@@ -56,7 +56,7 @@ def decode_icon_page(png, icon):
 ATLAS_PATH = 'content/generated/sprites/items.png'
 
 
-def pack_project(project):
+def pack_project(project=None, *, generated=None):
     """Finalize inventory imports into one bounded, exact-RGBA native PNG page.
 
     Run after individual source importers. Existing atlas regions are valid input,
@@ -70,8 +70,10 @@ def pack_project(project):
     from os.path import normcase
     from PIL import Image
     from presentation_atlas import pack
-    project = Path(project)
-    generated = project / 'content/generated'
+    if project is not None and generated is not None:
+        raise ValueError('Select either a project root or a generated resource root')
+    generated = Path(generated) if generated is not None else Path(project or _PROJECT_ROOT) / 'content/generated'
+    atlas_path = generated / ATLAS_PATH.removeprefix('content/generated/')
     documents = {p: json.loads(p.read_text()) for p in generated.rglob('*.json')}
     def nodes(value):
         if isinstance(value, dict):
@@ -80,7 +82,7 @@ def pack_project(project):
         elif isinstance(value, list):
             for child in value: yield from nodes(child)
     def absolute(document, value):
-        return project / value if value.startswith('content/generated/') else document.parent / value
+        return generated / value.removeprefix('content/generated/') if value.startswith('content/generated/') else document.parent / value
     rows = []
     images = {}
     originals = set()
@@ -117,7 +119,7 @@ def pack_project(project):
     regions = {r['id']: r['region'] for r in regions}
     # Capture old standalone paths before editing any document. Atlas aliases have
     # separate rectangles, so their identity includes the old region, never path only.
-    standalone = {p for p in originals if p != project / ATLAS_PATH}
+    standalone = {p for p in originals if p != atlas_path}
     # Every reference is still checked. Most strings in generated documents are
     # gameplay/text values, so reject impossible filenames before constructing a
     # Path for them. This is only a prefilter: positive candidates retain Path's
@@ -156,7 +158,7 @@ def pack_project(project):
                 row[collection]=outputs
         if json.dumps(data,sort_keys=True) != before:
             changed.append((document,(json.dumps(data,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()))
-    target=project/ATLAS_PATH;target.parent.mkdir(parents=True,exist_ok=True)
+    target=atlas_path;target.parent.mkdir(parents=True,exist_ok=True)
     if not target.exists() or target.read_bytes()!=page: target.write_bytes(page)
     for path,data in changed:path.write_bytes(data)
     # Only the known inventory inputs are retired, after every document and page
@@ -174,6 +176,9 @@ if __name__ == '__main__':
     import argparse
     import json
     from pathlib import Path
-    parser=argparse.ArgumentParser(description='Pack generated inventory icons after any regional import.')
-    parser.add_argument('--project-root',type=Path,default=_PROJECT_ROOT)
-    print(json.dumps(pack_project(parser.parse_args().project_root),sort_keys=True))
+    parser=argparse.ArgumentParser(description='Finalize generated inventory icons into their shared runtime atlas.')
+    destination=parser.add_mutually_exclusive_group()
+    destination.add_argument('--project-root',type=Path,help='Project containing content/generated; defaults to this project')
+    destination.add_argument('--generated',type=Path,help='Explicit generated resource tree, including isolated outputs')
+    args=parser.parse_args()
+    print(json.dumps(pack_project(args.project_root,generated=args.generated),sort_keys=True))

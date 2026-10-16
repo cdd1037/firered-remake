@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Import the original twelve Mail papers and settled Easy Chat presentation.
-
-Only pinned Git blobs are read; no source program is executed. Existing raw
-inputs and identical Fab/icon outputs are referenced in place, never copied.
-"""
+"""Render twelve Mail papers and Easy Chat presentation directly from pinned raw source."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
@@ -11,9 +7,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
-import importlib.util
 import json
-import os
 from pathlib import Path
 import re
 import struct
@@ -22,14 +16,6 @@ sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
 PROFILE = 'firered-mail-presentation-v1'
 BASE = 'content/generated/ui/mail-presentation/'
-RAW = 'content/raw/pokefirered/037335f4/'
-COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-HELPERS = (
-    'import-cinnabar-source-preparation.py',
-    'import-lab-battle-ui.py',
-    'fetch-lab-battle-ui.py',
-)
 NAMES = ['orange','harbor','glitter','mech','wood','wave','bead','shadow','tropic','dream','fab','retro']
 
 from image_io import png as encode_rgba_png
@@ -37,15 +23,10 @@ from image_io import png as encode_rgba_png
 def need(ok, message):
     if not ok: raise ValueError(message)
 def encoded(value): return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, default=item_json)+'\n').encode()
-def safe(path): need(not any(p.is_symlink() for p in [path,*path.parents]), 'Symlink resource rejected: '+str(path))
-def module(path, name):
-    safe(path)
-    spec=importlib.util.spec_from_file_location(name,path); result=importlib.util.module_from_spec(spec); spec.loader.exec_module(result); return result
-
-def generate(reference, dependency):
-    reader=module(dependency / 'scripts/imports/source/import-cinnabar-source-preparation.py', 'mail_source')
-    codec=module(dependency / 'scripts/imports/presentation/import-lab-battle-ui.py', 'mail_codec')
-    src=reader.Source(reference); outputs={}; assets=[]
+def generate(raw):
+    from world_source import WorldSource
+    import ui_tiles as codec
+    src = WorldSource(raw); outputs={}; assets=[]
     def capture(path, pattern, symbol):
         text=src.text(path); match=re.search(pattern,text,re.M|re.S); need(match is not None,'Missing source symbol: '+symbol)
         return match, dict(path=path,symbol=symbol,startLine=text[:match.start()].count('\n')+1,
@@ -53,15 +34,8 @@ def generate(reference, dependency):
     def block(path, name): return capture(path,r'^static const [^\n]*\b'+name+r'\[\][^=]*= \{(.*?)^\};',name)
     png = encode_rgba_png
     def asset(identifier,w,h,pixels,source_paths, reuse=None):
-        data=png(w,h,pixels); path=BASE+identifier+'.png'; shared=False
-        if reuse:
-            old=dependency/reuse
-            if old.is_file():
-                from PIL import Image
-                import io
-                im=Image.open(io.BytesIO(old.read_bytes())).convert('RGBA')
-                if im.size==(w,h) and im.tobytes()==pixels: data=old.read_bytes();path=reuse;shared=True
-        if not shared: outputs[path]=data
+        data=png(w,h,pixels); path=reuse or BASE+identifier+'.png'; shared=reuse is not None
+        outputs[path.removeprefix('content/generated/')]=data
         result=dict(id=identifier,width=w,height=h,pngPath=path,shared=shared)
         assets.append(result);return result
     mail=src.text('src/mail.c')
@@ -199,35 +173,21 @@ def generate(reference, dependency):
         easyChat=dict(fieldColumns=2,fieldRows=5,lastRowColumns=1,fieldX=41,fieldY=2,fieldAdvance=17,blankAdvance=advance,lineHeight=16,
             groupTextX=[18,102],wordTextX=[32,136],pickerTextY=90,pickerRows=4,footerTextX=[32,119,196],footerTextY=90,
             alphabetColumnOffsets=[0,12,24,56,68,80,92],textRgb=textpal[2],shadowRgb=textpal[3],blankRgb=textpal[4],specialGlyphs=specials))
-    outputs[BASE+'catalog.json']=encoded(document)
-    inputs=[];newraw={}
-    for path,entry in sorted(src.entries.items()):
-        existing=RAW+path if (dependency/(RAW+path)).is_file() else None
-        if existing:
-            need((dependency/existing).read_bytes()==src.data[path],'Shared source bytes differ: '+existing)
-        else:newraw[RAW+path]=src.data[path]
-        inputs.append(dict(**entry,localPath=existing or RAW+path,shared=existing is not None))
-    deps=[]
-    for a in assets:
-        if a['shared']:deps.append(dict(path=a['pngPath']))
-    locked=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=inputs,dependencies=deps,
-        helpers=HELPERS,outputs=[dict(path=p) for p,b in sorted(outputs.items())],
-        )
-    return newraw,outputs,locked,document
+    outputs['ui/mail-presentation/catalog.json']=encoded(document)
+    return outputs
+
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--reference-root',type=Path,required=True)
-    parser.add_argument('--dependency-root',type=Path,default=ROOT);parser.add_argument('--project-root',type=Path,default=ROOT);parser.add_argument('--check',action='store_true')
-    args=parser.parse_args();ref,dep,target=[Path(os.path.abspath(p)) for p in (args.reference_root,args.dependency_root,args.project_root)]
-    for p in (ref,dep,target):safe(p)
-    need(target!=ref and not target.is_relative_to(ref) and not ref.is_relative_to(target),'Source/output overlap')
-    raw,outputs,locked,doc=generate(ref,dep);lock=encoded(locked);writes={**raw, **outputs}
-    for path,data in sorted(writes.items()):
-        file=target/path;safe(file)
-        if args.check:need(file.is_file() and file.read_bytes()==data,'Regeneration differs: '+path)
-        else:file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(data)
-    print(json.dumps(dict(check=args.check,
+    from generated_output_compare import check_item_outputs
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--raw',type=Path,default=ROOT/'content/raw/pokefirered/037335f4')
+    parser.add_argument('--out',type=Path,default=ROOT/'content/generated')
+    parser.add_argument('--check',action='store_true')
+    args=parser.parse_args(); outputs=generate(args.raw)
+    if args.check: check_item_outputs(args.out,outputs)
+    else:
+        for name,data in outputs.items():
+            target=args.out/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+    print(json.dumps(dict(check=args.check,outputs=len(outputs))))
 
-        stationeryCount=len(doc['stationery']),assetCount=len(doc['assets']),newRawFiles=len(raw),newRawBytes=sum(map(len,raw.values())),
-        reusedRawFiles=sum(x['shared'] for x in locked['inputs']),outputCount=len(outputs),outputBytes=sum(map(len,outputs.values()))),indent=2, default=item_json))
 if __name__=='__main__':main()

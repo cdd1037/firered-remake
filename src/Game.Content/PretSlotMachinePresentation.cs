@@ -11,7 +11,6 @@ public sealed class SlotMachinePresentationData
     public JsonElement Manifest { get; }
     public JsonElement Layout { get; }
     public JsonElement Texts { get; }
-    public JsonElement Cues => Manifest.GetProperty("audio").GetProperty("cues");
     public IReadOnlyDictionary<string, SlotMachineTexture> Textures { get; }
 
     internal SlotMachinePresentationData(JsonElement manifest, JsonElement layout, Dictionary<string, byte[]> bytes)

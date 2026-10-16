@@ -15,11 +15,7 @@ public sealed class PretNpcTrades
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, string> Texts { get; }
-    public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretNpcTrades(SilphSourcePackage source, NpcTradePokemonCatalog trades,
         ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants)
@@ -28,8 +24,7 @@ public sealed class PretNpcTrades
             r => r.GetProperty("symbol").GetString()!, r => r.GetProperty("text").GetString()!, StringComparer.Ordinal);
         Trades = trades; NewMaps = maps; Constants = constants;
         GeneratedDirectory = source.Directory;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -37,48 +32,17 @@ public sealed class PretNpcTrades
         "MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE" => new("map.cinnabar-island-pokemon-lab-entrance"),
         _ => throw new InvalidDataException("Unknown original Lounge warp destination: " + symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretNpcTrades Load(PretCurrentWorld world, PokemonCatalog pokemon)
     {
-        Need(map.Id == LoungeMapId && map.Width == 15 && map.Height == 11 &&
-            map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
-            "NPC trade Lounge indoor geometry differs.");
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), []);
-    }
-    public static PretNpcTrades Load(string projectRoot, PokemonCatalog pokemon)
-    {
+        var projectRoot = world.ProjectRoot;
         ArgumentNullException.ThrowIfNull(pokemon);
         var source = new SilphSourcePackage(projectRoot,"maps/regions/npc-trades");
-        var catalog = source.Document("catalog.json");
-        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
-            "NPC trade source/catalog identity differs.");
-        var contracts = source.Document("contracts.json");
-        Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual(Enumerable.Range(0, 9)) &&
-            contracts.GetProperty("deferredTradeIds").GetArrayLength() == 0 &&
-            contracts.GetProperty("retainedMaps").GetArrayLength() == 8 &&
-            contracts.GetProperty("construction").GetProperty("metLocationValue").GetInt32() == 254 &&
-            contracts.GetProperty("construction").GetProperty("discardedRandomIvDraws").GetInt32() == 2,
-            "NPC trade construction/runtime boundary differs.");
         var definitions = source.Document("trades.json").EnumerateArray().Select(Definition).ToImmutableArray();
         NpcTradePokemonCatalog trades;
         try { trades = NpcTradePokemonCatalog.Create(pokemon, definitions); }
         catch (ArgumentException e) { throw new InvalidDataException("NPC trade definitions are invalid.", e); }
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
-            string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative , "Lounge compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 15 && runtime.Height == 11,
-                "Lounge map identity/dimensions differ.");
-            maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
-        }
-        Need(maps.Count == 1 && maps.ContainsKey(LoungeMapId) && maps[LoungeMapId].FieldWarps.Length == 1 &&
-            maps[LoungeMapId].Events.GetProperty("object_events").GetArrayLength() == 3,
-            "Only the original Lounge and its three actors may be added.");
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["INGAME_TRADE_NIDORAN"] == 2 && constants["INGAME_TRADE_NIDORINOA"] == 4 &&
             constants["FLAG_DID_MS_NIDO_TRADE"] == 587 && constants["FLAG_DID_NINA_TRADE"] == 593 &&

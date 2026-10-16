@@ -114,24 +114,34 @@ class LateMachineImporterTests(unittest.TestCase):
         with patch('subprocess.check_output', read_source):
             outputs = load('imports/story/import-viridian-gym-rules.py').generate(ROOT, ROOT)
             self.compare('content/generated/data/regions/viridian-gym/machines.json', outputs['machines.json'])
-            outputs, _ = load('imports/story/import-victory-road-rules.py').generate(ROOT, ROOT, ROOT)
+            outputs = load('imports/story/import-victory-road-rules.py').generate(RAW, ROOT)
             self.compare('content/generated/data/regions/victory-road/machines.json', outputs['machines.json'])
 
     def test_sevii_species_machine_outputs_use_direct_shared_views(self):
-        # These converters expose a real raw-input route. Keep the test at that
-        # boundary instead of pretending the project is the upstream Git tree.
-        for family, resource in [('celio-pokemon', 'data/pokemon/celio'), ('cerulean-cave-pokemon', 'data/pokemon/cerulean-cave')]:
-            with self.subTest(family=family), patch('subprocess.run',
-                    side_effect=AssertionError('Raw conversion invoked a process')):
-                documents = load(f'imports/pokemon/import-{family}.py').generate(None, ROOT, raw=RAW)
-                self.compare(f'content/generated/{resource}/machines.json', documents['machines.json'])
         with patch('subprocess.check_output', read_source):
-            for family, resource in [('seven-island-rules', 'data/regions/seven-island')]:
-                with self.subTest(family=family):
-                    documents = load(f'imports/story/import-{family}.py').generate(ROOT, ROOT)
-                    self.compare(f'content/generated/{resource}/machines.json', documents['machines.json'])
             document, _ = load('imports/pokemon/import-event-island-species.py').generate(ROOT, ROOT)
             self.compare('content/generated/data/pokemon/event-island.json', document)
+
+    def test_current_rosters_replace_historical_species_chains(self):
+        from runtime_json import runtime_json_bytes
+        from shared_trainers import trainer_json
+        from item_catalog import item_json
+        packages = [('story/import-seven-island-rules.py', 'seven-island'),
+                    ('story/import-league-rematch-rules.py', 'league-rematch'),
+                    ('trainers/import-trainer-tower-rules.py', 'trainer-tower')]
+        for script, region in packages:
+            with self.subTest(region=region), patch('subprocess.check_output', read_source):
+                result = load('imports/' + script).generate(ROOT, ROOT)
+                documents = result[0] if isinstance(result, tuple) else result
+                for name, value in documents.items():
+                    expected = json.loads((ROOT / 'content/generated/data/regions' / region / name).read_bytes())
+                    if name == 'trainers.json':
+                        actual = json.loads(trainer_json(ROOT / 'content/generated', value, check=True))
+                    elif region == 'trainer-tower':
+                        actual = json.loads(json.dumps(value, default=item_json))
+                    else:
+                        actual = json.loads(runtime_json_bytes(value, sort_keys=True, default=item_json))
+                    self.assertEqual(expected, actual, region + '/' + name)
 
     def test_sevii_item_machine_outputs_use_direct_shared_views(self):
         with patch('subprocess.check_output', read_source):

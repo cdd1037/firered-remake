@@ -9,7 +9,7 @@ namespace Game.Content;
 
 public sealed record SeviiRubyTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
-/// <summary>Source-authenticated initial trainer catalog and additive owned/opponent proofs; no runtime route admission.</summary>
+/// <summary>Initial Sevii Ruby trainer battle catalog.</summary>
 public static class PretSeviiRubyRules
 {
     private static T Read<T>(string root,string file)
@@ -29,5 +29,4 @@ public static class PretSeviiRubyRules
         var result = new SeviiRubyTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         SeviiRubyTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

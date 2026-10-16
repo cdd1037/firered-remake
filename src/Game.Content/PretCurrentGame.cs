@@ -17,16 +17,17 @@ public sealed partial class PretCampaignCatalog
     /// <summary>Builds the current game from generated gameplay resources and compiled story IR.</summary>
     public static PretCampaignCatalog LoadCurrent(string projectRoot)
     {
+        var world = PretCurrentWorld.Load(projectRoot);
         var canonicalPokemon = PretCanonicalPokemonCatalog.Load(projectRoot, projectRoot);
         var sharedItems = SharedItemCatalog.LoadProject(projectRoot);
         var sharedMachines = SharedMachineCatalog.LoadProject(projectRoot, sharedItems);
         // Resource readers validate their formats; no original-file identity pass is required.
         var mapNumbers = PretCelioMapNumbers.LoadSourceTable(projectRoot);
-        var eventIsland = PretEventIslandRegion.Load(projectRoot);
-        var powerPlant = PretPowerPlantRegion.Load(projectRoot);
-        var trainerTower = PretTrainerTowerRegion.Load(projectRoot);
-        var fightingDojo = PretFightingDojoRegion.Load(projectRoot);
-        var fossilLab = PretFossilLabRegion.Load(projectRoot);
+        var eventIsland = PretEventIslandRegion.Load(world);
+        var powerPlant = PretPowerPlantRegion.Load(world);
+        var trainerTower = PretTrainerTowerRegion.Load(world);
+        var fightingDojo = PretFightingDojoRegion.Load(world);
+        var fossilLab = PretFossilLabRegion.Load(world);
         var itemfinder = PretItemfinderSource.Load(projectRoot);
         var teachyTv = PretTeachyTv.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/teachy-tv.json")));
         var fameChecker = PretFameChecker.Load(projectRoot);
@@ -35,74 +36,73 @@ public sealed partial class PretCampaignCatalog
         var vsSeekerTrainers = PretVsSeekerParties.Load(projectRoot);
         var vsSeekerOccurrences = PretVsSeekerParties.LoadOccurrences(projectRoot);
         var slotRules = SlotMachineRules.FromAuthenticatedJson(File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/data/services/slot-machine/rules.json")));
-        var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
-        var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
-        var fiveIsland = PretFiveIslandRegion.Load(projectRoot);
+        var sevenIsland = PretSevenIslandRegion.Load(world);
+        var ceruleanCave = PretCeruleanCaveRegion.Load(world);
+        var fiveIsland = PretFiveIslandRegion.Load(world);
         var fiveIslandTrainers = PretFiveIslandRules.LoadTrainers(projectRoot);
-        var sixIsland = PretSixIslandRegion.Load(projectRoot);
+        var sixIsland = PretSixIslandRegion.Load(world);
         var sixIslandTrainers = PretSixIslandRules.LoadTrainers(projectRoot);
-        var fourIsland = PretFourIslandRegion.Load(projectRoot);
+        var fourIsland = PretFourIslandRegion.Load(world);
         var fourIslandTrainers = PretFourIslandRules.LoadTrainers(projectRoot);
-        var seviiRuby = PretSeviiRubyRegion.Load(projectRoot);
+        var seviiRuby = PretSeviiRubyRegion.Load(world);
         var seviiRubyTrainers = PretSeviiRubyRules.LoadTrainers(projectRoot);
         var twins = PretRoute8Twins.Load(projectRoot);
         var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(canonicalPokemon, projectRoot, sharedItems);
-        var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics.Catalog);
+        var npcTrades = PretNpcTrades.Load(world, doubleMechanics.Catalog);
         var gamePokemon = PretGamePokemonCatalog.Load(projectRoot, canonicalPokemon, doubleMechanics, npcTrades.Trades, sharedMachines);
-        var npcTradeElyssa = PretNpcTradeElyssa.Load(projectRoot);
-        var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
+        var npcTradeElyssa = PretNpcTradeElyssa.Load(world);
+        var npcTradeHaden = PretNpcTradeHaden.Load(world);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
         var mailComposer = PretMailComposer.Load(projectRoot);
         var mailPresentation = PretMailPresentation.Load(projectRoot, items: sharedItems);
-        var goodRodService = PretGoodRodService.Load(projectRoot);
-        var superRodService = PretSuperRodService.Load(projectRoot);
-        var seafoam = PretSeafoamRegion.Load(projectRoot);
+        var goodRodService = PretGoodRodService.Load(world);
+        var superRodService = PretSuperRodService.Load(world);
+        var seafoam = PretSeafoamRegion.Load(world);
         var seafoamTrainers = PretSeafoamRules.LoadTrainers(projectRoot);
-        var moveReminderHouse = PretMoveReminderHouse.Load(projectRoot);
-        var moveDeleterHouse = PretMoveDeleterHouse.Load(projectRoot);
-        var originalTutorRooms = PretOriginalTutorRooms.Load(projectRoot);
-        var copycatHouse = PretCopycatHouse.Load(projectRoot);
-        var capeBrinkTutor = PretCapeBrinkTutor.Load(projectRoot);
-        var route16FlyHouse = PretRoute16FlyHouse.Load(projectRoot);
-        var cyclingRoad = PretCyclingRoadRegion.Load(projectRoot);
-        var route5DayCare = PretRoute5DayCare.Load(projectRoot);
-        var fourIslandDayCare = PretFourIslandDayCare.Load(projectRoot);
-        var originalTmAcquisition = PretOriginalTmAcquisition.Load(projectRoot);
-        var schoolHouseInteriors = PretSchoolHouseInteriors.Load(projectRoot);
-        var lostCave = PretLostCaveRegion.Load(projectRoot);
-        var trainerFanClub = PretTrainerFanClub.Load(projectRoot);
+        var moveReminderHouse = PretMoveReminderHouse.Load(world);
+        var moveDeleterHouse = PretMoveDeleterHouse.Load(world);
+        var originalTutorRooms = PretOriginalTutorRooms.Load(world);
+        var copycatHouse = PretCopycatHouse.Load(world);
+        var capeBrinkTutor = PretCapeBrinkTutor.Load(world);
+        var route16FlyHouse = PretRoute16FlyHouse.Load(world);
+        var cyclingRoad = PretCyclingRoadRegion.Load(world);
+        var route5DayCare = PretRoute5DayCare.Load(world);
+        var fourIslandDayCare = PretFourIslandDayCare.Load(world);
+        var originalTmAcquisition = PretOriginalTmAcquisition.Load(world);
+        var schoolHouseInteriors = PretSchoolHouseInteriors.Load(world);
+        var lostCave = PretLostCaveRegion.Load(world);
+        var trainerFanClub = PretTrainerFanClub.Load(world);
         var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers, SharedTrainerCatalog.LoadProject(projectRoot).Select(LostCaveTrainerPartyFactory.AllTrainers));
         var fieldFly = PretFieldFly.Load(projectRoot, shared: sharedMachines);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
         var doubleItems = doubleMechanics.Catalog.BattleItems ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
-        var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.ManifestPath));
-        var route22 = PretRoute22Region.Load(projectRoot, runtimeMaps);
-        var route3 = PretRoute3Region.Load(projectRoot, runtimeMaps);
+        var route22 = PretRoute22Region.Load(world);
+        var route3 = PretRoute3Region.Load(world);
         var oakPokedex = PretPokedexMenu.Load(projectRoot);
         var route22Pokemon = PretRoute22Pokemon.Load(canonicalPokemon, projectRoot, includeSourceCryWaves: false, pokedexMenu: oakPokedex);
         var route3Pokemon = PretRoute3Pokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var ceruleanPokemon = PretCeruleanPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
-        var pokemonTower = PretPokemonTowerRegion.Load(projectRoot, PretPokemonTowerRuntimeMaps.Load(projectRoot));
+        var pokemonTower = PretPokemonTowerRegion.Load(world);
         PretPokemonTowerPokemon pokemonTowerPokemon;
-        var snorlax = PretSnorlaxRegion.Load(projectRoot);
+        var snorlax = PretSnorlaxRegion.Load(world);
         PretSnorlaxPokemon snorlaxPokemon;
         var snorlaxArt = PretSnorlaxArt.Load(projectRoot, pokedexMenu: oakPokedex);
-        var regionalServices = PretRegionalServiceMaps.Load(projectRoot);
+        var regionalServices = PretRegionalServiceMaps.Load(world);
         var regionalGift = PretRegionalGiftContract.Load(projectRoot, sharedItems);
         var eeveeArt = PretEeveeArt.Load(projectRoot, pokedexMenu: oakPokedex);
         var departmentStore = PretDepartmentStoreContract.Load(projectRoot);
         var nameRater = PretNameRaterContract.Load(projectRoot);
         PretEeveePokemon eeveePokemon;
-        var fuchsiaRoute = PretFuchsiaRouteRegion.Load(projectRoot);
+        var fuchsiaRoute = PretFuchsiaRouteRegion.Load(world);
         PretFuchsiaRoutePokemon fuchsiaPokemon;
-        var fuchsiaGym = PretFuchsiaGymRegion.Load(projectRoot, runtimeMaps.FuchsiaGymPackage(projectRoot));
+        var fuchsiaGym = PretFuchsiaGymRegion.Load(world);
         var fuchsiaGymTrainers = PretFuchsiaGymTrainers.LoadDocument(canonicalPokemon, projectRoot);
         var fuchsiaGymItems = PretFuchsiaGymItems.LoadProject(projectRoot, shared: sharedMachines);
         var fuchsiaGymMachines = PretFuchsiaGymMachines.LoadProject(projectRoot);
         var fuchsiaGymMoveSource = canonicalPokemon.MoveCatalog;
-        var safari = PretSafariRegion.Load(projectRoot);
+        var safari = PretSafariRegion.Load(world);
         var safariEncounters = PretSafariEncounters.Load(safari);
         var safariItems = PretSafariItems.LoadProject(projectRoot);
         var safariArt = PretSafariArt.Load(projectRoot);
@@ -112,25 +112,24 @@ public sealed partial class PretCampaignCatalog
         PretSurfArt surfArt;
         PretSurfEncounters surfEncounters;
 
-        var viridianGym = PretViridianGymRegion.Load(projectRoot);
+        var viridianGym = PretViridianGymRegion.Load(world);
         var viridianGymTrainers = PretViridianGymRules.LoadTrainers(projectRoot);
         var leagueRivalTrainers = PretLeagueRivalRules.LoadTrainers(projectRoot);
-        var victoryRoad = PretVictoryRoadRegion.Load(projectRoot);
+        var victoryRoad = PretVictoryRoadRegion.Load(world);
         var victoryRoadTrainers = PretVictoryRoadRules.LoadTrainers(projectRoot);
         var victoryRoadItems = PretVictoryRoadItems.LoadProject(projectRoot);
         _ = PretVictoryRoadRules.LoadWild(projectRoot);
-        var pokemonLeague = PretPokemonLeagueRegion.Load(projectRoot);
+        var pokemonLeague = PretPokemonLeagueRegion.Load(world);
         var pokemonLeagueTrainers = PretPokemonLeagueRules.LoadTrainers(projectRoot);
-        var firstSevii = PretFirstSeviiRegion.Load(projectRoot);
+        var firstSevii = PretFirstSeviiRegion.Load(world);
         var firstSeviiTrainers = PretFirstSeviiRules.LoadTrainers(projectRoot, shared: sharedMachines);
         var firstSeviiItems = PretFirstSeviiRules.LoadItems(projectRoot, shared: sharedMachines);
         var firstSeviiPresentation = PretFirstSeviiPresentation.LoadProject(projectRoot, projectRoot);
-        var cinnabar = PretCinnabarRegion.Load(projectRoot);
-        var cinnabarPokemon = PretCinnabarPokemon.LoadDocument(canonicalPokemon, projectRoot, projectRoot);
+        var cinnabar = PretCinnabarRegion.Load(world);
         var cinnabarTrainers = PretCinnabarTrainers.Load(projectRoot);
         var cinnabarItems = PretCinnabarItems.LoadProject(projectRoot);
 
-        var saffronGym = PretSaffronGymRegion.Load(projectRoot);
+        var saffronGym = PretSaffronGymRegion.Load(world);
         var saffronGymTrainers = PretSaffronGymTrainers.Load(canonicalPokemon, projectRoot);
         var saffronGymArt = PretSaffronGymArt.Load(projectRoot, projectRoot, pokedexMenu: oakPokedex);
         var cinnabarArt = PretCinnabarArt.Load(projectRoot, projectRoot, pokedexMenu: oakPokedex);
@@ -138,7 +137,7 @@ public sealed partial class PretCampaignCatalog
         var saffronGymItems = PretSaffronGymItems.LoadProject(projectRoot);
         var saffronGymPokemon = PretSaffronGymPokemon.LoadDocument(canonicalPokemon, projectRoot, projectRoot);
 
-        var silph = PretSilphRegion.Load(projectRoot);
+        var silph = PretSilphRegion.Load(world);
         var silphItems = PretSilphItems.LoadProject(projectRoot);
         var silphTrainers = PretSilphTrainers.Load(canonicalPokemon, projectRoot);
         PretSilphPokemon silphPokemon;
@@ -148,155 +147,82 @@ public sealed partial class PretCampaignCatalog
         var pokemonTowerItems = PretPokemonTowerItems.LoadProject(projectRoot, shared: sharedMachines);
         var pokemonTowerPickups = PretPokemonTowerItems.LoadPickupsProject(projectRoot);
         var pokemonTowerTrainers = PretPokemonTowerTrainers.Load(canonicalPokemon, projectRoot);
-        var rocketHideout = PretRocketHideoutRegion.Load(projectRoot, runtimeMaps);
+        var rocketHideout = PretRocketHideoutRegion.Load(world);
         var rocketHideoutPokemon = PretRocketHideoutPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var rocketHideoutItems = PretRocketHideoutItems.LoadProject(projectRoot, shared: sharedMachines);
         var rocketHideoutPickups = PretRocketHideoutItems.LoadPickupsProject(projectRoot);
         var rocketHideoutTrainers = PretRocketHideoutTrainers.Load(canonicalPokemon, projectRoot);
-        var celadonGym = PretCeladonGymRegion.Load(projectRoot, runtimeMaps);
+        var celadonGym = PretCeladonGymRegion.Load(world);
         var celadonGymPokemon = PretCeladonGymPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var celadonGymItems = PretCeladonGymItems.LoadProject(projectRoot, shared: sharedMachines);
         var celadonGymTrainers = PretCeladonGymTrainers.Load(canonicalPokemon, projectRoot);
-        var celadonApproach = PretCeladonApproachRegion.Load(projectRoot, runtimeMaps);
+        var celadonApproach = PretCeladonApproachRegion.Load(world);
         var celadonApproachPokemon = PretCeladonApproachPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var celadonApproachItems = PretCeladonApproachItems.LoadProject(projectRoot, shared: sharedMachines);
         var celadonApproachEncounters = PretCeladonApproachEncounters.Load(projectRoot);
         var celadonApproachTrainers = PretCeladonApproachTrainers.Load(projectRoot);
-        var rockTunnel = PretRockTunnelRegion.Load(projectRoot, runtimeMaps);
+        var rockTunnel = PretRockTunnelRegion.Load(world);
         var rockTunnelPokemon = PretRockTunnelPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var rockTunnelItems = PretRockTunnelItems.LoadProject(projectRoot, shared: sharedMachines);
         var rockTunnelEncounters = PretRockTunnelEncounters.Load(projectRoot);
         var rockTunnelTrainers = PretRockTunnelTrainers.Load(projectRoot);
-        var route11 = PretRoute11Region.Load(projectRoot, runtimeMaps);
+        var route11 = PretRoute11Region.Load(world);
         var route11Pokemon = PretRoute11Pokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var route11Items = PretRoute11Items.LoadProject(projectRoot, shared: sharedMachines);
         var route11Encounters = PretRoute11Encounters.Load(projectRoot);
         var route11Trainers = PretRoute11Trainers.Load(projectRoot);
-        var cityServices = PretCityServices.Load(projectRoot, runtimeMaps, shared: sharedMachines);
+        var cityServices = PretCityServices.Load(world, shared: sharedMachines);
         var gameCornerCoins = PretGameCornerCoins.Load(projectRoot, shared: sharedMachines);
         var oldRod = PretOldRod.Load(projectRoot);
-        var vermilionGym = PretVermilionGymRegion.Load(projectRoot, runtimeMaps);
+        var vermilionGym = PretVermilionGymRegion.Load(world);
         var vermilionGymTrainers = PretVermilionGymTrainers.Load(canonicalPokemon, projectRoot);
         var vermilionGymAssets = PretVermilionGymAssets.Load(projectRoot, shared: sharedMachines);
-        var ssAnne = PretSsAnneRegion.Load(projectRoot, runtimeMaps);
+        var ssAnne = PretSsAnneRegion.Load(world);
         var ssAnnePokemon = PretSsAnnePokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var ssAnneTrainers = PretSsAnneTrainers.Load(projectRoot);
         var ssAnneItems = PretSsAnneItems.LoadProject(projectRoot, shared: sharedMachines);
         var vermilionPokemon = PretVermilionPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
-        var vermilion = PretVermilionRegion.Load(projectRoot, runtimeMaps);
+        var vermilion = PretVermilionRegion.Load(world);
         var vermilionTrainers = PretVermilionTrainers.Load(projectRoot);
         var billPokemon = PretBillPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
-        var bill = PretBillRegion.Load(projectRoot, runtimeMaps);
+        var bill = PretBillRegion.Load(world);
         var billItems = PretBillItems.LoadProject(projectRoot, shared: sharedMachines);
         var billTrainers = PretBillTrainers.Load(projectRoot);
-        var cerulean = PretCeruleanRegion.Load(projectRoot, runtimeMaps);
-        var mtMoon = PretMtMoonRegion.Load(projectRoot, runtimeMaps);
+        var cerulean = PretCeruleanRegion.Load(world);
+        var mtMoon = PretMtMoonRegion.Load(world);
         var mtMoonPokemon = PretMtMoonPokemon.Load(canonicalPokemon, projectRoot, pokedexMenu: oakPokedex);
         var oakRating = PretOakRating.Load(projectRoot);
         var townMap = PretTownMap.Load(projectRoot, sharedItems);
-        // Extend map anchors in source order; each retained predecessor validates current data.
-        var maps = PretWorldCatalog.Load(Path.Combine(projectRoot, "content/generated"), runtimeMaps);
-        var region = PretViridianRegion.Load(projectRoot, runtimeMaps);
-        maps = maps.AddRange(region.NewMaps);
-        var center = PretViridianCenter.Load(projectRoot, runtimeMaps);
-        maps = maps.Add(center.Map.Id, center.Map);
-        var forest = PretForestRegion.Load(projectRoot, runtimeMaps);
-        maps = maps.AddRange(forest.NewMaps);
-        var pewter = PretPewterRegion.Load(projectRoot, runtimeMaps);
-        maps = maps.AddRange(pewter.NewMaps);
-        maps = maps.AddRange(route22.NewMaps);
-        maps = maps.AddRange(route3.NewMaps);
-        maps = maps.AddRange(mtMoon.NewMaps);
-        maps = maps.AddRange(cerulean.NewMaps);
-        maps = maps.AddRange(bill.NewMaps);
-        maps = maps.AddRange(vermilion.NewMaps);
-        maps = maps.AddRange(ssAnne.NewMaps);
-        maps = maps.AddRange(vermilionGym.NewMaps);
-        maps = maps.AddRange(cityServices.NewMaps);
-        maps = maps.AddRange(route11.NewMaps);
-        maps = maps.AddRange(rockTunnel.NewMaps);
-        maps = maps.AddRange(celadonApproach.NewMaps);
-        maps = maps.AddRange(celadonGym.NewMaps);
-        maps = maps.AddRange(rocketHideout.NewMaps);
-        maps = maps.AddRange(pokemonTower.NewMaps);
-        maps = maps.AddRange(snorlax.NewMaps);
-        var snorlaxCompositionMaps = maps;
-        {
-            regionalServices.ValidateReusedMaps(maps);
-            maps = maps.AddRange(RegionalServiceMapIds.Select(id => KeyValuePair.Create(id, regionalServices.NewMaps[id])));
-        }
+        // All ordinary maps come from the authoritative current world index.
+        var maps = world.Maps;
+        var region = PretViridianRegion.Load(world);
 
-        var regionalServiceCompositionMaps = maps;
-        maps = maps.AddRange(RegionalInteriorMapIds.Select(id => KeyValuePair.Create(id, regionalServices.SourceMaps[id])));
-        var regionalInteriorCompositionMaps = maps;
-        {
-            fuchsiaRoute.ValidateReusedMaps(maps);
-            maps = maps.AddRange(fuchsiaRoute.NewMaps);
-        }
+        var center = PretViridianCenter.Load(world);
 
-        var fuchsiaRouteCompositionMaps = maps;
-        maps = maps.AddRange(fuchsiaGym.NewMaps);
-        var fuchsiaGymCompositionMaps = maps;
-        {
-            safari.ValidateReusedMaps(maps);
-            maps = maps.AddRange(safari.SourceMaps);
-        }
+        var forest = PretForestRegion.Load(world);
 
-        maps = maps.AddRange(silph.NewMaps);
+        var pewter = PretPewterRegion.Load(world);
+
+        regionalServices.ValidateReusedMaps(maps);
+
+        fuchsiaRoute.ValidateReusedMaps(maps);
+
+        safari.ValidateReusedMaps(maps);
+
         {
             if (!maps.TryGetValue(new("map.saffron-city"), out var saffronCity) ||
                 !JsonElement.DeepEquals(saffronCity.Events, saffronGym.ExternalSaffronEvents))
-                throw new InvalidDataException("saffron_gym_predecessor_maps");
-            maps = maps.AddRange(saffronGym.NewMaps);
+                throw new InvalidDataException("saffron_gym_city_anchor");
+
         }
 
-        maps = maps.AddRange(cinnabar.NewMaps);
-        var firstSeviiPredecessorMaps = maps;
-        {
-            ValidateFirstSeviiAnchors(firstSevii, maps);
-            maps = maps.AddRange(firstSevii.NewMaps);
-        }
 
-        var viridianGymPredecessorMaps = maps;
-        {
-            ValidateViridianGymAnchors(viridianGym, maps);
-            maps = maps.AddRange(viridianGym.NewMaps);
-        }
 
-        var victoryRoadPredecessorMaps = maps;
-        {
-            ValidateVictoryRoadAnchors(victoryRoad, maps);
-            maps = maps.AddRange(victoryRoad.NewMaps);
-        }
 
-        var pokemonLeaguePredecessorMaps = maps;
-        {
-            ValidatePokemonLeagueAnchors(pokemonLeague, maps);
-            maps = maps.AddRange(pokemonLeague.NewMaps);
-        }
 
-        var seviiRubyPredecessorMaps = maps;
-        {
-            ValidateSeviiRubyAnchors(seviiRuby, maps);
-            maps = maps.AddRange(seviiRuby.NewMaps);
-        }
 
-        var fourIslandPredecessorMaps = maps;
-        {
-            ValidateFourIslandAnchors(fourIsland, maps);
-            maps = maps.AddRange(fourIsland.NewMaps);
-        }
 
-        var sixIslandPredecessorMaps = maps;
-        {
-            ValidateSixIslandAnchors(sixIsland, maps);
-            maps = maps.AddRange(sixIsland.NewMaps);
-        }
 
-        {
-            ValidateFiveIslandAnchors(fiveIsland, maps);
-            maps = maps.AddRange(fiveIsland.NewMaps);
-        }
 
         var pokemonStorage = PretPokemonStorageSource.Load(projectRoot);
         var fieldPickups = PretEarlyPickups.Load(projectRoot);
@@ -462,28 +388,28 @@ public sealed partial class PretCampaignCatalog
                     throw new InvalidDataException("magikarp_common_text_missing: " + label);
         }
 
-        ValidateSnorlaxComposition(snorlaxCompositionMaps, snorlaxCompositionPokemon, compiled, bank);
-        ValidateRegionalServiceComposition(regionalServices, regionalGift, regionalServiceCompositionMaps, snorlaxCompositionMaps, regionalServiceCompositionPokemon, snorlaxCompositionPokemon, compiled, bank);
-        ValidateRegionalInteriorComposition(regionalServices, departmentStore, regionalInteriorCompositionMaps, regionalServiceCompositionMaps);
-        ValidateRegionalFlavorComposition(regionalInteriorCompositionMaps, compiled, bank);
-        ValidateFuchsiaRouteComposition(fuchsiaRoute, fuchsiaRouteCompositionMaps, regionalInteriorCompositionMaps, fuchsiaRouteCompositionPokemon);
-        ValidateFuchsiaGymComposition(fuchsiaGymCompositionMaps, fuchsiaRouteCompositionMaps, fuchsiaGymTrainers, compiled);
-        ValidateFirstSeviiComposition(firstSevii, viridianGymPredecessorMaps, firstSeviiPredecessorMaps, gamePokemon, gamePokemon.Opponents, firstSeviiTrainers, compiled, bank);
-        ValidateViridianGymComposition(viridianGym, victoryRoadPredecessorMaps, viridianGymPredecessorMaps, viridianGymTrainers, compiled, machines, gamePokemon);
+        ValidateSnorlaxComposition(maps, snorlaxCompositionPokemon, compiled, bank);
+        ValidateRegionalServiceComposition(regionalServices, regionalGift, maps, regionalServiceCompositionPokemon, snorlaxCompositionPokemon, compiled, bank);
+        ValidateRegionalInteriorComposition(regionalServices, departmentStore, maps);
+        ValidateRegionalFlavorComposition(maps, compiled, bank);
+        ValidateFuchsiaRouteComposition(fuchsiaRoute, maps, fuchsiaRouteCompositionPokemon);
+        ValidateFuchsiaGymComposition(maps, fuchsiaGymTrainers, compiled);
+        ValidateFirstSeviiComposition(firstSevii, maps, gamePokemon, gamePokemon.Opponents, firstSeviiTrainers, compiled, bank);
+        ValidateViridianGymComposition(viridianGym, maps, viridianGymTrainers, compiled, machines, gamePokemon);
         {
-            ValidateLeagueRivalComposition(victoryRoadPredecessorMaps, leagueRivalTrainers, compiled, bank, pokemonContent, gamePokemon, gamePokemon.Opponents);
+            ValidateLeagueRivalComposition(maps, leagueRivalTrainers, compiled, bank, pokemonContent, gamePokemon, gamePokemon.Opponents);
         }
 
-        ValidateVictoryRoadComposition(victoryRoad, pokemonLeaguePredecessorMaps, victoryRoadPredecessorMaps, victoryRoadTrainers, gamePokemon, compiled);
+        ValidateVictoryRoadComposition(victoryRoad, maps, victoryRoadTrainers, gamePokemon, compiled);
 
-        ValidatePokemonLeagueComposition(pokemonLeague, seviiRubyPredecessorMaps, pokemonLeaguePredecessorMaps, pokemonLeagueTrainers, gamePokemon.Opponents, gamePokemon, compiled, bank);
+        ValidatePokemonLeagueComposition(pokemonLeague, maps, pokemonLeagueTrainers, gamePokemon.Opponents, gamePokemon, compiled, bank);
 
         SeviiRubyItemContent seviiRubyItems;
         {
 
             seviiRubyItems = PretSeviiRubyItems.Load(seviiRuby, gamePokemon, earlyShop.Catalog, machines, compiled, sharedMachines);
 
-            ValidateSeviiRubyComposition(seviiRuby, fourIslandPredecessorMaps, seviiRubyPredecessorMaps, gamePokemon, gamePokemon.Opponents, seviiRubyTrainers, compiled, pokemonContent, seviiRubyItems);
+            ValidateSeviiRubyComposition(seviiRuby, maps, gamePokemon, gamePokemon.Opponents, seviiRubyTrainers, compiled, pokemonContent, seviiRubyItems);
         }
 
         FourIslandItemContent fourIslandItems;
@@ -491,7 +417,7 @@ public sealed partial class PretCampaignCatalog
 
             fourIslandItems = PretFourIslandItems.Load(fourIsland, gamePokemon, earlyShop.Catalog, machines, compiled);
 
-            ValidateFourIslandComposition(sixIslandPredecessorMaps, fourIslandTrainers, compiled);
+            ValidateFourIslandComposition(maps, fourIslandTrainers, compiled);
         }
 
         SixIslandItemContent sixIslandItems;
@@ -519,21 +445,14 @@ public sealed partial class PretCampaignCatalog
             ValidateCelioComposition(maps, compiled, pokemonContent, celioPokemon, gamePokemon, gamePokemon.Opponents, fiveIslandItems.Machines);
         }
 
-        // Validate the original Celio composition before extending the sole current game.
-        var celioMaps = maps;
-        maps = maps.AddRange(ceruleanCave.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, ceruleanCave.NewMaps);
         var ceruleanCavePokemon = new CeruleanCavePokemonContent(gamePokemon, gamePokemon.Opponents, machines);
 
-        ValidateCeruleanCaveComposition(ceruleanCave, maps, celioMaps, compiled, pokemonContent, ceruleanCavePokemon, celioPokemon);
+        ValidateCeruleanCaveComposition(ceruleanCave, maps, compiled, pokemonContent, ceruleanCavePokemon, celioPokemon);
 
         // The same current game retains original League teams and activates the source rematches after Celio.
         var leagueRematchTrainers = PretLeagueRematchRules.LoadTrainers(projectRoot);
 
         ValidateLeagueRematchComposition(leagueRematchTrainers, gamePokemon.Opponents, ceruleanCavePokemon, compiled, bank);
-
-        maps = maps.AddRange(sevenIsland.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, sevenIsland.NewMaps);
 
         var sevenTrainers = PretSevenIslandRules.LoadTrainers(projectRoot, shared: sharedMachines);
 
@@ -541,77 +460,41 @@ public sealed partial class PretCampaignCatalog
 
         ValidateSevenIslandComposition(sevenIsland, sevenTrainers, sevenItems, compiled);
 
-        maps = maps.AddRange(eventIsland.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, eventIsland.NewMaps);
-
-        maps=maps.AddRange(powerPlant.NewMaps);
-        celioRoamerMaps=PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers,maps,celioRoamerMaps,powerPlant.NewMaps);
-
-        maps = maps.AddRange(trainerTower.Maps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, trainerTower.Maps);
         var trainerTowerCatalog = PretTrainerTowerRules.Load(projectRoot);
 
         ValidateTrainerTowerComposition(trainerTower, compiled, trainerTowerCatalog, earlyShop.Catalog);
 
-        var dojoPreviousMaps = maps;
-        maps = maps.AddRange(fightingDojo.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, fightingDojo.NewMaps);
-
         var dojoTrainers = PretFightingDojoRules.LoadTrainers(projectRoot);
 
-        ValidateFightingDojoComposition(fightingDojo, maps, dojoPreviousMaps, compiled);
+        ValidateFightingDojoComposition(fightingDojo, maps, compiled);
 
-        var fossilLabPreviousMaps = maps;
-        maps = maps.AddRange(fossilLab.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, fossilLab.NewMaps);
+        ValidateFossilLabComposition(fossilLab, maps, compiled);
 
-        ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
-        maps = maps.AddRange(npcTradeElyssa.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, npcTradeElyssa.NewMaps);
-        maps = maps.AddRange(npcTradeHaden.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, npcTradeHaden.NewMaps);
-        var npcTradePreviousMaps = maps;
-        maps = maps.AddRange(npcTrades.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, npcTrades.NewMaps);
-        ValidateNpcTradeComposition(npcTrades, maps, npcTradePreviousMaps, compiled);
-        var goodRodPreviousMaps = maps;
-        maps = maps.AddRange(goodRodService.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, goodRodService.NewMaps);
-        ValidateGoodRodComposition(goodRodService, maps, goodRodPreviousMaps, compiled);
+        ValidateNpcTradeComposition(npcTrades, maps, compiled);
 
-        var seafoamPreviousMaps = maps;
-        maps = maps.AddRange(seafoam.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, seafoam.NewMaps);
+        ValidateGoodRodComposition(goodRodService, maps, compiled);
+
         _ = PretPokeDollItems.LoadSourceContract(projectRoot);
 
-        ValidateSeafoamComposition(seafoam, maps, seafoamPreviousMaps, compiled);
-        var reminderPreviousMaps = maps;
-        maps = maps.AddRange(moveReminderHouse.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, moveReminderHouse.NewMaps);
-        ValidateMoveReminderComposition(moveReminderHouse, maps, reminderPreviousMaps, compiled);
-        var deleterPreviousMaps = maps;
-        maps = maps.AddRange(moveDeleterHouse.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, moveDeleterHouse.NewMaps);
-        ValidateSourceHouseComposition("move_deleter", moveDeleterHouse.NewMaps, maps, deleterPreviousMaps, compiled,
+        ValidateSeafoamComposition(seafoam, maps, compiled);
+
+        ValidateMoveReminderComposition(moveReminderHouse, maps, compiled);
+
+        ValidateSourceHouseComposition("move_deleter", moveDeleterHouse.NewMaps, maps, compiled,
             "map.fuchsia-city", 10, "data/maps/FuchsiaCity_House3/scripts.inc", "FuchsiaCity_House3_EventScript_MoveDeleter");
         foreach (var (mapId, townId, townWarp, scriptPath, entry) in new[] {
             (PretOriginalTutorRooms.BodySlamMapId, "map.four-island", 2, "data/maps/FourIsland_House1/scripts.inc", "FourIsland_House1_EventScript_BodySlamTutor"),
             (PretOriginalTutorRooms.MetronomeMapId, "map.cinnabar-island-pokemon-lab-entrance", 4, "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc", "CinnabarIsland_PokemonLab_ResearchRoom_EventScript_MetronomeTutor") })
         {
-            var previous = maps;
+
             var room = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(mapId, originalTutorRooms.NewMaps[mapId]);
-            maps = maps.AddRange(room);
-            celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, room);
-            ValidateSourceHouseComposition("original_tutor_room", room, maps, previous, compiled, townId, townWarp, scriptPath, entry);
+
+            ValidateSourceHouseComposition("original_tutor_room", room, maps, compiled, townId, townWarp, scriptPath, entry);
         }
-        var copycatPreviousMaps = maps;
-        maps = maps.AddRange(copycatHouse.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, copycatHouse.NewMaps);
-        ValidateCopycatHouseComposition(copycatHouse, maps, copycatPreviousMaps, compiled);
-        var superRodPreviousMaps = maps;
-        maps = maps.AddRange(superRodService.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, superRodService.NewMaps);
-        ValidateSuperRodComposition(superRodService, maps, superRodPreviousMaps, compiled);
+
+        ValidateCopycatHouseComposition(copycatHouse, maps, compiled);
+
+        ValidateSuperRodComposition(superRodService, maps, compiled);
 
         var vsSeekerItem = vsSeekerPresentation.ItemDefinition.Deserialize<EarlyShopItemDefinition>(sharedItems.CreateJsonOptions())
             ?? throw new InvalidDataException("vs_seeker_item_missing");
@@ -619,42 +502,23 @@ public sealed partial class PretCampaignCatalog
         var memorialTrainers = PretMemorialPillarTrainers.Load(originalTmAcquisition.MemorialTrainers);
 
         var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, gamePokemon, earlyShop.Catalog, machines, shared: sharedMachines);
-        var capeBrinkPreviousMaps = maps;
-        maps = maps.AddRange(capeBrinkTutor.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, capeBrinkTutor.NewMaps);
-        ValidateCapeBrinkComposition(capeBrinkTutor, maps, capeBrinkPreviousMaps, compiled);
+
+        ValidateCapeBrinkComposition(capeBrinkTutor, maps, compiled);
         var prizeRoom = PretGameCornerPrizeRoom.Load(regionalServices, maps);
-        maps = maps.AddRange(prizeRoom.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, prizeRoom.NewMaps);
-        route16FlyHouse.ValidateReusedMaps(maps);
-        maps = maps.AddRange(route16FlyHouse.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, route16FlyHouse.NewMaps);
-        maps = maps.AddRange(cyclingRoad.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, cyclingRoad.NewMaps);
-        var daycarePreviousMaps = maps;
-        maps = maps.AddRange(route5DayCare.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, route5DayCare.NewMaps);
-        ValidateRoute5DayCareComposition(route5DayCare, maps, daycarePreviousMaps, compiled);
-        var fourDaycarePreviousMaps = maps;
-        maps = maps.AddRange(fourIslandDayCare.NewMaps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, fourIslandDayCare.NewMaps);
-        ValidateFourIslandDayCareComposition(fourIslandDayCare, maps, fourDaycarePreviousMaps, compiled);
-        maps = originalTmAcquisition.MountMaps(maps);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, originalTmAcquisition.NewMaps);
+
+
+        ValidateRoute5DayCareComposition(route5DayCare, maps, compiled);
+
+        ValidateFourIslandDayCareComposition(fourIslandDayCare, maps, compiled);
+
         schoolHouseInteriors.ValidateReusedMaps(maps);
-        var schoolHousePreviousMaps = maps;
-        maps = maps.AddRange(schoolHouseInteriors.NewMaps);
-        if (maps.Count != schoolHousePreviousMaps.Count + schoolHouseInteriors.NewMaps.Count || schoolHousePreviousMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
-            throw new InvalidDataException("school_house_map_composition");
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, schoolHouseInteriors.NewMaps);
+
         lostCave.ValidateReusedMaps(maps);
-        maps = maps.AddRange(lostCave.NewMaps);
+
         ValidateLostCaveScripts(lostCave, compiled);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, lostCave.NewMaps);
-        var trainerFanClubPreviousMaps = maps;
-        maps = maps.AddRange(trainerFanClub.NewMaps);
-        ValidateTrainerFanClubComposition(trainerFanClub, maps, trainerFanClubPreviousMaps, compiled);
-        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(mapNumbers, maps, celioRoamerMaps, trainerFanClub.NewMaps);
+
+        ValidateTrainerFanClubComposition(trainerFanClub, maps, compiled);
+
         ValidateCapeBrinkEncounterSources(capeBrinkTutor, pokemonContent.Catalog);
         var moveReminder = PretMoveReminderService.Load(projectRoot, pokemonContent.Catalog);
         var moveTutors = PretMoveTutors.Load(projectRoot, pokemonContent.Catalog);
@@ -780,7 +644,6 @@ public sealed partial class PretCampaignCatalog
             saffronGymPokemon: saffronGymPokemon,
             saffronGymArt: saffronGymArt,
             cinnabar: cinnabar,
-            cinnabarPokemon: cinnabarPokemon,
             cinnabarTrainers: cinnabarTrainers,
             cinnabarItems: cinnabarItems,
             cinnabarArt: cinnabarArt,
@@ -823,17 +686,19 @@ public sealed partial class PretCampaignCatalog
     }
 
     private static void ValidateCeruleanCaveComposition(PretCeruleanCaveRegion region,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
+        ImmutableDictionary<MapId, PretWorldMap> maps,
         PretStoryCompilation scripts, CampaignPokemonContent pokemon, CeruleanCavePokemonContent cave, CelioPokemonContent celio)
     {
-        if (region.NewMaps.Any(pair => previous.ContainsKey(pair.Key) || !maps.ContainsKey(pair.Key)))
+        if (region.NewMaps.Any(pair => !maps.ContainsKey(pair.Key)))
             throw new InvalidDataException("cerulean_cave_map_collision");
-        var entrance = region.Contracts.GetProperty("cityEntrance");
-        var city = previous[new MapId("map.cerulean-city")];
-        var warp = entrance.GetProperty("entranceWarp");
-        var guard = entrance.GetProperty("guard");
-        if (!JsonElement.DeepEquals(city.Events.GetProperty("warp_events")[warp.GetProperty("index").GetInt32()], warp.GetProperty("event")) ||
-            !JsonElement.DeepEquals(city.Events.GetProperty("object_events")[guard.GetProperty("localId").GetInt32() - 1], guard.GetProperty("event")))
+        var city = maps[new MapId("map.cerulean-city")];
+        var caveEntrance = city.FieldWarps.Single(w => w.DestinationMapId == new MapId("map.cerulean-cave-1f"));
+        var destination = maps[caveEntrance.DestinationMapId].FieldWarps[caveEntrance.DestinationWarpId];
+        var guard = city.Events.GetProperty("object_events").EnumerateArray().Single(e =>
+            e.TryGetProperty("script", out var label) && label.GetString() == "CeruleanCity_EventScript_CeruleanCaveGuard");
+        if (destination.DestinationMapId != city.Id ||
+            guard.GetProperty("flag").GetString() != "FLAG_HIDE_CERULEAN_CAVE_GUARD" ||
+            scripts.FindProgram("CeruleanCity_EventScript_CeruleanCaveGuard") is not { Instructions.IsEmpty: false })
             throw new InvalidDataException("cerulean_cave_city_anchor");
         foreach (var label in new[] { "CeruleanCave_B1F_OnResume", "CeruleanCave_B1F_EventScript_TryRemoveMewtwo",
             "CeruleanCave_B1F_OnTransition", "CeruleanCave_B1F_EventScript_ShowMewtwo", "CeruleanCave_B1F_EventScript_Mewtwo",

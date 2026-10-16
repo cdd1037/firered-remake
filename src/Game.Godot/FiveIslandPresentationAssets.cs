@@ -61,9 +61,6 @@ internal static class FiveIslandPresentationAssets
             !manifest.GetProperty("newOpponentOnlySpecies").EnumerateArray().Select(s=>s.GetInt32()).ToHashSet().SetEquals(opponentOnly) || !manifest.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("item").GetString()).ToHashSet().SetEquals(
                 ["pret:ITEM_BIG_PEARL", "pret:ITEM_UP_GRADE", "pret:ITEM_SAPPHIRE", "pret:ITEM_TM36"]) || !manifest.GetProperty("tiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).ToHashSet().SetEquals([0x2af, 0x2a0]))
             throw new InvalidDataException("Five Island presentation inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Five Island cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

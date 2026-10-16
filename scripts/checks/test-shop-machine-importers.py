@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate nine compact machine emitters from retained local source bytes.
+"""Regenerate current service machine emitters from retained local source bytes.
 
 This is an offline source-adapter test, not upstream Git authentication. Machine
 references, ordering and surrounding machine-document facts match the existing
@@ -32,7 +32,7 @@ from machine_catalog import load_catalog
 
 RAW = ROOT / 'content/raw/pokefirered/037335f4'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-PACKAGES = [('breeding-species', 'pokemon', 'data/pokemon/breeding/machines.json'), ('gift-egg-species', 'pokemon', 'data/pokemon/gift-egg/machines.json'), ('ordinary-evolution-species', 'pokemon', 'data/pokemon/ordinary-evolution/machines.json'), ('original-machine-catalog', 'items', 'data/machine-learning/acquisition-machines.json'), ('department-machine-stock', 'items', 'data/machine-learning/department-machine-stock.json'), ('department-rooftop-items', 'items', 'data/items/department-rooftop/machines.json'), ('game-corner-prizes', 'story', 'data/services/game-corner-prizes/machines.json'), ('stone-evolution-species', 'pokemon', 'data/pokemon/stone-evolution/machines.json'), ('field-fly', 'story', 'data/services/field-fly/hm02.json')]
+PACKAGES = [('original-machine-catalog', 'items', 'data/machine-learning/acquisition-machines.json'), ('department-machine-stock', 'items', 'data/machine-learning/department-machine-stock.json'), ('department-rooftop-items', 'items', 'data/items/department-rooftop/machines.json'), ('game-corner-prizes', 'story', 'data/services/game-corner-prizes/machines.json'), ('field-fly', 'story', 'data/services/field-fly/hm02.json')]
 
 RECIPE_INPUTS = {
     'scripts/recipes/config/machine-admissions.json',
@@ -108,7 +108,7 @@ def generate(package, family):
                     module.main()
                 relative = 'content/generated/data/machine-learning/department-machine-stock.json'
                 return {relative: READ_BYTES(root / relative)}
-        reference = None if package == 'breeding-species' else Path('/retained-source-adapter')
+        reference = Path('/retained-source-adapter')
         result = module.generate(reference, ROOT)
         if package in ('department-rooftop-items', 'game-corner-prizes', 'field-fly'):
             return result[0]
@@ -167,7 +167,7 @@ class ShopMachineImportersTests(unittest.TestCase):
             self.assertFalse(machine_path(row['path']), row['path'])
             self.assertTrue((ROOT / row['path']).is_file(), row['path'])
 
-    def test_all_nine_emit_initially_compact_views_without_predecessor_reads(self):
+    def test_current_services_emit_compact_views_without_predecessor_reads(self):
         catalog = load_catalog(ROOT)
         definitions = compatibility_cells = checked = 0
         for package, family, resource in PACKAGES:
@@ -211,9 +211,9 @@ class ShopMachineImportersTests(unittest.TestCase):
                                      pixels(files[emitted['texturePath']]))
                 self.assert_import_boundary(package, files)
                 checked += 1
-        self.assertEqual(9, checked)
+        self.assertEqual(len(PACKAGES), checked)
         self.assertEqual(16, definitions)
-        self.assertEqual(4033, compatibility_cells)
+        self.assertEqual(3013, compatibility_cells)
 
 
 if __name__ == '__main__':

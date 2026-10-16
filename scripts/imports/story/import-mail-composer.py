@@ -8,9 +8,9 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from world_source import WorldSource
 
 import argparse
-import importlib.util
 import json
 from pathlib import Path
 import re
@@ -18,7 +18,7 @@ import sys
 sys.dont_write_bytecode = True
 
 ROOT = _PROJECT_ROOT
-PACKAGE = 'mail-composer'
+PACKAGE = 'data/services/mail-composer'
 PROFILE = 'firered-mail-composer-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
@@ -155,17 +155,13 @@ def main():
     parser.add_argument('--reference-root', type=Path, required=True); parser.add_argument('--project-root', type=Path, default=ROOT)
     parser.add_argument('--dependency-root', type=Path, default=ROOT); parser.add_argument('--check', action='store_true')
     args = parser.parse_args(); target = args.project_root.absolute(); dependency = args.dependency_root.absolute()
-    helper = dependency/'scripts/imports/source/import-cinnabar-source-preparation.py'; safe(helper)
-    spec = importlib.util.spec_from_file_location('mail_composer_source', helper); reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
-    reader.PROFILE = PROFILE; src = reader.Source(args.reference_root.absolute())
+    src = WorldSource(args.reference_root.absolute())
     docs = {'catalog.json': vocabulary(src), 'contracts.json': contracts(src)}
-    lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[], completeGame=False); lock_bytes = canonical(lock)
     generated = {p: canonical(value) for p, value in docs.items()}
-    manifest = dict(schemaVersion=1,     inputCount=len(src.entries), wordCount=len(docs['catalog.json']['words']), groupCount=22,
+    manifest = dict(schemaVersion=1, wordCount=len(docs['catalog.json']['words']), groupCount=22,
         outputs=[dict(path=p) for p, b in sorted(generated.items())])
     generated['manifest.json'] = canonical(manifest)
     writes = []
-    writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p, b in sorted(src.data.items())]
     writes += [(target/'content/generated'/PACKAGE/p, b) for p, b in sorted(generated.items())]
     for path, data in writes:
         safe(path)

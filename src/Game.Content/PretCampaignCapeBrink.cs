@@ -15,12 +15,12 @@ public sealed partial class PretCampaignCatalog
     public CapeBrinkWaterEncounterCatalog CapeBrinkWaterEncounters { get; }
     private ImmutableArray<ItemfinderUnderfoot> CapeBrinkUnderfootItems { get; }
 
-    private static void ValidateCapeBrinkComposition(PretCapeBrinkTutor source,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateCapeBrinkComposition(PretCapeBrinkTutor source,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
         if (source.NewMaps.Count != 2 )
             throw new InvalidDataException("cape_brink_current_map_composition");
-        var town = PretFirstSeviiRegion.ConnectedMap(maps[new("map.two-island")]);
-        var cape = PretCapeBrinkTutor.ConnectedMap(maps[PretCapeBrinkTutor.CapeMapId]);
+        var town = PretWorldMapConnections.Create(maps[new("map.two-island")]);
+        var cape = PretWorldMapConnections.Create(maps[PretCapeBrinkTutor.CapeMapId]);
         if (town.Connections.Single(c => c.DestinationMapId == cape.Id) is not { Direction: Direction.North, Offset: 24 } ||
             cape.Connections.Single() is not { Direction: Direction.South, Offset: -24 } edge || edge.DestinationMapId != town.Id)
             throw new InvalidDataException("cape_brink_current_original_edges");

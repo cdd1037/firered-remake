@@ -11,8 +11,8 @@ public sealed class GeneratedMapNumberTests
     public void CompositionSharesOneTableWithoutChangingProjectionOrValidation()
     {
         var source = PretCelioMapNumbers.LoadSourceTable(TestAssets.Root);
-        var first = PretPowerPlantRegion.Load(TestAssets.Root).NewMaps;
-        var additions = PretFossilLabRegion.Load(TestAssets.Root).NewMaps;
+        var first = PretPowerPlantRegion.Load(PretCurrentWorld.Load(TestAssets.Root)).NewMaps;
+        var additions = PretFossilLabRegion.Load(PretCurrentWorld.Load(TestAssets.Root)).NewMaps;
         var maps = first.AddRange(additions);
         var predecessor = PretCelioMapNumbers.Load(source, first);
         var current = PretCelioMapNumbers.ExtendAuthenticatedMaps(source, maps, predecessor, additions);

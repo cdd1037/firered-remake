@@ -94,13 +94,6 @@ public static class PretMemorialPillarPresentation
         if (dex.SchemaVersion != 1 ||
             !dex.Entries.Select(e => e.SourceSpeciesId).SequenceEqual(new[] { 163,164 }) || dex.Entries.Any(e => e.Portrait is null || e.Footprint is not null))
             throw new InvalidDataException("Memorial Pillar seen-Dex inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        var audio = manifest.GetProperty("audio");
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1 ||
-            audio.GetProperty("newCueCount").GetInt32() != 2 ||
-            !JsonElement.DeepEquals(audio.GetProperty("cues"), synth.RootElement.GetProperty("cues")) ||
-            !audio.GetProperty("cues").EnumerateArray().Select(c => c.GetProperty("species").GetInt32()).SequenceEqual(new[] { 163,164 }))
-            throw new InvalidDataException("Memorial Pillar normal cry inventory differs.");
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));
     }
 }

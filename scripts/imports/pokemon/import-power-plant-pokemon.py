@@ -6,7 +6,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse,  json, re
@@ -23,12 +22,7 @@ CATALOG_PATH='content/generated/data/pokemon/power-plant.json'
 RAW='content/raw/pokefirered/037335f4/'
 DEPENDENCIES=(
     'content/generated/data/pokemon/canonical/catalog.json',
-    'content/generated/data/regions/five-island/pokemon.json',
-    'content/generated/data/pokemon/celio/pokemon.json',
-    'content/generated/data/regions/seven-island/pokemon.json',
-    'content/generated/data/pokemon/event-island.json',
-    'content/generated/data/regions/league-rematch/pokemon.json',
-    'scripts/recipes/story/five-island-predecessor.json',
+    'data/game-pokemon.json',
 )
 from image_io import png as encode_rgba_png
 from item_icon_exports import decode_icon_page
@@ -52,7 +46,6 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
  import pathlib
  import re
  import struct
- import wave
  import zlib
  from PIL import Image
 
@@ -116,18 +109,8 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
                                         'path': 'graphics/pokemon/zapdos/shiny.pal'},
   'include/constants/items.h': {
                                 'path': 'include/constants/items.h'},
-  'include/constants/sound.h': {
-                                'path': 'include/constants/sound.h'},
   'include/constants/species.h': {
                                   'path': 'include/constants/species.h'},
-  'sound/cry_tables.inc': {
-                           'path': 'sound/cry_tables.inc'},
-  'sound/direct_sound_samples/cries/electabuzz.wav': {
-                                                      'path': 'sound/direct_sound_samples/cries/electabuzz.wav'},
-  'sound/direct_sound_samples/cries/jolteon.wav': {
-                                                   'path': 'sound/direct_sound_samples/cries/jolteon.wav'},
-  'sound/direct_sound_samples/cries/zapdos.wav': {
-                                                  'path': 'sound/direct_sound_samples/cries/zapdos.wav'},
   'src/data/graphics/items.h': {
                                 'path': 'src/data/graphics/items.h'},
   'src/data/graphics/pokemon.h': {
@@ -145,19 +128,11 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
   'src/data/text/species_names.h': {
                                     'path': 'src/data/text/species_names.h'},
   'src/pokemon_icon.c': {
-                         'path': 'src/pokemon_icon.c'},
-  'src/sound.c': {
-                  'path': 'src/sound.c'}}
+                         'path': 'src/pokemon_icon.c'}}
  DEPENDENCY_PINS = {'content/generated/sprites/items.png': {'path':'content/generated/sprites/items.png'},'content/generated/battle/art/campaign-hit-art/manifest.json': {
                                                        'path': 'content/generated/battle/art/campaign-hit-art/manifest.json'},
   'content/generated/data/items/mtmoon/mtmoon-items.json': {
                                                    'path': 'content/generated/data/items/mtmoon/mtmoon-items.json'},
-  'content/generated/audio/synth/firered.pack': {
-                                                 'path': 'content/generated/audio/synth/firered.pack'},
-  'content/generated/audio/synth/manifest.json': {
-                                                  'path': 'content/generated/audio/synth/manifest.json'},
-  'content/generated/audio/synth/normal-cries.bin': {
-                                                     'path': 'content/generated/audio/synth/normal-cries.bin'},
   'content/generated/ui/vermilion-gym-assets/assets.json': {
                                                            'path': 'content/generated/ui/vermilion-gym-assets/assets.json'}}
 
@@ -166,28 +141,8 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
                                     'path': 'data/maps/PowerPlant/map.json'},
   'data/maps/PowerPlant/scripts.inc': {
                                        'path': 'data/maps/PowerPlant/scripts.inc'},
-  'include/constants/songs.h': {
-                                'path': 'include/constants/songs.h'},
-  'sound/direct_sound_samples/cries/electrode.wav': {
-                                                     'path': 'sound/direct_sound_samples/cries/electrode.wav'},
-  'sound/song_table.inc': {
-                           'path': 'sound/song_table.inc'},
-  'sound/songs/midi/mus_encounter_gym_leader.mid': {
-                                                    'path': 'sound/songs/midi/mus_encounter_gym_leader.mid'},
-  'sound/songs/midi/mus_poke_mansion.mid': {
-                                            'path': 'sound/songs/midi/mus_poke_mansion.mid'},
-  'sound/songs/midi/mus_vs_legend.mid': {
-                                         'path': 'sound/songs/midi/mus_vs_legend.mid'},
-  'sound/songs/midi/mus_vs_wild.mid': {
-                                       'path': 'sound/songs/midi/mus_vs_wild.mid'},
   'src/battle_setup.c': {
                          'path': 'src/battle_setup.c'}})
- DEPENDENCY_PINS.update({'content/generated/audio/cues/cinnabar.json': {
-                                                           'path': 'content/generated/audio/cues/cinnabar.json'},
-  'content/generated/sprites/pokemon/event-island/synth-manifest.json': {
-                                                                      'path': 'content/generated/sprites/pokemon/event-island/synth-manifest.json'},
-  'content/generated/audio/cues/rocktunnel.json': {
-                                                             'path': 'content/generated/audio/cues/rocktunnel.json'}})
  def need(ok, message):
      if not ok:
          raise ValueError(message)
@@ -300,61 +255,6 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          need(display, 'Species display name missing')
          names.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, name=display[1]))
 
-     pack = reuse('content/generated/audio/synth/firered.pack')
-     cries = reuse('content/generated/audio/synth/normal-cries.bin')
-     need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack differs')
-     old_cues = json.loads(reuse('content/generated/audio/synth/manifest.json'))['cues']
-     for prior in ['audio/cues/rocktunnel.json', 'audio/cues/cinnabar.json', 'sprites/pokemon/event-island/synth-manifest.json']:
-         old_cues.extend(json.loads(reuse('content/generated/' + prior))['cues'])
-     cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-     cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-     priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', text('include/constants/sound.h'), re.M)[1])
-     need(priority == 10, 'Normal cry priority differs')
-     cues, inherited_cues, cry_evidence = [], [], []
-     for name, species in [*SPECIES, ('Electrode', 101)]:
-         need(re.search(r'^#define SPECIES_' + name.upper() + r'\s+' + str(species) + r'\s*$', constants, re.M), 'Cry species ID differs')
-         row = cry_rows[species]
-         need(cry_table[row[1]] == name and row[1] == species - 1, 'Species cry table differs')
-         tone = 0x0848c914 + row[1] * 12 - 0x08489968
-         wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-         need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Packed cry header differs')
-         path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-         with wave.open(io.BytesIO(read(path))) as original:
-             need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                  (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header differs')
-             pcm = original.readframes(original.getnframes())
-         delta = (0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1)
-         decoded = bytearray()
-         for index in range(row[2] + row[4]):
-             block, i = divmod(index, 64)
-             start = wave_offset + 16 + block * 33
-             if i == 0:
-                 value = pack[start]
-             else:
-                 packed = pack[start + (1 if i == 1 else i // 2 + 1)]
-                 nibble = packed & 15 if i == 1 or i % 2 else packed >> 4
-                 value = (value + delta[nibble]) & 255
-             decoded.append((value + 128) & 255)
-         need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
-         cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-             decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
-         cue = dict(id='CRY_' + name.upper() + '_NORMAL', sourceSymbol='SPECIES_' + name.upper(), sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0)
-         if species in (101, 135):
-             old = next(c for c in old_cues if c['id'] == cue['id'])
-             need(dict(old, cryMode=old.get('cryMode', 0)) == cue, 'Inherited cry cue differs')
-             inherited_cues.append(cue)
-         else:
-             need(not any(c['id'] == cue['id'] for c in old_cues), 'New cry already admitted')
-             cues.append(cue)
-         if species in (101, 145):
-             cues.append(dict(cue, id='CRY_' + name.upper() + '_ENCOUNTER', cryMode=2))
-     sound = text('src/sound.c')
-     need(re.search(r'case CRY_MODE_ENCOUNTER:\s*release = 225;\s*pitch = 15600;\s*chorus = 20;\s*volume = 90;\s*break;', sound), 'Encounter cry parameters differ')
-
-
-     need(re.search(r'#define CRY_MODE_ENCOUNTER\s+2', text('include/constants/sound.h')) and
-          re.search(r'length = 140;\s*reverse = FALSE;\s*release = 0;\s*pitch = 15360;\s*chorus = 0;', sound),
-          'Encounter cry default length/mode differs')
      script_path = 'data/maps/PowerPlant/scripts.inc'
      script = text(script_path)
      zapdos = script.split('PowerPlant_EventScript_Zapdos::', 1)[1].split('\nPowerPlant_EventScript_DefeatedZapdos::', 1)[0]
@@ -371,20 +271,6 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      legendary = setup.split('void StartLegendaryBattle(void)', 1)[1].split('void StartGroudonKyogreBattle(void)', 1)[0]
      need(re.search(r'case SPECIES_ZAPDOS:\s*case SPECIES_HO_OH:\s*case SPECIES_LUGIA:\s*CreateBattleStartTask\(B_TRANSITION_BLUR, MUS_VS_LEGEND\);', legendary),
           'Zapdos source battle music binding differs')
-     songs = text('include/constants/songs.h')
-     song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', text('sound/song_table.inc'), re.M)
-     for symbol in ['MUS_POKE_MANSION', 'MUS_ENCOUNTER_GYM_LEADER', 'MUS_VS_WILD', 'MUS_VS_LEGEND']:
-         song_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
-         address, player, second = struct.unpack_from('<IHH', pack, 0x084A32CC + song_id * 8 - 0x08489968)
-         need(song_table[song_id] == (symbol.lower(), str(player), str(second)) and player == 0, 'Inherited song table differs')
-         path = 'sound/songs/midi/' + symbol.lower() + '.mid'
-         midi = read(path)
-         need(midi[:4] == b'MThd' and b'\xff\x06\x01[' in midi and b'\xff\x06\x01]' in midi, 'Inherited source music loop differs')
-         cue = dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=True, cryMode=0)
-         old = next(c for c in old_cues if c['id'] == symbol)
-         need(dict(old, cryMode=old.get('cryMode', 0)) == cue, 'Inherited music cue differs')
-         inherited_cues.append(cue)
-     need(len(cues) == 4 and len(inherited_cues) == 6, 'Power Plant audio cue inventory differs')
 
      geometry_path = 'content/generated/battle/art/campaign-hit-art/manifest.json'
      geometry = json.loads(reuse(geometry_path))['geometry']
@@ -432,11 +318,10 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          need(set(inputs) == set(SOURCE_PINS), 'Source input inventory differs')
      if DEPENDENCY_PINS:
          need(set(inherited) == set(DEPENDENCY_PINS), 'Inherited input inventory differs')
-     out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
      lock = dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT,
                  files=[inputs[p] for p in sorted(inputs)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
      lock_bytes = encode(lock)
-     manifest = dict(schemaVersion=1, assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], itemIcons=item_icons, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues], cries=cry_evidence, encounter=dict(sourcePath=script_path, battleMusicSourcePath=setup_path, cryMode=2, cryParameters=dict(length=140, release=225, pitch=15600, chorus=20, volume=90), zapdos=dict(species=145, level=50, cry='CRY_ZAPDOS_ENCOUNTER', introductionMusic='MUS_ENCOUNTER_GYM_LEADER', battleMusic='MUS_VS_LEGEND'), electrodes=dict(species=101, level=34, count=2, cry='CRY_ELECTRODE_ENCOUNTER', battleMusic='MUS_VS_WILD'), mapMusic='MUS_POKE_MANSION', playbackAuthority='existing committed presentation effects and typed battle context')), outputs=[dict(path=p) for p, b in sorted(out.items())])
+     manifest = dict(schemaVersion=1, assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], itemIcons=item_icons, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(   encounter=dict(sourcePath=script_path, battleMusicSourcePath=setup_path, cryMode=2, cryParameters=dict(length=140, release=225, pitch=15600, chorus=20, volume=90), zapdos=dict(species=145, level=50, cry='CRY_ZAPDOS_ENCOUNTER', introductionMusic='MUS_ENCOUNTER_GYM_LEADER', battleMusic='MUS_VS_LEGEND'), electrodes=dict(species=101, level=34, count=2, cry='CRY_ELECTRODE_ENCOUNTER', battleMusic='MUS_VS_WILD'), mapMusic='MUS_POKE_MANSION', playbackAuthority='existing committed presentation effects and typed battle context')), outputs=[dict(path=p) for p, b in sorted(out.items())])
      manifest_bytes = encode(manifest)
      out['manifest.json'] = manifest_bytes
      files = {BASE + p: b for p, b in out.items()}
@@ -445,8 +330,8 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          icons=len(icons), footprints=len(footprints), itemIcons=len(item_icons), inheritedItemIcons=2,
          geometry=len(geometry_rows), outputs=len(out) - 1,  lockBytes=len(lock_bytes),
           manifestBytes=len(manifest_bytes),
-         synthBytes=len(out['synth-manifest.json']), newCues=len(cues), inheritedCues=len(inherited_cues),
-         exactCryPcmCompared=True, nativeWindowVerified=False, physicalAudioVerified=False)
+
+          nativeWindowVerified=False)
      return files, dict(manifest=manifest, sourceLock=lock, report=report, itemIcons=item_icons)
  return build_presentation(read_source_bytes,dependency_root)
 
@@ -466,12 +351,8 @@ def generate(reference,dependency,raw=None):
   return json.loads(b)
  d={p:dep(p) for p in DEPENDENCIES};canonical=d['content/generated/data/pokemon/canonical/catalog.json']
  species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
- seven=d['content/generated/data/regions/seven-island/pokemon.json']
- owned=[species[5:] for species in admission_species(dependency, CATALOG_PATH, '/newMachines/0') if species[5:] not in SPECIES]
- opponents={s[5:] for s in d['scripts/recipes/story/five-island-predecessor.json']['opponentSpecies']}|set(owned)|set(d['content/generated/data/regions/five-island/pokemon.json']['opponentSpeciesAdded'])|{s['id']['value'][5:] for s in d['content/generated/data/regions/league-rematch/pokemon.json']['opponentSpecies']}|set(seven['trainerOnlySpeciesAdded'])
- need(len(owned)==len(set(owned))==149 and len(opponents)==183,'Exact Event Island predecessor')
- need(not set(SPECIES)&set(owned) and not set(SPECIES)&opponents,'Minimal additions not previously admitted')
- owned+=SPECIES;need(len(owned)==152 and len(opponents|set(SPECIES))==186,'Exact successor counts')
+ owned={row['id']['value'][5:] for row in d['data/game-pokemon.json']['owned']}
+ need(set(SPECIES) <= owned, 'Power Plant species must be admitted by the current game')
  for s in SPECIES:
   need(not metadata[s]['sourceEvolutions'] and not species[s]['evolutions'],'Terminal added species')
  edges=[]

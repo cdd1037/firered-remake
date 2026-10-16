@@ -36,7 +36,7 @@ public sealed class SharedOverworldTextureTests
             Assert.Throws<InvalidDataException>(() => PretOverworldTextures.Resolve(directory, PretOverworldTextures.RelativePrefix + "red-normal.png"));
     }
     [TestMethod]
-    public void Canonical_catalog_preserves_animation_geometry_and_region_ids()
+    public void Canonical_catalog_preserves_animation_geometry_and_current_world_graphics()
     {
         string generated = Path.Combine(TestAssets.Root, "content/generated");
         var catalog = PretOverworldTextures.Load(generated);
@@ -49,18 +49,22 @@ public sealed class SharedOverworldTextureTests
             Assert.AreEqual(sprite.FrameHeight - 8, sprite.AnchorY);
             Assert.IsTrue(File.Exists(Path.Combine(generated, "sprites/overworld", sprite.TexturePath)));
         }
-        var npcBindings = Directory.EnumerateFiles(Path.Combine(generated, "maps/regions"),
-            "npc-source.json", SearchOption.AllDirectories)
-            .Append(Path.Combine(generated, "sprites/overworld/opening.json"));
-        foreach (var path in npcBindings)
+        var world = PretCurrentWorld.Load(TestAssets.Root);
+        int checkedGraphics = 0;
+        foreach (var map in world.RuntimeMaps.MapsByPath.Values)
         {
-            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllBytes(path));
-            foreach (var graphic in doc.RootElement.GetProperty("graphics").EnumerateArray())
+            foreach (var actor in map.Events.GetProperty("object_events").EnumerateArray())
             {
-                Assert.AreEqual(1, graphic.EnumerateObject().Count());
-                Assert.IsTrue(catalog.ContainsKey(graphic.GetProperty("graphicsId").GetString()!));
+                string graphicsId = actor.GetProperty("graphics_id").GetString()!;
+                // Clone actors and variable graphics are resolved by gameplay at runtime.
+                if (graphicsId == "0" || graphicsId.StartsWith("OBJ_EVENT_GFX_VAR_", StringComparison.Ordinal))
+                    continue;
+                Assert.IsTrue(catalog.ContainsKey(graphicsId), $"{map.Id}: {graphicsId}");
+                checkedGraphics++;
             }
         }
+        Assert.IsTrue(checkedGraphics > 0);
+
     }
 
 }

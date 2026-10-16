@@ -11,33 +11,21 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
-import importlib.util
 import json
-import os
 from pathlib import Path
 import re
 import struct
 import sys
 import tempfile
-import zlib
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
-PACKAGE = 'npc-trade-mail'
+PACKAGE = 'ui/npc-trade-mail'
 RESOURCE_ID = 'firered-npc-trade-mail-v1'
-SHOP_PROFILE = 'firered-npc-trade-inventory-v1'
-COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',', ':'), default=item_json) + '\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
-def safe(path):
-    need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink path rejected: ' + str(path))
-def module(path, name):
-    safe(path)
-    spec = importlib.util.spec_from_file_location(name, path)
-    result = importlib.util.module_from_spec(spec); spec.loader.exec_module(result)
-    return result
 def capture(src, path, pattern, symbol):
     text = src.text(path); match = re.search(pattern, text, re.M | re.S)
     need(match is not None, 'Missing source symbol: ' + symbol)
@@ -191,39 +179,6 @@ def read_layout(src, words):
     return layout
 
 
-def contracts(src):
-    specs = [
-        ('tradeReceive', 'src/trade_scene.c', 'TradeMons', ['ClearMailStruct(&gSaveBlock1Ptr->mail[playerMail]);', 'GiveMailToMon2(playerMon, &gLinkPartnerMail[partnerMail]);']),
-        ('attach', 'src/mail_data.c', 'GiveMailToMon2', ['u8 mailId = GiveMailToMon(mon, itemId);', 'gSaveBlock1Ptr->mail[mailId] = *mail;']),
-        ('allocatePartySlot', 'src/mail_data.c', 'GiveMailToMon', ['id < PARTY_SIZE', 'if (gSaveBlock1Ptr->mail[id].itemId == 0)', 'return 0xFF;']),
-        ('detachErase', 'src/mail_data.c', 'TakeMailFromMon', ['gSaveBlock1Ptr->mail[mailId].itemId = ITEM_NONE;', 'mailId = 0xFF;']),
-        ('detachToMailbox', 'src/mail_data.c', 'TakeMailFromMon2', ['i = PARTY_SIZE; i < MAIL_COUNT', 'sizeof(struct Mail)', 'return 0xFF;']),
-        ('emptyMail', 'src/mail_data.c', 'ClearMailStruct', ['mail->words[i] = 0xFFFF;', 'mail->itemId = ITEM_NONE;']),
-        ('readHeld', 'src/party_menu.c', 'CB2_ReadHeldMail', ['ReadMail(&gSaveBlock1Ptr->mail[GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_MAIL)]']),
-        ('takeChoice', 'src/party_menu.c', 'Task_HandleSendMailToPCYesNoInput', ['TakeMailFromMon2(', 'gText_PCMailboxFull', 'gText_MailMessageWillBeLost']),
-        ('eraseChoice', 'src/party_menu.c', 'Task_HandleLoseMailMessageYesNoInput', ['if (AddBagItem(item, 1) == TRUE)', 'TakeMailFromMon(', 'case MENU_B_PRESSED:']),
-        ('giveMailbox', 'src/party_menu.c', 'TryGiveMailToSelectedMon', ['if (GetMonData(mon, MON_DATA_HELD_ITEM) != ITEM_NONE)', 'GiveMailToMon2(mon, mail);', 'ClearMailStruct(mail);']),
-        ('countMailbox', 'src/player_pc.c', 'CountPCMail', ['i = PC_MAIL_NUM(0); i < MAIL_COUNT']),
-        ('compactMailbox', 'src/player_pc.c', 'PCMailCompaction', ['i = PC_MAIL_NUM(0); i < MAIL_COUNT - 1']),
-        ('readMailbox', 'src/player_pc.c', 'Task_WaitFadeAndReadSelectedMail', ['ReadMail(&SELECTED_MAIL, CB2_SetCbToReturnToMailbox, 1);']),
-        ('mailboxEraseWarning', 'src/player_pc.c', 'Task_PlayerPcMoveMailToBag', ['gText_MessageWillBeLost']),
-        ('mailboxEraseChoice', 'src/player_pc.c', 'Task_MoveToBagYesNoMenuHandleInput', ['Task_TryPutMailInBag_DestroyMsgIfSuccessful(taskId);', 'Task_DeclinedMoveMailToBag(taskId);']),
-        ('mailboxReturnToBag', 'src/player_pc.c', 'Task_TryPutMailInBag_DestroyMsgIfSuccessful', ['if (!AddBagItem(mail->itemId, 1))', 'ClearMailStruct(mail);', 'PCMailCompaction();']),
-        ('readClose', 'src/mail.c', 'ShowMailCB_WaitButton', ['JOY_NEW(A_BUTTON | B_BUTTON)'])]
-    refs = [dict(id=key, source=function(src, path, symbol, needles)) for key, path, symbol, needles in specs]
-    # Existing Cerulean geometry is reused; no room resource is imported.
-    map_path = 'data/maps/CeruleanCity_House3/map.json'; events = src.json(map_path)
-    actor = next(a for a in events['object_events'] if a['script'] == 'CeruleanCity_House3_EventScript_Dontae')
-    scripts = src.text('data/maps/CeruleanCity_House3/scripts.inc')
-    need('setvar VAR_0x8008, INGAME_TRADE_JYNX' in scripts and 'FLAG_DID_ZYNX_TRADE' in scripts, 'Original Dontae map binding differs')
-    src.read('data/maps/CeruleanCity_House3/text.inc')
-    return dict(schemaVersion=1, resourceId=RESOURCE_ID,  tradeId=1,
-         changesToTradeDefinitions=[], newMaps=[], newShops=[],
-        mapSymbol=events['id'], tradeDefinitionMapId='map.cerulean-city-house3', runtimeMapId='map.cerulean-city-house-3', actor=actor,
-        partyMailCapacity=6, mailboxCapacity=10, totalMailCapacity=16, noneMailIndex=255, emptyWord=65535,
-        lifecycle=refs)
-
-
 def strings(src):
     names = ['gText_From', 'gText_Mail', 'gText_Mailbox', 'gText_DoWhatWithMail', 'gText_SendMailToPC',
         'gText_MailSentToPC', 'gText_PCMailboxFull', 'gText_MailMessageWillBeLost', 'gText_RemoveMailBeforeItem',
@@ -239,46 +194,37 @@ def strings(src):
     return out
 
 
-def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--reference-root', type=Path, required=True)
-    p.add_argument('--dependency-root', type=Path, default=ROOT)
-    p.add_argument('--project-root', type=Path, default=ROOT)
-    p.add_argument('--check', action='store_true'); args = p.parse_args()
-    target, dep, ref = [Path(os.path.abspath(x)) for x in (args.project_root, args.dependency_root, args.reference_root)]
-    for path in (target, dep, ref): safe(path)
-    need(not (target == ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Source/output overlap')
-    reader = module(dep / 'scripts/imports/source/import-cinnabar-source-preparation.py', 'mail_reader')
-    codec_inputs = dep/'scripts/imports/source/fetch-lab-battle-ui.py'; safe(codec_inputs)
-    codec = module(dep / 'scripts/imports/presentation/import-lab-battle-ui.py', 'mail_codec')
-    reader.PROFILE = RESOURCE_ID; src = reader.Source(ref)
-    target.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='mail-', dir=target) as folder:
+def generate(raw):
+    from world_source import WorldSource
+    import ui_tiles as codec
+    src = WorldSource(raw)
+    with tempfile.TemporaryDirectory(prefix='mail-') as folder:
         stage = Path(folder)
-        dontae, words = payload(src); items = item(src, codec, stage); assets = render(src, codec, stage)
-        layout = read_layout(src, words); source_contracts = contracts(src); texts = strings(src)
-        lock = src.lock(); lock.update(gameVersion='FIRERED', revision=0, maps=[], completeGame=False)
-        lock_bytes = canonical(lock)
-        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID,  tradeId=1, assets=assets),
-            'dontae.json': dontae, 'easy-chat-words.json': words, 'read-layout.json': layout,
-            'contracts.json': source_contracts, 'items.json': items, 'texts.json': texts}
-        for name, value in docs.items(): (stage/name).write_bytes(canonical(value))
-        outputs = [dict(path=p.relative_to(stage).as_posix())
-            for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest = dict(schemaVersion=1,  resourceId=RESOURCE_ID,
-             inputCount=len(src.entries), outputs=outputs,
-            tradeCount=1, mailWordCount=9, itemCount=1, backgroundCount=2, mapCount=0)
-        manifest_bytes = canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        writes = []
-        writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p,b in sorted(src.data.items())]
-        writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
-        for path, data in writes:
-            safe(path)
-            if path.suffix == '.json': json.loads(data)
-            if args.check: need(path.is_file() and path.read_bytes() == data, 'Regeneration differs: '+str(path))
-            else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        print(json.dumps(dict(
-            inputCount=len(src.entries), outputCount=len(outputs), mailWords=dontae['words'], textLines=layout['lines'], check=args.check), indent=2, default=item_json))
+        dontae, words = payload(src)
+        items = item(src, codec, stage)
+        assets = render(src, codec, stage)
+        docs = {'catalog.json': dict(schemaVersion=1, resourceId=RESOURCE_ID, tradeId=1, assets=assets),
+                'dontae.json': dontae, 'easy-chat-words.json': words, 'read-layout.json': read_layout(src, words),
+                'items.json': items, 'texts.json': strings(src)}
+        for name, value in docs.items(): (stage / name).write_bytes(canonical(value))
+        return {PACKAGE + '/' + p.name: p.read_bytes() for p in stage.iterdir()}
+
+
+def main():
+    from generated_output_compare import check_item_outputs
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--raw', type=Path, default=ROOT / 'content/raw/pokefirered/037335f4')
+    parser.add_argument('--out', type=Path, default=ROOT / 'content/generated')
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    outputs = generate(args.raw)
+    if args.check: check_item_outputs(args.out, outputs)
+    else:
+        for name, data in outputs.items():
+            target = args.out / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+    print(json.dumps(dict(outputs=len(outputs), check=args.check)))
 
 
 if __name__ == '__main__': main()

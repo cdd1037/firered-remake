@@ -19,19 +19,10 @@ PROFILE = 'firered-trainer-tower-local-v1'
 BASE = 'content/generated/data/regions/trainer-tower/'
 RAW = 'content/raw/pokefirered/037335f4/'
 KINDS = ['SINGLE', 'DOUBLE', 'KNOCKOUT', 'MIXED']
-NEW_SPECIES = ['POLIWRATH', 'VAPOREON', 'FLAREON', 'FERALIGATR', 'LEDIAN', 'TOGEPI',
-               'AMPHAROS', 'POLITOED', 'ESPEON', 'DUNSPARCE', 'GRANBULL', 'QWILFISH',
-               'CORSOLA', 'MANTINE', 'PORYGON2', 'SMOOCHUM', 'MAGBY', 'BLISSEY']
 DEPENDENCIES = (
     'content/generated/data/services/metronome-moves.json',
     'content/generated/data/pokemon/canonical/catalog.json',
-    'content/generated/data/regions/five-island/pokemon.json',
-    'content/generated/data/pokemon/celio/pokemon.json',
-    'content/generated/data/regions/seven-island/pokemon.json',
-    'content/generated/data/pokemon/event-island.json',
-    'content/generated/data/regions/league-rematch/pokemon.json',
-    'content/generated/data/pokemon/power-plant.json',
-    'scripts/recipes/story/five-island-predecessor.json',
+    'data/game-pokemon.json',
 )
 
 def need(value, message):
@@ -74,10 +65,7 @@ def generate(reference, dependency):
     canonical = d['content/generated/data/pokemon/canonical/catalog.json']
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     moves = {m['id']['value'][5:]: m for m in d['content/generated/data/services/metronome-moves.json']['moves']}
-    seven = d['content/generated/data/regions/seven-island/pokemon.json']
-    owned = ({s[5:] for s in d['scripts/recipes/story/five-island-predecessor.json']['ownedSpecies']} | set(d['content/generated/data/regions/five-island/pokemon.json']['ownedSpeciesAdded'])) | set(d['content/generated/data/pokemon/celio/pokemon.json']['speciesAdded']) | {'SPECIES_MEWTWO'} | set(seven['ownedSpeciesAdded']) | {r['definition']['id']['value'][5:] for r in d['content/generated/data/pokemon/event-island.json']['species']} | {r['definition']['id']['value'][5:] for r in d['content/generated/data/pokemon/power-plant.json']['species']}
-    previous = {s[5:] for s in d['scripts/recipes/story/five-island-predecessor.json']['opponentSpecies']} | owned | set(d['content/generated/data/regions/five-island/pokemon.json']['opponentSpeciesAdded']) | {s['id']['value'][5:] for s in d['content/generated/data/regions/league-rematch/pokemon.json']['opponentSpecies']} | set(seven['trainerOnlySpeciesAdded'])
-    need(len(owned) == 152 and len(previous) == 186 and owned <= previous, 'Exact Power Plant predecessor')
+    admitted = {row['id']['value'][5:] for row in d['data/game-pokemon.json']['trainerTowerOpponents']}
 
     defs = {}
     for path in ['include/constants/species.h', 'include/constants/moves.h', 'include/constants/items.h',
@@ -202,8 +190,7 @@ def generate(reference, dependency):
     used_species={r['mon']['species']['value'][5:] for r in occurrences}
     used_moves={m['value'][5:] for r in occurrences for m in r['mon']['moves']}
     used_items={r['mon']['heldItem'] for r in occurrences}
-    missing=sorted(used_species-previous,key=lambda s:species[s]['sourceSpeciesId'])
-    need(missing==['SPECIES_'+s for s in NEW_SPECIES], 'Minimal new opponent closure')
+    need(used_species <= admitted, 'Tower teams must be admitted by the current game')
     need(len(referenced)==28 and declared_trainers==60 and declared_mons==360, 'Declared/referenced floor scope')
     need(sum(len(t['trainers']) for t in templates)==53 and sum(len(t['mons']) for f in templates for t in f['trainers'])==318, 'Referenced trainer pool scope')
     need(len(occurrences)==74 and len(used_species)==63 and len(used_moves)==114 and len(used_items)==23, 'Actual default course coverage')
@@ -254,7 +241,6 @@ def generate(reference, dependency):
         prizes=[dict(course=c['kind'],item=ident(c['prizeItem']),sourceItemId=c['sourcePrizeItemId'],quantity=1) for c in courses])
     local=dict(localSetId=1,externalEReaderEnabled=False,courses=courses,templates=templates)
     outputs={'catalog.json':dict(local=local),
-        'pokemon.json':dict(ownedSpeciesAdded=[],opponentSpecies=[dict(id=species[s]['id'],evolutions=species[s]['evolutions']) for s in missing]),
         'items.json':item_document}
     return outputs,raw
 

@@ -12,24 +12,19 @@ public sealed class PretCeruleanCaveRegion
     public const string ResourceId = "firered-cerulean-cave-resources-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
-    public JsonElement NpcSources { get; }
-    public JsonElement Encounters { get; }
     public JsonElement Items { get; }
-    public JsonElement Reachability { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretCeruleanCaveRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         NewMaps = maps; Constants = constants; GeneratedDirectory = source.Directory;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
-        Encounters = source.Document("encounters.json"); Items = source.Document("items.json");
-        Reachability = source.Document("reachability.json");
+        Contracts = source.Document("contracts.json");
+
+         Items = source.Document("items.json");
+
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -41,29 +36,11 @@ public sealed class PretCeruleanCaveRegion
         _ => throw new InvalidDataException("Unknown Cerulean Cave map symbol: " + symbol)
     };
 
-    public static PretCeruleanCaveRegion Load(string projectRoot)
+    public static PretCeruleanCaveRegion Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/cerulean-cave");
-        var catalog = source.Document("catalog.json");
-        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
-            "Cerulean Cave catalog source identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original cave resources; current-game admission is separate.", ResourceId);
-
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
-            string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative ,
-                "Cerulean Cave compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 40 && runtime.Height == 23,
-                "Cerulean Cave map identity/dimensions differ.");
-            maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata,
-                PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         Need(maps.Keys.ToHashSet().SetEquals(new[] { new MapId("map.cerulean-cave-1f"),new MapId("map.cerulean-cave-2f"),new MapId("map.cerulean-cave-b1f") }) , "Cerulean Cave map/warp collection differs.");
 
         var constants = PretSharedConstants.ForPackage(source.Directory);

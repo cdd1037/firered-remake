@@ -21,7 +21,7 @@ def module(name, relative):
 
 class StickerManImportTests(unittest.TestCase):
     def test_source_milestone_metadata(self):
-        importer = module('sticker_region', 'scripts/imports/maps/import-four-island-region.py')
+        importer = module('sticker_region', 'scripts/lib/icefall_features.py')
         class Source:
             def text(self, path): return (RAW / path).read_text()
         actual = importer.sticker_milestones(Source())

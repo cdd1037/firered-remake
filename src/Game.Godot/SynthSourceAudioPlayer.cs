@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FireRedAudio;
-using Game.Domain.Pokemon;
 using Godot;
 
 /// <summary>Opt-in original sequence/sample synthesis. Scene thread owns controls and PCM production.</summary>
@@ -41,247 +40,20 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false, bool includeSixIsland = false, bool includeFiveIsland = false, bool includeCelio = false, bool includeCeruleanCave = false, bool includeLeagueRematch = false, bool includeSevenIsland = false, bool includeEventIslands = false, bool includePowerPlant = false, bool includeTrainerTower = false, bool includeFossilLab = false, bool includeSeafoam = false, bool includeMoveDeleter = false, bool includeVending = false, bool includeFieldFly = false, bool includeSlotMachine = false, bool includeFameChecker = false, bool includeVsSeeker = false, bool includeTeachyTv = false)
+    public SynthSourceAudioPlayer(string projectRoot)
     {
-        if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
-        if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
-        if(includeSafari&&!includeFuchsiaRoute)throw new ArgumentException("Safari audio requires Fuchsia route.");
-        if(includeFuchsiaRoute&&!includeSnorlax)throw new ArgumentException("Fuchsia route audio requires Snorlax.");
-        if(includeSnorlax&&!includePokemonTower)throw new ArgumentException("Snorlax audio requires Pokemon Tower.");
-        if(includePokemonTower&&!includeRocketHideout)throw new ArgumentException("Pokemon Tower audio requires Rocket Hideout.");
-        if(includeRocketHideout&&!includeCeladonGym)throw new ArgumentException("Rocket Hideout audio requires Celadon Gym.");
-        if(includeCeladonGym&&!includeCeladonApproach)throw new ArgumentException("Celadon Gym audio requires Celadon approach.");
-        if(includeCeladonApproach&&!includeRockTunnel)throw new ArgumentException("Celadon approach audio requires RockTunnel.");
-        if(includeRockTunnel&&!includeRoute11)throw new ArgumentException("RockTunnel audio requires Route11.");
-        string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/audio/synth");
-        string pack = Path.Combine(directory, "firered.pack");
-        if (new FileInfo(pack).Length != FireRedAudio.Resources.End - FireRedAudio.Resources.Base)
-            throw new InvalidDataException("Synth resource pack length differs.");
-        _resources = FireRedAudio.Resources.FromPack(pack);
-        _cryCatalog = NormalCryCatalog.FromFile(Path.Combine(directory, "normal-cries.bin"));
-        string manifestPath = Path.Combine(directory, "manifest.json");
-        byte[] bytes = File.ReadAllBytes(manifestPath);
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = false,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };
-        var manifest = JsonSerializer.Deserialize<SynthManifest>(bytes, options)
-            ?? throw new InvalidDataException("Missing synth manifest.");
-        if (manifest.SchemaVersion != 1)
-            throw new InvalidDataException("Synth manifest contract differs.");
+        string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/audio");
+        _resources = FireRedAudio.Resources.FromPack(Path.Combine(directory, "synth/firered.pack"));
+        _cryCatalog = NormalCryCatalog.FromFile(Path.Combine(directory, "synth/normal-cries.bin"));
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+            RespectRequiredConstructorParameters = true };
+        var manifest = JsonSerializer.Deserialize<SynthManifest>(
+            File.ReadAllBytes(Path.Combine(directory, "cues.json")), options)
+            ?? throw new InvalidDataException("Missing audio cue catalog.");
+        if (manifest.SchemaVersion != 1 || manifest.Cues.Length == 0)
+            throw new InvalidDataException("Audio cue catalog contract differs.");
         var cues = manifest.Cues;
-        if (includeRoute11)
-        {
-            string extraPath = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/audio/cues/route11.json");
-            byte[] extraBytes = File.ReadAllBytes(extraPath);
-            var extra = JsonSerializer.Deserialize<SynthManifest>(extraBytes, options)
-                ?? throw new InvalidDataException("Missing Route11 synth manifest.");
-            if (extra.SchemaVersion != 1)
-                throw new InvalidDataException("Route11 synth manifest contract differs.");
-            cues = [.. cues, .. extra.Cues];
-        }
-        if(includeRockTunnel)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/rocktunnel.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing RockTunnel synth manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("RockTunnel synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeCeladonApproach)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/celadon-approach.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing CeladonApproach synth manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("CeladonApproach synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeCeladonGym)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/celadon-gym.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing CeladonGym synth manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("CeladonGym synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeRocketHideout)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/rocket-hideout.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing RocketHideout synth manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("RocketHideout synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includePokemonTower)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/pokemon-tower.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing PokemonTower synth manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("PokemonTower synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeSnorlax)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/snorlax.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Snorlax synth manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("Snorlax synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeFuchsiaRoute)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/fuchsia-route.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Fuchsia route cry manifest.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("Fuchsia route cry manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeSafari)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/safari.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Safari cry manifest.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_CHANSEY_NORMAL","CRY_SCYTHER_NORMAL","CRY_TAUROS_NORMAL"}))
-                throw new InvalidDataException("Safari cry manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeSurf)
-        {
-            string path=Path.Combine(Path.GetFullPath(surfContentRoot??projectRoot),"content/generated/audio/cues/surf.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Surf cry manifest.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_PSYDUCK_NORMAL","CRY_GOLDUCK_NORMAL"}))
-                throw new InvalidDataException("Surf cry manifest contract differs.");
-            // Tower already admitted Psyduck's scripted cry. Reuse only this exact source cue.
-            var inheritedPsyduck=cues.SingleOrDefault(c=>c.Id=="CRY_PSYDUCK_NORMAL");
-            if(inheritedPsyduck is null||inheritedPsyduck!=extension.Cues.Single(c=>c.Id=="CRY_PSYDUCK_NORMAL")||cues.Any(c=>c.Id=="CRY_GOLDUCK_NORMAL"))
-                throw new InvalidDataException("Inherited Surf cry differs.");
-            cues=[..cues,extension.Cues.Single(c=>c.Id=="CRY_GOLDUCK_NORMAL")];
-        }
-        if(includeSilph)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/silph.json");
-            byte[] extensionBytes=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Silph synth manifest.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SILPH","SE_WARP_OUT","CRY_ALAKAZAM_NORMAL","CRY_MR_MIME_NORMAL","CRY_LAPRAS_NORMAL"}))
-                throw new InvalidDataException("Silph synth manifest contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeSaffronGym)
-        {
-            if(!includeSilph)throw new InvalidDataException("Saffron Gym audio requires Silph predecessor.");
-            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/saffron-gym.json"));
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Saffron Gym cry manifest missing.");
-            if(extension.SchemaVersion!=1||extension.Cues[0].Id!="CRY_SLOWBRO_NORMAL"||extension.Cues[0].Species!=80||cues.Any(c=>c.Id=="CRY_SLOWBRO_NORMAL"))
-                throw new InvalidDataException("Saffron Gym source cry scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeCinnabar)
-        {
-            if(!includeSaffronGym)throw new InvalidDataException("Cinnabar audio requires Saffron predecessor.");
-            var extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/audio/cues/cinnabar.json"));
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Cinnabar synth manifest missing.");
-            if(extension.SchemaVersion!=1||!extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_CINNABAR","MUS_POKE_MANSION","SE_FALL","CRY_NINETALES_NORMAL","CRY_ARCANINE_NORMAL","CRY_RAPIDASH_NORMAL","CRY_CLOYSTER_NORMAL","CRY_KRABBY_NORMAL","CRY_KINGLER_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("Cinnabar source cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeFirstSevii)
-        {
-            if(!includeCinnabar)throw new InvalidDataException("First-Sevii audio requires Cinnabar predecessor.");
-            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/ui/first-sevii-presentation/synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("First-Sevii synth manifest missing.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_123","MUS_NET_CENTER","SE_SHIP"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("First-Sevii source cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeVictoryRoad)
-        {
-            if(!includeFirstSevii)throw new InvalidDataException("Victory Road audio requires its predecessor.");
-            byte[] addition=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),VictoryRoadPresentationAssets.Base+"synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<SynthManifest>(addition,options)??throw new InvalidDataException("Victory Road synth metadata missing.");
-            if(extension.SchemaVersion!=1||
-                extension.Cues[0].Id!="SE_ICE_BREAK"||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("Victory Road source cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includePokemonLeague)
-        {
-            if(!includeVictoryRoad)throw new InvalidDataException("Pokemon League audio requires Victory Road.");
-            byte[] leagueBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),PokemonLeaguePresentationAssets.Base+"synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<SynthManifest>(leagueBytes,options)??throw new InvalidDataException("Pokemon League synth missing.");
-            if(extension.SchemaVersion!=1||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))throw new InvalidDataException("Pokemon League cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeSeviiRuby)
-        {
-            if(!includePokemonLeague)throw new InvalidDataException("Sevii Ruby audio requires Pokemon League.");
-            byte[] rubyBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),SeviiRubyPresentationAssets.Base+"synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<SynthManifest>(rubyBytes,options)??throw new InvalidDataException("Sevii Ruby synth missing.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_CAVE","CRY_SLUGMA_NORMAL","CRY_MAGCARGO_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("Sevii Ruby source cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeFourIsland)
-        {
-            if(!includeSeviiRuby)throw new InvalidDataException("Four Island audio requires Ruby.");
-            byte[] fourIslandBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),FourIslandPresentationAssets.Base+"synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<FourIslandSynthManifest>(fourIslandBytes,options)??throw new InvalidDataException("Four Island synth missing.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_LAPRAS_ENCOUNTER","MUS_SEVII_45","CRY_WOOPER_NORMAL","CRY_QUAGSIRE_NORMAL","CRY_SWINUB_NORMAL","CRY_PILOSWINE_NORMAL","CRY_DELIBIRD_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("Four Island source cue scope differs.");
-            var inheritedSeel=extension.InheritedCues[0];
-            if(inheritedSeel is null||inheritedSeel.Id!="CRY_SEEL_NORMAL"||cues.SingleOrDefault(c=>c.Id=="CRY_SEEL_NORMAL")!=inheritedSeel)
-                throw new InvalidDataException("Four Island inherited Seel cue differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeSixIsland)
-        {
-            if(!includeFourIsland)throw new InvalidDataException("Six Island audio requires Four Island.");
-            byte[] sixIslandBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),SixIslandPresentationAssets.Base+"synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<SixIslandSynthManifest>(sixIslandBytes,options)??throw new InvalidDataException("Six Island synth missing.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_67","MUS_SEVII_DUNGEON","MUS_SEVII_ROUTE","SE_BANG","CRY_SENTRET_NORMAL","CRY_FURRET_NORMAL","CRY_NATU_NORMAL","CRY_XATU_NORMAL","CRY_YANMA_NORMAL","CRY_WOBBUFFET_NORMAL","CRY_BELLOSSOM_NORMAL","CRY_SUNKERN_NORMAL","CRY_SUNFLORA_NORMAL","CRY_CHINCHOU_NORMAL","CRY_LANTURN_NORMAL","CRY_SUDOWOODO_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("Six Island source cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if(includeFiveIsland)
-        {
-            if(!includeSixIsland)throw new InvalidDataException("Five Island audio requires Six Island.");
-            byte[] fiveIslandBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),FiveIslandPresentationAssets.Base+"synth-manifest.json"));
-            var extension=JsonSerializer.Deserialize<FiveIslandSynthManifest>(fiveIslandBytes,options)??throw new InvalidDataException("Five Island synth missing.");
-            if(extension.SchemaVersion!=1||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_HOPPIP_NORMAL","CRY_SKIPLOOM_NORMAL","CRY_JUMPLUFF_NORMAL","CRY_HOUNDOUR_NORMAL","CRY_HOUNDOOM_NORMAL","CRY_PORYGON_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
-                throw new InvalidDataException("Five Island source cue scope differs.");
-            cues=[..cues,..extension.Cues];
-        }
-        if (includeCelio) cues = ExtendCelioCues(projectRoot,includeFiveIsland,cues,options);
-        if (includeCeruleanCave) cues = ExtendMewtwoCues(projectRoot,includeCelio,cues,options);
-        if (includeLeagueRematch) cues = ExtendLeagueRematchCues(projectRoot,includeCeruleanCave,cues,options);
-        if (includeSevenIsland) cues = ExtendSevenIslandCues(projectRoot,includeLeagueRematch,cues,options);
-        if (includeEventIslands) cues = ExtendEventIslandCues(projectRoot,includeSevenIsland,cues,options);
-        if (includePowerPlant) cues = ExtendPowerPlantCues(projectRoot,includeEventIslands,cues,options);
-        if (includeTrainerTower) cues = ExtendTrainerTowerCues(projectRoot,includePowerPlant,cues,options);
-        if (includeFossilLab) cues = ExtendFossilLabCues(projectRoot,includeTrainerTower,cues,options);
-        if (includeSeafoam) cues = ExtendSeafoamCues(projectRoot,includeFossilLab,cues,options);
-        if (includeMoveDeleter) cues = ExtendMoveDeleterCues(projectRoot,includeSeafoam,cues,options);
-        if (includeVending) cues = ExtendVendingCues(projectRoot,cues,options);
-        if (includeFieldFly) cues = ExtendFieldFlyCues(projectRoot,cues,options);
-        if (includeSlotMachine) cues = ExtendSlotMachineCues(projectRoot,cues,options);
-        if (includeFameChecker) cues = ExtendFameCheckerCues(cues);
-        if (includeVsSeeker) cues = ExtendVsSeekerCues(cues);
-        if (includeTeachyTv) cues = ExtendTeachyTvCues(projectRoot,cues,options);
-        // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
-        if(includeFuchsiaRoute)
-        {
-            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/battle/animations/explosion/synth-manifest.json");
-            var addition=File.ReadAllBytes(path);
-            var extension=JsonSerializer.Deserialize<SynthManifest>(addition,options)??throw new InvalidDataException("Missing explosion sound metadata.");
-            if(extension.SchemaVersion!=1)throw new InvalidDataException("Explosion sound metadata contract differs.");
-            cues=[..cues,..extension.Cues];
-        }
         _catalog = new(StringComparer.Ordinal);
         foreach (var cue in cues)
         {
@@ -314,26 +86,6 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         foreach (var cue in _catalog.Values)
             if (cue.SourcePlayer == 4) synth.PrepareNormalCry(cue.Species);
         return synth;
-    }
-
-    /// <summary>Bind cry identities from canonical species and validate their loaded sample capability once.</summary>
-    public void RegisterCatalogCries(PokemonCatalog pokemon)
-    {
-        foreach (var species in pokemon.Species.Values)
-        {
-            string symbol = species.Id.Value.Replace("pret:", "", StringComparison.Ordinal);
-            if (!symbol.StartsWith("SPECIES_", StringComparison.Ordinal))
-                throw new InvalidDataException("Canonical cry species symbol differs.");
-            _cryCatalog.Get(species.SourceSpeciesId);
-            foreach (int mode in new[] { 0, SourceEncounterCry.Mode })
-            {
-                var cue = new SynthCue(CryId(symbol, mode), symbol, 4, 10, null, 0,
-                    species.SourceSpeciesId, false, mode);
-                if (!_catalog.TryAdd(cue.Id, cue) && _catalog[cue.Id] != cue)
-                    throw new InvalidDataException("Canonical cry cue conflicts with loaded metadata: " + cue.Id);
-            }
-            _synth.PrepareNormalCry(species.SourceSpeciesId);
-        }
     }
 
     private static string CryId(string symbol, int mode) =>
@@ -630,9 +382,6 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         public long? EndFrame { get; set; }
     }
     private sealed record SynthManifest(int SchemaVersion, SynthCue[] Cues);
-    private sealed record FiveIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
-    private sealed record SixIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
-    private sealed record FourIslandSynthManifest(int SchemaVersion, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record SynthCue(string Id, string SourceSymbol,
         int SourcePlayer, int Priority, int? SourceCounter, uint SongAddress, int Species, bool Looping, int CryMode = 0)
     {

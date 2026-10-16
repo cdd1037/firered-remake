@@ -15,25 +15,26 @@ public enum PretTrainerTowerLayoutFormat { Common = -1, Single = 0, Double = 1, 
 /// <summary>Authenticated Trainer Tower resources; loading these assets does not admit a challenge or alter current composition.</summary>
 public sealed class PretTrainerTowerRegion
 {
+    private readonly ImmutableDictionary<string, string> _layoutIds;
     public const string Profile = "firered-trainer-tower-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> Maps { get; }
     public ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> Layouts { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
 
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretTrainerTowerRegion(SilphSourcePackage source,
-        ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> layouts)
+        ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> layouts, PretCurrentWorld world)
     {
         Layouts = layouts;
+        _layoutIds = world.RuntimeMaps.Entries.ToImmutableDictionary(e =>
+            PretRuntimeMapValidation.SafeFile(Path.Combine(PretRuntimeMapValidation.ProjectRoot(source.Directory), "content/generated"), e.Path),
+            e => e.Layout ?? world.RuntimeMaps.MapsByPath[e.Path].Events.GetProperty("layout").GetString()!, StringComparer.Ordinal);
         Maps = layouts.Where(p => p.Key.Format is PretTrainerTowerLayoutFormat.Common or PretTrainerTowerLayoutFormat.Single)
             .ToImmutableDictionary(p => p.Key.Map, p => p.Value); GeneratedDirectory = source.Directory;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json");
+
         Constants = PretSharedConstants.ForPackage(source.Directory);
     }
 
@@ -95,9 +96,7 @@ public sealed class PretTrainerTowerRegion
     public string LayoutId(MapId map, PretTrainerTowerLayoutFormat format)
     {
         var selected = GetMap(map, format);
-        return Catalog.GetProperty("maps").EnumerateArray().Single(s =>
-            s.GetProperty("mapPath").GetString() == Path.GetRelativePath(GeneratedDirectory, selected.MapPath).Replace('\\', '/'))
-            .GetProperty("layoutId").GetString()!;
+        return _layoutIds[selected.MapPath];
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -109,35 +108,27 @@ public sealed class PretTrainerTowerRegion
         _ when Regex.IsMatch(symbol, "^MAP_TRAINER_TOWER_[1-8]F$", RegexOptions.CultureInvariant) => new("map.trainer-tower-" + symbol[^2..].ToLowerInvariant()),
         _ => throw new InvalidDataException("Unknown Trainer Tower map symbol: " + symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need(map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Tower indoor connection scope differs.");
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), []);
-    }
 
-    public static PretTrainerTowerRegion Load(string projectRoot)
+
+    public static PretTrainerTowerRegion Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var source = Source(projectRoot);
-        var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile);
         var layouts = ImmutableDictionary.CreateBuilder<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
+        foreach (var map in world.MapsInDirectory(source.Directory).Values)
         {
-            string relative = spec.GetProperty("mapPath").GetString()!, path = spec.GetProperty("path").GetString()!;
-            string id = spec.GetProperty("stableId").GetString()!;
-            Need(path == relative, "Tower map path differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Tower source map identity differs.");
-            var format = Enum.Parse<PretTrainerTowerLayoutFormat>(spec.GetProperty("format").GetString()!);
-            string originalId = runtime.Events.GetProperty("layout").GetString()!;
-            string expectedId = originalId + (format == PretTrainerTowerLayoutFormat.Double ? "_DOUBLES" : format == PretTrainerTowerLayoutFormat.Knockout ? "_KNOCKOUT" : "");
-            Need(spec.GetProperty("layoutId").GetString() == expectedId, "Tower map/format layout binding differs.");
-            layouts.Add((new(id), format), PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, relative),
-                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
+            var format = Regex.IsMatch(map.SourceMapSymbol, "^MAP_TRAINER_TOWER_[1-8]F$", RegexOptions.CultureInvariant)
+                ? PretTrainerTowerLayoutFormat.Single : PretTrainerTowerLayoutFormat.Common;
+            layouts.Add((map.Id, format), map);
         }
-        Need(layouts.Count == 27 && layouts.Keys.Select(k => k.Map).Distinct().Count() == 11, "Tower map/layout count differs.");
-
-        return new(source, layouts.ToImmutable());
+        foreach (var (layout, map) in world.VariantsInDirectory(source.Directory))
+        {
+            var format = layout.EndsWith("_DOUBLES", StringComparison.Ordinal) ? PretTrainerTowerLayoutFormat.Double
+                : layout.EndsWith("_KNOCKOUT", StringComparison.Ordinal) ? PretTrainerTowerLayoutFormat.Knockout
+                : throw new InvalidDataException("Unsupported Trainer Tower layout variant: " + layout);
+            layouts.Add((map.Id, format), map);
+        }
+        return new(source, layouts.ToImmutable(), world);
     }
     private static SilphSourcePackage Source(string root) => new(root,"maps/regions/trainer-tower");
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);

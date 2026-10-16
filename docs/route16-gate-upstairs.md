@@ -55,7 +55,7 @@ dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj --filter FullyQuali
 dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --filter FullyQualifiedName~CyclingRoadFlowTests
 dotnet test tests/Game.Content.Tests/Game.Content.Tests.csproj
 dotnet test tests/Game.ResourceImport.Tests/Game.ResourceImport.Tests.csproj
-python scripts/imports/maps/import-cycling-road.py --check
+python scripts/imports/maps/import-world.py --check
 python scripts/imports/items/import-current-items.py --check
 python scripts/imports/maps/import-field-tilesets.py --check
 python scripts/imports/maps/import-map-atlases.py --check

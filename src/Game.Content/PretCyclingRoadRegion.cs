@@ -15,7 +15,6 @@ public sealed class PretCyclingRoadRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public CyclingRoadTrainerCatalog Trainers { get; }
     public ImmutableArray<EarlyLandEncounterTable> LandEncounters { get; }
-    public string NpcSourcePath { get; }
     private readonly ImmutableDictionary<string, int> _constants;
 
     private PretCyclingRoadRegion(ImmutableDictionary<MapId, PretWorldMap> maps, CyclingRoadTrainerCatalog trainers, string directory,
@@ -24,7 +23,6 @@ public sealed class PretCyclingRoadRegion
         NewMaps = maps;
         Trainers = trainers;
         LandEncounters = landEncounters;
-        NpcSourcePath = Path.Combine(directory, "npc-source.json");
         _constants = constants;
     }
 
@@ -40,41 +38,13 @@ public sealed class PretCyclingRoadRegion
         _ => throw new InvalidDataException("cycling_road_map_symbol:" + symbol)
     };
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map) => new(map.Id, map.Width, map.Height,
-        map.CreateConnectedCells(), map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null ? [] : map.Events.GetProperty("connections").EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch
-            {
-                "up" => Direction.North,
-                "down" => Direction.South,
-                _ => throw new InvalidDataException("cycling_road_connection_direction")
-            }, c.GetProperty("offset").GetInt32(),
-                MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray());
 
-    public static PretCyclingRoadRegion Load(string root)
+
+    public static PretCyclingRoadRegion Load(PretCurrentWorld world)
     {
+        var root = world.ProjectRoot;
         var source = new SilphSourcePackage(root, "maps/regions/cycling-road");
-        var catalog = source.Document("catalog.json");
-        var symbols = catalog.GetProperty("mapSymbols").EnumerateObject()
-            .ToImmutableDictionary(p => p.Name, p => new MapId(p.Value.GetString()!), StringComparer.Ordinal);
-        MapId Resolve(string symbol) => symbols.TryGetValue(symbol, out var id) ? id :
-            throw new InvalidDataException("cycling_road_map_symbol:" + symbol);
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,
-            "Local source evidence; redistribution rights are not inferred.", "Original Cycling Road maps and gate interiors.",
-            "firered-cycling-road-v1");
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var entry in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = entry.GetProperty("stableId").GetString()!;
-            string relative = entry.GetProperty("mapPath").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(source.Read(relative), id, Resolve);
-            var map = PretWorldMap.FromRuntime(runtime, metadata,
-                PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), Resolve);
-            if (Resolve(runtime.SourceMapSymbol) != map.Id)
-                throw new InvalidDataException("cycling_road_map_identity");
-            maps.Add(map.Id, map);
-        }
-        if (maps.Count == 0) throw new InvalidDataException("cycling_road_maps_empty");
+        var maps = world.MapsInDirectory(source.Directory);
         var doc = JsonSerializer.Deserialize<FiveIslandTrainerDocument>(source.Read("trainers.json"),
             SharedTrainerCatalog.Options(root)) ?? throw new InvalidDataException("cycling_road_trainers_missing");
         var trainers = new CyclingRoadTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id),
@@ -86,7 +56,7 @@ public sealed class PretCyclingRoadRegion
             !land.Select(t => t.Map.Value).ToHashSet().SetEquals(["map.route-17", "map.route-18"]))
             throw new InvalidDataException("cycling_road_land_maps");
         foreach (var table in land) EarlyLandEncounterRules.ValidateTableDefinition(table);
-        return new(maps.ToImmutable(), trainers, source.Directory, PretSharedConstants.ForPackage(source.Directory), land);
+        return new(maps, trainers, source.Directory, PretSharedConstants.ForPackage(source.Directory), land);
     }
 
     public ImmutableArray<FieldPickupDefinition> HiddenPickups(EarlyShopCatalog shop) =>

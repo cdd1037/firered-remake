@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -232,48 +231,6 @@ def build(root, reference, dependency):
                         rgba[pos:pos + 4] = bytes((*palettes[pal][color], 255 if color else 0))
             layers.append(dict(map=map_id, metatileId=mid, layer=layer, **emit('tiles/' + str(mid) + '-' + str(layer), 16, 16, bytes(rgba), bases + metatile_paths + attribute_paths)))
 
-    # Declare original sequences and cry samples already present in the source pack.
-    pack = source.reuse('content/generated/audio/synth/firered.pack')
-    cries = source.reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    songs = source.text('include/constants/songs.h')
-    song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
-    cues = []
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    for name, species in [(name.upper(), number) for name, number in SPECIES]:
-        row = cry_rows[species]
-        need(cry_table[species - 1].upper() == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        wave_source = source.read(path)
-        need(wave_source[:4] == b'RIFF' and wave_source[8:12] == b'WAVE', 'Species source cry framing differs')
-        cues.append(dict(id='CRY_' + name + '_NORMAL', sourceSymbol='SPECIES_' + name, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-    inherited_cues = []
-    inherited_specs = [
-        ('MUS_SEVII_45', 'content/generated/sprites/pokemon/four-island/synth-manifest.json'),
-        ('MUS_SEVII_ROUTE', 'content/generated/sprites/pokemon/six-island/synth-manifest.json'),
-        ('MUS_ROCKET_HIDEOUT', 'content/generated/audio/cues/rocket-hideout.json'),
-        ('MUS_POKE_CENTER', 'content/generated/audio/synth/manifest.json'),
-        ('SE_PIN', 'content/generated/audio/synth/manifest.json')]
-    for symbol, inherited_path in inherited_specs:
-        song_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
-        address, player, second = struct.unpack_from('<IHH', pack, 0x084A32CC + song_id * 8 - 0x08489968)
-        name = symbol.lower()
-        need(song_table[song_id] == (name, str(player), str(second)), 'Inherited audio table binding differs')
-        path = 'sound/songs/midi/' + name + '.mid'
-        song = source.read(path)
-        need(song[:4] == b'MThd', 'Inherited audio source framing differs')
-        looping = symbol.startswith('MUS_')
-        need(not looping or (player == 0 and b'\xff\x06\x01[' in song and b'\xff\x06\x01]' in song), 'Inherited music loop binding differs')
-        cue = dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=looping, cryMode=0)
-        inherited = next(c for c in json.loads(source.reuse(inherited_path))['cues'] if c['id'] == symbol)
-        need(dict(inherited, cryMode=inherited.get('cryMode', 0)) == cue, 'Inherited cue record differs: ' + symbol)
-        inherited_cues.append(cue)
     map_music = []
     for name, symbol in [('FiveIsland', 'MUS_SEVII_45'), ('FiveIsland_Harbor', 'MUS_SEVII_45'),
                           ('FiveIsland_Meadow', 'MUS_SEVII_ROUTE'), ('FiveIsland_RocketWarehouse', 'MUS_ROCKET_HIDEOUT'),
@@ -282,13 +239,12 @@ def build(root, reference, dependency):
         need(data['music'] == symbol, 'Source map music differs: ' + name)
         map_music.append(dict(sourceMap=name, cue=symbol, battleScene=data['battle_scene'], mapType=data['map_type']))
         need(name != 'FiveIsland_RocketWarehouse' or data['battle_scene'] == 'MAP_BATTLE_SCENE_INDOOR_2', 'Warehouse battle scene differs')
-    out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
 
     manifest = runtime_json_bytes(dict(schemaVersion=1,
 
         assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, items=items, trainers=trainers,
         portraits=portraits, tiles=tiles, layers=layers, mapMusic=map_music, newOwnedSpecies=[number for _, number in OWNED], newOpponentOnlySpecies=[number for _, number in OPPONENT_ONLY], inheritedOpponentSprites=[],
-        audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues],  ),
+
         limits=['No runtime rules are created by this presentation package.', 'Party icons use original frame zero shared by normal/shiny variants.'],
         outputs=[dict(path=p) for p, b in sorted(out.items())]), sort_keys=True)
     out['manifest.json'] = manifest
@@ -299,7 +255,7 @@ def build(root, reference, dependency):
         trainers=len(trainers), portraits=len(portraits), newPortraits=sum(not p['inherited'] for p in portraits),
         itemIcons=len(items), dynamicMetatiles=len(tiles), dynamicLayers=len(layers), outputs=len(out) - 1,
          manifestBytes=len(manifest),
-         synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
+          sourceAndStaticChecksOnly=True)
     return result, report
 
 

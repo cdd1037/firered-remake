@@ -260,7 +260,6 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         SilphPokemonDocument saffronGymPokemon,
         PretSaffronGymArt saffronGymArt,
         PretCinnabarRegion cinnabar,
-        SilphPokemonDocument cinnabarPokemon,
         CinnabarTrainerCatalog cinnabarTrainers,
         PretCinnabarItemsDocument cinnabarItems,
         PretCinnabarArt cinnabarArt,
@@ -315,7 +314,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         FightingDojoMachines = machines; FightingDojoTrainers = dojoTrainers;
         TrainerTowerRegion = trainerTower; TrainerTowerCatalog = trainerTowerCatalog;
         TrainerTowerOpponents = gamePokemon.TrainerTowerOpponents;
-        _trainerTowerConnectedMaps = trainerTower.Layouts.ToImmutableDictionary(p => p.Key, p => PretTrainerTowerRegion.ConnectedMap(p.Value));
+        _trainerTowerConnectedMaps = trainerTower.Layouts.ToImmutableDictionary(p => p.Key, p => PretWorldMapConnections.Create(p.Value));
         PowerPlantRegion=powerPlant; PowerPlantOwnership=gamePokemon; PowerPlantOpponents=gamePokemon.Opponents;
         PowerPlantMachines = machines;
         CapeBrinkTutor = capeBrinkTutor;
@@ -384,7 +383,6 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         CinnabarArt = cinnabarArt;
         CinnabarPresentation = cinnabarPresentation;
         CinnabarRegion = cinnabar;
-        CinnabarPokemon = cinnabarPokemon;
         CinnabarTrainerParties = cinnabarTrainers;
         CinnabarItems = cinnabarItems;
         CinnabarOwnership = gamePokemon;
@@ -682,20 +680,13 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         }
 
         MetatileDefinitions = metatileDefinitions;
-        Maps = Maps.ToImmutableDictionary().SetItem(new("map.viridian-city"), new ViridianGymCityFieldMap(maps[new("map.viridian-city")]));
-        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => cyclingRoad.NewMaps.ContainsKey(x.Key) ? PretCyclingRoadRegion.ConnectedMap(x.Value) : trainerFanClub.NewMaps.ContainsKey(x.Key) ? PretTrainerFanClub.ConnectedMap(x.Value) : lostCave.NewMaps.ContainsKey(x.Key) ? PretLostCaveRegion.ConnectedMap(x.Value) : schoolHouseInteriors.NewMaps.ContainsKey(x.Key) ? PretSchoolHouseInteriors.ConnectedMap(x.Value) : originalTmAcquisition.NewMaps.ContainsKey(x.Key) ? PretOriginalTmAcquisition.ConnectedMap(x.Value) : fourIslandDayCare.NewMaps.ContainsKey(x.Key) ? PretFourIslandDayCare.ConnectedMap(x.Value) : route5DayCare.NewMaps.ContainsKey(x.Key) ? PretRoute5DayCare.ConnectedMap(x.Value) : route16FlyHouse.NewMaps.ContainsKey(x.Key) ? PretRoute16FlyHouse.ConnectedMap(x.Value) : capeBrinkTutor.NewMaps.ContainsKey(x.Key) ? PretCapeBrinkTutor.ConnectedMap(x.Value) : superRodService.NewMaps.ContainsKey(x.Key) ? PretSuperRodService.ConnectedMap(x.Value) : copycatHouse.NewMaps.ContainsKey(x.Key) ? PretCopycatHouse.ConnectedMap(x.Value) : originalTutorRooms.NewMaps.ContainsKey(x.Key) ? PretOriginalTutorRooms.ConnectedMap(x.Value) : moveDeleterHouse.NewMaps.ContainsKey(x.Key) ? PretMoveDeleterHouse.ConnectedMap(x.Value) : moveReminderHouse.NewMaps.ContainsKey(x.Key) ? PretMoveReminderHouse.ConnectedMap(x.Value) : seafoam.NewMaps.ContainsKey(x.Key) ? PretSeafoamRegion.ConnectedMap(x.Value) : goodRodService.NewMaps.ContainsKey(x.Key) ? PretGoodRodService.ConnectedMap(x.Value) : npcTradeHaden.NewMaps.ContainsKey(x.Key) ? PretNpcTradeHaden.ConnectedMap(x.Value) : npcTradeElyssa.NewMaps.ContainsKey(x.Key) ? PretNpcTradeElyssa.ConnectedMap(x.Value) : npcTrades.NewMaps.ContainsKey(x.Key) ? PretNpcTrades.ConnectedMap(x.Value) : fossilLab.NewMaps.ContainsKey(x.Key) ? PretFossilLabRegion.ConnectedMap(x.Value) : fightingDojo.NewMaps.ContainsKey(x.Key) ? PretFightingDojoRegion.ConnectedMap(x.Value) : trainerTower.Maps.ContainsKey(x.Key) ? PretTrainerTowerRegion.ConnectedMap(x.Value) : powerPlant.NewMaps.ContainsKey(x.Key) ? PretPowerPlantRegion.ConnectedMap(x.Value) : eventIsland.NewMaps.ContainsKey(x.Key) ? PretEventIslandRegion.ConnectedMap(x.Value) : sevenIsland.NewMaps.ContainsKey(x.Key) ? PretSevenIslandRegion.ConnectedMap(x.Value) : ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : IsRegionalServiceMap(x.Key) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
+        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => PretWorldMapConnections.Create(x.Value));
         _definitions = maps.ToImmutableDictionary(x => x.Key, x => Definition(x.Value));
         OrdinaryMarts = OrdinaryMartCatalog.Bind(scripts, _definitions.Values, EarlyShopDocument.Catalog);
         InitializeMapLayouts(seafoam.LayoutVariants.Concat(firstSevii.LayoutVariants));
     }
 
-    private static ConnectedFieldMap CeruleanCaveConnectedMap(PretWorldMap map)
-    {
-        if (map.Events.GetProperty("connections").ValueKind != JsonValueKind.Null)
-            throw new InvalidDataException("cerulean_cave_unexpected_connection");
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), []);
-    }
+
 
     private static ImmutableArray<FieldPickupDefinition> SourceRegionPickupDefinitions(IReadOnlyDictionary<MapId,PretWorldMap> regionMaps,JsonElement items,JsonElement contracts,Func<string,MapId> resolveMap,string proofId,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
@@ -840,40 +831,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public int? TerrainAt(MapId map,int x,int y) => SourceMaps.TryGetValue(map, out var source) ? source.GetSourceCell(x, y)?.Terrain : null;
     public bool AllowsCycling(MapId map) => SourceMaps.TryGetValue(map, out var source) && source.Events.GetProperty("allow_cycling").GetBoolean();
     public FieldMapDefinition MapDefinition(MapId id) => _definitions[id];
-    public MapId MapFromSourceSymbol(string symbol)
-    {
-        var loaded = SourceMaps.Values.FirstOrDefault(map => map.SourceMapSymbol == symbol);
-        if (loaded is not null) return loaded.Id;
-        // Region factories resolve the current world's unloaded boundaries.
-        if (symbol.StartsWith("MAP_CINNABAR_ISLAND_POKEMON_LAB_", StringComparison.Ordinal)) return PretFossilLabRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol == "MAP_SAFFRON_CITY_DOJO") return PretFightingDojoRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_TRAINER_TOWER_", StringComparison.Ordinal)) return PretTrainerTowerRegion.MapIdFromSourceSymbol(symbol);
-        if(symbol == "MAP_SAFFRON_CITY_COPYCATS_HOUSE_1F") return PretCopycatHouse.Floor1MapId;
-        if(symbol == "MAP_SAFFRON_CITY_COPYCATS_HOUSE_2F") return PretCopycatHouse.Floor2MapId;
-        if(symbol == "MAP_FOUR_ISLAND_HOUSE1") return PretOriginalTutorRooms.BodySlamMapId;
-        if(symbol == "MAP_CINNABAR_ISLAND_POKEMON_LAB_RESEARCH_ROOM") return PretOriginalTutorRooms.MetronomeMapId;
-        if(symbol == "MAP_FUCHSIA_CITY_HOUSE3") return PretMoveDeleterHouse.HouseMapId;
-        if(symbol == "MAP_TWO_ISLAND_HOUSE") return PretMoveReminderHouse.HouseMapId;
-        if(symbol == "MAP_ROUTE12_FISHING_HOUSE") return PretSuperRodService.HouseMapId;
-        if(symbol is "MAP_ROUTE19" or "MAP_ROUTE20" || symbol.StartsWith("MAP_SEAFOAM_ISLANDS_",StringComparison.Ordinal)) return PretSeafoamRegion.MapIdFromSourceSymbol(symbol);
-        if(symbol=="MAP_POWER_PLANT")return PretPowerPlantRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_NAVEL_ROCK", StringComparison.Ordinal) || symbol.StartsWith("MAP_BIRTH_ISLAND", StringComparison.Ordinal)) return PretEventIslandRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_SEVEN_ISLAND", StringComparison.Ordinal) || symbol == "MAP_TRAINER_TOWER_LOBBY") return PretSevenIslandRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_FIVE_ISLAND", StringComparison.Ordinal)) return PretFiveIslandRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_SIX_ISLAND", StringComparison.Ordinal)) return PretSixIslandRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_FOUR_ISLAND", StringComparison.Ordinal)) return PretFourIslandRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_MT_EMBER_", StringComparison.Ordinal) || symbol.StartsWith("MAP_ONE_ISLAND_KINDLE_ROAD", StringComparison.Ordinal))
-            return PretSeviiRubyRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_POKEMON_LEAGUE_", StringComparison.Ordinal) || symbol.StartsWith("MAP_INDIGO_PLATEAU_", StringComparison.Ordinal))
-            return PretPokemonLeagueRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_FUCHSIA_CITY", StringComparison.Ordinal) || symbol is "MAP_ROUTE13" or "MAP_ROUTE14" or "MAP_ROUTE15" || symbol.StartsWith("MAP_ROUTE15_", StringComparison.Ordinal))
-            return PretFuchsiaRouteRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol is "MAP_ROUTE12" or "MAP_ROUTE16" or "MAP_ROUTE13" or "MAP_ROUTE17" || symbol.StartsWith("MAP_ROUTE12_", StringComparison.Ordinal) || symbol.StartsWith("MAP_ROUTE16_", StringComparison.Ordinal))
-            return PretSnorlaxRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol.StartsWith("MAP_POKEMON_TOWER_", StringComparison.Ordinal)) return PretPokemonTowerRegion.MapIdFromSourceSymbol(symbol);
-        if (symbol == "MAP_VERMILION_CITY_GYM") return new("map.vermilion-city-gym");
-        return PretRocketHideoutRegion.MapIdFromSourceSymbol(symbol);
-    }
+    public MapId MapFromSourceSymbol(string symbol) => SourceMaps.Values.First().ResolveMapSymbol(symbol);
     public ImmutableArray<FieldProgramCondition> Conditions(string table) => _scripts.MapConditions.TryGetValue(table, out var list) ? list.Select(x => new FieldProgramCondition(x.Variable, ConditionValue(table, x.Expected), x.Target)).ToImmutableArray() : [];
     private int ConditionValue(string table,string token)
     {

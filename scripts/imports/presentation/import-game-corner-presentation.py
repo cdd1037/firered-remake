@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -15,7 +14,6 @@ import json
 import re
 import os
 import subprocess
-import struct
 from pathlib import Path
 from PIL import Image
 
@@ -43,7 +41,7 @@ def safe(path):
 
 
 # Shared raw inputs are authenticated by this package's lock and the pinned Git blob.
-SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h', 'sound/cry_tables.inc', 'include/constants/sound.h']}
+SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h']}
 SHARED_RAW['graphics/pokemon/icon_palettes/icon_palette_2.pal'] = 'content/raw/pokefirered/037335f4/graphics/pokemon/icon_palettes/icon_palette_2.pal'
 for name, number in SPECIES:
     if number == 147:
@@ -229,29 +227,6 @@ def build(target, dependency, reference, check):
         texture = lambda row: {k: row[k] for k in ['texturePath',  'width', 'height']}
         entries.append(dict(entry, portrait=texture(front), footprint=texture(foot)))
 
-    pack = reuse('content/generated/audio/synth/firered.pack')
-    cries = reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence, new_cues = [], [], []
-    for name, species in SPECIES:
-        if species == 147:
-            cue = dict(id='CRY_DRATINI_NORMAL', sourceSymbol='SPECIES_DRATINI', sourcePlayer=4, priority=10, sourceCounter=None, songAddress=0, species=147, looping=False, cryMode=0)
-            cues.append(dict(inherited=False, cue=cue))
-            new_cues.append(cue)
-        else:
-            path = 'content/generated/' + ('sprites/pokemon/five-island' if species == 137 else 'sprites/pokemon/pokemon-league') + '/synth-manifest.json'
-            manifest = json.loads(reuse(path))
-            cue = next(c for c in manifest['cues'] if c['id'] == 'CRY_' + name.upper() + '_NORMAL')
-            need(cue['species'] == species and cue['sourcePlayer'] == 4 and cue['priority'] == priority and cue.get('cryMode', 0) == 0 and not cue['looping'] and cue['sourceSymbol'] == 'SPECIES_' + name.upper(), 'Inherited normal cry binding differs')
-            cues.append(dict(inherited=True, inheritedManifest=path, cue=cue))
-        row = cry_rows[species]
-        need(cry_table[species - 1] == name and row[1] == species - 1, 'Species cry table differs')
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4])))
-    outputs['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=new_cues))
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1,   entries=entries))
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
@@ -260,7 +235,7 @@ def build(target, dependency, reference, check):
                       newOwnedSpecies=[s for _, s in SPECIES],
                     sprites=sprites, pokemonIcons=icons, footprints=footprints,
                     dexEntriesPath=BASE + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry),
-                    audio=dict(newCueCount=1, inheritedCueCount=3, inheritedSampleCount=4, cues=cues, normalCries=cry_evidence, ),
+
                     limits=['Twelve battler variants, three icons, three cue bindings and all four source cry samples are reused unchanged.',
                             'Only four Dratini battler variants, its frame-zero icon, four footprints, four Dex bindings and one cry cue are added.',
                             'All eight move geometry rows are inherited; no dedicated animation or audio package is added.',

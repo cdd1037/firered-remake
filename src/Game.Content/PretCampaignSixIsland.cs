@@ -24,11 +24,6 @@ public sealed partial class PretCampaignCatalog
     public SixIslandWaterEncounterCatalog? SixIslandWaterEncounters { get; }
     public bool SixIslandEnabled => SixIslandRegion is not null;
 
-    private static void ValidateSixIslandAnchors(PretSixIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
 
     private static void ValidateSixIslandComposition(SixIslandTrainerCatalog trainers, PretStoryCompilation scripts)

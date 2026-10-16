@@ -9,7 +9,8 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record PretWorldMetadata(string Repository, string Commit, string Rights, string Scope, string RenderProfile);
+public sealed record PretWorldWarp(int Index, int X, int Y, int Elevation, MapId DestinationMapId, int DestinationWarpId);
+
 public sealed record PretWorldArtifact(string Path, int Width, int Height);
 public sealed record PretWorldSpawn(int X, int Y, int Elevation, string Reason);
 public sealed record PretWorldAttributes(int BehaviorId, int Terrain, int Attribute2, int Attribute3,
@@ -61,7 +62,6 @@ public sealed class PretWorldMap : IFieldMap
     public int BorderWidth => _data.BorderWidth;
     public int BorderHeight => _data.BorderHeight;
     public string SourceMapName => _data.SourceMapName;
-    public PretWorldMetadata Metadata { get; }
     public PretWorldSpawn TechnicalSpawn => _data.TechnicalSpawn ?? throw new InvalidDataException("No technical spawn is declared for this region map.");
     public ImmutableArray<PretWorldCell> Cells => _data.ExpandCells();
     internal ImmutableArray<ConnectedFieldCell> CreateConnectedCells() => _data.CreateConnectedCells();
@@ -73,8 +73,8 @@ public sealed class PretWorldMap : IFieldMap
         new PretWorldWarp(index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
             _mapIdFromSymbol(e.GetProperty("dest_map").GetString()!),
             PretRocketHideoutRegion.ParseWarpId(SourceMapSymbol, e))).ToImmutableArray();
-    public static ImmutableDictionary<MapId, PretWorldMap> LoadCatalog(string collectionRoot) => PretWorldCatalog.Load(collectionRoot);
     public string MapPath { get; }
+    public bool UsesLocalBorder { get; }
     public string DirectoryPath => Path.GetDirectoryName(MapPath)!;
     public string TexturePath => Path.Combine(DirectoryPath, _data.TexturePath);
     public string BottomTexturePath => LayerTexturePath("bottom");
@@ -85,25 +85,14 @@ public sealed class PretWorldMap : IFieldMap
     public string BorderTopTexturePath => LayerTexturePath("border-top");
     public string PlayerTexturePath => _playerTexturePath ?? Path.Combine(PretRuntimeMapValidation.GeneratedRoot(MapPath), "sprites/overworld/opening-player.png");
     private string LayerTexturePath(string layer) => Path.Combine(DirectoryPath, _data.TexturePath[..^"map.png".Length] + layer + ".png");
-    private PretWorldMap(PretRuntimeMapData data, PretWorldMetadata metadata, string directory, string? playerTexturePath, Func<string, MapId>? resolver)
+    private PretWorldMap(PretRuntimeMapData data, string directory, string? playerTexturePath, Func<string, MapId>? resolver, bool usesLocalBorder)
     {
-        _data = data; Metadata = metadata; MapPath = directory; _playerTexturePath = playerTexturePath;
-        _mapIdFromSymbol = resolver ?? (symbol => PretWorldCatalog.Specifications.FirstOrDefault(s => s.SourceMapSymbol == symbol) is { } spec
-            ? new MapId(spec.StableId) : throw new InvalidDataException("Warp source map is outside the base collection: " + symbol));
+        _data = data; MapPath = directory; UsesLocalBorder = usesLocalBorder; _playerTexturePath = playerTexturePath;
+        _mapIdFromSymbol = resolver ?? data.ResolveMapSymbol;
     }
-    internal static PretWorldMap FromRuntime(PretRuntimeMapData data, PretWorldMetadata metadata, string directory, string? playerTexturePath = null, Func<string, MapId>? resolver = null)
-        => new(data, metadata, directory, playerTexturePath, resolver);
-    internal static PretWorldMap LoadRegion(string directory, string stableId, PretWorldMetadata metadata, string playerTexturePath, Func<string, MapId> resolver)
-        => FromRuntime(PretRuntimeMapData.Decode(File.ReadAllBytes(directory), stableId, resolver), metadata, directory, playerTexturePath, resolver);
+    internal static PretWorldMap FromRuntime(PretRuntimeMapData data, string directory, string? playerTexturePath = null, Func<string, MapId>? resolver = null, bool usesLocalBorder = true)
+        => new(data, directory, playerTexturePath, resolver, usesLocalBorder);
+    internal MapId ResolveMapSymbol(string symbol) => _mapIdFromSymbol(symbol);
     public PretWorldCell? GetSourceCell(int x, int y) => _data.GetSourceCell(x, y);
     public TileCell? GetTile(int x, int y) => _data.GetTile(x, y);
-    public static PretWorldMap Load(string generatedDirectory)
-    {
-        var directory = Path.GetFullPath(generatedDirectory);
-        var spec = PretWorldCatalog.Specifications.Single(s => s.Name == Path.GetFileNameWithoutExtension(directory));
-        var registry = PretRuntimeMapValidation.Decode<PretRuntimeMapRegistry>(File.ReadAllBytes(
-            Path.Combine(PretRuntimeMapValidation.GeneratedRoot(directory), "maps/metadata.json")));
-        var data = PretRuntimeMapData.Decode(File.ReadAllBytes(directory), spec.StableId);
-        return FromRuntime(data, registry.Metadata, directory);
-    }
 }

@@ -48,7 +48,7 @@ public sealed class GeneratedRegionalEncounterTests
             CollectionAssert.AreEqual(table.Slots.ToArray(), actual[table.Map].Slots.ToArray());
         }
         if (family == "safari")
-            Assert.AreEqual(actual.Count, PretSafariEncounters.Load(PretSafariRegion.Load(TestAssets.Root)).Tables.Count);
+            Assert.AreEqual(actual.Count, PretSafariEncounters.Load(PretSafariRegion.Load(PretCurrentWorld.Load(TestAssets.Root))).Tables.Count);
     }
 
     [TestMethod]

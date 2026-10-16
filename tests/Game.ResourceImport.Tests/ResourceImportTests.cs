@@ -26,6 +26,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task MapAtlases() => Run("test-map-atlases.py");
     [TestMethod]
+    public Task WorldSourceSemantics() => Run("test-world-pipeline-oracle.py");
+    [TestMethod]
     public Task Route15GateSourceAndRegeneration() => Run("test-route15-gate-import.py");
     [TestMethod]
     public Task SharedMapImporters() => Run("test-map-consolidation.py");

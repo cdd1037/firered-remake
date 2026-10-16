@@ -15,19 +15,14 @@ public sealed class PretGoodRodService
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<MachineItem> Items { get; }
     public ImmutableArray<PretPewterMachineIcon> Icons { get; }
-    public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretGoodRodService(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants, PretCityServiceItemsDocument items)
     {
         NewMaps = maps; Constants = constants;
         GeneratedDirectory = source.Directory; Items = items.Items; Icons = items.Icons;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -37,39 +32,13 @@ public sealed class PretGoodRodService
         _ => throw new InvalidDataException("Unknown Good Rod service map symbol: " + symbol)
     };
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
-            "Good Rod house must retain its original disconnected indoor geometry.");
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), []);
-    }
 
-    public static PretGoodRodService Load(string projectRoot)
+
+    public static PretGoodRodService Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/good-rod-service");
-        var npc = source.Document("npc-source.json").GetProperty("graphics");
-        Need(npc.GetArrayLength() == 2, "Good Rod actor collection differs.");
-        foreach (var texture in npc.EnumerateArray())
-        {
-            Need(texture.GetProperty("graphicsId").GetString() is "OBJ_EVENT_GFX_FISHER" or "OBJ_EVENT_GFX_RED_NORMAL",
-                "Good Rod actors must reuse the original existing resources.");
-        }
-        var catalog = source.Document("catalog.json");
-        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
-            "Good Rod catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Good Rod service resources; current-game admission is separate.", ResourceId);
-        var spec = catalog.GetProperty("maps")[0];
-        string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
-        string path = spec.GetProperty("path").GetString()!;
-        Need(id == HouseMapId.Value && path == relative ,
-            "Good Rod compact map binding differs.");
-        var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-        Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == 10 && runtime.Height == 10,
-            "Good Rod house dimensions differ.");
-        var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
+        var house = world.Maps[HouseMapId];
         Need(house.FieldWarps.Length == 4 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 0,
             "Good Rod original event collection differs.");

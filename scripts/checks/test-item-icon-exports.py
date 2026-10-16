@@ -65,6 +65,29 @@ class ItemIconExportsTests(unittest.TestCase):
         output=Path('/tmp/custom/generated/example')
         self.assertEqual(output_materials(output,{'content/generated/sprites/item-icons/potion.png':b'x'}),{(output.parent,'sprites/item-icons/potion.png'):b'x'})
 
+    def test_explicit_generated_root_needs_no_project_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            generated=Path(directory)/'isolated-resources'
+            folder=generated/'data/items/example';folder.mkdir(parents=True)
+            icon=generated/'sprites/item-icons/example.png';icon.parent.mkdir(parents=True)
+            original=Image.new('RGBA',(24,24),(10,20,30,255))
+            original.putpixel((7,8),(99,88,77,0));original.save(icon)
+            path=folder/'items.json'
+            path.write_text(json.dumps({'icons':[{'item':{'value':'pret:ITEM_EXAMPLE'},'width':24,'height':24,
+                'pngPath':'content/generated/sprites/item-icons/example.png'}]}))
+            self.assertEqual(1,pack_project(generated=generated)['retiredPngFiles'])
+            row=json.loads(path.read_bytes())['icons'][0]
+            self.assertEqual(ATLAS_PATH,row['pngPath'])
+            from item_icon_exports import decode_icon_page
+            actual=decode_icon_page((generated/'sprites/items.png').read_bytes(),row)
+            self.assertEqual(original.tobytes(),actual.tobytes())
+            self.assertFalse(icon.exists())
+            self.assertFalse((Path(directory)/'content').exists())
+            before={p:p.read_bytes() for p in generated.rglob('*') if p.is_file()}
+            self.assertEqual(0,pack_project(generated=generated)['updatedDocuments'])
+            self.assertEqual(before,{p:p.read_bytes() for p in generated.rglob('*') if p.is_file()})
+            with self.assertRaises(ValueError):pack_project(Path(directory),generated=generated)
+
     def test_all_eight_packages_regenerate_exact_regions(self):
         count=0
         for package, relative_document in PACKAGES:

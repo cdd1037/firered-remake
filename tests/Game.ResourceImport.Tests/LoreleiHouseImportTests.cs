@@ -6,13 +6,15 @@ namespace FireRed.Tests.ResourceImport;
 public sealed class LoreleiHouseImportTests
 {
     [TestMethod]
-    public async Task HouseCollectionContractAndFreshPixelsMatchPinnedSource()
+    public async Task HouseCollectionAndIceRulesMatchPinnedSource()
     {
         var info = new ProcessStartInfo(Environment.GetEnvironmentVariable("FIRERED_PYTHON") ?? (OperatingSystem.IsWindows() ? "python" : "python3"))
         { WorkingDirectory = TestAssets.Root, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
-        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts/imports/maps/import-four-island-region.py"));
-        info.ArgumentList.Add("--raw-root");
+        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts/imports/story/import-world-field-rules.py"));
+        info.ArgumentList.Add("--raw");
         info.ArgumentList.Add(Path.Combine(TestAssets.Root, "content/raw/pokefirered/037335f4"));
+        info.ArgumentList.Add("--region");
+        info.ArgumentList.Add("four-island");
         info.ArgumentList.Add("--check");
         using var process = Process.Start(info)!;
         var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();

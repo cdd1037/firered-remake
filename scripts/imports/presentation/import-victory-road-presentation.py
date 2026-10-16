@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from shared_trainers import resolve_trainers
 from runtime_json import runtime_json_bytes
@@ -21,7 +20,6 @@ ITEMS=[('TM02','TMHM','DragonTMHM','tm_hm','dragon_tm_hm'),('TM07','TMHM','IceTM
  ('TM37','TMHM','RockTMHM','tm_hm','rock_tm_hm'),('TM50','TMHM','FireTMHM','tm_hm','fire_tm_hm'),
  ('GUARD_SPEC','BattleStatItem','GuardSpec','battle_stat_item','guard_spec'),('SITRUS_BERRY','SitrusBerry','SitrusBerry','sitrus_berry','sitrus_berry')]
 MAPS=['Route23','VictoryRoad_1F','VictoryRoad_2F','VictoryRoad_3F','IndigoPlateau_Exterior']
-CUES=['MUS_VICTORY_ROAD','MUS_MT_MOON','MUS_ENCOUNTER_BOY','MUS_ENCOUNTER_GIRL','MUS_VS_TRAINER','MUS_VICTORY_TRAINER','MUS_VS_WILD','MUS_VICTORY_WILD','MUS_SURF','SE_M_STRENGTH','SE_FALL','SE_ICE_BREAK','MUS_OBTAIN_ITEM','MUS_OBTAIN_TMHM']
 from image_io import png as encode_rgba_png
 
 def need(v,m):
@@ -120,18 +118,10 @@ def build(lock,raw,reused,generated_directory=ROOT/'content/generated'):
   tiles.append(dict(symbol=symbol,metatileId=mid,rawAttributes=attribute,x=col*16,y=0))
  for n,atlas in enumerate(atlases):
   name='barrier-'+['bottom','middle','top'][n];rgba=atlas.tobytes();out[name+'.png']=png(64,16,rgba);layers.append(dict(layer=n, texturePath=BASE + name + '.png', width=64, height=16))
- # Register the original SE_ICE_BREAK song already inside the authenticated source resource pack.
- pack=reused['content/generated/audio/synth/firered.pack']
- songs={k:int(v) for k,v in re.findall(r'^#define ((?:MUS|SE)_\w+)\s+(\d+)',text('include/constants/songs.h'),re.M)};table=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',text('sound/song_table.inc'),re.M);sid=songs['SE_ICE_BREAK'];address,player,second=struct.unpack_from('<IHH',pack,0x084A32CC+sid*8-0x08489968);need(table[sid]==('se_ice_break',str(player),str(second)) and player in (1,2,3),'Source cue table')
- extra=dict(id='SE_ICE_BREAK', sourceSymbol='SE_ICE_BREAK', sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=False, cryMode=0)
- # The reviewed MIDI reader checks the original finite sequence, never executes source repository code.
- helper=reused['scripts/lib/audit-early-audio.py'];scope={'__name__':'victory_road_midi_reader','__file__':str(ROOT/'scripts/lib/audit-early-audio.py')};exec(compile(helper,'audit-early-audio.py','exec'),scope);midi=scope['midi'](raw[extra['sourcePath']]);need(not any(m['text'] in ('[',']') for m in midi['markers']),'Barrier cue unexpectedly loops')
- cues=[c for p,b in reused.items() if p.endswith('audio/synth/manifest.json') for c in json.loads(b)['cues']];need(not any(c['id']=='SE_ICE_BREAK' for c in cues),'Barrier cue already registered');cues.append(extra);need(all(sum(c['id']==name for c in cues)==1 for name in CUES),'Inherited cue closure')
- out['synth-manifest.json']=runtime_manifest_bytes(dict(schemaVersion=1, cues=[extra]))
  maps=[]
  for name in MAPS:
   m=json.loads(raw['data/maps/'+name+'/map.json']);need(m['music']==('MUS_MT_MOON' if name.startswith('VictoryRoad') else 'MUS_VICTORY_ROAD') and m['battle_scene']=='MAP_BATTLE_SCENE_NORMAL','Map presentation source');maps.append(dict(sourceMap=name,music=m['music'],battleScene=m['battle_scene']))
- manifest=dict(schemaVersion=1,trainers=trainers,portraits=portraits,items=icons,sprites=sprites,pokemonIcons=pokemon_icons,trainerOnlySpecies=[87,103],tiles=tiles,layers=layers,maps=maps,audio=dict(requiredCues=CUES,additionalCueIds=['SE_ICE_BREAK'],),outputs=[dict(path=p) for p,b in sorted(out.items())]);out['manifest.json']=runtime_json_bytes(manifest);return out
+ manifest=dict(schemaVersion=1,trainers=trainers,portraits=portraits,items=icons,sprites=sprites,pokemonIcons=pokemon_icons,trainerOnlySpecies=[87,103],tiles=tiles,layers=layers,maps=maps,outputs=[dict(path=p) for p,b in sorted(out.items())]);out['manifest.json']=runtime_json_bytes(manifest);return out
 
 def run(root=ROOT,inherited=None,rules=None,reference=None,check=False):
  lock,raw,reused=authenticate(root,inherited or root,rules or root,reference);out=build(lock,raw,reused,(rules or root)/'content/generated')
@@ -140,6 +130,6 @@ def run(root=ROOT,inherited=None,rules=None,reference=None,check=False):
  else:
   for p,b in [(RAW+p,b) for p,b in raw.items()]+[(BASE+p,b) for p,b in out.items()]:
    dest=safe(root,p);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
- return dict(passed=True,sourceFiles=len(raw),trainers=12,portraits=7,newPortraits=1,inheritedPortraits=6,items=6,barrierMetatiles=4,barrierLayers=3,newSpecies=2,trainerOnlySpecies=[87,103],newBattleSprites=8,newPokemonIcons=2,newOwnedSpecies=0,additionalCueIds=['SE_ICE_BREAK'],manifestBytes=len(out['manifest.json']),sourceAndStaticChecksOnly=True)
+ return dict(passed=True,sourceFiles=len(raw),trainers=12,portraits=7,newPortraits=1,inheritedPortraits=6,items=6,barrierMetatiles=4,barrierLayers=3,newSpecies=2,trainerOnlySpecies=[87,103],newBattleSprites=8,newPokemonIcons=2,newOwnedSpecies=0,manifestBytes=len(out['manifest.json']),sourceAndStaticChecksOnly=True)
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--inherited-root',type=pathlib.Path);p.add_argument('--rules-root',type=pathlib.Path);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.project_root,a.inherited_root,a.rules_root,a.reference_root,a.check)))

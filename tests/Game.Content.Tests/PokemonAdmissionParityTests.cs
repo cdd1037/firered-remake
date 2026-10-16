@@ -12,7 +12,7 @@ public sealed class PokemonAdmissionParityTests
     {
         var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);
         var mechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(canonical, TestAssets.Root);
-        var trades = PretNpcTrades.Load(TestAssets.Root, mechanics.Catalog).Trades;
+        var trades = PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades;
         var expected = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics, trades);
         var campaign = PretCampaignCatalog.LoadCurrent(TestAssets.Root);
         Check(expected.Catalog, campaign.PokemonContent!.Catalog);

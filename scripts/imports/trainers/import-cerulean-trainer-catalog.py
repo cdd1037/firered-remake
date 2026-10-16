@@ -18,17 +18,14 @@ PROFILE = 'firered-cerulean-trainers-v1'
 
 
 def compile_catalog(root):
-    generated = root / 'content/generated'
     raw = root / 'content/raw/pokefirered/037335f4'
-    def read(path):
-        return json.loads((generated / path).read_text())
-    rows = read('maps/regions/cerulean/dependencies.json')['trainers']
+    symbols = ['TRAINER_LEADER_MISTY', 'TRAINER_PICNICKER_DIANA', 'TRAINER_RIVAL_CERULEAN_BULBASAUR', 'TRAINER_RIVAL_CERULEAN_CHARMANDER', 'TRAINER_RIVAL_CERULEAN_SQUIRTLE', 'TRAINER_SWIMMER_MALE_LUIS', 'TRAINER_TEAM_ROCKET_GRUNT_5']
     setup = (raw / 'src/battle_setup.c').read_text()
     for statement in ('gMain.savedCallback = CB2_EndTrainerBattle;', 'return EventScript_DoNoIntroTrainerBattle;', 'return EventScript_TryDoNormalTrainerBattle;'):
         if statement not in setup: raise ValueError('Cerulean callback source differs')
-    trainers = selected_trainers(lambda path: (raw / path).read_text(), [row['symbol'] for row in rows])
+    trainers = selected_trainers(lambda path: (raw / path).read_text(), symbols)
     battles = []
-    if len(rows) != 7:
+    if len(trainers) != 7:
         raise ValueError('Cerulean party closure')
     for trainer in trainers:
         symbol = trainer['id']['value'][5:]

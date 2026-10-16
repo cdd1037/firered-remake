@@ -19,7 +19,7 @@ public sealed class GeneratedMapLayerPathTests
             using var document = JsonDocument.Parse(bytes);
             if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("blocks", out _)) continue;
             var data = PretRuntimeMapData.Decode(bytes, document.RootElement.GetProperty("stableId").GetString()!);
-            var map = PretWorldMap.FromRuntime(data, new("", "", "", "", ""), path);
+            var map = PretWorldMap.FromRuntime(data, path);
             void Check(string texture)
             {
                 var key = Path.GetRelativePath(generated, texture).Replace(Path.DirectorySeparatorChar, '/');

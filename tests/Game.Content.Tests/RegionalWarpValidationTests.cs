@@ -22,14 +22,14 @@ public sealed class RegionalWarpValidationTests
             var cityMap = city == "celadon" ? "maps/regions/celadon-approach/celadon-city.json"
                 : "maps/regions/fuchsia-route/fuchsia-city.json";
             var required = Directory.EnumerateFiles(Path.Combine(source, package), "*", SearchOption.AllDirectories)
-                .Select(path => Path.GetRelativePath(source, path)).Concat(["data/constants.json", cityMap]);
+                .Select(path => Path.GetRelativePath(source, path)).Concat(["data/constants.json", cityMap]).Concat(CurrentWorldTestFixture.RelativeFiles()).Distinct();
             foreach (var relative in required)
             {
                 var destination = Path.Combine(generated, relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 File.Copy(Path.Combine(source, relative), destination);
             }
-            Action load = city == "celadon" ? () => PretCeladonGymRegion.Load(root) : () => PretFuchsiaGymRegion.Load(root);
+            Action load = city == "celadon" ? () => PretCeladonGymRegion.Load(PretCurrentWorld.Load(root)) : () => PretFuchsiaGymRegion.Load(PretCurrentWorld.Load(root));
             load();
             var map = Path.Combine(generated, package, city + "-city-gym.json");
             var node = JsonNode.Parse(File.ReadAllText(map))!;

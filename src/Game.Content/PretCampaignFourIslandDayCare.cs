@@ -15,9 +15,9 @@ public sealed partial class PretCampaignCatalog
     public IReadOnlyDictionary<int, string> DayCareCompatibilityTextSymbols { get; } =
         new Dictionary<int, string> { [70] = "gDaycareText_GetAlongVeryWell",[50] = "gDaycareText_GetAlong",[20] = "gDaycareText_DontLikeOther",[0] = "gDaycareText_PlayOther" }.ToImmutableDictionary();
 
-    private static void ValidateFourIslandDayCareComposition(PretFourIslandDayCare daycare,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateFourIslandDayCareComposition(PretFourIslandDayCare daycare,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
-        if (maps.Count != previous.Count + 1 || previous.ContainsKey(PretFourIslandDayCare.HouseMapId) )
+        if (!maps.ContainsKey(PretFourIslandDayCare.HouseMapId) )
             throw new InvalidDataException("four_daycare_map_composition");
         var house = maps[PretFourIslandDayCare.HouseMapId]; var town = maps[new("map.four-island")];
         var door = town.FieldWarps.Single(w => w.Index == 1);

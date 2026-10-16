@@ -10,7 +10,6 @@ import importlib.util
 from pathlib import Path
 import json
 import tempfile
-from types import SimpleNamespace
 from unittest.mock import patch
 
 p = argparse.ArgumentParser()
@@ -38,63 +37,49 @@ except ValueError as error:
 else:
     raise AssertionError('incomplete-map-bindings-accepted')
 
-# Only conversion parity is tested here: this adapter reads retained raw bytes,
-# rather than claiming to exercise the party importer's pinned Git reader.
+# Party compilation reads the actual retained raw source through the shared reader.
 spec = importlib.util.spec_from_file_location('vs_seeker_parties', root / 'scripts/imports/trainers/import-vs-seeker-parties.py')
 parties = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(parties)
 
-class RawSource:
-    def __init__(self, reference=None, *, raw_root=None):
-        assert reference == args.git_dir and raw_root is None, "Unexpected fixture source selection"
-        self.data, self.entries = {}, {}
-    def text(self, path):
-        data = (root / 'content/raw/pokefirered/037335f4' / path).read_bytes()
-        self.data[path] = data
-        self.entries[path] = dict(path=path)
-        return data.decode()
+source_root = root / 'content/raw/pokefirered/037335f4'
+artifacts, _ = parties.generate(source_root, root, root)
+document = json.loads(artifacts['catalog.json'])
+assert len(document['trainers']) == 351
+assert sum(t['doubleBattle'] for t in document['trainers']) == 25
+artifacts['catalog.json'] = parties.trainer_json(root / 'content/generated', document, check=True)
+for name, data in artifacts.items():
+    existing = (root / 'content/generated/data/services/vs-seeker-parties' / name).read_bytes()
+    assert data == existing, name
 
-reader = SimpleNamespace(Source=RawSource)
-reader_spec = SimpleNamespace(loader=SimpleNamespace(exec_module=lambda module: None))
-with patch.object(parties.importlib.util, 'spec_from_file_location', return_value=reader_spec), \
-     patch.object(parties.importlib.util, 'module_from_spec', return_value=reader):
-    artifacts, _ = parties.generate(args.git_dir, root, root)
-    document = json.loads(artifacts['catalog.json'])
-    assert len(document['trainers']) == 351
-    assert sum(t['doubleBattle'] for t in document['trainers']) == 25
-    artifacts['catalog.json'] = parties.trainer_json(root / 'content/generated', document, check=True)
-    for name, data in artifacts.items():
-        existing = (root / 'content/generated/data/services/vs-seeker-parties' / name).read_bytes()
-        assert data == existing, name
-
-    with tempfile.TemporaryDirectory(prefix='vs-seeker-rules-') as temporary:
-        target = Path(temporary) / 'content/generated/data/services/vs-seeker.json'
-        target.parent.mkdir(parents=True)
-        for kind in ('wrong_id', 'conflicting_id', 'missing_slot', 'unknown_trainer'):
-            broken = json.loads(raw)
-            row = broken['rematches'][0]
-            if kind == 'wrong_id': row['trainerSourceIds'][0] += 1
-            elif kind == 'conflicting_id':
-                broken['rematches'].append(dict(row, trainerSourceIds=[-1] + row['trainerSourceIds'][1:]))
-            elif kind == 'missing_slot': row['trainers'].pop()
-            else: row['trainers'][0] = 'TRAINER_UNKNOWN_TEST'
-            target.write_text(json.dumps(broken))
-            try:
-                parties.generate(args.git_dir, root, Path(temporary))
-            except ValueError:
-                pass
-            else:
-                raise AssertionError('invalid rematch accepted: ' + kind)
-    original_text = RawSource.text
-    def malformed_declaration(self, path):
-        text = original_text(self, path)
-        return text.replace('.doubleBattle = FALSE', '.doubleBattle = INVALID') if path == 'src/data/trainers.h' else text
-    with patch.object(RawSource, 'text', malformed_declaration):
+with tempfile.TemporaryDirectory(prefix='vs-seeker-rules-') as temporary:
+    target = Path(temporary) / 'content/generated/data/services/vs-seeker.json'
+    target.parent.mkdir(parents=True)
+    for kind in ('wrong_id', 'conflicting_id', 'missing_slot', 'unknown_trainer'):
+        broken = json.loads(raw)
+        row = broken['rematches'][0]
+        if kind == 'wrong_id': row['trainerSourceIds'][0] += 1
+        elif kind == 'conflicting_id':
+            broken['rematches'].append(dict(row, trainerSourceIds=[-1] + row['trainerSourceIds'][1:]))
+        elif kind == 'missing_slot': row['trainers'].pop()
+        else: row['trainers'][0] = 'TRAINER_UNKNOWN_TEST'
+        target.write_text(json.dumps(broken))
         try:
-            parties.generate(args.git_dir, root, root)
-        except ValueError as error:
-            assert str(error).startswith('Unrecognized trainer items or battle mode:')
+            parties.generate(source_root, root, Path(temporary))
+        except ValueError:
+            pass
         else:
-            raise AssertionError('invalid declaration accepted')
+            raise AssertionError('invalid rematch accepted: ' + kind)
+original_text = parties.WorldSource.text
+def malformed_declaration(self, path):
+    text = original_text(self, path)
+    return text.replace('.doubleBattle = FALSE', '.doubleBattle = INVALID') if path == 'src/data/trainers.h' else text
+with patch.object(parties.WorldSource, 'text', malformed_declaration):
+    try:
+        parties.generate(source_root, root, root)
+    except ValueError as error:
+        assert str(error).startswith('Unrecognized trainer items or battle mode:')
+    else:
+        raise AssertionError('invalid declaration accepted')
 print(json.dumps(dict(passed=True, rematches=len(catalog['rematches']), trainers=351, doubles=25,
                      partyArtifactsByteEqual=len(artifacts), rejectedPartyInputs=5)))

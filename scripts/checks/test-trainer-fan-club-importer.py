@@ -7,6 +7,7 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 
@@ -22,28 +23,26 @@ def main():
     def need(value,name):
         if not value:raise AssertionError(name)
         checks.append(name)
-    lock=json.loads((root/'scripts/recipes/trainers/trainer-fan-club.lock.json').read_bytes())
-    manifest=json.loads((package/'manifest.json').read_bytes())
-    need(bool(lock['files']) and bool(manifest['outputs']),'nonempty current input and output inventories')
-    for row in lock['files']:
-        need((root/'content/raw/pokefirered/037335f4'/row['path']).is_file(),'source:'+row['path'])
-    for row in manifest['outputs']:
-        need((package/row['path']).is_file(),'resource:'+row['path'])
+    raw = root / 'content/raw/pokefirered/037335f4'
+    world = json.loads((root / 'content/generated/maps/world.json').read_bytes())
+    entry = next(row for row in world['maps'] if row['stableId'] == 'map.saffron-city-pokemon-trainer-fan-club')
+    room = json.loads((root / 'content/generated' / entry['path']).read_bytes())
+    original = json.loads((raw / 'data/maps/SaffronCity_PokemonTrainerFanClub/map.json').read_bytes())
+    need(room['events'] == original, 'room actors, flags and warps match original events')
+    story = json.loads((root / 'content/generated/data/story.json').read_bytes())['Compilation']
+    for actor in original['object_events']:
+        label = actor['script']
+        need(label in story['Programs'], 'compiled actor script:' + label)
+        source_text = (raw / story['Programs'][label]['SourcePath']).read_text()
+        need(re.search(r'^' + re.escape(label) + r'::?(?:\s|$)', source_text, re.M) is not None,
+             'compiled actor script has its source definition:' + label)
+    need('SaffronCity_PokemonTrainerFanClub_MapScripts' in story['MapHeaders'], 'compiled room script header')
     constants=json.loads((root/'content/generated/data/constants.json').read_bytes())
     need(constants['VAR_FANCLUB_FAN_COUNTER']==0x4038 and constants['VAR_FANCLUB_LOSE_FAN_TIMER']==0x4039,
          'native helper-only source variables retained')
     expression=constants['(NUM_TRAINER_FAN_CLUB_MEMBERS - 1)']
     need(expression==7 and expression==constants['NUM_TRAINER_FAN_CLUB_MEMBERS']-1, 'exact source expression value retained')
-    contract=json.loads((package/'contracts.json').read_bytes())
-    rules=contract['rules'];source=(args.reference_root/'src/trainer_fan_club.c').read_text(encoding='utf-8')
-    need(rules['counterIncrements']==[2,1,2,1] and 'sCounterIncrements[] = {2, 1, 2, 1};' in source,'counter source semantics')
-    need(rules['counterThreshold']==20 and 'fanClub->timer + sCounterIncrements[a1] >= 20' in source,'counter threshold')
-    need(rules['decay']['intervalHours']==12 and 'gSaveBlock2Ptr->playTimeHours - timer < 12' in source,'twelve-hour decay boundary')
-    need(rules['decay']['disabledAtHours']==999 and 'gSaveBlock2Ptr->playTimeHours < 999' in source,'clock cap boundary')
-    need(rules['gainScanOrder']==['FANCLUB_MEMBER'+str(i) for i in [2,4,6,1,8,7,5,3]],'gain scan order')
-    need(rules['loseScanOrder']==['FANCLUB_MEMBER'+str(i) for i in [6,7,4,8,5,2,1,3]],'lose scan order')
-    need(len(contract['actors'])==10 and len(contract['transition']['nonFanPositions'])==8,'complete source actor positioning')
-    report=dict(checkCount=len(checks),failures=0,checks=checks,scope='Current fan-club source semantics and runtime resource completeness; historical importer helper pipeline retired')
+    report=dict(checkCount=len(checks),failures=0,checks=checks,scope='Current fan-club map events, compiled actor scripts and shared constants; gameplay rules are implemented in Domain')
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
     print(json.dumps(report))
 

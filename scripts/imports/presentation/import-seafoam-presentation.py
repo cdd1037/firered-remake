@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -14,8 +13,6 @@ import json
 import re
 import os
 import subprocess
-import struct
-import wave
 from pathlib import Path
 from PIL import Image
 
@@ -43,7 +40,7 @@ def safe(path):
 
 
 # Shared raw inputs are authenticated by this package's lock and the pinned Git blob.
-SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h', 'sound/cry_tables.inc', 'include/constants/sound.h']}
+SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h']}
 SHARED_RAW.update({path: 'content/raw/pokefirered/037335f4/' + path for path in [
     'include/constants/trainers.h', 'src/data/graphics/trainers.h',
     'src/data/trainer_graphics/front_pic_tables.h', 'src/data/text/trainer_class_names.h',
@@ -222,43 +219,6 @@ def build(target, dependency, reference, check):
     geometry_path = 'content/generated/battle/art/campaign-hit-art/manifest.json'
     inherited_geometry = json.loads(reuse(geometry_path))['geometry']
     need(all(row in inherited_geometry for row in geometry), 'Existing source move geometry differs')
-    pack = reuse('content/generated/audio/synth/firered.pack')
-    cries = reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence = [], []
-    for name, species in SPECIES:
-        row = cry_rows[species]
-        need(cry_table[species - 1] == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        with wave.open(io.BytesIO(source.read(path))) as original:
-            need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                 (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header dimensions differ')
-            pcm = original.readframes(original.getnframes())
-        delta = (0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1)
-        decoded = bytearray()
-        for index in range(row[2] + row[4]):
-            block, i = divmod(index, 64)
-            start = wave_offset + 16 + block * 33
-            if i == 0:
-                value = pack[start]
-            else:
-                packed = pack[start + (1 if i == 1 else i // 2 + 1)]
-                nibble = packed & 15 if i == 1 or i % 2 else packed >> 4
-                value = (value + delta[nibble]) & 255
-            decoded.append((value + 128) & 255)
-        need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
-        cues.append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceSymbol='SPECIES_' + name.upper(), sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-
-    outputs['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues))
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1,   entries=entries))
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
@@ -268,7 +228,7 @@ def build(target, dependency, reference, check):
                     sprites=sprites, pokemonIcons=icons, footprints=footprints,
                     trainerPortraits=portraits, trainerBindings=trainer_bindings,
                     dexEntriesPath=BASE + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry),
-                    audio=dict(newCueCount=1, normalCries=cry_evidence, ),
+
                     limits=['Existing species textures remain in their original packages; this package adds Articuno and the Bird Keeper trainer portrait.',
                             'The party icon uses original frame zero for normal and shiny variants.',
                             'No new move animation coverage; native visual and audible output remain unverified.'],

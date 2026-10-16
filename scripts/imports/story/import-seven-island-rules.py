@@ -16,7 +16,6 @@ import json
 import re
 import subprocess
 from pathlib import Path
-from machine_catalog import compatibility_additions
 
 ROOT = _PROJECT_ROOT
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
@@ -56,26 +55,15 @@ def generate(reference, dependency):
         data=(dependency/path).read_bytes()
         dependencies.append(dict(path=path));return json.loads(data)
     canonical=dependent('content/generated/data/pokemon/canonical/catalog.json')
-    base=dependent('scripts/recipes/story/five-island-predecessor.json')
-    five_p=dependent('content/generated/data/regions/five-island/pokemon.json')
-    celio=dependent('content/generated/data/pokemon/celio/pokemon.json')
-    cave=dependent('content/generated/data/pokemon/cerulean-cave/pokemon.json')
-    rematch=dependent('content/generated/data/regions/league-rematch/pokemon.json')
+    admissions=dependent('data/game-pokemon.json')
+    owned={row['id']['value'][5:] for row in admissions['owned']}
+    opponents={row['id']['value'][5:] for row in admissions['opponents']}
     species={s['id']['value'][5:]:s for s in canonical['species']}
     metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
     for trainer in trainers:
-        need(all(member['species']['value'][5:] in species for member in trainer['party']),
-             'Unknown canonical trainer species')
-    previous_owned={s[5:] for s in base['ownedSpecies']}|set(five_p['ownedSpeciesAdded'])|set(celio['speciesAdded'])|set(cave['speciesAdded'])
-    previous_opponents={s[5:] for s in base['opponentSpecies']}|previous_owned|set(five_p['opponentSpeciesAdded'])|{s['id']['value'][5:] for s in rematch['opponentSpecies']}
-    additions=['SPECIES_PHANPY','SPECIES_DONPHAN','SPECIES_LARVITAR','SPECIES_PUPITAR','SPECIES_TYRANITAR','SPECIES_SKARMORY','SPECIES_UNOWN']
-    trainer_only=['SPECIES_GIRAFARIG','SPECIES_HITMONTOP','SPECIES_MILTANK','SPECIES_PINECO','SPECIES_SMEARGLE','SPECIES_URSARING']
-    need(len(previous_owned)==139 and len(previous_opponents)==168,'Exact Cave/Rematch predecessor')
-    need(len(previous_owned|set(additions))==146 and len(previous_opponents|set(additions)|set(trainer_only))==180,'Exact Seven closure')
-    edges=[]
-    for name,level,target in [('SPECIES_PHANPY',25,'SPECIES_DONPHAN'),('SPECIES_LARVITAR',30,'SPECIES_PUPITAR'),('SPECIES_PUPITAR',55,'SPECIES_TYRANITAR')]:
-        e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']==identity(target),'Source evolution')
-        edges.append(dict(species=identity(name),sourceEvolution=e[0]))
+        need(all(member['species']['value'][5:] in species and
+                 member['species']['value'][5:] in opponents for member in trainer['party']),
+             'Trainer species must be canonical and admitted by the current game')
     battles=[]
     names=['SevenIsland_SevaultCanyon','SevenIsland_SevaultCanyon_Entrance','SevenIsland_TanobyRuins','SevenIsland_TrainerTower']
     for name in names:
@@ -98,18 +86,14 @@ def generate(reference, dependency):
     fields=next(g['fields'] for g in wild['wild_encounter_groups'] if 'fields' in g)
     need(len(encounters)==11,'Exactly eleven FireRed encounter maps')
     admitted={s['species'] for e in encounters for kind in ['land_mons','water_mons','rock_smash_mons','fishing_mons'] for s in e.get(kind,{}).get('mons',[])[:2 if kind=='fishing_mons' else None]}
-    need(admitted-previous_owned=={'SPECIES_PHANPY','SPECIES_LARVITAR','SPECIES_SKARMORY','SPECIES_UNOWN'},'Minimal direct wild additions')
+    need(admitted <= owned,
+         'Seven Island species must be admitted by the current game')
     all_wild={s['species'] for e in encounters for kind in ['land_mons','water_mons','rock_smash_mons','fishing_mons'] for s in e.get(kind,{}).get('mons',[])}
     held=[dict(species=identity(s),common=metadata[s]['itemCommon'],rare=metadata[s]['itemRare']) for s in sorted(all_wild)]
-    cells=compatibility_additions(ROOT, 'content/generated/data/regions/seven-island/machines.json')
-    need(len(cells)==39, 'Exact admitted machine scope')
-    dependencies.extend(dict(path=p) for p in ['scripts/recipes/config/machine-admissions.json', 'scripts/recipes/config/machine-catalog.json'])
     for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','src/wild_encounter.c','include/random.h','include/constants/pokemon.h']:read(path)
     docs={
       'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(previousOwnedSpeciesCount=139,ownedSpeciesCount=146,previousOpponentSpeciesCount=168,opponentSpeciesCount=180,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=trainer_only,evolutionEdges=edges,species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']),metadata=metadata[s]) for s in additions+trainer_only]),
       'encounters.json':dict(sourcePath='src/data/wild_encounters.json',encounters=encounters,fields=fields,heldItems=held,runtimeMethods=['land','surf','oldRod'],retainedMetadataOnlyMethods=['rockSmash','goodRod','superRod']),
-      'machines.json':dict(previousSpeciesCount=139,speciesCount=146,machineCount=39,additions=cells,itemsAdded=[]),
     }
     items_text=read('src/data/items.json');source_items=json.loads(items_text)['items']
     constants=read('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
@@ -165,5 +149,5 @@ def main():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=18,battles=20,owned=146,opponents=180,machines=39),indent=2, default=item_json))
+    print(json.dumps(dict(checked=a.check,trainers=18,battles=20,encounterMaps=11,pickups=13),indent=2, default=item_json))
 if __name__=='__main__':main()

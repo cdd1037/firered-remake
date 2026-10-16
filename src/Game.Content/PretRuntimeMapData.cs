@@ -10,12 +10,9 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record PretRuntimeMapBehavior(int Id, string Name);
-public sealed record PretRuntimeMapEntry(string StableId, string Path);
-internal sealed record PretRuntimeMapRegistryEntry(string Path);
-internal sealed record PretRuntimeMapRegistry(int SchemaVersion,
-    PretWorldMetadata Metadata);
+public sealed record PretRuntimeMapEntry(string StableId, string Path, string SourceMapSymbol, string? Variant = null, string? PlayerTexturePath = null, string? Layout = null, bool UsesLocalBorder = true);
 internal sealed record PretRuntimeMapManifest(int SchemaVersion, ImmutableArray<PretRuntimeMapEntry> Maps,
-    PretRuntimeMapRegistryEntry SourceRegistry);
+    ImmutableDictionary<string, string> MapSymbols);
 internal sealed record PretRuntimeMapDocument(int SchemaVersion, string StableId, string SourceMapSymbol, string SourceMapName,
     int Width, int Height, int TileSize, int BorderWidth, int BorderHeight, string TexturePath,
     ImmutableArray<PretWorldArtifact> Artifacts, PretWorldSpawn? TechnicalSpawn, JsonElement Events,
@@ -30,59 +27,65 @@ public sealed class PretRuntimeMapCatalog
 {
     public ImmutableDictionary<MapId, PretRuntimeMapData> Maps { get; }
     public ImmutableArray<PretRuntimeMapEntry> Entries { get; }
-    public PretWorldMetadata BaseMetadata { get; }
-    private PretRuntimeMapCatalog(ImmutableDictionary<MapId, PretRuntimeMapData> maps,
-        ImmutableArray<PretRuntimeMapEntry> entries, PretWorldMetadata baseMetadata)
-        => (Maps, Entries, BaseMetadata) = (maps, entries, baseMetadata);
+    public ImmutableDictionary<string, PretRuntimeMapData> MapsByPath { get; }
+    private readonly ImmutableDictionary<string, MapId> _mapIds;
+    public MapId Resolve(string symbol) => symbol == "MAP_DYNAMIC" ? PretRocketHideoutRegion.DynamicMapId
+        : _mapIds.TryGetValue(symbol, out var id) ? id
+        : throw new InvalidDataException("Unknown world map symbol: " + symbol);
 
-    public static PretRuntimeMapCatalog Load(string directory)
+    private PretRuntimeMapCatalog(ImmutableDictionary<MapId, PretRuntimeMapData> maps,
+        ImmutableDictionary<string, PretRuntimeMapData> mapsByPath, ImmutableArray<PretRuntimeMapEntry> entries,
+        ImmutableDictionary<string, MapId> mapIds)
+        => (Maps, MapsByPath, Entries, _mapIds) = (maps, mapsByPath, entries, mapIds);
+
+    public static PretRuntimeMapCatalog Load(string path)
     {
-        var manifest = PretRuntimeMapValidation.Decode<PretRuntimeMapManifest>(File.ReadAllBytes(directory));
-        PretRuntimeMapValidation.Require(manifest.SchemaVersion == 3 &&
-            !manifest.Maps.IsDefaultOrEmpty,
-            "Unsupported runtime map format.");
+        PretRuntimeMapValidation.RequireNoLinks(Path.GetDirectoryName(Path.GetFullPath(path))!, Path.GetFileName(path));
+        var manifest = PretRuntimeMapValidation.Decode<PretRuntimeMapManifest>(File.ReadAllBytes(path));
+        PretRuntimeMapValidation.Require(manifest.SchemaVersion == 3 && !manifest.Maps.IsDefaultOrEmpty,
+            "Unsupported current world format.");
+        PretRuntimeMapValidation.Require(manifest.MapSymbols is { Count: > 0 },
+            "Missing current world symbol registry.");
+        foreach (var (symbol, stableId) in manifest.MapSymbols!)
+            PretRuntimeMapValidation.Require(symbol.StartsWith("MAP_", StringComparison.Ordinal) &&
+                !string.IsNullOrWhiteSpace(stableId), "Invalid current world symbol identity.");
+        var mapIds = manifest.MapSymbols.ToImmutableDictionary(p => p.Key, p => new MapId(p.Value), StringComparer.Ordinal);
+        MapId Resolve(string symbol) => symbol == "MAP_DYNAMIC" ? PretRocketHideoutRegion.DynamicMapId
+            : mapIds.TryGetValue(symbol, out var id) ? id
+            : throw new InvalidDataException("Unknown world map symbol: " + symbol);
+        var ordinary = manifest.Maps.Where(e => e.Variant is null).ToArray();
+        PretRuntimeMapValidation.Require(ordinary.Length > 0 && ordinary.Select(e => e.StableId).Distinct().Count() == ordinary.Length &&
+            ordinary.Select(e => e.SourceMapSymbol).Distinct().Count() == ordinary.Length,
+            "Duplicate ordinary world map identity.");
+        var ordinaryIds = ordinary.Select(e => e.StableId).ToHashSet(StringComparer.Ordinal);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretRuntimeMapData>();
-        var mapIds = new Dictionary<string, MapId>(StringComparer.Ordinal);
-        MapId Resolve(string symbol) => mapIds.TryGetValue(symbol, out var id) ? id
-            : symbol == "MAP_DYNAMIC" ? PretRocketHideoutRegion.DynamicMapId
-            : PretFuchsiaGymRegion.MapIdFromSourceSymbol(symbol);
+        var byPath = ImmutableDictionary.CreateBuilder<string, PretRuntimeMapData>(StringComparer.Ordinal);
+        var variants = new HashSet<(string, string)>();
         foreach (var entry in manifest.Maps)
         {
-            var file = PretRuntimeMapValidation.SafeFile(PretRuntimeMapValidation.GeneratedRoot(directory), entry.Path);
+            PretRuntimeMapValidation.Require(mapIds.TryGetValue(entry.SourceMapSymbol, out var id) && id.Value == entry.StableId,
+                "World index symbol identity differs.");
+            if (entry.Variant is not null)
+                PretRuntimeMapValidation.Require(!string.IsNullOrWhiteSpace(entry.Variant) && ordinaryIds.Contains(entry.StableId) &&
+                    variants.Add((entry.StableId, entry.Variant)), "Invalid or duplicate world layout variant.");
+            var file = PretRuntimeMapValidation.SafeFile(PretRuntimeMapValidation.GeneratedRoot(path), entry.Path);
+            PretRuntimeMapValidation.RequireNoLinks(PretRuntimeMapValidation.GeneratedRoot(path), entry.Path);
             var map = PretRuntimeMapData.Decode(File.ReadAllBytes(file), entry.StableId, Resolve);
-            PretRuntimeMapValidation.Require(mapIds.TryAdd(map.SourceMapSymbol, map.Id), "Duplicate runtime map source symbol.");
-            PretRuntimeMapValidation.Require(maps.TryAdd(map.Id, map), "Duplicate runtime map ID.");
+            PretRuntimeMapValidation.Require(map.SourceMapSymbol == entry.SourceMapSymbol,
+                "World payload source symbol differs from index.");
+            PretRuntimeMapValidation.Require(byPath.TryAdd(entry.Path, map), "Duplicate world map path.");
+            if (entry.Variant is null) maps.Add(map.Id, map);
         }
-        foreach (var map in maps.Values)
+        foreach (var map in byPath.Values)
+        {
             foreach (var warp in map.FieldWarps)
-                if (maps.TryGetValue(warp.DestinationMapId, out var target))
+                if (maps.TryGetValue(warp.DestinationMapId, out var target) && warp.DestinationWarpId >= 0)
                     PretRuntimeMapValidation.Require(warp.DestinationWarpId < target.FieldWarps.Length,
                         "Runtime warp endpoint is outside its destination.");
-        return new(maps.ToImmutable(), manifest.Maps, LoadBaseMetadata(directory, manifest.SourceRegistry));
-    }
-
-    // The Gym catalog references its canonical compact map; its region supplies source metadata.
-    internal PretRuntimeMapCatalog FuchsiaGymPackage(string projectRoot)
-    {
-        const string filename = "fuchsia-city-gym.json";
-        var directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/maps/regions/fuchsia-gym");
-        var manifestBytes = File.ReadAllBytes(Path.Combine(directory, "manifest.json"));
-        using var manifest = JsonDocument.Parse(manifestBytes);
-        var outputs = manifest.RootElement.GetProperty("outputs").EnumerateArray().ToDictionary(o => o.GetProperty("path").GetString()!, StringComparer.Ordinal);
-        _ = outputs[filename];
-        var bytes = File.ReadAllBytes(Path.Combine(directory, filename));
-        var entry = new PretRuntimeMapEntry("map.fuchsia-city-gym","maps/regions/fuchsia-gym/" + filename);
-        var map = PretRuntimeMapData.Decode(bytes, entry);
-        return new(ImmutableDictionary<MapId, PretRuntimeMapData>.Empty.Add(map.Id, map), [entry], BaseMetadata);
-    }
-
-    private static PretWorldMetadata LoadBaseMetadata(string directory, PretRuntimeMapRegistryEntry entry)
-    {
-        var registry = PretRuntimeMapValidation.Decode<PretRuntimeMapRegistry>(
-            File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(PretRuntimeMapValidation.GeneratedRoot(directory), entry.Path)));
-        PretRuntimeMapValidation.Require(registry.SchemaVersion == 3,
-            "Unsupported runtime source registry format.");
-        return registry.Metadata;
+            if (map.Events.GetProperty("connections") is { ValueKind: JsonValueKind.Array } connections)
+                foreach (var connection in connections.EnumerateArray()) _ = Resolve(connection.GetProperty("map").GetString()!);
+        }
+        return new(maps.ToImmutable(), byPath.ToImmutable(), manifest.Maps, mapIds);
     }
 
 }
@@ -100,6 +103,7 @@ public sealed class PretRuntimeMapData : IFieldMap
     private readonly ImmutableDictionary<int, string> _behaviors;
     private readonly Func<string, MapId> _mapIdFromSymbol;
     public MapId Id { get; }
+    internal MapId ResolveMapSymbol(string symbol) => _mapIdFromSymbol(symbol);
     public int Width => _data.Width;
     public int Height => _data.Height;
     public int TileSize => _data.TileSize;
@@ -125,7 +129,7 @@ public sealed class PretRuntimeMapData : IFieldMap
     {
         _data = data; _blocks = blocks; _borderBlocks = borderBlocks; _metatiles = metatiles; _behaviors = behaviors;
         Id = new(data.StableId);
-        _mapIdFromSymbol = mapResolver ?? PretFuchsiaGymRegion.MapIdFromSourceSymbol;
+        _mapIdFromSymbol = mapResolver ?? (symbol => throw new InvalidDataException("A world symbol resolver is required: " + symbol));
     }
 
     public TileCell? GetTile(int x, int y)
@@ -311,6 +315,12 @@ internal static class PretRuntimeMapValidation
         Require(!string.IsNullOrWhiteSpace(relative) && !Path.IsPathRooted(relative) && !relative.Contains('\\') &&
             !relative.Contains(':') && relative.Split('/').All(p => p is not ("" or "." or "..")), "Unsafe runtime map path.");
         return Path.Combine(Path.GetFullPath(root), relative);
+    }
+    internal static void RequireNoLinks(string directory, string relative)
+    {
+        var path = SafeFile(directory, relative);
+        for (string? current = path; current is not null; current = Path.GetDirectoryName(current))
+            Require((File.GetAttributes(current) & FileAttributes.ReparsePoint) == 0, "Runtime map symlink rejected.");
     }
     internal static T Decode<T>(byte[] bytes)
     {

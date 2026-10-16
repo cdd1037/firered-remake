@@ -17,7 +17,7 @@ public sealed partial class PretCampaignCatalog
     public MachineCatalog FightingDojoMachines { get; }
     public FightingDojoTrainerCatalog FightingDojoTrainers { get; }
 
-    private static void ValidateFightingDojoComposition(PretFightingDojoRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateFightingDojoComposition(PretFightingDojoRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
         var id = new MapId("map.saffron-city-dojo");
         if (region.NewMaps.Count != 1 ) throw new InvalidDataException("fighting_dojo_map_composition");

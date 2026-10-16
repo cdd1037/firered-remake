@@ -56,7 +56,7 @@ public sealed class LoreleiHouseContentTests
         CollectionAssert.AreEqual(new[] { "UpdateLoreleiDollCollection" }, transition.Instructions[0].Args.ToArray());
         Assert.AreEqual(StoryOp.End, transition.Instructions[1].Op);
         var presentation = PretCampaignMapPresentation.Create(content)[House];
-        Assert.AreEqual(content.FourIslandRegion!.NpcSourcePath, presentation.NpcSourcePath);
+        Assert.IsTrue(presentation.OverworldCatalogPath.EndsWith("sprites/overworld/catalog.json", StringComparison.Ordinal));
         Assert.IsTrue(presentation.UsesLocalBorder);
     }
 

@@ -58,9 +58,6 @@ internal static class FourIslandPresentationAssets
             manifest.GetProperty("trainers")[0].GetProperty("trainer").GetString() != "pret:TRAINER_TEAM_ROCKET_GRUNT_45" || !manifest.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("item").GetString()).ToHashSet().SetEquals(
                 ["pret:ITEM_HM07", "pret:ITEM_NEVER_MELT_ICE"]) || !manifest.GetProperty("tiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).ToHashSet().SetEquals([0x35A, 0x35B]))
             throw new InvalidDataException("Four Island presentation inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Four Island cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

@@ -14,7 +14,6 @@ public sealed partial class PretCampaignCatalog
     public PretCinnabarRegion? CinnabarRegion{get;}
     public PretCinnabarArt? CinnabarArt{get;}
     public PretCinnabarPresentation? CinnabarPresentation{get;}
-    public SilphPokemonDocument? CinnabarPokemon{get;}
     public PretCinnabarItemsDocument? CinnabarItems{get;}
     public GamePokemonCatalog? CinnabarOwnership{get;}
     public GameOpponentPokemonCatalog? CinnabarOpponents{get;}
@@ -22,8 +21,6 @@ public sealed partial class PretCampaignCatalog
     public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
     public bool CinnabarEnabled=>CinnabarRegion is not null;
 
-    private string? CinnabarSpeciesName(int species)=>CinnabarPokemon?.SpeciesNames.FirstOrDefault(n=>
-        CinnabarPokemon.Species.Concat(CinnabarPokemon.OpponentSpecies).Any(s=>s.SourceSpeciesId==species&&s.Id==n.Id))?.Name;
 
     private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)
     {

@@ -30,9 +30,9 @@ public sealed partial class PretCampaignCatalog
             "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId);
     }
 
-    private static void ValidateCopycatHouseComposition(PretCopycatHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateCopycatHouseComposition(PretCopycatHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
-        if (house.NewMaps.Count != 2 || maps.Count != previous.Count + 2 )
+        if (house.NewMaps.Count != 2 )
             throw new InvalidDataException("copycat_map_composition");
         var town = maps[new("map.saffron-city")];
         var first = house.NewMaps[PretCopycatHouse.Floor1MapId];

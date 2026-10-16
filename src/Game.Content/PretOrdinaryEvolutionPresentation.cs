@@ -71,9 +71,7 @@ public static class PretOrdinaryEvolutionPresentation
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(Species) ||
             manifest.GetProperty("inheritedSprites").GetArrayLength() != 16 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 4 ||
-            manifest.GetProperty("footprints").GetArrayLength() != 4 ||
-            manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 0 ||
-            manifest.GetProperty("audio").GetProperty("inheritedCueCount").GetInt32() != 4)
+            manifest.GetProperty("footprints").GetArrayLength() != 4)
             throw new InvalidDataException("Ordinary evolution presentation inventory differs.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
@@ -131,39 +129,6 @@ public static class PretOrdinaryEvolutionPresentation
                     sprite.GetProperty("sourceWidth").GetInt32() != row.GetProperty("sourceWidth").GetInt32() ||
                     sprite.GetProperty("sourceHeight").GetInt32() != row.GetProperty("sourceHeight").GetInt32())
                     throw new InvalidDataException("Ordinary evolution source battler geometry differs.");
-        }
-        var cues = manifest.GetProperty("audio").GetProperty("cues").EnumerateArray().ToArray();
-        if (!cues.Select(c => c.GetProperty("cue").GetProperty("species").GetInt32()).SequenceEqual(Species))
-            throw new InvalidDataException("Ordinary evolution inherited cry inventory differs.");
-        foreach (var row in cues)
-        {
-            using var synth = JsonDocument.Parse(Read(row.GetProperty("inheritedManifest").GetString()!));
-            var cue = row.GetProperty("cue");
-            int species = cue.GetProperty("species").GetInt32();
-            string name = dex.Entries.Single(e => e.SourceSpeciesId == species).Name;
-            if (cue.GetProperty("id").GetString() != "CRY_" + name + "_NORMAL" || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
-                cue.GetProperty("priority").GetInt32() != 10 ||
-                cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
-                cue.TryGetProperty("cryMode", out var mode) && mode.GetInt32() != 0 ||
-                cue.GetProperty("songAddress").GetInt32() != 0 || cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null ||
-                !synth.RootElement.GetProperty("cues").EnumerateArray().Any(old => JsonElement.DeepEquals(old, cue)))
-                throw new InvalidDataException("Ordinary evolution inherited normal cry differs.");
-        }
-        var cryBytes = Read("content/generated/audio/synth/normal-cries.bin");
-        var cryRows = manifest.GetProperty("audio").GetProperty("normalCries").EnumerateArray().ToArray();
-        if (!cryRows.Select(r => r.GetProperty("species").GetInt32()).SequenceEqual(Species))
-            throw new InvalidDataException("Ordinary evolution existing cry sample inventory differs.");
-        foreach (var row in cryRows)
-        {
-            int species = row.GetProperty("species").GetInt32();
-            var record = Enumerable.Range(0, (cryBytes.Length - 12) / 16).Select(i => 12 + i * 16)
-                .Single(i => System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(cryBytes.AsSpan(i)) == species);
-            if (System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(cryBytes.AsSpan(record + 2)) != row.GetProperty("cryIndex").GetInt32() ||
-                row.GetProperty("cryIndex").GetInt32() != (species - 1) ||
-                System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(cryBytes.AsSpan(record + 4)) != row.GetProperty("sampleCount").GetUInt32() ||
-                System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(cryBytes.AsSpan(record + 8)) != row.GetProperty("payloadBytes").GetUInt32() ||
-                (cryBytes[record + 12] != 0) != row.GetProperty("guardStored").GetBoolean())
-                throw new InvalidDataException("Ordinary evolution existing cry sample identity differs.");
         }
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));
     }

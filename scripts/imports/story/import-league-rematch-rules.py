@@ -19,13 +19,6 @@ TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-league-rematch-trainers-v1'
 TRAINERS = ['ELITE_FOUR_LORELEI_2','ELITE_FOUR_BRUNO_2','ELITE_FOUR_AGATHA_2','ELITE_FOUR_LANCE_2',
             'CHAMPION_REMATCH_SQUIRTLE','CHAMPION_REMATCH_BULBASAUR','CHAMPION_REMATCH_CHARMANDER']
-MISSING = ['CROBAT','MISDREAVUS','HERACROSS','KINGDRA','TYRANITAR']
-DEPENDENCIES = (
-    'content/generated/data/pokemon/celio/pokemon.json',
-    'content/generated/data/regions/five-island/pokemon.json',
-    'scripts/recipes/story/five-island-predecessor.json',
-    'content/generated/data/pokemon/cerulean-cave/pokemon.json',
-)
 
 def need(value, message):
     if not value: raise ValueError(message)
@@ -55,15 +48,9 @@ def generate(reference, dependency):
         data=(dependency/path).read_bytes()
         dependencies.append(dict(path=path));return json.loads(data)
     canonical=dependent('content/generated/data/pokemon/canonical/catalog.json')
-    deps={path:dependent(path) for path in DEPENDENCIES}
-    celio=deps['content/generated/data/pokemon/celio/pokemon.json']
-    five_pokemon=deps['content/generated/data/regions/five-island/pokemon.json']
-    baseline=deps['scripts/recipes/story/five-island-predecessor.json']
-    cave=deps['content/generated/data/pokemon/cerulean-cave/pokemon.json']
+    admissions=dependent('data/game-pokemon.json')
+    opponents={row['id']['value'][5:] for row in admissions['opponents']}
     species={s['id']['value'][5:]:s for s in canonical['species']}
-    owned=({s[5:] for s in baseline['ownedSpecies']} | set(five_pokemon['ownedSpeciesAdded'])) | set(celio['speciesAdded']) | set(cave['speciesAdded'])
-    previous={s[5:] for s in baseline['opponentSpecies']} | owned | set(five_pokemon['opponentSpeciesAdded'])
-    need(len(owned)==139 and len(previous)==163 and owned<=previous,'Exact current Cave predecessor scope')
     trainers = selected_trainers(read, ['TRAINER_' + short for short in TRAINERS])
     battles, move_defs = [], {}
     for short, trainer in zip(TRAINERS, trainers):
@@ -91,8 +78,7 @@ def generate(reference, dependency):
             postBattleText='',entryScript='EventScript_DoNoIntroTrainerBattle',callback='CB2_EndTrainerBattle',source=ref(script_path,label,script),
             postBattleScript=None,musicOption=None))
     required={m['species']['value'][5:] for t in trainers for m in t['party']}
-    missing=sorted(required-previous,key=lambda s:species[s]['sourceSpeciesId'])
-    need(missing==['SPECIES_'+s for s in MISSING],'New opponent closure differs')
+    need(required <= opponents, 'Rematch teams must be admitted by the current game')
     need(len(trainers)==7 and len(required)==25 and sum(len(t['party']) for t in trainers)==38,'League scope differs')
     need([t['sourceTrainerId'] for t in trainers]==[735,736,737,738,739,740,741],'Trainer IDs differ')
     for i,t in enumerate(trainers):
@@ -125,9 +111,7 @@ def generate(reference, dependency):
          '#define ISO_RANDOMIZE1(val)(RAND_MULT * (val) + 24691)' in read('include/random.h'), 'Source RNG')
     need('} while (shinyValue < SHINY_ODDS);' in read('src/pokemon.c') and
          re.search(r'^#define SHINY_ODDS\s+8(?:\s|$)',read('include/constants/pokemon.h'),re.M), 'Source no-shiny rejection')
-    outputs={'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs),
-        'pokemon.json':dict(
-            ownedSpeciesAdded=[],opponentSpecies=[dict(id=species[s]['id'],evolutions=species[s]['evolutions']) for s in missing])}
+    outputs={'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=move_defs)}
     return outputs,raw
 
 def main():
@@ -142,6 +126,6 @@ def main():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
         else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=7,members=38,trainerSpecies=25,newOpponentSpecies=5,newOwnedSpecies=0,
+    print(json.dumps(dict(checked=a.check,trainers=7,members=38,trainerSpecies=25,
         moves=len(docs['trainers.json']['resolvedMoves']),sourceInputs=len(raw),files=len(files)),indent=2))
 if __name__=='__main__':main()

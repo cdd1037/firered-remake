@@ -6,9 +6,9 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    private static void ValidateTrainerFanClubComposition(PretTrainerFanClub room,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateTrainerFanClubComposition(PretTrainerFanClub room,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
-        ValidateSourceHouseComposition("trainer_fan_club", room.NewMaps, maps, previous, scripts,
+        ValidateSourceHouseComposition("trainer_fan_club", room.NewMaps, maps, scripts,
             "map.saffron-city", 14, PretTrainerFanClub.ScriptPath,
             "SaffronCity_PokemonTrainerFanClub_EventScript_MeetFirstFans");
         if (            scripts.UnsupportedInstructions.Any(d => d.Path.StartsWith(PretTrainerFanClub.ScriptPath, StringComparison.Ordinal)))

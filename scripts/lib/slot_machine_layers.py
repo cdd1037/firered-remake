@@ -61,7 +61,6 @@ def bake(outputs, manifest):
     for line in layout['matchLines']:line.pop('tileIndices')
     for key in ('buttonTileIndices','normalLinePalette','betLinePalette','winningLinePalette','pressedButtonTileBase'):
         layout.pop(key,None)
-    result={'presentation.png':page,'layout.json':(json.dumps(document,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode(),
-            'synth-manifest.json':outputs['synth-manifest.json']}
+    result={'presentation.png':page,'layout.json':(json.dumps(document,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()}
     manifest=dict(manifest,assets=rows,outputs=[dict(path=p) for p in sorted(result)])
     return result,manifest

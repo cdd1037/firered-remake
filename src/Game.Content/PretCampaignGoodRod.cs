@@ -12,10 +12,10 @@ public sealed partial class PretCampaignCatalog
     public ImmutableDictionary<MapId, OldRodEncounterTable> GoodRodEncounters { get; }
     public FishingTaskProfile FishingTables { get; }
 
-    private static void ValidateGoodRodComposition(PretGoodRodService service,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateGoodRodComposition(PretGoodRodService service,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
         if (service.NewMaps.Count != 1 ||
-            !maps.Keys.Except(previous.Keys).SequenceEqual([PretGoodRodService.HouseMapId]) )
+            !maps.ContainsKey(PretGoodRodService.HouseMapId) )
             throw new InvalidDataException("good_rod_current_map_composition");
 
         var city = maps[new("map.fuchsia-city")];

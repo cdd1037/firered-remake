@@ -95,18 +95,18 @@ public sealed class GeneratedDomainCatalogTests
         try
         {
             Assert.IsNotNull(PretFameChecker.Load(root));
-            Assert.IsNotNull(PretCapeBrinkTutor.Load(root));
-            Assert.IsNotNull(PretFourIslandDayCare.Load(root));
-            Assert.IsNotNull(PretGoodRodService.Load(root));
-            Assert.IsNotNull(PretNpcTradeElyssa.Load(root));
-            Assert.IsNotNull(PretNpcTradeHaden.Load(root));
-            Assert.IsNotNull(PretNpcTrades.Load(root, SourceMechanicsCatalogLoader.LoadAuthenticated(PretCanonicalPokemonCatalog.Load(root, root), root).Catalog));
-            Assert.IsNotNull(PretOriginalTmAcquisition.Load(root));
-            Assert.IsNotNull(PretOriginalTutorRooms.Load(root));
-            Assert.IsNotNull(PretRoute5DayCare.Load(root));
-            Assert.IsNotNull(PretSuperRodService.Load(root));
-            Assert.IsNotNull(PretTrainerFanClub.Load(root));
-            Assert.AreEqual(4, PretSafariEncounters.Load(PretSafariRegion.Load(root)).Tables.Count);
+            Assert.IsNotNull(PretCapeBrinkTutor.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretFourIslandDayCare.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretGoodRodService.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretNpcTradeElyssa.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretNpcTradeHaden.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretNpcTrades.Load(PretCurrentWorld.Load(root), SourceMechanicsCatalogLoader.LoadAuthenticated(PretCanonicalPokemonCatalog.Load(root, root), root).Catalog));
+            Assert.IsNotNull(PretOriginalTmAcquisition.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretOriginalTutorRooms.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretRoute5DayCare.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretSuperRodService.Load(PretCurrentWorld.Load(root)));
+            Assert.IsNotNull(PretTrainerFanClub.Load(PretCurrentWorld.Load(root)));
+            Assert.AreEqual(4, PretSafariEncounters.Load(PretSafariRegion.Load(PretCurrentWorld.Load(root))).Tables.Count);
             var pokemon = SharedMachineCatalogTests.Pokemon(root);
             var currentMachines = SharedMachineCatalog.LoadProject(root).LoadCurrent(pokemon);
             Assert.AreEqual(57, currentMachines.Machines.Length);

@@ -32,10 +32,10 @@ public sealed partial class PretCampaignCatalog
         foreach(var expected in MtMoonLandEncounterTables.All)
         {
             var entries=(expected.Map.Value=="map.route-4"?route3!.Encounters:moon.Encounters).EnumerateArray()
-                .Where(e=>PretMtMoonRegion.MapIdFromSourceSymbol(e.GetProperty("table").GetProperty("map").GetString()!)==expected.Map).ToArray();
+                .Where(e=>PretMtMoonRegion.MapIdFromSourceSymbol(e.GetProperty("map").GetString()!)==expected.Map).ToArray();
             if(entries.Length!=1)throw new InvalidDataException("mtmoon_encounter_table_missing");
-            var entry=entries[0];var table=entry.GetProperty("table");
-            var land=table.GetProperty("land_mons");var weights=entry.GetProperty("slotWeights").EnumerateArray().Select(v=>v.GetInt32()).ToArray();
+            var entry=entries[0];var table=entry;
+            var land=table.GetProperty("land_mons");var weights=EarlyLandEncounterRules.SlotWeights;
             var parsed=new EarlyLandEncounterTable(PretMtMoonRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),weights[i])).ToImmutableArray());
             EarlyLandEncounterRules.ValidateTable(parsed);
             if(parsed.Map!=expected.Map||parsed.RawEncounterRate!=expected.RawEncounterRate||!parsed.Slots.SequenceEqual(expected.Slots))

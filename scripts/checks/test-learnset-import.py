@@ -164,15 +164,29 @@ class LearnsetImportTests(unittest.TestCase):
                         self.assertEqual(json.loads((GENERATED / 'sprites/pokemon' / region / name).read_bytes()),
                                          json.loads(actual[name]))
 
-    def test_late_species_regeneration_matches_all_fields(self):
-        for region in ('celio', 'cerulean-cave'):
-            with self.subTest(region=region):
-                importer = module('imports/pokemon/import-' + region + '-pokemon')
-                actual = importer.generate(None, ROOT, RAW)
-                self.assertEqual({'pokemon.json', 'machines.json'}, set(actual))
-                self.assertFalse((GENERATED / 'data/pokemon' / region / 'source-input-hashes.json').exists())
-                self.assertEqual((GENERATED / 'data/pokemon' / region / 'pokemon.json').read_bytes(),
-                                 importer.encoded(actual['pokemon.json']))
+    def test_late_encounters_use_admitted_canonical_learnsets(self):
+        document = json.loads((GENERATED / 'data/pokemon/canonical/catalog.json').read_bytes())
+        species = {row['id']['value']: row for row in document['species']}
+        owned = {row['id']['value'] for row in json.loads((ROOT / 'data/game-pokemon.json').read_bytes())['owned']}
+        raw_learnsets = source_learnsets()
+        symbols = {'SPECIES_ENTEI', 'SPECIES_RAIKOU', 'SPECIES_SUICUNE', 'SPECIES_MEWTWO'}
+        wild = json.loads((RAW / 'src/data/wild_encounters.json').read_bytes())
+        cave_maps = {'MAP_CERULEAN_CAVE_1F', 'MAP_CERULEAN_CAVE_2F', 'MAP_CERULEAN_CAVE_B1F'}
+        encounters = [row for group in wild['wild_encounter_groups'] for row in group['encounters']
+                      if row['map'] in cave_maps and row['base_label'].endswith('_FireRed')]
+        self.assertEqual(cave_maps, {row['map'] for row in encounters})
+        for row in encounters:
+            for table in row.values():
+                if isinstance(table, dict) and 'mons' in table:
+                    symbols.update(slot['species'] for slot in table['mons'])
+        for symbol in symbols:
+            with self.subTest(species=symbol):
+                identity = 'pret:' + symbol
+                self.assertIn(identity, owned)
+                self.assertEqual(raw_learnsets[symbol], species[identity]['levelUpMoves'])
+        for family in ('celio', 'cerulean-cave'):
+            self.assertFalse((GENERATED / 'data/pokemon' / family / 'pokemon.json').exists())
+            self.assertFalse((GENERATED / 'data/pokemon' / family / 'machines.json').exists())
 
     def test_power_plant_runtime_outputs_omit_unused_proof_inventories(self):
         importer = module('imports/pokemon/import-power-plant-pokemon')
@@ -185,7 +199,8 @@ class LearnsetImportTests(unittest.TestCase):
         manifest = result['manifest']
         self.assertNotIn('inputs', manifest)
         self.assertNotIn('inheritedInputs', manifest)
-        self.assertTrue(all('decodedSha256' not in row for row in manifest['audio']['cries']))
+        self.assertNotIn('cries', manifest['audio'])
+        self.assertEqual('CRY_ZAPDOS_ENCOUNTER', manifest['audio']['encounter']['zapdos']['cry'])
         for path, data in outputs.items():
             if path.startswith('content/generated/') and path.endswith('.json'):
                 self.assertEqual(json.loads(data), json.loads((ROOT / path).read_bytes()), path)
@@ -265,7 +280,7 @@ class LearnsetImportTests(unittest.TestCase):
         from pokemon_import_io import canonical as encode
         value = {'text': 'Pokémon \n text', 'array': [3, 1, {'nested': True}], 'null': None}
         for writer in [encode, *(module('imports/pokemon/import-' + name + '-pokemon').encoded
-                                 for name in ('celio', 'cerulean-cave', 'power-plant'))]:
+                                 for name in ('power-plant',))]:
             actual = writer(value)
             self.assertEqual(value, json.loads(actual))
             self.assertEqual(actual, writer(value))

@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
@@ -27,6 +28,21 @@ def load(relative):
 
 
 class TrainerImportTests(unittest.TestCase):
+    def test_early_bindings_compile_without_map_dependency_documents(self):
+        early = load('imports/trainers/import-early-trainer-catalogs.py')
+        cerulean = load('imports/trainers/import-cerulean-trainer-catalog.py')
+        original = Path.read_text
+        def raw_only(path, *args, **kwargs):
+            if 'content/generated/maps' in path.as_posix():
+                raise AssertionError('Trainer compilation read a retired map stage')
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'read_text', raw_only):
+            documents = [(region, early.compile_catalog(ROOT, region)) for region in early.COUNTS]
+            documents.append(('cerulean/trainers', cerulean.compile_catalog(ROOT)))
+            for name, document in documents:
+                actual = trainer_json(ROOT / 'content/generated', document, check=True)
+                self.assertEqual((ROOT / f'content/generated/data/trainer-battles/{name}.json').read_bytes(), actual)
+
     def test_all_regional_cli_outputs_and_shared_contributions(self):
         with tempfile.TemporaryDirectory() as temporary:
             generated = Path(temporary) / 'generated'
@@ -50,7 +66,7 @@ class TrainerImportTests(unittest.TestCase):
                        'fighting-dojo', 'viridian-gym', 'seafoam', 'victory-road', 'pokemon-league', 'league-rematch', 'sevii-ruby'):
             with self.subTest(region=region):
                 module = load(f'imports/story/import-{region}-rules.py')
-                args = [RAW, ROOT] + ([ROOT] if region in ('victory-road', 'sevii-ruby') else [])
+                args = [RAW] if region in ('sevii-ruby', 'fighting-dojo', 'seafoam') else [RAW, ROOT]
                 result = module.generate(*args)
                 docs = result[0] if isinstance(result, tuple) else result
                 document = docs['trainers.json']
@@ -64,9 +80,9 @@ class TrainerImportTests(unittest.TestCase):
                         '--rules-root', str(ROOT), '--check'], check=True, capture_output=True)
 
     def test_route16_double_team_uses_shared_parser(self):
-        importer = load('imports/story/import-route16-fly-house.py')
-        reader = load('imports/source/import-cinnabar-source-preparation.py')
-        document = importer.trainer_inventory(reader.Source(raw_root=RAW))
+        from field_service_features import north_trainers
+        from world_source import WorldSource
+        document = north_trainers(WorldSource(RAW))
         self.assertEqual(1, len(document['trainers']))
         self.assertTrue(document['trainers'][0]['doubleBattle'])
         self.assertEqual(2, len(document['battles']))
@@ -123,13 +139,10 @@ class TrainerImportTests(unittest.TestCase):
         self.assertEqual({'catalogs': 5, 'trainers': 30, 'checked': True}, json.loads(result.stdout))
         with tempfile.TemporaryDirectory() as temporary:
             isolated = Path(temporary)
-            for region in module.COUNTS:
-                relative = Path('content/generated/maps/regions') / region / 'dependencies.json'
-                target = isolated / relative
-                target.parent.mkdir(parents=True)
-                target.write_bytes((ROOT / relative).read_bytes())
-            # Exercise the actual writer against an isolated project root, with only
-            # its five prepared inputs rather than copied golden output files.
+            raw = isolated / 'content/raw/pokefirered/037335f4'
+            raw.parent.mkdir(parents=True)
+            raw.symlink_to(RAW, target_is_directory=True)
+            # Exercise the writer from pinned raw, with no generated maps or catalogs.
             command = [sys.executable, '-c',
                        "import runpy,sys; from pathlib import Path; "
                        "m=runpy.run_path(sys.argv.pop(1)); "

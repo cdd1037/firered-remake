@@ -132,8 +132,6 @@ def build(lock, raw, reused):
     require(size == old_icon.size == (24, 24) and old_icon.tobytes() == icon, 'Inherited Ground TM pixels differ')
     card = json.loads(reused['content/generated/ui/trainer-card/trainer-card.json'])
     require(any(b['flag'] == 'FLAG_BADGE08_GET' and b['assetId'] == 'badge-8' for b in card['layout']['badges']), 'Earth Badge art missing')
-    audio = json.loads(reused['content/generated/audio/synth/manifest.json'])
-    require(audio['sourceCommit'] == COMMIT and all(sum(c['id'] == cue for c in audio['cues']) == 1 for cue in CUES), 'Inherited synth closure differs')
     movement = source('src/event_object_movement.c')
     require('InitJumpRegular(objectEvent, sprite, DIR_SOUTH, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);' in movement
         and '[JUMP_DISTANCE_FAR]      = 32,' in movement and '[JUMP_DISTANCE_FAR]      = 1,' in movement, 'Source jump timing differs')

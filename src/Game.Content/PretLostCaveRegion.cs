@@ -21,19 +21,16 @@ public sealed class PretLostCaveRegion
     public static MapId EntranceMapId { get; } = new("map.five-island-lost-cave-entrance");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement Items { get; }
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretLostCaveRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string,int> constants)
     {
         NewMaps = maps; Constants = constants;
-        GeneratedDirectory = source.Directory; Catalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json"); Items = source.Document("items.json"); NpcSources = source.Document("npc-source.json");
+        GeneratedDirectory = source.Directory;
+        Contracts = source.Document("contracts.json"); Items = source.Document("items.json");
 
     }
 
@@ -55,40 +52,13 @@ public sealed class PretLostCaveRegion
         };
     }
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        var source = map.Events.GetProperty("connections");
-        var edges = source.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty :
-            source.EnumerateArray().Select(c => new ConnectedFieldConnection(
-                c.GetProperty("direction").GetString() switch
-                {
-                    "up" => Direction.North, "down" => Direction.South,
-                    _ => throw new InvalidDataException("Lost Cave has only original north/south outdoor connections.")
-                }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), edges);
-    }
 
-    public static PretLostCaveRegion Load(string projectRoot)
+
+    public static PretLostCaveRegion Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/lost-cave");
-        var catalog = source.Document("catalog.json");
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Lost Cave and connecting outdoor maps; gameplay and services require separate admission.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = spec.GetProperty("stableId").GetString()!,directory = spec.GetProperty("mapPath").GetString()!;
-            string path = spec.GetProperty("path").GetString()!;
-            Need(path == directory , "Lost Cave compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.TechnicalSpawn is null,
-                "Lost Cave source map identity differs.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, directory),
-                PretOverworldTextures.Resolve(source.Directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            maps.Add(map.Id, map);
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         Need(maps.Values.Select(m => m.SourceMapName).ToHashSet().SetEquals(SourceNames),
             "Lost Cave exact eighteen-map cohort differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);

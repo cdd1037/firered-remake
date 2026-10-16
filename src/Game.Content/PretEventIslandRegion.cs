@@ -13,21 +13,17 @@ public sealed partial class PretEventIslandRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement Items { get; }
     public EventIslandFieldData Field { get; }
-    public JsonElement NpcSources { get; }
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretEventIslandRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        Items = source.Document("items.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json");
+
+
         Field = LoadField(source, constants);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -58,32 +54,14 @@ public sealed partial class PretEventIslandRegion
         "MAP_NAVEL_ROCK_SUMMIT_PATH_5F" => new("map.navel-rock-summit-path-5f"),
         _ => PretSevenIslandRegion.MapIdFromSourceSymbol(symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretEventIslandRegion Load(PretCurrentWorld world)
     {
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown event-island connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
-    }
-    public static PretEventIslandRegion Load(string root)
-    {
+        var root = world.ProjectRoot;
         var source = new SilphSourcePackage(root,"maps/regions/event-island");
 
         var directory = source.Directory;
-        var catalog = source.Document("catalog.json");
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original event-island source maps; application admission remains separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!;
-            var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(source.Read(relative), stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol does not match its ID.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            maps.Add(new(stableId), map);
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "EventIsland target warp index differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);

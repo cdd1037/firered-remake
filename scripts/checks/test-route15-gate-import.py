@@ -1,66 +1,47 @@
 #!/usr/bin/env python3
-"""Offline Route15 upstairs geometry, package ownership and reproduction checks."""
+"""Route15 gate source semantics and final-world pixels without stage-package inventories."""
 import importlib.util
-import json
 from pathlib import Path
 import re
-import struct
-import sys
+import subprocess
 import tempfile
-from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
-
 from PIL import Image, PngImagePlugin
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / 'scripts/lib'))
-from map_runtime import runtime_cells
-
-spec = importlib.util.spec_from_file_location('fuchsia_route_import',
-    ROOT / 'scripts/imports/maps/import-fuchsia-route-region.py')
-IMPORTER = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(IMPORTER)
-RAW = ROOT / 'content/raw/pokefirered/037335f4'
-GENERATED = ROOT / 'content/generated'
-PACKAGE = GENERATED / IMPORTER.PACKAGE
+spec = importlib.util.spec_from_file_location('ordinary_map_oracle', ROOT / 'scripts/checks/test-ordinary-interiors-source.py')
+oracle = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(oracle)
+RAW, GENERATED = oracle.RAW, oracle.GENERATED
+document = oracle.document
+WorldSource, load_selection = oracle.WorldSource, oracle.load_selection
 UPSTAIRS = 'Route15_WestEntrance_2F'
 UPSTAIRS_ID = 'map.route-15-west-entrance-2f'
-
-
-def document(path):
-    return json.loads(path.read_bytes())
+PACKAGE = GENERATED / 'maps/regions/fuchsia-route'
 
 
 class Route15GateImportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.selection = [row for row in load_selection(ROOT / 'data/world-maps.json')
+                         if row['path'].startswith('maps/regions/fuchsia-route/')]
+
     def test_all_owned_maps_preserve_original_events_and_every_source_block(self):
-        layouts = document(RAW / 'data/layouts/layouts.json')['layouts']
-        catalog = document(PACKAGE / 'fuchsia-route-region-catalog.json')
-        self.assertEqual(IMPORTER.CORE[1:], [row['sourceName'] for row in catalog['maps']])
-        for row in catalog['maps']:
+        self.assertTrue(self.selection)
+        for row in self.selection:
             with self.subTest(map=row['sourceName']):
-                source = document(RAW / f"data/maps/{row['sourceName']}/map.json")
-                layout = next(row for row in layouts if row.get('id') == source['layout'])
-                actual = document(PACKAGE / row['mapPath'])
-                self.assertEqual(source, actual['events'])
-                self.assertEqual(row['stableId'], actual['stableId'])
-                self.assertEqual(source['id'], actual['sourceMapSymbol'])
-                self.assertEqual((layout['width'], layout['height']), (actual['width'], actual['height']))
-                self.assertEqual([f"data/maps/{row['sourceName']}/{name}.inc" for name in ('scripts', 'text')],
-                                 actual['scriptPaths'])
-                for border in (False, True):
-                    path = layout['border_filepath' if border else 'blockdata_filepath']
-                    expected = [block for block, in struct.iter_unpack('<H', (RAW / path).read_bytes())]
-                    cells = list(runtime_cells(actual, border=border))
-                    self.assertTrue(cells)
-                    self.assertEqual(expected, [cell['rawBlock'] for cell in cells])
-                    for cell in cells:
-                        primary = cell['metatileId'] < 640
-                        symbol = layout['primary_tileset' if primary else 'secondary_tileset']
-                        attributes = RAW / f'data/tilesets/{IMPORTER.TILESETS[symbol]}/metatile_attributes.bin'
-                        index = cell['metatileId'] if primary else cell['metatileId'] - 640
-                        expected_attribute, = struct.unpack_from('<I', attributes.read_bytes(), index * 4)
-                        self.assertEqual(expected_attribute, cell['rawAttributes'])
+                oracle.assert_raw_geometry(self, row)
+
+    def test_every_source_rendered_layer_matches_final_packed_rgba(self):
+        source, images = WorldSource(RAW), oracle.LogicalImages(GENERATED)
+        count = 0
+        with tempfile.TemporaryDirectory(prefix='route15-pixels-') as temporary:
+            for row in self.selection:
+                with self.subTest(map=row['sourceName']):
+                    count += oracle.assert_raw_pixels(self, row, source, images, temporary)
+        self.assertGreater(count, 0)
+        print(f'Checked {len(self.selection)} Fuchsia-route maps and {count} final RGBA layers')
 
     def test_upstairs_uses_shared_layout_and_original_two_way_stair_endpoints(self):
         upstairs = document(PACKAGE / 'route-15-west-entrance-2f.json')
@@ -76,60 +57,53 @@ class Route15GateImportTests(unittest.TestCase):
         gate16 = document(RAW / 'data/maps/Route16_NorthEntrance_2F/map.json')
         self.assertEqual(gate16['layout'], upstairs['events']['layout'])
 
-    def test_upstairs_admission_keeps_route12_reused_and_package_schemas(self):
-        catalog = document(PACKAGE / 'fuchsia-route-region-catalog.json')
-        runtime = document(PACKAGE / 'runtime-catalog.json')
-        self.assertEqual(catalog['maps'], runtime['maps'])
-        self.assertEqual(1, len(catalog['reusedMaps']))
-        reused, = catalog['reusedMaps']
-        self.assertEqual('map.route-12', reused['stableId'])
-        self.assertEqual('data/maps/Route12/map.json', reused['sourceRef']['path'])
-        self.assertFalse(reused['regenerate'])
+    def test_final_world_has_one_owner_for_route12_and_upstairs(self):
+        index = document(GENERATED / 'maps/world.json')
+        for identity in ('map.route-12', UPSTAIRS_ID):
+            rows = [row for row in index['maps'] if row['stableId'] == identity and not row.get('variant')]
+            self.assertEqual(1, len(rows))
+            self.assertTrue((GENERATED / rows[0]['path']).is_file())
+            if identity == 'map.route-12':
+                self.assertFalse(rows[0]['path'].startswith('maps/regions/fuchsia-route/'))
+            else:
+                self.assertEqual('maps/regions/fuchsia-route/route-15-west-entrance-2f.json', rows[0]['path'])
         self.assertFalse((PACKAGE / 'route-12.json').exists())
-        self.assertFalse(any(row['stableId'] == 'map.route-12' for row in catalog['maps']))
-        self.assertEqual(1, sum(row['stableId'] == UPSTAIRS_ID for row in catalog['maps']))
-        availability = document(PACKAGE / 'availability.json')
-        self.assertIn('MAP_ROUTE15_WEST_ENTRANCE_2F', availability['loadedMapSymbols'])
-        self.assertNotIn('MAP_ROUTE15_WEST_ENTRANCE_2F', availability['deferredDestinations'])
-        self.assertEqual([], availability['enabledServices'])
-        self.assertFalse(availability['completeGame'])
-        self.assertEqual(['Route12_FishingHouse'], IMPORTER.OPTIONAL)
-        manifest = document(PACKAGE / 'manifest.json')
-        paths = [row['path'] for row in manifest['outputs']]
-        self.assertEqual(len(paths), len(set(paths)))
-        self.assertIn('route-15-west-entrance-2f.json', paths)
-        self.assertTrue(all('/' not in path and (PACKAGE / path).is_file() for path in paths))
+        self.assertEqual(UPSTAIRS_ID, index['mapSymbols']['MAP_ROUTE15_WEST_ENTRANCE_2F'])
 
     def test_source_actor_and_binocular_bindings_are_not_replaced(self):
-        events = document(RAW / f'data/maps/{UPSTAIRS}/map.json')
-        objects = [row for row in document(PACKAGE / 'objects.json')['objects'] if row['map'] == UPSTAIRS_ID]
-        self.assertEqual(1, len(objects))
-        actor, = objects
-        self.assertEqual(1, actor['localId'])
-        self.assertEqual(0, actor['sourceObjectIndex'])
-        self.assertEqual(events['object_events'][0], actor['declaration'])
-        self.assertEqual('Route15_WestEntrance_2F_EventScript_Aide', actor['declaration']['script'])
-        runtime = document(PACKAGE / 'route-15-west-entrance-2f.json')
-        self.assertEqual(events['bg_events'], runtime['events']['bg_events'])
-        self.assertEqual([(4, 1), (8, 1)], [(row['x'], row['y']) for row in events['bg_events']])
-        npcs = document(PACKAGE / 'npc-source.json')
-        self.assertIn(dict(graphicsId='OBJ_EVENT_GFX_SCIENTIST'), npcs['graphics'])
-        self.assertEqual(1, len(npcs['dynamicGraphics']))
-        self.assertEqual('OBJ_EVENT_GFX_OMANYTE', npcs['dynamicGraphics'][0]['whenSet'])
-        self.assertEqual('OBJ_EVENT_GFX_KABUTO', npcs['dynamicGraphics'][0]['whenUnset'])
+        source = document(RAW / f'data/maps/{UPSTAIRS}/map.json')
+        actual = document(PACKAGE / 'route-15-west-entrance-2f.json')['events']
+        self.assertEqual(source['object_events'], actual['object_events'])
+        actor, = actual['object_events']
+        self.assertEqual('Route15_WestEntrance_2F_EventScript_Aide', actor['script'])
+        self.assertEqual('OBJ_EVENT_GFX_SCIENTIST', actor['graphics_id'])
+        self.assertEqual(source['bg_events'], actual['bg_events'])
+        self.assertEqual([(4, 1), (8, 1)], [(row['x'], row['y']) for row in actual['bg_events']])
+        sprites = document(GENERATED / 'sprites/overworld/catalog.json')
+        self.assertIn(actor['graphics_id'], sprites)
+        sprite = sprites[actor['graphics_id']]
+        with Image.open(GENERATED / 'sprites/overworld' / sprite['texturePath']) as image:
+            region = sprite['region']
+            self.assertGreater(sprite['frameCount'], 0)
+            self.assertEqual(sprite['frameCount'] * sprite['frameWidth'], region['width'])
+            self.assertLessEqual(region['x'] + region['width'], image.width)
+            self.assertLessEqual(region['y'] + region['height'], image.height)
+        programs = document(GENERATED / 'data/story.json')['Compilation']['Programs']
+        for event in [actor, *actual['bg_events']]:
+            self.assertEqual(f'data/maps/{UPSTAIRS}/scripts.inc', programs[event['script']]['SourcePath'])
 
     def test_raw_source_is_offline_and_rejects_missing_or_escaping_paths(self):
-        with patch.object(IMPORTER, 'git', side_effect=AssertionError('Raw cache must not invoke Git')):
-            source = IMPORTER.Source(raw_root=RAW)
+        with patch.object(subprocess, 'check_output', side_effect=AssertionError('Raw reads must not invoke Git')):
+            source = WorldSource(RAW)
             self.assertEqual('MAP_ROUTE15_WEST_ENTRANCE_2F', source.json(f'data/maps/{UPSTAIRS}/map.json')['id'])
-            for path in ('../outside', '/outside', 'data\\maps\\Route15', 'data/maps/Missing/map.json'):
-                with self.subTest(path=path), self.assertRaises(ValueError):
+            for path in ('../outside', '/outside', 'data/maps/Missing/map.json'):
+                with self.subTest(path=path), self.assertRaises((ValueError, OSError)):
                     source.read(path)
         with tempfile.TemporaryDirectory(prefix='route15-raw-') as temporary:
             raw = Path(temporary)
             (raw / 'input').symlink_to(RAW / f'data/maps/{UPSTAIRS}/map.json')
             with self.assertRaisesRegex(ValueError, 'Symlink'):
-                IMPORTER.Source(raw_root=raw)
+                WorldSource(raw).read('input')
 
     def test_compiled_aide_thresholds_preserve_each_source_file_scope(self):
         compilation = document(GENERATED / 'data/story.json')['Compilation']
@@ -154,37 +128,21 @@ class Route15GateImportTests(unittest.TestCase):
         # bindings are substituted by the compiler, never published globally.
         self.assertEqual(30, document(GENERATED / 'data/constants.json')['REQUIRED_CAUGHT_MONS'])
 
-    def test_reproduction_checks_pixels_for_standalone_and_packed_images(self):
+    def test_pixel_comparison_uses_rgba_not_png_encoding(self):
         with tempfile.TemporaryDirectory(prefix='route15-image-check-') as temporary:
             root = Path(temporary)
-            stage, output = root / 'stage', root / 'output'
-            stage.mkdir(); output.mkdir()
             expected = Image.new('RGBA', (2, 2), (27, 58, 93, 127))
-            expected.save(stage / 'room.png', compress_level=0)
-            metadata = PngImagePlugin.PngInfo(); metadata.add_text('Description', 'Different PNG encoding')
-            expected.save(output / 'room.png', compress_level=9, pnginfo=metadata)
-            manifest = dict(schemaVersion=1, outputs=[dict(path='room.png')])
-            (stage / 'manifest.json').write_bytes(IMPORTER.canonical(manifest))
-            (output / 'manifest.json').write_bytes(IMPORTER.canonical(manifest))
-            self.assertNotEqual((stage / 'room.png').read_bytes(), (output / 'room.png').read_bytes())
-            IMPORTER.check_package(stage, output, root, manifest)
-            Image.new('RGBA', (2, 2), (27, 58, 93, 128)).save(output / 'room.png')
-            with self.assertRaisesRegex(ValueError, 'RGBA differs'):
-                IMPORTER.check_package(stage, output, root, manifest)
-            (output / 'room.png').unlink()
-            (output / 'manifest.json').write_bytes(IMPORTER.canonical(dict(schemaVersion=1, outputs=[])))
-            paths = []
-            def read(path):
-                paths.append(path)
-                return expected
-            with patch.object(IMPORTER, 'load_helper', return_value=SimpleNamespace(
-                    AtlasReader=lambda _: SimpleNamespace(read=read))):
-                IMPORTER.check_package(stage, output, root, manifest)
-            self.assertEqual([IMPORTER.PACKAGE + '/room.png'], paths)
-            (output / 'manifest.json').write_bytes(IMPORTER.canonical(manifest))
-            with self.assertRaisesRegex(ValueError, 'Regeneration differs'):
-                IMPORTER.check_package(stage, output, root, manifest)
+            expected.save(root / 'first.png', compress_level=0)
+            metadata = PngImagePlugin.PngInfo()
+            metadata.add_text('Description', 'Different PNG encoding')
+            expected.save(root / 'second.png', compress_level=9, pnginfo=metadata)
+            self.assertNotEqual((root / 'first.png').read_bytes(), (root / 'second.png').read_bytes())
+            images = oracle.LogicalImages(root)
+            oracle.assert_rgba_equal(self, images.read('first.png'), images.read('second.png'))
+            Image.new('RGBA', (2, 2), (27, 58, 93, 128)).save(root / 'second.png')
+            with self.assertRaises(AssertionError):
+                oracle.assert_rgba_equal(self, images.read('first.png'), images.read('second.png'))
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

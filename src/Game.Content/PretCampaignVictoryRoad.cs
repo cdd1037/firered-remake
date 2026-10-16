@@ -20,11 +20,6 @@ public sealed partial class PretCampaignCatalog
     public VictoryRoadWaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
     public bool VictoryRoadEnabled=>VictoryRoadRegion is not null;
 
-    private static void ValidateVictoryRoadAnchors(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
     private static IEnumerable<FieldPickupDefinition> VictoryRoadPickupDefinitions(PretVictoryRoadRegion region,VictoryRoadItemContent content,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
@@ -48,7 +43,7 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateVictoryRoadComposition(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,VictoryRoadTrainerCatalog trainers,GamePokemonCatalog owned,PretStoryCompilation scripts)
+    private static void ValidateVictoryRoadComposition(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,VictoryRoadTrainerCatalog trainers,GamePokemonCatalog owned,PretStoryCompilation scripts)
     {
         VictoryRoadTrainerPartyFactory.ValidateCatalog(trainers);
         foreach(var battle in trainers.BattlesByScript.Values)

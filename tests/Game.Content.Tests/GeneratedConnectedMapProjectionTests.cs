@@ -21,7 +21,7 @@ public sealed class GeneratedConnectedMapProjectionTests
             using var document = JsonDocument.Parse(bytes);
             if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("blocks", out _)) continue;
             var data = PretRuntimeMapData.Decode(bytes, document.RootElement.GetProperty("stableId").GetString()!);
-            var map = PretWorldMap.FromRuntime(data, new("", "", "", "", ""), path);
+            var map = PretWorldMap.FromRuntime(data, path);
             var expected = map.Cells.Select(cell => new ConnectedFieldCell(cell.BehaviorId, cell.Collision, cell.Elevation)).ToImmutableArray();
             Assert.AreEqual(map.Width * map.Height, expected.Length, path);
             Assert.IsTrue(expected.SequenceEqual(data.CreateConnectedCells()), path);
@@ -41,7 +41,7 @@ public sealed class GeneratedConnectedMapProjectionTests
             Check(source, catalog.ConnectedFieldMaps[id]);
         Assert.IsTrue(catalog.TrainerTowerRegion.Layouts.Count > 0);
         foreach (var source in catalog.TrainerTowerRegion.Layouts.Values)
-            Check(source, PretTrainerTowerRegion.ConnectedMap(source));
+            Check(source, PretWorldMapConnections.Create(source));
 
         void Check(PretWorldMap source, ConnectedFieldMap connected)
         {

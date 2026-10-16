@@ -63,15 +63,21 @@ public partial class CampaignView
         catch{replacement.Dispose();throw;}
     }
     private IReadOnlyDictionary<string,Game.Content.OverworldSprite>? _overworldSprites;
-    private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner)
+    private Dictionary<string,SpriteAsset> LoadWorldNpcs(Game.Content.PretWorldMap map,string catalogPath,CampaignResourceCache.Owner owner)
     {
         var generated=System.IO.Path.Combine(_root,"content/generated");
         _overworldSprites ??= Game.Content.PretOverworldTextures.Load(generated);
-        using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));
+        if(System.IO.Path.GetFullPath(catalogPath)!=System.IO.Path.GetFullPath(System.IO.Path.Combine(generated,"sprites/overworld/catalog.json")))
+            throw new InvalidDataException("Unexpected overworld catalog binding.");
+        var graphics=map.Events.GetProperty("object_events").EnumerateArray()
+            .Select(entry=>entry.GetProperty("graphics_id").GetString()!).ToHashSet(StringComparer.Ordinal);
+        // Variable and cloned actors can change graphics through executable story
+        // state. The shared catalog contains their source-selected possibilities.
+        if(graphics.Any(id=>id=="0"||id.StartsWith("OBJ_EVENT_GFX_VAR_",StringComparison.Ordinal)))
+            graphics=_overworldSprites.Keys.ToHashSet(StringComparer.Ordinal);
         var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
-        foreach(var entry in doc.RootElement.GetProperty("graphics").EnumerateArray())
+        foreach(var id in graphics)
         {
-            string id=entry.GetProperty("graphicsId").GetString()!;
             var sprite=_overworldSprites[id]; var r=sprite.Region;
             var texture=owner.NativeTexture(System.IO.Path.Combine(generated,"sprites/overworld",sprite.TexturePath),new Rect2I(r.X,r.Y,r.Width,r.Height));
             if(r.Width!=sprite.FrameWidth*sprite.FrameCount||r.Height!=sprite.FrameHeight)

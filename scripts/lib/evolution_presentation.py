@@ -5,7 +5,6 @@ from generated_output_compare import generated_output_matches
 import io
 import json
 import re
-import struct
 from pathlib import Path
 from PIL import Image
 
@@ -192,25 +191,8 @@ def build(selection, target, dependency, reference=None, check=False, recipe_pat
         texture = lambda row: {k: row[k] for k in ['texturePath',  'width', 'height']}
         entries.append(dict(entry, portrait=texture(front), footprint=texture(foot)))
 
-    pack = reuse('content/generated/audio/synth/firered.pack')
-    cries = reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence = [], []
-    for (name, number), policy in zip(species, options['species']):
-        path = policy['cryManifest']
-        manifest = json.loads(reuse(path))
-        cue = next(c for c in manifest['cues'] if c['id'] == 'CRY_' + name.upper() + '_NORMAL')
-        need(cue['species'] == number and cue['sourcePlayer'] == 4 and cue['priority'] == priority and cue.get('cryMode', 0) == 0 and not cue['looping'] and cue['sourceSymbol'] == 'SPECIES_' + name.upper(), 'Inherited normal cry binding differs')
-        row = cry_rows[number]
-        need(cry_table[number - 1] == name and row[1] == number - 1, 'Species cry table differs')
-        cues.append(dict(inheritedManifest=path, cue=cue))
-        cry_evidence.append(dict(species=number, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4])))
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1, entries=entries))
-    manifest = dict(schemaVersion=1, newOwnedSpecies=[s for _, s in species], inheritedSprites=sprites, pokemonIcons=icons, footprints=footprints, dexEntriesPath=base + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry), audio=dict(newCueCount=0, inheritedCueCount=len(species), cues=cues, normalCries=cry_evidence), limits=options['limits'], outputs=[dict(path=p) for p, b in sorted(outputs.items())])
+    manifest = dict(schemaVersion=1, newOwnedSpecies=[s for _, s in species], inheritedSprites=sprites, pokemonIcons=icons, footprints=footprints, dexEntriesPath=base + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry), limits=options['limits'], outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = runtime_json_bytes(manifest, sort_keys=True)
     files = {base + 'manifest.json': mb, **{base + path: data for path, data in outputs.items()}}
     if check:

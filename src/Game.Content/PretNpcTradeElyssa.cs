@@ -6,6 +6,8 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
+public sealed record NpcTradeHeldItemsDocument(ImmutableArray<EarlyShopItemDefinition> Additions,
+    ImmutableArray<NpcTradeItemIcon> Icons);
 public sealed record NpcTradeItemsDocument(int PreviousItemCount, int ItemCount,
     ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<EarlyShopStock> ShopsAdded,
     ImmutableArray<NpcTradeItemIcon> Icons);
@@ -18,20 +20,15 @@ public sealed class PretNpcTradeElyssa
     public const string ResourceId = "firered-npc-trade-elyssa-v1";
     public static MapId HouseMapId { get; } = new("map.vermilion-city-house2");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
-    public NpcTradeItemsDocument Items { get; }
+    public NpcTradeHeldItemsDocument Items { get; }
     public ImmutableDictionary<string, byte[]> IconFiles { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
-    private PretNpcTradeElyssa(SilphSourcePackage source, PretWorldMap map, NpcTradeItemsDocument items)
+    private PretNpcTradeElyssa(SilphSourcePackage source, PretWorldMap map, NpcTradeHeldItemsDocument items)
     {
         NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(map.Id, map);
         GeneratedDirectory = source.Directory; Items = items;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+
         IconFiles = items.Icons.Select(i => i.TexturePath)
             .Distinct(StringComparer.Ordinal).ToImmutableDictionary(p => p, p => source.Read(p), StringComparer.Ordinal);
     }
@@ -41,42 +38,21 @@ public sealed class PretNpcTradeElyssa
         "MAP_VERMILION_CITY" => new("map.vermilion-city"),
         _ => throw new InvalidDataException("Unknown original Elyssa room destination: " + symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need(map.Id == HouseMapId && map.Width == 11 && map.Height == 9 &&
-            map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Original Elyssa room geometry differs.");
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), []);
-    }
 
-    public static PretNpcTradeElyssa Load(string projectRoot)
+
+    public static PretNpcTradeElyssa Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/npc-trade-elyssa");
-        var catalog = source.Document("catalog.json");
-        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
-            "Elyssa source/catalog identity differs.");
-        var retained = source.Document("contracts.json").GetProperty("retainedCity");
-        var city = SilphSourcePackage.Json(SafariSource.Read(projectRoot,retained.GetProperty("path").GetString()!));
-        Need(JsonElement.DeepEquals(city.GetProperty("events").GetProperty("warp_events")[6], retained.GetProperty("warp")),
-            "Elyssa retained city door differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Vermilion trade room and Stick.", ResourceId);
-        var spec = catalog.GetProperty("maps")[0];
-        string relative = spec.GetProperty("mapPath").GetString()!, path = spec.GetProperty("path").GetString()!;
-        var bytes = source.Read(path);
-        Need(spec.GetProperty("stableId").GetString() == HouseMapId.Value && path == relative ,
-            "Elyssa compact resource binding differs.");
-        var runtime = PretRuntimeMapData.Decode(bytes, HouseMapId.Value, MapIdFromSourceSymbol);
-        Need(runtime.Width == 11 && runtime.Height == 9 && MapIdFromSourceSymbol(runtime.SourceMapSymbol) == HouseMapId,
-            "Elyssa map identity/dimensions differ.");
-        var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
+        var map = world.Maps[HouseMapId];
+
         Need(map.FieldWarps.Length == 3 && map.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             map.FieldWarps.All(w => w.DestinationMapId == new MapId("map.vermilion-city") && w.DestinationWarpId == 6),
             "Original Elyssa actor/exit cohort differs.");
-        var items = source.Parse<NpcTradeItemsDocument>("items.json");
-        Need(            items.PreviousItemCount == 125 && items.ItemCount == 126 && items.Additions.Length == 1 &&
+        var items = source.Parse<NpcTradeHeldItemsDocument>("items.json");
+        Need(            items.Additions.Length == 1 &&
             items.Additions[0].Id == ItemIds.StickId &&
-            items.ShopsAdded.IsEmpty && items.Icons.Length == 1, "Elyssa Stick inventory scope differs.");
+            items.Icons.Length == 1, "Elyssa Stick inventory scope differs.");
         Need(items.Additions[0].Item is { HoldEffect: "HOLD_EFFECT_STICK", CanGive: true, CanSell: true, CanToss: true },
             "Original Stick held metadata differs.");
         var icon = items.Icons[0];

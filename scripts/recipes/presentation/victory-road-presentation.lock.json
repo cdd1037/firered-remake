@@ -158,16 +158,7 @@
       "path": "include/constants/opponents.h"
     },
     {
-      "path": "include/constants/songs.h"
-    },
-    {
       "path": "include/constants/trainers.h"
-    },
-    {
-      "path": "sound/song_table.inc"
-    },
-    {
-      "path": "sound/songs/midi/se_ice_break.mid"
     },
     {
       "path": "src/data/graphics/items.h"
@@ -250,9 +241,6 @@
       "path": "content/generated/sprites/trainers/celadon-gym/cooltrainer-f-front.png"
     },
     {
-      "path": "content/generated/audio/cues/cinnabar.json"
-    },
-    {
       "path": "content/generated/ui/fuchsia-gym-presentation/juggler-front.png"
     },
     {
@@ -262,12 +250,6 @@
       "path": "content/generated/sprites/trainers/rocktunnel/pokemaniac-front.png"
     },
     {
-      "path": "content/generated/audio/synth/firered.pack"
-    },
-    {
-      "path": "content/generated/audio/synth/manifest.json"
-    },
-    {
       "path": "content/generated/data/regions/victory-road/trainers.json"
     },
     {
@@ -275,9 +257,6 @@
     },
     {
       "path": "content/generated/ui/viridian-gym-presentation/cooltrainer-m-front.png"
-    },
-    {
-      "path": "scripts/lib/audit-early-audio.py"
     }
   ],
   "profile": "firered-victory-road-presentation-v1",

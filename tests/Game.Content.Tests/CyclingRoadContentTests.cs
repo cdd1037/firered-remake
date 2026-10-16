@@ -144,8 +144,9 @@ public sealed class CyclingRoadContentTests
     public void LegalGeneratedTableChangesReachCandidateGenerationWithoutStaticFallback()
     {
         using var output = TestAssets.TemporaryOutput();
-        foreach (var relative in new[] { Package + "/route-17.json", Package + "/route-16-north-entrance-2f.json", Package + "/catalog.json", Package + "/trainers.json",
-            Package + "/land-encounters.json", "content/generated/data/trainers.json", "content/generated/data/constants.json" })
+        foreach (var relative in new[] { Package + "/route-17.json", Package + "/route-16-north-entrance-2f.json", Package + "/trainers.json",
+            Package + "/land-encounters.json", "content/generated/data/trainers.json", "content/generated/data/constants.json" }
+            .Concat(CurrentWorldTestFixture.RelativeFiles().Select(path => "content/generated/" + path)).Distinct())
         {
             string target = Path.Combine(output.Path, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
@@ -162,7 +163,7 @@ public sealed class CyclingRoadContentTests
             slot["maximumLevel"] = 30;
         }
         File.WriteAllText(encounters, document.ToJsonString());
-        var region = PretCyclingRoadRegion.Load(output.Path);
+        var region = PretCyclingRoadRegion.Load(PretCurrentWorld.Load(output.Path));
         var table = region.LandEncounters.Single(t => t.Map.Value == "map.route-17");
         Assert.AreEqual(255, table.RawEncounterRate);
         Assert.AreEqual(5, table.Slots[0].MinimumLevel);

@@ -6,6 +6,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
+from generated_output_compare import generated_output_matches
 from presentation_pixels import PixelReader
 import argparse
 import io
@@ -13,8 +14,6 @@ import json
 import re
 import os
 import subprocess
-import struct
-import wave
 from pathlib import Path
 from PIL import Image
 
@@ -42,11 +41,10 @@ def safe(path):
 
 
 # Shared raw inputs are authenticated by this package's lock and the pinned Git blob.
-SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h', 'sound/cry_tables.inc', 'include/constants/sound.h']}
+SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h']}
 SHARED_RAW.update({path: 'content/raw/pokefirered/037335f4/' + path for path in [
     'graphics/pokemon/qwilfish/front.png', 'graphics/pokemon/qwilfish/back.png',
     'graphics/pokemon/qwilfish/normal.pal', 'graphics/pokemon/qwilfish/shiny.pal']})
-SHARED_RAW['sound/direct_sound_samples/cries/qwilfish.wav'] = 'content/raw/pokefirered/037335f4/sound/direct_sound_samples/cries/qwilfish.wav'
 
 
 def safe_path(root, relative):
@@ -192,45 +190,6 @@ def build(target, dependency, reference, check):
         sprite = next(s for s in sprites if s['side'] == row['side'] and s['paletteVariant'] == 'normal')
         need((sprite['sourceYOffset'], sprite['sourceEnemyElevation'] if row['side'] == 'front' else 0, sprite['sourceWidth'], sprite['sourceHeight']) ==
              (row['yOffset'], row['elevation'], row['sourceWidth'], row['sourceHeight']), 'Tower source move geometry differs')
-    synth_path = 'content/generated/audio/cues/trainer-tower/synth-manifest.json'
-    inherited_synth = json.loads(reuse(synth_path))
-    pack = reuse('content/generated/audio/synth/firered.pack')
-    cries = reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence = [], []
-    for name, species in SPECIES:
-        row = cry_rows[species]
-        need(cry_table[species - 1] == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        with wave.open(io.BytesIO(source.read(path))) as original:
-            need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                 (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header dimensions differ')
-            pcm = original.readframes(original.getnframes())
-        delta = (0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1)
-        decoded = bytearray()
-        for index in range(row[2] + row[4]):
-            block, i = divmod(index, 64)
-            start = wave_offset + 16 + block * 33
-            if i == 0:
-                value = pack[start]
-            else:
-                packed = pack[start + (1 if i == 1 else i // 2 + 1)]
-                nibble = packed & 15 if i == 1 or i % 2 else packed >> 4
-                value = (value + delta[nibble]) & 255
-            decoded.append((value + 128) & 255)
-        need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
-        cues.append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceSymbol='SPECIES_' + name.upper(), sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-
-    need(cues == [c for c in inherited_synth['cues'] if c['species'] == 211], 'Existing normal cry binding differs')
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1,   entries=entries))
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
@@ -239,7 +198,6 @@ def build(target, dependency, reference, check):
                       newOwnedSpecies=[s for _, s in SPECIES],
                     inheritedSprites=sprites, pokemonIcons=icons, footprints=footprints,
                     dexEntriesPath=BASE + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=tower_path, rows=geometry),
-                    audio=dict(newCueCount=0, inheritedCueCount=1, inheritedManifest=synth_path, cues=cues, normalCries=cry_evidence, ),
                     limits=['Qwilfish battle textures and normal cry remain in the existing Tower packages; only icon and footprint pixels are new.',
                             'The party icon uses original frame zero for normal and shiny variants.',
                             'No new move animation coverage; native visual and audible output remain unverified.'],
@@ -253,12 +211,12 @@ def build(target, dependency, reference, check):
         if p.suffix == '.json':
             json.loads(b)
         if check:
-            need(p.is_file() and p.read_bytes() == b, 'Regeneration differs: ' + str(p))
+            need(generated_output_matches(p, b), 'Regeneration differs: ' + str(p))
         else:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(b)
     print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.entries), newRawFiles=len(source.entries) - len(SHARED_RAW),  inheritedInputs=len(inherited),
-                         newFootprints=1, dexEntries=1, newBattleSprites=0, inheritedBattleSprites=4, newPokemonIcons=1, newAudioCues=0, inheritedAudioCues=1,
+                         newFootprints=1, dexEntries=1, newBattleSprites=0, inheritedBattleSprites=4, newPokemonIcons=1,
                           lockBytes=len(lb),  manifestBytes=len(mb)), indent=2))
 
 

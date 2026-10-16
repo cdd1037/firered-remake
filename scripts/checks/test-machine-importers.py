@@ -51,7 +51,7 @@ def git(args,**kwargs):
 
 class LateMachineImporterTests(unittest.TestCase):
  def test_source_projections_preserve_gameplay_and_shared_references(self):
-  for name, family, folder in [('power-plant-pokemon', 'pokemon', 'data/pokemon/power-plant.json'), ('fighting-dojo-rules', 'story', 'data/regions/fighting-dojo'), ('fossil-lab-rules', 'story', 'data/regions/fossil-lab'), ('npc-trade-owned-rules', 'story', 'data/regions/npc-trade-owned'), ('seafoam-rules', 'story', 'data/regions/seafoam'), ('super-rod-species', 'pokemon', 'data/pokemon/super-rod')]:
+  for name, family, folder in [('power-plant-pokemon', 'pokemon', 'data/pokemon/power-plant.json')]:
    m=load(name, family)
    if name=='power-plant-pokemon':
     # Exercise its explicit retained-raw reader; no Git transport is needed.

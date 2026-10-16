@@ -25,8 +25,8 @@ public sealed partial class PretCampaignCatalog
         if(bill is null)return tables;
         foreach(var expected in BillLandEncounterTables.All)
         {
-            var entry=bill.Encounters.GetProperty("maps").EnumerateArray().Single(e=>PretBillRegion.MapIdFromSourceSymbol(e.GetProperty("declaration").GetProperty("map").GetString()!)==expected.Map);
-            var table=entry.GetProperty("declaration");var land=table.GetProperty("land_mons");
+            var entry=bill.Encounters.EnumerateArray().Single(e=>PretBillRegion.MapIdFromSourceSymbol(e.GetProperty("map").GetString()!)==expected.Map);
+            var table=entry;var land=table.GetProperty("land_mons");
             var parsed=new EarlyLandEncounterTable(PretBillRegion.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
             EarlyLandEncounterRules.ValidateTable(parsed);
             if(parsed.Map!=expected.Map||parsed.RawEncounterRate!=expected.RawEncounterRate||!parsed.Slots.SequenceEqual(expected.Slots))throw new InvalidDataException("bill_encounter_source_differs");

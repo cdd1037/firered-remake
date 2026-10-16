@@ -53,9 +53,10 @@ class RuntimeProofRetirementTests(unittest.TestCase):
                 with patch.object(module.subprocess, 'check_output', side_effect=self._regional_source_reader(module)):
                     result = module.generate(ROOT, ROOT)
                 documents = result if isinstance(result, dict) else result[0]
-                expected_names = {'trainers.json', 'pokemon.json'}
+                expected_names = {'trainers.json'}
+                if family == 'pokemon-league': expected_names.add('pokemon.json')
                 if family == 'seven-island':
-                    expected_names |= {'encounters.json', 'machines.json', 'items.json'}
+                    expected_names |= {'encounters.json', 'items.json'}
                 self.assertEqual(expected_names, documents.keys())
                 directory = ROOT / 'content/generated/data/regions' / family
                 self.assertFalse((directory / 'rules.json').exists())
@@ -105,66 +106,50 @@ class RuntimeProofRetirementTests(unittest.TestCase):
     def test_seafoam_outputs_keep_business_data_without_unused_rules_report(self):
         module = load('imports/story/import-seafoam-rules.py')
 
-        read_source = self._regional_source_reader(module)
-
-        with patch.object(module.subprocess, 'check_output', side_effect=read_source):
-            documents, _, files = module.generate(ROOT, ROOT)
-        self.assertEqual({'trainers.json', 'pokemon.json', 'machines.json'}, documents.keys())
-        self.assertFalse((ROOT / module.BASE / 'rules.json').exists())
+        raw = ROOT / 'content/raw/pokefirered/037335f4'
+        documents, files = module.generate(raw)
+        self.assertEqual({'trainers.json'}, documents.keys())
         for name, document in documents.items():
-            if name == 'trainers.json':
-                document = json.loads(module.trainer_json(ROOT / 'content/generated', document, check=True))
-            self.assertEqual(json.loads((ROOT / module.BASE / name).read_bytes()), document, name)
+            actual = module.trainer_json(ROOT / 'content/generated', document, check=True)
+            self.assertEqual((ROOT / 'content/generated/data/regions/seafoam' / name).read_bytes(), actual)
         for path, data in files.items():
             self.assertEqual((ROOT / path).read_bytes(), data, path)
-        for damaged in ('static-command', 'learnset'):
-            def broken_source(command, **kwargs):
-                data = read_source(command, **kwargs)
-                if damaged == 'static-command' and command[-1].endswith('data/maps/SeafoamIslands_B4F/scripts.inc'):
-                    return data.replace(b'setwildbattle SPECIES_ARTICUNO, 50', b'setwildbattle SPECIES_ARTICUNO, 49')
-                if damaged == 'learnset' and command[-1].endswith('src/data/pokemon/level_up_learnsets.h'):
-                    return data.replace(b'LEVEL_UP_MOVE(', b'INVALID_MOVE(')
+        original = module.WorldSource.text
+        for damaged in ('encounter-weights', 'trainer-party'):
+            def broken_source(source, path):
+                data = original(source, path)
+                if damaged == 'encounter-weights' and path == 'src/data/wild_encounters.json':
+                    value = json.loads(data)
+                    fields = next(group['fields'] for group in value['wild_encounter_groups'] if group['label'] == 'gWildMonHeaders')
+                    next(field for field in fields if field['type'] == 'land_mons')['encounter_rates'][0] = 21
+                    return json.dumps(value)
+                if damaged == 'trainer-party' and path == 'src/data/trainer_parties.h':
+                    return data.replace('.species = SPECIES_', '.invalidSpecies = SPECIES_')
                 return data
-            # Let the malformed learnset reach its parser, rather than stop at
-            # the shared-byte consistency check against the unmodified raw file.
-            shared = {path: value for path, value in module.SHARED_INPUTS.items()
-                      if path != 'src/data/pokemon/level_up_learnsets.h'}
-            with self.subTest(damaged=damaged), patch.object(module.subprocess, 'check_output', side_effect=broken_source), \
-                 patch.dict(module.SHARED_INPUTS, shared, clear=True):
-                message = 'Original static command' if damaged == 'static-command' else 'Unsupported or incomplete source learnset line'
-                with self.assertRaisesRegex(ValueError, message):
-                    module.generate(ROOT, ROOT)
+            with self.subTest(damaged=damaged), patch.object(module.WorldSource, 'text', broken_source):
+                with self.assertRaises(ValueError): module.generate(raw)
 
-    def test_mtmoon_dependencies_keep_business_values_and_source_validation(self):
-        module = load('imports/maps/import-mtmoon-region.py')
-        source = module.Source(ROOT / 'content/raw/pokefirered/037335f4')
-        layouts = source.json('data/layouts/layouts.json')['layouts']
-        worlds = []
-        # Dependency conversion needs source events and dimensions, not rendered PNGs.
-        for name, _, _ in module.MAPS:
-            path = f'data/maps/{name}/map.json'
-            events = source.json(path)
-            layout = next(row for row in layouts if row.get('id') == events['layout'])
-            worlds.append(dict(events=events, width=layout['width'], height=layout['height'],
-                               sourceRef=source.ref(path, events['id'])))
-        scripts = module.script_inventory(source, worlds)
-        constants = module.constants_inventory(source, worlds, scripts)
-        actual = module.dependency_inventory(source, worlds, scripts, constants)
-        expected = json.loads((ROOT / 'content/generated/maps/regions/mtmoon/dependencies.json').read_text())
-        self.assertEqual(expected, actual)
-        self.assertTrue(actual['trainers'] and actual['encounters'] and actual['pickups'])
-        self.assertTrue({'moves', 'species', 'items'}.isdisjoint(actual))
-        # Omitted inventories must not hide malformed referenced raw declarations.
-        for path in ('src/data/pokemon/level_up_learnsets.h',
-                     'src/data/battle_moves.h', 'src/data/items.json'):
-            with self.subTest(path=path):
-                original = source.data[path]
-                try:
-                    source.data[path] = (b'{"items":[]}' if path.endswith('.json') else b'')
-                    with self.assertRaises(ValueError):
-                        module.dependency_inventory(source, worlds, scripts, constants)
-                finally:
-                    source.data[path] = original
+    def test_early_field_rules_use_raw_without_stage_documents(self):
+        module = load('imports/story/import-early-field-rules.py')
+        source = module.WorldSource(ROOT / 'content/raw/pokefirered/037335f4')
+        headers = module.land_headers(source)
+        self.assertEqual(12, len(headers))
+        self.assertEqual(module.LAND_MAPS, {row['map'] for row in headers})
+        self.assertTrue(all(set(row) == {'map', 'land_mons'} for row in headers))
+
+    def test_field_services_regenerate_only_live_business_documents(self):
+        module = load('imports/story/import-field-services.py')
+        from generated_output_compare import check_item_outputs
+        from shared_trainers import trainer_json
+        outputs = module.generate(ROOT / 'content/raw/pokefirered/037335f4')
+        self.assertEqual(14, len(outputs))
+        self.assertFalse(any(name.endswith(('contracts.json', 'catalog.json', 'manifest.json', 'npc-source.json')) for name in outputs))
+        self.assertEqual(9, len(outputs['maps/regions/npc-trades/trades.json']))
+        self.assertEqual([178, 44], [len(row['cells']) for row in outputs['maps/regions/route16-fly-house/passage.json']['upperFootAdmissions']])
+        self.assertEqual(4, len(outputs['maps/regions/original-tm-acquisition/services.json']))
+        encoded = {name: value if isinstance(value, bytes) else trainer_json(ROOT / 'content/generated', value, check=True)
+                   if name.endswith('trainers.json') else module.encode(value) for name, value in outputs.items()}
+        check_item_outputs(ROOT / 'content/generated', encoded)
 
     def test_pokemon_outputs_are_only_runtime_catalogs(self):
         for family in ('safari', 'surf', 'fuchsia-route'):
@@ -182,6 +167,17 @@ class RuntimeProofRetirementTests(unittest.TestCase):
                 self.assertFalse((ROOT / prefix / 'source-fixtures.json').exists())
                 for path, data in outputs.items():
                     self.assertEqual((ROOT / path).read_bytes(), data, path)
+
+    def test_mail_compilers_preserve_live_values_and_pixels(self):
+        from generated_output_compare import check_item_outputs
+        raw = ROOT / 'content/raw/pokefirered/037335f4'
+        generated = ROOT / 'content/generated'
+        for name, count in [('story/import-npc-trade-mail.py', 9), ('presentation/import-mail-presentation.py', 48)]:
+            with self.subTest(compiler=name):
+                outputs = load('imports/' + name).generate(raw)
+                self.assertEqual(count, len(outputs))
+                self.assertFalse(any(Path(p).name in ('contracts.json', 'manifest.json') for p in outputs))
+                check_item_outputs(generated, outputs)
 
     def test_tower_outputs_preserve_runtime_values(self):
         module = load('imports/trainers/import-trainer-tower-rules.py')
@@ -203,7 +199,7 @@ class RuntimeProofRetirementTests(unittest.TestCase):
         with patch.object(module.subprocess, 'check_output', side_effect=read_source):
             outputs, raw = module.generate(ROOT, ROOT)
         self.assertTrue(raw)
-        self.assertEqual({'catalog.json', 'pokemon.json', 'items.json'}, outputs.keys())
+        self.assertEqual({'catalog.json', 'items.json'}, outputs.keys())
         self.assertFalse((ROOT / module.BASE / 'creation-vectors.json').exists())
         for path, document in outputs.items():
             # Item metadata can be a shared Python value object before serialization.

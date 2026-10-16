@@ -45,6 +45,26 @@ class SingleFileImportTests(unittest.TestCase):
                 self.assertEqual(current[row['id']['value']], row)
 
 
+    def test_grid_menu_and_mail_use_current_paths_without_source_copies(self):
+        raw = ROOT / 'content/raw/pokefirered/037335f4'
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary)
+            cases = [
+                ('presentation/import-source-grid-menus.py', ['--reference', str(raw), '--target', str(target), '--dependency-root', str(ROOT)], ['ui/grid-menus.json']),
+                ('story/import-mail-composer.py', ['--reference-root', str(raw), '--project-root', str(target)], ['data/services/mail-composer/catalog.json', 'data/services/mail-composer/contracts.json'])]
+            for entry, arguments, outputs in cases:
+                result = subprocess.run([sys.executable, str(ROOT / 'scripts/imports' / entry), *arguments],
+                                        cwd=temporary, capture_output=True, text=True, timeout=60)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                for relative in outputs:
+                    actual = target / 'content/generated' / relative
+                    self.assertTrue(actual.is_file(), actual)
+                    self.assertEqual(json.loads((ROOT / 'content/generated' / relative).read_bytes()),
+                                     json.loads(actual.read_bytes()))
+            self.assertFalse((target / 'content/raw').exists())
+            self.assertFalse((target / 'scripts').exists())
+            self.assertFalse(any(p.is_dir() and p.suffix == '.json' for p in target.rglob('*')))
+
     def test_machine_cli_outputs_preserve_values_and_exact_icon_pixels(self):
         def pixels(path, region=None):
             with Image.open(path) as source:

@@ -19,21 +19,13 @@ public sealed class PretRegionalServiceMaps
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableArray<MapId> ReusedMapIds => [new("map.route-5-south-entrance"), new("map.route-6-north-entrance"), new("map.route-7-east-entrance"), new("map.route-8-west-entrance")];
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
-    public JsonElement ObjectTemplates { get; }
-    public JsonElement NpcSources { get; }
-    public JsonElement Availability { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretRegionalServiceMaps(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableDictionary<string, int> constants,
-        JsonElement catalog, JsonElement objects, JsonElement npcs,
-        JsonElement availability)
+        ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = directory; SourceMaps = maps; NewMaps = maps.Remove(ElevatorMapId);
-        Constants = constants; Catalog = catalog; ObjectTemplates = objects;
-        NpcSources = npcs; Availability = availability; }
+        Constants = constants; }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -72,57 +64,15 @@ public sealed class PretRegionalServiceMaps
     }
 
     /// <summary>Maps use the compact representation; source cells expand only on request.</summary>
-    public static PretRegionalServiceMaps Load(string projectRoot)
+    public static PretRegionalServiceMaps Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/maps/regions/regional-service-maps");
-        byte[] Pinned(string root,string path)
-        {
-            var bytes = File.ReadAllBytes(Safe(root, path));
-            return bytes;
-        }
-        using var manifestDocument = JsonDocument.Parse(Pinned(directory,"manifest.json"));
-        var manifest = manifestDocument.RootElement;
-        Need(manifest.GetProperty("schemaVersion").GetInt32() == 1,
-            "Regional service manifest scope differs.");
-        var outputEntries = manifest.GetProperty("outputs").EnumerateArray().ToDictionary(x => x.GetProperty("path").GetString()!, StringComparer.Ordinal);
-        var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var (path, entry) in outputEntries)
-        {
-            _ = Safe(directory, path);
-            outputs.Add(path, Pinned(directory,path));
-        }
-        JsonElement Document(string path) { using var doc = JsonDocument.Parse(outputs[path]); return doc.RootElement.Clone(); }
-        var catalog = Document("regional-service-maps-catalog.json");
-
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "17 source maps; four unchanged reused gates; services require explicit admission.", Profile);
-        var runtimeCatalog = Document("runtime-catalog.json");
-        var runtimeEntries = runtimeCatalog.GetProperty("maps").EnumerateArray().ToDictionary(e => e.GetProperty("stableId").GetString()!, StringComparer.Ordinal);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtimeEntry = runtimeEntries[stableId];
-            Need(runtimeEntry.GetProperty("path").GetString() == relative , "Runtime source certificate differs.");
-            var payload = outputs[relative];
-            var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
-            var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
-            maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
-        }
-        Need(maps.Count == 17 && maps.Values.Sum(m => m.Width * m.Height) == 3241 && maps.Values.Sum(m => m.BorderWidth * m.BorderHeight) == 68, "Source map collection differs.");
-        foreach (var map in maps.Values.Where(m => m.Id != ElevatorMapId))
-            foreach (var warp in map.FieldWarps)
-                if (maps.TryGetValue(warp.DestinationMapId, out var target))
-                    Need(warp.DestinationWarpId < target.Events.GetProperty("warp_events").GetArrayLength(), "Loaded warp index differs.");
+        var maps = world.MapsInDirectory(directory);
         var constants = PretSharedConstants.ForPackage(directory);
         Need(constants["ITEM_TEA"] == 369 && constants["FLAG_GOT_TEA"] == 678 && constants["FLAG_GOT_EEVEE"] == 611 && constants["LOCALID_EEVEE_POKEBALL"] == 2 && constants["SPECIES_EEVEE"] == 133, "Tea/Eevee source constants differ.");
-        var availability = Document("availability.json");
-        Need(!availability.GetProperty("completeGame").GetBoolean() && availability.GetProperty("enabledServices").GetArrayLength() == 0, "Source import cannot enable services.");
-        return new(directory, maps.ToImmutable(), constants, catalog,
-            Document("objects.json"), Document("npc-source.json"), availability);
+        return new(directory, maps, constants);
     }
     private static void Need(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static string Safe(string root, string path)

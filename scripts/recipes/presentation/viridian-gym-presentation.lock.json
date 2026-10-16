@@ -122,9 +122,6 @@
       "path": "content/generated/ui/trainer-card/trainer-card.json"
     },
     {
-      "path": "content/generated/audio/synth/manifest.json"
-    },
-    {
       "path": "content/generated/sprites/items.png"
     }
   ],

@@ -58,9 +58,6 @@ internal static class SeviiRubyPresentationAssets
             sprites.Any(s => s.GetProperty("speciesId").GetString() != (s.GetProperty("sourceSpeciesId").GetInt32() == 218 ? "pret:SPECIES_SLUGMA" : "pret:SPECIES_MAGCARGO")) || !manifest.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("item").GetString()).ToHashSet().SetEquals(
                 ["pret:ITEM_RUBY", "pret:ITEM_RAINBOW_PASS", "pret:ITEM_HM06", "pret:ITEM_BLACK_BELT", "pret:ITEM_DIRE_HIT", "pret:ITEM_FIRE_STONE"]))
             throw new InvalidDataException("Sevii Ruby presentation inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Sevii Ruby cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

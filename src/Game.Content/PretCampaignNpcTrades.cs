@@ -33,7 +33,7 @@ public sealed partial class PretCampaignCatalog
     public bool IsNpcTradeStablePosition(MapId map,int x,int y) => CyclingRoadEnabled && PretCyclingRoadRegion.IsRoadOrGate(map) || !NpcTradeHaden.NewMaps.ContainsKey(map) || NpcTradeHaden.AllowsFootDestination(map,x,y);
     public NpcTradePokemonCatalog NpcTrades => NpcTradeContent.Trades;
 
-    private static void ValidateNpcTradeComposition(PretNpcTrades trades,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateNpcTradeComposition(PretNpcTrades trades,ImmutableDictionary<MapId,PretWorldMap> maps,PretStoryCompilation scripts)
     {
         if (trades.NewMaps.Count != 1 )
             throw new InvalidDataException("npc_trade_current_map_composition");

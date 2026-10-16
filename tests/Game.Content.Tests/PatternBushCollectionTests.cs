@@ -23,7 +23,7 @@ public sealed class PatternBushCollectionTests
         var mechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(canonical, TestAssets.Root);
         var machines = SharedMachineCatalog.LoadProject(TestAssets.Root);
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics,
-            PretNpcTrades.Load(TestAssets.Root, mechanics.Catalog).Trades, machines);
+            PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades, machines);
         var dex = PretPokedexMenu.Load(TestAssets.Root);
         var content = new CampaignPokemonContent(game, game.Catalog.Species.Values.ToImmutableSortedDictionary(
             species => species.SourceSpeciesId, species => dex.Entries[species.SourceSpeciesId].Name),

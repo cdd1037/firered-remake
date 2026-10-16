@@ -64,8 +64,7 @@ internal static class FightingDojoPresentationAssets
             !dex.Entries.Select(e => e.SourceSpeciesId).SequenceEqual(new[] { 106, 107 }) ||
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(new[] { 106, 107 }) ||
-            !manifest.GetProperty("trainers").EnumerateArray().Select(e => e.GetProperty("sourceTrainerId").GetInt32()).SequenceEqual(Enumerable.Range(317, 5)) ||
-            manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 0)
+            !manifest.GetProperty("trainers").EnumerateArray().Select(e => e.GetProperty("sourceTrainerId").GetInt32()).SequenceEqual(Enumerable.Range(317, 5)))
             throw new InvalidDataException("Fighting Dojo presentation inventory differs.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!, e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png))

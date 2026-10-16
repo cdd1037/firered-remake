@@ -17,14 +17,13 @@ public sealed class GeneratedMenuAndRatingTests
                 "ui/main-menu/main-menu.json",
                 "data/services/oak-rating/oak-rating.json",
                 "data/constants.json",
-                "data/story.json",
-                "maps/metadata.json"
+                "data/story.json"
             ];
             var generated = Path.Combine(TestAssets.Root, "content/generated");
             var packages = new[] { "maps/regions/viridian-center", "maps/regions/opening" };
-            var required = files.Concat(packages.SelectMany(package =>
+            var required = files.Concat(CurrentWorldTestFixture.RelativeFiles()).Concat(packages.SelectMany(package =>
                 Directory.EnumerateFiles(Path.Combine(generated, package), "*", SearchOption.AllDirectories)
-                    .Select(file => Path.GetRelativePath(generated, file))));
+                    .Select(file => Path.GetRelativePath(generated, file)))).Distinct();
             foreach (var relative in required)
             {
                 var target = Path.Combine(root, "content/generated", relative);
@@ -51,13 +50,13 @@ public sealed class GeneratedMenuAndRatingTests
             Assert.IsTrue(national.NationalComplete);
             Assert.IsTrue(national.ShouldSetOakSawDexCompletion);
 
-            var center = PretViridianCenter.Load(root);
+            var center = PretViridianCenter.Load(PretCurrentWorld.Load(root));
             Assert.AreEqual(new MapId(PretViridianCenter.StableMapId), center.Map.Id);
             Assert.AreEqual((15, 10), (center.Map.Width, center.Map.Height));
             Assert.AreEqual(2, center.Constants["HEAL_LOCATION_VIRIDIAN_CITY"]);
             Assert.AreEqual(1, center.Constants["LOCALID_VIRIDIAN_NURSE"]);
             Assert.IsFalse(string.IsNullOrWhiteSpace(center.SourceUiTexts["gText_PlayerScurriedToCenter"]));
-            Assert.AreEqual(5, PretWorldCatalog.Load(Path.Combine(root, "content/generated")).Count);
+            Assert.IsTrue(PretCurrentWorld.Load(root).Maps.ContainsKey(new MapId("map.pallet-town")));
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "content/raw")));
             Assert.IsFalse(Directory.Exists(Path.Combine(root, "scripts")));
         }

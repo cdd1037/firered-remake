@@ -29,20 +29,16 @@ public sealed class PretRocketHideoutRegion
     public ImmutableArray<PretRocketElevatorFloor> ElevatorFloors { get; }
     public ImmutableArray<PretRocketElevatorEntrance> ElevatorEntrances { get; }
     public ImmutableArray<PretRocketDynamicExit> DynamicExits { get; }
-    public JsonElement SourceContract { get; }
     public JsonElement ExternalCeladonEvents { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
-    public JsonElement NpcSources => ReadDocument("npc-source.json");
-    public JsonElement SpinRoutes => ReadDocument("spin-routes.json");
 
     private PretRocketHideoutRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants,
         JsonElement contract, JsonElement city)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; SourceContract = contract; ExternalCeladonEvents = city;
+        Constants = constants; ExternalCeladonEvents = city;
         InitiallySetFlags = [constants["FLAG_HIDE_LIFT_KEY"], constants["FLAG_HIDE_SILPH_SCOPE"]];
         var atlas = contract.GetProperty("patchAtlas").EnumerateArray().ToDictionary(x => x.GetProperty("symbol").GetString()!, StringComparer.Ordinal);
         MetatilePatches = contract.GetProperty("metatilePatches").EnumerateArray().Select(p =>
@@ -105,46 +101,26 @@ public sealed class PretRocketHideoutRegion
         return id;
     }
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        var source = map.Events.GetProperty("connections");
-        var connections = source.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : source.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South,
-                "left" => Direction.West, "right" => Direction.East, _ => throw new InvalidDataException("Unsupported connection direction.") },
-                c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(),connections);
-    }
 
-    public static PretRocketHideoutRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
+
+    public static PretRocketHideoutRegion Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var project = Path.GetFullPath(projectRoot); var directory = Path.Combine(project,"content/generated/maps/regions/rocket-hideout");
-        var runtime = runtimeMaps ?? PretRocketHideoutRuntimeMaps.Load(project);
+        var runtime = world.RuntimeMaps;
         JsonElement Document(string path) { using var d = JsonDocument.Parse(ReadPinned(directory, path)); return d.RootElement.Clone(); }
 
-        var metadata = new PretWorldMetadata("pret/pokefirered",PretWorldMap.SourceCommit,"Local authenticated source data.","Source contracts; executable progression is registered by Application.",Profile);
-        var spec = Document("runtime.json"); var maps=ImmutableDictionary.CreateBuilder<MapId,PretWorldMap>();
-        foreach(var s in spec.GetProperty("maps").EnumerateArray())
-        {
-            var id=new MapId(s.GetProperty("stableId").GetString()!);var compact=runtime.Maps[id];
-                Need(                compact.SourceMapSymbol==s.GetProperty("sourceMapSymbol").GetString() && MapIdFromSourceSymbol(compact.SourceMapSymbol)==id,"Rocket map identity differs.");
-
-            var relative=s.GetProperty("mapPath").GetString()!;
-            maps.Add(id,PretWorldMap.FromRuntime(compact,metadata,PretRuntimeMapValidation.SafeFile(directory,relative),
-                PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"),MapIdFromSourceSymbol));
-        }
-        Need(maps.Count==6 && maps.Values.Sum(x=>x.Width*x.Height)==3179,"Rocket six-map geometry differs.");
+        var maps = world.MapsInDirectory(directory);
 
         var constants=PretSharedConstants.ForPackage(directory);
         var contract=Document("rocket-hideout.json");
-        using var city=JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/CeladonCity/map.json"));
-        return new(directory,maps.ToImmutable(),constants,contract,city.RootElement.Clone());
+        using var city=JsonDocument.Parse(world.ReadEvents("data/maps/CeladonCity/map.json"));
+        return new(directory,maps,constants,contract,city.RootElement.Clone());
     }
 
-    private JsonElement ReadDocument(string path)
-        { using var document=JsonDocument.Parse(ReadPinned(GeneratedDirectory,path));return document.RootElement.Clone(); }
     private static byte[] ReadPinned(string root, string path)
     {
-        PretRocketHideoutRuntimeMaps.RequireNoLinks(root, path);
+        PretRuntimeMapValidation.RequireNoLinks(root, path);
         return File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(root, path));
     }
     private static void Need(bool ok,string message)=>PretRuntimeMapValidation.Require(ok,message);

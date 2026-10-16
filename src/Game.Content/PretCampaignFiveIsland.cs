@@ -29,11 +29,6 @@ public sealed partial class PretCampaignCatalog
          "FiveIsland_PokemonCenter_2F", "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire", "InitRoamer",
          "SevenIsland", "GoodRod", "SuperRod", "Porygon.TradeEvolution", "VsSeeker.Rematch"];
 
-    private static void ValidateFiveIslandAnchors(PretFiveIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
 
     private static void ValidateFiveIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FiveIslandTrainerCatalog trainers, PretStoryCompilation scripts, FiveIslandItemContent items, bool includeCelio = false)
@@ -49,8 +44,6 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("five_island_trainer_instruction: " + battle.ScriptEntry);
         }
         ValidateFiveIslandStory(scripts, includeCelio);
-        foreach (var symbol in new[] { "MAP_FIVE_ISLAND_WATER_LABYRINTH","MAP_FIVE_ISLAND_MEMORIAL_PILLAR","MAP_FIVE_ISLAND_HOUSE1","MAP_FIVE_ISLAND_HOUSE2","MAP_FIVE_ISLAND_POKEMON_CENTER_2F","MAP_SEVEN_ISLAND" })
-            if (maps.Values.Any(m => m.SourceMapSymbol == symbol)) throw new InvalidDataException("five_island_excluded_map_admitted");
     }
 
     internal static void ValidateFiveIslandStory(PretStoryCompilation scripts,bool includeCelio = false)

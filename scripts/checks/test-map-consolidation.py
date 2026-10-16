@@ -1,26 +1,31 @@
 #!/usr/bin/env python3
-"""Shared map importer regressions plus bounded regeneration from the local raw cache.
+"""Direct world conversion regressions, without historical regional stages.
 
-This is not a full cold rebuild: it verifies current map JSON, atlas pixels,
-script closure, and explicit catalog selection without changing generated assets.
+Selected maps are regenerated into temporary output and compared against final
+JSON and all decoded RGBA channels. The separate world oracle checks all maps.
 """
 import importlib.util
 import json
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
 from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as ROOT
-from map_runtime import publish_map_package
+from generated_output_compare import generated_output_matches
 from map_scripts import parse_scripts, script_closure
-from map_source import read_source_lock, source_topology
-from runtime_map_manifest import compose, region_paths, verify_package
+from map_source import source_topology, tileset_bindings
+from source_features import script_blocks
+from world_map_renderer import render_map
+from world_selection import load_selection
+from world_source import WorldSource
 
 RAW = ROOT / 'content/raw/pokefirered/037335f4'
 GENERATED = ROOT / 'content/generated'
+SELECTION = ROOT / 'data/world-maps.json'
 
 
 def module(relative):
@@ -38,12 +43,18 @@ def script_source(text):
 
 
 class MapConsolidationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.selected = load_selection(SELECTION)
+        cls.source = WorldSource(RAW)
+        cls.tilesets = tileset_bindings(cls.source)
+        cls.atlas = module('scripts/imports/maps/import-map-atlases.py').AtlasReader(GENERATED / 'maps/atlases')
+
     def test_aliases_macros_and_transitive_closure(self):
         source = script_source('.macro local arg\n call Hidden\n.endm\n.equ Alias, Branch\n'
             'Root::\n call Alias\n goto End\nBranch::\n message Text\nEnd::\n end\n'
             'Text::\n .string "label-like text$"\nHidden::\n end\n')
-        parsed = parse_scripts(source)
-        result = script_closure(parsed, {'Root'})
+        result = script_closure(parse_scripts(source), {'Root'})
         self.assertEqual(['Branch', 'End', 'Root', 'Text'], [b['label'] for b in result['blocks']])
         self.assertEqual('local', result['localMacros'][0]['name'])
         self.assertFalse(result['unresolvedLabelReferences'])
@@ -60,20 +71,37 @@ class MapConsolidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_scripts(script_source('Root::\n end\nRoot::\n end\n'))
 
-    def test_lock_rejects_duplicates_and_escaping_paths(self):
+    def test_raw_reads_reject_escape_symlinks_missing_and_misaligned_data(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / 'source.json'
-            from map_runtime import COMMIT
-            lock = dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT,
-                profile='test', gameVersion='FIRERED', revision=0, completeGame=False,
-                maps=['Test'], files=[dict(path='data/maps/Test/map.json', roles=['map-source'])])
-            path.write_text(json.dumps(lock))
-            self.assertEqual(lock, read_source_lock(path, maps=[('Test',)], profile='test'))
-            for paths in (['x', 'x'], ['../escape']):
-                lock['files'] = [dict(path=p, roles=['map-source']) for p in paths]
-                path.write_text(json.dumps(lock))
-                with self.assertRaises(ValueError):
-                    read_source_lock(path, maps=[('Test',)], profile='test')
+            root = Path(temporary)
+            raw = root / 'raw'; raw.mkdir()
+            (raw / 'odd.bin').write_bytes(b'123')
+            (root / 'outside').write_bytes(b'outside')
+            (raw / 'link').symlink_to(root / 'outside')
+            source = WorldSource(raw)
+            for name in ('../outside', str(root / 'outside'), 'link'):
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    source.read(name)
+            with self.assertRaises(FileNotFoundError):
+                source.read('missing')
+            with self.assertRaisesRegex(ValueError, 'Misaligned'):
+                source.units('odd.bin', 'H')
+            self.assertEqual(b'123', source.read('odd.bin'))
+
+    def test_final_selection_rejects_unsafe_empty_and_duplicate_outputs(self):
+        importer = module('scripts/imports/maps/import-world.py')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); selection = root / 'selection.json'; out = root / 'out'
+            for group, filename in (('../escape', 'map.json'), ('safe', '../map.json'),
+                                    ('safe', 'nested\\map.json'), ('safe', 'drive:map.json')):
+                selection.write_text(json.dumps({'groups': {group: [{'sourceName': 'PalletTown', 'filename': filename}]}}))
+                with self.subTest(group=group, filename=filename), self.assertRaises(ValueError):
+                    load_selection(selection)
+            for groups in ({}, {'opening': ['PalletTown', 'PalletTown']}):
+                selection.write_text(json.dumps({'groups': groups}))
+                with self.subTest(groups=groups), self.assertRaises(ValueError):
+                    importer.compile_world(RAW, out, selection)
+                self.assertFalse(out.exists())
 
     def test_topology_preserves_reciprocal_connection_semantics(self):
         a = dict(id='MAP_A', warp_events=[], connections=[dict(map='MAP_B', direction='right', offset=3)])
@@ -87,167 +115,122 @@ class MapConsolidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             source_topology(source, [dict(events=a), dict(events=b)])
 
-    def assert_published_map(self, directory, region, name, atlas):
-        current = GENERATED / 'maps/regions' / region / (name + '.json')
-        converted = directory / (name + '.json')
-        self.assertEqual(json.loads(current.read_bytes()), json.loads(converted.read_bytes()))
-        images = 0
-        for path in directory.glob(name + '.*.png'):
-            relative = f'maps/regions/{region}/{path.name}'
-            expected = atlas.read(relative)
-            with Image.open(path) as actual:
-                self.assertEqual(expected.size, actual.size)
-                self.assertEqual(expected.tobytes(), actual.convert('RGBA').tobytes(), relative)
-            images += 1
-        self.assertGreater(images, 0)
-        return images
-
-    def test_early_region_json_and_atlas_pixels(self):
-        atlas = module('scripts/imports/maps/import-map-atlases.py').AtlasReader(GENERATED / 'maps/atlases')
-        images = maps = 0
+    def assert_selected_maps(self, rows):
+        self.assertTrue(rows)
         with tempfile.TemporaryDirectory() as temporary:
-            for region, filename in [('route22', 'route22-region'), ('forest', 'forest-region'),
-                    ('pewter', 'pewter-region'), ('viridian', 'viridian-region'), ('viridian-center', 'viridian-center')]:
-                importer = module('scripts/imports/maps/import-' + filename + '.py')
-                source = importer.Source(RAW)
-                for name, stable_id, directory in importer.MAPS:
-                    # The first two Viridian inputs are explicitly reference-only copies.
-                    if region == 'viridian' and name.startswith('PalletTown'):
-                        continue
-                    with self.subTest(map=name):
-                        stage = Path(temporary) / region / directory
-                        importer.import_map(source, name, stable_id, stage / directory)
-                        publish_map_package(stage)
-                        images += self.assert_published_map(stage, region, directory, atlas)
-                        maps += 1
-            importer = module('scripts/imports/maps/import-pallet.py')
-            for name, stable_id, directory in importer.MAPS:
-                with self.subTest(map=name):
-                    stage = Path(temporary) / 'opening' / directory
-                    importer.import_map(name, stable_id, stage / directory)
-                    publish_map_package(stage)
-                    images += self.assert_published_map(stage, 'opening', directory, atlas)
-                    maps += 1
-        self.assertEqual(24, maps)
-        self.assertEqual(156, images)
+            output = Path(temporary)
+            for row in rows:
+                with self.subTest(map=row['sourceName'], path=row['path']):
+                    target = output / row['path']
+                    document = render_map(self.source, row['sourceName'], row['stableId'], target,
+                        tilesets=self.tilesets, render_border=row.get('renderBorder', True),
+                        layout_symbol=row.get('layout'), technical_spawn=row.get('technicalSpawn'))
+                    self.assertEqual(json.loads((GENERATED / row['path']).read_bytes()), document)
+                    self.assertEqual(self.source.json('data/maps/' + row['sourceName'] + '/map.json'), document['events'])
+                    self.assertTrue(document['artifacts'])
+                    for artifact in document['artifacts']:
+                        logical = (Path(row['path']).parent / artifact['path']).as_posix()
+                        expected = self.atlas.read(logical)
+                        with Image.open(target.parent / artifact['path']) as actual:
+                            self.assertEqual(expected.size, actual.size, logical)
+                            self.assertEqual(expected.tobytes(), actual.convert('RGBA').tobytes(), logical)
 
-    def test_recipe_driven_gym_json_and_atlas_pixels(self):
-        importer = module('scripts/imports/maps/import-gym-region.py')
-        atlas = module('scripts/imports/maps/import-map-atlases.py').AtlasReader(GENERATED / 'maps/atlases')
-        with tempfile.TemporaryDirectory() as temporary:
-            for gym in ('celadon', 'fuchsia'):
-                out = Path(temporary) / 'content/generated/maps/regions' / (gym + '-gym')
-                result = importer.run(ROOT / f'scripts/recipes/maps/{gym}-gym-region.lock.json', RAW, out)
-                self.assertEqual(1, result['maps'])
-                self.assertEqual(8, self.assert_published_map(out, gym + '-gym', gym + '-city-gym', atlas))
-                for filename in ('npc-source.json', gym + '-gym-catalog.json'):
-                    self.assertEqual(json.loads((GENERATED / 'maps/regions' / (gym + '-gym') / filename).read_bytes()),
-                                     json.loads((out / filename).read_bytes()))
+    def test_early_maps_and_gyms_match_final_json_and_atlas_pixels(self):
+        groups = {'opening', 'viridian', 'viridian-center', 'forest', 'route22', 'pewter', 'celadon-gym', 'fuchsia-gym'}
+        rows = [r for r in self.selected if r['path'].split('/')[2] in groups]
+        self.assertEqual(groups, {r['path'].split('/')[2] for r in rows})
+        self.assert_selected_maps(rows)
 
     def test_cleared_vram_interiors_and_shared_graphics_alias(self):
-        reader = module('scripts/imports/maps/import-fuchsia-route-region.py')
-        codec = module('tools/import-regional-service-maps/_regional_service_shared.py')
-        cleared = module('scripts/lib/school-house-map-renderer.py')
-        interiors = module('scripts/imports/maps/import-school-house-interiors.py')
-        atlas = module('scripts/imports/maps/import-map-atlases.py').AtlasReader(GENERATED / 'maps/atlases')
-        source = reader.Source(raw_root=RAW)
-        with tempfile.TemporaryDirectory() as temporary:
-            codec.TILESETS = interiors.TILESETS
-            catalog = json.loads((GENERATED / interiors.PACKAGE / 'catalog.json').read_bytes())
-            self.assertTrue(catalog['maps'])
-            for row in catalog['maps']:
-                name = row['sourceName']
-                directory = Path(row['mapPath']).stem
-                for leaf in ('scripts.inc', 'text.inc'):
-                    source.read(f'data/maps/{name}/{leaf}')
-                stage = Path(temporary) / directory
-                cleared.import_map(source, name, row['stableId'], stage / directory, codec)
-                publish_map_package(stage)
-                self.assertEqual(8, self.assert_published_map(stage, 'school-house-interiors', directory, atlas))
-            for region, name, directory, tilesets in [
-                ('regional-service-maps', 'CeladonCity_Condominiums_RoofRoom', 'celadon-city-condominiums-roof-room',
-                 {'gTileset_Building': 'primary/building', 'gTileset_School': 'secondary/school'}),
-                ('silph', 'SilphCo_1F', 'silph-co-1f',
-                 {'gTileset_Building': 'primary/building', 'gTileset_SilphCo': 'secondary/silph_co'})]:
-                codec.TILESETS = tilesets
-                for leaf in ('scripts.inc', 'text.inc'):
-                    path = f'data/maps/{name}/{leaf}'
-                    if path in source.tree:
-                        source.read(path)
-                stage = Path(temporary) / directory
-                codec.import_map(source, name, 'map.' + directory, stage / directory)
-                publish_map_package(stage)
-                self.assertEqual(8, self.assert_published_map(stage, region, directory, atlas))
+        names = {'CeladonCity_Condominiums_RoofRoom', 'SilphCo_1F'}
+        rows = [r for r in self.selected if r['path'].split('/')[2] == 'school-house-interiors' or r['sourceName'] in names]
+        self.assertTrue(names <= {r['sourceName'] for r in rows})
+        self.assert_selected_maps(rows)
 
-    def test_actual_regional_script_closures_are_nonempty(self):
-        files = ['viridian-region', 'viridian-center', 'vermilion-region', 'vermilion-gym-region',
-            'ssanne-region', 'route3-region', 'route22-region', 'route11-region', 'rocktunnel-region',
-            'pewter-region', 'mtmoon-region', 'forest-region', 'cerulean-region', 'celadon-approach-region', 'bill-region']
-        for name in files:
-            with self.subTest(region=name):
-                importer = module('scripts/imports/maps/import-' + name + '.py')
-                source = importer.Source(RAW)
-                names = [row[0] for row in importer.MAPS] if hasattr(importer, 'MAPS') else importer.SERVICE_MAPS
-                worlds = [dict(events=source.json(f'data/maps/{n}/map.json')) for n in names]
-                result = importer.script_inventory(source, worlds)
-                self.assertTrue(result['roots'] and result['blocks'])
+    def test_actual_source_script_closures_remain_nonempty(self):
+        source = WorldSource(RAW)
+        groups = ('viridian', 'viridian-center', 'vermilion', 'vermilion-gym', 'ssanne', 'route3',
+                  'route22', 'route11', 'rocktunnel', 'pewter', 'mtmoon', 'forest', 'cerulean', 'celadon-approach', 'bill')
+        # Register original include/text inputs once. Regional stage catalogs are
+        # never used as either source selection or expected output.
+        script_blocks(source, ['ViridianCity'])
+        parsed = parse_scripts(source, alias_directives=('equ', 'set'))
+        for group in groups:
+            names = [r['sourceName'] for r in self.selected if r['path'].split('/')[2] == group and 'variant' not in r]
+            with self.subTest(group=group):
+                self.assertTrue(names)
+                roots = {e['script'] for name in names
+                    for kind in ('object_events', 'coord_events', 'bg_events')
+                    for e in source.json('data/maps/' + name + '/map.json')[kind]
+                    if e.get('script') not in (None, '0', '0x0', 'NULL')}
+                self.assertTrue(roots)
+                result = script_closure(parsed, roots)
+                self.assertTrue(result['blocks'])
                 self.assertFalse(result['unresolvedLabelReferences'])
-                self.assertTrue(set(result['roots']) <= {b['label'] for b in result['blocks']})
+                self.assertTrue(roots <= {b['label'] for b in result['blocks']})
 
-    def test_package_check_accepts_verified_pruning_but_rejects_data_drift(self):
-        atlas = module('scripts/imports/maps/import-map-atlases.py')
+    def test_final_comparison_preserves_types_array_order_and_transparent_rgb(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            generated = root / 'generated'
-            output = generated / 'maps/regions/test'
-            stage = root / 'stage'
-            stage.mkdir()
-            output.mkdir(parents=True)
+            document = dict(meaningful=[1, 2], enabled=False)
+            target = root / 'data.json'
+            expected = json.dumps(document, indent=2).encode()
+            target.write_text(json.dumps(document, sort_keys=True))
+            self.assertTrue(generated_output_matches(target, expected))
+            for changed in (dict(document, enabled=0), dict(document, meaningful=[2, 1])):
+                target.write_text(json.dumps(changed))
+                self.assertFalse(generated_output_matches(target, expected))
             image = Image.new('RGBA', (16, 16), (11, 22, 33, 0))
-            image.save(stage / 'map.png', compress_level=0)
-            image.save(output / 'map.png', compress_level=9)
-            document = dict(schemaVersion=1, meaningful=[1, 2], enabled=False)
-            (stage / 'data.json').write_text(json.dumps(document, indent=2))
-            (output / 'data.json').write_text(json.dumps(document, sort_keys=True))
-            manifest = dict(schemaVersion=1, outputCount=2,
-                outputs=[dict(path='data.json'), dict(path='map.png')])
-            (stage / 'manifest.json').write_text(json.dumps(manifest))
-            (output / 'manifest.json').write_text(json.dumps(manifest))
-            verify_package(stage, output, generated)
-            atlas.compile_atlases(generated, generated / 'maps/atlases', {'maps/regions/test/map.png': (16, 16)})
-            (output / 'map.png').unlink()
-            pruned = dict(manifest, outputCount=1, outputs=[dict(path='data.json')])
-            (output / 'manifest.json').write_text(json.dumps(pruned))
-            verify_package(stage, output, generated)
-            (output / 'data.json').write_text(json.dumps(dict(document, enabled=0)))
-            with self.assertRaises(ValueError):
-                verify_package(stage, output, generated)
-            (output / 'data.json').write_text(json.dumps(document))
-            (output / 'manifest.json').write_text(json.dumps(dict(pruned, unexpected=True)))
-            with self.assertRaises(ValueError):
-                verify_package(stage, output, generated)
-            (output / 'manifest.json').write_text(json.dumps(pruned))
-            Image.new('RGBA', (16, 16), (12, 22, 33, 0)).save(stage / 'map.png')
-            with self.assertRaises(ValueError):
-                verify_package(stage, output, generated)
+            target = root / 'map.png'; expected_path = root / 'expected.png'
+            image.save(target, compress_level=9); image.save(expected_path, compress_level=0)
+            self.assertTrue(generated_output_matches(target, expected_path.read_bytes()))
+            Image.new('RGBA', (16, 16), (12, 22, 33, 0)).save(target)
+            self.assertFalse(generated_output_matches(target, expected_path.read_bytes()))
 
-    def test_explicit_regions_reproduce_every_current_catalog(self):
-        catalogs = sorted((GENERATED / 'maps/catalogs').glob('*.json'))
-        self.assertTrue(catalogs)
+    def test_partial_map_option_is_rejected_without_writing(self):
         with tempfile.TemporaryDirectory() as temporary:
-            for catalog in catalogs:
-                with self.subTest(catalog=catalog.name):
-                    expected = json.loads(catalog.read_bytes())
-                    regions = sorted({row['path'].split('/')[2] for row in expected['maps']})
-                    output = Path(temporary) / catalog.name
-                    compose(GENERATED, output, region_paths(GENERATED, regions))
-                    expected['maps'].sort(key=lambda row: row['path'])
-                    self.assertEqual(expected, json.loads(output.read_bytes()))
-                    compose(GENERATED, catalog, region_paths(GENERATED, regions), check=True)
-            with self.assertRaises(ValueError):
-                region_paths(GENERATED, ['../escape'])
-            with self.assertRaises(ValueError):
-                region_paths(GENERATED, ['opening', 'opening'])
+            out = Path(temporary)
+            for relative in ('maps/world.json', 'maps/regions/opening/pallet-town.json',
+                             'maps/atlases/catalog.json', 'maps/atlases/world.png'):
+                target = out / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(b'existing complete world must remain unchanged')
+            def snapshot():
+                return {p.relative_to(out).as_posix(): (p.read_bytes(), p.stat().st_mtime_ns)
+                        for p in out.rglob('*') if p.is_file()}
+            before = snapshot()
+            result = subprocess.run([sys.executable, str(ROOT / 'scripts/imports/maps/import-world.py'),
+                                     '--raw', str(RAW), '--out', str(out), '--map', 'PalletTown'],
+                                    capture_output=True, text=True)
+            self.assertEqual(2, result.returncode)
+            self.assertIn('unrecognized arguments: --map PalletTown', result.stderr)
+            self.assertEqual(before, snapshot())
+
+    def test_world_check_is_read_only_and_rejects_final_data_drift(self):
+        importer = module('scripts/imports/maps/import-world.py')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); out = root / 'resources'
+            selection = root / 'world.json'
+            selection.write_text(json.dumps({'groups': {'opening': ['PalletTown']}}))
+            importer.compile_world(RAW, out, selection)
+            def snapshot():
+                return {p.relative_to(out).as_posix(): (p.read_bytes(), p.stat().st_mtime_ns)
+                        for p in out.rglob('*') if p.is_file()}
+            command = [sys.executable, str(ROOT / 'scripts/imports/maps/import-world.py'),
+                       '--raw', str(RAW), '--out', str(out), '--selection', str(selection), '--check']
+            before = snapshot()
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(before, snapshot())
+            target = out / 'maps/world.json'
+            changed = json.loads(target.read_bytes())
+            changed['maps'][0]['stableId'] = 'map.wrong'
+            target.write_text(json.dumps(changed))
+            damaged = snapshot()
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn('Final world output differs', result.stderr)
+            self.assertEqual(damaged, snapshot())
 
 
 if __name__ == '__main__':

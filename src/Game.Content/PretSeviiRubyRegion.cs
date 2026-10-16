@@ -14,19 +14,16 @@ public sealed partial class PretSeviiRubyRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public JsonElement ExcludedEncounterGates => Contracts.GetProperty("excludedEncounterGates");
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretSeviiRubyRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json");
+
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -49,34 +46,14 @@ public sealed partial class PretSeviiRubyRegion
         "MAP_ONE_ISLAND_KINDLE_ROAD_EMBER_SPA" => new("map.one-island-kindle-road-ember-spa"),
         _ => PretFirstSeviiRegion.MapIdFromSourceSymbol(symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretSeviiRubyRegion Load(PretCurrentWorld world)
     {
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown SeviiRuby connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
-    }
-    public static PretSeviiRubyRegion Load(string root)
-    {
+        var root = world.ProjectRoot;
         var source = SeviiRubySource.Region(root);
 
         var directory = source.Directory;
-        var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Kindle Road and Mt. Ember source maps; application admission remains separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtimeEntry = spec;
-            Need(runtimeEntry.GetProperty("path").GetString() == relative , "SeviiRuby runtime certificate differs.");
-            var payload = source.Read(relative);
-            var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
-            var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
-            maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         Need(maps.Count > 0, "SeviiRuby map collection is empty.");
         foreach (var map in maps.Values)
             foreach (var warp in map.FieldWarps)

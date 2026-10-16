@@ -22,14 +22,9 @@ public sealed partial class PretCampaignCatalog
     public SeviiRubyItemContent? SeviiRubyItems { get; }
     public bool SeviiRubyEnabled => SeviiRubyRegion is not null;
 
-    private static void ValidateSeviiRubyAnchors(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
 
-    private static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
+    private static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
     {
         if (pokemon.SpeciesNames[78] != "RAPIDASH" || pokemon.SpeciesNames[218] != "SLUGMA" || pokemon.SpeciesNames[219] != "MAGCARGO")
             throw new InvalidDataException("sevii_ruby_composition_scope");

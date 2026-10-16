@@ -1,271 +1,106 @@
 # 资源导入与再生成
 
-本文描述当前工程的实际边界与可用入口。运行游戏不需要原作源码；重新转换资源需要对应的原始输入。已有普通工程包携带本地资源，代码仓库只保存作者实现、必要配方和测试。
+游戏只读取 `content/generated` 和 Godot 自有素材，不读取 pret 仓库或导入配方。
+源码仓库保存代码、必要的选择配置和测试；普通工程包另带本地资源。不要把临时
+报告、Git checkout、SDK、构建缓存或旧阶段产物塞回运行目录。
 
-运行资源的实际功能目录见[资源布局](resource-layout.md)。地图与图像由各自发布器写入当前位置，单文件目录已经改为直接 JSON/PNG 目标。
+## 原始输入
 
-## 输入与输出
+- `content/raw/pokefirered/037335f4/` 按上游相对路径保存固定输入，revision 为
+  `037335f4c725d7c9aecdac87066f2002b4bd7e14`，来源 `pret/pokefirered`。
+- `content/raw/local/forest-trainer-art/` 是实际使用的三个本地调色板变体，不能
+  用上游默认调色板替换。
+- `src/Game.Godot/Assets/` 中字体和效果素材随普通工程提供。
+- 音频另需现有匹配 `audio/synth/firered.pack` 与 `normal-cries.bin`，见[音频说明](audio.md)。
 
-- `content/raw/pokefirered/037335f4/`：按上游相对路径保存的原始输入，固定 revision 为 `037335f4c725d7c9aecdac87066f2002b4bd7e14`，来源为 `pret/pokefirered`。
-- `content/raw/local/forest-trainer-art/`：三个实际使用的本地调色板变体，不能用上游默认调色板替换。
-- `content/generated/`：运行时需要的类型化游戏数据、图集、图块索引和合成音频资源。这里不保存原始 C/ASM 副本或导入来源锁。
-- `scripts/recipes/` 中按功能组织的配方和 `config/` 跨族配置：固定版本、输入选择及真实转换设置，仅供工具使用。
-- `src/Game.Godot/Assets/`：Godot 项目的字体和效果素材，也需随普通工程提供。
+缺少源文件时，从固定 revision 取得对应路径。不要用最新分支同名文件、旧生成
+JSON 或历史证明文件冒充原始输入。新地图／场景服务编译器直接读取 raw；部分尚未
+迁移的专用入口仍读取固定版本 Git blob，以该入口实际参数为准。转换不执行上游脚本。
 
-资源、存档、SDK、编译缓存由 `.gitignore` 排除。不要用 `git add -f` 把它们加进源码仓库。来源可追溯或转换成功不等于获得公开分发授权；对外分发资源前仍须自行确认适用权利。
+`python scripts/imports/source/materialize-source.py --recipe <配方> --offline`
+可以从已有本地输入物化所选源文件；只有显式 `--download` 才联网。
+配方描述真实输入选择与转换差异，不承担每次运行的文件回执功能。
 
-## 准备原始输入
-
-现有导入器有两种输入方式：直接读取上述 raw 目录，或通过 `--reference-repo` 从固定版本的本地 Git checkout 读取 blob。少数 fetch 工具提供 `--cache` / `--offline`。以具体入口的 `--help` 为准，不要仅凭 fetch/import 文件名推断是否联网。
-
-缺少输入时，从官方 `pret/pokefirered` 仓库的固定 revision 取得对应路径，保存到 raw 树的同一相对位置；需要 Git 对象的入口则准备本地 checkout。不要拿最新分支的同名文件混入固定版本，也不要把丢失的来源证明 JSON 当成游戏素材重新构造。文件读取与格式错误应清楚报出缺失路径。
-
-这些转换不需要运行上游游戏代码。普通导入链不以 ROM、模拟器录音或旧的参考构建目录为前提。主游戏使用 `src/Game.Audio` 的自定义合成器；其工具与资源说明见 [音频说明](audio.md)。
-
-工具布局、离线原始输入物化和维护检查见 [scripts 说明](../scripts/README.md)。重复的薄 fetch／seed 入口已合并为 `scripts/imports/source/materialize-source.py --recipe <配方路径>`；默认离线，支持固定版本 Git blob 和只读目录缓存。
+资源由 `.gitignore` 排除；不使用 `git add -f` 绕过。转换能力不代表公开分发授权。
 
 ## 工具环境
 
-使用 .NET 10 SDK、Godot 4.7.2 .NET 和 Python 3；图像转换需要 Pillow。工具发现见工程 README 与 `scripts/env.sh`。下面命令均在仓库根目录执行，`source scripts/env.sh` 是 Bash 示例。
+.NET 10 SDK、Godot 4.7.2 .NET、Python 3 和 Pillow。安装及发现入口见工程 README
+与 `scripts/env.sh`。以下命令从仓库根目录执行：
 
 ```sh
 source scripts/env.sh
-dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false
-dotnet test FireRed.Current.slnx --no-build --no-restore -m:1 -nr:false
+dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
 ```
 
-`--no-restore` 要求包已恢复。首次环境配置按工程 README 进行，不应把本机工具安装目录写进项目资源。
+`--no-restore` 要求此前已完成包恢复。音频测试按需单独运行，不进默认全量测试。
 
-## 当前再生成入口
-
-以下是已有资源工程上的定向再生成命令，不是一条覆盖所有历史开发包的从零流水线。区域地图、物种、训练师和展示数据先由所属导入器生成，再执行依赖它们的共享转换。
+## 最终资源编译入口
 
 ```sh
-# 共享 TM/HM 定义及兼容性；区域文件保留紧凑引用。
-python3 scripts/imports/items/import-machine-catalog.py --references-only
-python3 scripts/imports/items/import-machine-catalog.py --references-only --check
+# 全部选定地图、真实布局变体、场地瓦片、地图图集及共享 NPC 图集。
+python scripts/imports/rebuild-resources.py world
 
-# 运行时地图编号和场地属性；后者依赖已有区域地图元数据。
-python3 scripts/imports/maps/import-map-numbers.py
-python3 scripts/imports/maps/import-field-tilesets.py
+# 真实场景功能、遇敌、交互图像，以及 NPC 交换／钓竿等服务。
+python scripts/imports/rebuild-resources.py field-rules field-services
 
-# 战斗文本与演出时长。
-python3 tools/import-battle-text.py
-python3 tools/import-presentation-cues.py
+# 由源码和现有合成素材生成唯一音频 cue 目录。
+python scripts/imports/rebuild-resources.py audio-cues
 
-# 共享 NPC 图集，及依赖已有菜单/初始物种/驱虫文本的故事编译。
-python3 scripts/imports/presentation/import-shared-overworld.py
-python3 scripts/imports/story/import-story.py
-python3 scripts/imports/story/import-story.py --check
-
-# 在区域地图转换完成后重建并校验共享图块页。
-python3 scripts/imports/maps/import-map-atlases.py
-python3 scripts/imports/maps/import-map-atlases.py --check
+# 检查而不修改；也可用独立输出目录重建再对照。
+python scripts/imports/rebuild-resources.py world field-rules field-services audio-cues --check
+python scripts/imports/rebuild-resources.py world --out /tmp/firered-world-check
 ```
 
-地图原 PNG 已收进图集时，再打包可读取已有图集；首次清除独立地图 PNG 使用 `--prune`，工具先验证并把原文件备份到工程外。只检查一致性时用 `--check`，不要为验证反复删除资源。图像输出使用共享的精确 RGBA 编码工具，不能因为压缩后没有字节相等就认定像素改变。
+可用 `--raw` 指定原始输入目录，`--out` 指定最终 generated 根。`--dry-run` 校验
+入口和显式音频输入并打印命令，但不保证整个源闭包齐全。任一步失败即停止；不会
+跳过缺失工具而报告成功，也不再依赖旧 services/postgame 地域阶段编排。
 
-`scripts/imports/rebuild-services.py` 和 `scripts/imports/rebuild-postgame.py` 分别是服务／支线及后续区域的有范围编排入口，尚未在完整固定版本 checkout 上执行全量冷重建，不应标成“一键重建整个游戏”。单个族的输入、顺序和已验证范围应由对应工具说明维护，而不是额外生成一份全项目来源回执。
+这个入口明确覆盖所列目标，并非全游戏一键冷重建器。共享物品、物种、故事 IR、
+UI 等仍有各自的真实生产入口；不把这些未编排流程隐藏在“全部完成”里。
 
-## Pokémon 导入族
+### 地图
 
-区域入口为 `scripts/imports/pokemon/import-<区域>-pokemon.py`，初始物种入口为 `scripts/imports/pokemon/import-pokemon.py`；Celadon/Rocket 的综合目录也调用同一转换核心。共享实现位于 `scripts/lib/pokemon_import.py` 与 `scripts/lib/pokemon_import_io.py`，区域以显式参数提供物种/地图选择，不通过修改另一区域模块的全局变量继承配置。区域的真实数据选择与规则仍由对应入口拥有。
+`data/world-maps.json` 明确选择地图、真实变体与少量命名覆盖，普通字段从源数据
+派生。唯一运行索引是 `content/generated/maps/world.json`。地图身份不依赖加载
+先后或历史区域包。真实变体保留原事件头、NPC 和 warp，只替换对应布局／像素。
 
-当前可持有／对手物种由 `data/game-pokemon.json` 声明，运行目录直接引用共享 canonical
-定义；繁殖、成长、捕获率和招式兼容性不在地区代码中复制。新增收藏展示资源由
-`scripts/recipes/pokemon/collection-presentation.json` 选择源图标／脚印及可复用的
-战斗正面图，写入 `content/generated/sprites/pokemon/collection/`。导入器验证固定
-raw 绑定与完整 RGBA 像素；运行时名称和图鉴文字继续使用共享图鉴目录。
+统一 world 编译已经在新建空目录验证：414 份地图数据、3296 张逻辑地图／边框
+图像、126 组 NPC 图像的 1088 帧，以及开场玩家图像，与原有最终资源对照一致。
+比较从最终图集裁剪完整 RGBA，不把 PNG 编码差异当成画面变化。
 
-```sh
-python3 scripts/imports/pokemon/import-game-pokemon.py
-python3 scripts/imports/presentation/import-pokemon-collection-presentation.py
-python3 scripts/imports/presentation/import-pokemon-collection-presentation.py --check
-python3 scripts/checks/test-game-pokemon.py
-python3 scripts/checks/test-pokemon-collection-presentation.py
-python3 scripts/checks/test-pokemon-import.py
-```
+三之岛通路、海沫岛、宝可梦塔等仍按各自真实游戏条件选择变体；普通房屋、门楼、
+火焰山顶与后期区域都由同一地图入口处理，不需要先重放早期开发阶段。
 
-这组检查验证独立重复转换、输入读取及实际字段/图像行为；对照在工程外临时输出完成。工具布局与运行资源布局各自按职责整理；实际发布位置以当前导入器为准。
-
-## 验证边界
-
-- [运行时资源边界](generated-only-runtime.md)：仅 generated 的独立资源根、新游戏/存档/Continue，以及代表存档加载检查。
-- [共享机器目录](shared-machine-catalog.md)：区域引用、完整兼容性矩阵与导入测试。
-- [地图图集](map-render-atlases.md)和[图像资源](generated-image-assets.md)：像素保持、原生 Godot 解码及缓存边界。
-- `tests/Game.ResourceImport.Tests`：当前维护的导入检查；`scripts/checks/test-*.py` 中的族测试补充字段和像素比较。
-
-通过这些检查不等于整条游戏路线重放、每个旧入口的冷重建、真实扬声器听感验收或素材公开授权。缺失的旧研究记录不应通过伪造报告、放宽玩法断言或重新塞回运行时来源依赖来补齐。
-
-Celadon approach 遇敌表由 `python scripts/imports/story/import-celadon-approach-encounters.py` 从固定 raw 的 wild_encounters.json、species_info.h、pokemon.c 重建。`--check` 核对现存 JSON，`--raw` / `--out` 支持隔离输出。两张地图、24 个槽位及携带物品玩法字段与保留资源逐字段等价；当前输出已删除不参与业务的 sourcePath 和 excludedTables。
-
-共享地图属性表使用当前schema3地图及raw的src/data/tilesets/headers.h、metatiles.h和实际属性bin再生。运行import-field-tilesets.py后用--check核对；不能仅保留旧地图文件名对应的layout。
-
-音频从零恢复有单独的输入合同：主 pack 需要现有 pack 或合法自备 ROM；normal-cries 目录生成需要匹配 pret 常量/声明、生成后的 cry .bin 与源 .wav，并对照现有 pack。工具直接写目录，不再依赖旧 inventory/ELF/map。当前 raw 树没有生成后的 cry .bin。目前八份早期cue配方缺失；在这些闭包补齐前保留现有私有音频资源，不宣称完整冷重建。
-
-音频现合入主工程 `src/Game.Audio`，只保留 `content/generated/audio/synth/firered.pack` 与 `normal-cries.bin` 一套运行素材。`tools/AudioTool` 和 catalog 生成器显式接收输入路径；运行库不依赖项目目录。当前入口见 [音频说明](audio.md)，音频测试按需单独执行。
-
-## 16号路门楼二层与新增物品图标
-
-`import-cycling-road.py` 的地图清单现在包含17号路及16号路门楼二层，
-读取同一固定raw目录的地图、楼层布局、脚本和文本。故事路径在
-`tools/import-story/recipe.json`；护符金币从既有共享物品定义和显式取得清单导入。
-取得清单的可选 `icon: true` 使用上游图标表与调色板生成
-`data/items/current-icons.json`，由通用商店／背包表现加载，不增加地区专用UI入口。
+### 游戏数据与故事
 
 ```sh
-python scripts/imports/maps/import-cycling-road.py
-python scripts/imports/maps/import-field-tilesets.py
-python scripts/imports/maps/import-map-atlases.py
+python scripts/imports/items/import-machine-catalog.py --references-only
 python scripts/imports/items/import-current-items.py
-python scripts/lib/item_icon_exports.py
-python scripts/imports/story/import-story.py
-python scripts/imports/maps/import-cycling-road.py --check
-python scripts/imports/items/import-current-items.py --check
-```
-
-物品图标检查在收进图集后仍比较完整RGBA像素；不要求PNG压缩字节一致。
-新增原始输入仍只保存在本地raw中，不进入Git或公开站点。
-
-## 三之岛土龙弟弟通路
-
-First-Sevii 地图与规则入口支持显式 `--raw-root`，可直接使用工程内的固定版本
-原始输入。该模式全程离线；它信任调用者选定的 pinned raw 缓存，不将目录冒充
-Git checkout，也不声称验证了不存在的 Git 对象。缺失文件、越界路径或符号链接
-会报错。`--reference-root` 仍用于实际固定版本 Git checkout，两种模式不能混用。
-规则入口也保留原来的 `reference preparation output` 三个位置参数。
-
-地图布局变体由 `scripts/lib/layout_variants.py` 共享导入，Seafoam 与通路均使用
-同一渲染器和紧凑地图编码器。变体改变网格和图像，保留原地图事件头、NPC 与
-warp。通路的 National Dex 条件由原脚本选择 dug-out 布局；Port 遇敌表正常导入，
-首访限制来自实际地图连通性。NPC 赠送及隐藏 Nugget 使用源脚本、事件与共享物品定义。
-赠送服务绑定生成到 `data/regions/first-sevii/services.json` 的 `serviceBindings`，
-保留原 NPC 事件身份；`scripts/lib/field_item_services.py` 与 Lost Cave 共用脚本图遍历，
-从源脚本推导物品及可达程序，并展开 `giveitem` 等宏的共享标准程序依赖。
-
-在工程根目录执行：
-
-```sh
-python scripts/imports/maps/import-first-sevii-region.py --raw-root content/raw/pokefirered/037335f4
-python scripts/imports/story/import-first-sevii-rules.py --raw-root content/raw/pokefirered/037335f4 --preparation content/generated/maps/regions/first-sevii --out content/generated/data/regions/first-sevii
-python scripts/imports/maps/import-field-tilesets.py
-python scripts/imports/presentation/import-shared-overworld.py
-python scripts/imports/presentation/import-first-sevii-town-map.py --raw content/raw/pokefirered/037335f4
-python scripts/imports/story/import-story.py
-python scripts/imports/maps/import-map-atlases.py
-
-python scripts/imports/maps/import-first-sevii-region.py --raw-root content/raw/pokefirered/037335f4 --check
-python scripts/imports/story/import-first-sevii-rules.py --raw-root content/raw/pokefirered/037335f4 --preparation content/generated/maps/regions/first-sevii --out content/generated/data/regions/first-sevii --check
-python scripts/imports/maps/import-field-tilesets.py --check
-python scripts/imports/presentation/import-shared-overworld.py --check
-python scripts/imports/presentation/import-first-sevii-town-map.py --raw content/raw/pokefirered/037335f4 --check
-python scripts/imports/story/import-story.py --check
-python scripts/imports/maps/import-map-atlases.py --check
-python scripts/checks/verify-map-importer-unification.py
-python scripts/checks/test-pokemon-import.py
-```
-
-`import-story.py` 使用 PATH 中的 .NET，也支持 `--dotnet <可执行文件>`。
-`tools/import-story/recipe.json` 必须包含通路脚本、文本及隐藏物品旗标，才能重建
-运行时故事 IR；只更新地图资源不足以启用交互。
-
-需要移除重新生成的独立地图 PNG 时，使用现有
-`python scripts/imports/maps/import-map-atlases.py --prune` 流程；工具会先验证像素，
-再备份到工程外并更新文件清单。First-Sevii 的 `--check` 同时支持独立 PNG 与已打包
-图集，比较完整 RGBA；不依赖 PNG 压缩字节相等。共享变体检查还验证原事件头未变、
-来源字节未被改写、东西出口连通性、隐藏物品可交互位置以及无效布局被拒绝。
-
-Town Map 位置从原地图 section、布局尺寸及 `sSeviiMapsecs` 页归属生成。
-通路属于地下地图，原作使用逃脱入口的地图与坐标投影玩家标记；因此资源保留
-`requiresEscapeWarp`，不将 section 的占位坐标误当成玩家位置。
-
-### Six Island Green Path / Pattern Bush
-
-The Six Island map importer accepts the retained pinned raw cache directly; it
-indexes source labels without requiring a full reference checkout or executing
-upstream tools. Green Path and Pattern Bush use their original layouts, four
-outdoor entrances/six forest exit tiles, trainers and encounter headers.
-
-```sh
-python scripts/imports/maps/import-six-island-region.py --raw-root content/raw/pokefirered/037335f4
-python scripts/imports/story/import-six-island-rules.py content/raw/pokefirered/037335f4 . .
-python scripts/imports/items/import-six-island-items.py content/raw/pokefirered/037335f4 . .
-python scripts/imports/story/import-six-island-encounters.py content/raw/pokefirered/037335f4 .
-python scripts/imports/maps/import-field-tilesets.py
-python scripts/imports/maps/import-map-atlases.py
-python scripts/imports/story/import-story.py
-```
-
-Each Six Island producer above also supports `--check`. Ordinary land tables
-load from the generated encounter headers. The retained regional water importer
-supplies Green Path Surf/Old Rod source contracts; the shared fishing catalog
-admits all three rods when the map is mounted. Trainer membership is discovered
-from map actors and their local/shared initial-battle scripts. The old predecessor
-species-count projection no longer controls this importer.
-
-Owned additions and breeding remain in the shared `data/game-pokemon.json`
-admissions/import, and collection presentation uses its existing recipe with
-optional source battle sprites when no reusable portrait exists. Source escape
-warp instructions now contribute the allowable exits and select the correct
-entry side through ordinary script execution; no remote map jump is substituted
-for reaching either entrance.
-
-## Mt. Ember summit
-
-The Sevii Ruby map package also owns Mt. Ember Summit Path 1F/2F/3F and the summit.
-Its importer accepts either the pinned Git checkout with `--reference-root` or the
-retained offline cache with `--raw-root`; raw mode does not claim Git verification.
-All four layouts, map events and local scripts come from the same pinned revision.
-The existing shared field definitions consume the four summit Strength boulders
-and nine second-floor Rock Smash rocks (temporary flags 12–1A).
-
-```sh
-python scripts/imports/maps/import-sevii-ruby-region.py --raw-root content/raw/pokefirered/037335f4
-python scripts/imports/maps/import-field-tilesets.py
-python scripts/imports/presentation/import-shared-overworld.py
-python scripts/imports/maps/import-map-atlases.py
-python scripts/imports/maps/import-sevii-ruby-region.py --raw-root content/raw/pokefirered/037335f4 --check
-python scripts/checks/test-mt-ember-summit-import.py
-```
-
-The map check compares full RGBA even when the original PNGs have been packed.
-Moltres uses the source NPC_BLUE palette and 32×32 overworld image; all nine
-original animation entries repeat frame zero. The shared overworld importer
-keeps that frame mapping. Story compilation remains a separate required step,
-using the summit script paths in `tools/import-story/recipe.json`.
-
-Summit walking encounters are regenerated from the pinned FireRed rows through the
-shared source-table registry, while fixed encounters use typed scripted origins
-and the same battle/capture/history pipeline. Source script preparation uses the
-original random-personality CreateScriptedWildMon path, not ordinary nature-first
-wild generation. Legendary entry skips the ordinary held-item draw. Terminal
-source outcomes retain Run versus Teleport before returning to the original map
-callbacks; caught/defeated versus retry state is not inferred from presentation.
-
-```sh
-python scripts/imports/story/import-mt-ember-summit-encounters.py
-python scripts/imports/story/import-mt-ember-summit-encounters.py --check
-python scripts/checks/test-mt-ember-summit-encounters.py
-python scripts/imports/story/import-story.py
-python scripts/imports/story/import-story.py --check
 python scripts/imports/pokemon/import-game-pokemon.py
 python scripts/imports/presentation/import-pokemon-collection-presentation.py
-python scripts/imports/presentation/import-pokemon-collection-presentation.py --check
+python scripts/imports/story/import-story.py
 ```
 
-Encounter cry registration uses the loaded canonical species/cry capability;
-mode 2 keeps the existing fixed source parameters. No source audio assets or DSP
-algorithms were changed for this route. Offline synthesis checks do not establish
-audible device output.
+运行物种定义共享 canonical 目录，真实选择在 `data/game-pokemon.json`；TM/HM
+兼容性共享一份数据，不复制累计地区物种表。物品图标由共享导出工具合入图集。
 
-## 普通房屋与浅红商店
+地图几何与剧情是不同资源：改变可交互对象还需重新编译故事 IR。故事源选择在
+`tools/import-story/recipe.json`；`import-story.py` 使用 PATH 的 .NET，也支持
+`--dotnet`。NPC 赠送、隐藏物品与剧情条件从源事件及脚本解析，不靠地图成功载入
+来证明交互已经实现。
 
-普通房屋使用 `scripts/imports/maps/import-school-house-interiors.py` 的固定来源选择，默认读取 pinned raw；不再要求完整 Git checkout。浅红商店随 `import-fuchsia-route-region.py` 重建。均支持 `--check`，逐项核对源地图、保留的外部门和新渲染像素；已打包图像由共享地图图集读回比较。运行端只读生成目录，不复制房间数或坐标表。
+## 验证与恢复边界
 
-修改源选择后依次运行两个地图导入器、`scripts/imports/maps/import-field-tilesets.py`、`scripts/imports/maps/import-map-atlases.py`、`scripts/imports/presentation/import-shared-overworld.py`；故事与商店分别由 `scripts/imports/story/import-story.py` 和 `scripts/imports/items/import-current-items.py` 转换。普通房屋新增的波波／烈雀精灵帧保留于 raw 并进入共有 overworld 图集。所有步骤均使用本工程已审阅工具，不执行上游脚本。
+- `scripts/checks/test-world-pipeline-oracle.py` 检查源几何、事件顺序、脚本入口和真实变体。
+- `tests/Game.ResourceImport.Tests` 运行导入行为测试；局部修改只跑相关族，跨读取层
+  修改再跑组合回归。
+- [generated-only 运行验证](generated-only-runtime.md)覆盖独立资源根、新游戏和存档加载。
+- [地图图集](map-render-atlases.md)、[图像素材](generated-image-assets.md)、[共享机器目录](shared-machine-catalog.md)
+  说明对应数据与像素语义。
+- pack 提取及普通叫声样本的完整再生仍有独立输入要求；完整 cue 目录已不依赖旧
+  地区音频配方，不能将二者混为一谈。
 
-科拿住家继续由四岛地图包维护，可运行 `python scripts/imports/maps/import-four-island-region.py --raw-root content/raw/pokefirered/037335f4`（或固定 Git 来源 `--reference-root`）。`import-four-island-presentation.py` 保留原房屋全部NPC图像输入；随后重建共同 field tilesets、地图图集与 overworld 图集。以上入口均支持 `--check`。玩偶阈值从 `src/field_specials.c` 导入地图合同，并核对原新游戏初始隐藏旗标，不维护第二张手写运行时阈值表。故事入口沿用 `import-story.py`，源选择在既有 recipe 中。
-
-## 导入入口收敛
-
-区域宝可梦、训练家、机器视图、物种图片及地图目录的重复入口已合并，旧入口不再保留。当前命令见 [scripts 说明](../scripts/README.md)，实际等价验证与尚未覆盖的冷重建边界见[整合记录](script-consolidation.md)。请按新命令选择资源，不沿用历史阶段的脚本名。
+导入等价不等于完整游戏自然通关、全部动画视觉验收或扬声器听感验收。阶段清理
+的实际检查范围见[整合记录](script-consolidation.md)。备份恢复重放、Drive 上传
+目前均不作为本轮验证步骤。

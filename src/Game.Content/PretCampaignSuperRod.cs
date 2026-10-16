@@ -16,10 +16,10 @@ public sealed partial class PretCampaignCatalog
     public MachineCatalog SuperRodMachines { get; }
     public ImmutableDictionary<MapId, OldRodEncounterTable> SuperRodEncounters { get; }
 
-    private static void ValidateSuperRodComposition(PretSuperRodService service,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateSuperRodComposition(PretSuperRodService service,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
         if (service.NewMaps.Count != 1 ||
-            !maps.Keys.Except(previous.Keys).SequenceEqual([PretSuperRodService.HouseMapId]) )
+            !maps.ContainsKey(PretSuperRodService.HouseMapId) )
             throw new InvalidDataException("super_rod_current_map_composition");
         var route = maps[new("map.route-12")];
         var house = maps[PretSuperRodService.HouseMapId];

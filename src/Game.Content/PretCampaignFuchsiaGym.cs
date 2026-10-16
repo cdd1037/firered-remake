@@ -24,10 +24,10 @@ public sealed partial class PretCampaignCatalog
     public PokemonMoveDefinition? FuchsiaGymToxic => FuchsiaGymEnabled
         ? PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")] : null;
 
-    private static void ValidateFuchsiaGymComposition(ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> predecessorMaps, FuchsiaGymTrainerDocument trainers, PretStoryCompilation scripts)
+    private static void ValidateFuchsiaGymComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FuchsiaGymTrainerDocument trainers, PretStoryCompilation scripts)
     {
         var gymId = new MapId("map.fuchsia-city-gym"); var cityId = new MapId("map.fuchsia-city");
-        if (!maps.Keys.Except(predecessorMaps.Keys).SequenceEqual([gymId]))
+        if (!maps.ContainsKey(gymId))
             throw new InvalidDataException("fuchsia_gym_composition_scope");
         if (maps[cityId].Warps[4].DestinationMapId != gymId || maps[cityId].Warps[4].DestinationWarpId != 1 ||
             maps[gymId].Warps.Length != 3 || maps[gymId].Warps.Any(w => w.DestinationMapId != cityId || w.DestinationWarpId != 4))

@@ -67,9 +67,6 @@ internal static class LeagueRematchPresentationAssets
         var trainers = manifest.GetProperty("trainers").EnumerateArray().ToArray();
         if (!trainers.Select(t => t.GetProperty("sourceTrainerId").GetInt32()).Order().SequenceEqual(Enumerable.Range(735, 7)))
             throw new InvalidDataException("League rematch trainer inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("League rematch cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

@@ -288,64 +288,7 @@
       "path": "include/constants/opponents.h"
     },
     {
-      "path": "include/constants/songs.h"
-    },
-    {
       "path": "include/constants/trainers.h"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/aerodactyl.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/dewgong.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/dragonair.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/dragonite.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/exeggutor.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/gengar.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/hitmonchan.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/hitmonlee.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/jynx.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/machamp.wav"
-    },
-    {
-      "path": "sound/direct_sound_samples/cries/rhydon.wav"
-    },
-    {
-      "path": "sound/song_table.inc"
-    },
-    {
-      "path": "sound/songs/midi/mus_credits.mid"
-    },
-    {
-      "path": "sound/songs/midi/mus_hall_of_fame.mid"
-    },
-    {
-      "path": "sound/songs/midi/mus_slow_pallet.mid"
-    },
-    {
-      "path": "sound/songs/midi/mus_vs_champion.mid"
-    },
-    {
-      "path": "sound/songs/midi/se_applause.mid"
-    },
-    {
-      "path": "sound/songs/midi/se_rs_door.mid"
     },
     {
       "path": "src/battle_main.c"

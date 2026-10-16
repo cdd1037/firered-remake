@@ -20,11 +20,6 @@ public sealed partial class PretCampaignCatalog
     public PretFirstSeviiPresentation? FirstSeviiPresentation { get; }
     public bool FirstSeviiEnabled=>FirstSeviiRegion is not null;
 
-    private static void ValidateFirstSeviiAnchors(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
     private static IEnumerable<FieldPickupDefinition> FirstSeviiPickupDefinitions(PretFirstSeviiRegion region,FirstSeviiItemCatalog items,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
@@ -60,9 +55,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidateFirstSeviiComposition(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,FirstSeviiTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(maps.Count!=previous.Count+region.NewMaps.Count || !region.NewMaps.Keys.All(maps.ContainsKey))
+        if(!region.NewMaps.Keys.All(maps.ContainsKey))
             throw new InvalidDataException("first_sevii_composition_scope");
         foreach(var battle in trainers.BattlesBySource.Values)
         {

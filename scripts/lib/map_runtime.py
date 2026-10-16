@@ -43,69 +43,6 @@ def movement(behavior):
     return "unsupported"
 
 
-def compact_world(world, sources=None):
-    require(world["schemaVersion"] == 1 and world["tileSize"] == 16, "Unsupported source version/tile size")
-    reference = world["sourceRef"]
-    require(reference["commit"] == COMMIT and reference["repository"] == "pret/pokefirered" and reference["kind"] == "pret", "Source identity differs")
-    embedded = dict(sources or {})
-    for item in world.get("embeddedSource", []):
-        path = item["path"]
-        data = base64.b64decode(item["base64"], validate=True)
-        require(path not in embedded or embedded[path] == data, "Conflicting embedded source path: " + path)
-        embedded[path] = data
-    if not embedded:
-        embedded = {p.relative_to(RAW_ROOT).as_posix(): p.read_bytes() for p in RAW_ROOT.rglob("*") if p.is_file()}
-    layouts = json.loads(embedded["data/layouts/layouts.json"])["layouts"]
-    layout = world.get("layout") or next(v for v in layouts if v.get("id") == world["events"]["layout"])
-    require((world["width"], world["height"], world["borderWidth"], world["borderHeight"]) ==
-            tuple(layout[k] for k in ("width", "height", "border_width", "border_height")), "Source dimensions differ")
-    tables, sources, behaviors = {}, {}, {}
-    blocks = []
-    for name, width, height, path in (("cells", world["width"], world["height"], layout["blockdata_filepath"]),
-                                     ("borderCells", world["borderWidth"], world["borderHeight"], layout["border_filepath"])):
-        cells = world[name]
-        require(0 < width <= 1024 and 0 < height <= 1024 and width * height <= 262144, "Map dimensions out of bounds")
-        require(len(cells) == width * height and len(embedded[path]) == len(cells) * 2, "Incomplete source grid")
-        packed = bytearray()
-        for i, cell in enumerate(cells):
-            block, = struct.unpack_from("<H", embedded[path], i * 2)
-            require((cell["x"], cell["y"], cell["rawBlock"], cell["metatileId"], cell["collision"], cell["elevation"]) ==
-                    (i % width, i // width, block, block & 1023, (block >> 10) & 3, block >> 12), "Cell block decoding differs")
-            src = cell["sourceRef"]
-            attribute_path = src["path"]
-            local_id = cell["metatileId"] if cell["metatileId"] < 640 else cell["metatileId"] - 640
-            require(src['kind'] == 'pret' and src['commit'] == COMMIT and (src['repository'] == 'pret/pokefirered') and (src['symbol'] == f'metatile_{local_id:03x}'), "Cell source differs")
-            attribute, = struct.unpack_from("<I", embedded[attribute_path], local_id * 4)
-            decoded = (attribute & 511, (attribute >> 9) & 31, (attribute >> 14) & 15, (attribute >> 18) & 63,
-                       (attribute >> 24) & 7, (attribute >> 27) & 3, (attribute >> 29) & 3, attribute >> 31)
-            require(cell["rawAttributes"] == attribute and decoded == tuple(cell[k] for k in
-                    ("behaviorId", "terrain", "attribute2", "attribute3", "encounterType", "attribute5", "layerType", "attribute7")), "Cell attributes differ")
-            require(cell["layerType"] <= 2 and cell["movement"] == movement(cell["behaviorId"]), "Cell movement/layer differs")
-            entry = (attribute, attribute_path)
-            require(tables.get(cell["metatileId"], entry) == entry, "Conflicting metatile identity")
-            tables[cell["metatileId"]] = entry
-            source = {"path": attribute_path}
-            require(sources.get(attribute_path, source) == source, "Conflicting attribute source")
-            sources[attribute_path] = source
-            require(behaviors.get(cell["behaviorId"], cell["behaviorName"]) == cell["behaviorName"], "Conflicting behavior symbol")
-            behaviors[cell["behaviorId"]] = cell["behaviorName"]
-            packed.extend(struct.pack("<H", block))
-        blocks.append(base64.b64encode(packed).decode("ascii"))
-    source_paths = sorted(sources)
-    scripts = []
-    for name in ("scripts.inc", "text.inc"):
-        path = reference["path"].removesuffix("map.json") + name
-        if path in embedded:
-            scripts.append(path)
-    require(any(s.endswith("/scripts.inc") for s in scripts), "Missing live script dependency")
-    return {"schemaVersion": 3,
-            **{k: world[k] for k in ("stableId", "width", "height", "tileSize", "borderWidth", "borderHeight",
-                                    "texturePath", "events")},
-            "sourceMapSymbol": reference["symbol"], "sourceMapName": reference["path"].split("/")[2],
-            "artifacts": [{k: v for k, v in item.items() if k != "sha256"} for item in world["artifacts"]],
-            "technicalSpawn": world.get("technicalSpawn"), "blocks": blocks[0], "borderBlocks": blocks[1],
-            "metatiles": [[key, value[0]] for key, value in sorted(tables.items())],
-            "behaviors": [{"id": key, "name": value} for key, value in sorted(behaviors.items())], "scriptPaths": scripts}
 
 
 
@@ -117,9 +54,6 @@ def normalize_runtime(document):
     return dict(document)
 
 
-def convert(raw):
-    document = json.loads(raw, object_pairs_hook=no_duplicates) if isinstance(raw, (bytes, str)) else raw
-    return compact_world(document) if "cells" in document else normalize_runtime(document)
 
 
 def runtime_cells(document, *, border=False):
@@ -147,59 +81,6 @@ def runtime_cells(document, *, border=False):
                    layerType=(attribute >> 29) & 3, attribute7=attribute >> 31, movement=movement(behavior))
 
 
-def publish_map_package(staging_directory):
-    """Publish map conversions with flat, variant-specific file names.
-
-    Importers may render each map into a private staging directory. This step
-    turns that staging structure into the public package before its output
-    inventory is built. There are no legacy paths in the resulting resources.
-    """
-    root = Path(staging_directory)
-    maps = sorted(root.rglob('runtime-map.json'))
-    renames, map_paths = {}, {}
-    for source in maps:
-        relative = source.relative_to(root)
-        if source.parent == root:
-            continue
-        stem = '.'.join(relative.parts[:-1])
-        target = root / (stem + '.json')
-        require(not target.exists(), 'Duplicate map output: ' + str(target))
-        document = normalize_runtime(json.loads(source.read_bytes()))
-        map_paths[str(relative.parent)] = target.relative_to(root).as_posix()
-        renames[relative.as_posix()] = target.relative_to(root).as_posix()
-        for artifact in document['artifacts']:
-            old = (relative.parent / artifact['path']).as_posix()
-            new = stem + '.' + artifact['path']
-            renames[old] = new
-            artifact['path'] = new
-        document['texturePath'] = stem + '.' + document['texturePath']
-        source.write_bytes(encode(document))
-    def rewrite(value):
-        if isinstance(value, str):
-            return renames.get(value, value)
-        if isinstance(value, list):
-            return [rewrite(item) for item in value]
-        if isinstance(value, dict):
-            result = {key: rewrite(item) for key, item in value.items()}
-            if value.get('directory') in map_paths:
-                result.pop('directory')
-                result['mapPath'] = map_paths[value['directory']]
-            return result
-        return value
-    for path in sorted(root.rglob('*.json')):
-        document = json.loads(path.read_bytes())
-        transformed = rewrite(document)
-        if transformed != document:
-            path.write_bytes(encode(transformed))
-    for old, new in renames.items():
-        source, target = root / old, root / new
-        if source.is_file():
-            require(not target.exists(), 'Conflicting published map asset: ' + str(target))
-            source.replace(target)
-    for directory in sorted((p for p in root.rglob('*') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
-        if not any(directory.iterdir()):
-            directory.rmdir()
-    return map_paths
 
 
 def generated_root(package_directory):

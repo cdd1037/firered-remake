@@ -21,7 +21,7 @@ The obsolete Six Island excluded-map validation list is removed. Loaded map dime
 Run from the repository root using the existing pinned raw source cache:
 
 ```
-python scripts/imports/maps/import-six-island-region.py --raw-root content/raw/pokefirered/037335f4 --dependency-root . --project-root .
+python scripts/imports/maps/import-world.py --raw content/raw/pokefirered/037335f4 --out content/generated
 python scripts/imports/story/import-six-island-rules.py content/raw/pokefirered/037335f4 . .
 python scripts/imports/items/import-six-island-items.py content/raw/pokefirered/037335f4 . .
 python scripts/imports/story/import-six-island-encounters.py content/raw/pokefirered/037335f4 .

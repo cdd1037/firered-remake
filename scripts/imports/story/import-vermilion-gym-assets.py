@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Authenticate TM34, two trainer portraits and the Gym's four additional synth cues.
+"""Import TM34 and two trainer portraits.
 Only pinned Git blobs/local inputs are read; upstream code is never executed.
 """
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 
@@ -16,7 +15,6 @@ import importlib.util
 import json
 import pathlib
 import re
-import struct
 import subprocess
 import sys
 import machine_catalog as shared_machines
@@ -27,7 +25,6 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-vermilion-gym-assets-v1'
 LOCK_BYTES = 9529
-NEW_CUES = {'SE_UNLOCK', 'SE_M_CHARGE', 'SE_M_TRI_ATTACK2', 'SE_M_THUNDERBOLT'}
 PORTRAITS = [('engineer-front', 'Engineer', 'engineer', 93),
              ('lt-surge-front', 'LeaderLtSurge', 'leader_lt_surge', 118)]
 
@@ -59,7 +56,7 @@ def read_lock(path=None):
     path = safe(path or ROOT / 'scripts/recipes/story/vermilion-gym-assets.lock.json')
     data = read(path.parent, path.name)
     lock = json.loads(data, object_pairs_hook=pairs)
-    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameVersion'], lock['revision'], len(lock['files']), len(lock['inputs'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0, 36, 5):
+    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameVersion'], lock['revision']) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Gym asset lock identity differs')
     return lock
 
@@ -81,34 +78,6 @@ def authenticated_inputs(lock, raw, repository=None, root=ROOT):
         if entry['path'] in inputs: raise ValueError('Duplicate local input')
         inputs[entry['path']] = read(root, entry['path'])
     return sources, inputs
-
-def sound_closure(script, moves):
-    labels = list(re.finditer(r'^(\w+)::?$', script, re.M))
-    blocks = {m[1]: script[m.end():labels[i + 1].start() if i + 1 < len(labels) else len(script)]
-              for i, m in enumerate(labels)}
-    result = {}
-    for move in sorted(moves):
-        pending, seen, effects = ['Move_' + move], set(), set()
-        while pending:
-            label = pending.pop()
-            if label in seen: continue
-            if label not in blocks: raise ValueError('Unresolved animation branch: ' + label)
-            seen.add(label)
-            for line in blocks[label].splitlines():
-                line = line.split('@', 1)[0].strip()
-                if not line: continue
-                tokens = line.split(None, 1)
-                op = tokens[0]
-                args = [a.strip() for a in tokens[1].split(',')] if len(tokens) > 1 else []
-                effects.update(re.findall(r'\bSE_\w+', line))
-                arities = {'call': 1, 'goto': 1, 'jumprettrue': 1, 'jumpretfalse': 1,
-                           'jumpargeq': 3, 'jumpreteq': 2, 'choosetwoturnanim': 2}
-                if op in arities:
-                    if len(args) != arities[op]: raise ValueError('Unexpected animation branch arity')
-                    pending.extend(args if op == 'choosetwoturnanim' else [args[-1]])
-                elif op.startswith(('jump', 'choose')): raise ValueError('Unsupported animation branch: ' + op)
-        result[move] = dict(effects=sorted(effects), labels=sorted(seen))
-    return result
 
 def build(lock, sources, inputs, root=ROOT):
     text = {p: b.decode() for p, b in sources.items() if not p.endswith(('.png', '.mid'))}
@@ -203,32 +172,6 @@ def build(lock, sources, inputs, root=ROOT):
         resolved.append(dict(trainer='TRAINER_' + trainer, party=roster))
     expected = set('THUNDER_WAVE QUICK_ATTACK DOUBLE_TEAM SLAM TACKLE SCREECH SONIC_BOOM SPARK THUNDER_SHOCK SUPERSONIC SHOCK_WAVE'.split())
     if moves != expected or [len(r['party']) for r in resolved] != [3, 2, 2, 1]: raise ValueError('Gym move repertoire differs')
-    closure = sound_closure(text['data/battle_anim_scripts.s'], moves)
-    prior_bytes = inputs['scripts/recipes/audio/synth-ssanne-cues.json']
-    recipe = json.loads(prior_bytes, object_pairs_hook=pairs)
-    prior_ids = {c['id'] for c in recipe['cues']}
-    if (recipe['schemaVersion'], recipe['sourceCommit'], len(recipe['cues']), len(prior_ids)) != (1, COMMIT, 239, 239):
-        raise ValueError('Historical239 synth identity differs')
-    field = set(re.findall(r'\b(?:MUS|SE)_\w+', text['data/maps/VermilionCity_Gym/scripts.inc']))
-    field.add(json.loads(text['data/maps/VermilionCity_Gym/map.json'])['music'])
-    cut = match('src/fldeff_cut.c', r'^static void FieldMoveCallback_CutTree\(void\)\n\{.*?^\}')
-    field.update(re.findall(r'PlaySE\((SE_\w+)\)', cut[0]))
-    rules.append(ref('src/fldeff_cut.c', 'FieldMoveCallback_CutTree', cut))
-    effects = set().union(*(set(c['effects']) for c in closure.values()))
-    if field - prior_ids != {'SE_UNLOCK'} or effects - prior_ids != NEW_CUES - {'SE_UNLOCK'}:
-        raise ValueError('Gym field/battle sound closure differs')
-    constants = {s: int(n) for s, n in re.findall(r'^#define ((?:MUS|SE)_\w+)\s+(\d+)', text['include/constants/songs.h'], re.M)}
-    table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', text['sound/song_table.inc'], re.M)
-    pack = inputs['content/generated/audio/synth/firered.pack']
-    additions = []
-    for cue in sorted(NEW_CUES):
-        source_id = constants[cue]
-        address, player, secondary = struct.unpack_from('<IHH', pack, 0x084A32CC + source_id * 8 - 0x08489968)
-        path = 'sound/songs/midi/' + cue.lower() + '.mid'
-        if table[source_id] != (cue.lower(), str(player), str(secondary)) or not sources[path].startswith(b'MThd'):
-            raise ValueError('Source cue mapping/MIDI differs')
-        additions.append(dict(id=cue, sourceSymbol=cue, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=False))
-    outputs['synth-extra-cues.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=additions))
     document = dict(schemaVersion=1,
                     tm34=tm34, icon=icon, portraits=portraits)
     outputs['assets.json'] = runtime_json_bytes(document)

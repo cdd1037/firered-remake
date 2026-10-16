@@ -14,21 +14,16 @@ public sealed class PretCapeBrinkTutor
     public static MapId HouseMapId { get; } = new("map.two-island-cape-brink-house");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement MapCatalog { get; }
-    public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
     public JsonElement EncountersAndItems { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretCapeBrinkTutor(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         EncountersAndItems = source.Document("encounters-items.json");
         NewMaps = maps; Constants = constants;
-        GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+        GeneratedDirectory = source.Directory;
+
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -41,50 +36,15 @@ public sealed class PretCapeBrinkTutor
 
     public CapeBrinkTutorCatalog AuthenticateTutor(PokemonCatalog owned) => CapeBrinkTutorCatalog.Authenticate(owned);
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need(map.Id == CapeMapId || map.Id == HouseMapId, "Cape Brink map scope differs.");
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty :
-            connections.EnumerateArray().Select(c => new ConnectedFieldConnection(
-                c.GetProperty("direction").GetString() == "down" ? Direction.South : throw new InvalidDataException("Cape Brink direction differs."),
-                c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), edges);
-    }
+
 
     /// <summary>Load before campaign compilation. dependencyRoot supplies unchanged adjacent maps and NPC textures.</summary>
-    public static PretCapeBrinkTutor Load(string projectRoot, string? dependencyRoot = null)
+    public static PretCapeBrinkTutor Load(PretCurrentWorld world, string? dependencyRoot = null)
     {
+        var projectRoot = world.ProjectRoot;
         dependencyRoot ??= projectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/cape-brink-tutor");
-        var graphics = new HashSet<string>(["OBJ_EVENT_GFX_CHANNELER", "OBJ_EVENT_GFX_RED_NORMAL"], StringComparer.Ordinal);
-        foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
-        {
-            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!),
-                "Cape Brink actors must reuse the original existing resources.");
-        }
-        Need(graphics.Count == 0, "Cape Brink actor resources are incomplete.");
-        var catalog = source.Document("catalog.json");
-        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
-            "Cape Brink catalog identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Cape Brink and ultimate tutor house; current-game admission is separate.", ResourceId);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
-            string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative ,
-                "Cape Brink compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Cape Brink source identity differs.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            Need(map.FieldWarps.Length == 1 && map.Events.GetProperty("coord_events").GetArrayLength() == 0,
-                "Cape Brink event scope differs.");
-            maps.Add(map.Id, map);
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         Need(maps.Keys.ToHashSet().SetEquals([CapeMapId, HouseMapId]), "Cape Brink map collection differs.");
         ValidateMaps(source, maps);
         var constants = PretSharedConstants.ForPackage(source.Directory);
@@ -111,7 +71,7 @@ public sealed class PretCapeBrinkTutor
         Need(cape.Warps[0].DestinationMapId == HouseMapId && cape.Warps[0].DestinationWarpId == 0 &&
             house.Warps[0].DestinationMapId == CapeMapId && house.Warps[0].DestinationWarpId == 0,
             "Original Cape Brink reciprocal doors differ.");
-        Need(ConnectedMap(cape).Connections.Length == 1 && ConnectedMap(house).Connections.IsEmpty,
+        Need(PretWorldMapConnections.Create(cape).Connections.Length == 1 && PretWorldMapConnections.Create(house).Connections.IsEmpty,
             "Cape Brink connected map scope differs.");
     }
 

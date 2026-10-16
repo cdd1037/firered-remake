@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Import exact Sevii Ruby battle catalogs from pinned Git blobs, without running upstream code.
-Use REFERENCE DEPENDENCY REGION OUTPUT [--check]. All source inputs and artifacts are locked.
+"""Compile Sevii Ruby battle rules directly from pinned raw source.
+Use --raw-root RAW --out FINAL_RULE_DIRECTORY [--check].
 """
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
@@ -8,11 +8,12 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
-from trainer_import import read_source, selected_trainers, resolved_parties
+from trainer_import import selected_trainers
+from map_runtime import generated_root
+from sevii_rule_source import region_context, battle_occurrences
 import argparse
 import json
 import re
-import subprocess
 from pathlib import Path
 
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
@@ -23,14 +24,12 @@ def need(value, message):
     if not value:
         raise ValueError(message)
 
-def generate(reference, dependency, region):
-    texts, inputs, raw = {}, {}, {}
+def generate(raw_root):
+    source, worlds, scripts = region_context(raw_root, 'sevii-ruby')
+    texts = {}
     def read(path):
         if path not in texts:
-            data = read_source(reference, path, COMMIT)
-            inputs[path] = dict(path=path)
-            raw[path] = data
-            texts[path] = data.decode()
+            texts[path] = source.text(path)
         return texts[path]
     def one(path, pattern):
         matches = list(re.finditer(pattern, read(path), re.M | re.S))
@@ -45,27 +44,9 @@ def generate(reference, dependency, region):
     def identity(symbol):
         return dict(value="pret:" + symbol)
     trainers = selected_trainers(read, ["TRAINER_" + short for short in TRAINERS])
-    resolved = resolved_parties(read, trainers)
-    dependencies = []
-    def dependent(root, path):
-        data = (root / path).read_bytes()
-        dependencies.append(dict(path=path))
-        return json.loads(data)
-    canonical = dependent(dependency, 'content/generated/data/pokemon/canonical/catalog.json')
-    # Reuse the region's original extractor in memory; no source snapshot is published.
-    import importlib.util
-    def importer(name, path):
-        spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
-    ruby=importer('ruby_rule_region',(_PROJECT_ROOT / 'scripts/imports/maps/import-sevii-ruby-region.py'))
-    reader=ruby.module((_PROJECT_ROOT / 'scripts/imports/source/import-cinnabar-source-preparation.py'),'ruby_rule_source')
-    prep=ruby.module((_PROJECT_ROOT / 'scripts/lib/prepare_first_sevii.py'),'ruby_rule_scripts')
-    prep.CORE=ruby.CORE;prep.SUPPORT=ruby.SUPPORT;prep.ANCHOR=['OneIsland_PokemonCenter_1F']
-    source=reader.Source(reference) if (reference / ".git").exists() else reader.Source(raw_root=reference)
-    worlds=[dict(events=source.json('data/maps/'+name+'/map.json')) for name in ruby.CORE+ruby.SUPPORT]
-    declarations=json.loads(json.dumps(ruby.declarations(source,prep.script_index(source,reader),worlds,canonical),sort_keys=True))
-    species = {s['id']['value'][5:]: s for s in canonical['species']}
+    occurrences = battle_occurrences(source, scripts, ruby=True)
     battles = []
-    for occurrence in declarations['battleOccurrences']:
+    for occurrence in occurrences:
         if occurrence['rematch']: continue
         path, label = occurrence['sourceRef']['path'], occurrence['script']
         block = one(path, r'^' + label + r'::\n((?:(?!^\w+::).)*)')
@@ -87,58 +68,24 @@ def generate(reference, dependency, region):
     need(sum(t['doubleBattle'] for t in trainers)==1 and sum(b['mode']==4 for b in battles)==2, 'Mik/Kia double scope')
     held = [t for t in trainers if any(m['heldItem'] != 'ITEM_NONE' for m in t['party'])]
     need(len(held)==6 and all(t['partyFlags']==2 and all(m['heldItem']=='ITEM_BLACK_BELT' for m in t['party']) for t in held), 'Exact Black Belt teams')
-    for t in trainers:
-        original=next(x for x in declarations['trainers'] if 'pret:'+x['trainer']==t['id']['value'])
-        sets=next(x['party'] for x in resolved if 'pret:'+x['trainer']==t['id']['value'])
-        need(len(t['party'])==len(original['party']), 'Region party length')
-        for m, moves, source in zip(t['party'], sets, original['party']):
-            need(m['species']['value']=='pret:'+source['species'] and m['level']==source['level'] and
-                m['sourceIv']==source['sourceIv'] and m['heldItem']==source['heldItem'] and
-                moves['moves']==source['resolvedMoves'] and bool(m['customMoves'])==source['customMoves'], 'Region trainer projection')
-    # Canonical mechanics already hold every original species and all 354 moves.
-    # Reuse those records and only disclose the two newly reachable level evolution edges.
-    additions=['SPECIES_RAPIDASH','SPECIES_SLUGMA','SPECIES_MAGCARGO']
-    metadata={m['id']['value'][5:]:m for m in declarations['pokemonMetadata']}
-    edges=[]
-    for name,level,target in [('SPECIES_PONYTA',40,'SPECIES_RAPIDASH'),('SPECIES_SLUGMA',38,'SPECIES_MAGCARGO')]:
-        e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']['value']=='pret:'+target,'Evolution edge')
-        edges.append(dict(species=identity(name),sourceEvolution=e[0]))
-    identities=[]
-    for t in trainers:
-        h=0; members=[]; defaults=next(r['party'] for r in resolved if 'pret:'+r['trainer']==t['id']['value'])
-        for p,moves in zip(t['party'],defaults):
-            h=(h+sum(t['encodedTrainerName'])+sum(p['encodedSpeciesName']))&0xffffffff
-            pid=((0x80 if t['doubleBattle'] else 0x78 if t['encounterMusicGender']&128 else 0x88)+(h<<8))&0xffffffff
-            members.append(dict(species=p['species'],level=p['level'],fixedIv=p['sourceIv']*31//255,personality=pid,
-                heldItem=p['heldItem'],moves=[identity(m) for m in moves['moves']]))
-        identities.append(dict(trainer=t['id'],members=members,basePrize=(8 if t['doubleBattle'] else 4)*t['baseMoney']*t['party'][-1]['level']))
-    for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h']:
-        read(path)
-    rules=dict(ownedSpeciesCount=118,previousOwnedSpeciesCount=115,
-        opponentSpeciesCount=135,previousOpponentSpeciesCount=133,ownedSpeciesAdded=additions,
-        trainerSpecies=sorted({m['species']['value'] for t in trainers for m in t['party']}),
-        trainerMoves=sorted({m for t in resolved for p in t['party'] for m in p['moves']}),identities=identities,
-        battleOccurrences=declarations['battleOccurrences'],heldBlackBeltTeams=[t['id'] for t in held])
-    docs={'trainers.json':dict(completeSourceRoster=False,
-          trainers=trainers,battles=battles,resolvedMoves=resolved),
-        'pokemon.json':dict(
-          ownedSpeciesAdded=additions,evolutionEdges=edges),
-        'rules.json':rules}
-    return docs,raw
+    return {'trainers.json': dict(trainers=trainers, battles=battles)}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__)
-    for name in ['reference','dependency','region','output']:p.add_argument(name,type=Path)
-    p.add_argument('--check',action='store_true');a=p.parse_args()
-    docs,raw=generate(a.reference,a.dependency,a.region)
-    files={'content/generated/data/regions/sevii-ruby/'+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else (json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode()) for n,d in docs.items()}
-    files.update({'content/raw/pokefirered/037335f4/'+n:d for n,d in raw.items()})
-    lock=dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-rules-v1',
-        files=[dict(path=k) for k,v in sorted(files.items())])
-    for name,data in files.items():
-        dest=a.output/name
-        if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
-        else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=17,members=sum(len(t['party']) for t in docs['trainers.json']['trainers']),
-        battles=18,moves=len(docs['rules.json']['trainerMoves']),inputs=len(raw)),indent=2))
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--raw-root',type=Path,required=True)
+    parser.add_argument('--out',type=Path,required=True)
+    parser.add_argument('--check',action='store_true')
+    args=parser.parse_args()
+    docs=generate(args.raw_root)
+    for name,document in docs.items():
+        data=(trainer_json(generated_root(args.out), document, check=args.check) if name == 'trainers.json'
+              else (json.dumps(document,indent=2,ensure_ascii=False)+'\n').encode())
+        target=args.out/name
+        if args.check:
+            need(target.read_bytes()==data,'Regeneration differs: '+name)
+        else:
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_bytes(data)
+    print(json.dumps(dict(checked=args.check,trainers=17,battles=18),indent=2))
+
 if __name__=='__main__':main()

@@ -68,9 +68,6 @@ internal static class EventIslandPresentationAssets
         if(!triangle.Select(r=>r.GetProperty("interactionNumber").GetInt32()).SequenceEqual(Enumerable.Range(0,11)) ||
             triangle.Any(r=>r.GetProperty("objectPaletteSlot").GetInt32()!=10 || r.GetProperty("width").GetInt32()!=32 || r.GetProperty("height").GetInt32()!=32))
             throw new InvalidDataException("Event Island triangle effect inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Event Island cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

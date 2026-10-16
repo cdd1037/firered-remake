@@ -21,22 +21,18 @@ public sealed class PretRoute16FlyHouse
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public PretRoute16FlyTrainerDocument Trainers { get; }
-    public JsonElement Contracts { get; }
 
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private readonly ImmutableDictionary<MapId, ImmutableHashSet<(int X, int Y)>> _upperCells;
-    private readonly ImmutableDictionary<MapId, PretRuntimeMapData> _retained;
 
     private PretRoute16FlyHouse(Source source, PretWorldMap house, ImmutableDictionary<string, int> constants,
         ImmutableDictionary<MapId, PretRuntimeMapData> retained, PretRoute16FlyTrainerDocument trainers)
     {
         NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house); Constants = constants;
-        GeneratedDirectory = source.Directory; Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
-        Trainers = trainers; _retained = retained;
-        _upperCells = Contracts.GetProperty("upperFootAdmissions").EnumerateArray().ToImmutableDictionary(
+        GeneratedDirectory = source.Directory;
+
+        Trainers = trainers;
+        _upperCells = source.Document("passage.json").GetProperty("upperFootAdmissions").EnumerateArray().ToImmutableDictionary(
             r => new MapId(r.GetProperty("map").GetString()!),
             r => r.GetProperty("cells").EnumerateArray().Select(c => (c[0].GetInt32(), c[1].GetInt32())).ToImmutableHashSet());
         Need(_upperCells[RouteMapId].Count == 178 && _upperCells[GateMapId].Count == 44, "Upper passage cell count differs.");
@@ -60,58 +56,18 @@ public sealed class PretRoute16FlyHouse
     public bool AllowsWarp(MapId map, int sourceWarpId) => map == HouseMapId ? sourceWarpId is >= 0 and <= 2 :
         map == RouteMapId ? sourceWarpId is >= 0 and <= 2 : map == GateMapId && sourceWarpId is 0 or 1;
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need(map.Id == HouseMapId && map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Unexpected Fly house connection.");
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), []);
-    }
 
-    /// <summary>Call before composing. This validates the retained instances without replacing or republishing them.</summary>
-    public void ValidateReusedMaps(IReadOnlyDictionary<MapId, PretWorldMap> maps)
-    {
-        foreach (var row in Contracts.GetProperty("retainedMaps").EnumerateArray())
-        {
-            var id = new MapId(row.GetProperty("stableId").GetString()!);
-            Need(maps.TryGetValue(id, out var map), "Missing retained north-passage map.");
-            var original = _retained[id]; var events = original.Events;
-            Need(map!.SourceMapSymbol == row.GetProperty("sourceMap").GetString() &&
-                map.Width == original.Width && map.Height == original.Height &&
-                JsonElement.DeepEquals(map.Events, events), "Retained north-passage identity/events differ.");
-            foreach (var c in original.ExpandCells())
-            {
-                var cell = map.GetSourceCell(c.X, c.Y);
-                Need(cell is not null && cell.RawBlock == c.RawBlock &&
-                    cell.RawAttributes == c.RawAttributes, "Retained north-passage geometry differs.");
-            }
-        }
-    }
 
-    public static PretRoute16FlyHouse Load(string projectRoot, string? dependencyRoot = null)
+    public static PretRoute16FlyHouse Load(PretCurrentWorld world, string? dependencyRoot = null)
     {
+        var projectRoot = world.ProjectRoot;
         dependencyRoot ??= projectRoot; var source = new Source(projectRoot);
-        var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("maps").GetArrayLength() == 1 , "Fly house catalog differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "One house; north path admission remains separate.", ResourceId);
-        var spec = catalog.GetProperty("maps")[0]; string path = spec.GetProperty("path").GetString()!;
-        Need(path == "route-16-house.json" && spec.GetProperty("stableId").GetString() == HouseMapId.Value ,
-            "Fly house compact map identity differs.");
-        var house = LoadHouse(source, metadata, spec, dependencyRoot);
+        var house = world.Maps[HouseMapId];
         Need(house.Width == 11 && house.Height == 9 && house.FieldWarps.Length == 3 &&
             house.Events.GetProperty("object_events").GetArrayLength() == 2 && house.Events.GetProperty("coord_events").GetArrayLength() == 0 &&
             house.Events.GetProperty("bg_events").GetArrayLength() == 0 && house.Events.GetProperty("layout").GetString() == "LAYOUT_HOUSE1",
             "Original Fly house geometry/event cohort differs.");
-        var retained = ImmutableDictionary.CreateBuilder<MapId, PretRuntimeMapData>();
-        foreach (var anchor in source.Document("contracts.json").GetProperty("retainedMaps").EnumerateArray())
-        {
-            var original = PretRuntimeMapData.Decode(SafariSource.Read(dependencyRoot, anchor.GetProperty("resourcePath").GetString()!),
-                anchor.GetProperty("stableId").GetString()!, PretSnorlaxRegion.MapIdFromSourceSymbol);
-            retained.Add(new(anchor.GetProperty("stableId").GetString()!), original);
-        }
-        Need(retained.Keys.ToHashSet().SetEquals([RouteMapId, GateMapId]), "North-passage retained map cohort differs.");
-        ValidateTopology(source.Document("contracts.json"), house, retained);
-        var npcs = source.Document("npc-source.json").GetProperty("graphics");
-        Need(npcs.GetArrayLength() == 3, "Fly house actor textures differ.");
+        var retained = new[] { RouteMapId, GateMapId }.ToImmutableDictionary(id => id, id => world.RuntimeMaps.Maps[id]);
 
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["ITEM_HM02"] == 340 && constants["FLAG_GOT_HM02"] == 0x238, "Original HM02 gift constants differ.");
@@ -119,33 +75,7 @@ public sealed class PretRoute16FlyHouse
         Game.Domain.Trainers.Route16FlyTrainerPartyFactory.ValidateCatalog(new(
             trainers.Trainers.ToImmutableDictionary(trainer => trainer.Id),
             trainers.Battles.ToImmutableDictionary(battle => battle.ScriptEntry, StringComparer.Ordinal)));
-        return new(source, house, constants, retained.ToImmutable(), trainers);
-    }
-
-    // This house reuses the regional source-symbol mapping for its exterior warp.
-    private static PretWorldMap LoadHouse(Source source, PretWorldMetadata metadata, JsonElement spec, string dependencyRoot)
-    {
-        var runtime = PretRuntimeMapData.Decode(source.Read("route-16-house.json"), HouseMapId.Value, PretSnorlaxRegion.MapIdFromSourceSymbol);
-        Need((runtime.Width, runtime.Height, runtime.BorderWidth, runtime.BorderHeight) == (11, 9, 2, 2),
-            "Fly house geometry differs.");
-        return PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, "route-16-house"),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), PretSnorlaxRegion.MapIdFromSourceSymbol);
-    }
-
-    private static void ValidateTopology(JsonElement contract, PretWorldMap house, ImmutableDictionary<MapId, PretRuntimeMapData>.Builder retained)
-    {
-        JsonElement Events(string symbol) => symbol == "MAP_ROUTE16_HOUSE" ? house.Events : retained[PretSnorlaxRegion.MapIdFromSourceSymbol(symbol)].Events;
-        Need(contract.GetProperty("topology").GetArrayLength() == 8, "Fly house source topology scope differs.");
-        foreach (var edge in contract.GetProperty("topology").EnumerateArray())
-        {
-            string symbol = edge.GetProperty("sourceMap").GetString()!; int index = edge.GetProperty("sourceIndex").GetInt32();
-            var source = Events(symbol).GetProperty("warp_events")[index];
-            string destination = source.GetProperty("dest_map").GetString()!; int target = int.Parse(source.GetProperty("dest_warp_id").GetString()!, System.Globalization.CultureInfo.InvariantCulture);
-            var back = Events(destination).GetProperty("warp_events")[target];
-            Need(JsonElement.DeepEquals(source, edge.GetProperty("source")) && JsonElement.DeepEquals(back, edge.GetProperty("destination")) &&
-                back.GetProperty("dest_map").GetString() == symbol && (back.GetProperty("dest_warp_id").GetString() == index.ToString(System.Globalization.CultureInfo.InvariantCulture) ||
-                    symbol == "MAP_ROUTE16_HOUSE" && target == 0 && back.GetProperty("dest_warp_id").GetString() == "1"), "Original north-passage warp link differs.");
-        }
+        return new(source, house, constants, retained, trainers);
     }
 
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);

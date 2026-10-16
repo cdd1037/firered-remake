@@ -4,18 +4,16 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
+from world_source import WorldSource
+from generated_output_compare import generated_output_matches
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
 import argparse
-import importlib.util
 import io
 import json
 import re
 import sys
-import struct
-import wave
 from pathlib import Path
 from PIL import Image
 
@@ -42,12 +40,7 @@ def safe(path):
 
 
 def build(target, dependency, reference, check):
-    reader_path = dependency / 'scripts/imports/source/import-cinnabar-source-preparation.py'
-    spec = importlib.util.spec_from_file_location('fossil_lab_presentation_reader', reader_path)
-    reader = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(reader)
-    reader.PROFILE = PROFILE
-    source = reader.Source(reference)
+    source = WorldSource(reference)
     inherited, outputs = {}, {}
 
     def reuse(path):
@@ -181,79 +174,32 @@ def build(target, dependency, reference, check):
     old_amber = dict(id='pret:ITEM_OLD_AMBER', sourceSymbol='ITEM_OLD_AMBER', sourceItemId=354,
                     name=item['english'], description=item['description_english'].replace('\\n', '\n'),
                     fieldUseFunction=item['fieldUseFunc'], icon=item_asset)
-    pack = reuse('content/generated/audio/synth/firered.pack')
-    cries = reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence, inherited_cry_cues = [], [], []
-    for name, species in SPECIES[:-1]:
-        row = cry_rows[species]
-        need(cry_table[species - 1] == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        with wave.open(io.BytesIO(source.read(path))) as original:
-            need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                 (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header dimensions differ')
-            pcm = original.readframes(original.getnframes())
-        delta = (0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1)
-        decoded = bytearray()
-        for index in range(row[2] + row[4]):
-            block, i = divmod(index, 64)
-            start = wave_offset + 16 + block * 33
-            if i == 0:
-                value = pack[start]
-            else:
-                packed = pack[start + (1 if i == 1 else i // 2 + 1)]
-                nibble = packed & 15 if i == 1 or i % 2 else packed >> 4
-                value = (value + delta[nibble]) & 255
-            decoded.append((value + 128) & 255)
-        need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
-        cues.append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceSymbol='SPECIES_' + name.upper(), sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-
-    league_synth_bytes = reuse(league_base + 'synth-manifest.json')
-    inherited_cry = next(c for c in json.loads(league_synth_bytes)['cues'] if c['id'] == 'CRY_AERODACTYL_NORMAL')
-    need(inherited_cry['species'] == 142 and inherited_cry['sourcePlayer'] == 4 and inherited_cry['priority'] == priority and
-         inherited_cry['cryMode'] == 0 and cry_table[141] == 'Aerodactyl' and cry_rows[142][1] == 141, 'Inherited Aerodactyl cry binding differs')
-    inherited_cry_cues.append(inherited_cry)
-    outputs['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues))
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1,   entries=entries))
-    lock = source.lock()
-    lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
-    lb = canonical(lock)
     manifest = dict(schemaVersion=1,
                       newOwnedSpecies=[s for _, s in SPECIES],
                     sprites=sprites, pokemonIcons=icons, inheritedSprites=inherited_sprites, inheritedPokemonIcons=inherited_icons,
                     footprints=footprints, menus=menus, oldAmber=old_amber,
                     dexEntriesPath=BASE + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry),
-                    audio=dict(newCueCount=4, normalCries=cry_evidence, inheritedCues=inherited_cry_cues),
+
                     limits=['Room, border and reused scientist/boy/player sheets are supplied by fossil-lab-region.',
                             'Aerodactyl sprites, icon and normal cry reuse the authenticated League package; only its owned footprint and dex entry are added.',
                             'No new move animation coverage; native visual and audible output remain unverified.'],
-                    authorDependencies=[dict(path='scripts/imports/source/import-cinnabar-source-preparation.py')],
                     outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = runtime_json_bytes(manifest, sort_keys=True)
     writes = [(target / BASE / 'manifest.json', mb)]
-    writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(source.data.items())]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
     for p, b in writes:
         safe(p)
         if p.suffix == '.json':
             json.loads(b)
         if check:
-            need(p.is_file() and p.read_bytes() == b, 'Regeneration differs: ' + str(p))
+            need(generated_output_matches(p, b), 'Regeneration differs: ' + str(p))
         else:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(b)
-    print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.entries), inheritedInputs=len(inherited),
+    print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.data), inheritedInputs=len(inherited),
                          newFootprints=5, dexEntries=5, menus=5, newBattleSprites=16, inheritedBattleSprites=4, newAudioCues=4, inheritedAudioCues=1,
-                          lockBytes=len(lb),  manifestBytes=len(mb)), indent=2))
+                          manifestBytes=len(mb)), indent=2))
 
 
 if __name__ == '__main__':
@@ -266,5 +212,5 @@ if __name__ == '__main__':
     for p in [args.reference_root, args.project_root, args.dependency_root]:
         safe(p.absolute())
     target, dependency, reference = [p.resolve() for p in [args.project_root, args.dependency_root, args.reference_root]]
-    need(not (target == reference or target.is_relative_to(reference) or reference.is_relative_to(target)), 'Source/output overlap')
+    need(not ((target / 'content/generated').is_relative_to(reference) or reference.is_relative_to(target / 'content/generated')), 'Source/output overlap')
     build(target, dependency, reference, args.check)

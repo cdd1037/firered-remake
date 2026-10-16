@@ -1,54 +1,29 @@
 #!/usr/bin/env python3
-"""Import exact Seafoam/Route19/20 catalogs from pinned Git blobs, without running upstream code.
-Use REFERENCE DEPENDENCY OUTPUT [--check]. All source inputs and artifacts are locked.
+"""Import exact Seafoam/Route19/20 catalogs from pinned raw source, without running upstream code.
+Use --raw-root RAW --out PROJECT [--check]. Only live final resources are emitted.
 """
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
-from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
-from trainer_import import read_source, selected_trainers, resolved_parties, natural_moves
+from trainer_import import selected_trainers
+from world_source import WorldSource
 import argparse
 import json
 import re
-import subprocess
 from pathlib import Path
 
-import sys
-from machine_catalog import compatibility_additions, machine_definitions, admission_species
 
-COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
-TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('SWIMMER_MALE_REECE', 'SWIMMER_MALE_RICHARD', 'SWIMMER_MALE_TONY', 'SWIMMER_MALE_MATTHEW', 'SWIMMER_MALE_DOUGLAS', 'SWIMMER_MALE_DAVID', 'SWIMMER_MALE_AXLE', 'SWIMMER_FEMALE_ALICE', 'SWIMMER_FEMALE_CONNIE', 'SWIMMER_FEMALE_ANYA', 'SIS_AND_BRO_LIA_LUC', 'SWIMMER_FEMALE_MELISSA', 'PICNICKER_MISSY', 'SWIMMER_FEMALE_NORA', 'BIRD_KEEPER_ROGER', 'SWIMMER_MALE_DEAN', 'PICNICKER_IRENE', 'SWIMMER_MALE_BARRY', 'SWIMMER_MALE_DARRIN', 'SWIMMER_FEMALE_SHIRLEY', 'SWIMMER_FEMALE_TIFFANY')
 MAPS = {"Route19": "map.route-19", "Route20": "map.route-20", **{"SeafoamIslands_" + f: "map.seafoam-islands-" + f.lower() for f in ("1F", "B1F", "B2F", "B3F", "B4F")}}
-BASE = "content/generated/data/regions/seafoam/"
-RAW = "content/raw/pokefirered/037335f4/"
-DEPENDENCIES = (
-    'content/generated/data/pokemon/canonical/catalog.json',
-    'content/generated/data/regions/npc-trade-owned/pokemon.json',
-)
-
-
-SHARED_INPUTS = {'asm/macros/event.inc': 'content/raw/pokefirered/037335f4/asm/macros/event.inc', 'charmap.txt': 'content/raw/pokefirered/037335f4/charmap.txt', 'data/maps/Route19/map.json': 'content/raw/pokefirered/037335f4/data/maps/Route19/map.json', 'data/maps/Route20/map.json': 'content/raw/pokefirered/037335f4/data/maps/Route20/map.json', 'data/scripts/trainer_battle.inc': 'content/raw/pokefirered/037335f4/data/scripts/trainer_battle.inc', 'data/scripts/trainers.inc': 'content/raw/pokefirered/037335f4/data/scripts/trainers.inc', 'include/constants/battle.h': 'content/raw/pokefirered/037335f4/include/constants/battle.h', 'include/constants/battle_ai.h': 'content/raw/pokefirered/037335f4/include/constants/battle_ai.h', 'include/constants/battle_setup.h': 'content/raw/pokefirered/037335f4/include/constants/battle_setup.h', 'include/constants/flags.h': 'content/raw/pokefirered/037335f4/include/constants/flags.h', 'include/constants/items.h': 'content/raw/pokefirered/037335f4/include/constants/items.h', 'include/constants/opponents.h': 'content/raw/pokefirered/037335f4/include/constants/opponents.h', 'include/constants/pokemon.h': 'content/raw/pokefirered/037335f4/include/constants/pokemon.h', 'include/constants/species.h': 'content/raw/pokefirered/037335f4/include/constants/species.h', 'include/constants/trainers.h': 'content/raw/pokefirered/037335f4/include/constants/trainers.h', 'include/random.h': 'content/raw/pokefirered/037335f4/include/random.h', 'src/battle_main.c': 'content/raw/pokefirered/037335f4/src/battle_main.c', 'src/battle_setup.c': 'content/raw/pokefirered/037335f4/src/battle_setup.c', 'src/data/pokemon/evolution.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/evolution.h', 'src/data/pokemon/level_up_learnset_pointers.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h', 'src/data/pokemon/pokedex_entries.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/species_info.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h', 'src/data/pokemon/tmhm_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h', 'src/data/text/species_names.h': 'content/raw/pokefirered/037335f4/src/data/text/species_names.h', 'src/data/trainer_parties.h': 'content/raw/pokefirered/037335f4/src/data/trainer_parties.h', 'src/data/trainers.h': 'content/raw/pokefirered/037335f4/src/data/trainers.h', 'src/data/wild_encounters.json': 'content/raw/pokefirered/037335f4/src/data/wild_encounters.json', 'src/pokemon.c': 'content/raw/pokefirered/037335f4/src/pokemon.c', 'src/script_pokemon_util.c': 'content/raw/pokefirered/037335f4/src/script_pokemon_util.c', 'src/wild_encounter.c': 'content/raw/pokefirered/037335f4/src/wild_encounter.c'}
-
-
 def need(value, message):
     if not value:
         raise ValueError(message)
 
-def generate(reference, dependency):
-    texts, inputs, raw = {}, {}, {}
-    def read(path):
-        if path not in texts:
-            data = read_source(reference, path, COMMIT)
-            reused = dependency / SHARED_INPUTS[path] if path in SHARED_INPUTS else None
-            if reused is not None: need(reused.read_bytes() == data, "Shared source differs: " + path)
-            local = reused.relative_to(dependency).as_posix() if reused else RAW + path
-            inputs[path] = dict(path=path, localPath=local, shared=reused is not None)
-            if reused is None: raw[path] = data
-            texts[path] = data.decode()
-        return texts[path]
+def generate(raw_root):
+    source = WorldSource(Path(raw_root))
+    read = source.text
     def one(path, pattern):
         matches = list(re.finditer(pattern, read(path), re.M | re.S))
         need(len(matches) == 1, "Expected one source declaration: " + pattern)
@@ -62,18 +37,6 @@ def generate(reference, dependency):
     def identity(symbol):
         return dict(value="pret:" + symbol)
     trainers = selected_trainers(read, ["TRAINER_" + short for short in TRAINERS])
-    resolved = resolved_parties(read, trainers)
-    dependencies=[]
-    def dependent(path):
-        data=(dependency/path).read_bytes()
-        dependencies.append(dict(path=path)); return json.loads(data)
-    canonical,previous=[dependent(p) for p in DEPENDENCIES]
-    need(previous['ownedSpeciesCount']==161 and previous['opponentSpeciesCount']==190,'Exact NPC trade ownership')
-    species={s['id']['value'][5:]:s for s in canonical['species']}; metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
-    additions=['SPECIES_ARTICUNO']
-    need(len(species)==386,'Complete shared source mechanics')
-    original=species[additions[0]]; meta=metadata[additions[0]]
-    need(original['sourceSpeciesId']==144 and not original['evolutions'] and not meta['sourceEvolutions'],'Terminal Articuno source')
     battles=[];script_path='data/scripts/trainers.inc'
     for mapname in ['Route19','Route20']:
         mapping=json.loads(read('data/maps/'+mapname+'/map.json'))
@@ -90,8 +53,6 @@ def generate(reference, dependency):
     need(len(trainers)==21 and len(battles)==22 and sum(t['doubleBattle'] for t in trainers)==1,'21 complete first-battle teams, 22 entries, one double')
     need(all(t['partyFlags']==0 and t['items']==['ITEM_NONE']*4 for t in trainers),'Default-move no-item original teams')
     need(all(m['heldItem']=='ITEM_NONE' for t in trainers for m in t['party']),'Original held items')
-    need(all(member['species']['value'][5:] in species for trainer in trainers for member in trainer['party']),
-         'Missing canonical trainer species')
     wildpath='src/data/wild_encounters.json';wild=json.loads(read(wildpath))
     by_symbol={json.loads(read('data/maps/'+n+'/map.json'))['id']:MAPS[n] for n in MAPS}
     entries=[e for g in wild['wild_encounter_groups'] for e in g.get('encounters',[]) if e['map'] in by_symbol and e['base_label'].endswith('_FireRed')]
@@ -111,22 +72,12 @@ def generate(reference, dependency):
             else:tables['land' if field=='land_mons' else 'water'].append(dict(base,slots=slots))
     need([len(tables[k]) for k in tables]==[5,4,4,4,4],'Exact land/surf/rod scope')
     wild_species=sorted({s['species']['value'][5:] for group in tables.values() for t in group for s in t['slots']}|{'SPECIES_ARTICUNO'})
-    held=[dict(species=identity(s),common=metadata[s]['itemCommon'],rare=metadata[s]['itemRare']) for s in wild_species]
-    pairs={(s['species']['value'][5:],lv) for group in tables.values() for t in group for s in t['slots'] for lv in range(min(s['minimumLevel'],s['maximumLevel']),max(s['minimumLevel'],s['maximumLevel'])+1)}|{('SPECIES_ARTICUNO',50)}
-    for s,level in sorted(pairs): natural_moves(read,s,level)
-    need(natural_moves(read,'SPECIES_ARTICUNO',50)==['MOVE_MIST','MOVE_AGILITY','MOVE_MIND_READER','MOVE_ICE_BEAM'],'Original Articuno50 moves')
-    art_path='data/maps/SeafoamIslands_B4F/scripts.inc';art=one(art_path,r'^SeafoamIslands_B4F_EventScript_Articuno::\n((?:(?!^\w+::).)*)')
-    need('setwildbattle SPECIES_ARTICUNO, 50' in art[1] and 'special StartLegendaryBattle' in art[1],'Original static command')
-    creation_path='src/script_pokemon_util.c';creation=one(creation_path,r'^void CreateScriptedWildMon\([^\n]+\)\n\{\n.*?^\}')
-    need('CreateMon(&gEnemyParty[0], species, level, 32, 0, 0, OT_ID_PLAYER_ID, 0);' in creation[0],'Original static player OT random PID/IV')
-    cells=compatibility_additions(dependency, 'content/generated/data/regions/seafoam/machines.json')
-    for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/wild_encounter.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','include/random.h','include/constants/pokemon.h','include/constants/flags.h','include/constants/items.h']:read(path)
-    need('if (!(gBattleTypeFlags & (BATTLE_TYPE_POKEDUDE | BATTLE_TYPE_LEGENDARY | BATTLE_TYPE_TRAINER)))' in read('src/pokemon.c'),'Legendary held assignment bypass')
-    docs={
-      'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
-      'pokemon.json':dict(previousOwnedSpeciesCount=161,ownedSpeciesCount=162,previousOpponentSpeciesCount=190,opponentSpeciesCount=191,ownedSpeciesAdded=additions,opponentSpeciesAdded=additions,trainerOnlySpeciesAdded=[],evolutions=[]),
-      'machines.json':dict(previousSpeciesCount=161,speciesCount=162,machineCount=41,additions=cells,itemsAdded=[]),
-    }
+    held=[]
+    for symbol in wild_species:
+        match=one('src/data/pokemon/species_info.h', r'^    \[' + symbol + r'\] =\s*\n    \{\n(.*?)^    \},')
+        fields=dict(re.findall(r'^\s*\.(\w+) = (.+),$', match[1], re.M))
+        held.append(dict(species=identity(symbol), common=fields['itemCommon'], rare=fields['itemRare']))
+    docs = {'trainers.json': dict(trainers=trainers, battles=battles)}
 
     code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Trainers;\n\n// Generated from the 21 pinned Route19/20 first-battle teams and 22 source actor entries.\npublic static partial class SeafoamTrainerPartyFactory\n{\n'
     for name,rows in [('TrainerIds',[t['id']['value'] for t in trainers]),('BattleScripts',[b['scriptEntry'] for b in battles])]:
@@ -149,20 +100,27 @@ def generate(reference, dependency):
         code+='    ];\n'
     code+='    public static ImmutableArray<SeafoamHeldItemSource> HeldItems { get; } = [\n'+''.join(f'        new(new("{r["species"]["value"]}"),"{r["common"]}","{r["rare"]}"),\n' for r in held)+'    ];\n}\n'
     files['src/Game.Domain/Encounters/SeafoamEncounterTables.cs']=code.encode()
-    return docs,raw,files
+    return docs,files
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__)
-    for arg in ['reference','dependency','output']:p.add_argument(arg,type=Path)
-    p.add_argument('--check',action='store_true');a=p.parse_args()
-    docs,raw,files=generate(a.reference,a.dependency)
-    files.update({BASE+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else (json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode()) for n,d in docs.items()})
-    files.update({RAW+n:data for n,data in raw.items()})
-    lock=dict(sourceCommit=COMMIT,profile='firered-seafoam-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--raw-root',type=Path,required=True)
+    parser.add_argument('--out',type=Path,required=True,help='Project output root for final JSON and C# resources')
+    parser.add_argument('--check',action='store_true')
+    args=parser.parse_args()
+    docs,files=generate(args.raw_root)
+    files.update({'content/generated/data/regions/seafoam/'+name:
+                  trainer_json(args.out/'content/generated', document, check=args.check)
+                  for name,document in docs.items()})
     for name,data in files.items():
-        dest=a.output/name
-        if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)
-        else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
-    print(json.dumps(dict(checked=a.check,trainers=21,battles=22,members=sum(len(t['party']) for t in docs['trainers.json']['trainers']),owned=162,opponents=191,machines=41,newCells=41,newRawInputs=len(raw)),indent=2))
+        target=args.out/name
+        if args.check:
+            need(target.read_bytes()==data,'Regeneration differs: '+name)
+        else:
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_bytes(data)
+    print(json.dumps(dict(checked=args.check,trainers=len(docs['trainers.json']['trainers']),
+                          battles=len(docs['trainers.json']['battles']))))
+
 if __name__=='__main__':main()

@@ -1,43 +1,30 @@
-"""Test fixture conversion from source preparation; does not execute upstream code."""
+"""Compile First Sevii rules directly from pinned raw maps, scripts and definitions."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
-from trainer_import import selected_trainers
-from item_catalog import item_definition as shared_item, inventory_item, item_json
-from shared_constants import read_values
+from trainer_import import selected_trainers, resolved_parties
+from sevii_rule_source import region_context, battle_occurrences, first_sevii_items, first_sevii_encounters, item_definition
+from source_constants import constants_inventory
+from item_catalog import inventory_item, item_json
 from field_item_services import service_script_graph
 from map_runtime import generated_root
-import argparse,json,re,sys,importlib.util
+import argparse,json,re
 from pathlib import Path
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('paths',nargs='*',type=Path,help='Legacy Git mode: reference preparation output')
-parser.add_argument('--raw-root',type=Path,help='Offline pinned raw cache')
-parser.add_argument('--preparation',type=Path,help='Generated first-Sevii map package')
-parser.add_argument('--out',type=Path,help='Generated first-Sevii rule directory')
+parser.add_argument('--raw-root',type=Path,required=True,help='Pinned raw source directory')
+parser.add_argument('--out',type=Path,required=True,help='Final First Sevii rule directory')
 parser.add_argument('--check',action='store_true')
-args=parser.parse_args();check=args.check
-if args.raw_root is not None:
- if args.paths or args.preparation is None or args.out is None:parser.error('Raw mode requires --preparation and --out, with no positional paths')
- reference=None;preparation=args.preparation;out=args.out
-else:
- if len(args.paths)!=3 or args.preparation is not None or args.out is not None:parser.error('Provide reference preparation output, or --raw-root --preparation --out')
- reference,preparation,out=args.paths
+args=parser.parse_args();check=args.check;out=args.out
 generated=generated_root(out)
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-def importer(name, path):
- spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
-reader=importer('first_sevii_rule_source',(_PROJECT_ROOT / 'scripts/imports/source/import-cinnabar-source-preparation.py'))
-prep=importer('first_sevii_rule_declarations',(_PROJECT_ROOT / 'scripts/lib/prepare_first_sevii.py'))
-source=reader.Source(reference,raw_root=args.raw_root)
-worlds=[dict(events=source.json('data/maps/'+name+'/map.json')) for name in prep.CORE+prep.SUPPORT]
-script_index=prep.script_index(source,reader)
-canonical=json.loads((_PROJECT_ROOT/'content/generated/data/pokemon/canonical/catalog.json').read_text())
-decl=prep.declarations(source,script_index,worlds,canonical)
-prep.item_declarations(source,script_index,worlds,decl)
-# Preserve the deterministic field ordering of the previous importer handoff.
+source,worlds,script_index=region_context(args.raw_root, 'first-sevii')
+decl=first_sevii_items(source,script_index,worlds)
+decl.update(first_sevii_encounters(source,worlds))
+decl['battleOccurrences']=battle_occurrences(source,script_index)
+# Keep deterministic serialization of source records.
 decl=json.loads(json.dumps(decl,sort_keys=True, default=item_json))
 def write(name,content):
  target=out/name
@@ -56,10 +43,9 @@ def one(p,pattern):
 def ref(p,s,m):return dict(path=p,symbol=s,startLine=read(p).count('\n',0,m.start())+1,endLine=read(p).count('\n',0,m.end())+1)
 def num(p,s):return int(one(p,r'^#define '+s+r'\s+(\d+)\b[^\n]*')[1])
 def identity(s):return dict(value='pret:'+s)
-trainers = selected_trainers(read, [row['trainer'] for row in decl['trainers']])
+trainers = selected_trainers(read, sorted({row['trainer'] for row in decl['battleOccurrences']}))
 battles = []
-resolved = [dict(trainer=row['trainer'], party=[dict(species=member['species'], level=member['level'],
-    moves=member['resolvedMoves']) for member in row['party']]) for row in decl['trainers']]
+resolved = resolved_parties(read, trainers)
 for d in decl['battleOccurrences']:
  if d['rematch']:continue
  p=d['sourceRef']['path'];read(p);assert read(p).splitlines()[d['sourceRef']['line']-1].strip()==d['opcode']+' '+', '.join(d['arguments']);label=one(p,r'^'+d['script']+r'::\n((?:(?!^\w+::).)*)');args=d['arguments'][1:];noIntro=d['opcode']=='trainerbattle_no_intro';double=d['opcode']=='trainerbattle_double'
@@ -74,7 +60,9 @@ out.mkdir(parents=True,exist_ok=True)
 document=dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved)
 write('trainers.json',trainer_json(generated, document, check=check).decode())
 print(f'Converted {len(trainers)} trainers/{sum(len(t["party"]) for t in trainers)} members/{len(battles)} admitted source occurrences')
-contracts=json.loads((preparation/'contracts.json').read_text()); constants=read_values(_PROJECT_ROOT / 'content/generated')
+contracts=decl; constants={name: row['value'] for name,row in constants_inventory(source,worlds,script_index)['values'].items()}
+source_items={row['itemId']: row for row in decl['itemDeclarations']}
+def shared_item(symbol):return item_definition(source_items[symbol], constants)
 items=[]; additions=[]; stocks=[];pickups=[]
 for item in decl['itemDeclarations']:
  symbol=item['itemId'];p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}')
@@ -118,7 +106,7 @@ for map in [w['events']['id'] for w in worlds if re.search(r'MAP_GROUP\(' + w['e
   group=re.search(r'\.'+k+r' = \{(.*?)\}',m[1],re.S);tokens=re.findall(r'HIDDEN_ID\((FLAG_\w+)\)|\b(NO_ITEM)\b',group[1]);assert len(tokens)==8;groups[k]=[a if a else None for a,b in tokens]
  renew.append(dict(mapSymbol=map,**groups,source=ref(p,'sRenewableHiddenItems',m)))
 service_bindings=[]
-catalog=json.loads((preparation/'catalog.json').read_text())
+catalog=dict(maps=worlds)
 for name,root in [('ThreeIsland_DunsparceTunnel','ThreeIsland_DunsparceTunnel_EventScript_Prospector')]:
  map_entry=next(m for m in catalog['maps'] if m['sourceName']==name)
  events=source.json('data/maps/'+name+'/map.json')['object_events']

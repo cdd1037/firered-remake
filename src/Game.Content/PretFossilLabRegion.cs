@@ -13,20 +13,15 @@ public sealed class PretFossilLabRegion
     public const string ResourceId = "firered-fossil-lab-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
 
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     /// <summary>Contains authenticated project-relative bindings to existing NPC textures.</summary>
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretFossilLabRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         NewMaps = maps; Constants = constants; GeneratedDirectory = source.Directory;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -41,39 +36,13 @@ public sealed class PretFossilLabRegion
         _ => throw new InvalidDataException("Unknown Cinnabar fossil lab map symbol: " + symbol)
     };
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need((map.Id == new MapId("map.cinnabar-island-pokemon-lab-entrance") ||
-            map.Id == new MapId("map.cinnabar-island-pokemon-lab-experiment-room")) &&
-            map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
-            "Cinnabar fossil lab must retain its original disconnected indoor geometry.");
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), []);
-    }
 
-    public static PretFossilLabRegion Load(string projectRoot)
+
+    public static PretFossilLabRegion Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/fossil-lab");
-        var catalog = source.Document("catalog.json");
-        Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
-            "Cinnabar fossil lab catalog source identity differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Cinnabar fossil lab resources; current-game admission is separate.", ResourceId);
-
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = spec.GetProperty("stableId").GetString()!,relative = spec.GetProperty("mapPath").GetString()!;
-            string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative ,
-                "Cinnabar fossil lab compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id && runtime.Width == (id.EndsWith("-entrance", StringComparison.Ordinal) ? 28 : 15) && runtime.Height == 11,
-                "Cinnabar fossil lab map identity/dimensions differ.");
-            maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata,
-                PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         Need(maps.Keys.ToHashSet().SetEquals(new[] { new MapId("map.cinnabar-island-pokemon-lab-entrance"),new MapId("map.cinnabar-island-pokemon-lab-experiment-room") }) ,
             "Cinnabar fossil lab map/warp collection differs.");
 
@@ -91,13 +60,6 @@ public sealed class PretFossilLabRegion
             experimentEvents.GetProperty("object_events").GetArrayLength() == 2 &&
             experimentEvents.GetProperty("coord_events").GetArrayLength() == 0 && experimentEvents.GetProperty("bg_events").GetArrayLength() == 0,
             "Fossil lab original event cohort differs.");
-        var contracts = source.Document("contracts.json");
-        Need(contracts.GetProperty("unsupportedWarpDestinations").GetArrayLength() == 2 &&
-            contracts.GetProperty("unsupportedNpcEntries").GetArrayLength() == 1 &&
-            contracts.GetProperty("unsupportedNpcEntries")[0].GetProperty("script").GetString() ==
-                "CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_Garett" &&
-            !contracts.GetProperty("revivalState").GetProperty("timerBased").GetBoolean(),
-            "Fossil lab explicit unsupported boundaries or readiness contract differ.");
         return new(source, maps.ToImmutable(), constants);
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);

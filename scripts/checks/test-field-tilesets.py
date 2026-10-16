@@ -17,16 +17,23 @@ LEGACY_OUTPUT = Path('content/generated/field-tilesets.json')
 
 def current_maps():
     maps = []
-    for path in sorted((ROOT / 'content/generated/maps/regions').rglob('*.json')):
+    index = json.loads((ROOT / 'content/generated/maps/world.json').read_bytes())
+    for entry in index['maps']:
+        path = ROOT / 'content/generated' / entry['path']
         document = json.loads(path.read_bytes())
-        if isinstance(document, dict) and document.get('schemaVersion') == 3 and 'blocks' in document:
-            maps.append((path.relative_to(ROOT), document))
+        maps.append((path.relative_to(ROOT), document))
     if not maps:
         raise AssertionError('Current schema-3 map inputs are missing')
     return maps
 
 
 def prepare_inputs(destination, maps):
+    index = json.loads((ROOT / 'content/generated/maps/world.json').read_bytes())
+    chosen = {str(path.relative_to('content/generated')) for path, _ in maps}
+    entries = [e for e in index['maps'] if e['path'] in chosen]
+    target = destination / 'content/generated/maps/world.json'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(dict(maps=entries)))
     paths = [path for path, _ in maps]
     paths += [RAW / 'data/layouts/layouts.json', RAW / 'src/data/tilesets/headers.h',
               RAW / 'src/data/tilesets/metatiles.h']
@@ -66,7 +73,9 @@ class FieldTilesetTests(unittest.TestCase):
         self.invoke()
         before = (self.root / OUTPUT).read_bytes()
         actual = json.loads(before)
-        self.assertEqual({document['events']['layout'] for _, document in self.maps}, set(actual['layouts']))
+        index = json.loads((self.root / 'content/generated/maps/world.json').read_bytes())
+        by_path = {str(path.relative_to('content/generated')):doc for path,doc in self.maps}
+        self.assertEqual({e.get('layout', by_path[e['path']]['events']['layout']) for e in index['maps']}, set(actual['layouts']))
         self.assertTrue(actual['tilesets'])
         self.assertEqual({name for pair in actual['layouts'].values() for name in pair}, set(actual['tilesets']))
         self.assertFalse((self.root / LEGACY_OUTPUT).exists())
@@ -120,7 +129,7 @@ class FieldTilesetTests(unittest.TestCase):
     def test_empty_effective_map_input_fails_without_output(self):
         directory = self.root / 'content/generated/maps/regions/empty'
         directory.mkdir(parents=True)
-        (directory / 'catalog.json').write_text('{"schemaVersion":3,"maps":[]}')
+        (self.root / 'content/generated/maps/world.json').write_text('{"schemaVersion":3,"maps":[]}')
         result = self.invoke(succeeds=False)
         self.assertIn('No schema-3 field maps', result.stderr)
         self.assertFalse((self.root / OUTPUT).exists())

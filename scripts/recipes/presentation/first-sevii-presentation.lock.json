@@ -1,1 +1,161 @@
-{"commit":"037335f4c725d7c9aecdac87066f2002b4bd7e14","files":[{"path":"data/scripts/seagallop.inc"},{"path":"graphics/items/icon_palettes/fresh_water.pal"},{"path":"graphics/items/icon_palettes/iapapa_berry.pal"},{"path":"graphics/items/icon_palettes/max_elixir.pal"},{"path":"graphics/items/icon_palettes/meteorite.pal"},{"path":"graphics/items/icon_palettes/pinap_berry.pal"},{"path":"graphics/items/icon_palettes/razz_berry.pal"},{"path":"graphics/items/icon_palettes/soda_pop.pal"},{"path":"graphics/items/icon_palettes/tri_pass.pal"},{"path":"graphics/items/icons/ether.png"},{"path":"graphics/items/icons/fresh_water.png"},{"path":"graphics/items/icons/iapapa_berry.png"},{"path":"graphics/items/icons/meteorite.png"},{"path":"graphics/items/icons/pinap_berry.png"},{"path":"graphics/items/icons/razz_berry.png"},{"path":"graphics/items/icons/soda_pop.png"},{"path":"graphics/items/icons/tri_pass.png"},{"path":"graphics/seagallop/eb_tilemap.bin"},{"path":"graphics/seagallop/ferry_and_wake.pal"},{"path":"graphics/seagallop/ferry_sprite.png"},{"path":"graphics/seagallop/wake.png"},{"path":"graphics/seagallop/water.png"},{"path":"graphics/seagallop/wb_tilemap.bin"},{"path":"graphics/trainers/front_pics/aroma_lady_front_pic.png"},{"path":"graphics/trainers/front_pics/biker_front_pic.png"},{"path":"graphics/trainers/front_pics/cue_ball_front_pic.png"},{"path":"graphics/trainers/front_pics/swimmer_f_front_pic.png"},{"path":"graphics/trainers/front_pics/tuber_f_front_pic.png"},{"path":"graphics/trainers/front_pics/twins_front_pic.png"},{"path":"graphics/trainers/palettes/aroma_lady.pal"},{"path":"graphics/trainers/palettes/biker.pal"},{"path":"graphics/trainers/palettes/cue_ball.pal"},{"path":"graphics/trainers/palettes/swimmer_f.pal"},{"path":"graphics/trainers/palettes/tuber_f.pal"},{"path":"graphics/trainers/palettes/twins.pal"},{"path":"graphics_file_rules.mk"},{"path":"include/constants/seagallop.h"},{"path":"include/constants/songs.h"},{"path":"include/constants/trainers.h"},{"path":"sound/song_table.inc"},{"path":"sound/songs/midi/mus_net_center.mid"},{"path":"sound/songs/midi/mus_sevii_123.mid"},{"path":"sound/songs/midi/se_ship.mid"},{"path":"src/data/graphics/items.h"},{"path":"src/data/graphics/trainers.h"},{"path":"src/data/item_icon_table.h"},{"path":"src/data/items.json"},{"path":"src/data/text/trainer_class_names.h"},{"path":"src/data/trainer_graphics/front_pic_tables.h"},{"path":"src/data/trainers.h"},{"path":"src/field_fadetransition.c"},{"path":"src/field_weather.c"},{"path":"src/m4a.c"},{"path":"src/overworld.c"},{"path":"src/palette.c"},{"path":"src/seagallop.c"},{"path":"src/sound.c"},{"path":"src/sprite.c"}],"profile":"firered-first-sevii-presentation-v1","repository":"pret/pokefirered","schemaVersion":1}
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/scripts/seagallop.inc"
+    },
+    {
+      "path": "graphics/items/icon_palettes/fresh_water.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/iapapa_berry.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/max_elixir.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/meteorite.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/pinap_berry.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/razz_berry.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/soda_pop.pal"
+    },
+    {
+      "path": "graphics/items/icon_palettes/tri_pass.pal"
+    },
+    {
+      "path": "graphics/items/icons/ether.png"
+    },
+    {
+      "path": "graphics/items/icons/fresh_water.png"
+    },
+    {
+      "path": "graphics/items/icons/iapapa_berry.png"
+    },
+    {
+      "path": "graphics/items/icons/meteorite.png"
+    },
+    {
+      "path": "graphics/items/icons/pinap_berry.png"
+    },
+    {
+      "path": "graphics/items/icons/razz_berry.png"
+    },
+    {
+      "path": "graphics/items/icons/soda_pop.png"
+    },
+    {
+      "path": "graphics/items/icons/tri_pass.png"
+    },
+    {
+      "path": "graphics/seagallop/eb_tilemap.bin"
+    },
+    {
+      "path": "graphics/seagallop/ferry_and_wake.pal"
+    },
+    {
+      "path": "graphics/seagallop/ferry_sprite.png"
+    },
+    {
+      "path": "graphics/seagallop/wake.png"
+    },
+    {
+      "path": "graphics/seagallop/water.png"
+    },
+    {
+      "path": "graphics/seagallop/wb_tilemap.bin"
+    },
+    {
+      "path": "graphics/trainers/front_pics/aroma_lady_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/biker_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/cue_ball_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/swimmer_f_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/tuber_f_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/front_pics/twins_front_pic.png"
+    },
+    {
+      "path": "graphics/trainers/palettes/aroma_lady.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/biker.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/cue_ball.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/swimmer_f.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/tuber_f.pal"
+    },
+    {
+      "path": "graphics/trainers/palettes/twins.pal"
+    },
+    {
+      "path": "graphics_file_rules.mk"
+    },
+    {
+      "path": "include/constants/seagallop.h"
+    },
+    {
+      "path": "include/constants/trainers.h"
+    },
+    {
+      "path": "src/data/graphics/items.h"
+    },
+    {
+      "path": "src/data/graphics/trainers.h"
+    },
+    {
+      "path": "src/data/item_icon_table.h"
+    },
+    {
+      "path": "src/data/items.json"
+    },
+    {
+      "path": "src/data/text/trainer_class_names.h"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h"
+    },
+    {
+      "path": "src/data/trainers.h"
+    },
+    {
+      "path": "src/field_fadetransition.c"
+    },
+    {
+      "path": "src/field_weather.c"
+    },
+    {
+      "path": "src/overworld.c"
+    },
+    {
+      "path": "src/palette.c"
+    },
+    {
+      "path": "src/seagallop.c"
+    },
+    {
+      "path": "src/sprite.c"
+    }
+  ],
+  "profile": "firered-first-sevii-presentation-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1
+}

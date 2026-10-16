@@ -67,9 +67,7 @@ public static class PretQwilfishPresentation
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(new[] { 211 }) ||
             manifest.GetProperty("inheritedSprites").GetArrayLength() != 4 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 1 ||
-            manifest.GetProperty("footprints").GetArrayLength() != 1 ||
-            manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 0 ||
-            manifest.GetProperty("audio").GetProperty("inheritedCueCount").GetInt32() != 1)
+            manifest.GetProperty("footprints").GetArrayLength() != 1)
             throw new InvalidDataException("Qwilfish presentation inventory differs.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
@@ -115,12 +113,6 @@ public static class PretQwilfishPresentation
                 row.GetProperty("sourceHeight").GetInt32() != (front ? 48 : 56))
                 throw new InvalidDataException("Qwilfish move geometry differs.");
         }
-        using var synth = JsonDocument.Parse(Read("content/generated/audio/cues/trainer-tower/synth-manifest.json"));
-        var cue = manifest.GetProperty("audio").GetProperty("cues").EnumerateArray().Single();
-        if (cue.GetProperty("id").GetString() != "CRY_QWILFISH_NORMAL" || cue.GetProperty("species").GetInt32() != 211 ||
-            cue.GetProperty("cryMode").GetInt32() != 0 || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
-            !synth.RootElement.GetProperty("cues").EnumerateArray().Any(old => JsonElement.DeepEquals(old, cue)))
-            throw new InvalidDataException("Qwilfish inherited normal cry differs.");
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));
     }
 }

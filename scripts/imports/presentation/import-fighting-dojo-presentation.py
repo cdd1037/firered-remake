@@ -4,11 +4,12 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from world_source import WorldSource
+from generated_output_compare import generated_output_matches
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
 import argparse
-import importlib.util
 import io
 import json
 import re
@@ -40,12 +41,7 @@ def safe(path):
 
 
 def build(target, dependency, reference, check):
-    reader_path = dependency / 'scripts/imports/source/import-cinnabar-source-preparation.py'
-    spec = importlib.util.spec_from_file_location('dojo_presentation_reader', reader_path)
-    reader = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(reader)
-    reader.PROFILE = PROFILE
-    source = reader.Source(reference)
+    source = WorldSource(reference)
     inherited, outputs = {}, {}
 
     def reuse(path):
@@ -139,39 +135,31 @@ def build(target, dependency, reference, check):
         trainers.append(dict(trainer='pret:TRAINER_BLACK_BELT_' + name, sourceTrainerId=number, name=name, trainerClass='TRAINER_CLASS_BLACK_BELT',
                              className=class_name, trainerPic='TRAINER_PIC_BLACK_BELT', sourceTrainerPicId=105,
                              portrait='black-belt-front', encounterMusicGender=4))
-    synth = json.loads(reuse(league_base + 'synth-manifest.json'))
-    cries = [next(c for c in synth['cues'] if c['id'] == 'CRY_' + name.upper() + '_NORMAL') for name, _ in SPECIES]
-    need([c['species'] for c in cries] == [106, 107], 'Inherited cry species differs')
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1,   entries=entries))
-    lock = source.lock()
-    lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
-    lb = canonical(lock)
     manifest = dict(schemaVersion=1,
                       newOwnedSpecies=[106, 107],
                     sprites=sprites, pokemonIcons=icons, footprints=footprints, portraits=[portrait], trainers=trainers,
                     npc=dict(graphicsId='OBJ_EVENT_GFX_BLACK_BELT'),
-                    dexEntriesPath=BASE + 'dex-entries.json', audio=dict(newCueCount=0, inheritedCries=cries),
+                    dexEntriesPath=BASE + 'dex-entries.json',
                     limits=['Room and border layers are supplied by fighting-dojo-region.',
                             'Existing League sprites, party/storage icons and cries are reused.',
                             'No new move animation coverage; native visual and audible output remain unverified.'],
-                    authorDependencies=[dict(path='scripts/imports/source/import-cinnabar-source-preparation.py')],
                     outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = runtime_json_bytes(manifest, sort_keys=True)
     writes = [(target / BASE / 'manifest.json', mb)]
-    writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(source.data.items())]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
     for p, b in writes:
         safe(p)
         if p.suffix == '.json':
             json.loads(b)
         if check:
-            need(p.is_file() and p.read_bytes() == b, 'Regeneration differs: ' + str(p))
+            need(generated_output_matches(p, b), 'Regeneration differs: ' + str(p))
         else:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(b)
-    print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.entries), inheritedInputs=len(inherited),
+    print(json.dumps(dict(passed=True, check=check, sourceFiles=len(source.data), inheritedInputs=len(inherited),
                          newFootprints=2, dexEntries=2, trainerBindings=5, newBattleSprites=0, newAudioCues=0,
-                          lockBytes=len(lb),  manifestBytes=len(mb)), indent=2))
+                          manifestBytes=len(mb)), indent=2))
 
 
 if __name__ == '__main__':
@@ -184,5 +172,5 @@ if __name__ == '__main__':
     for p in [args.reference_root, args.project_root, args.dependency_root]:
         safe(p.absolute())
     target, dependency, reference = [p.resolve() for p in [args.project_root, args.dependency_root, args.reference_root]]
-    need(not (target == reference or target.is_relative_to(reference) or reference.is_relative_to(target)), 'Source/output overlap')
+    need(not ((target / 'content/generated').is_relative_to(reference) or reference.is_relative_to(target / 'content/generated')), 'Source/output overlap')
     build(target, dependency, reference, args.check)

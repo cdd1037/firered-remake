@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Rebuild Event Island pixels and cue metadata from pinned local blobs; no upstream execution."""
+"""Rebuild Event Island pixels and motion metadata from pinned local blobs; no upstream execution."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -18,7 +17,6 @@ import re
 import runpy
 import struct
 import subprocess
-import wave
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
@@ -85,42 +83,6 @@ def build(root, reference, dependency):
         rgba = bytes(v for index in indices for v in (*colors[index], 255 if index else 0))
         footprints.append(dict(speciesId='pret:' + symbol, sourceSpeciesId=species, **emit(stem + '-footprint', 16, 16, rgba, [image, pal])))
 
-    pack = source.reuse('content/generated/audio/synth/firered.pack')
-    cries = source.reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence, inherited_cry_cues = [], [], []
-    for name, species in SPECIES:
-        row = cry_rows[species]
-        need(cry_table[row[1]] == name and row[1] == (386 if species==410 else species-1), 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + ('ho_oh' if name=='HoOh' else name.lower()) + '.wav'
-        with wave.open(io.BytesIO(source.read(path))) as original:
-            need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                 (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header dimensions differ')
-            pcm = original.readframes(original.getnframes())
-        delta = (0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1)
-        decoded = bytearray()
-        for index in range(row[2] + row[4]):
-            block, i = divmod(index, 64)
-            start = wave_offset + 16 + block * 33
-            if i == 0:
-                value = pack[start]
-            else:
-                packed = pack[start + (1 if i == 1 else i // 2 + 1)]
-                nibble = packed & 15 if i == 1 or i % 2 else packed >> 4
-                value = (value + delta[nibble]) & 255
-            decoded.append((value + 128) & 255)
-        need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]), decodedBytes=len(decoded), sourcePlayer=4, priority=priority))
-        cues.append(dict(id='CRY_' + ('HO_OH' if name == 'HoOh' else name.upper()) + '_NORMAL', sourceSymbol='SPECIES_' + ('HO_OH' if name == 'HoOh' else name.upper()), sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-
-    cues += [dict(c,id=c['id'].replace('_NORMAL','_ENCOUNTER'),cryMode=2) for c in cues[:]]
     names = []
     for name, species in SPECIES:
         symbol='SPECIES_'+('HO_OH' if name=='HoOh' else name.upper())
@@ -129,12 +91,6 @@ def build(root, reference, dependency):
     decompress=source.text('src/decompress.c')
     need('CpuCopy32(pointer + 0x800, pointer, 0x800)' in decompress,'Attack form frame-copy binding differs')
     need('iconSprite += 0x400;' in source.text('src/pokemon_icon.c'),'Attack icon offset differs')
-    sound=source.text('src/sound.c')
-    need(re.search(r'if \(songNum == MUS_NONE\)\s*songNum = 0;',sound),'Source silent-map song alias differs')
-    need(re.search(r'case CRY_MODE_ENCOUNTER:\s*release = 225;\s*pitch = 15600;\s*chorus = 20;\s*volume = 90;\s*break;',sound),'Encounter cry parameters differ')
-    setup=source.text('src/battle_setup.c')
-    need(re.search(r'case SPECIES_DEOXYS:\s*CreateBattleStartTask\(B_TRANSITION_BLUR, MUS_VS_DEOXYS\);',setup),'Deoxys battle music differs')
-    need(re.search(r'case SPECIES_HO_OH:\s*case SPECIES_LUGIA:\s*CreateBattleStartTask\(B_TRANSITION_BLUR, MUS_VS_LEGEND\);',setup),'Navel battle music differs')
     map_music=[]
     maps=['BirthIsland_Exterior','BirthIsland_Harbor','NavelRock_Summit','NavelRock_Base','NavelRock_Exterior','NavelRock_Harbor']
     for name in maps:
@@ -142,26 +98,6 @@ def build(root, reference, dependency):
         map_music.append(dict(map=name, music=json.loads(source.read(path))['music']))
     for name in ['BirthIsland_Exterior','NavelRock_Summit','NavelRock_Base']:
         source.read('data/maps/'+name+'/scripts.inc')
-    all_cues=[]
-    for path in ['content/generated/audio/synth/manifest.json','content/generated/sprites/pokemon/sevii-ruby/synth-manifest.json','content/generated/sprites/pokemon/six-island/synth-manifest.json']:
-        all_cues+=json.loads(source.reuse(path))['cues']
-    inherited_cues=[]
-    songs=source.text('include/constants/songs.h')
-    song_table=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',source.text('sound/song_table.inc'),re.M)
-    song_symbols={r['music'] for r in map_music}-{'MUS_NONE'}|{'MUS_VS_LEGEND','MUS_VS_DEOXYS','MUS_ENCOUNTER_DEOXYS','SE_DEOXYS_MOVE','SE_M_CONFUSE_RAY','SE_M_WING_ATTACK','SE_M_STRENGTH','SE_THUNDERSTORM_STOP','SE_THUNDER2','SE_THUNDER'}
-    for symbol in sorted(song_symbols):
-        number=int(re.search(r'^#define '+symbol+r'\s+(\d+)',songs,re.M)[1])
-        address,player,second=struct.unpack_from('<IHH',pack,0x084A32CC+number*8-0x08489968)
-        need(song_table[number]==(symbol.lower(),str(player),str(second)),'Source song table differs')
-        path='sound/songs/midi/'+symbol.lower()+'.mid'
-        midi=source.read(path);need(midi[:4]==b'MThd','MIDI framing differs')
-        looping=b'\xff\x06\x01[' in midi
-        need(looping==(b'\xff\x06\x01]' in midi),'MIDI loop markers differ')
-        expected=dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=looping, cryMode=0)
-        old=next((c for c in all_cues if c['id']==symbol),None)
-        if old:
-            need(dict(old,cryMode=old.get('cryMode',0))==expected,'Inherited song differs');inherited_cues.append(expected)
-        else:cues.append(expected)
     geometry_path='content/generated/battle/art/campaign-hit-art/manifest.json'
     geometry=json.loads(source.reuse(geometry_path))['geometry'];geometry_rows=[]
     for row in sprites:
@@ -205,11 +141,10 @@ def build(root, reference, dependency):
             need(local*8+8<=len(table),'Summit shade metatile range differs')
             used.update(tile>>12 for tile in table[local*8:local*8+8])
     need(used and max(used)<=12,'Summit BG requires mixed shade treatment')
-    out['synth-manifest.json']=runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
-    manifest = runtime_json_bytes(dict(schemaVersion=1,     assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], mapMusic=map_music, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows), audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues], cries=cry_evidence, ), triangle=triangle, fragments=fragments, fieldPresentation=dict( paletteTint='ApplyGlobalFieldPaletteTint(10)', destroy=dict(fragmentFrame=122, totalFrames=206, amplitude=4, decayInterval=21, flashBlend=16, flashBackgroundOnly=True), hoOhFlap=dict(frames=[3, 4, 3, 4], frameDuration=8), summitShade=dict(gammaIndex=3, paletteIndices=sorted(used), normalChannels=[c * 13 // 16 for c in range(32)])), outputs=[dict(path=p) for p, b in sorted(out.items())]), sort_keys=True)
+    manifest = runtime_json_bytes(dict(schemaVersion=1,     assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, speciesNames=names, newOwnedSpecies=[s for _, s in SPECIES], mapMusic=map_music, moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry_rows),  triangle=triangle, fragments=fragments, fieldPresentation=dict( paletteTint='ApplyGlobalFieldPaletteTint(10)', destroy=dict(fragmentFrame=122, totalFrames=206, amplitude=4, decayInterval=21, flashBlend=16, flashBackgroundOnly=True), hoOhFlap=dict(frames=[3, 4, 3, 4], frameDuration=8), summitShade=dict(gammaIndex=3, paletteIndices=sorted(used), normalChannels=[c * 13 // 16 for c in range(32)])), outputs=[dict(path=p) for p, b in sorted(out.items())]), sort_keys=True)
     out['manifest.json']=manifest
     result={BASE+p:b for p,b in out.items()};result.update({RAW+p:b for p,b in source.raw.items()})
-    report=dict(passed=True,sourceFiles=len(source.raw),inheritedInputs=len(source.inherited),sprites=len(sprites),icons=len(icons),footprints=len(footprints),trianglePalettes=len(triangle),fragments=len(fragments),assets=len(assets),geometry=len(geometry_rows),outputs=len(out)-1,manifestBytes=len(manifest),synthBytes=len(out['synth-manifest.json']),newCues=len(cues),inheritedCues=len(inherited_cues),exactCryPcmCompared=True,nativeWindowVerified=False)
+    report=dict(passed=True,sourceFiles=len(source.raw),inheritedInputs=len(source.inherited),sprites=len(sprites),icons=len(icons),footprints=len(footprints),trianglePalettes=len(triangle),fragments=len(fragments),assets=len(assets),geometry=len(geometry_rows),outputs=len(out)-1,manifestBytes=len(manifest),nativeWindowVerified=False)
     return result,report
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

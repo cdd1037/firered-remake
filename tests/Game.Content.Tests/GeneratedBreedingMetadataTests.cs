@@ -16,7 +16,7 @@ public sealed class GeneratedBreedingMetadataTests
     {
         var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);
         var mechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(canonical, TestAssets.Root);
-        return new(canonical, mechanics, PretNpcTrades.Load(TestAssets.Root, mechanics.Catalog).Trades,
+        return new(canonical, mechanics, PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades,
             SharedMachineCatalog.LoadProject(TestAssets.Root));
     });
 

@@ -42,7 +42,7 @@ dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --filter 
 dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj --filter FullyQualifiedName~PokedexAideCatalogTests
 dotnet test tests/Game.Battle.Tests/Game.Battle.Tests.csproj --filter FullyQualifiedName~ExpShareRewardTests
 dotnet test tests/Game.Content.Tests/Game.Content.Tests.csproj --filter 'FullyQualifiedName~Route15GateContentTests|FullyQualifiedName~CyclingRoadContentTests|FullyQualifiedName~GeneratedConnectedMapProjectionTests|FullyQualifiedName~RegionalWarpValidationTests|FullyQualifiedName~CurrentItemCatalogTests'
-python scripts/imports/maps/import-fuchsia-route-region.py --check
+python scripts/imports/maps/import-world.py --check
 python scripts/checks/test-route15-gate-import.py
 python scripts/checks/test-current-items-import.py
 python scripts/imports/items/import-current-items.py --check

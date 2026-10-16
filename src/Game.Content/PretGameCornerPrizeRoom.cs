@@ -20,9 +20,9 @@ public sealed class PretGameCornerPrizeRoom
     {
         ArgumentNullException.ThrowIfNull(regional);
         ArgumentNullException.ThrowIfNull(existing);
-        if (existing.ContainsKey(MapId) || !existing.TryGetValue(new("map.celadon-city"), out var city) ||
+        if (!existing.TryGetValue(new("map.celadon-city"), out var city) ||
             !regional.NewMaps.TryGetValue(MapId, out var map))
-            throw new InvalidDataException("game_corner_prize_room_predecessor");
+            throw new InvalidDataException("game_corner_prize_room_map_missing");
         if (map.Id != MapId || map.SourceMapName != "CeladonCity_GameCorner_PrizeRoom" ||
             city.SourceMapName != "CeladonCity" ||
             map.Width != 9 || map.Height != 10 || map.Events.GetProperty("object_events").GetArrayLength() != 5 ||

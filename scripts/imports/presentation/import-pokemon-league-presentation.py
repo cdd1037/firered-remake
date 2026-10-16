@@ -33,8 +33,8 @@ def run(root,reference,inherited,check=False):
    pl=im.getpalette();colors=[tuple(pl[i:i+3]) for i in range(0,len(pl),3)]
   colors=[tuple(((v>>3)<<3)|((v>>3)>>2) for v in c) for c in colors]
   dst=Image.new('RGBA',im.size);dst.putdata([(*colors[i],0 if transparent and i==0 else 255) for i in ix]);return dst
- # Explicit source provenance for FSM, source text, trainer and sound selection.
- for p in ['src/palette.c','src/field_weather.c','src/field_effect.c','src/hall_of_fame.c','src/credits.c','src/strings.c','src/pokemon.c','src/battle_main.c','src/data/trainers.h','src/data/graphics/trainers.h','src/data/trainer_graphics/front_pic_tables.h','src/data/text/trainer_class_names.h','include/constants/trainers.h','include/constants/opponents.h','include/constants/songs.h','sound/song_table.inc','include/constants/metatile_labels.h','tileset_rules.mk']:get(p)
+ # Explicit source provenance for FSM, source text, trainer selection.
+ for p in ['src/palette.c','src/field_weather.c','src/field_effect.c','src/hall_of_fame.c','src/credits.c','src/strings.c','src/pokemon.c','src/battle_main.c','src/data/trainers.h','src/data/graphics/trainers.h','src/data/trainer_graphics/front_pic_tables.h','src/data/text/trainer_class_names.h','include/constants/trainers.h','include/constants/opponents.h','include/constants/metatile_labels.h','tileset_rules.mk']:get(p)
  table=text('src/data/trainers.h');constants=text('include/constants/trainers.h');opponents=text('include/constants/opponents.h');classes=text('src/data/text/trainer_class_names.h');portraits=[];trainers=[]
  for stem in ['elite_four_lorelei','elite_four_bruno','elite_four_agatha','elite_four_lance','champion_rival','red','leaf']:
   row=emit(stem+'-front',indexed('graphics/trainers/front_pics/'+stem+'_front_pic.png','graphics/trainers/palettes/'+stem+'.pal'))
@@ -99,15 +99,6 @@ def run(root,reference,inherited,check=False):
     for r,g,b,a in im.getdata():pix.append(((r>>3)*255//31,(g>>3)*255//31,(b>>3)*255//31,a))
     im.putdata(pix);row=emit(stem+'-'+side+'-'+variant,im);row.update(speciesId='pret:'+sym,sourceSpeciesId=sid,side=side,paletteVariant=variant,x=144 if side=='front' else 40,y=8+yoff-elevation if side=='front' else 48+yoff);sprites.append(row)
   pi=int(re.search(r'\['+sym+r'\]\s*=\s*(\d+),',text('src/pokemon_icon.c'))[1]);im=indexed('graphics/pokemon/'+stem+'/icon.png',f'graphics/pokemon/icon_palettes/icon_palette_{pi}.pal').crop((0,0,32,32));row=emit(stem+'-icon',im);row.update(speciesId='pret:'+sym,sourceSpeciesId=sid);icons.append(row)
- # Existing original resource pack already contains all source sequences; append metadata only.
- pack=(inherited/'content/generated/audio/synth/firered.pack').read_bytes()
- songs={k:int(v) for k,v in re.findall(r'^#define ((?:MUS|SE)_\w+)\s+(\d+)',text('include/constants/songs.h'),re.M)};songtable=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',text('sound/song_table.inc'),re.M);cues=[]
- for id in ['MUS_VS_CHAMPION','MUS_HALL_OF_FAME','MUS_CREDITS','SE_APPLAUSE','MUS_SLOW_PALLET','SE_RS_DOOR']:
-  sid=songs[id];address,player,second=struct.unpack_from('<IHH',pack,0x084A32CC+sid*8-0x08489968);symbol,sp,ss=songtable[sid];need((player,second)==(int(sp),int(ss)),'Audio source player')
-  path='sound/songs/midi/'+symbol+'.mid';get(path);cues.append(dict(id=id, sourceSymbol=id, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=id.startswith('MUS_') and id != 'MUS_CREDITS', cryMode=0))
- for stem,sid in species+[('dewgong',87),('exeggutor',103)]:
-  path='sound/direct_sound_samples/cries/'+stem+'.wav';get(path);cues.append(dict(id='CRY_' + stem.upper() + '_NORMAL', sourceSymbol='SPECIES_' + stem.upper(), sourcePlayer=4, priority=10, sourceCounter=None, songAddress=0, species=sid, looping=False, cryMode=0))
- out['synth-manifest.json']=enc(dict(schemaVersion=1, cues=cues))
  inputs=[dict(path=p) for p,b in sorted(raw.items())]
  lock=enc(dict(schemaVersion=1,sourceCommit=COMMIT,files=inputs));lockpath=root/'scripts/recipes/presentation/pokemon-league-presentation.lock.json'
  manifest=runtime_json_bytes(dict(schemaVersion=1,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(title=strings['gString_PokemonFireRed_Staff'],texts=texts,commands=commands,maps=maps),texts={k:strings[k] for k in ['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber']},outputs=[dict(path=p) for p,b in sorted(out.items())]));out['manifest.json']=manifest
@@ -118,6 +109,6 @@ def run(root,reference,inherited,check=False):
   lockpath.write_bytes(lock)
   for p,b in [(RAW+p,b) for p,b in raw.items()]+[(BASE+p,b) for p,b in out.items()]:
    dest=root/p;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
- return dict(passed=True,rawFiles=len(raw),outputs=len(out),manifestBytes=len(manifest),lockBytes=len(lock),synthBytes=len(out['synth-manifest.json']),creditsCommands=len(commands),originalVisualFidelityVerified=False)
+ return dict(passed=True,rawFiles=len(raw),outputs=len(out),manifestBytes=len(manifest),lockBytes=len(lock),creditsCommands=len(commands),originalVisualFidelityVerified=False)
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--inherited-root',type=pathlib.Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();print(json.dumps(run(a.project_root,a.reference_root,a.inherited_root,a.check),indent=2))

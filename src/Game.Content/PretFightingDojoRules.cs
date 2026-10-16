@@ -10,7 +10,7 @@ using Game.Domain.World;
 namespace Game.Content;
 
 public sealed record FightingDojoTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
-/// <summary>Bounded Dojo ownership, opponent, trainer and machine catalogs over authenticated Power Plant resources.</summary>
+/// <summary>Initial Fighting Dojo trainer battle catalog.</summary>
 public static class PretFightingDojoRules
 {
     private static T Read<T>(string root,string file)
@@ -30,5 +30,4 @@ public static class PretFightingDojoRules
         var result = new FightingDojoTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         FightingDojoTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

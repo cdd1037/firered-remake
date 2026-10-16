@@ -14,18 +14,15 @@ public sealed class PretFuchsiaGymRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
 
-    public JsonElement Catalog { get; }
-    public JsonElement NpcSources { get; }
     public JsonElement ExternalFuchsiaEvents { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretFuchsiaGymRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
-        JsonElement catalog, JsonElement npcSources, JsonElement externalFuchsiaEvents)
+        JsonElement externalFuchsiaEvents)
     {
         GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; Catalog = catalog;
-        NpcSources = npcSources; ExternalFuchsiaEvents = externalFuchsiaEvents;
+        Constants = constants;
+         ExternalFuchsiaEvents = externalFuchsiaEvents;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -34,81 +31,28 @@ public sealed class PretFuchsiaGymRegion
         _ => PretFuchsiaRouteRegion.MapIdFromSourceSymbol(symbol)
     };
 
-    public static Game.Domain.World.ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        var connections = map.Events.GetProperty("connections");
-        var values = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<Game.Domain.World.ConnectedFieldConnection>.Empty :
-            connections.EnumerateArray().Select(c => new Game.Domain.World.ConnectedFieldConnection(c.GetProperty("direction").GetString() switch
-            {
-                "up" => Game.Domain.World.Direction.North, "down" => Game.Domain.World.Direction.South,
-                "left" => Game.Domain.World.Direction.West, "right" => Game.Domain.World.Direction.East,
-                _ => throw new InvalidDataException("Unsupported connection direction.")
-            }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), values);
-    }
 
-    public static PretFuchsiaGymRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
+
+    public static PretFuchsiaGymRegion Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/maps/regions/fuchsia-gym");
 
-        byte[] ReadPinned(string root,string path)
-        {
-            return File.ReadAllBytes(SafeFile(root, path));
-        }
-        using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-
-        var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Fuchsia Gym manifest identity differs.");
-
-        var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var output in m.GetProperty("outputs").EnumerateArray())
-        {
-            var path = output.GetProperty("path").GetString()!;
-            if (path == "scripts.json") continue;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "maps/regions/fuchsia-gym/" + path)) continue;
-            Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate Fuchsia Gym output.");
-        }
-        using var catalog = JsonDocument.Parse(outputs["fuchsia-gym-catalog.json"]);
-        Require(catalog.RootElement.GetProperty("schemaVersion").GetInt32() == 1 ,
-            "Fuchsia Gym source inventory differs from fixed lock.");
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
-            "Authenticated Fuchsia Gym source profile; runtime certification is separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
-        {
-            var relative = spec.GetProperty("mapPath").GetString()!;
-            if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact))
-            {
-
-                var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-                Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate Fuchsia Gym runtime map.");
-                continue;
-            }
-            var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
-            Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
-        }
+        var maps = world.MapsInDirectory(directory);
 
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_BADGE05_GET"] == 0x824 && constants["FLAG_DEFEATED_KOGA"] == 0x4B4 &&
             constants["FLAG_GOT_TM06_FROM_KOGA"] == 0x259 && constants["ITEM_TM06"] == 294,
             "Fuchsia Gym badge/reward constants differ.");
-        using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
-        using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/FuchsiaCity/map.json"));
-        Require(npcSources.RootElement.GetProperty("schemaVersion").GetInt32() == 1 &&
-            npcSources.RootElement.GetProperty("graphics").GetArrayLength() == 5, "Fuchsia Gym NPC inventory differs.");
+        using var cityEvents = JsonDocument.Parse(world.ReadEvents("data/maps/FuchsiaCity/map.json"));
         var gymEvents = maps[new MapId("map.fuchsia-city-gym")].Events;
         var cityEntry = cityEvents.RootElement.GetProperty("warp_events")[4];
         Require(cityEntry.GetProperty("dest_map").GetString() == "MAP_FUCHSIA_CITY_GYM" && cityEntry.GetProperty("dest_warp_id").GetString() == "1" &&
             gymEvents.GetProperty("warp_events")[1].GetProperty("dest_map").GetString() == "MAP_FUCHSIA_CITY" &&
             gymEvents.GetProperty("warp_events")[1].GetProperty("dest_warp_id").GetString() == "4",
             "Fuchsia Gym city entry differs from original source.");
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+        return new(directory, maps, constants.ToImmutable(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

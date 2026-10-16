@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -265,64 +264,12 @@ def build(root, reference):
         terrains.append(dict(terrain='BATTLE_TERRAIN_' + terrain.upper(), terrainId=terrain_id, **emit(terrain, 240, 112, bytes(terrain_rgba[:240 * 112 * 4]), [terrain_prefix + suffix for suffix in ('png', 'pal', 'bin')])))
 
 
-    # Declare original sequences and cry samples already present in the source pack.
-    pack = source.reuse('content/generated/audio/synth/firered.pack')
-    cries = source.reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    songs = source.text('include/constants/songs.h')
-    song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
-    symbol = 'MUS_SEVII_45'
-    song_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
-    address, player, second = struct.unpack_from('<IHH', pack, 0x084A32CC + song_id * 8 - 0x08489968)
-    need(song_table[song_id] == ('mus_sevii_45', str(player), str(second)) and player == 0, 'Cave music table binding differs')
-    midi_path = 'sound/songs/midi/mus_sevii_45.mid'
-    midi = source.read(midi_path)
-    need(midi[:4] == b'MThd' and b'\xff\x06\x01[' in midi and b'\xff\x06\x01]' in midi, 'Cave music loop markers differ')
-    cues = [dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=True, cryMode=0)]
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    for name, species in [(name.upper(), number) for name, number in SPECIES if number != 87]:
-        row = cry_rows[species]
-        need(cry_table[species - 1].upper() == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        wave_source = source.read(path)
-        need(wave_source[:4] == b'RIFF' and wave_source[8:12] == b'WAVE', 'Species source cry framing differs')
-        cues.append(dict(id='CRY_' + name + '_NORMAL', sourceSymbol='SPECIES_' + name, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-    # Lorelei's original script uses Lapras's aggressive encounter cry, mode 2.
-    # Reuse the already authenticated sample pack with the exact sound.c controls.
-    sound = source.text('src/sound.c')
-    encounter = re.search(r'case CRY_MODE_ENCOUNTER:(.*?)break;', sound, re.S)[1]
-    need(all(re.search(r'\b' + name + r'\s*=\s*' + str(value) + r';', encounter) for name, value in
-             [('release', 225), ('pitch', 15600), ('chorus', 20), ('volume', 90)]), 'Encounter cry source parameters differ')
-    need(re.search(r'#define CRY_MODE_ENCOUNTER\s+2\b', source.text('include/constants/sound.h')), 'Encounter cry source mode differs')
-    script = source.text('data/maps/FourIsland_IcefallCave_Back/scripts.inc')
-    need('playmoncry SPECIES_LAPRAS, CRY_MODE_ENCOUNTER' in script and re.search(r'#define SPECIES_LAPRAS\s+131\b', constants), 'Lorelei Lapras cry binding differs')
-    row = cry_rows[131]
-    need(cry_table[130] == 'Lapras' and row[1] == 130, 'Lapras cry table differs')
-    tone = 0x0848c914 + row[1] * 12 - 0x08489968
-    wave = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-    need(struct.unpack_from('<HHIII', pack, wave) == (1, 0, 10764288, 0, row[2]), 'Lapras packed cry header differs')
-    path = 'sound/direct_sound_samples/cries/lapras.wav'
-    wave_source = source.read(path)
-    need(wave_source[:4] == b'RIFF' and wave_source[8:12] == b'WAVE', 'Lapras source cry framing differs')
-    cues.append(dict(id='CRY_LAPRAS_ENCOUNTER', sourceSymbol='SPECIES_LAPRAS', sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=131, looping=False, cryMode=2))
-    inherited_seel = next(c for c in cues if c['id'] == 'CRY_SEEL_NORMAL')
-    original_manifest = json.loads(source.reuse('content/generated/audio/synth/manifest.json'))
-    original_seel = next(c for c in original_manifest['cues'] if c['id'] == 'CRY_SEEL_NORMAL')
-    need(dict(original_seel, cryMode=original_seel.get('cryMode', 0)) == inherited_seel, 'Inherited Seel cue differs')
-    cues = [c for c in cues if c['id'] != 'CRY_SEEL_NORMAL']
-    out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=[inherited_seel]))
 
     manifest = runtime_json_bytes(dict(schemaVersion=1,
 
         assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, items=items, trainers=trainers,
         portraits=portraits, tiles=tiles, layers=layers, terrains=terrains, newOwnedSpecies=[number for _, number in SPECIES], inheritedOpponentSprites=[87],
-        audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=['CRY_SEEL_NORMAL'],  ),
+
         limits=['No runtime rules are created by this presentation package.', 'Party icons use original frame zero shared by normal/shiny variants.'],
         outputs=[dict(path=p) for p, b in sorted(out.items())]), sort_keys=True)
     out['manifest.json'] = manifest
@@ -334,7 +281,7 @@ def build(root, reference):
         trainers=len(trainers), portraits=len(portraits), newPortraits=sum(not p['inherited'] for p in portraits),
         itemIcons=len(items), dynamicMetatiles=len(tiles), dynamicLayers=len(layers), outputs=len(out) - 1,
          manifestBytes=len(manifest),
-         synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
+          sourceAndStaticChecksOnly=True)
     return result, report
 
 

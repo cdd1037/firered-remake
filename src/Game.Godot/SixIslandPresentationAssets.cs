@@ -61,9 +61,6 @@ internal static class SixIslandPresentationAssets
             !manifest.GetProperty("newOpponentOnlySpecies").EnumerateArray().Select(s=>s.GetInt32()).ToHashSet().SetEquals(opponentOnly) || !manifest.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("item").GetString()).ToHashSet().SetEquals(
                 ["pret:ITEM_SUN_STONE", "pret:ITEM_DRAGON_SCALE", "pret:ITEM_DREAM_MAIL"]) || !manifest.GetProperty("tiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).ToHashSet().SetEquals([0x357, 0x358]))
             throw new InvalidDataException("Six Island presentation inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Six Island cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

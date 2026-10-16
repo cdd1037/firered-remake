@@ -38,15 +38,16 @@ public sealed class GeneratedRegionBoundaryTests
     [TestMethod]
     public void MtMoonLoadsBusinessDefinitionsWithoutDuplicateSharedCatalogs()
     {
-        var region = PretMtMoonRegion.Load(TestAssets.Root);
-        foreach (string omitted in new[] { "moves", "species", "items" })
-            Assert.IsFalse(region.Dependencies.TryGetProperty(omitted, out _), omitted);
+        var region = PretMtMoonRegion.Load(PretCurrentWorld.Load(TestAssets.Root));
         Assert.AreEqual(3, region.NewMaps.Count);
-        Assert.AreEqual(12, region.Trainers.Length);
+        Assert.AreEqual(12, PretMtMoonTrainers.Load(TestAssets.Root).Trainers.Count);
         Assert.AreEqual(3, region.Encounters.GetArrayLength());
-        Assert.AreEqual(18, region.Pickups.GetArrayLength());
-        Assert.AreEqual("FLAG_GOT_FOSSIL_FROM_MT_MOON", region.FossilChoice.GetProperty("completedFlag").GetString());
-        Assert.IsFalse(region.ProgressionBoundary.GetProperty("enabled").GetBoolean());
+        var items = PretMtMoonItems.LoadProject(TestAssets.Root);
+        Assert.AreEqual(18, items.Pickups.Count(p => p.Map != "Route4"));
+        Assert.AreEqual(2, items.Fossils.Length);
+        foreach (string obsolete in new[] { "dependencies.json", "npc-source.json", "mtmoon-catalog.json" })
+            Assert.IsFalse(File.Exists(Path.Combine(region.GeneratedDirectory, obsolete)));
+
     }
 
     [TestMethod]
@@ -106,11 +107,12 @@ public sealed class GeneratedRegionBoundaryTests
             typeof(PretMagikarpContract),
             typeof(PretRegionalGiftContract),
             ];
+            var world = PretCurrentWorld.Load(root);
             var failures = new List<string>();
             foreach (Type type in loaders)
             {
                 var method = type.GetMethod("Load", BindingFlags.Public | BindingFlags.Static)!;
-                object?[] arguments = method.GetParameters().Select((p, i) => i == 0 ? (object)root : p.DefaultValue).ToArray();
+                object?[] arguments = method.GetParameters().Select((p, i) => i == 0 ? (p.ParameterType == typeof(PretCurrentWorld) ? (object)world : root) : p.DefaultValue).ToArray();
                 try { Assert.IsNotNull(method.Invoke(null, arguments), type.Name); }
                 catch (Exception error)
                 {

@@ -26,11 +26,6 @@ public sealed partial class PretCampaignCatalog
     public ImmutableDictionary<string, FieldMilestoneCollection> FieldMilestones => FourIslandRegion?.FieldMilestones ?? ImmutableDictionary<string, FieldMilestoneCollection>.Empty;
     public bool FourIslandEnabled => FourIslandRegion is not null;
 
-    private static void ValidateFourIslandAnchors(PretFourIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
 
     private static void ValidateFourIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FourIslandTrainerCatalog trainers, PretStoryCompilation scripts)
@@ -71,9 +66,6 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("sticker_house_unsupported_script:" + program.Id);
         if (scripts.FindProgram("FourIsland_House2_EventScript_StickerMan") is not { Instructions.IsEmpty: false })
             throw new InvalidDataException("sticker_house_missing_entry");
-        foreach (var symbol in new[] { "MAP_FOUR_ISLAND_POKEMON_CENTER_2F","MAP_FOUR_ISLAND_POKEMON_DAY_CARE","MAP_FOUR_ISLAND_HOUSE1" })
-            if (maps.ContainsKey(PretFourIslandRegion.MapIdFromSourceSymbol(symbol)))
-                throw new InvalidDataException("four_island_excluded_map_admitted");
     }
 
 }

@@ -12,17 +12,16 @@ public sealed partial class PretCampaignCatalog
     public PretMoveReminderHouse MoveReminderHouse { get; }
     public MoveReminderCatalog? MoveReminder { get; }
 
-    private static void ValidateMoveReminderComposition(PretMoveReminderHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
-        => ValidateSourceHouseComposition("move_reminder", house.NewMaps, maps, previous, scripts,
+    private static void ValidateMoveReminderComposition(PretMoveReminderHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
+        => ValidateSourceHouseComposition("move_reminder", house.NewMaps, maps, scripts,
             "map.two-island", 1, "data/maps/TwoIsland_House/scripts.inc", "TwoIsland_House_EventScript_MoveManiac");
 
     public PretMoveDeleterHouse MoveDeleterHouse { get; }
     public MoveDeleterCatalog? MoveDeleter { get; }
 
-    private static void ValidateSourceHouseComposition(string scope,ImmutableDictionary<MapId, PretWorldMap> houseMaps,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts,string townId,int townWarp,string scriptPath,string entry)
+    private static void ValidateSourceHouseComposition(string scope,ImmutableDictionary<MapId, PretWorldMap> houseMaps,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts,string townId,int townWarp,string scriptPath,string entry)
     {
-        if (maps.Count != previous.Count + 1 || houseMaps.Count != 1 ||
-            previous.ContainsKey(houseMaps.Single().Key) )
+        if (houseMaps.Count != 1 || !maps.ContainsKey(houseMaps.Single().Key) )
             throw new InvalidDataException(scope + "_map_composition");
         var house = houseMaps.Single().Value;
         var town = maps[new(townId)];

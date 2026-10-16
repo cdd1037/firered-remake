@@ -27,19 +27,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled,includeSurf:_catalog.SurfEnabled,includeSilph:_catalog.SilphEnabled,includeSaffronGym:_catalog.SaffronGymEnabled,includeCinnabar:_catalog.CinnabarEnabled,includeFirstSevii:_catalog.FirstSeviiEnabled,includeVictoryRoad:_catalog.VictoryRoadEnabled,includePokemonLeague:_catalog.PokemonLeagueEnabled,includeSeviiRuby:_catalog.SeviiRubyEnabled,includeFourIsland:_catalog.FourIslandEnabled,includeSixIsland:_catalog.SixIslandEnabled,includeFiveIsland:_catalog.FiveIslandEnabled,includeCelio:_catalog.CelioEnabled,includeCeruleanCave:_catalog.CeruleanCaveEnabled,includeLeagueRematch:_catalog.LeagueRematchEnabled,includeSevenIsland:_catalog.SevenIslandEnabled,includeEventIslands:_catalog.EventIslandsEnabled,includePowerPlant:_catalog.PowerPlantEnabled,includeTrainerTower:_catalog.TrainerTowerEnabled,includeFossilLab:_catalog.FossilLabEnabled,includeSeafoam:_catalog.SeafoamEnabled,includeMoveDeleter:_catalog.MoveDeleter is not null,includeVending:_catalog.DepartmentRooftopEnabled,includeFieldFly:_catalog.FieldFly is not null,includeSlotMachine:_catalog.GameCornerSlots is not null,includeFameChecker:_catalog.FameChecker is not null,includeVsSeeker:_catalog.VsSeeker is not null,includeTeachyTv:_catalog.TeachyTv is not null,surfContentRoot:OS.GetEnvironment("FIRERED_SURF_CONTENT_ROOT") is {Length:>0} surfRoot?surfRoot:null);
-                if(_catalog.PokemonContent?.Pokemon is {} cornerOwned)
-                    synthesized.RegisterGameCornerCues(cornerOwned,_root);
-                if(_catalog.PokemonContent?.Pokemon is {} breedingOwned)
-                    synthesized.RegisterBreedingCues(breedingOwned,_root);
-                if(_catalog.PokemonContent?.Pokemon is {} ordinaryOwned)
-                    synthesized.VerifyOrdinaryEvolutionPresentationCues(ordinaryOwned,_root);
-                if(_catalog.MemorialPillarOpponents is {} memorialOpponents)
-                    synthesized.RegisterMemorialPillarCues(memorialOpponents,_root);
-                if(_catalog.PokemonContent?.Pokemon is {} giftOwned)
-                    synthesized.RegisterGiftEggCues(giftOwned,_root);
-                if(_catalog.PokemonContent?.Pokemon.Mechanics.Catalog is {} canonicalPokemon)
-                    synthesized.RegisterCatalogCries(canonicalPokemon);
+                var synthesized=new SynthSourceAudioPlayer(_root);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {

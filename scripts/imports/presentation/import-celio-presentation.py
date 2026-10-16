@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -16,7 +15,6 @@ import pathlib
 import re
 import struct
 import subprocess
-import wave
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
@@ -161,54 +159,10 @@ def build(root, reference, dependency):
                         rgba[pos:pos + 4] = bytes((*palettes[pal][color], 255 if color else 0))
             layers.append(dict(map=map_id, metatileId=mid, layer=layer, **emit('tiles/' + str(mid) + '-' + str(layer), 16, 16, bytes(rgba), bases + metatile_paths + attribute_paths)))
 
-    # Declare original sequences and cry samples already present in the source pack.
-    pack = source.reuse('content/generated/audio/synth/firered.pack')
-    cries = source.reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    songs = source.text('include/constants/songs.h')
-    song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
-    cues = []
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    for name, species in [(name.upper(), number) for name, number in SPECIES]:
-        row = cry_rows[species]
-        need(cry_table[species - 1].upper() == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        wave_source = source.read(path)
-        need(wave_source[:4] == b'RIFF' and wave_source[8:12] == b'WAVE', 'Species source cry framing differs')
-        with wave.open(io.BytesIO(wave_source)) as original:
-            need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                 (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header dimensions differ')
-        cues.append(dict(id='CRY_' + name + '_NORMAL', sourceSymbol='SPECIES_' + name, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-    inherited_cues = []
-    inherited_specs = ('MUS_OBTAIN_TMHM', 'SE_CLICK', 'SE_PC_ON', 'MUS_NET_CENTER')
     source_script = 'data/maps/OneIsland_PokemonCenter_1F/scripts.inc'
     handoff = source.text(source_script).split('OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire::', 1)[1].split('\n\n', 1)[0]
     handoff_cues = re.findall(r'^\s*(playfanfare|playse) (\w+)$', handoff, re.M)
     need(handoff_cues == [('playfanfare', 'MUS_OBTAIN_TMHM'), ('playse', 'SE_CLICK'), ('playse', 'SE_PC_ON')], 'Celio handoff cue order differs')
-    counters = source.text('src/sound.c')
-    for symbol in inherited_specs:
-        song_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
-        address, player, second = struct.unpack_from('<IHH', pack, 0x084A32CC + song_id * 8 - 0x08489968)
-        name = symbol.lower()
-        need(song_table[song_id] == (name, str(player), str(second)), 'Inherited audio table binding differs')
-        path = 'sound/songs/midi/' + name + '.mid'
-        song = source.read(path)
-        need(song[:4] == b'MThd', 'Inherited audio source framing differs')
-        looping = symbol == 'MUS_NET_CENTER'
-        need(not looping or (player == 0 and b'\xff\x06\x01[' in song and b'\xff\x06\x01]' in song), 'Inherited music loop binding differs')
-        counter = int(re.search(r'\{\s*' + symbol + r',\s*(\d+)\s*\}', counters)[1]) if symbol == 'MUS_OBTAIN_TMHM' else None
-        need(symbol != 'MUS_OBTAIN_TMHM' or counter == 220, 'Celio handoff fanfare counter differs')
-        cue = dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=counter, songAddress=address, species=0, looping=looping, cryMode=0)
-        inherited_path = 'content/generated/ui/first-sevii-presentation/synth-manifest.json' if symbol == 'MUS_NET_CENTER' else 'content/generated/audio/synth/manifest.json'
-        inherited = next(c for c in json.loads(source.reuse(inherited_path))['cues'] if c['id'] == symbol)
-        need(dict(inherited, cryMode=inherited.get('cryMode', 0)) == cue, 'Inherited cue record differs: ' + symbol)
-        inherited_cues.append(cue)
     data = json.loads(source.read('data/maps/OneIsland_PokemonCenter_1F/map.json'))
     need(data['music'] == 'MUS_NET_CENTER', 'Source Network Center music differs')
     # Existing source move animations already cover these source geometry rows.
@@ -223,7 +177,6 @@ def build(root, reference, dependency):
                         elevation=row['sourceEnemyElevation'] if row['side'] == 'front' else 0)
         need(expected in geometry, 'Inherited move-animation geometry differs')
         inherited_geometry.append(expected)
-    out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
 
     manifest = runtime_json_bytes(dict(schemaVersion=1,
 
@@ -233,7 +186,7 @@ def build(root, reference, dependency):
         handoff=dict(sourcePath=source_script, sourceLabel='OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire',
                      orderedCues=[dict(opcode=op, cue=cue) for op, cue in handoff_cues], fanfareCounter=220,
                      mapMusic='MUS_NET_CENTER', playbackAuthority='existing committed presentation effects; no custom replay'),
-        audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues],  ),
+
         limits=['No runtime rules are created by this presentation package.', 'Party icons use original frame zero shared by normal/shiny variants.',
                 'Move art reuses the existing bounded animation dispatch; this package adds no move animation coverage.'],
         outputs=[dict(path=p) for p, b in sorted(out.items())]), sort_keys=True)
@@ -244,7 +197,7 @@ def build(root, reference, dependency):
     report = dict(passed=True, sourceFiles=len(source.raw), sprites=len(sprites), pokemonIcons=len(icons), footprints=len(footprints),
         dynamicMetatiles=len(tiles), dynamicLayers=len(layers), moveGeometry=len(inherited_geometry), outputs=len(out) - 1,
          manifestBytes=len(manifest),
-         synthBytes=len(out['synth-manifest.json']), sourceAndStaticChecksOnly=True)
+          sourceAndStaticChecksOnly=True)
     return result, report
 
 

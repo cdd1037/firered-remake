@@ -61,7 +61,7 @@ public sealed class CurrentPokemonAdmissionTests
     public void CurrentCompositionCarriesBreedingTradeAndBattleRulesAsValues()
     {
         var (canonical, mechanics) = Definitions();
-        var trades = PretNpcTrades.Load(TestAssets.Root, mechanics.Catalog).Trades;
+        var trades = PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades;
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics, trades);
         var breeding = game.Catalog.BreedingData!;
         Assert.IsTrue(breeding.Species.Keys.ToHashSet().SetEquals(game.Catalog.Species.Keys));

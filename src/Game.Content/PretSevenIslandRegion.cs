@@ -14,23 +14,19 @@ public sealed partial class PretSevenIslandRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement Items { get; }
     public SevenIslandFieldData Field { get; }
-    public JsonElement NpcSources { get; }
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretSevenIslandRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableDictionary<string, int> constants, JsonElement catalog)
+        ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
-        Catalog = catalog; Contracts = source.Document("contracts.json");
-        Items = source.Document("items.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json");
+
+
         InitializeField(source);
-        Field = LoadField(Catalog, Contracts, constants);
+        Field = LoadField(NewMaps, Contracts, constants);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -57,41 +53,19 @@ public sealed partial class PretSevenIslandRegion
         "MAP_TRAINER_TOWER_LOBBY" => new("map.trainer-tower-lobby"),
         _ => PretSixIslandRegion.MapIdFromSourceSymbol(symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretSevenIslandRegion Load(PretCurrentWorld world)
     {
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown Seven Island connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
-    }
-    public static PretSevenIslandRegion Load(string root)
-    {
+        var root = world.ProjectRoot;
         var source = new SilphSourcePackage(root,"maps/regions/seven-island");
 
         var directory = source.Directory;
-        var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Seven Island source maps; application admission remains separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtimeEntry = spec;
-            Need(runtimeEntry.GetProperty("path").GetString() == relative , "SevenIsland runtime certificate differs.");
-            var payload = source.Read(relative);
-            var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol differs from its ID.");
-            var mapDirectory = Safe(directory, relative);
-            var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
-            maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
-        }
-        Need(maps.Count == 18 && maps.Values.Sum(m => m.Width * m.Height) == 14685 && maps.Values.Sum(m => m.FieldWarps.Length) == 29,
-            "SevenIsland source map collection differs.");
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "SevenIsland target warp index differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);
 
-        return new(source, maps.ToImmutable(), constants, catalog);
+        return new(source, maps.ToImmutable(), constants);
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
     private static string Safe(string root, string relative) => PretRuntimeMapValidation.SafeFile(root, relative);

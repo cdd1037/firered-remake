@@ -41,47 +41,6 @@ public sealed partial class PretCampaignCatalog
         return tables.Add(table.Map,table);
     }
 
-    private FieldActorDefinition CampaignSourceActor(PretWorldMap map,JsonElement source,int index)
-    {
-        if(CeladonApproachRegion is {} approach && map.SourceMapSymbol=="MAP_CELADON_CITY" && source.GetProperty("type").GetString()=="clone")
-        {
-            if(source.GetProperty("target_map").GetString()!="MAP_ROUTE16" || source.GetProperty("target_local_id").GetString()!="LOCALID_ROUTE16_CUT_TREE")
-                throw new InvalidDataException("celadon_border_clone_target_differs");
-            var celadonCloneTarget=approach.ExternalRoute16Events.GetProperty("object_events").EnumerateArray().Select((value,i)=>(value,i))
-                .Single(x=>x.value.TryGetProperty("local_id",out var local)&&local.GetString()=="LOCALID_ROUTE16_CUT_TREE");
-            return SourceActor(celadonCloneTarget.value,celadonCloneTarget.i) with{X=source.GetProperty("x").GetInt32(),Y=source.GetProperty("y").GetInt32(),IsClone=true};
-        }
-        if(CeruleanRegion is {} cerulean && map.SourceMapSymbol=="MAP_CERULEAN_CITY" && source.GetProperty("type").GetString()=="clone")
-        {
-            var clone=cerulean.NpcSources.GetProperty("clones").EnumerateArray().Single(c=>c.GetProperty("map").GetString()==map.SourceMapSymbol&&c.GetProperty("localId").GetInt32()==index+1);
-            if(!JsonElement.DeepEquals(clone.GetProperty("declaration"),source)||source.GetProperty("target_map").GetString()!="MAP_ROUTE9")
-                throw new InvalidDataException("cerulean_clone_source_differs");
-            string id=source.GetProperty("target_local_id").GetString()!;
-            var cloneTemplate=cerulean.ExternalRoute9Events.GetProperty("object_events").EnumerateArray().Select((value,i)=>(value,i)).Single(pair=>pair.value.TryGetProperty("local_id",out var local)&&local.GetString()==id);
-            if(!JsonElement.DeepEquals(cloneTemplate.value,clone.GetProperty("target")))throw new InvalidDataException("cerulean_clone_target_differs");
-            return SourceActor(cloneTemplate.value,cloneTemplate.i) with{X=source.GetProperty("x").GetInt32(),Y=source.GetProperty("y").GetInt32(),IsClone=true};
-        }
-        if(Route3Region is null||source.GetProperty("type").GetString()!="clone"||
-            SourceMaps.ContainsKey(MapFromSourceSymbol(source.GetProperty("target_map").GetString()!)))
-            return SourceActor(source,index);
-
-        // Route4 has an original Cerulean guard clone, although Cerulean itself is outside this profile.
-        // The importer retains the authenticated template; it does not require admitting the target map.
-        var entries=Route3Region.Dependencies.GetProperty("objects").EnumerateArray().Where(x=>
-            x.GetProperty("map").GetString()==map.SourceMapSymbol&&
-            x.GetProperty("sourceObjectIndex").GetInt32()==index).ToArray();
-        if(entries.Length!=1||!JsonElement.DeepEquals(entries[0].GetProperty("object"),source)||
-            !entries[0].TryGetProperty("cloneTarget",out var target))
-            throw new InvalidDataException("route3_clone_dependency_differs");
-        var template=target.GetProperty("object");
-        var identity=target.GetProperty("sourceRef");
-        string symbol=source.GetProperty("target_local_id").GetString()!;
-        int targetIndex=target.GetProperty("sourceObjectIndex").GetInt32();
-        if(target.GetProperty("map").GetString()!=source.GetProperty("target_map").GetString()||
-            target.GetProperty("localId").GetInt32()!=targetIndex+1||targetIndex<0||
-            template.GetProperty("local_id").GetString()!=symbol||template.GetProperty("type").GetString()!="object"||
-            identity.GetProperty("kind").GetString()!="pret"||identity.GetProperty("symbol").GetString()!=symbol)
-            throw new InvalidDataException("route3_clone_source_identity_differs");
-        return SourceActor(template,targetIndex) with{X=source.GetProperty("x").GetInt32(),Y=source.GetProperty("y").GetInt32(),IsClone=true};
-    }
+    private FieldActorDefinition CampaignSourceActor(PretWorldMap map, JsonElement source, int index)
+        => SourceActor(source, index);
 }

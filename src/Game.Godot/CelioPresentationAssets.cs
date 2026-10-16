@@ -59,9 +59,6 @@ internal static class CelioPresentationAssets
             !manifest.GetProperty("footprints").EnumerateArray().Select(s => s.GetProperty("sourceSpeciesId").GetInt32()).ToHashSet().SetEquals(owned) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(s => s.GetInt32()).ToHashSet().SetEquals(owned) || !manifest.GetProperty("tiles").EnumerateArray().Select(t => t.GetProperty("metatileId").GetInt32()).ToHashSet().SetEquals([858,859,863]))
             throw new InvalidDataException("Celio presentation inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Celio cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

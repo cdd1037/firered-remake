@@ -71,9 +71,7 @@ public static class PretStoneEvolutionPresentation
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(Species) ||
             manifest.GetProperty("inheritedSprites").GetArrayLength() != 28 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 7 ||
-            manifest.GetProperty("footprints").GetArrayLength() != 7 ||
-            manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 0 ||
-            manifest.GetProperty("audio").GetProperty("inheritedCueCount").GetInt32() != 7)
+            manifest.GetProperty("footprints").GetArrayLength() != 7)
             throw new InvalidDataException("Stone evolution presentation inventory differs.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
@@ -130,22 +128,6 @@ public static class PretStoneEvolutionPresentation
                     sprite.GetProperty("sourceWidth").GetInt32() != row.GetProperty("sourceWidth").GetInt32() ||
                     sprite.GetProperty("sourceHeight").GetInt32() != row.GetProperty("sourceHeight").GetInt32())
                     throw new InvalidDataException("Stone evolution source battler geometry differs.");
-        }
-        var cues = manifest.GetProperty("audio").GetProperty("cues").EnumerateArray().ToArray();
-        if (!cues.Select(c => c.GetProperty("cue").GetProperty("species").GetInt32()).SequenceEqual(Species))
-            throw new InvalidDataException("Stone evolution inherited cry inventory differs.");
-        foreach (var row in cues)
-        {
-            using var synth = JsonDocument.Parse(Read(row.GetProperty("inheritedManifest").GetString()!));
-            var cue = row.GetProperty("cue");
-            int species = cue.GetProperty("species").GetInt32();
-            string name = dex.Entries.Single(e => e.SourceSpeciesId == species).Name;
-            if (cue.GetProperty("id").GetString() != "CRY_" + name + "_NORMAL" || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
-                cue.GetProperty("priority").GetInt32() != 10 ||
-                cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
-                cue.TryGetProperty("cryMode", out var mode) && mode.GetInt32() != 0 ||
-                !synth.RootElement.GetProperty("cues").EnumerateArray().Any(old => JsonElement.DeepEquals(old, cue)))
-                throw new InvalidDataException("Stone evolution inherited normal cry differs.");
         }
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));
     }

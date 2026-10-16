@@ -60,23 +60,17 @@ class WaterPathHouseImportTests(unittest.TestCase):
                     self.assertEqual(expected, (cell['collision'], cell['behaviorId']))
 
     def test_fresh_source_render_matches_every_published_layer_pixel(self):
-        importer = module('scripts/imports/maps/import-six-island-region.py', 'water_path_importer')
-        reader = importer.module(ROOT / 'scripts/imports/source/import-cinnabar-source-preparation.py', 'water_path_reader')
-        reader.PRODUCT = ROOT; reader.TILESETS = importer.TILESETS; reader.PROFILE = importer.PROFILE
-        source = reader.Source(None, raw_root=RAW)
-        for name in MAPS:
-            for filename in ('scripts.inc', 'text.inc'):
-                source.read(f'data/maps/{name}/{filename}', 'house-source-regression')
-        shared = reader.load_helper('_regional_service_shared.py')
-        shared.PROFILE = importer.PROFILE; shared.TILESETS = importer.TILESETS
+        from world_source import WorldSource
+        from world_map_renderer import render_map
+        from map_source import tileset_bindings
+        source = WorldSource(RAW)
         atlas = module('scripts/imports/maps/import-map-atlases.py', 'water_path_atlas')
         packed = atlas.AtlasReader(ROOT / 'content/generated/maps/atlases')
         with tempfile.TemporaryDirectory(prefix='water-path-house-test-') as temp:
             for name in MAPS:
                 with self.subTest(map=name):
-                    folder = Path(temp) / slug(name)
-                    shared.import_map(source, name, 'map.' + slug(name), folder)
-                    fresh = normalize_runtime(json.loads((folder / 'runtime-map.json').read_bytes()))
+                    folder = Path(temp)
+                    fresh = render_map(source, name, 'map.' + slug(name), folder / (slug(name) + '.json'), tilesets=tileset_bindings(source))
                     current = json.loads((REGION / (slug(name) + '.json')).read_bytes())
                     for key in ('width', 'height', 'blocks', 'borderBlocks', 'events', 'metatiles', 'behaviors', 'scriptPaths'):
                         self.assertEqual(current[key], fresh[key], key)
@@ -84,7 +78,7 @@ class WaterPathHouseImportTests(unittest.TestCase):
                     for artifact in fresh['artifacts']:
                         with Image.open(folder / artifact['path']) as image:
                             expected = image.convert('RGBA')
-                            actual = packed.read('maps/regions/six-island/' + slug(name) + '.' + artifact['path'])
+                            actual = packed.read('maps/regions/six-island/' + artifact['path'])
                             self.assertEqual(expected.size, actual.size)
                             self.assertEqual(expected.tobytes(), actual.tobytes(), artifact['path'])
 

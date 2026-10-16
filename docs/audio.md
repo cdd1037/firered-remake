@@ -7,6 +7,7 @@
 - `src/Game.Audio/`：序列、PCM/PSG、叫声、资源格式的唯一运行实现
 - `src/Game.Godot/SynthSourceAudioPlayer.cs`：主游戏 Godot PCM 主机与场景 cue 接线
 - `tools/AudioTool/`：pack 提取、离线 WAV 渲染、性能测量
+- `scripts/imports/audio/build-cue-catalog.py`：由固定源码与 pack 一次生成完整运行 cue 目录
 - `scripts/imports/audio/build-cry-catalog.py`：直接生成普通叫声目录
 - `tests/Game.Audio.Tests/`：按需运行的合成器测试
 - `scripts/checks/test-audio-catalog-import.py`：按需运行的导入器单元测试
@@ -62,7 +63,7 @@ Core 只依赖 .NET 标准库。游戏 cue 选择、场景路由、fanfare 等�
 
 ### 运行素材
 
-主工程的 `content/generated/audio/synth/firered.pack` 和 `normal-cries.bin` 是唯一维护副本。二者不随源码提交或公开分发。主游戏另有实际 cue 定义；这些是游戏表现层的内容，不属于合成器库。
+主工程的 `content/generated/audio/synth/firered.pack` 和 `normal-cries.bin` 是唯一维护副本。二者不随源码提交或公开分发。主游戏仅加载 `content/generated/audio/cues.json`，不再读取地区增量、前驱证明或展示资源中的 synth manifest。目录在初始化时验证歌曲头和普通/遭遇叫声能力，播放时不读源码。
 
 `firered.pack` 保留固定 FireRed 布局的地址区间 `[0x08489968, 0x086fbea4)`，共 2,565,436 字节，所有多字节整数为 little-endian。序列和采样保存虚拟原作地址；读取器把它转换为数组偏移并校验地址、长度、溢出及实际格式，不解引用原生指针。歌曲头包含轨道数、block 标志、优先级、reverb 参数、音色表和轨道指针。每个音色记录 12 字节；PCM 波形头 16 字节，包含类型、状态、频率、循环起点和样本数。具体支持的指令和音色在读取/执行时校验，不支持的数据会报错。
 
@@ -86,6 +87,19 @@ dotnet run --project tools/AudioTool -c Release -- pack /absolute/path/to/input.
 
 ROM 版本检查仅属于提取工具；Core 的运行时入口只读取 pack。没有匹配 ROM 时保留现有 pack，不下载 ROM，也不把源 WAV 当作 pack 的替代品。
 
+### 生成运行 cue 目录
+
+```sh
+python3 scripts/imports/audio/build-cue-catalog.py
+python3 scripts/imports/audio/build-cue-catalog.py --check
+```
+
+入口默认读取固定 raw 版本中的 songs.h、song_table.inc、species.h、sound.c，以及现有 pack 和 normal-cries.bin。歌曲 ID/播放器来自源常量/表并与 pack 对照；地址/优先级来自包内歌曲头；fanfare 计数直接来自 sound.c。循环标记通过包内 M4A 指令控制流、running status 和 pattern 栈推导，现有 MIDI 的循环 marker 另行交叉核对。raw 缺少部分 MIDI，不影响完整歌曲控制流检查。
+
+目前输出 345 首歌曲与 386 个物种各两种叫声，共 1117 个 cue。MUS_DUMMY 是停止哨兵；MUS_RS_VS_TRAINER 含当前 Core 未实现的 MEMACC 指令，明确不注册。其它未知指令、越界地址或缺失来源会失败，不猜测循环。该入口不读取任何旧 cue JSON，也不以复制旧中间目录作为权威输入。
+
+地区音频 CLI、配方及累加 manifests 已删除。normal-cries.bin 的独立原始样本再生边界仍见下节；此入口不重建 pack 或修改 DSP。
+
 ### 生成普通叫声目录
 
 ```sh
@@ -105,6 +119,6 @@ python3 scripts/imports/audio/build-cry-catalog.py \
 
 主游戏 PCM 主机以 48 kHz 生产，目标队列为 5120 帧，约 106.67ms；不能等同最终设备延迟或无卡顿保证。长主线程阻塞仍可能影响补充。音频不改变领域 RNG 或战斗结算。
 
-本次合并前后的实际主游戏实现已对 17 组代表场景进行 PCM 字节与控制状态比较，包括 BGM/SE、两种 profile、普通叫声、9 种既有 encounter cry 和播放控制；输出相同。单独音频测试仍需要在改动后运行，不纳入默认全量测试。
+原共享 Core 合并已对 17 组代表场景进行 PCM 字节与控制状态比较，包括 BGM/SE、两种 profile、普通叫声、9 种既有 encounter cry 和播放控制；输出相同。新目录迁移另对旧目录的 460 个唯一 cue 逐字段比较，保持语义相同。单独音频测试仍需要在改动后运行，不纳入默认全量测试。
 
 已有云端原生检查使用 Dummy，非零 PCM 与正常消费不能替代真实扬声器听感；P0 听感仍未完成。专属招式音效/动画和整条游戏路线覆盖以当前功能范围为准，不能按旧研究报告累计为全部完成。

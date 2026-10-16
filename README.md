@@ -14,7 +14,7 @@
 
 导入脚本按职责分组，入口、公共模块、配方和检查见 [scripts 说明](scripts/README.md)。
 
-范围与缺口：docs/scope.md、docs/full-scope-audit.md、docs/first-clear-remaining-scope.md。资源再生成：docs/resource-reconstruction-guide.md。当前运行资源边界：[仅转换数据运行](docs/generated-only-runtime.md)。
+范围与缺口：docs/scope.md、docs/full-scope-audit.md、docs/first-clear-remaining-scope.md。资源再生成：docs/resource-reconstruction-guide.md。统一地图管线：[world 资源](docs/world-resource-pipeline.md)。当前运行资源边界：[仅转换数据运行](docs/generated-only-runtime.md)。
 
 ## 构建与验证（Windows / Linux）
 

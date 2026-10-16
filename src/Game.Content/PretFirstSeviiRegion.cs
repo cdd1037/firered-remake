@@ -17,18 +17,12 @@ public sealed partial class PretFirstSeviiRegion
     public ImmutableArray<Game.Domain.Encounters.EarlyLandEncounterTable> LandEncounters { get; private init; }
     public ImmutableArray<Game.Domain.Encounters.WaterEncounterTable> WaterEncounters { get; private init; }
     public ImmutableArray<FieldItemServiceDefinition> ItemServices { get; private init; }
-    public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
-    public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretFirstSeviiRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -65,54 +59,23 @@ public sealed partial class PretFirstSeviiRegion
         "MAP_TWO_ISLAND_POKEMON_CENTER_2F" => new("map.two-island-pokemon-center-2f"),
         _ => PretCinnabarRegion.MapIdFromSourceSymbol(symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretFirstSeviiRegion Load(PretCurrentWorld world)
     {
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown FirstSevii connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
-    }
-    public static PretFirstSeviiRegion Load(string root)
-    {
+        var root = world.ProjectRoot;
         var source = FirstSeviiSource.Region(root);
 
         var directory = source.Directory;
-        var catalog = source.Document("catalog.json");
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original One/Two/Three Island first-visit source maps; application admission remains separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!;
-            var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(source.Read(relative), stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol does not match its ID.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            maps.Add(new(stableId), map);
-        }
-        foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
-            if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "FirstSevii target warp index differs.");
-        var constants = PretSharedConstants.ForPackage(source.Directory);
-
-        var variants = ImmutableDictionary.CreateBuilder<string, PretWorldMap>(StringComparer.Ordinal);
-        if (catalog.TryGetProperty("layoutVariants", out var layouts))
-            foreach (var spec in layouts.EnumerateArray())
-            {
-                var id = spec.GetProperty("stableId").GetString()!;
-                var relative = spec.GetProperty("mapPath").GetString()!;
-                var runtime = PretRuntimeMapData.Decode(source.Read(relative), id, MapIdFromSourceSymbol);
-                Need(maps.ContainsKey(new(id)) && MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Alternate layout map binding differs.");
-                variants.Add(spec.GetProperty("layoutSymbol").GetString()!, PretWorldMap.FromRuntime(runtime, metadata,
-                    Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol));
-            }
+        var maps = world.MapsInDirectory(directory);
+        var variants = world.VariantsInDirectory(directory);
+        var constants = PretSharedConstants.ForPackage(directory);
         using var encounters = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/first-sevii/encounters.json")));
         var land = PretWildEncounterTables.Land(encounters.RootElement.GetProperty("admitted"), MapIdFromSourceSymbol);
         var water = PretWildEncounterTables.Water(encounters.RootElement.GetProperty("admitted"), MapIdFromSourceSymbol);
         Need(land.All(t => maps.ContainsKey(t.Map)) && water.All(t => maps.ContainsKey(t.Map)), "Encounter map is not mounted.");
         using var serviceData = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/first-sevii/services.json")));
         var services = PretFieldItemServices.Decode(serviceData.RootElement.GetProperty("serviceBindings"), maps, constants);
-        return new(source, maps.ToImmutable(), constants) { LayoutVariants = variants.ToImmutable(), LandEncounters = land, WaterEncounters = water, ItemServices = services };
+        return new(source, maps, constants) { LayoutVariants = variants, LandEncounters = land, WaterEncounters = water, ItemServices = services };
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
     private static string Safe(string root, string relative) => PretRuntimeMapValidation.SafeFile(root, relative);

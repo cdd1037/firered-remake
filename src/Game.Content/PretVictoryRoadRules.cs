@@ -13,11 +13,10 @@ public sealed record VictoryRoadTrainerDocument(ImmutableArray<TrainerDefinition
 public sealed record VictoryRoadFishingTable(MapId Map, int RawEncounterRate, ImmutableArray<OldRodEncounterSlot> Slots,
     ImmutableDictionary<string, ImmutableArray<int>> RodGroups);
 public sealed record VictoryRoadWildSpeciesSource(SpeciesId Species,int SourceSpeciesId,string Ability1,string Ability2,
-    string ItemCommon,string ItemRare,OpeningItemSourceRef Source,OpeningItemSourceRef LearnsetSource);
+    string ItemCommon,string ItemRare,OpeningItemSourceRef Source);
 public sealed record VictoryRoadWildDocument(ImmutableArray<EarlyLandEncounterTable> Land,
     ImmutableArray<WaterEncounterTable> Water,ImmutableArray<VictoryRoadFishingTable> Fishing,
-    ImmutableArray<VictoryRoadInitialMoves> InitialMoves,ImmutableArray<VictoryRoadWildSpeciesSource> Species,
-    ImmutableArray<SpeciesId> OwnedSpeciesAdded);
+    ImmutableArray<VictoryRoadInitialMoves> InitialMoves,ImmutableArray<VictoryRoadWildSpeciesSource> Species);
 
 /// <summary>Authenticated Victory Road rules without new ownership or an Application profile.</summary>
 public static class PretVictoryRoadRules
@@ -38,8 +37,7 @@ public static class PretVictoryRoadRules
     {
         var d=Parse<VictoryRoadWildDocument>(Read(root,"content/generated/data/regions/victory-road/wild.json"));
         Need(d.Land.Length==4 && d.Water.Length==1 &&
-            d.Fishing.Length==1 && d.Fishing[0].Slots.Length==10 && d.InitialMoves.Length==122 && d.Species.Length==19 &&
-            d.OwnedSpeciesAdded.IsEmpty,"Victory Road wild source scope differs.");
+            d.Fishing.Length==1 && d.Fishing[0].Slots.Length==10 && d.InitialMoves.Length==122 && d.Species.Length==19,"Victory Road wild source scope differs.");
         foreach(var t in d.Land)
         {
             var expected=VictoryRoadEncounterTables.Land.Single(t2=>t2.Map==t.Map);
@@ -78,9 +76,4 @@ public static class PretVictoryRoadRules
         var bytes=File.ReadAllBytes(full);return bytes;
     }
     private static void Need(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
-    private sealed record Artifact(string Path);
-    private sealed record SourceLock(ImmutableArray<Artifact> Files);
-    private sealed record Input(string Path);
-    private sealed record InputDocument(ImmutableArray<Input> Files, ImmutableArray<Artifact> PredecessorInputs,
-        ImmutableArray<Artifact> RegionInputs);
 }

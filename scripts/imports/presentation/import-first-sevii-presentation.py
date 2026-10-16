@@ -6,7 +6,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 import argparse, io, json, pathlib, re, struct, subprocess
 from PIL import Image
@@ -18,7 +17,6 @@ ROOT = _PROJECT_ROOT
 TRAINERS = ('AROMA_LADY_NIKKI','AROMA_LADY_VIOLET','BIKER_GOON','BIKER_GOON_2','BIKER_GOON_3','CUE_BALL_PAXTON','SWIMMER_FEMALE_TISHA','TUBER_ALEXIS','TUBER_AMIRA','TWINS_JOY_MEG')
 PORTRAITS = (('aroma_lady','AromaLady'),('biker','Biker'),('cue_ball','CueBall'),('swimmer_f','SwimmerF'),('tuber_f','TuberF'),('twins','Twins'))
 ITEMS = ('METEORITE','TRI_PASS','IAPAPA_BERRY','MAX_ELIXIR','RAZZ_BERRY','PINAP_BERRY','FRESH_WATER','SODA_POP')
-CUES = ('MUS_SEVII_123','MUS_NET_CENTER','SE_SHIP')
 
 from image_io import png as encode_rgba_png
 
@@ -65,7 +63,7 @@ def build(root,reference,dependency):
     ferry=s.text('src/seagallop.c')
     for marker in ['++task->data[1] == 140','ChangeBgX(3, 0x600, 1)','gSprites[spriteId].data[0] = 48','sprite->data[2] % 5 == 0','0x1888','ANIMCMD_FRAME(0x00, 0x14)','ANIMCMD_FRAME(0x10, 0x14)','ANIMCMD_FRAME(0x20, 0x0f)','BGMusicStopped() && !gPaletteFade.active']:
         need(marker in ferry,'Ferry source binding differs: '+marker)
-    for p in ['include/constants/seagallop.h','data/scripts/seagallop.inc','src/palette.c','src/field_weather.c','src/field_fadetransition.c','src/overworld.c','src/sound.c','src/m4a.c','src/sprite.c','graphics_file_rules.mk']:s.read(p)
+    for p in ['include/constants/seagallop.h','data/scripts/seagallop.inc','src/palette.c','src/field_weather.c','src/field_fadetransition.c','src/overworld.c','src/sprite.c','graphics_file_rules.mk']:s.read(p)
     need('graphics/seagallop/water.4bpp: %.4bpp: %.png\n\t$(GFX) $< $@ -num_tiles 41' in s.text('graphics_file_rules.mk'),'Ferry water tile truncation differs')
     for n,pad in [('ferry_sprite',(64,64)),('wake',None)]:
         p='graphics/seagallop/'+n+'.png';pal='graphics/seagallop/ferry_and_wake.pal';w,h,rgba=indexed(p,pal,pad);add('seagallop-'+n,w,h,rgba,[p,pal])
@@ -97,20 +95,13 @@ def build(root,reference,dependency):
         symbol='TRAINER_'+name;m=re.search(r'\['+symbol+r'\]\s*=\s*\{(.*?)\n    \}',trainer_source,re.S);need(m is not None,'Trainer binding missing: '+symbol);body=m[1]
         cls=re.search(r'\.trainerClass = (\w+)',body)[1];pic=re.search(r'\.trainerPic = (\w+)',body)[1];name=re.search(r'\.trainerName = _\("([^"]+)"\)',body)[1];display=re.search(r'\['+cls+r'\]\s*= _\("([^"]+)"\)',classes)[1]
         trainers.append(dict(id='pret:'+symbol,name=name,trainerPic=pic,trainerClass=cls,className=display))
-    pack=safe(dependency,'content/generated/audio/synth/firered.pack').read_bytes();need(len(pack) == 141541028 - 138975592,'Original source audio pack differs')
-    songs=s.text('include/constants/songs.h');table=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',s.text('sound/song_table.inc'),re.M);cues=[]
-    for name in CUES:
-        sid=int(re.search(r'^#define '+name+r'\s+(\d+)',songs,re.M)[1]);addr,player,other=struct.unpack_from('<IHH',pack,0x084A32CC+sid*8-0x08489968);need(table[sid]==(name.lower(),str(player),str(other)),'Source song table differs')
-        p='sound/songs/midi/'+name.lower()+'.mid';b=s.read(p);need(b[:4]==b'MThd' and player==(0 if name.startswith('MUS_') else 1),'Source MIDI/player differs')
-        cues.append(dict(id=name, sourceSymbol=name, sourcePlayer=player, priority=pack[addr - 138975592 + 2], sourceCounter=None, songAddress=addr, species=0, looping=name.startswith('MUS_'), cryMode=0))
-    out['synth-manifest.json']=runtime_manifest_bytes(dict(schemaVersion=1, cues=cues))
     out['presentation.json']=canonical(dict(schemaVersion=1,assets=assets,items=items,portraits=portraits,trainers=trainers))
     lock=canonical(dict(schemaVersion=1,profile=PROFILE,repository='pret/pokefirered',commit=COMMIT,files=[s.files[p] for p in sorted(s.files)]))
     manifest=canonical(dict(schemaVersion=1,outputs=[dict(path=p) for p,b in sorted(out.items())]))
     result={'content/generated/ui/first-sevii-presentation/'+p:b for p,b in out.items()};result['content/generated/ui/first-sevii-presentation/manifest.json']=manifest;result['scripts/recipes/presentation/first-sevii-presentation.lock.json']=lock
     result.update({'content/raw/pokefirered/037335f4/'+p:b for p,b in s.raw.items()})
 
-    return result,dict(passed=True,assets=len(assets),itemIcons=len(items),trainerPortraits=len(portraits),trainers=len(trainers),cues=len(cues),originalSources=len(s.files),originalAudioPackUnchanged=True)
+    return result,dict(passed=True,assets=len(assets),itemIcons=len(items),trainerPortraits=len(portraits),trainers=len(trainers),originalSources=len(s.files))
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project-root',type=pathlib.Path,default=ROOT);p.add_argument('--reference-root',type=pathlib.Path);p.add_argument('--dependency-root',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args();out,result=build(a.project_root,a.reference_root,a.dependency_root or a.project_root)

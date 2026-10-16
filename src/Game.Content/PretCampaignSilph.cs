@@ -28,7 +28,7 @@ public sealed partial class PretCampaignCatalog
     public string PresentedSpeciesName(int species)=>PokemonContent?.SpeciesNames.GetValueOrDefault(species)
         ??SilphPokemon?.AdditionalSpeciesNames.GetValueOrDefault(species)
         ??SaffronGymSpeciesNames.GetValueOrDefault(species)
-        ??CinnabarSpeciesName(species)
+        ??SourceSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
 
     private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)

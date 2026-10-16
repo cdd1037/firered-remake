@@ -121,14 +121,6 @@ def build(root, source, inputs):
          'TM06 source fanfare differs')
     card = json.loads(inputs['content/generated/ui/trainer-card/trainer-card.json'])
     need(any(b['flag'] == 'FLAG_BADGE05_GET' and b['assetId'] == 'badge-5' for b in card['layout']['badges']), 'Soul Badge display differs')
-    cues = []
-    for path, data in inputs.items():
-        if path.endswith('/manifest.json') and 'synth-audio' in path:
-            manifest = json.loads(data)
-            need(manifest['schemaVersion'] == 1, 'Synth source identity differs')
-            cues.extend(manifest['cues'])
-    by_id = {c['id']: c for c in cues}
-    need(len(cues) == len(by_id) == 303 and all(id in by_id for id in CUES), 'Existing synth cue closure differs')
     spec = importlib.util.spec_from_file_location('_fuchsia_gym_codec', safe(root, 'scripts/imports/presentation/import-lab-battle-ui.py'))
     codec = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(codec)
@@ -152,10 +144,7 @@ def build(root, source, inputs):
                     rewards=dict(badgeFlag='FLAG_BADGE05_GET', badgeAsset='badge-5', badgeMusicControl=None,
                                  tmItem='pret:ITEM_TM06', tmOnceFlag='FLAG_GOT_TM06_FROM_KOGA', tmFanfare='MUS_LEVEL_UP',
                                  tmTexture=json.loads(inputs['content/generated/data/items/fuchsia-gym/fuchsia-gym-items.json'])['icons'][0]['pngPath'],
-                                 tmRegion=json.loads(inputs['content/generated/data/items/fuchsia-gym/fuchsia-gym-items.json'])['icons'][0]['region']),
-                    audio=dict(backend='original-csharp-source-filtered-v1', inheritedCueCount=303,
-                               requiredCues=[by_id[id] for id in CUES], newCues=0,
-                               audibleOutputVerified=False))
+                                 tmRegion=json.loads(inputs['content/generated/data/items/fuchsia-gym/fuchsia-gym-items.json'])['icons'][0]['region']))
     return metadata, output
 
 

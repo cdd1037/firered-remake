@@ -14,7 +14,7 @@ public sealed class MtEmberSummitContentTests
     [TestMethod]
     public void SummitRouteHasOriginalDimensionsAndReciprocalPhysicalWarps()
     {
-        var region = PretSeviiRubyRegion.Load(TestAssets.Root);
+        var region = PretSeviiRubyRegion.Load(PretCurrentWorld.Load(TestAssets.Root));
         foreach (var (name, width, height) in new[] { ("summit-path-1f", 15, 18), ("summit-path-2f", 48, 46),
             ("summit-path-3f", 15, 11), ("summit", 19, 22) })
         {
@@ -92,19 +92,19 @@ public sealed class MtEmberSummitContentTests
         try
         {
             var required = Directory.EnumerateFiles(Path.Combine(source, "maps/regions/sevii-ruby"), "*", SearchOption.AllDirectories)
-                .Select(path => Path.GetRelativePath(source, path)).Concat(["data/constants.json", "maps/tilesets.json"]);
+                .Select(path => Path.GetRelativePath(source, path)).Concat(["data/constants.json"]).Concat(CurrentWorldTestFixture.RelativeFiles()).Distinct();
             foreach (var relative in required)
             {
                 var target = Path.Combine(root, "content/generated", relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 File.Copy(Path.Combine(source, relative), target);
             }
-            _ = PretSeviiRubyRegion.Load(root);
+            _ = PretSeviiRubyRegion.Load(PretCurrentWorld.Load(root));
             var path = Path.Combine(root, "content/generated/maps/regions/sevii-ruby/mt-ember-summit-path-2f.json");
             var document = JsonNode.Parse(File.ReadAllText(path))!;
             document["events"]!["warp_events"]![0]![field] = value;
             File.WriteAllText(path, document.ToJsonString());
-            Assert.ThrowsExactly<InvalidDataException>(() => PretSeviiRubyRegion.Load(root));
+            Assert.ThrowsExactly<InvalidDataException>(() => PretSeviiRubyRegion.Load(PretCurrentWorld.Load(root)));
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }

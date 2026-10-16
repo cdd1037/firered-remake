@@ -9,9 +9,9 @@ public sealed partial class PretCampaignCatalog
     public PretRoute5DayCare Route5DayCare { get; }
     public bool Route5DayCareEnabled => true;
 
-    private static void ValidateRoute5DayCareComposition(PretRoute5DayCare daycare,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateRoute5DayCareComposition(PretRoute5DayCare daycare,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
-        if (maps.Count != previous.Count + 1 || previous.ContainsKey(PretRoute5DayCare.HouseMapId) )
+        if (!maps.ContainsKey(PretRoute5DayCare.HouseMapId) )
             throw new InvalidDataException("daycare_map_composition");
         var house = maps[PretRoute5DayCare.HouseMapId]; var route = maps[new("map.route-5")];
         var door = route.FieldWarps.Single(w => w.Index == 1);

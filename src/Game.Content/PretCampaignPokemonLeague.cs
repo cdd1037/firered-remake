@@ -19,11 +19,6 @@ public sealed partial class PretCampaignCatalog
     public PokemonLeagueMartStock? PokemonLeagueMartStock { get; }
     public bool PokemonLeagueEnabled=>PokemonLeagueRegion is not null;
 
-    private static void ValidatePokemonLeagueAnchors(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
-    {
-        if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("Duplicate campaign map ID.");
-    }
 
     private static PokemonLeagueMartStock CreatePokemonLeagueMartStock(PretPokemonLeagueRegion region,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
@@ -37,10 +32,8 @@ public sealed partial class PretCampaignCatalog
         return result;
     }
 
-    private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PokemonLeagueTrainerCatalog trainers,GameOpponentPokemonCatalog opponents,GamePokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
+    private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,PokemonLeagueTrainerCatalog trainers,GameOpponentPokemonCatalog opponents,GamePokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
-        if(maps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
-            throw new InvalidDataException("pokemon_league_composition_scope");
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(trainers);
         if(trainers.Trainers.Count!=7||trainers.Trainers.Values.Sum(t=>t.Party.Length)!=38||
             trainers.Trainers.Values.SelectMany(t=>t.Party).Any(p=>!opponents.Catalog.Species.ContainsKey(p.Species)))

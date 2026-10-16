@@ -110,21 +110,6 @@ public static class PretGiftEggPresentation
                     sprite.GetProperty("sourceHeight").GetInt32() != row.GetProperty("sourceHeight").GetInt32())
                     throw new InvalidDataException("GiftEgg source battler geometry differs.");
         }
-        var cues = manifest.GetProperty("audio").GetProperty("cues").EnumerateArray().ToArray();
-        if (!cues.Select(c => c.GetProperty("cue").GetProperty("species").GetInt32()).SequenceEqual(Species))
-            throw new InvalidDataException("GiftEgg inherited cry inventory differs.");
-        foreach (var row in cues)
-        {
-            var cue = row.GetProperty("cue");
-            int species = cue.GetProperty("species").GetInt32();
-            string name = dex.Entries.Single(e => e.SourceSpeciesId == species).Name;
-            if (cue.GetProperty("id").GetString() != "CRY_" + name + "_NORMAL" || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
-                cue.GetProperty("priority").GetInt32() != 10 ||
-                cue.GetProperty("sourceSymbol").GetString() != "SPECIES_" + name || cue.GetProperty("looping").GetBoolean() ||
-                cue.GetProperty("cryMode").GetInt32() != 0 || cue.GetProperty("songAddress").GetInt32() != 0 ||
-                cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null)
-                throw new InvalidDataException("GiftEgg normal cry source binding differs.");
-        }
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));
     }
 }

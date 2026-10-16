@@ -19,8 +19,6 @@ public sealed class PretViridianCenter
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
-    public string ServiceSourcePath => Path.Combine(GeneratedDirectory, "service.json");
 
     private PretViridianCenter(string directory, PretWorldMap map, ImmutableDictionary<string, int> constants,
         ImmutableDictionary<string, string> uiTexts)
@@ -31,41 +29,13 @@ public sealed class PretViridianCenter
 
     public static MapId MapIdFromSourceSymbol(string symbol) => PretViridianRegion.MapIdFromSourceSymbol(symbol);
 
-    public static PretViridianCenter Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
+    public static PretViridianCenter Load(PretCurrentWorld world)
     {
+        var projectRoot = world.ProjectRoot;
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/maps/regions/viridian-center");
-        byte[] ReadPinned(string root,string path)
-        {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
-            return bytes;
-        }
-        using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Center manifest identity differs.");
-        var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var output in m.GetProperty("outputs").EnumerateArray())
-        {
-            var path = output.GetProperty("path").GetString()!;
-            if(runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps,"maps/regions/viridian-center/"+path))continue;
-            Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate center output.");
-        }
-        using var catalog = JsonDocument.Parse(outputs["center-catalog.json"]);
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
-            "Authenticated Viridian Pokemon Center 1F; runtime certification is separate.", Profile);
-        var spec = catalog.RootElement.GetProperty("map");
-        var relative = spec.GetProperty("mapPath").GetString()!;
-        PretWorldMap map;
-        if(runtimeMaps is not null)
-        {
-            var compact=runtimeMaps.Maps[new MapId(spec.GetProperty("stableId").GetString()!)];
-            map=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"),MapIdFromSourceSymbol);
-        }
-        else
-        {
-            map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-        }
+        var map = world.Maps[new MapId(StableMapId)];
+
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["HEAL_LOCATION_VIRIDIAN_CITY"] == 2 && constants["LOCALID_VIRIDIAN_NURSE"] == 1 &&
             constants["FLDEFF_POKECENTER_HEAL"] == 25 && constants["SCR_MENU_CANCEL"] == 127, "Center required source constants differ.");

@@ -4,9 +4,9 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from world_source import WorldSource
 
 import argparse
-import importlib.util
 import json
 from pathlib import Path
 import re
@@ -15,7 +15,7 @@ import sys
 sys.dont_write_bytecode = True
 PROFILE = 'firered-source-grid-menus-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-BASE = 'content/generated/ui/grid-menus.json/'
+OUTPUT = 'content/generated/ui/grid-menus.json'
 
 
 def canonical(value):
@@ -28,12 +28,7 @@ def need(value, message):
 
 
 def build(target, dependency, reference, check):
-    reader_path = dependency / 'scripts/imports/source/import-cinnabar-source-preparation.py'
-    spec = importlib.util.spec_from_file_location('source_grid_reader', reader_path)
-    reader = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(reader)
-    reader.PROFILE = PROFILE
-    source = reader.Source(reference)
+    source = WorldSource(reference)
     menus = source.text('src/script_menu.c')
     controls = source.text('src/menu.c')
     commands = source.text('src/scrcmd.c')
@@ -74,12 +69,10 @@ def build(target, dependency, reference, check):
             options.append(dict(textSymbol=symbol, text=label))
         column_width = max((sum(widths[charmap[c]] for c in option['text']) + 7) // 8 for option in options) + 1
         definitions.append(dict(id=menu_id, sourceId=number, options=options, columnWidthTiles=column_width))
-    locked = canonical(source.lock())
     manifest = canonical(dict(schemaVersion=1,
                                menus=definitions, semantics=dict(cancelResult=127, rowHeight=16,
                               initialCursor=0, wrap=False, rowMajor=True, textX=8, textY=1, cursorX=0, cursorY=1)))
-    outputs = {'scripts/recipes/presentation/source-grid-menus.lock.json': locked, BASE + 'manifest.json': manifest}
-    outputs.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in source.data.items()})
+    outputs = {OUTPUT: manifest}
     for path, data in outputs.items():
         destination = target / path
         need(not any(p.is_symlink() for p in [destination, *destination.parents]), 'Symlink output rejected')

@@ -20,22 +20,18 @@ public sealed class PretOriginalTmAcquisition
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     private readonly OriginalTmPickups _pickups;
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
-    public JsonElement ServiceBindings => Contracts.GetProperty("serviceBindings");
+    public JsonElement ServiceBindings { get; }
     public FiveIslandTrainerDocument MemorialTrainers { get; }
     public JsonElement MemorialEncounters { get; }
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretOriginalTmAcquisition(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         NewMaps = maps; Constants = constants;
-        GeneratedDirectory = source.Directory; Catalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+        GeneratedDirectory = source.Directory;
+        ServiceBindings = source.Document("services.json");
+
         MemorialTrainers = source.Parse<FiveIslandTrainerDocument>("memorial-trainers.json");
         MemorialEncounters = source.Document("memorial-encounters.json");
         _ = PretMemorialPillarTrainers.Load(MemorialTrainers);
@@ -57,34 +53,7 @@ public sealed class PretOriginalTmAcquisition
         _ => throw new InvalidDataException("Unknown original TM acquisition map symbol: " + symbol)
     };
 
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        Need(map.Id == ReturnRoomMapId || map.Id == PsychicHouseMapId || map.Id == MemorialMapId,
-            "Unexpected original TM map adapter.");
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty :
-            connections.EnumerateArray().Select(c => new ConnectedFieldConnection(
-                c.GetProperty("direction").GetString() switch {
-                    "left" => Direction.West, "right" => Direction.East, "up" => Direction.North, "down" => Direction.South,
-                    _ => throw new InvalidDataException("Unknown original connection direction.") },
-                c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), edges);
-    }
 
-    /// <summary>Append exactly three source instances; never replace existing Route12/15 or entrance geometry.</summary>
-    public ImmutableDictionary<MapId, PretWorldMap> MountMaps(ImmutableDictionary<MapId, PretWorldMap> existing)
-    {
-        ValidateRetainedMaps(existing);
-        Need(!NewMaps.Keys.Any(existing.ContainsKey), "Original TM acquisition maps were already mounted.");
-        return existing.AddRange(NewMaps);
-    }
-
-    public void ValidateRetainedMaps(IReadOnlyDictionary<MapId, PretWorldMap> existing)
-    {
-        foreach (var row in Contracts.GetProperty("retainedMaps").EnumerateArray())
-            Need(existing.ContainsKey(new MapId(row.GetProperty("mapId").GetString()!)), "Original TM retained map is missing.");
-    }
 
     /// <summary>Authenticate typed shared-service bindings against the actual imported event and source label inventory.</summary>
     public ImmutableArray<FieldItemServiceDefinition> ServiceDefinitions()
@@ -120,27 +89,12 @@ public sealed class PretOriginalTmAcquisition
             new ItemId("pret:" + pickup.ItemSymbol), name, pocket, pickup.Quantity, pickup.Flag, Constants[pickup.Flag]);
     }
 
-    public static PretOriginalTmAcquisition Load(string projectRoot, string? dependencyRoot = null)
+    public static PretOriginalTmAcquisition Load(PretCurrentWorld world, string? dependencyRoot = null)
     {
+        var projectRoot = world.ProjectRoot;
         dependencyRoot ??= projectRoot;
         var source = new SilphSourcePackage(projectRoot,"maps/regions/original-tm-acquisition");
-        var catalog = source.Document("catalog.json");
-        Need(catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 3 , "Original TM catalog scope differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original TM acquisition maps; shared gameplay admission is separate.", ResourceId);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("mapPath").GetString()!;
-            string path = spec.GetProperty("path").GetString()!;
-            Need(path == relative ,
-                "Original TM compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == id, "Original TM map symbol differs.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            maps.Add(map.Id, map);
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         Need(maps.Keys.ToHashSet().SetEquals([ReturnRoomMapId, PsychicHouseMapId, MemorialMapId]), "Original TM map collection differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);
         return new(source, maps.ToImmutable(), constants);

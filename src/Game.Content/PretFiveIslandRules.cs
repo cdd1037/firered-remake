@@ -8,7 +8,7 @@ namespace Game.Content;
 
 public sealed record FiveIslandTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
-/// <summary>Source-authenticated initial trainer catalog and additive owned/opponent proofs; no runtime route admission.</summary>
+/// <summary>Initial Five Island trainer battle catalog.</summary>
 public static class PretFiveIslandRules
 {
     private static T Read<T>(string root,string file)
@@ -28,6 +28,4 @@ public static class PretFiveIslandRules
         var result = new FiveIslandTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         FiveIslandTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static JsonElement LoadEncounterDeclarations(string root) => Read<JsonElement>(root,"encounters.json");
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

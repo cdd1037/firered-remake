@@ -20,9 +20,9 @@ public sealed partial class PretCampaignCatalog
     public SeafoamWaterEncounterCatalog SeafoamWaterEncounters { get; }
     public IFieldMap SeafoamMap(MapId map,bool stoppedCurrent) => SeafoamRegion.SeafoamMap(map, stoppedCurrent);
     public ConnectedFieldMap SeafoamConnectedMap(MapId map,bool stoppedCurrent) =>
-        PretSeafoamRegion.ConnectedMap(SeafoamRegion.SeafoamMap(map, stoppedCurrent));
+        PretWorldMapConnections.Create(SeafoamRegion.SeafoamMap(map, stoppedCurrent));
 
-    private static void ValidateSeafoamComposition(PretSeafoamRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateSeafoamComposition(PretSeafoamRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
         if (region.NewMaps.Count != 7 )
             throw new InvalidDataException("seafoam_map_composition");

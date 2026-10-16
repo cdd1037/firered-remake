@@ -4,8 +4,10 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from world_source import WorldSource
+from generated_output_compare import generated_output_matches
 
-import argparse,  importlib.util, io, json, re, sys, tempfile
+import argparse,  io, json, re, sys, tempfile
 from pathlib import Path
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -65,9 +67,7 @@ def need(v,m):
     if not v:raise ValueError(m)
 def safe(p):need(not any(x.is_symlink() for x in [p,*p.parents]),'Symlink rejected: '+str(p))
 def build(target,dep,ref,check):
-    path=dep/'scripts/imports/source/import-cinnabar-source-preparation.py'
-    spec=importlib.util.spec_from_file_location('tower_presentation_reader',path);reader=importlib.util.module_from_spec(spec);spec.loader.exec_module(reader);reader.PROFILE=PROFILE
-    src=reader.Source(ref);out={};assets=[]
+    src=WorldSource(ref);out={};assets=[]
     def indexed(image,pal,shape=None,floor=False):
         im=Image.open(io.BytesIO(src.read(image)));need(im.mode=='P' and (shape is None or im.size==shape) and max(im.tobytes())<16,'Invalid indexed source '+image)
         lines=src.text(pal).splitlines();need(lines[:3]==['JASC-PAL','0100','16'] and len(lines)==19,'Invalid palette '+pal)
@@ -135,17 +135,16 @@ def build(target,dep,ref,check):
     catalog=dict(schemaVersion=1,newOpponentSpecies=NEW_SPECIES,newOwnedSpecies=[],sprites=sprites,trainerBindings=bindings,trainerPortraits=portraits,itemIcons=icons,assets=assets,doorAnimations=door_animations,audioIncluded=False,
       fixedShinyCases=[dict(course='Single',floor=7,species='SPECIES_MEOWTH'),dict(course='Double',floor=1,species='SPECIES_ESPEON'),dict(course='Knockout',floor=4,species='SPECIES_SEAKING')])
     out['catalog.json']=canonical(catalog)
-    lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False);lb=canonical(lock)
-    manifest=dict(schemaVersion=1,inputCount=len(src.entries),outputCount=len(out),spriteCount=len(sprites),portraitCount=len(portraits),itemIconCount=len(icons),assetCount=len(assets),authorDependencies=[dict(path='scripts/imports/source/import-cinnabar-source-preparation.py')],outputs=[dict(path=p) for p,b in sorted(out.items())])
+    manifest=dict(schemaVersion=1,outputCount=len(out),spriteCount=len(sprites),portraitCount=len(portraits),itemIconCount=len(icons),assetCount=len(assets),outputs=[dict(path=p) for p,b in sorted(out.items())])
     mb=canonical(manifest)
-    writes=[(target / 'content/generated' / PACKAGE / 'manifest.json', mb)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p,b) for p,b in sorted(out.items())]
+    writes=[(target / 'content/generated' / PACKAGE / 'manifest.json', mb)]+[(target/'content/generated'/PACKAGE/p,b) for p,b in sorted(out.items())]
     for p,b in writes:
         safe(p)
-        if check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs '+str(p))
+        if check:need(generated_output_matches(p,b),'Regeneration differs '+str(p))
         else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
     print(json.dumps({k:v for k,v in manifest.items() if k not in ['outputs','authorDependencies']}|dict(check=check),indent=2))
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--reference-root',required=True,type=Path);ap.add_argument('--project-root',type=Path,default=ROOT);ap.add_argument('--dependency-root',type=Path,default=ROOT);ap.add_argument('--check',action='store_true');a=ap.parse_args()
     for p in [a.reference_root,a.project_root,a.dependency_root]:safe(p.absolute())
-    ref,target,dep=[p.resolve() for p in [a.reference_root,a.project_root,a.dependency_root]];need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)),'Source/output overlap');build(target,dep,ref,a.check)
+    ref,target,dep=[p.resolve() for p in [a.reference_root,a.project_root,a.dependency_root]];need(not((target/'content/generated').is_relative_to(ref) or ref.is_relative_to(target/'content/generated')),'Source/output overlap');build(target,dep,ref,a.check)
 if __name__=='__main__':main()

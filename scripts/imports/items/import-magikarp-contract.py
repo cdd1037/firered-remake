@@ -90,21 +90,11 @@ def read_sources(project=ROOT, raw=None, region_raw=None):
     project = Path(project)
     raw = Path(raw) if raw is not None else project / 'content/raw/pokefirered/037335f4'
     region_raw = Path(region_raw) if region_raw is not None else project / 'content/raw/pokefirered/037335f4'
-    lock_bytes = safe_file(project, 'scripts/recipes/maps/route3-region.lock.json').read_bytes()
-    lock = json.loads(lock_bytes)
-    if lock['commit'] != COMMIT:
-        raise ValueError('Route3 source identity differs')
-    indexed = {entry['path']: entry for entry in lock['files']}
     sources, entries = {}, []
-    for path in sorted(REGION_PATHS):
-        entry = {k: indexed[path][k] for k in ('path',)}
-        sources[path] = safe_file(region_raw, path).read_bytes().decode('utf-8', errors='strict')
-        entries.append(dict(**entry, sourceDirectory='content/raw/pokefirered/037335f4'))
-    for entry in missing_entries():
-        if entry['path'] in indexed:
-            raise ValueError('Unnecessary duplicate import: ' + entry['path'])
-        sources[entry['path']] = safe_file(raw, entry['path']).read_bytes().decode('utf-8', errors='strict')
-        entries.append(dict(**entry, sourceDirectory='content/raw/pokefirered/037335f4'))
+    for path in sorted(set(REGION_PATHS) | set(MISSING)):
+        base = region_raw if path in REGION_PATHS else raw
+        sources[path] = safe_file(base, path).read_bytes().decode('utf-8', errors='strict')
+        entries.append(dict(path=path, sourceDirectory='content/raw/pokefirered/037335f4'))
     return sources, sorted(entries, key=lambda entry: entry['path'])
 
 
@@ -231,7 +221,7 @@ def build(sources, entries):
         newSourceCount=len(MISSING), scriptBlockCount=len(selected), commonScriptCount=len(COMMON_SCRIPTS),
         commonTextCount=len(COMMON_TEXTS), sourceFunctionCount=len(snippets),
         outputs=[dict(path=p) for p, b in sorted(outputs.items())])
-    outputs['manifest.json'] = encode(manifest)
+    outputs['manifest.json'] = runtime_json_bytes(manifest, sort_keys=True)
     return outputs
 
 

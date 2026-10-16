@@ -35,12 +35,8 @@ PER_PAGE = COLUMNS * COLUMNS
 
 def inventory(generated: Path):
     images = {}
-    documents = []
-    for path in sorted((generated / 'maps/regions').rglob('*.json')):
-        document = json.loads(path.read_bytes())
-        if isinstance(document, dict) and document.get('schemaVersion') == 3 and 'blocks' in document:
-            documents.append(path)
-    documents += sorted((generated / 'maps/borders').rglob('border.json'))
+    index = json.loads((generated / 'maps/world.json').read_bytes())
+    documents = [generated / entry['path'] for entry in index['maps']]
     for document in documents:
         for artifact in json.loads(document.read_text())['artifacts']:
             if not any(artifact['path'] == name or artifact['path'].endswith('.' + name) for name in ('bottom.png', 'middle.png', 'top.png', 'map.png', 'border-bottom.png', 'border-middle.png', 'border-top.png', 'border.png')):
@@ -220,50 +216,27 @@ def prune_originals(root: Path, generated: Path, output: Path, images, backup_di
     # are compared to originals; absent inputs are reported as packed consistency.
     verified = verify(generated, output, images)
     removals = [generated / path for path in images if (generated / path).is_file()]
-    updates = []
-    for manifest in sorted(generated.rglob('manifest.json')):
-        document = json.loads(manifest.read_text())
-        changed = False
-        for key in ('outputs', 'files', 'artifacts'):
-            rows = document.get(key)
-            if not isinstance(rows, list):
-                continue
-            kept = []
-            for row in rows:
-                path = row if isinstance(row, str) else row.get('path') if isinstance(row, dict) else None
-                logical = (manifest.parent / path).relative_to(generated).as_posix() if path else None
-                if logical in images:
-                    changed = True
-                else:
-                    kept.append(row)
-            document[key] = kept
-            if key == 'outputs' and 'outputCount' in document and len(kept) != len(rows):
-                document['outputCount'] = len(kept)
-        if changed:
-            updates.append((manifest, (json.dumps(document, sort_keys=True, separators=(',', ':')) + '\n').encode()))
-    if not removals and not updates:
-        return dict(prunedImages=0, manifestsUpdated=0, backup=None, **verified)
+    if not removals:
+        return dict(prunedImages=0, backup=None, **verified)
     backup = (backup_directory or Path(tempfile.mkdtemp(prefix='firered-map-png-backup-'))).resolve()
     if backup == root or root in backup.parents:
         raise ValueError('Prune backup must be outside the project')
     if backup.exists() and any(backup.iterdir()):
         raise ValueError('Prune backup directory must be empty')
     backup.mkdir(parents=True, exist_ok=True)
-    originals = removals + [path for path, _ in updates]
+    originals = removals
     for path in originals:
         target = backup / path.relative_to(root)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, target)
     try:
-        for path, data in updates:
-            path.write_bytes(data)
         for path in removals:
             path.unlink()
     except Exception:
         for path in originals:
             shutil.copy2(backup / path.relative_to(root), path)
         raise
-    return dict(prunedImages=len(removals), manifestsUpdated=len(updates), backup=str(backup), **verified)
+    return dict(prunedImages=len(removals), backup=str(backup), **verified)
 
 
 def main():

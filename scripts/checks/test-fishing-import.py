@@ -44,7 +44,7 @@ class FishingImportTests(unittest.TestCase):
             output.write_text('{}')
             self.assertNotEqual(0, subprocess.run(command + ['--check'], capture_output=True).returncode)
 
-    def test_all_source_slots_and_current_sevii_gap_are_exact(self):
+    def test_all_source_slots_and_selected_sevii_waters_are_exact(self):
         source = json.loads((RAW / 'src/data/wild_encounters.json').read_text())
         group = next(g for g in source['wild_encounter_groups'] if g['label'] == 'gWildMonHeaders')
         output = json.loads(OUTPUT.read_text())
@@ -73,16 +73,17 @@ class FishingImportTests(unittest.TestCase):
         tables = {name: table for (rod, name), table in tables.items() if rod == 'good'}
         regions = ['first-sevii', 'sevii-ruby', 'four-island', 'five-island', 'six-island', 'seven-island',
                    'cape-brink-tutor', 'original-tm-acquisition', 'lost-cave']
-        loaded = {m['stableId'] for name in regions for m in json.loads((ROOT / 'content/generated/maps/regions' / name / 'catalog.json').read_text())['maps']}
-        existing = {'map.two-island-cape-brink', 'map.five-island-memorial-pillar', 'map.five-island-resort-gorgeous', 'map.five-island-water-labyrinth'}
-        added = loaded.intersection(tables) - existing
-        self.assertTrue(added)
-        self.assertIn('map.six-island-green-path', added)
+        world = json.loads((ROOT / 'content/generated/maps/world.json').read_text())
+        self.assertEqual(3, world['schemaVersion'])
+        loaded = {m['stableId'] for m in world['maps'] if 'variant' not in m and m['path'].split('/')[2] in regions}
+        waters = loaded.intersection(tables)
+        self.assertTrue(waters)
+        self.assertIn('map.six-island-green-path', waters)
         self.assertEqual({'pret:SPECIES_HORSEA', 'pret:SPECIES_MAGIKARP', 'pret:SPECIES_POLIWAG', 'pret:SPECIES_GOLDEEN'},
-                         {s['species']['value'] for m in added for s in tables[m]['slots']})
-        for name in added:
+                         {s['species']['value'] for m in waters for s in tables[m]['slots']})
+        for name in waters:
             self.assertEqual([(5, 15)] * 3, [(s['minimumLevel'], s['maximumLevel']) for s in tables[name]['slots']])
-        self.assertIn('map.one-island-treasure-beach', added)
+        self.assertIn('map.one-island-treasure-beach', waters)
         for name in ['map.six-island-outcast-island']:
             self.assertIn(name, tables)
             self.assertIn(name, loaded)

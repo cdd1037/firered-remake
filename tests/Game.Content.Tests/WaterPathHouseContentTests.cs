@@ -56,7 +56,7 @@ public sealed class WaterPathHouseContentTests
         Assert.IsNotNull(program);
         Assert.IsFalse(program.Instructions.Any(i => i.Op == StoryOp.Unsupported));
         var presentation = PretCampaignMapPresentation.Create(content)[id];
-        Assert.AreEqual(content.SixIslandRegion!.NpcSourcePath, presentation.NpcSourcePath);
+        Assert.IsTrue(presentation.OverworldCatalogPath.EndsWith("sprites/overworld/catalog.json", StringComparison.Ordinal));
         Assert.IsTrue(presentation.UsesLocalBorder);
         using var shared = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
             "content/generated/sprites/overworld/catalog.json")));

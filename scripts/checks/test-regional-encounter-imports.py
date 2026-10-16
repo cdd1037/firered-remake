@@ -49,8 +49,8 @@ class RegionalEncounterImportTests(unittest.TestCase):
                     self.assertEqual(json.loads((ROOT / f'content/generated/data/encounters/{family}.json').read_bytes()), document)
 
     def test_safari_encounter_conversion_needs_no_provenance_provider(self):
-        module = load('scripts/imports/maps/import-safari-region.py')
-        document = module.encounter_contract(RawSource())
+        module = load('scripts/lib/safari_features.py')
+        document = module.compile_safari_encounters(RawSource())
         self.assert_business_only(document)
         self.assertEqual(json.loads((ROOT / 'content/generated/maps/regions/safari/encounters.json').read_bytes()), document)
 
@@ -59,7 +59,7 @@ class RegionalEncounterImportTests(unittest.TestCase):
             def json(self, path):
                 return {'wild_encounter_groups': []}
         with self.assertRaisesRegex(ValueError, 'Missing exact FireRed Safari table'):
-            load('scripts/imports/maps/import-safari-region.py').encounter_contract(EmptySource())
+            load('scripts/lib/safari_features.py').compile_safari_encounters(EmptySource())
 
 
 if __name__ == '__main__':

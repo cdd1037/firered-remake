@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Game.Content;
 
 namespace FireRed.Tests.Content;
 
@@ -7,27 +6,18 @@ namespace FireRed.Tests.Content;
 public sealed class GeneratedAudioContractTests
 {
     [TestMethod]
-    public void SynthManifestsContainOnlyPlaybackBindings()
+    public void AudioCatalogContainsOnlyPlaybackBindings()
     {
-        string root = Path.Combine(TestAssets.Root, "content/generated");
-        int manifests = 0;
-        foreach (string path in Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories))
-        {
-            using var json = JsonDocument.Parse(File.ReadAllBytes(path));
-            var document = json.RootElement;
-            if (document.ValueKind != JsonValueKind.Object || !document.TryGetProperty("cues", out var cues) ||
-                !document.TryGetProperty("schemaVersion", out var version)) continue;
-            manifests++;
-            Assert.AreEqual(1, version.GetInt32(), path);
-            Assert.IsFalse(document.TryGetProperty("sourceCommit", out _), path);
-            Assert.IsTrue(cues.GetArrayLength() > 0, path);
-            var ids = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var cue in cues.EnumerateArray()) ValidateCue(cue, ids, path);
-            if (document.TryGetProperty("inheritedCues", out var inherited))
-                foreach (var cue in inherited.EnumerateArray()) ValidateCue(cue, ids, path);
-        }
-        Assert.IsTrue(manifests > 0, "No runtime synth manifests were checked.");
-        _ = PretTrainerTowerAudio.LoadSynthManifest(TestAssets.Root);
+        string path = Path.Combine(TestAssets.Root, "content/generated/audio/cues.json");
+        using var json = JsonDocument.Parse(File.ReadAllBytes(path));
+        var document = json.RootElement;
+        Assert.AreEqual(1, document.GetProperty("schemaVersion").GetInt32());
+        Assert.IsFalse(document.TryGetProperty("sourceCommit", out _));
+        Assert.IsFalse(document.TryGetProperty("inheritedCues", out _));
+        var cues = document.GetProperty("cues");
+        Assert.IsTrue(cues.GetArrayLength() > 0);
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var cue in cues.EnumerateArray()) ValidateCue(cue, ids, path);
     }
 
     private static void ValidateCue(JsonElement cue, HashSet<string> ids, string path)

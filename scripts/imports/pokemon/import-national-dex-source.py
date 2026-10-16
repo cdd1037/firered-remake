@@ -4,9 +4,10 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from world_source import WorldSource
 
 from shared_constants import package_documents
-import argparse, ast, collections,  importlib.util, json, re, sys
+import argparse, ast, collections,  json, re, sys
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
@@ -26,12 +27,6 @@ def canonical(value): return (json.dumps(value, sort_keys=True, separators=(',',
 def need(value, message):
     if not value: raise ValueError(message)
 def safe(path): need(not any(p.is_symlink() for p in [path, *path.parents]), 'Symlink in path: ' + str(path))
-def reader():
-    path = ROOT / 'scripts/imports/source/import-cinnabar-source-preparation.py'
-    spec = importlib.util.spec_from_file_location('national_dex_reader', path)
-    value = importlib.util.module_from_spec(spec); spec.loader.exec_module(value); value.PROFILE = PROFILE
-    return value
-
 def index(src, paths):
     blocks = {}; aliases = {}
     for path in paths:
@@ -188,17 +183,15 @@ def contracts(src, scripts, blocks, constants):
     return dict(schemaVersion=1,  completeGame=False, mapCount=0, scope='First postgame National Dex node on the existing Pallet Town and Oak lab maps.', entry=dict(gameClearFlag='FLAG_SYS_GAME_CLEAR', outdoorSceneVariable='VAR_MAP_SCENE_PALLET_TOWN_OAK', outdoorReadyScene=2, outdoorResolvedScene=3, oneIslandVisitFlag='FLAG_WORLD_MAP_ONE_ISLAND', selectorVariable='VAR_0x8004', kantoSelector=0, minimumCaught=60, seenResult='VAR_0x8005', caughtResult='VAR_0x8006', bufferedCaught='VAR_0x8009', distinctKantoSpecies=True, failureReentry='Interact with Oak in the lab; outdoor scene does not repeat until source Hall-of-Fame reset readies it again.'), grant=dict(native='EnableNationalPokedex', nationalMagic=185, variable='VAR_NATIONAL_DEX', variableValue=25176, flag='FLAG_SYS_NATIONAL_DEX', accessRule='All three fields must match.', labSceneVariable='VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB', labArrivalScene=7, labGrantedScene=8, labNextTransitionScene=9, mutatedByGrant=['pokedex.nationalMagic', 'VAR_NATIONAL_DEX', 'FLAG_SYS_NATIONAL_DEX']), countRules=dict(kantoCount=constants['values']['KANTO_DEX_COUNT']['value'], nationalCount=constants['values']['NATIONAL_DEX_COUNT']['value'], nationalCountingRange=[1, 386], nationalCountingExcluded=[], nationalCompletionRanges=[[1, 150], [152, 248], [252, 384]], nationalCompletionExcluded=[151, 249, 250, 251, 385, 386], nationalCompletionRequiredCount=380, nationalCompletionExcludedSpecies=['MEW', 'LUGIA', 'HO_OH', 'CELEBI', 'JIRACHI', 'DEOXYS'], selectorZero='Kanto seen/caught counts', selectorNonzero='National seen/caught counts; the source script uses 1', returnValue='IsNationalPokedexEnabled, independent of count selector'), actors={name: src.json(f'data/maps/{name}/map.json')['object_events'] for name in [PALLET, LAB]}, directionCases=[dict(direction=d, value=constants['values'][d]['value'], rivalStart=[5 if d == 'DIR_NORTH' else 6, 10], entryScript=LAB + '_EventScript_NationalDexSceneRivalEnter' + ('North' if d == 'DIR_NORTH' else 'South' if d == 'DIR_SOUTH' else 'EastWest')) for d in ['DIR_NORTH', 'DIR_SOUTH', 'DIR_EAST', 'DIR_WEST']], nativeDependencies=mechanisms, specialBindings=bindings, compilerEffects=compiler_effects, prerequisites=['Completed source Hall of Fame flow', 'Visited One Island', 'At least 60 distinct Kanto species caught'], excluded=['Ruby retrieval', 'Sapphire retrieval', 'Network Machine repair', 'FLAG_SYS_CAN_LINK_WITH_RS', 'Later Sevii maps and ferries', 'Rematch League'])
 
 def generate(reference, generated_directory, check=False):
-    helper = reader(); src = helper.Source(reference)
+    src = WorldSource(reference)
     scripts, blocks = script_inventory(src)
     constants = constants_inventory(src, scripts)
     contract = contracts(src, scripts, blocks, constants)
-    contract.update(sourceCommit=helper.COMMIT, sourceTree=helper.TREE)
     documents = package_documents(generated_directory, constants, {'scripts.json': scripts, 'contracts.json': contract}, check=check)
     docs = {name: canonical(value) for name, value in documents.items()}
-    manifest = dict(schemaVersion=1, inputCount=len(src.entries), mapCount=0, scriptBlockCount=len(scripts['blocks']), outputCount=len(docs), outputs=[dict(path=p) for p, b in sorted(docs.items())])
+    manifest = dict(schemaVersion=1, mapCount=0, scriptBlockCount=len(scripts['blocks']), outputCount=len(docs), outputs=[dict(path=p) for p, b in sorted(docs.items())])
     manifest_data = canonical(manifest); docs['manifest.json'] = manifest_data
     writes = {}
-    writes.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in src.data.items()})
     writes.update({'content/generated/' + PACKAGE + '/' + p: b for p, b in docs.items()})
     return writes, manifest, dict()
 
@@ -208,7 +201,7 @@ def main():
     parser.add_argument('--project-root', type=Path, default=ROOT)
     parser.add_argument('--check', action='store_true'); args = parser.parse_args()
     target = args.project_root.absolute(); reference = args.reference_root.absolute()
-    need(not (target == reference or target.is_relative_to(reference) or reference.is_relative_to(target)), 'Reference/output overlap')
+    need(not ((target / 'content/generated').is_relative_to(reference) or reference.is_relative_to(target / 'content/generated')), 'Source/output overlap')
     safe(target)
     writes, manifest, identity = generate(reference, target / 'content/generated', args.check)
     for relative, data in sorted(writes.items()):

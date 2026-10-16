@@ -16,7 +16,7 @@ public sealed partial class PretCampaignCatalog
     public GameOpponentPokemonCatalog FossilLabOpponents { get; }
     public MachineCatalog FossilLabMachines { get; }
 
-    private static void ValidateFossilLabComposition(PretFossilLabRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
+    private static void ValidateFossilLabComposition(PretFossilLabRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
         if (region.NewMaps.Count != 2 )
             throw new InvalidDataException("fossil_lab_map_composition");

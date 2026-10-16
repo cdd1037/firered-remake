@@ -8,11 +8,11 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from world_source import WorldSource
 
 from shared_trainers import trainer_json
 from trainer_import import selected_trainers, natural_moves as source_natural_moves
 import argparse
-import importlib.util
 import json
 from pathlib import Path
 import re
@@ -31,10 +31,7 @@ def output(value): return compact(value) + b'\n'
 def identity(symbol): return {'value': 'pret:' + symbol}
 
 def generate(reference, dependency, rules_root, raw_root=None):
-    helper = dependency/'scripts/imports/source/import-cinnabar-source-preparation.py'
-    spec = importlib.util.spec_from_file_location('vs_seeker_source_reader', helper)
-    reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
-    src = reader.Source(reference, raw_root=raw_root)
+    src = WorldSource(raw_root or reference)
     dependencies = []
     def dependent(root, path):
         raw = (root/path).read_bytes()
@@ -127,9 +124,6 @@ def generate(reference, dependency, rules_root, raw_root=None):
     occurrences.sort(key=lambda x: (x['actorScript'], x['isRematch']))
     document = dict(  trainers=trainers, resolvedMoves=resolved)
     occurrence_document = dict(occurrences=occurrences)
-    lock = dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT,  profile=PROFILE,
-        reader=dict(path='scripts/imports/source/import-cinnabar-source-preparation.py'), dependencies=dependencies,
-        files=[src.entries[p] for p in sorted(src.entries)])
     summary = dict(trainers=len(trainers), singles=sum(not t['doubleBattle'] for t in trainers), doubles=sum(t['doubleBattle'] for t in trainers),
         partyMembers=sum(len(t['party']) for t in trainers), sourceSpecies=sorted({m['species']['value'] for t in trainers for m in t['party']}),
         moveCount=len({m['value'] for row in resolved for party in row['partyMoves'] for m in party}),
@@ -152,10 +146,6 @@ def main():
         path = a.output_root/'content/generated/data/services/vs-seeker-parties'/name
         if a.check: need(path.read_bytes() == data, 'Generated artifact differs: ' + str(path))
         else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-    for name, raw in src.data.items():
-        path = a.output_root/'content/raw/pokefirered/037335f4'/name
-        if a.check: need(path.read_bytes() == raw, 'Raw source differs: ' + name)
-        else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(raw)
     print(artifacts['manifest.json'].decode().strip())
 
 if __name__ == '__main__': main()

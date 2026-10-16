@@ -59,9 +59,6 @@ internal static class MewtwoPresentationAssets
             manifest.GetProperty("footprints")[0].GetProperty("sourceSpeciesId").GetInt32() != 150 ||
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(s => s.GetInt32()).SequenceEqual([150]))
             throw new InvalidDataException("Mewtwo presentation inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Mewtwo cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

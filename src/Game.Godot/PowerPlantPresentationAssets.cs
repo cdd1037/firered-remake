@@ -64,9 +64,6 @@ internal static class PowerPlantPresentationAssets
             if(!manifest.GetProperty(property).EnumerateArray()
                 .Select(r=>r.GetProperty("sourceSpeciesId").GetInt32()).ToHashSet().SetEquals(owned))
                 throw new InvalidDataException("Power Plant owned icon/footprint inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Power Plant cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

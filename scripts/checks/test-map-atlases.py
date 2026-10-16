@@ -31,8 +31,8 @@ class AtlasTests(unittest.TestCase):
             artifacts = [dict(path=name, width=32, height=32) for name in colors]
             runtime = room / 'runtime-map.json'
             runtime.write_text(json.dumps(dict(schemaVersion=3,blocks='',artifacts=artifacts)))
-            manifest = region / 'manifest.json'
-            manifest.write_text(json.dumps(dict(outputCount=3, outputs=[dict(path='room/' + name) for name in colors])))
+            (generated / 'maps/world.json').write_text(json.dumps(dict(maps=[dict(path=runtime.relative_to(generated).as_posix())])))
+            (generated / 'maps/world.json').write_text(json.dumps(dict(maps=[dict(path='maps/regions/test-region/room/runtime-map.json')])))
             output = generated / 'maps/atlases'
             images = ATLAS.inventory(generated)
             self.assertEqual(len(images), 2)  # Sprite sheets are deliberately outside this importer.
@@ -42,11 +42,9 @@ class AtlasTests(unittest.TestCase):
             original_runtime = runtime.read_bytes()
             backup = Path(temp) / 'backup'
             result = ATLAS.prune_originals(root, generated, output, images, backup)
-            self.assertEqual((result['prunedImages'], result['manifestsUpdated']), (2, 1))
+            self.assertEqual(result['prunedImages'], 2)
             self.assertTrue((room / 'player.png').is_file())
             self.assertEqual(runtime.read_bytes(), original_runtime)
-            self.assertEqual(json.loads(manifest.read_text())['outputs'], [dict(path='room/player.png')])
-            self.assertEqual(json.loads(manifest.read_text())['outputCount'], 1)
             self.assertTrue((backup / 'content/generated/maps/regions/test-region/room/top.png').is_file())
             checked = ATLAS.verify(generated, output)
             self.assertEqual(checked['originalImagesCompared'], 0)

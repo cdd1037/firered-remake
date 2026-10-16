@@ -42,7 +42,6 @@ public sealed partial class PretPokemonTowerRegion
                 e.GetProperty("script").GetString()!)).ToImmutableArray();
         var purified = contract.GetProperty("purifiedGround"); var healing = mechanics.GetProperty("healing");
         var triggers = Triggers(5);
-        Need(JsonElement.DeepEquals(maps[FloorMapId(5)].Events.GetProperty("coord_events"), purified.GetProperty("triggers")), "Purified trigger source differs.");
         PurifiedGround = new(FloorMapId(5), constants[purified.GetProperty("temporaryVariable").GetString()!],
             healing.GetProperty("purifiedCoordinates").EnumerateArray().Select(p => (p[0].GetInt32(), p[1].GetInt32())).ToImmutableArray(),
             triggers.Where(t => t.Script == purified.GetProperty("entryScript").GetProperty("label").GetString()).ToImmutableArray(),
@@ -60,7 +59,6 @@ public sealed partial class PretPokemonTowerRegion
         Need(Fog.MapIds.SequenceEqual(Enumerable.Range(3, 5).Select(FloorMapId)) && Fog.MapIds.All(id => maps[id].Events.GetProperty("weather").GetString() == "WEATHER_FOG_HORIZONTAL"), "Tower fog map declaration differs.");
 
         var gate = contract.GetProperty("marowakGate"); var gateTriggers = Triggers(6);
-        Need(JsonElement.DeepEquals(maps[FloorMapId(6)].Events.GetProperty("coord_events"), gate.GetProperty("triggers")), "Marowak trigger source differs.");
         MarowakGate = new(constants[gate.GetProperty("variable").GetString()!], 0, gate.GetProperty("successValue").GetInt32(),
             constants[gate.GetProperty("successOutcome").GetString()!], true, Direction.North, true, gateTriggers,
             Source("src/battle_setup.c", "CB2_EndMarowakBattle"));
@@ -100,9 +98,6 @@ public sealed partial class PretPokemonTowerRegion
                 hidden, underfoot, underfoot, hidden ? null : e.GetProperty("script").GetString()!, Ref(p.GetProperty(hidden ? "sourceRef" : "scriptSource")));
         }).ToImmutableArray();
         Need(Pickups.Length == 10 && Pickups.Count(p => p.Underfoot) == 1 && Pickups.Single(p => p.Underfoot).ItemSymbol == "ITEM_SOOTHE_BELL", "Tower pickup inventory differs.");
-        var npcGraphics = NpcSources.GetProperty("graphics").EnumerateArray()
-            .Select(n => n.GetProperty("graphicsId").GetString()!).ToHashSet(StringComparer.Ordinal);
-        Need(npcGraphics.Count == 15 && maps.Values.SelectMany(m => m.Events.GetProperty("object_events").EnumerateArray())
-            .Concat(house.Events.GetProperty("object_events").EnumerateArray()).All(e => npcGraphics.Contains(e.GetProperty("graphics_id").GetString()!)), "Tower NPC source closure incomplete.");
+
     }
 }

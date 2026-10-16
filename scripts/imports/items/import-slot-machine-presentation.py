@@ -6,7 +6,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 import argparse
 import importlib.util
@@ -39,9 +38,6 @@ SHARED = {
     'src/text.c': 'content/raw/pokefirered/037335f4/src/text.c',
     'src/text_window.c': 'content/raw/pokefirered/037335f4/src/text_window.c',
     'src/strings.c': 'content/raw/pokefirered/037335f4/src/strings.c',
-    'src/sound.c': 'content/raw/pokefirered/037335f4/src/sound.c',
-    'include/constants/songs.h': 'content/raw/pokefirered/037335f4/include/constants/songs.h',
-    'sound/song_table.inc': 'content/raw/pokefirered/037335f4/sound/song_table.inc',
     'charmap.txt': 'content/raw/pokefirered/037335f4/charmap.txt',
     'graphics/fonts/latin_small.png': 'content/raw/pokefirered/037335f4/graphics/fonts/latin_small.png',
     'graphics/fonts/keypad_icons.png': 'content/raw/pokefirered/037335f4/graphics/fonts/keypad_icons.png',
@@ -73,7 +69,7 @@ def generate(reference, dependency):
         return subprocess.check_output(['git', '--no-replace-objects', '--no-optional-locks', '-C', str(reference), *args], env=env)
 
     tree = {}
-    for row in git('ls-tree', '-rz', COMMIT).split(b'\0'):
+    for row in (git('ls-tree', '-rz', COMMIT).split(b'\0') if reference else []):
         if row:
             fields, path = row.split(b'\t')
             tree[path.decode()] = fields.decode().split()
@@ -81,19 +77,17 @@ def generate(reference, dependency):
 
     def source(path):
         if path not in sources:
-            need(path in tree and tree[path][:2] == ['100644', 'blob'], 'Source is not regular blob: ' + path)
-            data = git('cat-file', 'blob', tree[path][2])
+            if reference:
+                need(path in tree and tree[path][:2] == ['100644', 'blob'], 'Source is not regular blob: ' + path)
+                data = git('cat-file', 'blob', tree[path][2])
+            else:
+                data = safe(dependency, RAW + path).read_bytes()
             sources[path] = data
             raw = SHARED.get(path, RAW + path)
             if path in SHARED:
                 need(safe(dependency, raw).read_bytes() == data, 'Inherited raw source differs: ' + path)
             source_rows[path] = dict(path=path, rawPath=raw)
         return sources[path]
-
-    def reuse(path):
-        data = safe(dependency, path).read_bytes()
-        inherited[path] = dict(path=path)
-        return data
 
 
     def helper(path, name):
@@ -250,35 +244,6 @@ def generate(reference, dependency):
     line_names = ['TLBR', 'TopRow', 'MiddleRow', 'BottomRow', 'BLTR']
     layout = dict(width=240, height=160, textureFilter='nearest', paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', mapWidthTiles=32, mapHeightTiles=20, bgTemplates=structures('sBgTemplates'), windows=structures('sWindowTemplates'), yesNoWindow={k: int(v, 0) for k, v in re.findall('\\.(\\w+)\\s*=\\s*(0x[\\da-fA-F]+|\\d+)', declaration('sYesNoWindowTemplate'))}, reels=dict(centers=[[80 + 40 * i, 44 + 24 * j] for i in range(3) for j in range(5)], spriteWidth=32, spriteHeight=32, priority=3, subpriority=2, subpixelScale=8, paletteBanks=palette_tags, iconSymbols=['ICON_7', 'ICON_ROCKET', 'ICON_PIKACHU', 'ICON_PSYDUCK', 'ICON_CHERRIES', 'ICON_MAGNEMITE', 'ICON_SHELLDER'], tileOffsets=[0, 16, 32, 48, 64, 80, 96]), digits=dict(creditCenters=[[85 + 7 * i, 30] for i in range(4)], payoutCenters=[[133 + 7 * i, 30] for i in range(4)], spriteWidth=8, spriteHeight=16, tileOffsets=list(range(0, 20, 2)), leadingZeros=True, priority=1), clefairy=dict(centers=[[16, 136], [224, 136]], rightHFlip=True, spriteWidth=32, spriteHeight=32, priority=1, animations=animations), scanline=dict(registerOffset=43, activeRows=84, affineParameters=table('sReelIconAffineParams'), darkenCoefficients=table('sReelIconBldY'), effect='darken BG3, OBJ and backdrop; outside range affine 0x100 and darken 0'), matchLines=[dict(id=i, name=n, minimumBet=[3, 2, 1, 2, 3][i], tileIndices=table('sLineTiles_' + n)) for i, n in enumerate(line_names)], normalLinePalette=4, betLinePalette=5, winningLinePalette=6, winningUnblendedColorIndices=table('sWinningLineFlashPalIdxs'), buttonTileIndices=table('sReelButtonMapTileIdxs'), pressedButtonTileBase=192, controls=dict(font='small', fontId=0, x=controls_x, y=0, width=controls_width, paletteBank=14, colorIndices=[15, 1, 3], keypad=keypad), help=dict(bg=1, initialScrollPixels=256, finalScrollPixels=0, stepPixels=16, openButton='Right', closeButton='Left'), message=dict(fontId=2, x=1, y=2, letterSpacing=1, lineSpacing=2, borderTileStart=1, borderPalette=15), yesNo=dict(fontId=2, x=0, y=2, borderTileStart=10, borderPalette=13, initialCursor=0, wraps=False), backdropRgb555=[30, 30, 31])
     need(len(layout['scanline']['affineParameters']) == len(layout['scanline']['darkenCoefficients']) == 96, 'Scanline table length differs')
-    # Reuse the existing source sound pack. This extends cue metadata only, never samples/PCM.
-    pack_path = 'content/generated/audio/synth/firered.pack'
-    pack = reuse(pack_path)
-    need(len(pack) == 141541028 - 138975592, 'Original synth pack differs')
-    songs = source('include/constants/songs.h').decode()
-    song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source('sound/song_table.inc').decode(), re.M)
-    sound = source('src/sound.c').decode()
-    inherited_cues = json.loads(reuse('content/generated/audio/synth/manifest.json'))['cues']
-    cues, new_cues = [], []
-    for symbol in ['SE_RS_SHOP', 'SE_CONTEST_PLACE', 'SE_PIN', 'SE_WIN_OPEN', 'MUS_SLOTS_WIN', 'MUS_SLOTS_JACKPOT']:
-        source_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
-        address, player, player2 = struct.unpack_from('<IHH', pack, 0x084A32CC + source_id * 8 - 0x08489968)
-        need(song_table[source_id] == (symbol.lower(), str(player), str(player2)), 'Source cue table differs')
-        path = 'sound/songs/midi/' + symbol.lower() + '.mid'
-        midi = source(path)
-        need(midi[:4] == b'MThd' and b'\xff\x06\x01[' not in midi, 'Slot cue is not admitted non-looping MIDI')
-        counter = int(re.search(r'\{\s*' + symbol + r',\s*(\d+)\s*\}', sound)[1]) if symbol.startswith('MUS_') else None
-        cue = dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=counter, songAddress=address, species=0, looping=False)
-        old = next((c for c in inherited_cues if c['id'] == symbol), None)
-        if old:
-            need(old == cue, 'Inherited cue identity differs')
-        else:
-            new_cues.append(cue)
-        call_sites = [dict(line=original.count('\n', 0, m.start()) + 1, function=m[1])
-                      for m in re.finditer(r'\b(PlaySE|PlayFanfare)\(' + symbol + r'\)', original)]
-        need(call_sites, 'Missing source cue call site')
-        cues.append(dict(cue=cue, sourceId=source_id, inherited=old is not None, callSites=call_sites))
-    need(len(new_cues) == 4, 'Expected four new cue identities')
-    outputs['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=new_cues))
     outputs['palettes.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, palettes=palettes))
     outputs['layout.json'] = encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, layout=layout, texts=texts))
     source('src/text_window.c')
@@ -287,7 +252,7 @@ def generate(reference, dependency):
         inputs=[source_rows[p] for p in sorted(source_rows)], inheritedInputs=[inherited[p] for p in sorted(inherited)])
     lock_bytes = encoded(source_lock)
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-        assets=assets, audio=dict(packPath=pack_path, newCueCount=4, inheritedCueCount=2, cues=cues, preservesMapMusic=True),
+        assets=assets,
         outputs=[dict(path=path) for path, data in sorted(outputs.items())],
         limitations=['Resource candidate only; no Application betting, probabilities or initial-state policy.',
                      'Background, help and controls are individual source layers, not complete game screenshots.',
@@ -305,7 +270,7 @@ def generate(reference, dependency):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('reference', type=Path)
+    parser.add_argument('reference', type=Path, nargs='?', help='Pinned Git checkout; omit to read the dependency raw cache')
     parser.add_argument('output', type=Path)
     parser.add_argument('--dependency', required=True, type=Path)
     parser.add_argument('--check', action='store_true')

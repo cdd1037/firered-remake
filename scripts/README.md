@@ -30,8 +30,9 @@ python scripts/imports/presentation/import-species-art.py --profile eevee --chec
 python scripts/imports/items/import-machine-views.py --region cerulean --out /tmp/example/content/generated/data/machine-learning/cerulean.json
 python scripts/imports/items/import-regional-items.py --group ssanne --check
 
-# 地图运行目录按需要的区域直接组合，不必逐个重放历史阶段
-python scripts/imports/maps/export-runtime-maps.py --help
+# 最终地图／场景服务／音频目录，不重放历史地域阶段
+python scripts/imports/rebuild-resources.py world field-rules field-services
+python scripts/imports/rebuild-resources.py audio-cues --check
 ```
 
 单文件资源的 `--out` / `--output` 指向 JSON 文件，不是同名目录。训练家导入还维护共享定义；非标准输出位置应显式传 `--generated-root`。物品图标临时输出至 `sprites/item-icons/`，最终用 `python scripts/lib/item_icon_exports.py --project-root <工程>` 合入 `sprites/items.png`。
@@ -48,12 +49,13 @@ python scripts/imports/source/materialize-source.py --recipe scripts/recipes/sou
 
 ## 重建与验证边界
 
-`imports/rebuild-services.py` 与 `imports/rebuild-postgame.py` 是范围明确的现有流程编排，仍依赖基础区域资源及各步骤需要的输入；它们不是已验证的完整冷重建器。可单独重建资源族，或在临时输出目录比较 JSON 语义和完整解码像素。PNG 编码不同但像素相同不算资源变化。
+`imports/rebuild-resources.py` 统一编排明确选择的最终资源目标：world、field-rules、field-services、audio-cues。支持 `--raw` / `--out` 与 `--dry-run`。地图由 raw 直接生成最终格式及图集；所有目标支持只读 `--check`；world 在临时空目录生成后做语义／像素比较。旧地域前置编排不再保留。
 
-部分早期音频增量工具所需的原始 cue 配方仍缺失，本轮没有用最终生成文件伪造这些输入。完整边界见 [资源再生说明](../docs/resource-reconstruction-guide.md)。
+这个入口不假称覆盖所有游戏资源；物品、物种、故事和特殊 UI 的独立入口仍按真实依赖执行。音频 cue 已由源码与现有 pack/叫声库一次生成，pack 与叫声样本本身的重建要求见[资源再生说明](../docs/resource-reconstruction-guide.md)。
 
 ```sh
 python scripts/checks/test-script-layout.py
+python scripts/checks/test-world-pipeline-oracle.py
 python scripts/checks/test-single-file-imports.py
 python scripts/checks/test-pokemon-import.py
 python scripts/checks/test-trainer-import.py

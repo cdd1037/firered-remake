@@ -19,15 +19,11 @@ import struct
 
 
 def map_layouts(generated: Path) -> set[str]:
+    index = json.loads((generated / 'maps/world.json').read_bytes())
     used = set()
-    for path in sorted((generated / 'maps/regions').rglob('*.json')):
-        document = json.loads(path.read_bytes())
-        if not isinstance(document, dict) or document.get('schemaVersion') != 3 or 'blocks' not in document:
-            continue
-        layout = document.get('events', {}).get('layout')
-        if not isinstance(layout, str) or not layout:
-            raise ValueError(f'Missing field layout in {path}')
-        used.add(layout)
+    for entry in index['maps']:
+        document = json.loads((generated / entry['path']).read_bytes())
+        used.add(entry.get('layout', document['events']['layout']))
     if not used:
         raise ValueError('No schema-3 field maps found in content/generated/maps/regions')
     return used
@@ -67,10 +63,9 @@ def tileset_declarations(raw: Path) -> dict[str, tuple[bool, str]]:
     return symbols
 
 
-def compile_tables(root: Path) -> dict:
-    generated = root / 'content/generated'
-    raw = root / 'content/raw/pokefirered/037335f4'
-    used = map_layouts(generated)
+def compile_tables(root: Path, *, raw=None, used=None) -> dict:
+    raw = raw or root / 'content/raw/pokefirered/037335f4'
+    used = map_layouts(root / 'content/generated') if used is None else used
     symbols = tileset_declarations(raw)
     layouts, tables = {}, {}
     for layout in json.loads((raw / 'data/layouts/layouts.json').read_bytes())['layouts']:

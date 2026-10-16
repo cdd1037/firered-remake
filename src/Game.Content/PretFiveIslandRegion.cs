@@ -16,23 +16,14 @@ public sealed partial class PretFiveIslandRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
-    public JsonElement WarehouseDoor => Contracts.GetProperty("warehouseDoor");
-    public JsonElement Admin1Arrows => Contracts.GetProperty("admin1Arrows");
-    public JsonElement SapphireRecovery => Contracts.GetProperty("sapphireRecovery");
-    public JsonElement SpinTiles => Contracts.GetProperty("spinTiles");
-    public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
-    public JsonElement ExcludedEncounterGates => Contracts.GetProperty("excludedEncounterGates");
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretFiveIslandRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json");
+
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -49,38 +40,14 @@ public sealed partial class PretFiveIslandRegion
         "MAP_FIVE_ISLAND_WATER_LABYRINTH" => new("map.five-island-water-labyrinth"),
         _ => PretSixIslandRegion.MapIdFromSourceSymbol(symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretFiveIslandRegion Load(PretCurrentWorld world)
     {
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown FiveIsland connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!),
-                c.GetProperty("map").GetString() switch
-                {
-                    "MAP_FIVE_ISLAND_WATER_LABYRINTH" => WaterLabyrinthConnectionWidth,
-                    "MAP_FIVE_ISLAND_MEMORIAL_PILLAR" => MemorialPillarConnectionHeight,
-                    _ => (int?)null
-                })).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
-    }
-    public static PretFiveIslandRegion Load(string root)
-    {
+        var root = world.ProjectRoot;
         var source = FiveIslandSource.Region(root);
 
         var directory = source.Directory;
-        var catalog = source.Document("catalog.json");
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Five Island and Rocket Warehouse source maps; application admission remains separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!;
-            var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(source.Read(relative), stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol does not match its ID.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            maps.Add(new(stableId), map);
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "FiveIsland target warp index differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);

@@ -8,9 +8,6 @@ namespace Game.Content;
 
 public sealed record LeagueRematchTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
 
-public sealed record LeagueRematchOpponentDocument(ImmutableArray<string> OwnedSpeciesAdded,
-    ImmutableArray<PokemonSpeciesDefinition> OpponentSpecies);
-
 /// <summary>Exact upgraded League source teams and the minimal trainer-only species continuation.</summary>
 public static class PretLeagueRematchRules
 {

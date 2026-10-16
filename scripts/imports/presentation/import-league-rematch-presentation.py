@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_source import Source, safe, need
@@ -15,16 +14,13 @@ import json
 import pathlib
 import re
 import runpy
-import struct
 import subprocess
-import wave
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
 BASE = 'content/generated/sprites/pokemon/league-rematch/'
 RAW = 'content/raw/pokefirered/037335f4/'
 SPECIES = [('Crobat', 169), ('Misdreavus', 200), ('Steelix', 208), ('Heracross', 214), ('Kingdra', 230), ('Tyranitar', 248)]
-MUSIC = ['MUS_VS_GYM_LEADER', 'MUS_VS_CHAMPION', 'MUS_VICTORY_TRAINER', 'MUS_VICTORY_GYM_LEADER']
 
 
 def build(root, reference, dependency):
@@ -80,59 +76,6 @@ def build(root, reference, dependency):
                     sourceWidth=width, sourceHeight=height, sourceYOffset=y_offset, sourceEnemyElevation=elevation,
                      sourceCoordinatePath=coordinates, paletteExpansion='floor(rgb5 * 255 / 31)', transparentIndex=0, **row))
 
-    pack = source.reuse('content/generated/audio/synth/firered.pack')
-    cries = source.reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    cues, cry_evidence, inherited_cry_cues = [], [], []
-    for name, species in SPECIES:
-        row = cry_rows[species]
-        need(cry_table[species - 1] == name and row[1] == species - 1, 'Species cry table differs')
-        tone = 0x0848c914 + row[1] * 12 - 0x08489968
-        wave_offset = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
-        need(struct.unpack_from('<HHIII', pack, wave_offset) == (1, 0, 10764288, 0, row[2]), 'Species packed cry header differs')
-        path = 'sound/direct_sound_samples/cries/' + name.lower() + '.wav'
-        with wave.open(io.BytesIO(source.read(path))) as original:
-            need((original.getnchannels(), original.getsampwidth(), original.getframerate(), original.getnframes(), original.getcomptype()) ==
-                 (1, 1, 10512, row[2] + 1, 'NONE'), 'Source cry sample/header dimensions differ')
-            pcm = original.readframes(original.getnframes())
-        delta = (0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1)
-        decoded = bytearray()
-        for index in range(row[2] + row[4]):
-            block, i = divmod(index, 64)
-            start = wave_offset + 16 + block * 33
-            if i == 0:
-                value = pack[start]
-            else:
-                packed = pack[start + (1 if i == 1 else i // 2 + 1)]
-                nibble = packed & 15 if i == 1 or i % 2 else packed >> 4
-                value = (value + delta[nibble]) & 255
-            decoded.append((value + 128) & 255)
-        need(decoded == pcm[:len(decoded)], 'Cry pack/source PCM differs: ' + name)
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4]),
-            decodedBytes=len(decoded),  sourcePath=path, sourcePlayer=4, priority=priority))
-        (inherited_cry_cues if species == 208 else cues).append(dict(id='CRY_' + name.upper() + '_NORMAL', sourceSymbol='SPECIES_' + name.upper(), sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-
-    inherited_cues = inherited_cry_cues[:]
-    prior_cues = []
-    for path in ('content/generated/audio/synth/manifest.json', 'content/generated/sprites/pokemon/pokemon-league/synth-manifest.json'):
-        prior_cues.extend(json.loads(source.reuse(path))['cues'])
-    for expected in inherited_cry_cues:
-        inherited = next(c for c in prior_cues if c['id'] == expected['id'])
-        need(dict(inherited, cryMode=inherited.get('cryMode', 0)) == expected, 'Inherited Steelix cry cue differs')
-    songs = source.text('include/constants/songs.h')
-    song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
-    for symbol in MUSIC:
-        song_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
-        address, player, second = struct.unpack_from('<IHH', pack, 0x084A32CC + song_id * 8 - 0x08489968)
-        need(song_table[song_id] == (symbol.lower(), str(player), str(second)) and player == 0, 'Inherited battle music binding differs')
-        inherited = next(c for c in prior_cues if c['id'] == symbol)
-        expected = dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=pack[address - 138975592 + 2], sourceCounter=None, songAddress=address, species=0, looping=True, cryMode=0)
-        need(dict(inherited, cryMode=inherited.get('cryMode', 0)) == expected, 'Inherited battle music cue differs')
-        inherited_cues.append(expected)
 
     geometry_manifest = 'content/generated/battle/art/campaign-hit-art/manifest.json'
     geometry = json.loads(source.reuse(geometry_manifest))['geometry']
@@ -164,14 +107,12 @@ def build(root, reference, dependency):
         need(re.search(r'\.trainerName = _\("([^"]+)"\)', body)[1] == row['name'], 'Inherited rematch trainer name differs')
         trainers.append(dict(row, inheritedTrainer=old['trainer'], sourcePath=trainer_source_path))
     need(len(trainers) == 7, 'Rematch trainer inventory differs')
-    out['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=cues, inheritedCues=inherited_cues))
     manifest = runtime_json_bytes(dict(schemaVersion=1,
 
         assets=assets, sprites=sprites, inheritedSprites=inherited_sprites, inheritedSpriteManifest=pewter_path, speciesNames=species_names, pokemonIcons=[], footprints=[], newOwnedSpecies=[],
         newOpponentOnlySpecies=[species for _, species in SPECIES if species != 208], trainers=trainers, inheritedTrainerManifest=league_manifest_path,
         moveAnimationGeometry=dict(inheritedManifest=geometry_manifest, rows=inherited_geometry),
-        audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=[c['id'] for c in inherited_cues], cries=cry_evidence,
-             ),
+
         limits=['Trainer-only species do not extend player ownership.', 'Existing battle sprites, names, trainer portraits and music selection are reused.',
             'No party/storage icon or footprint consumer is admitted for these trainer-only species.',
             'Existing bounded move animation dispatch and geometry are reused; no new move animation coverage.'],
@@ -183,8 +124,8 @@ def build(root, reference, dependency):
     report = dict(passed=True, sourceFiles=len(source.raw), inheritedInputs=len(source.inherited), sprites=len(sprites),
         inheritedSprites=len(inherited_sprites), pokemonIcons=0, footprints=0, assets=len(assets), moveGeometry=len(inherited_geometry), trainers=len(trainers),
         outputs=len(out) - 1,  manifestBytes=len(manifest),
-         synthBytes=len(out['synth-manifest.json']), newCries=len(cues),
-        exactCryPcmCompared=True, sourceAndStaticChecksOnly=True, nativeWindowVerified=False)
+
+         sourceAndStaticChecksOnly=True, nativeWindowVerified=False)
     return result, report
 
 if __name__ == '__main__':

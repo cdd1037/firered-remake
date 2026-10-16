@@ -40,7 +40,6 @@ public sealed class PretNpcTradeMail
     public ImmutableArray<NpcTradeMailText> TextSources { get; }
     public NpcTradeItemsDocument Items { get; }
     public JsonElement Catalog { get; }
-    public JsonElement Contracts { get; }
     public string GeneratedDirectory { get; }
 
     private PretNpcTradeMail(SilphSourcePackage source, NpcTradeMailPayload dontae,
@@ -54,7 +53,7 @@ public sealed class PretNpcTradeMail
         if (SourceMailRules.ValidateMessage(Message) is {} error) throw new InvalidDataException(error);
         Words = words; ReadLayout = layout; Assets = assets; Items = items;
         TextSources = texts; Texts = texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
+        Catalog = source.Document("catalog.json");
         GeneratedDirectory = source.Directory;
         AssetFiles = assets.Select(a => a.TexturePath)
             .Concat(items.Icons.Select(i => i.TexturePath))
@@ -68,14 +67,9 @@ public sealed class PretNpcTradeMail
     public static PretNpcTradeMail Load(string projectRoot)
     {
         var source = new SilphSourcePackage(projectRoot,"ui/npc-trade-mail");
-        var catalog = source.Document("catalog.json"); var contracts = source.Document("contracts.json");
+        var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Dontae mail source/catalog identity differs.");
-        Need(            contracts.GetProperty("changesToTradeDefinitions").GetArrayLength() == 0 &&
-            contracts.GetProperty("newMaps").GetArrayLength() == 0 && contracts.GetProperty("newShops").GetArrayLength() == 0 &&
-            contracts.GetProperty("partyMailCapacity").GetInt32() == 6 && contracts.GetProperty("mailboxCapacity").GetInt32() == 10 &&
-            contracts.GetProperty("totalMailCapacity").GetInt32() == 16 && contracts.GetProperty("noneMailIndex").GetInt32() == 255,
-            "Original mail lifecycle scope differs.");
         var payload = source.Parse<NpcTradeMailPayload>("dontae.json");
         Need(payload.TradeId == 1 && payload.MailNumber == 0 &&
             payload.AuthorName == "DONTAE" && payload.AuthorTrainerId == 36728 &&

@@ -297,7 +297,7 @@ class PokemonConversionTests(unittest.TestCase):
             self.assertEqual(sorted(set(moves)), moves)
 
     def test_first_sevii_encounter_gate_is_source_checked(self):
-        import prepare_first_sevii as prep
+        import sevii_rule_source as prep
         class Source:
             def __init__(self, altered=False): self.altered = altered
             def text(self, path):

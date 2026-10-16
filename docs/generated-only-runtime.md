@@ -50,7 +50,7 @@ The startup simplification passed a zero-warning solution build and all 2,435 ma
 
 Learnset rows retain move and level semantics without per-row source spans. Generated top-level input inventories are tool bookkeeping and no longer belong to runtime documents. Breeding/ordinary-evolution/gift-egg metadata retain egg groups/cycles, base egg species and ordered egg moves; their repeated machine-move lists are projected from the existing shared compatibility catalog and preserved 58-slot machine mapping (including HM08, without enabling a teachable HM08 definition). All 188 metadata rows match frozen gameplay values.
 
-Breeding can regenerate from retained raw files with `python3 scripts/imports/pokemon/import-breeding-species.py - . . --check`; `-` selects ordinary raw input, not a claim of Git authentication. Ordinary-evolution and gift-egg importers retain their `--dependency-root . --project-root . --check` entry points.
+The historical breeding/ordinary-evolution/gift-egg species projections have since been retired. `scripts/imports/pokemon/import-game-pokemon.py` owns the current admitted species and breeding data; dedicated presentation importers retain only actual image choices. No cumulative stage-species files are required by the current runtime.
 
 This JSON slice reduced 1,295 files / 30,320,868 bytes to 1,293 files / 26,067,341 bytes: 1,755,435 bytes of unused/duplicated semantics and 2,498,092 bytes of formatting. The same JSON set compressed with ZIP DEFLATE level 9 changed from 3,655,177 to 3,476,165 bytes; raw-file savings are not archive savings. Current direct-output producers emit the compact form, with parsed values and array order preserved. Two unused source-input receipts were removed.
 

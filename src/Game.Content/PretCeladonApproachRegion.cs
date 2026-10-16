@@ -1,38 +1,31 @@
-// Recovery candidate reconstructed from retained context, 2026-10-10.
-// Source pins are original. This C# file's original byte identity is not known.
 using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 
 namespace Game.Content;
 
-/// <summary>Authenticated Celadon approach source data; no gameplay-handler registration.</summary>
 public sealed class PretCeladonApproachRegion
 {
-    public const string Profile = "firered-celadon-approach-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<string, int> Constants { get; }
+    public string GeneratedDirectory { get; }
     public ImmutableArray<MapId> ReusedMapIds => [new("map.lavender-town")];
-
-    public JsonElement Catalog { get; }
-    public JsonElement NpcSources { get; }
     public JsonElement ExternalLavenderEvents { get; }
     public JsonElement ExternalRoute16Events { get; }
-    public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
-    private PretCeladonApproachRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableDictionary<string, int> constants, JsonElement catalog, JsonElement npcSources,
-        JsonElement lavenderEvents, JsonElement route16Events)
+    private PretCeladonApproachRegion(PretCurrentWorld world)
     {
-        GeneratedDirectory = directory; NewMaps = maps;
-        Constants = constants; Catalog = catalog;
-        NpcSources = npcSources;
-        ExternalLavenderEvents = lavenderEvents; ExternalRoute16Events = route16Events;
+        var projectRoot = world.ProjectRoot;
+        var project = Path.GetFullPath(projectRoot);
+        GeneratedDirectory = Path.Combine(project, "content/generated/maps/regions/celadon-approach");
+        NewMaps = world.MapsInDirectory(GeneratedDirectory);
+        Constants = PretSharedConstants.ForPackage(GeneratedDirectory);
+        using var ExternalLavenderEventsDocument = JsonDocument.Parse(world.ReadEvents("data/maps/LavenderTown/map.json"));
+        ExternalLavenderEvents = ExternalLavenderEventsDocument.RootElement.Clone();
+        using var ExternalRoute16EventsDocument = JsonDocument.Parse(world.ReadEvents("data/maps/Route16/map.json"));
+        ExternalRoute16Events = ExternalRoute16EventsDocument.RootElement.Clone();
     }
+
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
         "MAP_CELADON_CITY" => new("map.celadon-city"),
@@ -66,80 +59,6 @@ public sealed class PretCeladonApproachRegion
         "MAP_UNION_ROOM" => new("map.union-room"),
         _ => PretRockTunnelRegion.MapIdFromSourceSymbol(symbol)
     };
-    public static Game.Domain.World.ConnectedFieldMap ConnectedMap(PretWorldMap map)
-    {
-        var source = map.Events.GetProperty("connections");
-        var connections = source.ValueKind == JsonValueKind.Null ? ImmutableArray<Game.Domain.World.ConnectedFieldConnection>.Empty :
-            source.EnumerateArray().Select(c => new Game.Domain.World.ConnectedFieldConnection(c.GetProperty("direction").GetString() switch
-            {
-                "up" => Game.Domain.World.Direction.North, "down" => Game.Domain.World.Direction.South,
-                "left" => Game.Domain.World.Direction.West, "right" => Game.Domain.World.Direction.East,
-                _ => throw new InvalidDataException("Unsupported connection direction.")
-            }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height,
-            map.Cells.Select(c => new Game.Domain.World.ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), connections);
-    }
-    public static PretCeladonApproachRegion Load(string projectRoot, PretRuntimeMapCatalog? runtimeMaps = null)
-    {
-        var project = Path.GetFullPath(projectRoot);
-        var directory = Path.Combine(project, "content/generated/maps/regions/celadon-approach");
 
-        byte[] ReadPinned(string root,string path)
-        {
-            var bytes = File.ReadAllBytes(SafeFile(root, path));
-            return bytes;
-        }
-        using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-
-        var m = manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32() == 1, "Celadon approach manifest identity differs.");
-        var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var output in m.GetProperty("outputs").EnumerateArray())
-        {
-            var path = output.GetProperty("path").GetString()!;
-            if (path == "scripts.json") continue;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "maps/regions/celadon-approach/" + path)) continue;
-            Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate output.");
-        }
-        using var catalog = JsonDocument.Parse(outputs["celadon-approach-catalog.json"]);
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
-            "Authenticated CeladonApproach source profile; runtime certification is separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.RootElement.GetProperty("maps").EnumerateArray())
-        {
-            var relative = spec.GetProperty("mapPath").GetString()!;
-            if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact))
-            {
-
-                var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-                Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate runtime map."); continue;
-            }
-            var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
-            Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
-        }
-
-        var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
-        Require(constants["FLAG_GOT_TEA"] == 0x2A6 && constants["FLAG_RESCUED_MR_FUJI"] == 0x23C && constants["HEAL_LOCATION_LAVENDER_TOWN"] == 5 && constants["HEAL_LOCATION_CELADON_CITY"] == 7, "Service requirements differ.");
-        using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
-        using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/LavenderTown/map.json"));
-        using var route16Events = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/Route16/map.json"));
-        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
-            catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone(), route16Events.RootElement.Clone());
-    }
-    private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
-    private static string SafeFile(string root, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') || path.Split('/').Any(x => x is "" or "." or "..")) throw new InvalidDataException("Unsafe Celadon path: " + path);
-        for (var cursor = new DirectoryInfo(root); cursor is not null; cursor = cursor.Parent) if (cursor.LinkTarget is not null) throw new InvalidDataException("Directory symlink unsupported.");
-        var result = root;
-        foreach (var segment in path.Split('/'))
-        {
-            result = Path.Combine(result, segment);
-            if (new FileInfo(result).LinkTarget is not null || new DirectoryInfo(result).LinkTarget is not null) throw new InvalidDataException("File symlink unsupported: " + path);
-        }
-        return result;
-    }
+    public static PretCeladonApproachRegion Load(PretCurrentWorld world) => new(world);
 }

@@ -32,7 +32,6 @@ class SharedTrainerTests(unittest.TestCase):
         package = generated / 'data/regions/first-sevii'
         command = [sys.executable, str(ROOT / 'scripts/imports/story/import-first-sevii-rules.py'),
                    '--raw-root', str(ROOT / 'content/raw/pokefirered/037335f4'),
-                   '--preparation', str(ROOT / 'content/generated/maps/regions/first-sevii'),
                    '--out', str(package)]
         subprocess.run(command, check=True, capture_output=True, text=True)
         regional = json.loads((package / 'trainers.json').read_text())

@@ -15,7 +15,6 @@
         {
           "name": "Ninetales",
           "catalog": "cinnabar",
-          "cryManifest": "content/generated/audio/cues/cinnabar.json",
           "icon": {
             "collection": "icons",
             "palette": "floor"
@@ -25,7 +24,6 @@
         {
           "name": "Arcanine",
           "catalog": "cinnabar",
-          "cryManifest": "content/generated/audio/cues/cinnabar.json",
           "icon": {
             "collection": "icons",
             "palette": "floor"
@@ -34,13 +32,11 @@
         },
         {
           "name": "Poliwrath",
-          "catalog": "tower",
-          "cryManifest": "content/generated/audio/cues/celadon-approach.json"
+          "catalog": "tower"
         },
         {
           "name": "Cloyster",
           "catalog": "cinnabar",
-          "cryManifest": "content/generated/audio/cues/cinnabar.json",
           "icon": {
             "collection": "icons",
             "palette": "floor"
@@ -50,7 +46,6 @@
         {
           "name": "Exeggutor",
           "catalog": "victory",
-          "cryManifest": "content/generated/sprites/pokemon/pokemon-league/synth-manifest.json",
           "icon": {
             "collection": "pokemonIcons",
             "palette": "floor"
@@ -58,13 +53,11 @@
         },
         {
           "name": "Vaporeon",
-          "catalog": "tower",
-          "cryManifest": "content/generated/audio/synth/manifest.json"
+          "catalog": "tower"
         },
         {
           "name": "Flareon",
-          "catalog": "tower",
-          "cryManifest": "content/generated/audio/synth/manifest.json"
+          "catalog": "tower"
         }
       ],
       "limits": [
@@ -79,7 +72,6 @@
         {
           "name": "Rhydon",
           "catalog": "league",
-          "cryManifest": "content/generated/sprites/pokemon/pokemon-league/synth-manifest.json",
           "icon": {
             "collection": "pokemonIcons",
             "palette": "replicate"
@@ -88,7 +80,6 @@
         {
           "name": "Slowbro",
           "catalog": "saffron",
-          "cryManifest": "content/generated/audio/cues/saffron-gym.json",
           "icon": {
             "collection": "icons",
             "palette": "floor"
@@ -97,13 +88,11 @@
         },
         {
           "name": "Crobat",
-          "catalog": "rematch",
-          "cryManifest": "content/generated/sprites/pokemon/league-rematch/synth-manifest.json"
+          "catalog": "rematch"
         },
         {
           "name": "Blissey",
-          "catalog": "tower",
-          "cryManifest": "content/generated/audio/cues/trainer-tower/synth-manifest.json"
+          "catalog": "tower"
         }
       ],
       "limits": [

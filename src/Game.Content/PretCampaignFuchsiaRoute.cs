@@ -18,8 +18,8 @@ public sealed partial class PretCampaignCatalog
         FuchsiaRouteRegion is not {} region || !region.NewMaps.ContainsKey(map) ||
         IsCurrentStaticWarpResolved(map, sourceWarpId);
 
-    private static void ValidateFuchsiaRouteComposition(PretFuchsiaRouteRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> predecessor,CampaignPokemonContent pokemon)
+    private static void ValidateFuchsiaRouteComposition(PretFuchsiaRouteRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,CampaignPokemonContent pokemon)
     {
-        if(!maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(region.NewMaps.Keys) )throw new InvalidDataException("fuchsia_route_composition_scope");
+        if(!region.NewMaps.Keys.All(maps.ContainsKey) )throw new InvalidDataException("fuchsia_route_composition_scope");
     }
 }

@@ -28,19 +28,7 @@ public sealed partial class PretCampaignCatalog
         new("map.celadon-city-condominiums-roof-room")
     ];
 
-    private static ConnectedFieldMap RegionalServiceConnectedMap(PretWorldMap map)
-    {
-        var source = map.Events.GetProperty("connections");
-        var connections = source.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty :
-            source.EnumerateArray().Select(c => new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch
-            {
-                "up" => Direction.North, "down" => Direction.South,
-                "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("regional_services_connection_direction")
-            }, c.GetProperty("offset").GetInt32(), PretRegionalServiceMaps.MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height,
-            map.CreateConnectedCells(), connections);
-    }
+
 
     private static void MergeRegionalServiceConstants(Dictionary<string, int> constants,IReadOnlyDictionary<string, int> added)
     {
@@ -52,9 +40,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region,PretRegionalGiftContract gift,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> predecessorMaps,CampaignPokemonContent pokemon,CampaignPokemonContent predecessorPokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
+    private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region,PretRegionalGiftContract gift,ImmutableDictionary<MapId, PretWorldMap> maps,CampaignPokemonContent pokemon,CampaignPokemonContent predecessorPokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {
-        if (!maps.Keys.Except(predecessorMaps.Keys).ToHashSet().SetEquals(RegionalServiceMapIds) )
+        if (!RegionalServiceMapIds.All(maps.ContainsKey) )
             throw new InvalidDataException("regional_services_composition_scope");
         region.ValidateReusedMaps(maps);
         foreach (var id in RegionalServiceMapIds)

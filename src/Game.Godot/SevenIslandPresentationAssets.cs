@@ -78,9 +78,6 @@ internal static class SevenIslandPresentationAssets
         var portraits=manifest.GetProperty("portraits").EnumerateArray().ToArray();
         if (trainers.Any(t=>!portraits.Any(p=>p.GetProperty("id").GetString()==t.GetProperty("portrait").GetString())))
             throw new InvalidDataException("Seven Island trainer inventory differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        if (synth.RootElement.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("Seven Island cue metadata differs.");
         return new(manifest.Clone(), files);
     }
 }

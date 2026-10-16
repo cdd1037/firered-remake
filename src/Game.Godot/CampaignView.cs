@@ -25,7 +25,6 @@ public partial class CampaignView:Node2D
     private readonly HashSet<string> _drawMapPins=new(StringComparer.Ordinal);
     private CampaignResourceCache.MapCache<MapArt> MapCache=>_maps??=new(_mapResources);
     private CampaignResourceCache.Owner SceneTextures=>_sceneTextures??=_mapResources.CreateOwner("scene");
-    private IReadOnlyDictionary<MapId,PretMapBorders> _borderSources=null!;
     private IReadOnlyDictionary<MapId,PretMapPresentationBinding>? _mapPresentation;
     private readonly Dictionary<string,Pose> _poses=new(StringComparer.Ordinal);
     private readonly List<Track> _tracks=[];
@@ -116,7 +115,6 @@ public partial class CampaignView:Node2D
             _sourceInactiveCursor=SourceGameFont.Load(fontDirectory,foreground:OpeningItemUiSkin.MenuTextShadow,shadow:OpeningItemUiSkin.MenuTextColor);
             _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui/ui-corrections"));
             _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
-            _borderSources=PretMapBorders.LoadCatalog(System.IO.Path.Combine(_root,"content/generated/maps/borders"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
             LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();if(_catalog.RegionEnabled)LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             _nicknameEdit=new LineEdit{Position=new(20,62),Size=new(200,22),MaxLength=10,Visible=false,PlaceholderText="",CaretBlink=true,KeepEditingOnTextSubmit=true};
@@ -170,11 +168,9 @@ public partial class CampaignView:Node2D
             Texture2D MapTexture(string path)=>owner.MapTexture(path);
             var npcs=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
             var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
-            if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner);
-            else throw new InvalidDataException("Map NPC presentation binding is missing.");
+            npcs=LoadWorldNpcs(source, binding.OverworldCatalogPath, owner);
             BorderArt? borderArt=null;
-            if(_borderSources.TryGetValue(id,out var border))borderArt=new(border.BorderWidth,border.BorderHeight,MapTexture(border.BottomTexturePath),MapTexture(border.MiddleTexturePath),MapTexture(border.TopTexturePath));
-            else if(binding.UsesLocalBorder)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(source.BorderBottomTexturePath),MapTexture(source.BorderMiddleTexturePath),MapTexture(source.BorderTopTexturePath));
+            if(binding.UsesLocalBorder)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(source.BorderBottomTexturePath),MapTexture(source.BorderMiddleTexturePath),MapTexture(source.BorderTopTexturePath));
             return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
         });
     }
@@ -626,7 +622,7 @@ public partial class CampaignView:Node2D
         {
             if((x>=0&&y>=0&&x<_art.Source.Width&&y<_art.Source.Height)||IsConnectedNeighborCell(x,y))continue;
             var border=_art.Border!;
-            DrawTextureRectRegion(texture,new(new Vector2(x*16,y*16)-camera,new Vector2(16,16)),new(PretMapBorders.PatternCoordinate(x,border.Width)*16,PretMapBorders.PatternCoordinate(y,border.Height)*16,16,16));
+            DrawTextureRectRegion(texture,new(new Vector2(x*16,y*16)-camera,new Vector2(16,16)),new(MapBorderPattern.Coordinate(x,border.Width)*16,MapBorderPattern.Coordinate(y,border.Height)*16,16,16));
         }
     }
     private void DrawActor(SpriteAsset asset,Pose pose,Vector2 camera)

@@ -98,17 +98,13 @@ def generate(reference,dependency):
     jump=[-((3*sine[i])>>7) for i in range(10,128,10)]+[0];swim=[sine[i]>>7 for i in range(0,256,4)]
     pack=reuse('content/generated/audio/synth/firered.pack');need(len(pack) == 141541028 - 138975592,'Unchanged authenticated original synth pack')
     songs=text('include/constants/songs.h');table=re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)',text('sound/song_table.inc'),re.M);cfg=text('sound/songs/midi/midi.cfg');cues=[]
-    baseline=json.loads(reuse('content/generated/audio/synth/manifest.json'))['cues']
     for symbol in ['SE_CONTEST_MONS_TURN','SE_PIN']:
         sid=int(re.search(r'^#define '+symbol+r'\s+(\d+)',songs,re.M)[1]);address,player,player2=struct.unpack_from('<IHH',pack,0x084A32CC+sid*8-0x08489968)
         need(table[sid]==(symbol.lower(),str(player),str(player2)),'Source sound table binding')
         midipath='sound/songs/midi/'+symbol.lower()+'.mid';midi=source(midipath);need(midi[:4]==b'MThd' and b'\xff\x06\x01[' not in midi,'Finite original source MIDI')
         options=re.search(r'^'+symbol.lower()+r'\.mid: (.+)',cfg,re.M)[1];priority=int(re.search(r'-P(\d+)',options)[1]);need(priority==pack[address-0x08489968+2],'Source sound priority')
         cue=dict(id=symbol, sourceSymbol=symbol, sourcePlayer=player, priority=priority, sourceCounter=None, songAddress=address, species=0, looping=False, cryMode=0)
-        old=next((c for c in baseline if c['id']==symbol),None)
-        if old:need({**old,'cryMode':old.get('cryMode',0)}==cue,'Inherited source cue')
         cues.append(cue)
-    need(cues[0]['id'] not in [c['id'] for c in baseline] and cues[1]['id'] in [c['id'] for c in baseline],'Exactly one new cue')
     schedule = dict(normalFrames=[0, 1, 5, 6] + [7, 8] * 7 + [6, 1, 0], bikeFrames=[0, 1, 2, 3] + [4, 5] * 7 + [3, 2, 1, 0], frameTicks=4, signalParentTaskTicks=[31, 42], responseWaitTicks=48, acceptedStepTicks=4, iconFrameTicks=[4, 4, 52], iconSourceFrames=dict(unfought=[0, 1, 2], accepted=[3, 4, 5], declined=[6, 7, 8]), jumpYOffsets=jump, swimXOffsets=swim, readyFrame=9, jumpMiddleWaitTicks=17, jumpRestTicks=81, readyJumpPeriodTicks=126, readySwimPeriodTicks=66, sourceQuestLogTransitionTicks=89)
     lock=dict(schemaVersion=1,profile=PROFILE,repository='pret/pokefirered',sourceCommit=COMMIT,sourceFiles=[inputs[p] for p in sorted(inputs)],reusedInputs=[reused[p] for p in sorted(reused)])
     lockbytes=encoded(lock)

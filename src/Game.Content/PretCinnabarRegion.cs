@@ -13,17 +13,14 @@ public sealed partial class PretCinnabarRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
     public ImmutableDictionary<string, int> Constants { get; }
-    public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
-    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretCinnabarRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants)
     {
         GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants;
-        Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json");
+
         InitializeField(source);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -43,40 +40,21 @@ public sealed partial class PretCinnabarRegion
         "MAP_POKEMON_MANSION_B1F" => new("map.pokemon-mansion-b1f"),
         _ => PretRegionalServiceMaps.MapIdFromSourceSymbol(symbol)
     };
-    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+
+    public static PretCinnabarRegion Load(PretCurrentWorld world)
     {
-        var connections = map.Events.GetProperty("connections");
-        var edges = connections.ValueKind == JsonValueKind.Null ? ImmutableArray<ConnectedFieldConnection>.Empty : connections.EnumerateArray().Select(c =>
-            new ConnectedFieldConnection(c.GetProperty("direction").GetString() switch { "up" => Direction.North, "down" => Direction.South, "left" => Direction.West, "right" => Direction.East,
-                _ => throw new InvalidDataException("Unknown Cinnabar connection direction.") }, c.GetProperty("offset").GetInt32(), MapIdFromSourceSymbol(c.GetProperty("map").GetString()!))).ToImmutableArray();
-        return new(map.Id, map.Width, map.Height, map.CreateConnectedCells(), edges);
-    }
-    public static PretCinnabarRegion Load(string root)
-    {
+        var root = world.ProjectRoot;
         var source = CinnabarSource.Region(root);
 
         var directory = source.Directory;
-        var catalog = source.Document("catalog.json");
-
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Route21, Cinnabar and Mansion source maps; application admission remains separate.", Profile);
-        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
-        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
-        {
-            var stableId = spec.GetProperty("stableId").GetString()!;
-            var relative = spec.GetProperty("mapPath").GetString()!;
-            var runtime = PretRuntimeMapData.Decode(source.Read(relative), stableId, MapIdFromSourceSymbol);
-            Need(MapIdFromSourceSymbol(runtime.SourceMapSymbol).Value == stableId, "Map symbol does not match its ID.");
-            var map = PretWorldMap.FromRuntime(runtime, metadata, Safe(directory, relative), PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png"), MapIdFromSourceSymbol);
-            maps.Add(new(stableId), map);
-        }
+        var maps = world.MapsInDirectory(source.Directory).ToBuilder();
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "Cinnabar target warp index differs.");
         var constants = PretSharedConstants.ForPackage(source.Directory);
 
         var contracts = source.Document("contracts.json");
         Need(contracts.GetProperty("fallWarps").GetArrayLength() == 5 &&
-            contracts.GetProperty("itemPickups").GetArrayLength() == 12 && NpcGraphics(source) == 20 &&
-            contracts.GetProperty("tilePatches").EnumerateArray().Sum(p => p.GetProperty("changes").GetArrayLength()) == 194 &&
+            contracts.GetProperty("itemPickups").GetArrayLength() == 12 && contracts.GetProperty("tilePatches").EnumerateArray().Sum(p => p.GetProperty("changes").GetArrayLength()) == 194 &&
             contracts.GetProperty("mansionSwitchFlag").GetString() == "FLAG_POKEMON_MANSION_SWITCH_STATE", "Cinnabar source field scope differs.");
         var key = contracts.GetProperty("secretKeyPickup"); var door = contracts.GetProperty("gymDoorTrigger");
         Need(key.GetProperty("localId").GetInt32() == 6 && key.GetProperty("event").GetProperty("flag").GetString() == "FLAG_HIDE_POKEMON_MANSION_B1F_SECRET_KEY" &&
@@ -106,7 +84,6 @@ public sealed partial class PretCinnabarRegion
         "map.cinnabar-island-gym" => 691753,
         _ => throw new InvalidDataException("Unknown Cinnabar rich source identity.")
     };
-    private static int NpcGraphics(SilphSourcePackage source) => source.Document("npc-source.json").GetProperty("graphics").GetArrayLength();
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
     private static string Safe(string root, string relative) => PretRuntimeMapValidation.SafeFile(root, relative);
 }

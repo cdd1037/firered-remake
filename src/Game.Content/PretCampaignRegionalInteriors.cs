@@ -67,9 +67,9 @@ public sealed partial class PretCampaignCatalog
         var deferred=DepartmentStoreContract!.DeferredServices.FirstOrDefault(d=>d.MapId==map.Value&&d.Script==script);
         return deferred is null ? null : "regional_service_unavailable: "+deferred.Service+"\nis not available yet.";
     }
-    private static void ValidateRegionalInteriorComposition(PretRegionalServiceMaps region,PretDepartmentStoreContract store,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> predecessor)
+    private static void ValidateRegionalInteriorComposition(PretRegionalServiceMaps region,PretDepartmentStoreContract store,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(!maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(RegionalInteriorMapIds))throw new InvalidDataException("regional_interiors_composition_scope");
+        if(!RegionalInteriorMapIds.All(maps.ContainsKey))throw new InvalidDataException("regional_interiors_composition_scope");
         foreach(var id in RegionalInteriorMapIds)
         {
             var map=maps[id];            if(id.Value.StartsWith("map.celadon-city-department-store-",StringComparison.Ordinal))store.ValidateMapEvents(id.Value,map.Events);

@@ -95,7 +95,7 @@ public sealed class OrdinaryInteriorBatchContentTests
         }
 
         var presentation = PretCampaignMapPresentation.Create(content)[id];
-        Assert.AreEqual(content.SchoolHouseInteriors.NpcSourcePath, presentation.NpcSourcePath);
+        Assert.IsTrue(presentation.OverworldCatalogPath.EndsWith("sprites/overworld/catalog.json", StringComparison.Ordinal));
         Assert.IsTrue(presentation.UsesLocalBorder);
         using var art = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
             "content/generated/sprites/overworld/catalog.json")));

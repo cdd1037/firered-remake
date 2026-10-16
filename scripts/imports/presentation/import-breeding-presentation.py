@@ -4,7 +4,6 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
-from audio_manifest import runtime_manifest_bytes
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
@@ -15,7 +14,6 @@ import json
 import re
 import os
 import subprocess
-import struct
 from pathlib import Path
 from PIL import Image
 
@@ -43,12 +41,11 @@ def safe(path):
 
 
 # Shared raw inputs are authenticated by this package's lock and the pinned Git blob.
-SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h', 'sound/cry_tables.inc', 'include/constants/sound.h']}
+SHARED_RAW = {path: 'content/raw/pokefirered/037335f4/' + path for path in ['include/constants/species.h', 'src/data/graphics/pokemon.h', 'src/data/pokemon_graphics/front_pic_coordinates.h', 'src/data/pokemon_graphics/back_pic_coordinates.h', 'src/data/pokemon_graphics/enemy_mon_elevation.h', 'src/pokemon_icon.c', 'graphics/pokemon/icon_palettes/icon_palette_0.pal', 'graphics/pokedex/kanto_dex_bgpals.pal', 'src/data/pokemon_graphics/footprint_table.h', 'src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/pokedex_text_fr.h']}
 SHARED_RAW['graphics/pokemon/icon_palettes/icon_palette_2.pal'] = 'content/raw/pokefirered/037335f4/graphics/pokemon/icon_palettes/icon_palette_2.pal'
 SHARED_RAW['graphics/pokemon/icon_palettes/icon_palette_1.pal'] = 'content/raw/pokefirered/037335f4/graphics/pokemon/icon_palettes/icon_palette_1.pal'
 SHARED_RAW['src/daycare.c'] = 'content/raw/pokefirered/037335f4/src/daycare.c'
 SHARED_RAW['src/graphics.c'] = 'content/raw/pokefirered/037335f4/src/graphics.c'
-SHARED_RAW['src/data/pokemon/cry_ids.h'] = 'content/raw/pokefirered/037335f4/src/data/pokemon/cry_ids.h'
 for name, package in [('Hitmontop', 'seven-island-presentation'), ('Smoochum', 'trainer-tower-presentation')]:
     for asset in ['front.png', 'back.png', 'normal.pal', 'shiny.pal']:
         path = 'graphics/pokemon/' + name.lower() + '/' + asset
@@ -267,33 +264,6 @@ def build(target, dependency, reference, check):
                 role=role, sourceFrame=frame, sourceFrameCount=4, sourceTileOffset=frame * stride,
                 sourceDuration=5, paletteExpansion='floor(rgb5 * 255 / 31)', **fields))
 
-    pack = reuse('content/generated/audio/synth/firered.pack')
-    cries = reuse('content/generated/audio/synth/normal-cries.bin')
-    need(len(pack) == 141541028 - 138975592 and len(cries) == 6188, 'Original audio pack identity differs')
-    cry_table = re.findall(r'^\s*cry Cry_(\w+)\s*$', source.text('sound/cry_tables.inc').split('gCryTable::', 1)[1].split('gCryTable_Reverse::', 1)[0], re.M)
-    cry_rows = {struct.unpack_from('<H', cries, offset)[0]: struct.unpack_from('<HHIIB3x', cries, offset) for offset in range(12, len(cries), 16)}
-    priority = int(re.search(r'^#define CRY_PRIORITY_NORMAL\s+(\d+)', source.text('include/constants/sound.h'), re.M)[1])
-    need(priority == 10, 'Normal cry priority differs')
-    need('[SPECIES_WYNAUT - HOENN_MON_SPECIES_START] = CRY_WYNAUT,' in source.text('src/data/pokemon/cry_ids.h'), 'Wynaut cry mapping differs')
-    wynaut_cry = int(re.search(r'CRY_WYNAUT\s*=\s*(\d+)', source.text('include/constants/hoenn_cries.h'))[1])
-    need(wynaut_cry == 258, 'Wynaut source cry constant differs')
-    cues, cry_evidence, new_cues = [], [], []
-    for name, species in SPECIES:
-        cue = dict(id='CRY_' + name.upper() + '_NORMAL', sourceSymbol='SPECIES_' + name.upper(), sourcePlayer=4, priority=10, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0)
-        if species not in (237, 238):
-            cues.append(dict(inherited=False, cue=cue))
-            new_cues.append(cue)
-        else:
-            path = 'content/generated/' + ('audio/cues/trainer-tower' if species == 238 else 'sprites/pokemon/seven-island') + '/synth-manifest.json'
-            manifest = json.loads(reuse(path))
-            inherited_cue = next(c for c in manifest['cues'] if c['id'] == cue['id'])
-            need(inherited_cue == cue, 'Inherited normal cry binding differs')
-            cues.append(dict(inherited=True, inheritedManifest=path, cue=cue))
-        row = cry_rows[species]
-        expected_index = wynaut_cry if species == 360 else species - 1
-        need(cry_table[row[1]] == name and row[1] == expected_index, 'Species cry table differs')
-        cry_evidence.append(dict(species=species, cryIndex=row[1], sampleCount=row[2], payloadBytes=row[3], guardStored=bool(row[4])))
-    outputs['synth-manifest.json'] = runtime_manifest_bytes(dict(schemaVersion=1, cues=new_cues))
     outputs['dex-entries.json'] = canonical(dict(schemaVersion=1,   entries=entries))
     lock = source.lock()
     lock['inheritedInputs'] = [inherited[p] for p in sorted(inherited)]
@@ -302,7 +272,7 @@ def build(target, dependency, reference, check):
                       newOwnedSpecies=[s for _, s in SPECIES],
                     sprites=sprites, pokemonIcons=icons, footprints=footprints, eggAssets=egg_assets,
                     dexEntriesPath=BASE + 'dex-entries.json', moveAnimationGeometry=dict(inheritedManifest=geometry_path, rows=geometry),
-                    audio=dict(newCueCount=6, inheritedCueCount=2, inheritedSampleCount=8, cues=cues, normalCries=cry_evidence, ),
+
                     limits=['Eight inherited Smoochum and Hitmontop battler variants and two cue bindings are reused unchanged.',
                             'Only twenty-four battler variants, eight frame-zero icons, eight footprints, eight Dex bindings and six cry cues are added.',
                             'All sixteen move geometry rows and eight source cry samples are inherited; no dedicated animation or audio package is added.',

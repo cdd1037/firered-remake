@@ -68,8 +68,7 @@ public static class PretSeafoamPresentation
             !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(new[] { 144 }) ||
             manifest.GetProperty("sprites").GetArrayLength() != 4 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 1 ||
             manifest.GetProperty("footprints").GetArrayLength() != 1 ||
-            manifest.GetProperty("trainerPortraits").GetArrayLength() != 1 || manifest.GetProperty("trainerBindings").GetArrayLength() != 1 ||
-            manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 1)
+            manifest.GetProperty("trainerPortraits").GetArrayLength() != 1 || manifest.GetProperty("trainerBindings").GetArrayLength() != 1)
             throw new InvalidDataException("Seafoam presentation inventory differs.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
@@ -119,17 +118,6 @@ public static class PretSeafoamPresentation
             trainer.GetProperty("trainerPic").GetString() != "TRAINER_PIC_BIRD_KEEPER" ||
             trainer.GetProperty("trainerClass").GetString() != "TRAINER_CLASS_BIRD_KEEPER" || trainer.GetProperty("className").GetString() != "BIRD KEEPER")
             throw new InvalidDataException("Seafoam Bird Keeper portrait/binding differs.");
-        using var synth = JsonDocument.Parse(files[Base + "synth-manifest.json"]);
-        var audio = synth.RootElement;
-        var cue = audio.GetProperty("cues").EnumerateArray().Single();
-        if (audio.GetProperty("schemaVersion").GetInt32() != 1 ||
-            cue.GetProperty("id").GetString() != "CRY_ARTICUNO_NORMAL" ||
-            cue.GetProperty("sourceSymbol").GetString() != "SPECIES_ARTICUNO" ||
-            cue.GetProperty("species").GetInt32() != 144 || cue.GetProperty("sourcePlayer").GetInt32() != 4 ||
-            cue.GetProperty("priority").GetInt32() != 10 || cue.GetProperty("cryMode").GetInt32() != 0 ||
-            cue.GetProperty("sourceCounter").ValueKind != JsonValueKind.Null || cue.GetProperty("songAddress").GetInt32() != 0 ||
-            cue.GetProperty("looping").GetBoolean())
-            throw new InvalidDataException("Seafoam normal cry binding differs.");
         return new(manifest.Clone(), files, dex.Entries.ToDictionary(e => e.SourceSpeciesId));
     }
 }

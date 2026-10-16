@@ -10,8 +10,7 @@ public sealed class OrdinaryInteriorsImportTests
     {
         var info = new ProcessStartInfo(Environment.GetEnvironmentVariable("FIRERED_PYTHON") ?? (OperatingSystem.IsWindows() ? "python" : "python3"))
         { WorkingDirectory = TestAssets.Root, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
-        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts/imports/maps/import-school-house-interiors.py"));
-        info.ArgumentList.Add("--check");
+        info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts/checks/test-ordinary-interiors-source.py"));
         using var process = Process.Start(info)!;
         var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(1));
