@@ -1,3 +1,0 @@
-dev text eol=lf
-scripts/env.sh text eol=lf
-dev.cmd text eol=crlf

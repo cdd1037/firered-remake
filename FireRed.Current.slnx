@@ -1,0 +1,18 @@
+<Solution>
+  <Project Path="src/Game.Domain/Game.Domain.csproj" />
+  <Project Path="src/Game.Application/Game.Application.csproj" />
+  <Project Path="src/Game.Content/Game.Content.csproj" />
+  <Project Path="src/Game.Godot/Game.Godot.csproj" />
+  <Project Path="src/Game.Tooling/Game.Tooling.csproj" />
+  <Project Path="tools/AudioTool/AudioTool.csproj" />
+  <Project Path="src/Game.Audio/Game.Audio.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Game.Domain.Tests/Game.Domain.Tests.csproj" />
+    <Project Path="tests/Game.Battle.Tests/Game.Battle.Tests.csproj" />
+    <Project Path="tests/Game.Application.Tests/Game.Application.Tests.csproj" />
+    <Project Path="tests/Game.Content.Tests/Game.Content.Tests.csproj" />
+    <Project Path="tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj" />
+    <Project Path="tests/Game.ResourceImport.Tests/Game.ResourceImport.Tests.csproj" />
+    <Project Path="tests/Game.Process.Tests/Game.Process.Tests.csproj" />
+  </Folder>
+</Solution>

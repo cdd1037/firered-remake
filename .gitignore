@@ -1,18 +1,28 @@
-# Runtime assets and local data stay in the engineering ZIP, not Git.
-/firered-remake/content/raw/
-/firered-remake/content/generated/
-/firered-remake/src/Game.Godot/Assets/
-/firered-audio-player/resources/
-/checkpoints/
-/reference/
-/audio-reference-build/
+# Rebuildable compiler, engine and tool caches.
 **/bin/
 **/obj/
 **/.godot/
 **/__pycache__/
+**/TestResults/
 **/.tools/
-**/.play/
+.toolhome/
+.build/
+.runtime-tmp/
 *.user
+src/Game.Godot/*.cs.uid
+
+# Runtime assets and local data stay in the engineering package, not Git.
+/content/raw/
+/content/generated/
+/src/Game.Godot/Assets/
+/checkpoints/
+/reference/
+/audio-reference-build/
 
 # Source-derived cue tables are runtime/import assets, not authored source.
-/firered-remake/scripts/recipes/audio/synth-*-cues.json
+/scripts/recipes/audio/synth-*-cues.json
+
+# Temporary execution reports, screenshots, saves and exported builds.
+evidence/
+**/.play/
+exports/

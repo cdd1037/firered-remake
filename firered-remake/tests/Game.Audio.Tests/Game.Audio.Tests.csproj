@@ -1,5 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="../../../firered-audio-player/core/FireRedAudio.Core.csproj" />
-  </ItemGroup>
-</Project>
