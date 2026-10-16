@@ -43,6 +43,5 @@ public static class PretSevenIslandRules
         return document;
     }
 
-    public static JsonElement LoadRules(string root, SharedMachineCatalog? shared = null) => Read<JsonElement>(root,"rules.json", shared);
     public static JsonElement LoadEncounterDeclarations(string root, SharedMachineCatalog? shared = null) => Read<JsonElement>(root,"encounters.json", shared);
 }

@@ -41,5 +41,4 @@ public static class PretLeagueRematchRules
         return result;
     }
 
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

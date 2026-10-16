@@ -7,6 +7,25 @@ namespace FireRed.Tests.Content;
 public sealed class GeneratedRegionBoundaryTests
 {
     [TestMethod]
+    public void LeagueAndSevenIslandLoadBusinessDataWithoutUnusedRulesReports()
+    {
+        foreach (string family in new[] { "pokemon-league", "league-rematch", "seven-island" })
+            Assert.IsFalse(File.Exists(Path.Combine(TestAssets.Root, "content/generated/data/regions", family, "rules.json")));
+
+        var league = PretPokemonLeagueRules.LoadDocument(TestAssets.Root);
+        Assert.AreEqual(7, league.Trainers.Length);
+        Assert.AreEqual(7, league.Battles.Length);
+        var rematch = PretLeagueRematchRules.LoadDocument(TestAssets.Root);
+        Assert.AreEqual(7, rematch.Trainers.Length);
+        Assert.AreEqual(7, rematch.Battles.Length);
+        var seven = PretSevenIslandRules.LoadDocument(TestAssets.Root);
+        Assert.AreEqual(18, seven.Trainers.Length);
+        Assert.AreEqual(20, seven.Battles.Length);
+        Assert.AreEqual(13, PretSevenIslandRules.LoadItemsDocument(TestAssets.Root).Pickups.Length);
+        Assert.AreEqual(11, PretSevenIslandRules.LoadEncounterDeclarations(TestAssets.Root).GetProperty("encounters").GetArrayLength());
+    }
+
+    [TestMethod]
     public void SeafoamLoadsTrainerBusinessDataWithoutUnusedRulesReport()
     {
         Assert.IsFalse(File.Exists(Path.Combine(TestAssets.Root, "content/generated/data/regions/seafoam/rules.json")));

@@ -229,3 +229,7 @@ FirstBattleProfile集中首战支持的招式语义、御三家类型/特性与�
 ## 服务转换帧输入复用
 
 MoveTutor、NameRater、MagikarpRecord、NpcTrade共用同一转换当帧防穿透helper，各模块仍保留自身触发条件和帧号；F5/F9/F12按原路径放行，StorageCustomization的Escape例外不变。Godot产品与外置宿主构建零警告/错误，四适配器输入矩阵及Storage对照186项断言通过；Name Rater真实脚本选择→取消当帧不穿透，下一帧解除门控，淡出和文本结束后正常推进，退出0。未合并不同语义的保存/路由/preflight名单，不代表Q09整体完成。
+
+## League与Seven Island运行报告退休
+
+已停写并移出三份无人加载的rules报告，净减66,422字节，删除三个未调用LoadRules及仅供报告的身份/随机向量/来源清单构造，实际源解析和业务校验保留。三个生产者复用runtime_json_bytes并统一排序，六份保留JSON只改键顺序，值与大小不变；训练家产物未改。Python6项覆盖九份业务产物逐字节再生、三个CLI --check与损坏输入拒绝，布局8项、Content边界4项、当前v3代表档严格往返1项通过，原档不变。再生测试使用只读raw适配，不声称实际pinned Git读取路径通过。

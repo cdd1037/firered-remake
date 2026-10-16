@@ -8,6 +8,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from shared_trainers import trainer_json
+from runtime_json import runtime_json_bytes
 from item_catalog import item_definition as shared_item, inventory_item, item_json
 import argparse
 import json
@@ -112,6 +113,9 @@ def generate(reference, dependency):
     rematch=dependent('content/generated/data/regions/league-rematch/pokemon.json')
     species={s['id']['value'][5:]:s for s in canonical['species']}
     metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
+    for trainer in trainers:
+        need(all(member['species']['value'][5:] in species for member in trainer['party']),
+             'Unknown canonical trainer species')
     previous_owned={s[5:] for s in base['ownedSpecies']}|set(five_p['ownedSpeciesAdded'])|set(celio['speciesAdded'])|set(cave['speciesAdded'])
     previous_opponents={s[5:] for s in base['opponentSpecies']}|previous_owned|set(five_p['opponentSpeciesAdded'])|{s['id']['value'][5:] for s in rematch['opponentSpecies']}
     additions=['SPECIES_PHANPY','SPECIES_DONPHAN','SPECIES_LARVITAR','SPECIES_PUPITAR','SPECIES_TYRANITAR','SPECIES_SKARMORY','SPECIES_UNOWN']
@@ -122,11 +126,11 @@ def generate(reference, dependency):
     for name,level,target in [('SPECIES_PHANPY',25,'SPECIES_DONPHAN'),('SPECIES_LARVITAR',30,'SPECIES_PUPITAR'),('SPECIES_PUPITAR',55,'SPECIES_TYRANITAR')]:
         e=metadata[name]['sourceEvolutions'];need(len(e)==1 and e[0]['method']=='EVO_LEVEL' and e[0]['parameterValue']==level and e[0]['target']==identity(target),'Source evolution')
         edges.append(dict(species=identity(name),sourceEvolution=e[0]))
-    battles=[];actors=[]
+    battles=[]
     names=['SevenIsland_SevaultCanyon','SevenIsland_SevaultCanyon_Entrance','SevenIsland_TanobyRuins','SevenIsland_TrainerTower']
     for name in names:
         mapping=json.loads(read('data/maps/'+name+'/map.json'))
-        for local_id,actor in enumerate(mapping['object_events'],1):
+        for actor in mapping['object_events']:
             if actor.get('trainer_type')!='TRAINER_TYPE_NORMAL':continue
             label=actor['script'];path='data/scripts/trainers.inc'
             block=one(path,r'^'+label+r'::\n((?:(?!^\w+::).)*)')
@@ -137,17 +141,8 @@ def generate(reference, dependency):
             post=re.search(r'^\tmsgbox (\w+)',block[1],re.M)
             battle=dict(trainer=identity(args[0]),mode=number('include/constants/battle_setup.h','TRAINER_BATTLE_DOUBLE' if double else 'TRAINER_BATTLE_SINGLE'),rivalFlags=0,battleTypeFlags=9 if double else 8,scriptEntry=label,introText=args[1],defeatText=args[2],victoryText='',postBattleText=post[1],entryScript='EventScript_TryDoDoubleTrainerBattle' if double else 'EventScript_TryDoNormalTrainerBattle',callback='CB2_EndTrainerBattle',source=ref(path,label,block),postBattleScript=None,musicOption=None)
             if double:battle['notEnoughMonsText']=args[3]
-            battles.append(battle);actors.append(dict(map=mapping['id'],localId=local_id,x=actor['x'],y=actor['y'],movementType=actor['movement_type'],sight=actor['trainer_sight_or_berry_tree_id'],script=label,trainer=identity(args[0])))
+            battles.append(battle)
     need(len(trainers)==18 and len(battles)==20 and sum(t['doubleBattle'] for t in trainers)==2,'18 identities, 20 actor scripts, two doubles')
-    identities=[]
-    for trainer,sets in zip(trainers,resolved):
-        h=0;members=[]
-        for member,moves in zip(trainer['party'],sets['party']):
-            h=(h+sum(trainer['encodedTrainerName'])+sum(member['encodedSpeciesName']))&0xffffffff
-            pid=((0x80 if trainer['doubleBattle'] else 0x78 if trainer['encounterMusicGender']&128 else 0x88)+(h<<8))&0xffffffff
-            p=species[member['species']['value'][5:]];ratio=p['genderRatio']
-            members.append(dict(species=member['species'],level=member['level'],fixedIv=member['sourceIv']*31//255,personality=pid,nature=pid%25,abilitySlot=pid&1,ability=p['ability2'] if pid&1 and p['ability2']!='ABILITY_NONE' else p['ability1'],gender='genderless' if ratio==255 else 'female' if ratio==254 or ratio!=0 and (pid&255)<ratio else 'male',heldItem=member['heldItem'],moves=[identity(m) for m in moves['moves']]))
-        identities.append(dict(trainer=trainer['id'],members=members,basePrize=(8 if trainer['doubleBattle'] else 4)*trainer['baseMoney']*trainer['party'][-1]['level']))
     wild=json.loads(read('src/data/wild_encounters.json'))
     encounters=[e for g in wild['wild_encounter_groups'] for e in g.get('encounters',[]) if e['map'].startswith('MAP_SEVEN_ISLAND_') and e['base_label'].endswith('_FireRed')]
     fields=next(g['fields'] for g in wild['wild_encounter_groups'] if 'fields' in g)
@@ -160,24 +155,9 @@ def generate(reference, dependency):
     need(len(cells)==39, 'Exact admitted machine scope')
     dependencies.extend(dict(path=p) for p in ['scripts/recipes/config/machine-admissions.json', 'scripts/recipes/config/machine-catalog.json'])
     for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','src/wild_encounter.c','include/random.h','include/constants/pokemon.h']:read(path)
-    def draw(seed):
-        seed=(seed*1103515245+24691)&0xffffffff;return seed,seed>>16
-    cases=[]
-    for team in identities:
-        pid=team['members'][0]['personality']
-        shiny_seed=next(seed for seed in range(1000000) if (draw(draw(seed)[0])[1]^draw(seed)[1]^(pid>>16)^(pid&65535))<8)
-        for initial in [42,shiny_seed]:
-            seed=initial;raw_draws=[];ots=[]
-            for member in team['members']:
-                while True:
-                    seed,lo=draw(seed);seed,hi=draw(seed);raw_draws.extend([lo,hi]);pid=member['personality']
-                    if hi^lo^(pid>>16)^(pid&65535)>=8:break
-                ots.append(lo|(hi<<16))
-            cases.append(dict(trainer=team['trainer'],initialSeed=initial,finalSeed=seed,draws=len(raw_draws),rawDraws=raw_draws,originalTrainerIds=ots))
     docs={
       'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
       'pokemon.json':dict(previousOwnedSpeciesCount=139,ownedSpeciesCount=146,previousOpponentSpeciesCount=168,opponentSpeciesCount=180,ownedSpeciesAdded=additions,trainerOnlySpeciesAdded=trainer_only,evolutionEdges=edges,species=[dict(definition=dict(id=species[s]['id'],evolutions=species[s]['evolutions']),metadata=metadata[s]) for s in additions+trainer_only]),
-      'rules.json':dict(identities=identities,generationCases=cases,trainerActors=actors),
       'encounters.json':dict(sourcePath='src/data/wild_encounters.json',encounters=encounters,fields=fields,heldItems=held,runtimeMethods=['land','surf','oldRod'],retainedMetadataOnlyMethods=['rockSmash','goodRod','superRod']),
       'machines.json':dict(previousSpeciesCount=139,speciesCount=146,machineCount=39,additions=cells,itemsAdded=[]),
     }
@@ -229,7 +209,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--dependency-root',required=True,type=Path)
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency_root)
-    files={'content/generated/data/regions/seven-island/'+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else (json.dumps(d,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()) for n,d in docs.items()}
+    files={'content/generated/data/regions/seven-island/'+n:(trainer_json(a.output/'content/generated', d, check=a.check) if n == 'trainers.json' else runtime_json_bytes(d, sort_keys=True, default=item_json)) for n,d in docs.items()}
     lock=dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
     for name,data in files.items():
         dest=a.output/name

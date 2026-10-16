@@ -42,5 +42,4 @@ public static class PretPokemonLeagueRules
         return result;
     }
 
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
 }

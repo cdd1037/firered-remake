@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify retained output parity and retired proof output boundaries.
 
-Tower's Git-reading parser receives retained raw bytes through a read-only adapter;
+Git-reading parsers receive retained raw bytes through a read-only adapter;
 this checks conversion parity, not Git authentication or original-C execution.
 """
 import sys as _bootstrap_sys
@@ -10,6 +10,7 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[2] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import importlib.util
+import io
 import json
 from pathlib import Path
 import sys
@@ -29,6 +30,73 @@ def load(name):
 
 
 class RuntimeProofRetirementTests(unittest.TestCase):
+    def _regional_source_reader(self, module):
+        def read_source(command, **kwargs):
+            self.assertEqual(['git', 'show'], command[:2])
+            self.assertEqual(3, len(command))
+            commit, path = command[2].split(':', 1)
+            self.assertEqual(module.COMMIT, commit)
+            self.assertFalse(Path(path).is_absolute())
+            self.assertNotIn('..', Path(path).parts)
+            return (ROOT / 'content/raw/pokefirered/037335f4' / path).read_bytes()
+        return read_source
+
+    def test_league_and_seven_outputs_keep_business_data_without_unused_reports(self):
+        for family in ('pokemon-league', 'league-rematch', 'seven-island'):
+            with self.subTest(family=family):
+                module = load('imports/story/import-' + family + '-rules.py')
+                with patch.object(module.subprocess, 'check_output', side_effect=self._regional_source_reader(module)):
+                    result = module.generate(ROOT, ROOT)
+                documents = result if isinstance(result, dict) else result[0]
+                expected_names = {'trainers.json', 'pokemon.json'}
+                if family == 'seven-island':
+                    expected_names |= {'encounters.json', 'machines.json', 'items.json'}
+                self.assertEqual(expected_names, documents.keys())
+                directory = ROOT / 'content/generated/data/regions' / family
+                self.assertFalse((directory / 'rules.json').exists())
+                for name, document in documents.items():
+                    if name == 'trainers.json':
+                        actual = module.trainer_json(ROOT / 'content/generated', document, check=True)
+                    else:
+                        actual = module.runtime_json_bytes(document, sort_keys=True, default=getattr(module, 'item_json', None))
+                    self.assertEqual((directory / name).read_bytes(), actual, name)
+
+                arguments = [module.__file__, str(ROOT), str(ROOT), str(ROOT), '--check']
+                if family == 'seven-island':
+                    arguments = [module.__file__, str(ROOT), str(ROOT), '--dependency-root', str(ROOT), '--check']
+                with patch.object(module.subprocess, 'check_output', side_effect=self._regional_source_reader(module)), \
+                     patch.object(sys, 'argv', arguments), patch.object(sys, 'stdout', io.StringIO()) as output:
+                    module.main()
+                self.assertTrue(json.loads(output.getvalue())['checked'])
+
+    def test_league_and_seven_reject_damaged_business_inputs(self):
+        for family in ('pokemon-league', 'league-rematch', 'seven-island'):
+            module = load('imports/story/import-' + family + '-rules.py')
+            read_source = self._regional_source_reader(module)
+            for damaged in ('party', 'battle-script'):
+                def broken_source(command, **kwargs):
+                    data = read_source(command, **kwargs)
+                    path = command[2].split(':', 1)[1]
+                    if damaged == 'party' and path == 'src/data/trainer_parties.h':
+                        self.assertIn(b'.species = SPECIES_', data)
+                        return data.replace(b'.species = SPECIES_', b'.unsupportedSpecies = SPECIES_')
+                    if damaged == 'battle-script':
+                        if family == 'seven-island' and path == 'data/scripts/trainers.inc':
+                            original = b'trainerbattle_single TRAINER_CRUSH_GIRL_CYNDY'
+                            self.assertIn(original, data)
+                            return data.replace(original, b'trainerbattle_unsupported TRAINER_CRUSH_GIRL_CYNDY')
+                        if family != 'seven-island' and path == 'data/maps/PokemonLeague_LoreleisRoom/scripts.inc':
+                            self.assertIn(b'trainerbattle_no_intro ', data)
+                            return data.replace(b'trainerbattle_no_intro ', b'trainerbattle_single ')
+                    return data
+
+                with self.subTest(family=family, damaged=damaged), \
+                     patch.object(module.subprocess, 'check_output', side_effect=broken_source):
+                    message = ('Unexpected member fields' if family == 'seven-island' else 'Unknown member field') \
+                        if damaged == 'party' else ('First trainer command' if family == 'seven-island' else 'Trainer script differs')
+                    with self.assertRaisesRegex(ValueError, message):
+                        module.generate(ROOT, ROOT)
+
     def test_seafoam_outputs_keep_business_data_without_unused_rules_report(self):
         module = load('imports/story/import-seafoam-rules.py')
 
