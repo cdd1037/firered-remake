@@ -7,7 +7,7 @@ public enum StoryOp
     ConditionalGoto, ConditionalCall, FlagGoto, FlagCall, Lock, Release,
     Dialog, Message, WaitMessage, CloseMessage, Delay, ApplyMovement, WaitMovement,
     Warp, WaitState, ObjectPosition, ObjectMovementType, ObjectVisible, TurnObject,
-    TextColor, Music, Sound, Door, FameChecker, Respawn, FacePlayer, PokemonPicture, GivePokemon, BufferSpecies, ScreenFade, Special, TrainerBattle, QuestLogJump, Unsupported, Multichoice, WaitButtonPress
+    TextColor, Music, Sound, Door, FameChecker, Respawn, FacePlayer, PokemonPicture, GivePokemon, BufferSpecies, ScreenFade, Special, TrainerBattle, QuestLogJump, Unsupported, Multichoice, WaitButtonPress, Random
 }
 public sealed record StorySource(string Path, string Symbol, int Line);
 public sealed record StoryInstruction(StoryOp Op, string Opcode, ImmutableArray<string> Args, StorySource Source);
@@ -186,6 +186,11 @@ public static class StoryRules
                     case StoryOp.Lock:state=state with{Locked=true};Effect(i);break;
                     case StoryOp.Release:state=state with{Locked=false};Effect(i);break;
                     case StoryOp.Dialog:Effect(i,a.Length>1&&a[1]=="MSGBOX_YESNO"?StoryWaitKind.Choice:StoryWaitKind.Dialog);break;
+                    case StoryOp.Random:
+                        if(i.Opcode!="random"||a.Length!=1)return Fault("event_random_operands", "random requires one maximum.");
+                        int maximum=Value(a[0]);
+                        if(maximum is <1 or >ushort.MaxValue)return Fault("event_random_maximum", "random maximum must be a positive u16.");
+                        Effect(i with {Args=[maximum.ToString(System.Globalization.CultureInfo.InvariantCulture)]},StoryWaitKind.NativeEffect);break;
                     case StoryOp.Multichoice:
                         if(StoryMenuRules.HasDefinition(i,catalog)&&StoryMenuRules.Resolve(i,catalog) is null)
                             return Fault("event_menu_invalid","Invalid catalog menu definition or operands.");

@@ -34,6 +34,9 @@ python scripts/imports/items/import-regional-items.py --group ssanne --check
 # 最终地图／场景服务／音频目录，不重放历史地域阶段
 python scripts/imports/rebuild-resources.py world field-rules field-services
 python scripts/imports/rebuild-resources.py audio-cues --check
+
+# 原版关都／全国图鉴证书画面与文本
+python scripts/imports/rebuild-resources.py diploma --check
 ```
 
 单文件资源的 `--out` / `--output` 指向 JSON 文件，不是同名目录。训练家导入还维护共享定义；非标准输出位置应显式传 `--generated-root`。物品图标临时输出至 `sprites/item-icons/`，最终用 `python scripts/lib/item_icon_exports.py --project-root <工程>` 合入 `sprites/items.png`。
@@ -59,12 +62,13 @@ connected-field、route1-encounter、route1-whiteout 和 wild-battle 的旧 fetc
 
 ## 重建与验证边界
 
-`imports/rebuild-resources.py` 统一编排明确选择的最终资源目标：world、field-rules、field-services、audio-cues。支持 `--raw` / `--out` 与 `--dry-run`。地图由 raw 直接生成最终格式及图集；所有目标支持只读 `--check`；world 在临时空目录生成后做语义／像素比较。旧地域前置编排不再保留。
+`imports/rebuild-resources.py` 统一编排明确选择的最终资源目标：world、field-rules、field-services、audio-cues、diploma。支持 `--raw` / `--out` 与 `--dry-run`。地图由 raw 直接生成最终格式及图集；所有目标支持只读 `--check`；world 在临时空目录生成后做语义／像素比较。旧地域前置编排不再保留。
 
 这个入口不假称覆盖所有游戏资源；物品、物种、故事和特殊 UI 的独立入口仍按真实依赖执行。音频 cue 已由源码与现有 pack/叫声库一次生成，pack 与叫声样本本身的重建要求见[资源再生说明](../docs/resource-reconstruction-guide.md)。
 
 ```sh
 python scripts/checks/test-script-layout.py
+python scripts/checks/test-diploma-import.py
 python scripts/checks/test-world-pipeline-oracle.py
 python scripts/checks/test-single-file-imports.py
 python scripts/checks/test-pokemon-import.py

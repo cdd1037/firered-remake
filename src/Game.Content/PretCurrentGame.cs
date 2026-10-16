@@ -676,7 +676,7 @@ public sealed partial class PretCampaignCatalog
         OldManTutorial = oldMan;
         PokemonStorageSource = pokemonStorage;
         EarlyPickups = fieldPickups;
-        FieldPickups = fieldPickups.Pickups.Select(p => new FieldPickupDefinition(p.Id, p.MapSymbol, p.Kind == "hiddenItem", p.SourceLocalId, p.X, p.Y, p.Elevation, p.Script, p.ItemSymbol, p.SourceItemId, new ItemId(p.ItemId), p.ItemName, p.Pocket, p.Quantity, p.Flag, p.SourceFlagId)).ToImmutableArray();
+        FieldPickups = fieldPickups.Pickups.Where(p => p.Kind != "hiddenItem").Select(p => new FieldPickupDefinition(p.Id, p.MapSymbol, p.Kind == "hiddenItem", p.SourceLocalId, p.X, p.Y, p.Elevation, p.Script, p.ItemSymbol, p.SourceItemId, new ItemId(p.ItemId), p.ItemName, p.Pocket, p.Quantity, p.Flag, p.SourceFlagId)).ToImmutableArray();
         EarlyShopDocument = earlyShop;
         var inventoryDefinitions = earlyShop.Catalog.Items.Select(i => i.Item)
             .Concat(questItems.Items)
@@ -722,37 +722,37 @@ public sealed partial class PretCampaignCatalog
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(FirstSeviiPickupDefinitions(firstSevii, firstSeviiItems, earlyShop.Catalog, compiled));
+            FieldPickups = FieldPickups.AddRange(FirstSeviiPickupDefinitions(firstSevii, firstSeviiItems, earlyShop.Catalog, compiled).Where(p => !p.Hidden));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(firstSevii.LandEncounters.Select(t => KeyValuePair.Create(t.Map, t)));
             FirstSeviiWaterEncounters = CinnabarWaterEncounters!.Add(FirstSeviiEncounterTables.Water);
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(VictoryRoadPickupDefinitions(victoryRoad, victoryRoadItems, earlyShop.Catalog, compiled));
+            FieldPickups = FieldPickups.AddRange(VictoryRoadPickupDefinitions(victoryRoad, victoryRoadItems, earlyShop.Catalog, compiled).Where(p => !p.Hidden));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(VictoryRoadEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             VictoryRoadWaterEncounters = FirstSeviiWaterEncounters!.Add(VictoryRoadEncounterTables.Water);
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(seviiRubyItems.Pickups);
+            FieldPickups = FieldPickups.AddRange(seviiRubyItems.Pickups.Where(p => !p.Hidden));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(SeviiRubyEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             SeviiRubyWaterEncounters = VictoryRoadWaterEncounters!.Add(SeviiRubyEncounterTables.Water);
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(fourIslandItems.Pickups);
+            FieldPickups = FieldPickups.AddRange(fourIslandItems.Pickups.Where(p => !p.Hidden));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(FourIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             FourIslandWaterEncounters = SeviiRubyWaterEncounters!.Add(FourIslandEncounterTables.Water);
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(sixIslandItems.Pickups);
+            FieldPickups = FieldPickups.AddRange(sixIslandItems.Pickups.Where(p => !p.Hidden));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(sixIsland.LandEncounters.Select(t => KeyValuePair.Create(t.Map, t)));
             SixIslandWaterEncounters = FourIslandWaterEncounters!.Add(SixIslandEncounterTables.Water);
         }
 
         {
-            FieldPickups = FieldPickups.AddRange(fiveIslandItems.Pickups);
+            FieldPickups = FieldPickups.AddRange(fiveIslandItems.Pickups.Where(p => !p.Hidden));
             LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(FiveIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
             FiveIslandWaterEncounters = SixIslandWaterEncounters!.Add(FiveIslandEncounterTables.Water);
         }
@@ -763,7 +763,7 @@ public sealed partial class PretCampaignCatalog
         if (FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != FieldPickups.Length)
             throw new InvalidDataException("cerulean_cave_pickup_composition");
 
-        FieldPickups = FieldPickups.AddRange(sevenItems.Pickups);
+        FieldPickups = FieldPickups.AddRange(sevenItems.Pickups.Where(p => !p.Hidden));
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(SevenIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
         SevenIslandWaterEncounters = CeruleanCaveWaterEncounters.Add(SevenIslandEncounterTables.Water);
         SeafoamWaterEncounters = SevenIslandWaterEncounters.Add(SeafoamEncounterTables.Water);
@@ -781,15 +781,18 @@ public sealed partial class PretCampaignCatalog
         FieldPickups=FieldPickups.AddRange(powerPickups);
         FieldPickups=FieldPickups.AddRange(SourceRegionPickupDefinitions(seafoam.NewMaps,seafoam.Items,seafoam.Contracts,
             PretSeafoamRegion.MapIdFromSourceSymbol,"seafoam",earlyShop.Catalog,compiled));
-        FieldPickups = FieldPickups.Add(CopycatHiddenPickup(copycatHouse, earlyShop.Catalog, compiled));
-        FieldPickups = FieldPickups.AddRange(PretGameCornerHiddenCoins.Pickups(maps[new(GameCornerCoinSource.Map)], compiled));
-        var capeBrinkPickups = CapeBrinkHiddenPickups(capeBrinkTutor, earlyShop.Catalog, compiled);
-        FieldPickups = FieldPickups.AddRange(capeBrinkPickups);
         FieldPickups = FieldPickups.AddRange(originalTmAcquisition.MachineBallPickups(machines));
         FieldPickups = FieldPickups.AddRange(originalTmAcquisition.MemorialPickups(earlyShop.Catalog));
         FieldPickups = FieldPickups.AddRange(LostCavePickupDefinitions(lostCave, earlyShop.Catalog, compiled));
-        FieldPickups = FieldPickups.AddRange(cyclingRoad.HiddenPickups(earlyShop.Catalog));
-        CapeBrinkUnderfootItems = capeBrinkPickups.Where(p => p.ItemSymbol == "ITEM_PP_MAX")
+        if (FieldPickups.Any(p => p.Hidden))
+            throw new InvalidDataException("hidden_pickups_require_world_binding");
+        FieldPickups = FieldPickups.AddRange(PretWorldHiddenPickups.Load(world, sharedItems));
+        if (FieldPickups.Where(p => p.ItemSymbol != "ITEM_NONE").Any(p => !Inventory.Items.ContainsKey(p.Item)))
+            throw new InvalidDataException("field_pickup_inventory_admission");
+        var underfootFlags = world.Maps.Values.SelectMany(map => map.Events.GetProperty("bg_events").EnumerateArray())
+            .Where(row => row.GetProperty("type").GetString() == "hidden_item" && row.GetProperty("underfoot").GetBoolean())
+            .Select(row => row.GetProperty("flag").GetString()!).ToHashSet(StringComparer.Ordinal);
+        WorldUnderfootItems = FieldPickups.Where(p => p.Hidden && underfootFlags.Contains(p.Flag))
             .Select(p => new ItemfinderUnderfoot(p.MapSymbol, p.X, p.Y, p.Elevation, p.ItemSymbol, p.SourceItemId,
                 p.Flag, p.SourceFlagId, p.Quantity)).ToImmutableArray();
         LandEncounters=LandEncounters!.ToImmutableDictionary().Add(PowerPlantEncounterTables.Land.Map,PowerPlantEncounterTables.Land);

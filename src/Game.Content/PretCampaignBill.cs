@@ -9,8 +9,8 @@ public sealed partial class PretCampaignCatalog
 {
     private static IEnumerable<FieldPickupDefinition> BillPickupDefinitions(PretBillItemsDocument items,MachineCatalog machines,PretStoryCompilation scripts)
     {
-        // Hidden Elixir/berries retain authenticated source metadata. Their pocket/use
-        // closure is a separate increment; unsupported interactions reject in preflight.
+        // Visible machine balls use the regional script contract; every hidden event
+        // is bound once by PretWorldHiddenPickups from the selected world.
         foreach(var p in items.Pickups.Where(p=>p.Kind=="visible"))
         {
             var item=machines.Machines.Single(m=>m.Machine.Item.Id==p.Item).Machine.Item;

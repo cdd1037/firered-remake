@@ -58,7 +58,7 @@ class ScriptLayoutTests(unittest.TestCase):
                             self.assertTrue((ROOT / value).is_file(), value)
 
     def test_entry_points_do_not_depend_on_working_directory(self):
-        entries = ('imports/source/materialize-source.py', 'imports/rebuild-resources.py')
+        entries = ('imports/source/materialize-source.py', 'imports/rebuild-resources.py', 'imports/presentation/import-diploma.py')
         with tempfile.TemporaryDirectory() as temporary:
             for entry in entries:
                 with self.subTest(entry=entry):
@@ -131,6 +131,12 @@ class ResourceEntryTests(unittest.TestCase):
             self.module.build_commands(['field-rules'], self.raw, self.out, pack=pack)
         with self.assertRaises(ValueError):
             self.module.build_commands(['audio-cues'], self.raw, self.out, pack=self.out / 'audio/cues.json')
+
+    def test_diploma_uses_selected_raw_and_dedicated_output(self):
+        commands = self.module.build_commands(['diploma'], self.raw, self.out, check=True)
+        self.assertEqual(1, len(commands))
+        self.assertEqual('import-diploma.py', Path(commands[0][1]).name)
+        self.assertEqual(['--raw', str(self.raw), '--out', str(self.out / 'ui/diploma'), '--check'], commands[0][2:])
 
     def test_missing_audio_input_fails_before_other_targets_write(self):
         with patch.object(self.module.subprocess, 'run') as run:

@@ -39,15 +39,6 @@ public sealed partial class PretCampaignCatalog
                 item.GetProperty("elevation").GetInt32(),label,symbol,ordinary?.SourceItemId??machine!.SourceItemId,id,
                 ordinary?.Name??machine!.Name,ordinary?.Pocket??machine!.Pocket,1,flag,flagId);
         }
-        foreach(var row in region.Contracts.GetProperty("hiddenItems").EnumerateArray())
-        {
-            var item=row.GetProperty("event");var map=region.NewMaps[new(row.GetProperty("map").GetString()!)];
-            var definition=shop.Items.Single(i=>i.Id.Value=="pret:"+item.GetProperty("item").GetString());
-            string flag=item.GetProperty("flag").GetString()!;
-            if(!scripts.TryConstant(flag,out int flagId)||item.GetProperty("underfoot").GetBoolean())throw new InvalidDataException("cinnabar_hidden_source");
-            yield return new("cinnabar:"+flag,map.SourceMapSymbol,true,null,item.GetProperty("x").GetInt32(),item.GetProperty("y").GetInt32(),
-                item.GetProperty("elevation").GetInt32(),"EventScript_HiddenItemScript",definition.SourceItemSymbol,definition.SourceItemId,
-                definition.Id,definition.Name,definition.Pocket,item.GetProperty("quantity").GetInt32(),flag,flagId);
-        }
+
     }
 }

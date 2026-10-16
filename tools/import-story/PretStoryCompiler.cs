@@ -378,7 +378,7 @@ public static partial class PretStoryCompiler
     }
     private static (StoryOp,int,int)? GameCornerCoinsInstructionShape(PretSourceScriptFile file,string label,string opcode,ImmutableArray<string> operands)
     {
-        if (FirstSeviiSource(file,PretGameCornerHiddenCoins.ScriptPath) &&
+        if (FirstSeviiSource(file,"data/scripts/obtain_item.inc") &&
             label == "EventScript_TryPickUpHiddenCoins" && opcode is "checkcoins" or "addcoins")
         {
             string argument = opcode == "checkcoins" ? "VAR_RESULT" : "VAR_0x8006";
@@ -450,6 +450,7 @@ public static partial class PretStoryCompiler
         }
         return op switch
         {
+            "random"=>(StoryOp.Random,1,1),
             "goto_if_questlog"=>(StoryOp.QuestLogJump,1,1),
             "end"=>(StoryOp.End,0,0),"return"=>(StoryOp.Return,0,0),"goto"=>(StoryOp.Goto,1,1),"call"=>(StoryOp.Call,1,1),
             "setflag" or "setworldmapflag"=>(StoryOp.SetFlag,1,1),"clearflag"=>(StoryOp.ClearFlag,1,1),"setvar" or "setorcopyvar"=>(StoryOp.SetVar,2,2),"copyvar"=>(StoryOp.CopyVar,2,2),

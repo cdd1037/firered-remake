@@ -4,7 +4,6 @@ using Game.Domain.Pokemon;
 namespace Game.Application;
 
 public sealed record CampaignDaisyGrooming(bool ChoosingParty, int PartyIndex = -1, long? InstanceId = null, bool Groomed = false);
-public enum CampaignDeferredNativeScreen { Diploma }
 
 public sealed partial class CampaignSession
 {
@@ -88,9 +87,8 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("ordinary_native_wait_context");
             if (daisy && effect.Source.Symbol == DaisyPrefix + "GroomMon" && state.DaisyGrooming is { ChoosingParty: true })
                 next = state with { Dialogue = null, Script = state.Script with { Wait = state.Script.Wait with { Kind = StoryWaitKind.PartySelection } } };
-            else if (!daisy && effect.Source.Symbol == DesignerPrefix + "ShowDiploma" && state.DeferredNativeScreen == CampaignDeferredNativeScreen.Diploma)
-                next = state with { Dialogue = new("service.diploma.deferred", ["The diploma screen is\nnot available yet."], 0, false, true),
-                    Script = state.Script with { Wait = state.Script.Wait with { Kind = StoryWaitKind.Dialog } } };
+            else if (!daisy && effect.Source.Symbol == DesignerPrefix + "ShowDiploma" && state.Diploma is not null)
+                next = state with { Dialogue = null, SignMessage = null, ScreenIsBlack = false, PresentationTicks = 0 };
             else throw new InvalidDataException("ordinary_native_wait_owner");
             return true;
         }
@@ -131,9 +129,9 @@ public sealed partial class CampaignSession
                 next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", name[..Math.Min(10, name.Length)]) }; return true;
             case "HasAllKantoMons": next = Result(KantoPokedexRules.HasAllKantoMons(state.CaughtSpecies) ? 1 : 0); return true;
             case "ShowDiploma":
-                if (!KantoPokedexRules.HasAllKantoMons(state.CaughtSpecies) || state.DeferredNativeScreen is not null)
+                if (!KantoPokedexRules.HasAllKantoMons(state.CaughtSpecies) || state.Diploma is not null)
                     throw new InvalidDataException("diploma_completion_context");
-                next = state with { DeferredNativeScreen = CampaignDeferredNativeScreen.Diploma }; return true;
+                next = state with { Diploma = new(_content.EvaluateNationalDex(state.SeenSpecies, state.CaughtSpecies).Complete) }; return true;
             default: throw new InvalidDataException("ordinary_native_unsupported: " + function);
         }
     }

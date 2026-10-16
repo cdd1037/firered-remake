@@ -65,7 +65,7 @@ public sealed class PretOriginalTmAcquisition
     }
 
     public ImmutableArray<FieldPickupDefinition> MemorialPickups(EarlyShopCatalog shop) =>
-        _pickups.Memorial.Select(p => {
+        _pickups.Memorial.Where(p => !p.Hidden).Select(p => {
             var item = shop.Items.SingleOrDefault(i => i.Id.Value == "pret:" + p.ItemSymbol)
                 ?? throw new InvalidDataException("Memorial item is not admitted: " + p.ItemSymbol);
             return BindPickup(p, item.SourceItemId, item.Name, item.Pocket);

@@ -151,20 +151,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
                 source.GetProperty("x").GetInt32(), source.GetProperty("y").GetInt32(), source.GetProperty("elevation").GetInt32(),
                 label, symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, quantity, flag, flagId));
         }
-        foreach (var row in contracts.GetProperty("hiddenItems").EnumerateArray())
-        {
-            var source = row.GetProperty("event");
-            var map = regionMaps[resolveMap(row.GetProperty("map").GetString()!)];
-            string symbol = source.GetProperty("item").GetString()!,flag = source.GetProperty("flag").GetString()!;
-            var item = Item(symbol);
-            if (source.GetProperty("quantity").GetInt32() != 1 || source.GetProperty("underfoot").GetBoolean() ||
-                !map.Events.GetProperty("bg_events").EnumerateArray().Any(e => JsonElement.DeepEquals(e, source)) ||
-                !scripts.TryConstant(flag, out int flagId))
-                throw new InvalidDataException(proofId+"_hidden_source:" + flag);
-            pickups.Add(new(proofId+":" + flag, map.SourceMapSymbol, true, null,
-                source.GetProperty("x").GetInt32(), source.GetProperty("y").GetInt32(), source.GetProperty("elevation").GetInt32(),
-                "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId));
-        }
+
         if (pickups.Select(p => p.SourceFlagId).Distinct().Count() != pickups.Count)
             throw new InvalidDataException(proofId+"_pickup_scope");
         return pickups.ToImmutable();

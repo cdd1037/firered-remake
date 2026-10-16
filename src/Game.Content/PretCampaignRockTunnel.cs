@@ -18,7 +18,7 @@ public sealed partial class PretCampaignCatalog
     private static IEnumerable<FieldPickupDefinition> RockTunnelPickupDefinitions(
         PretRockTunnelItemsDocument items,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)
     {
-        foreach (var pickup in items.Pickups)
+        foreach (var pickup in items.Pickups.Where(p => p.Kind != "hidden"))
         {
             var item = shop.Items.FirstOrDefault(i => i.Id == pickup.Item);
             var machine = MachineRules.Definition(machines, pickup.Item)?.Machine.Item;
@@ -29,10 +29,10 @@ public sealed partial class PretCampaignCatalog
             string pocket = item?.Pocket ?? machine!.Pocket;
             if (!scripts.TryConstant(pickup.Flag, out int flag))
                 throw new InvalidDataException("rocktunnel_pickup_flag_missing: " + pickup.Flag);
-            bool hidden = pickup.Kind == "hidden";
+
             string map = "MAP_" + Regex.Replace(pickup.Map, "([a-z])([A-Z])", "$1_$2").ToUpperInvariant();
-            yield return new("rocktunnel:" + pickup.Flag, map, hidden, pickup.LocalObjectId,
-                pickup.X, pickup.Y, pickup.Elevation, hidden ? "EventScript_HiddenItemScript" : pickup.Script!,
+            yield return new("rocktunnel:" + pickup.Flag, map, false, pickup.LocalObjectId,
+                pickup.X, pickup.Y, pickup.Elevation, pickup.Script!,
                 symbol, itemNumber, pickup.Item, name, pocket, pickup.Quantity, pickup.Flag, flag);
         }
     }

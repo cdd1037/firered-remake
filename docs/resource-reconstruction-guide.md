@@ -47,8 +47,11 @@ python scripts/imports/rebuild-resources.py field-rules field-services
 # 由源码和现有合成素材生成唯一音频 cue 目录。
 python scripts/imports/rebuild-resources.py audio-cues
 
+# 原版图鉴证书，两张画面和文本／布局数据。
+python scripts/imports/rebuild-resources.py diploma
+
 # 检查而不修改；也可用独立输出目录重建再对照。
-python scripts/imports/rebuild-resources.py world field-rules field-services audio-cues --check
+python scripts/imports/rebuild-resources.py world field-rules field-services audio-cues diploma --check
 python scripts/imports/rebuild-resources.py world --out /tmp/firered-world-check
 ```
 
@@ -104,3 +107,5 @@ python scripts/imports/story/import-story.py
 导入等价不等于完整游戏自然通关、全部动画视觉验收或扬声器听感验收。阶段清理
 的实际检查范围见[整合记录](script-consolidation.md)。备份恢复重放、Drive 上传
 目前均不作为本轮验证步骤。
+
+图鉴证书的独立输入闭包、屏幕块转换与重建检查见 [Pokédex diploma](pokedex-diploma.md)。

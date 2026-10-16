@@ -35,19 +35,6 @@ public sealed partial class PretCampaignCatalog
             yield return new("safari:" + flag, map.SourceMapSymbol, false, local, x, y,
                 actor.GetProperty("elevation").GetInt32(), label, symbol, number, id, name, pocket, 1, flag, sourceFlag);
         }
-        foreach (var row in region.Contracts.GetProperty("hiddenItems").EnumerateArray())
-        {
-            var declaration = row.GetProperty("declaration");
-            var id = new ItemId("pret:" + declaration.GetProperty("item").GetString()!);
-            var item = shop.Items.Single(i => i.Id == id);
-            var map = region.SourceMaps[new(row.GetProperty("map").GetString()!)];
-            string flag = declaration.GetProperty("flag").GetString()!;
-            if (!scripts.TryConstant(flag, out int sourceFlag) || declaration.GetProperty("underfoot").GetBoolean())
-                throw new InvalidDataException("safari_hidden_pickup_source");
-            yield return new("safari:" + flag, map.SourceMapSymbol, true, null,
-                declaration.GetProperty("x").GetInt32(), declaration.GetProperty("y").GetInt32(),
-                declaration.GetProperty("elevation").GetInt32(), "EventScript_HiddenItemScript", item.SourceItemSymbol,
-                item.SourceItemId, item.Id, item.Name, item.Pocket, declaration.GetProperty("quantity").GetInt32(), flag, sourceFlag);
-        }
+
     }
 }

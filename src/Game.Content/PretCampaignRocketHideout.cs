@@ -49,7 +49,7 @@ public sealed partial class PretCampaignCatalog
     private static IEnumerable<FieldPickupDefinition> RocketHideoutPickupDefinitions(
         PretRocketHideoutPickupsDocument pickups,EarlyShopCatalog shop,MachineCatalog machines,PretRocketHideoutRegion region,PretStoryCompilation scripts)
     {
-        foreach (var pickup in pickups.Pickups)
+        foreach (var pickup in pickups.Pickups.Where(p => p.Kind != "hidden"))
         {
             var item = shop.Items.SingleOrDefault(i => i.Id == pickup.Item);
             var machine = MachineRules.Definition(machines, pickup.Item)?.Machine.Item;
@@ -62,9 +62,9 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("rocket-hideout_pickup_flag_differs: " + pickup.Flag);
             if (!region.NewMaps.ContainsKey(PretRocketHideoutRegion.MapIdFromSourceSymbol(pickup.Map)))
                 throw new InvalidDataException("rocket-hideout_pickup_map_missing: " + pickup.Map);
-            bool hidden = pickup.Kind == "hidden";
-            yield return new("rocket-hideout:" + pickup.Flag, pickup.Map, hidden, pickup.LocalId,
-                pickup.X, pickup.Y, pickup.Elevation, hidden ? "EventScript_HiddenItemScript" : pickup.Script!,
+
+            yield return new("rocket-hideout:" + pickup.Flag, pickup.Map, false, pickup.LocalId,
+                pickup.X, pickup.Y, pickup.Elevation, pickup.Script!,
                 symbol, itemNumber, pickup.Item, name, pocket, pickup.Quantity, pickup.Flag, flag);
         }
     }

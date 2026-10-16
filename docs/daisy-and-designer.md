@@ -15,13 +15,13 @@ This slice adds no maps and reads only generated runtime resources. It uses the 
 
 `src/pokedex.c:HasAllKantoMons` checks caught National Dex entries 1–150 inclusive, excluding Mew alone. Seen entries, Mew, and later-generation catches cannot replace a missing Kanto catch. A single normal FireRed save is not asserted to be able to obtain every entry without external dependencies.
 
-The original condominium 3F script now reaches its incomplete-Dex reply or congratulations normally. At the complete branch, `ShowDiploma` produces the explicit transient `CampaignDeferredNativeScreen.Diploma` outcome. Its following wait displays a dismissible “The diploma screen is not available yet.” notice, then the original script releases field control. This is an honest unsupported visual boundary, not a fabricated diploma, award, screenshot, or completed original screen.
+The original condominium 3F script reaches its incomplete-Dex reply or congratulations normally. The subsequent collection slice replaces the initial unavailable-screen notice with the original Kanto/National native certificate and the suspended source waitstate callback. See [Pokédex diploma](pokedex-diploma.md) for the resource, completion, input and return-to-field contracts.
 
 ## Verification boundary
 
 Focused generated-only application tests exercise the original scripts from controlled valid checkpoint states. Domain tests cover massage bands, bonus ordering, cap, eggs/fainting, and all 150 missing-entry cases. These are not natural new-game-to-League route evidence. The historic checkpoint remains untouched and still requires an explicit known lifetime hatch count migration; test fixtures retain their documented synthetic counter.
 
-Remaining native side-service presentation includes the badge-topic list menu, museum fossil pictures, diploma screen, and photo-printer behavior. This slice does not implement those visuals, communication facilities, or e-Reader content. Actual audio output and full original visual parity remain open.
+Badge-topic list menus, museum fossil pictures and the diploma were completed by subsequent slices; their dedicated documents own the current verification boundaries. Photo-printer behavior, communication facilities and e-Reader content remain outside this slice. Actual audio output and full original visual parity remain open.
 
 Reproducible commands (SDK 10.0.401, target/runtime major 10):
 

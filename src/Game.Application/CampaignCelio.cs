@@ -24,7 +24,6 @@ public sealed partial class CampaignSession
     private const string CelioHandoffScript = "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire";
     private const string CelioSapphireScript = "OneIsland_PokemonCenter_1F_EventScript_SetSapphireMetatile";
     private const string CelioMachineScript = "OneIsland_PokemonCenter_1F_EventScript_SetNetworkMachineOn";
-    private const string CelioBillFactScript = "OneIsland_PokemonCenter_1F_EventScript_CelioGiveBillFact";
     private const string CelioLinkFlag = "FLAG_SYS_CAN_LINK_WITH_RS";
     private const string CelioCaveGuardFlag = "FLAG_HIDE_CERULEAN_CAVE_GUARD";
     private const string CelioLoreleiFlag = "FLAG_HIDE_LORELEI_IN_HER_HOUSE";

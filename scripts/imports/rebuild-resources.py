@@ -20,6 +20,7 @@ TARGET_SCRIPTS = {
     'field-services': ('scripts/imports/story/import-city-services.py',
                        'scripts/imports/story/import-field-services.py'),
     'audio-cues': ('scripts/imports/audio/build-cue-catalog.py',),
+    'diploma': ('scripts/imports/presentation/import-diploma.py',),
 }
 
 
@@ -48,6 +49,8 @@ def build_commands(targets, raw, out, *, pack=None, cries=None, check=False):
                     raise ValueError('Audio cue output overlaps an audio input')
                 arguments = ['--reference', str(raw), '--pack', str(pack), '--cries', str(cries),
                              '--output', str(output)]
+            elif target == 'diploma':
+                arguments = ['--raw', str(raw), '--out', str(out / 'ui/diploma')]
             else:
                 arguments = ['--raw', str(raw), '--out', str(out)]
             if check:
@@ -85,6 +88,7 @@ def main(argv=None):
                '  field-rules    Early/world field rules, encounters and interactive field art.\n'
                '  field-services City/rod items, trades, field service/battle bindings and item atlas.\n'
                '  audio-cues     Cue catalog from source + existing pack and normal-cries.\n'
+               '  diploma        Original Kanto/National certificate artwork, text and layout.\n'
                '\nThere is no implicit all target or best-effort skipping. A failed step stops the run.\n'
                '--check is read-only for every target; world recompiles in a temporary directory.')
     parser.add_argument('targets', nargs='+', choices=tuple(TARGET_SCRIPTS))

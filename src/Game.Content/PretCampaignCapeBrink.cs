@@ -13,7 +13,6 @@ public sealed partial class PretCampaignCatalog
 {
     public PretCapeBrinkTutor CapeBrinkTutor { get; }
     public WaterEncounterCatalog CapeBrinkWaterEncounters { get; }
-    private ImmutableArray<ItemfinderUnderfoot> CapeBrinkUnderfootItems { get; }
 
     private static void ValidateCapeBrinkComposition(PretCapeBrinkTutor source,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {
@@ -76,34 +75,5 @@ public sealed partial class PretCampaignCatalog
             water.RawEncounterRate, water.Slots.Select(s => (s.Index, s.Species, s.MinimumLevel, s.MaximumLevel, s.Weight)));
     }
 
-    private static ImmutableArray<FieldPickupDefinition> CapeBrinkHiddenPickups(PretCapeBrinkTutor source,EarlyShopCatalog shop,PretStoryCompilation scripts)
-    {
-        EarlyShopInventoryRules.ValidateCatalog(shop);
-        var map = source.NewMaps[PretCapeBrinkTutor.CapeMapId];
-        var events = map.Events.GetProperty("bg_events");
-        var hidden = source.EncountersAndItems.GetProperty("hiddenItems");
-        if (!JsonElement.DeepEquals(events, hidden) || hidden.GetArrayLength() != 2)
-            throw new InvalidDataException("cape_brink_hidden_source_events");
-        var result = ImmutableArray.CreateBuilder<FieldPickupDefinition>();
-        foreach (var row in hidden.EnumerateArray())
-        {
-            string symbol = row.GetProperty("item").GetString()!,flag = row.GetProperty("flag").GetString()!;
-            var item = shop.Items.SingleOrDefault(i => i.SourceItemSymbol == symbol)
-                ?? throw new InvalidDataException("cape_brink_hidden_item_missing:" + symbol);
-            var declaration = source.EncountersAndItems.GetProperty("itemDeclarations").EnumerateArray()
-                .Single(i => i.GetProperty("itemId").GetString() == symbol);
-            if (!scripts.TryConstant(flag, out int flagId) || source.Constants[flag] != flagId ||
-                source.Constants[symbol] != item.SourceItemId || item.Id.Value != "pret:" + symbol ||
-                item.Name != declaration.GetProperty("english").GetString() || item.Pocket != declaration.GetProperty("pocket").GetString() ||
-                item.Price != declaration.GetProperty("price").GetInt32() || item.FieldUseFunction != declaration.GetProperty("fieldUseFunc").GetString() ||
-                row.GetProperty("quantity").GetInt32() != 1 || row.GetProperty("elevation").GetInt32() != 3 ||
-                (symbol == "ITEM_PP_MAX" ? row.GetProperty("x").GetInt32() != 16 || row.GetProperty("y").GetInt32() != 28 || !row.GetProperty("underfoot").GetBoolean() :
-                    symbol != "ITEM_RARE_CANDY" || row.GetProperty("x").GetInt32() != 15 || row.GetProperty("y").GetInt32() != 13 || row.GetProperty("underfoot").GetBoolean()))
-                throw new InvalidDataException("cape_brink_hidden_source_item:" + symbol);
-            result.Add(new("cape-brink:" + flag, map.SourceMapSymbol, true, null,
-                row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32(), row.GetProperty("elevation").GetInt32(),
-                "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId));
-        }
-        return result.ToImmutable();
-    }
+
 }

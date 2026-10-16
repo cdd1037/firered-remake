@@ -42,14 +42,6 @@ public sealed partial class PretCampaignCatalog
             yield return new("silph:"+flag,map.SourceMapSymbol,false,local,x,y,actor.GetProperty("elevation").GetInt32(),label,symbol,
                 ordinary?.SourceItemId??source.SourceItemId,id,ordinary?.Name??source.Name,ordinary?.Pocket??source.Pocket,1,flag,sourceFlag);
         }
-        foreach(var row in region.Contracts.GetProperty("hiddenItems").EnumerateArray())
-        {
-            var d=row.GetProperty("declaration");var item=shop.Items.Single(i=>i.Id.Value=="pret:"+d.GetProperty("item").GetString());
-            var map=region.NewMaps[new(row.GetProperty("map").GetString()!)];string flag=d.GetProperty("flag").GetString()!;
-            if(!scripts.TryConstant(flag,out int sourceFlag)||d.GetProperty("underfoot").GetBoolean())throw new InvalidDataException("silph_hidden_source");
-            yield return new("silph:"+flag,map.SourceMapSymbol,true,null,d.GetProperty("x").GetInt32(),d.GetProperty("y").GetInt32(),
-                d.GetProperty("elevation").GetInt32(),"EventScript_HiddenItemScript",item.SourceItemSymbol,item.SourceItemId,item.Id,item.Name,item.Pocket,
-                d.GetProperty("quantity").GetInt32(),flag,sourceFlag);
-        }
+
     }
 }

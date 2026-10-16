@@ -12,23 +12,7 @@ public sealed partial class PretCampaignCatalog
     public PokeDollShopStock? PokeDollShopStock =>
         EarlyShop!.Items.Any(i => i.Id == ItemIds.PokeDollId) ? new() : null;
 
-    private static FieldPickupDefinition CopycatHiddenPickup(PretCopycatHouse house,EarlyShopCatalog shop,PretStoryCompilation scripts)
-    {
-        EarlyShopInventoryRules.ValidateCatalog(shop);
-        var map = house.NewMaps[PretCopycatHouse.Floor2MapId];
-        var hidden = map.Events.GetProperty("bg_events").EnumerateArray()
-            .Single(e => e.GetProperty("type").GetString() == "hidden_item");
-        const string symbol = "ITEM_NUGGET",flag = "FLAG_HIDDEN_ITEM_SAFFRON_CITY_COPYCATS_HOUSE_2F_NUGGET";
-        var item = shop.Items.SingleOrDefault(i => i.Id.Value == "pret:" + symbol);
-        if (hidden.GetProperty("item").GetString() != symbol || hidden.GetProperty("flag").GetString() != flag ||
-            hidden.GetProperty("x").GetInt32() != 2 || hidden.GetProperty("y").GetInt32() != 1 ||
-            hidden.GetProperty("elevation").GetInt32() != 0 || hidden.GetProperty("quantity").GetInt32() != 1 ||
-            hidden.GetProperty("underfoot").GetBoolean() || item?.SourceItemSymbol != symbol ||
-            !scripts.TryConstant(flag, out int flagId))
-            throw new InvalidDataException("copycat_hidden_source");
-        return new("copycat:" + flag, map.SourceMapSymbol, true, null, 2, 1, 0,
-            "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId);
-    }
+
 
     private static void ValidateCopycatHouseComposition(PretCopycatHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {

@@ -51,6 +51,6 @@ public sealed partial class PretCampaignCatalog
         }
         return new(x, y, elevation, "EventScript_HiddenItemScript", source.GetProperty("item").GetString(),
             source.GetProperty("flag").GetString(), source.GetProperty("quantity").GetInt32())
-        { Underfoot = enabled && source.GetProperty("underfoot").GetBoolean() };
+        { Underfoot = source.GetProperty("underfoot").GetBoolean() };
     }
 }

@@ -126,17 +126,6 @@ public sealed partial class CampaignSession
                 return true;
             }
         }
-        if (effect.Opcode == "random" && effect.Source.Symbol == CelioBillFactScript)
-        {
-            RequireCelioEffect(state, effect);
-            if (!a.SequenceEqual(new[] { "3" }) || !state.Script.Locked || !CelioCompleted(state) ||
-                state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 7)
-                throw new InvalidDataException("celio_bill_fact_context");
-            var draw = Gen3Rng.Next(state.World.Rng, "celio.bill-fact", 3);
-            next = state with { World = state.World with { Rng = draw.State },
-                Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", draw.Trace.Result) } };
-            return true;
-        }
         return false;
     }
 }

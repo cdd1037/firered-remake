@@ -65,7 +65,7 @@ public sealed class DaisyDesignerServicesTests : WildBattleFixture
                 Assert.IsTrue(stopAtParty, "party selection must be explicit");
                 return texts;
             }
-            if (stopAtDiploma && session.State.DeferredNativeScreen == CampaignDeferredNativeScreen.Diploma) return texts;
+            if (stopAtDiploma && session.State.Diploma is not null) return texts;
             if (session.State.Dialogue is null && session.State.Script.Completed && session.State.Script.Wait is null && session.State.EntryPrograms.IsEmpty) return texts;
             Send(session, new("ack", Choice: session.State.Script.Wait?.Kind == StoryWaitKind.Choice ? choice : null));
         }
@@ -296,7 +296,7 @@ public sealed class DaisyDesignerServicesTests : WildBattleFixture
 
     [TestMethod]
     [DataRow(false)][DataRow(true)]
-    public void DesignerChecksCaughtKantoSpeciesAndExplicitlyDefersTheDiploma(bool complete)
+    public void DesignerChecksCaughtKantoSpeciesAndOpensNativeDiploma(bool complete)
     {
         var state = FieldFixture();
         state = state with { SeenSpecies = state.SeenSpecies.Union(Enumerable.Range(1, 151)),
@@ -308,17 +308,108 @@ public sealed class DaisyDesignerServicesTests : WildBattleFixture
         var texts = Finish(session, stopAtDiploma: true);
         if (complete) {
             Assert.IsTrue(texts.Contains(DesignerText + "CompletedPokedexCongratulations"));
-            Assert.AreEqual(CampaignDeferredNativeScreen.Diploma, session.State.DeferredNativeScreen);
-            Assert.IsNotNull(session.State.Dialogue, "unavailable native screen must have an explicit acknowledgement");
+            Assert.AreEqual(new CampaignDiploma(false), session.State.Diploma);
+            Assert.IsNull(session.State.Dialogue);
+            Assert.AreEqual(StoryWaitKind.Presentation, session.State.Script.Wait?.Kind);
+            RejectUnchanged(session, new("ack"));
+            RejectUnchanged(session, new("move", Direction: Direction.West));
             Assert.AreEqual("save_event_active", session.ValidatePlayerSave(session.State));
+            Send(session, new("diploma_complete"));
             Finish(session);
         } else {
             Assert.IsTrue(texts.Contains(DesignerText + "ImGameDesignerShowMeFinishedPokedex"));
-            Assert.IsNull(session.State.DeferredNativeScreen);
+            Assert.IsNull(session.State.Diploma);
         }
-        Assert.IsNull(session.State.DeferredNativeScreen);
+        Assert.IsNull(session.State.Diploma);
         Assert.AreEqual(party, CanonicalJson.Hash(session.State.Party));
         Assert.AreEqual(caught, CanonicalJson.Hash(session.State.CaughtSpecies));
         StrictRoundtrip(session);
     }
+
+    [TestMethod]
+    [DataRow(false)][DataRow(true)]
+    public void NationalDiplomaUsesInternalSpeciesMappingAndHasNoSeparateUnlockGate(bool omitRequiredHoennSpecies)
+    {
+        var state = FieldFixture();
+        var required = content.PokedexMenu!.Entries.Values
+            .Where(e => e.NationalNumber is not (151 or 249 or 250 or 251 or 385 or 386))
+            .Select(e => e.SourceSpeciesId).ToImmutableSortedSet();
+        Assert.AreEqual(380, required.Count);
+        Assert.IsTrue(required.Contains(content.PokedexMenu.NationalEntries[280].SourceSpeciesId));
+        if (omitRequiredHoennSpecies) required = required.Remove(content.PokedexMenu.NationalEntries[280].SourceSpeciesId);
+        state = state with { SeenSpecies = state.SeenSpecies.Union(required), CaughtSpecies = state.CaughtSpecies.Union(required),
+            UnownPokedexPersonality = state.UnownPokedexPersonality ?? 0,
+            // Explicit synthetic unlock receipt for this collection fixture, not recovered player history.
+            TanobyCompletion = state.TanobyCompletion ?? new(
+                (string)typeof(CampaignSession).GetField("TanobyKeySourceSha256", BindingFlags.Static | BindingFlags.NonPublic)!.GetRawConstantValue()!,
+                content.SevenIslandField!.TanobyKey.Boulders.Select(b => b.LocalId).ToImmutableArray()),
+            Script = state.Script with { Flags = state.Script.Flags.SetItem("FLAG_SYS_UNLOCKED_TANOBY_RUINS", true) } };
+        var session = Start(Place(state, "map.celadon-city-condominiums-3f", 3, 9));
+        var inventory = session.State.Inventory;
+        var party = session.State.Party;
+        var rng = session.State.World.Rng;
+        var flags = session.State.Script.Flags;
+        for (int visit = 0; visit < 2; visit++) {
+            Send(session, new("interact")); Finish(session, stopAtDiploma: true);
+            Assert.AreEqual(!omitRequiredHoennSpecies, session.State.Diploma!.National);
+            // The callback itself has no National-unlock check. Probe that contract without
+            // pretending a postgame save with its National gate removed would be restorable.
+            var program = content.FindProgram("CeladonCity_Condominiums_3F_EventScript_ShowDiploma")!;
+            int index = Enumerable.Range(0, program.Instructions.Length).Single(i =>
+                program.Instructions[i].Opcode == "special" && program.Instructions[i].Args.SequenceEqual(new[] { "ShowDiploma" }));
+            var instruction = program.Instructions[index];
+            var withoutGate = session.State with { Diploma = null, NationalDexMagic = 0,
+                Script = session.State.Script with { Stack = [new(program.Id, index + 1)],
+                    Wait = new(StoryWaitKind.NativeEffect, "test-diploma-gate"),
+                    Flags = session.State.Script.Flags.SetItem("FLAG_SYS_NATIONAL_DEX", false),
+                    Variables = session.State.Script.Variables.SetItem("VAR_NATIONAL_DEX", 0) } };
+            var callback = typeof(CampaignSession).GetMethod("TryApplyDaisyAndDesignerEffect", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            object?[] arguments = [withoutGate, new StoryEffect(0, instruction.Opcode, instruction.Args, instruction.Source), null];
+            Assert.IsTrue((bool)callback.Invoke(session, arguments)!);
+            Assert.AreEqual(!omitRequiredHoennSpecies, ((CampaignState)arguments[2]!).Diploma!.National);
+            Assert.AreEqual("save_event_active", session.ValidatePlayerSave(session.State));
+            RejectUnchanged(session, new("ack"));
+            Send(session, new("diploma_complete")); Finish(session);
+            Assert.IsNull(session.State.Diploma);
+            Assert.IsTrue(session.State.Script.Completed);
+            Assert.IsFalse(session.State.Script.Locked);
+            Assert.IsNull(session.State.Script.Wait);
+            Assert.AreEqual(inventory, session.State.Inventory);
+            Assert.AreEqual(party, session.State.Party);
+            Assert.AreEqual(rng, session.State.World.Rng);
+            Assert.AreEqual(CanonicalJson.Hash(flags), CanonicalJson.Hash(session.State.Script.Flags));
+            StrictRoundtrip(session);
+        }
+        RejectUnchanged(session, new("diploma_complete"));
+    }
+
+    [TestMethod]
+    public void DiplomaReturnRejectsForgedWaitActorAndInstructionOwnership()
+    {
+        var state = FieldFixture();
+        state = state with { SeenSpecies = state.SeenSpecies.Union(Enumerable.Range(1, 150)),
+            CaughtSpecies = state.CaughtSpecies.Union(Enumerable.Range(1, 150)) };
+        var session = Start(Place(state, "map.celadon-city-condominiums-3f", 3, 9));
+        Send(session, new("interact")); Finish(session, stopAtDiploma: true);
+        var method = typeof(CampaignSession).GetMethod("TryDecideDiploma", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var active = session.State;
+        CampaignState[] forged = [
+            active with { LastTalked = null },
+            active with { Script = active.Script with { Locked = false } },
+            active with { Script = active.Script with { QuestLogState = 1 } },
+            active with { Script = active.Script with { Wait = active.Script.Wait! with { Kind = StoryWaitKind.Dialog } } },
+            active with { Script = active.Script with { Stack = [] } },
+            active with { Script = active.Script with { Variables = active.Script.Variables.SetItem("VAR_LAST_TALKED", 99) } }
+        ];
+        foreach (var wrong in forged) {
+            var hash = CanonicalJson.Hash(wrong);
+            object?[] arguments = [wrong, new CampaignCommand("diploma_complete"), null];
+            Assert.IsTrue((bool)method.Invoke(session, arguments)!);
+            var decision = (Decision<CampaignState>)arguments[2]!;
+            Assert.AreEqual(CommandStatus.Rejected, decision.Status);
+            Assert.AreEqual(hash, CanonicalJson.Hash(decision.State));
+        }
+        Send(session, new("diploma_complete")); Finish(session); StrictRoundtrip(session);
+    }
+
 }

@@ -36,6 +36,12 @@ public sealed partial class CampaignSession
                     if(!CampaignSlotMachineTransactions.OwnsCallback(probe,_content))throw new InvalidDataException("slot_preflight_callback_context");
                     continue;
                 }
+                if(probe.Diploma is not null)
+                {
+                    var diploma=Decide(probe,new("diploma_complete"));
+                    if(diploma.Status!=CommandStatus.Accepted)throw new InvalidDataException("script_preflight: "+program+": "+diploma.Error);
+                    pending.Enqueue(diploma.State);continue;
+                }
                 // These are already-owned application workflows with separate admission contracts.
                 if(probe.DaisyGrooming is not null||probe.TownMap is not null||probe.EggHatch is not null||probe.DayCareInteraction is not null||probe.SeafoamMovement is not null||probe.RuinValleyCut is not null||probe.DottedHoleFall is not null||probe.FourIslandMovement is not null||probe.PokemonLeagueCompletion is not null||probe.Seagallop is not null||probe.Pc is not null||probe.Shop is not null||probe.DoubleBattle is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null||probe.NpcTrade is not null||probe.NameRater is not null||probe.MoveTutor is not null||probe.MoveReminder is not null||probe.MoveDeleter is not null||probe.SizeRecord is not null)continue;
                 if(probe.Script.Completed&&probe.Script.Wait is null)continue;

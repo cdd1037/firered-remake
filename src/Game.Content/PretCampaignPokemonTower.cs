@@ -28,12 +28,12 @@ public sealed partial class PretCampaignCatalog
     }
     private static IEnumerable<FieldPickupDefinition> PokemonTowerPickupDefinitions(PretPokemonTowerPickupsDocument pickups,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
-        foreach(var p in pickups.OrdinaryPickups)
+        foreach(var p in pickups.OrdinaryPickups.Where(p => p.Kind != "hidden"))
         {
             var item=shop.Items.Single(i=>i.Id==p.Item);
             if(!scripts.TryConstant(p.Flag,out int flag)||flag!=p.SourceFlagId)throw new InvalidDataException("tower_pickup_flag_source");
-            bool hidden=p.Kind=="hidden";
-            yield return new("pokemon-tower:"+p.Flag,p.Map,hidden,p.LocalId,p.X,p.Y,p.Elevation,hidden?"EventScript_HiddenItemScript":p.Script!,
+
+            yield return new("pokemon-tower:"+p.Flag,p.Map,false,p.LocalId,p.X,p.Y,p.Elevation,p.Script!,
                 item.SourceItemSymbol,item.SourceItemId,item.Id,item.Name,item.Pocket,p.Quantity,p.Flag,flag);
         }
     }

@@ -14,12 +14,6 @@ public static partial class PretStoryCompiler
         if (!owned || !FirstSeviiSource(file,PretCelioStory.SourcePath))
             return (StoryOp.Unsupported,0,int.MaxValue);
         if (handoffSpecial && label != PretCelioStory.HandoffLabel) return (StoryOp.Unsupported,0,int.MaxValue);
-        if (opcode == "random")
-        {
-            if (label != PretCelioStory.Prefix + "EventScript_CelioGiveBillFact" || !operands.SequenceEqual(new[] { "3" }))
-                throw new InvalidDataException("celio_bill_random_operands");
-            return (StoryOp.Special,1,1);
-        }
         // Restore the normal typed operations after Five's intentionally closed handoff gate.
         // Nothing is swallowed: Special must be handled by Application, or it faults.
         return Shape(opcode, false, false, false, false, false, false, false, false, false, false);

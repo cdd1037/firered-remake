@@ -15,15 +15,13 @@ public sealed class PretCyclingRoadRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public CyclingRoadTrainerCatalog Trainers { get; }
     public ImmutableArray<EarlyLandEncounterTable> LandEncounters { get; }
-    private readonly ImmutableDictionary<string, int> _constants;
 
     private PretCyclingRoadRegion(ImmutableDictionary<MapId, PretWorldMap> maps, CyclingRoadTrainerCatalog trainers, string directory,
-        ImmutableDictionary<string, int> constants, ImmutableArray<EarlyLandEncounterTable> landEncounters)
+        ImmutableArray<EarlyLandEncounterTable> landEncounters)
     {
         NewMaps = maps;
         Trainers = trainers;
         LandEncounters = landEncounters;
-        _constants = constants;
     }
 
     public static bool IsRoadOrGate(MapId map) =>
@@ -56,19 +54,7 @@ public sealed class PretCyclingRoadRegion
             !land.Select(t => t.Map.Value).ToHashSet().SetEquals(["map.route-17", "map.route-18"]))
             throw new InvalidDataException("cycling_road_land_maps");
         foreach (var table in land) EarlyLandEncounterRules.ValidateTableDefinition(table);
-        return new(maps, trainers, source.Directory, PretSharedConstants.ForPackage(source.Directory), land);
+        return new(maps, trainers, source.Directory, land);
     }
 
-    public ImmutableArray<FieldPickupDefinition> HiddenPickups(EarlyShopCatalog shop) =>
-        NewMaps[Route17MapId].Events.GetProperty("bg_events").EnumerateArray()
-            .Where(e => e.GetProperty("type").GetString() == "hidden_item").Select(e =>
-            {
-                string symbol = e.GetProperty("item").GetString()!;
-                string flag = e.GetProperty("flag").GetString()!;
-                var item = shop.Items.Single(i => i.Id.Value == "pret:" + symbol);
-                return new FieldPickupDefinition("cycling-road:" + flag, "MAP_ROUTE17", true, null,
-                    e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
-                    "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket,
-                    e.GetProperty("quantity").GetInt32(), flag, _constants[flag]);
-            }).ToImmutableArray();
 }

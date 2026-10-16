@@ -3,6 +3,7 @@
     <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
     <Compile Include="../../src/Game.Godot/*PresentationAssets.cs" Link="PresentationAssets/%(Filename)%(Extension)" />
+    <Compile Include="../../src/Game.Godot/DiplomaPresentation.cs" Link="DiplomaPresentation.cs" />
     <Compile Include="../../src/Game.Godot/PresentationPackage.cs" Link="PresentationPackage.cs" />
     <Compile Include="../../src/Game.Godot/PresentationDexIndex.cs" Link="PresentationDexIndex.cs" />
     <Compile Include="../../src/Game.Godot/SourceVerticalMenuPresentation.cs" Link="SourceVerticalMenuPresentation.cs" />
