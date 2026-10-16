@@ -24,6 +24,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task RegionalEncounters() => Run("test-regional-encounter-imports.py");
     [TestMethod]
+    public Task MtEmberSummitEncounters() => Run("test-mt-ember-summit-encounters.py");
+    [TestMethod]
     public Task FieldTilesetRegeneration() => Run("test-field-tilesets.py");
     [TestMethod]
     public Task FameChecker() => Run("test-fame-checker-importer.py", "--git-dir", TestAssets.Source);

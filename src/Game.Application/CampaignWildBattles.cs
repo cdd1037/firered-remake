@@ -108,7 +108,7 @@ public sealed partial class CampaignSession
         seafoamReceipt=PrepareSeafoamReceipt(state,generated,seafoamOrigin,seafoamReceipt,seafoamGenerationRng,
             scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin);
         var sourceTableReceipt=PrepareSourceTableReceipt(state,generated,sourceTableOrigin,sourceTableGenerationRng,
-            scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin,scriptedSnorlax:scriptedSnorlaxRoute==16);
+            scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin,scriptedSnorlax:scriptedSnorlaxRoute==16,rockSmash:rockSmashReceipt is not null);
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
         var encounterKind=surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land;
@@ -279,13 +279,15 @@ public sealed partial class CampaignSession
             // CB2_EndMarowakBattle sends defeat directly to CB2_WhiteOut. Its
             // suspended map script is abandoned, not resumed as a non-victory.
             // Random wild battles have no suspended caller to clear.
-            var lost=b.RockSmashReceipt is not null||b.LostelleHypno is not null||b.ScriptedMarowak||b.ScriptedSnorlaxRoute!=0||IsMewtwoBattle(b)||IsEventIslandBattle(b)||IsPowerPlantStaticBattle(b)||IsArticunoBattle(b)?state with{Dialogue=null,Motions=[],PresentationTicks=0,
+            var lost=b.RockSmashReceipt is not null||b.LostelleHypno is not null||b.ScriptedMarowak||b.ScriptedSnorlaxRoute!=0||IsMewtwoBattle(b)||IsEventIslandBattle(b)||IsPowerPlantStaticBattle(b)||IsArticunoBattle(b)||IsSourceScriptedBattle(b)?state with{Dialogue=null,Motions=[],PresentationTicks=0,
                 Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false}}:state;
-            if(b.ScriptedSnorlaxRoute!=0||IsMewtwoBattle(b)||IsEventIslandBattle(b)||IsPowerPlantStaticBattle(b)||IsArticunoBattle(b))lost=lost with{Script=lost.Script with{Flags=lost.Script.Flags.Remove(SpecialWildFlag)}};
+            if(b.ScriptedSnorlaxRoute!=0||IsMewtwoBattle(b)||IsEventIslandBattle(b)||IsPowerPlantStaticBattle(b)||IsArticunoBattle(b)||IsSourceScriptedBattle(b))lost=lost with{Script=lost.Script with{Flags=lost.Script.Flags.Remove(SpecialWildFlag)}};
+            if(IsSourceScriptedBattle(b))lost=lost with{SourceScriptedPreparation=null,SourceScriptedReturn=null};
             if(IsArticunoBattle(b))lost=lost with{ArticunoPreparation=null,ArticunoReturn=null};
             if(IsPowerPlantStaticBattle(b))lost=lost with{PowerPlantPreparation=null,PowerPlantReturn=null};
             return WhiteOutFromRoute1(lost);
         }
+        if(IsSourceScriptedBattle(b))return ReturnFromSourceScriptedBattle(state,b);
         if(b.RockSmashReceipt is not null)return ReturnFromRockSmashBattle(state,b);
         if(IsArticunoBattle(b))return ReturnFromArticunoBattle(state,b);
         if(IsPowerPlantStaticBattle(b))return ReturnFromPowerPlantBattle(state,b);

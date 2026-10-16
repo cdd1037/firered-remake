@@ -7,17 +7,20 @@ namespace Game.Domain.Battle;
 internal static class SourceBattleOutcomeRules
 {
     internal static SourceBattleFrame SetOutcome(SourceBattleFrame frame, WildBattleOutcome outcome,
-        RoamerBattleOutcome? sourceOutcome = null)
+        SourceWildBattleOutcome? sourceOutcome = null)
     {
         var next = frame with { Outcome = outcome,
             TrainerEncounter = outcome != WildBattleOutcome.Ongoing && frame.TrainerEncounter is { } trainer
                 ? trainer with { StaleCurrentMove = Game.Domain.Trainers.SourceTrainerEncounterPolicy.NoMove, PlayerFaintedThisTurn = false }
                 : frame.TrainerEncounter };
-        if (next.WildEncounter?.CelioRoamer is not { } origin) return next;
+        if (next.WildEncounter is not { } encounter) return next;
         var mapped = sourceOutcome ?? outcome switch {
-            WildBattleOutcome.Won => RoamerBattleOutcome.Won, WildBattleOutcome.Lost => RoamerBattleOutcome.Lost,
-            WildBattleOutcome.Draw => RoamerBattleOutcome.Drew, WildBattleOutcome.Caught => RoamerBattleOutcome.Caught,
-            WildBattleOutcome.Escaped => RoamerBattleOutcome.Ran, _ => (RoamerBattleOutcome?)null };
-        return next with { WildEncounter = next.WildEncounter with { CelioRoamer = origin with { SourceOutcome = mapped } } };
+            WildBattleOutcome.Won => SourceWildBattleOutcome.Won, WildBattleOutcome.Lost => SourceWildBattleOutcome.Lost,
+            WildBattleOutcome.Draw => SourceWildBattleOutcome.Drew, WildBattleOutcome.Caught => SourceWildBattleOutcome.Caught,
+            WildBattleOutcome.Escaped => SourceWildBattleOutcome.Ran, _ => (SourceWildBattleOutcome?)null };
+        next = next with { WildEncounter = encounter with { SourceOutcome = mapped } };
+        return encounter.CelioRoamer is not { } origin ? next : next with {
+            WildEncounter = next.WildEncounter with { CelioRoamer = origin with {
+                SourceOutcome = mapped is { } result ? (RoamerBattleOutcome)(int)result : null } } };
     }
 }

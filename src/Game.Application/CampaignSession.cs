@@ -149,6 +149,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEventIslandReturn? EventIslandReturn{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignArticunoPreparation? ArticunoPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? ArticunoReturn{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSourceScriptedPreparation? SourceScriptedPreparation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSourceScriptedReturn? SourceScriptedReturn{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignPowerPlantPreparation? PowerPlantPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignPowerPlantReturn? PowerPlantReturn{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMewtwoPreparation? MewtwoPreparation{get;init;}
@@ -580,7 +582,7 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Accepted,state with{Party=state.Party.SetItem(naming.PartyIndex,mon with{Nickname=name}),Nickname=naming with{Submitted=true},TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",name),ScreenIsBlack=false,PresentationTicks=16,Script=state.Script with{Wait=wait with{Kind=StoryWaitKind.Presentation}}});
             }
             if(command.Kind is "sign_tick" or "sign_cancel")return DecideRegionalSignWalkaway(state,command);
-            if(command.Kind=="button_press")return ArticunoButtonWait(state)?DecideArticunoButton(state,command):PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):DecideOakRatingButton(state,command);
+            if(command.Kind=="button_press")return SourceScriptedButtonWait(state)?DecideSourceScriptedButton(state,command):ArticunoButtonWait(state)?DecideArticunoButton(state,command):PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):DecideOakRatingButton(state,command);
             if(command.Kind=="ack")
             {
                 if(state.Script.Wait is not {} wait)return new(CommandStatus.Rejected,state,"no_pending_event");
@@ -800,6 +802,7 @@ public sealed partial class CampaignSession
             if(TryApplyTrainerTowerElevatorEffect(state,effect,out var towerElevatorState)){state=towerElevatorState;continue;}
             if(TryApplyTrainerTowerEffect(state,effect,out var trainerTowerState)){state=trainerTowerState;continue;}
             if(TryApplyArticunoEffect(state,effect,out var articunoState)){state=articunoState;continue;}
+            if(TryApplySourceScriptedEffect(state,effect,out var sourceScriptedState)){state=sourceScriptedState;continue;}
             if(TryApplyPowerPlantEffect(state,effect,out var powerPlantState)){state=powerPlantState;continue;}
             if(TryApplyEventIslandBattleEffect(state,effect,out var eventBattleState)){state=eventBattleState;continue;}
             if(TryApplyEventIslandFieldEffect(state,effect,out var eventIslandFieldState)){state=eventIslandFieldState;continue;}

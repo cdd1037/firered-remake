@@ -311,6 +311,8 @@ public static partial class PretStoryCompiler
                         }
                         if(includeGiftOpcodes&&OriginalTmAcquisitionInstructionShape(file,label,opcode,operands) is {} originalTmShape)
                             (kind,min,max)=originalTmShape;
+                        if (SourceScriptedEncounterInstructionShape(file, label, opcode, operands) is { } scriptedShape)
+                            (kind,min,max) = scriptedShape;
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");
                         if(kind==StoryOp.Unsupported)unsupported.Add(new("opcode_unsupported",$"{file.Path}:{lineNumber}",opcode));
                         instructions.Add(new(kind,opcode,operands,new(file.Path,label,lineNumber)));

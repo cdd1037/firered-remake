@@ -173,7 +173,7 @@ public static partial class SourceWildBattlePolicy
             Publish(ref next, events, (n, t) => new SourceRoamerRunEvent(n, t, escaped));
             if (escaped)
             {
-                next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Escaped, RoamerBattleOutcome.MonFled);
+                next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Escaped, SourceWildBattleOutcome.MonFled);
                 Publish(ref next, events, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Escaped));
             }
         }
@@ -196,7 +196,7 @@ public static partial class SourceWildBattlePolicy
             Publish(ref next, events, (n, t) => new SourceRunAttemptEvent(n, t, before, attempts, p, o, threshold, roll, escaped) { EscapingItem = item });
             if (escaped)
             {
-                next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Escaped, RoamerBattleOutcome.Ran);
+                next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Escaped, SourceWildBattleOutcome.Ran);
                 Publish(ref next, events, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Escaped));
             }
             else if (frame.FourTurn?.Phase != SourceFourActionPhase.ReplacementsPending) BeginItem(ref next, events, clearGrudge: false);

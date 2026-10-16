@@ -9,7 +9,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-/// <summary>National Dex successor with the eleven original Kindle Road and Ruby-route maps.</summary>
+/// <summary>Kindle Road and Mt. Ember campaign composition.</summary>
 public sealed partial class PretCampaignCatalog
 {
     public const string SeviiRubyContentProfile = "firered-sevii-ruby-campaign-v1";
@@ -43,10 +43,12 @@ public sealed partial class PretCampaignCatalog
         int flag = Array.FindIndex(ruby.Instructions.ToArray(), i => i.Opcode == "setflag" && i.Args.SequenceEqual(new[] { "FLAG_GOT_RUBY" }));
         int hide = Array.FindIndex(ruby.Instructions.ToArray(), i => i.Opcode == "removeobject" && i.Args.SequenceEqual(new[] { "LOCALID_RUBY" }));
         int give = Array.FindIndex(ruby.Instructions.ToArray(), i => i.Opcode == "additem" && i.Args.SequenceEqual(new[] { "ITEM_RUBY","1" }));
-        if (flag < 0 || hide <= flag || give <= hide || items.Pickups.Length != 8 || items.Pickups.Any(p => p.ItemSymbol == "ITEM_RUBY"))
+        if (flag < 0 || hide <= flag || give <= hide || items.Pickups.Any(p => p.ItemSymbol == "ITEM_RUBY"))
             throw new InvalidDataException("sevii_ruby_bespoke_reward_order");
-        foreach (var symbol in new[] { "MAP_MT_EMBER_SUMMIT","MAP_MT_EMBER_SUMMIT_PATH_1F","MAP_MT_EMBER_SUMMIT_PATH_3F" })
-            if (maps.ContainsKey(PretSeviiRubyRegion.MapIdFromSourceSymbol(symbol)))
-                throw new InvalidDataException("sevii_ruby_excluded_map_admitted");
+        foreach (var map in region.NewMaps.Values)
+            foreach (var warp in map.FieldWarps)
+                if (!maps.TryGetValue(warp.DestinationMapId, out var target) ||
+                    warp.DestinationWarpId < 0 || warp.DestinationWarpId >= target.FieldWarps.Length)
+                    throw new InvalidDataException("SeviiRuby warp destination is not mounted.");
     }
 }

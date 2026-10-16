@@ -64,7 +64,7 @@ public sealed partial class CampaignSession
         }
         return false;
     }
-    private static int SnorlaxSourceOutcome(CampaignWildBattle battle)=>battle.Frame!.Outcome switch
+    private static int SnorlaxSourceOutcome(CampaignWildBattle battle)=>battle.Frame!.WildEncounter?.SourceOutcome is {} sourceOutcome ? (int)sourceOutcome : battle.Frame.Outcome switch
     {
         WildBattleOutcome.Won=>1,WildBattleOutcome.Lost=>2,WildBattleOutcome.Draw=>3,
         WildBattleOutcome.Escaped=>battle.Events.Any(e=>e is WildBattleForcedOutEvent {TrainerBattle:false})?5:4,

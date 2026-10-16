@@ -1289,6 +1289,12 @@
     },
     {
       "id": {
+        "value": "pret:SPECIES_MOLTRES"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
         "value": "pret:SPECIES_DRATINI"
       },
       "evolutions": [
@@ -3064,6 +3070,12 @@
     {
       "id": {
         "value": "pret:SPECIES_ZAPDOS"
+      },
+      "evolutions": []
+    },
+    {
+      "id": {
+        "value": "pret:SPECIES_MOLTRES"
       },
       "evolutions": []
     },

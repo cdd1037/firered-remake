@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticate the bounded One Island / Mt. Ember Ruby region; execute no upstream code."""
+"""Authenticate the bounded One Island / Mt. Ember region; execute no upstream code."""
 import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
@@ -7,7 +7,8 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from map_runtime import publish_map_package, generated_root
 
 from shared_constants import package_documents
-import argparse, ast, collections,  importlib.util, json, re, sys, tempfile
+import argparse, ast, collections, importlib.util, io, json, re, sys, tempfile
+from PIL import Image
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = _PROJECT_ROOT
@@ -17,7 +18,8 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 CORE = ['OneIsland_KindleRoad', 'MtEmber_Exterior', 'MtEmber_RubyPath_1F',
         'MtEmber_RubyPath_B1F', 'MtEmber_RubyPath_B2F', 'MtEmber_RubyPath_B3F',
         'MtEmber_RubyPath_B4F', 'MtEmber_RubyPath_B5F',
-        'MtEmber_RubyPath_B1F_Stairs', 'MtEmber_RubyPath_B2F_Stairs']
+        'MtEmber_RubyPath_B1F_Stairs', 'MtEmber_RubyPath_B2F_Stairs',
+        'MtEmber_SummitPath_1F', 'MtEmber_SummitPath_2F', 'MtEmber_SummitPath_3F', 'MtEmber_Summit']
 SUPPORT = ['OneIsland_KindleRoad_EmberSpa']
 ANCHOR = ['OneIsland', 'OneIsland_PokemonCenter_1F']
 TILESETS = {'gTileset_General':'primary/general',
@@ -146,18 +148,20 @@ def constants(src, shared, worlds, scripts):
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--reference-root',type=Path,required=True)
+    inputs=ap.add_mutually_exclusive_group(required=True)
+    inputs.add_argument('--reference-root',type=Path)
+    inputs.add_argument('--raw-root',type=Path)
     ap.add_argument('--dependency-root',type=Path,default=ROOT)
     ap.add_argument('--project-root',type=Path,default=ROOT)
     ap.add_argument('--check',action='store_true');args=ap.parse_args()
     safe(args.project_root.absolute())
-    target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve();safe(target)
-    need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
+    target=args.project_root.resolve();dep=args.dependency_root.resolve();ref=args.reference_root.resolve() if args.reference_root else None;safe(target)
+    if ref is not None:need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
     reader=module(dep / 'scripts/imports/source/import-cinnabar-source-preparation.py', 'ruby_reader')
     prep=module(dep / 'scripts/lib/prepare_first_sevii.py', 'ruby_script_index')
     reader.PRODUCT=dep;reader.TILESETS=TILESETS;reader.PROFILE=PROFILE
     prep.CORE=CORE;prep.SUPPORT=SUPPORT;prep.ANCHOR=['OneIsland_PokemonCenter_1F']
-    src=reader.Source(ref);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
+    src=reader.Source(ref,raw_root=args.raw_root);worlds=[reader.decode(src,n) for n in CORE+SUPPORT]
     for n in ANCHOR:src.read(f'data/maps/{n}/map.json','reused-anchor-events')
     scripts=prep.script_index(src,reader);scripts['profile']=PROFILE
 
@@ -232,10 +236,26 @@ def main():
 
             outputs=outputs)
         manifestbytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifestbytes)
-        writes=[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=([(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())] if ref is not None else [])+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        atlas=None
         for p,b in writes:
             safe(p)
-            if args.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
+            if args.check:
+                if p.suffix=='.png' and p.is_relative_to(target/'content/generated'):
+                    with Image.open(io.BytesIO(b)) as expected:expected=expected.convert('RGBA')
+                    if p.is_file():
+                        with Image.open(p) as actual:actual=actual.convert('RGBA')
+                    else:
+                        if atlas is None:
+                            atlas_module=module(ROOT/'scripts/imports/maps/import-map-atlases.py','sevii_ruby_atlas_reader')
+                            atlas=atlas_module.AtlasReader(target/'content/generated/maps/atlases')
+                        actual=atlas.read(p.relative_to(target/'content/generated').as_posix())
+                    need(actual.size==expected.size and actual.tobytes()==expected.tobytes(),'Map RGBA differs: '+str(p))
+                elif p.name=='manifest.json' and p.is_file() and p.read_bytes()!=b:
+                    # Atlas publication removes the PNG entries; omitted pixels were checked above.
+                    packed=dict(manifest,outputs=[row for row in outputs if not row['path'].endswith('.png')])
+                    need(p.read_bytes()==canonical(packed),'Regeneration differs: '+str(p))
+                else:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))
             else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
         print(json.dumps({k:v for k,v in manifest.items() if k!='outputs'}|dict(outputCount=len(outputs),fileCount=len(writes),totalBytes=sum(len(b) for _,b in writes)),indent=2))
 

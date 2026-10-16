@@ -8,7 +8,7 @@ public static class SourceTableEncounterRegistry
 {
     public static ImmutableArray<EarlyLandEncounterTable> Land { get; } = CapeBrinkEncounterTables.Land
         .Add(Route16LandEncounterTables.Route16).AddRange(MemorialPillarEncounterTables.Land)
-        .AddRange(LostCaveEncounterTables.Land);
+        .AddRange(LostCaveEncounterTables.Land).AddRange(MtEmberSummitEncounterTables.Land);
     public static ImmutableArray<WaterEncounterTable> Water { get; } = CapeBrinkEncounterTables.Water
         .AddRange(MemorialPillarEncounterTables.Water).AddRange(LostCaveEncounterTables.Water);
     public static ImmutableArray<OldRodEncounterTable> OldRod { get; } = CapeBrinkEncounterTables.OldRod

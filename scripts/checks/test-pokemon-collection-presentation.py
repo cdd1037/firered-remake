@@ -84,6 +84,31 @@ class PokemonCollectionPresentationTests(unittest.TestCase):
                 with Image.open(io.BytesIO(output[f'{stem}-{side}-{variant}.png'])) as actual:
                     self.assertEqual(expected, actual.convert('RGBA').tobytes())
 
+    def test_moltres_menu_pixels_and_flying_battle_coordinates_match_source(self):
+        output = compiler.convert(self.recipe, self.sources, ROOT)
+        def palette(path):
+            return [tuple((int(c) >> 3) * 8 + (int(c) >> 5) for c in line.split())
+                    for line in self.sources[path].decode().splitlines()[3:]]
+        for kind, size, palette_path in (
+            ('icon', 32, 'graphics/pokemon/icon_palettes/icon_palette_0.pal'),
+            ('footprint', 16, 'graphics/pokedex/kanto_dex_bgpals.pal')):
+            with Image.open(io.BytesIO(self.sources[f'graphics/pokemon/moltres/{kind}.png'])) as source:
+                indices = source.crop((0, 0, 32, 32)).tobytes() if kind == 'icon' else \
+                    [int(pixel == 0) for pixel in source.convert('L').tobytes()]
+            colors = palette(palette_path)
+            expected = bytes(channel for index in indices for channel in (*colors[index], 255 if index else 0))
+            with Image.open(io.BytesIO(output[f'moltres-{kind}.png'])) as actual:
+                self.assertEqual((size, size), actual.size)
+                self.assertEqual(expected, actual.convert('RGBA').tobytes())
+        data = json.loads(output['catalog.json'])
+        entry = next(row for row in data['entries'] if row['species']['value'] == 'pret:SPECIES_MOLTRES')
+        self.assertEqual(146, entry['sourceSpeciesId'])
+        self.assertEqual(compiler.BASE + 'moltres-front-normal.png', entry['portrait']['texturePath'])
+        sprites = [row for row in data['sprites'] if row['species']['value'] == 'pret:SPECIES_MOLTRES']
+        self.assertEqual(4, len(sprites))
+        for row in sprites:
+            self.assertEqual((144, 9) if row['side'] == 'front' else (40, 52), (row['x'], row['y']))
+
     def test_empty_duplicate_and_unowned_species_rejected(self):
         for selection in ([], self.recipe['species'] * 2,
                           [dict(symbol='TREECKO', graphicsName='Treecko', portraitPath='unused')]):

@@ -751,6 +751,46 @@
       }
     },
     {
+      "path": "data/maps/MtEmber_Summit/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/MtEmber_Summit/scripts.inc",
+        "Symbol": "MAP_MT_EMBER_SUMMIT",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
+      "path": "data/maps/MtEmber_SummitPath_1F/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/MtEmber_SummitPath_1F/scripts.inc",
+        "Symbol": "MAP_MT_EMBER_SUMMIT_PATH_1F",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
+      "path": "data/maps/MtEmber_SummitPath_2F/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/MtEmber_SummitPath_2F/scripts.inc",
+        "Symbol": "MAP_MT_EMBER_SUMMIT_PATH_2F",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
+      "path": "data/maps/MtEmber_SummitPath_3F/scripts.inc",
+      "sourceRef": {
+        "Kind": 1,
+        "Path": "data/maps/MtEmber_SummitPath_3F/scripts.inc",
+        "Symbol": "MAP_MT_EMBER_SUMMIT_PATH_3F",
+        "Repository": "pret/pokefirered",
+        "Commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+      }
+    },
+    {
       "path": "data/maps/MtMoon_1F/scripts.inc",
       "sourceRef": {
         "Kind": 1,

@@ -77,6 +77,8 @@ public static class CampaignWildHistoryRetention
 
     private static (string Family, int Variant)? EventKey(CampaignWildHistory b)
     {
+        if (b.SourceTableReceipt?.Origin is { Kind: SourceTableEncounterKind.Scripted } scripted)
+            return ("source-scripted:" + scripted.Map.Value, scripted.Slot);
         if (b.CelioRoamer is not null) return ("celio-roamer", 0);
         if (b.EventIslandReceipt is { } island) return ("event-island", (int)island.Origin.Kind);
         if (b.CeruleanCaveOrigin?.Kind == CeruleanCaveEncounterKind.Mewtwo || b.MewtwoReceipt is not null)

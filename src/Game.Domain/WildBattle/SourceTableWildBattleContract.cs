@@ -6,7 +6,7 @@ using Game.Domain.Randomness;
 
 namespace Game.Domain.WildBattle;
 
-public enum SourceTableEncounterKind { Land, Surf, OldRod }
+public enum SourceTableEncounterKind { Land, Surf, OldRod, Scripted }
 public sealed record SourceTableWildOrigin(MapId Map, SourceTableEncounterKind Kind, int Slot)
 {
     public string RulesVersion { get; init; } = SourceTableWildBattleContract.Version;
@@ -22,6 +22,11 @@ public static class SourceTableWildBattleContract
     {
         if (origin is null || origin.RulesVersion != Version || origin.Slot < 0)
             return null;
+        if (origin.Kind == SourceTableEncounterKind.Scripted)
+        {
+            var definition = SourceScriptedEncounterRegistry.Find(origin);
+            return definition is null ? null : new(definition.Species, definition.Level, definition.Level);
+        }
         if (origin.Kind == SourceTableEncounterKind.Land)
         {
             var table = SourceTableEncounterRegistry.Land
@@ -57,7 +62,14 @@ public static class SourceTableWildBattleContract
         if (!ValidOwned(owned) || SourceSlot(origin) is not { } slot || !owned.Catalog.Species.ContainsKey(slot.Species) ||
             level < slot.MinimumLevel || level > slot.MaximumLevel || rng.AlgorithmId != Gen3Rng.AlgorithmId)
             throw new ArgumentException("source_table_wild_generation");
-        var made = Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, slot.Species, level, rng, trainerId);
+        Route1WildPokemonResult made;
+        if (origin.Kind == SourceTableEncounterKind.Scripted)
+        {
+            var created = SourcePokemonFactory.Create(owned.Mechanics,
+                new(slot.Species, level, trainerId, IvPolicy.Random, PersonalityPolicy.Random), rng);
+            made = new(created.Pokemon, created.Rng, created.Trace);
+        }
+        else made = Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, slot.Species, level, rng, trainerId);
         if (!SourceInitialInstance(owned, origin, made.Pokemon)) throw new InvalidOperationException("source_table_wild_identity");
         return made;
     }

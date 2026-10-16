@@ -37,6 +37,10 @@
     {
       "symbol": "PINSIR",
       "graphicsName": "Pinsir"
+    },
+    {
+      "symbol": "MOLTRES",
+      "graphicsName": "Moltres"
     }
   ],
   "files": [
@@ -123,6 +127,24 @@
     },
     {
       "path": "graphics/pokemon/ledyba/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/moltres/back.png"
+    },
+    {
+      "path": "graphics/pokemon/moltres/footprint.png"
+    },
+    {
+      "path": "graphics/pokemon/moltres/front.png"
+    },
+    {
+      "path": "graphics/pokemon/moltres/icon.png"
+    },
+    {
+      "path": "graphics/pokemon/moltres/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/moltres/shiny.pal"
     },
     {
       "path": "graphics/pokemon/pinsir/back.png"

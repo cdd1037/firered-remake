@@ -33,7 +33,10 @@ public sealed class OrdinaryLandEncounterCatalog
             if (EarlyLandEncounterRules.RequiresSpecialTable(id))
             {
                 EarlyLandEncounterRules.ValidateTable(table);
-                continue;
+                // Source-table receipts require the exact registered slots, but their
+                // walking terrain still comes from the supplied map like ordinary land.
+                // Distinct legacy processes (Safari, roaming regions, etc.) stay separate.
+                if (!SourceTableEncounterRegistry.Land.Any(source => source.Map == id)) continue;
             }
             if (map.Width <= 0 || map.Height <= 0)
                 throw new ArgumentException("Land encounter map has invalid dimensions.");

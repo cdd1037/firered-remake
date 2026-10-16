@@ -139,7 +139,7 @@ public sealed partial class CampaignSession
             return new() { Fishing = fishing, FishingTables = _content.FishingTables };
         }
         if(sourceTable is not null&&(!IsSourceTableMap(map)||sourceTable.Map!=map||
-            (int)sourceTable.Kind!=(int)kind||!SourceTableWildBattleContract.Matches(sourceTable,pokemon)))
+            sourceTable.Kind!=SourceTableEncounterKind.Scripted&&(int)sourceTable.Kind!=(int)kind||!SourceTableWildBattleContract.Matches(sourceTable,pokemon)))
             throw new InvalidDataException("source_table_wild_origin");
         if(sourceTable is null&&IsSourceTableMap(map)&&!(snorlax&&_content.SnorlaxEnabled&&map.Value=="map.route-16"))throw new InvalidDataException("source_table_wild_missing_origin");
         if(seafoam is not null&&(!_content.SeafoamEnabled||seafoam.Map!=map||!SeafoamWildBattleContract.Matches(seafoam,pokemon,_content.FishingTables)))throw new InvalidDataException("seafoam_wild_origin");

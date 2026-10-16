@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FireRedAudio;
+using Game.Domain.Pokemon;
 using Godot;
 
 /// <summary>Opt-in original sequence/sample synthesis. Scene thread owns controls and PCM production.</summary>
@@ -292,8 +293,10 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             {
                 _cryCatalog.Get(cue.Species);
                 if (cue.SongAddress != 0 || cue.Looping || cue.SourceCounter is not null ||
-                    cue.CryMode != 0 && !(cue.CryMode == 2 && (includeSnorlax && cue.Species == 143 && cue.Id == "CRY_SNORLAX_ENCOUNTER" || includeFourIsland && cue.Species == 131 && cue.Id == "CRY_LAPRAS_ENCOUNTER" || includeCeruleanCave && cue.Species == 150 && cue.Id == "CRY_MEWTWO_ENCOUNTER" || includeEventIslands && ((cue.Species,cue.Id) is (249,"CRY_LUGIA_ENCOUNTER") or (250,"CRY_HO_OH_ENCOUNTER") or (410,"CRY_DEOXYS_ENCOUNTER")) || includePowerPlant && ((cue.Species,cue.Id) is (101,"CRY_ELECTRODE_ENCOUNTER") or (145,"CRY_ZAPDOS_ENCOUNTER")) || includeSeafoam && cue.Species == 144 && cue.Id == "CRY_ARTICUNO_ENCOUNTER")))
-                    throw new InvalidDataException("Invalid normal cry cue.");
+                    cue.CryMode is not (0 or SourceEncounterCry.Mode) || cue.Priority != 10 ||
+                    !cue.SourceSymbol.StartsWith("SPECIES_", StringComparison.Ordinal) ||
+                    cue.Id != CryId(cue.SourceSymbol, cue.CryMode))
+                    throw new InvalidDataException("Invalid source cry cue.");
             }
             else
             {
@@ -312,6 +315,34 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if (cue.SourcePlayer == 4) synth.PrepareNormalCry(cue.Species);
         return synth;
     }
+
+    /// <summary>Bind cry identities from canonical species and validate their loaded sample capability once.</summary>
+    public void RegisterCatalogCries(PokemonCatalog pokemon)
+    {
+        foreach (var species in pokemon.Species.Values)
+        {
+            string symbol = species.Id.Value.Replace("pret:", "", StringComparison.Ordinal);
+            if (!symbol.StartsWith("SPECIES_", StringComparison.Ordinal))
+                throw new InvalidDataException("Canonical cry species symbol differs.");
+            _cryCatalog.Get(species.SourceSpeciesId);
+            foreach (int mode in new[] { 0, SourceEncounterCry.Mode })
+            {
+                var cue = new SynthCue(CryId(symbol, mode), symbol, 4, 10, null, 0,
+                    species.SourceSpeciesId, false, mode);
+                if (!_catalog.TryAdd(cue.Id, cue) && _catalog[cue.Id] != cue)
+                    throw new InvalidDataException("Canonical cry cue conflicts with loaded metadata: " + cue.Id);
+            }
+            _synth.PrepareNormalCry(species.SourceSpeciesId);
+        }
+    }
+
+    private static string CryId(string symbol, int mode) =>
+        "CRY_" + symbol["SPECIES_".Length..] + (mode == SourceEncounterCry.Mode ? "_ENCOUNTER" : "_NORMAL");
+
+    public string? CryCueId(string symbol, int mode) =>
+        mode is 0 or SourceEncounterCry.Mode && symbol.StartsWith("SPECIES_", StringComparison.Ordinal) &&
+        _catalog.TryGetValue(CryId(symbol, mode), out var cue) && cue.SourcePlayer == 4 && cue.CryMode == mode
+            ? cue.Id : null;
 
     public SourceAudioMetadata Metadata(string id) => _catalog.TryGetValue(id, out var cue)
         ? cue.Metadata : throw new InvalidDataException("Unknown synth cue: " + id);

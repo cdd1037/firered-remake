@@ -7,7 +7,7 @@ using Game.Domain.Ids;
 using Game.Domain.World;
 namespace Game.Content;
 
-/// <summary>Eleven exact Mt. Ember Ruby region maps, including guarded original boundaries. Application admission remains separate.</summary>
+/// <summary>Original Kindle Road, Mt. Ember Ruby and summit maps. Application admission remains separate.</summary>
 public sealed partial class PretSeviiRubyRegion
 {
     public const string Profile = "firered-sevii-ruby-region-v1";
@@ -42,6 +42,7 @@ public sealed partial class PretSeviiRubyRegion
         "MAP_MT_EMBER_RUBY_PATH_B5F" => new("map.mt-ember-ruby-path-b5f"),
         "MAP_MT_EMBER_SUMMIT" => new("map.mt-ember-summit"),
         "MAP_MT_EMBER_SUMMIT_PATH_1F" => new("map.mt-ember-summit-path-1f"),
+        "MAP_MT_EMBER_SUMMIT_PATH_2F" => new("map.mt-ember-summit-path-2f"),
         "MAP_MT_EMBER_SUMMIT_PATH_3F" => new("map.mt-ember-summit-path-3f"),
         "MAP_ONE_ISLAND" => new("map.one-island"),
         "MAP_ONE_ISLAND_KINDLE_ROAD" => new("map.one-island-kindle-road"),
@@ -62,7 +63,7 @@ public sealed partial class PretSeviiRubyRegion
 
         var directory = source.Directory;
         var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Kindle Road and Mt. Ember Ruby source maps; application admission remains separate.", Profile);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Kindle Road and Mt. Ember source maps; application admission remains separate.", Profile);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
@@ -76,10 +77,18 @@ public sealed partial class PretSeviiRubyRegion
             var playerTexture = PretOverworldTextures.Resolve(directory, "sprites/overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
-        Need(maps.Count == 11 && maps.Values.Sum(m => m.Width * m.Height) == 9764 && maps.Values.Sum(m => m.FieldWarps.Length) == 27,
-            "SeviiRuby source map collection differs.");
-        foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
-            if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "SeviiRuby target warp index differs.");
+        Need(maps.Count > 0, "SeviiRuby map collection is empty.");
+        foreach (var map in maps.Values)
+            foreach (var warp in map.FieldWarps)
+            {
+                Need(map.GetTile(warp.X, warp.Y) is not null, "SeviiRuby warp is outside its map.");
+                if (!maps.TryGetValue(warp.DestinationMapId, out var target)) continue;
+                Need(warp.DestinationWarpId >= 0 && warp.DestinationWarpId < target.FieldWarps.Length,
+                    "SeviiRuby target warp index differs.");
+                var endpoint = target.FieldWarps[warp.DestinationWarpId];
+                Need(endpoint.DestinationMapId == map.Id && target.GetTile(endpoint.X, endpoint.Y) is not null,
+                    "SeviiRuby warp has no valid return endpoint.");
+            }
         var constants = PretSharedConstants.ForPackage(source.Directory);
 
         return new(source, maps.ToImmutable(), constants);

@@ -209,3 +209,51 @@ optional source battle sprites when no reusable portrait exists. Source escape
 warp instructions now contribute the allowable exits and select the correct
 entry side through ordinary script execution; no remote map jump is substituted
 for reaching either entrance.
+
+## Mt. Ember summit
+
+The Sevii Ruby map package also owns Mt. Ember Summit Path 1F/2F/3F and the summit.
+Its importer accepts either the pinned Git checkout with `--reference-root` or the
+retained offline cache with `--raw-root`; raw mode does not claim Git verification.
+All four layouts, map events and local scripts come from the same pinned revision.
+The existing shared field definitions consume the four summit Strength boulders
+and nine second-floor Rock Smash rocks (temporary flags 12–1A).
+
+```sh
+python scripts/imports/maps/import-sevii-ruby-region.py --raw-root content/raw/pokefirered/037335f4
+python scripts/imports/maps/import-field-tilesets.py
+python scripts/imports/presentation/import-shared-overworld.py
+python scripts/imports/maps/import-map-atlases.py
+python scripts/imports/maps/import-sevii-ruby-region.py --raw-root content/raw/pokefirered/037335f4 --check
+python scripts/checks/test-mt-ember-summit-import.py
+```
+
+The map check compares full RGBA even when the original PNGs have been packed.
+Moltres uses the source NPC_BLUE palette and 32×32 overworld image; all nine
+original animation entries repeat frame zero. The shared overworld importer
+keeps that frame mapping. Story compilation remains a separate required step,
+using the summit script paths in `tools/import-story/recipe.json`.
+
+Summit walking encounters are regenerated from the pinned FireRed rows through the
+shared source-table registry, while fixed encounters use typed scripted origins
+and the same battle/capture/history pipeline. Source script preparation uses the
+original random-personality CreateScriptedWildMon path, not ordinary nature-first
+wild generation. Legendary entry skips the ordinary held-item draw. Terminal
+source outcomes retain Run versus Teleport before returning to the original map
+callbacks; caught/defeated versus retry state is not inferred from presentation.
+
+```sh
+python scripts/imports/story/import-mt-ember-summit-encounters.py
+python scripts/imports/story/import-mt-ember-summit-encounters.py --check
+python scripts/checks/test-mt-ember-summit-encounters.py
+python scripts/imports/story/import-story.py
+python scripts/imports/story/import-story.py --check
+python scripts/imports/pokemon/import-game-pokemon.py
+python scripts/imports/presentation/import-pokemon-collection-presentation.py
+python scripts/imports/presentation/import-pokemon-collection-presentation.py --check
+```
+
+Encounter cry registration uses the loaded canonical species/cry capability;
+mode 2 keeps the existing fixed source parameters. No source audio assets or DSP
+algorithms were changed for this route. Offline synthesis checks do not establish
+audible device output.

@@ -38,6 +38,8 @@ public partial class CampaignView
                     synthesized.RegisterMemorialPillarCues(memorialOpponents,_root);
                 if(_catalog.PokemonContent?.Pokemon is {} giftOwned)
                     synthesized.RegisterGiftEggCues(giftOwned,_root);
+                if(_catalog.PokemonContent?.Pokemon.Mechanics.Catalog is {} canonicalPokemon)
+                    synthesized.RegisterCatalogCries(canonicalPokemon);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -106,8 +108,8 @@ public partial class CampaignView
         if(_sourceAudio is SynthSourceAudioPlayer synthesized)
         {
             if(int.TryParse(species,out int sourceSpecies))species=synthesized.CrySymbol(sourceSpecies)??species;
-            if(mode!=0&&!(mode==2&&(_catalog.SnorlaxEnabled&&species=="SPECIES_SNORLAX"||_catalog.FourIslandEnabled&&species=="SPECIES_LAPRAS"||_catalog.CeruleanCaveEnabled&&species=="SPECIES_MEWTWO"||_catalog.EventIslandsEnabled&&species is "SPECIES_LUGIA" or "SPECIES_HO_OH" or "SPECIES_DEOXYS"||_catalog.PowerPlantEnabled&&(species is "SPECIES_ELECTRODE" or "SPECIES_ZAPDOS")||_catalog.SeafoamEnabled&&species=="SPECIES_ARTICUNO"))){_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
-            string cueId="CRY_"+species.Replace("SPECIES_","",StringComparison.Ordinal)+(mode==2?"_ENCOUNTER":"_NORMAL");
+            if(synthesized.CryCueId(species,mode) is not {} cueId)
+            {_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
             if(EnsureAudio(cueId))synthesized.PlayCry(cueId);
             return;
         }
@@ -145,6 +147,7 @@ public partial class CampaignView
         }
         if(s.WildBattle is {} wild)
             return wild.Capture is not null?"MUS_CAUGHT":wild.Phase==CampaignBattlePhase.Results&&wild.State.Outcome==WildBattleOutcome.Won?"MUS_VICTORY_WILD":
+                SourceScriptedEncounterRegistry.Find(wild.Frame?.WildEncounter?.SourceTable)?.Legendary==true?"MUS_VS_LEGEND":
                 _catalog.SeafoamEnabled&&wild.Frame?.WildEncounter?.Seafoam?.Kind==SeafoamEncounterKind.Articuno?"MUS_VS_LEGEND":
                 _catalog.PowerPlantEnabled&&wild.Frame?.WildEncounter?.PowerPlant?.Kind==PowerPlantEncounterKind.Zapdos?"MUS_VS_LEGEND":
                 _catalog.EventIslandsEnabled&&wild.EventIslandReceipt is {} eventIsland?(eventIsland.Origin.Kind==EventIslandEncounterKind.Deoxys?"MUS_VS_DEOXYS":"MUS_VS_LEGEND"):

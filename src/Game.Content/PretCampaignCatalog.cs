@@ -659,11 +659,10 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
                 p.Flag, p.SourceFlagId, p.Quantity)).ToImmutableArray();
         LandEncounters=LandEncounters!.ToImmutableDictionary().Add(PowerPlantEncounterTables.Land.Map,PowerPlantEncounterTables.Land);
         LandEncounters = LandEncounters.ToImmutableDictionary().AddRange(SeafoamEncounterTables.Land.Select(table => KeyValuePair.Create(table.Map, table)));
-        LandEncounters = LandEncounters.ToImmutableDictionary().AddRange(CapeBrinkEncounterTables.Land.Select(table => KeyValuePair.Create(table.Map, table)))
-            .AddRange(MemorialPillarEncounterTables.Land.Select(table => KeyValuePair.Create(table.Map, table)))
-            .Add(Route16LandEncounterTables.Route16.Map, Route16LandEncounterTables.Route16)
-            .AddRange(cyclingRoad.LandEncounters.Select(table => KeyValuePair.Create(table.Map, table)))
-            .AddRange(LostCaveEncounterTables.Land.Select(table => KeyValuePair.Create(table.Map, table)));
+        LandEncounters = LandEncounters.ToImmutableDictionary()
+            .AddRange(SourceTableEncounterRegistry.Land.Where(table => maps.ContainsKey(table.Map))
+                .Select(table => KeyValuePair.Create(table.Map, table)))
+            .AddRange(cyclingRoad.LandEncounters.Select(table => KeyValuePair.Create(table.Map, table)));
 
         var metatileDefinitions = metatiles.Definitions.ToDictionary(x => x.Key, x => new FieldMetatileDefinition(x.Key, x.Value.Behavior, x.Value.Terrain, x.Value.EncounterType, x.Value.LayerType));
         {

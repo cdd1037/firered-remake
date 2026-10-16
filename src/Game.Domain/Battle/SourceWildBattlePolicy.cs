@@ -9,11 +9,19 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
+/// <summary>Original B_OUTCOME values, shared by all wild callbacks rather than inferred from display events.</summary>
+public enum SourceWildBattleOutcome
+{
+    Won = 1, Lost = 2, Drew = 3, Ran = 4, PlayerTeleported = 5,
+    MonFled = 6, Caught = 7, NoSafariBalls = 8, Forfeited = 9, MonTeleported = 10
+}
+
 /// <summary>Current encounter provenance and outcome only. Action/residual cursors live in the frame.</summary>
 public sealed record SourceWildEncounterContext
 {
     public const string Version = "firered-current-wild-policy-v1";
     public string RulesVersion { get; init; } = Version;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceWildBattleOutcome? SourceOutcome { get; init; }
     [JsonIgnore] public FishingTaskProfile? FishingTables { get; init; }
     [JsonIgnore] public OrdinaryLandBattleBinding? OrdinaryLand { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceTableWildOrigin? SourceTable { get; init; }
@@ -125,7 +133,7 @@ public static partial class SourceWildBattlePolicy
             for (int i = 0; i < 4; i++) Draw($"wild-battle.entry.ai-setup.slot-{i}", 16);
             // pokemon.c SetWildMonHeldItem skips BATTLE_TYPE_LEGENDARY. Scripted Electrode
             // is WILD_SCRIPTED and still consumes this draw, including its NONE/NONE item pair.
-            if (owned is not null && encounter.EventIsland is null && encounter.TowerBattleKind != PokemonTowerBattleKind.RevealedMarowak &&
+            if (owned is not null && SourceScriptedEncounterRegistry.Find(encounter.SourceTable)?.Legendary != true && encounter.EventIsland is null && encounter.TowerBattleKind != PokemonTowerBattleKind.RevealedMarowak &&
                 encounter.CeruleanCave?.Kind != CeruleanCaveEncounterKind.Mewtwo &&
                 encounter.PowerPlant?.Kind != PowerPlantEncounterKind.Zapdos && encounter.Seafoam?.Kind != SeafoamEncounterKind.Articuno)
             {
@@ -184,6 +192,13 @@ public static partial class SourceWildBattlePolicy
             frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || frame.BattleKind != WildBattleCalledBattleKind.Wild ||
             frame.Party(BattleSide.Opponent).Members.Length != 1)
             return "source_wild_policy_identity";
+        if (context.SourceOutcome is { } sourceOutcome && (!Enum.IsDefined(sourceOutcome) ||
+            frame.Outcome != (sourceOutcome switch {
+                SourceWildBattleOutcome.Won => WildBattleOutcome.Won,
+                SourceWildBattleOutcome.Lost => WildBattleOutcome.Lost,
+                SourceWildBattleOutcome.Drew => WildBattleOutcome.Draw,
+                SourceWildBattleOutcome.Caught => WildBattleOutcome.Caught,
+                _ => WildBattleOutcome.Escaped }))) return "source_wild_terminal_outcome";
         int origins = new object?[] { context.OrdinaryLand, context.RockSmash, context.SourceTable, context.Seafoam, context.Fishing, context.CelioRoamer, context.VictoryRoad, context.SeviiRuby, context.FourIsland,
             context.SixIsland, context.FiveIsland, context.PowerPlant, context.EventIsland, context.SevenIsland, context.CeruleanCave, context.TowerBattleKind }.Count(x => x is not null) +
             (context.ScriptedSnorlax ? 1 : 0) + (context.FirstSeviiWild ? 1 : 0);
