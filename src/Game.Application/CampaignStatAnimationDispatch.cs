@@ -39,18 +39,11 @@ public static partial class CampaignStatAnimationPresentation
         var definition=CampaignMoveAnimationPresentation.Definition(new(pp.Move),moves);
         if(definition is null)return null;
         int sourceMove=definition.SourceMoveId;
-        var reduction=CampaignMoveAnimationPresentation.ReductionAnimation(definition);
-        var spec=reduction is {} lowered
-            ? (Move:sourceMove,Stat:lowered.Stat,Delta:lowered.Delta,Arg:AnimationArgument(lowered.Stat,lowered.Delta))
-            : definition.Effect switch
-        {
-            "EFFECT_SPEED_UP_2"=>(Move:sourceMove,Stat:WildBattleStat.Speed,Delta:2,Arg:41),
-            "EFFECT_SPECIAL_ATTACK_UP"=>(Move:sourceMove,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
-            "EFFECT_MINIMIZE" or "EFFECT_EVASION_UP"=>(Move:sourceMove,Stat:WildBattleStat.Evasion,Delta:1,Arg:21),
-            "EFFECT_DEFENSE_CURL" or "EFFECT_DEFENSE_UP"=>(Move:sourceMove,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
-            "EFFECT_DEFENSE_UP_2"=>(Move:sourceMove,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
-            _=>default
-        };
+        var change=CampaignMoveAnimationPresentation.ReductionAnimation(definition)
+            ?? CampaignMoveAnimationPresentation.SelfStatAnimation(definition);
+        var spec=change is {} delta
+            ? (Move:sourceMove,Stat:delta.Stat,Delta:delta.Delta,Arg:AnimationArgument(delta.Stat,delta.Delta))
+            : default;
         if(spec.Move==0||spec.Stat!=stat.Stat||stat.After!=Math.Clamp(stat.Before+spec.Delta,0,12)||
             (spec.Delta>0?stat.Target!=stat.Actor:stat.Target==stat.Actor||(stat.Target&1)==(stat.Actor&1)&&!AllowsSelectedStatAlly(pp.Move,moves)))return null;
         int used=index-2;

@@ -82,7 +82,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -272,4 +272,53 @@ class ElementalImportTests(unittest.TestCase):
     data=original(reference,path);return data.replace(before,after) if path=='data/battle_anim_scripts.s' else data
    with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
    self.assertFalse(excluded&{r['moveId'] for r in json.loads(data)['scripts']})
+ def test_self_attack_roots_keep_shared_tasks_and_callback_only_sound(self):
+  data,blobs=imp.build(REFERENCE);pack=json.loads(data);roots={r['moveId']:r for r in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  sword=recipes['gSwordsDanceBladeSpriteTemplate'];sphere=recipes['gSharpenSphereSpriteTemplate']
+  self.assertEqual(('AnimSwordsDanceBlade',32,64,True,False),(sword['callback'],sword['width'],sword['height'],sword['blend'],sword['affineDoubleSize']))
+  self.assertEqual([(16,256,0),(20,0,12),(0,0,32)],[(c['x'],c['y'],c['duration']) for c in sword['affineAnimations'][0][:-1]])
+  self.assertEqual(['AnimTask_TranslateMonEllipticalRespectSide','AnimTask_FlashAnimTagWithColor'],[c['args'][0] for c in roots[14]['commands'] if c['op']=='createvisualtask'])
+  self.assertEqual(('AnimSharpenSphere',32,32,False),(sphere['callback'],sphere['width'],sphere['height'],sphere['blend']))
+  self.assertEqual([0,0,16,0,16,32,16,32,48,32,48,64,48,64],[f['tile'] for f in sphere['animations'][0]])
+  self.assertEqual([18,6,18,6,6,18,6,6,18,6,6,18,6,54],[f['duration'] for f in sphere['animations'][0]])
+  self.assertEqual({'SE_M_SWORDS_DANCE'},set(roots[14]['soundEffects']));self.assertEqual({'SE_M_SWAGGER2':187},roots[159]['soundEffects'])
+  self.assertFalse(any(c['op'] in {'playse','playsewithpan'} for c in roots[159]['commands']))
+  self.assertFalse({'sword','sphere-to-cube'}&{r['id'] for r in pack['assets']})
+ def test_self_attack_indexed_materials_match_every_source_pixel(self):
+  data,blobs=imp.build(REFERENCE);rows={r['id']:r for r in json.loads(data)['indexedAssets']}
+  for name,size in [('sword',(32,64)),('sphere-to-cube',(32,160))]:
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+name.replace('-','_')+'.png')) as image:
+    self.assertEqual(size,image.size);indices=image.tobytes();palette=image.getpalette()
+   row=rows[name];self.assertEqual(size,(row['width'],row['height']));self.assertEqual('ANIM_TAG_'+name.upper().replace('-','_'),row['paletteTag']);packed=blobs[name+'.4bpp'];colors=struct.unpack('<16H',blobs[name+'.pal16'])
+   self.assertEqual(size[0]*size[1]//2,len(packed))
+   for y in range(size[1]):
+    for x in range(size[0]):
+     address=((y//8)*(size[0]//8)+x//8)*32+(y%8)*4+(x%8)//2;index=indices[y*size[0]+x]
+     self.assertEqual(index,(packed[address]>>((x&1)*4))&15);self.assertEqual(sum((palette[index*3+c]//8)<<(5*c) for c in range(3)),colors[index])
+ def test_self_attack_missing_template_or_shared_task_excludes_incomplete_root(self):
+  original=imp.read
+  for before,after,move in [(b'gSwordsDanceBladeSpriteTemplate,',b'gUnknownSwordTemplate,',14),(b'gSharpenSphereSpriteTemplate,',b'gUnknownSharpenTemplate,',159),(b'AnimTask_FlashAnimTagWithColor,',b'AnimTask_UnknownFlash,',14)]:
+   def read(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path=='data/battle_anim_scripts.s' else data
+   with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
+   self.assertNotIn(move,{r['moveId'] for r in json.loads(data)['scripts']})
+ def test_sharpen_callback_sound_is_extracted_from_source_and_missing_handoff_rejected(self):
+  original=imp.read
+  def read(reference,path):
+   data=original(reference,path);return data.replace(b'PlaySE12WithPanning(SE_M_SWAGGER2, sprite->data[5]);',b'PlaySE12WithPanning(SE_M_SWORDS_DANCE, sprite->data[5]);') if path=='src/battle_anim_effects_1.c' else data
+  with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
+  row=next(r for r in json.loads(data)['scripts'] if r['moveId']==159);self.assertEqual({'SE_M_SWORDS_DANCE'},set(row['soundEffects']))
+  for before,after in [(b'sprite->callback = AnimSharpenSphere_Step;',b'sprite->callback = UnknownSharpenStep;'),(b'PlaySE12WithPanning(SE_M_SWAGGER2, sprite->data[5]);',b'PlaySE12WithPanning(SE_UNKNOWN_SHARPEN, sprite->data[5]);')]:
+   def read(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path=='src/battle_anim_effects_1.c' else data
+   with patch.object(imp,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
+ def test_self_attack_source_registration_and_indexed_shape_fail_closed(self):
+  original=imp.read
+  for filename,before,after in [('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Sword, 0x0400, ANIM_TAG_SWORD}',b'{gBattleAnimSpriteGfx_Sword, 0x0200, ANIM_TAG_SWORD}'),('src/graphics.c',b'graphics/battle_anims/sprites/sphere_to_cube.gbapal.lz',b'graphics/battle_anims/sprites/unknown.gbapal.lz')]:
+   def read(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path==filename else data
+   with patch.object(imp,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
+  def read(reference,path):
+   return original(reference,'graphics/battle_anims/sprites/conversion.png' if path=='graphics/battle_anims/sprites/sword.png' else path)
+  with patch.object(imp,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
 if __name__=='__main__':unittest.main()

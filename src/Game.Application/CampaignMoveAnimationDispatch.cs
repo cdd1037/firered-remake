@@ -27,6 +27,17 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_SPECIAL_DEFENSE_DOWN_2" => (WildBattleStat.SpecialDefense,-2),
         _ => null
     };
+    internal static (WildBattleStat Stat,int Delta)? SelfStatAnimation(PokemonMoveDefinition move) => move.Effect switch
+    {
+        "EFFECT_ATTACK_UP" => (WildBattleStat.Attack,1),
+        "EFFECT_ATTACK_UP_2" => (WildBattleStat.Attack,2),
+        "EFFECT_SPEED_UP_2" => (WildBattleStat.Speed,2),
+        "EFFECT_SPECIAL_ATTACK_UP" => (WildBattleStat.SpecialAttack,1),
+        "EFFECT_MINIMIZE" or "EFFECT_EVASION_UP" => (WildBattleStat.Evasion,1),
+        "EFFECT_DEFENSE_CURL" or "EFFECT_DEFENSE_UP" => (WildBattleStat.Defense,1),
+        "EFFECT_DEFENSE_UP_2" => (WildBattleStat.Defense,2),
+        _ => null
+    };
     private static string? FieldSettingAnimation(int move)=>move switch{54=>"mist",113=>"light-screen",115=>"reflect",258=>"hail",_=>null};
     private static bool IsRecoveryAnimation(int move) => move is 105 or 135 or 208 or 235 or 303;
 
@@ -262,7 +273,7 @@ public static partial class CampaignMoveAnimationPresentation
             if(ready.Length!=1)return new(null,"unmatched-source-snatch-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,ready[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 74 or 106 or 334 or 110 or 107 or 97 or 111 or 112)
+        if(SelfStatAnimation(definition!) is not null)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is SourceStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||battle.StatResult(resultIndices[0]) is not {} result||result.SourceMoveId!=move)

@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/imports/battle/import-source-hit-animations.py');hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
 TEMPLATES={
+ 'gSwordsDanceBladeSpriteTemplate':('battle_anim_effects_2.c','AnimSwordsDanceBlade'),
+ 'gSharpenSphereSpriteTemplate':('battle_anim_effects_1.c','AnimSharpenSphere'),
  'gConversionSpriteTemplate':('battle_anim_effects_1.c','AnimConversion'),
  'gConversion2SpriteTemplate':('battle_anim_effects_1.c','AnimConversion2'),
  'sHailParticleSpriteTemplate':('battle_anim_ice.c','AnimHailBegin'),
@@ -175,7 +177,8 @@ SOUNDS|={'SE_M_HAIL'}
 SOUNDS|={'SE_M_SING','SE_M_GRASSWHISTLE','SE_M_BELLY_DRUM'}
 GFX|={'ANIM_TAG_MUSIC_NOTES','ANIM_TAG_PURPLE_HAND_OUTLINE'}
 TASKS|={'AnimTask_ConversionAlphaBlend','AnimTask_Conversion2AlphaBlend','AnimTask_FlashAnimTagWithColor'}
-GFX|={'ANIM_TAG_CONVERSION'}
+GFX|={'ANIM_TAG_CONVERSION','ANIM_TAG_SWORD','ANIM_TAG_SPHERE_TO_CUBE'}
+SOUNDS|={'SE_M_SWORDS_DANCE'}
 SOUNDS|={'SE_M_BARRIER'}
 def fold_firered_contest_branches(reference,source,commands,labels):
  # Both native contest tests are constant false in pinned FireRed. Canonical
@@ -262,6 +265,14 @@ def build(reference):
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=sound_effects(reference,flat),spriteTags={name:tags[name] for name in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})}));subs.update(local)
  for row in scripts:
   flat=row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]]
+  if any(c['op']=='createsprite' and c['args'][0]=='gSharpenSphereSpriteTemplate' for c in flat):
+   effects=read(reference,'src/battle_anim_effects_1.c').decode()
+   init=re.search(r'static void AnimSharpenSphere\(struct Sprite\* sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   step=re.search(r'static void AnimSharpenSphere_Step\(struct Sprite\* sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   if init is None or step is None or 'sprite->callback = AnimSharpenSphere_Step;' not in init[1]:raise ValueError('Sharpen source callback handoff differs')
+   sounds=re.findall(r'PlaySE12WithPanning\((SE_\w+), sprite->data\[5\]\);',step[1])
+   if len(sounds)!=1:raise ValueError('Sharpen source callback sound differs')
+   row['soundEffects'].update(sound_effects(reference,[dict(op='playsewithpan',args=[sound,'SOUND_PAN_ATTACKER']) for sound in sounds]))
   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_Hail' for c in flat):
    ice=read(reference,'src/battle_anim_ice.c').decode()
    def body(name):
@@ -307,11 +318,17 @@ def build(reference):
  pixels['spore']=hit.rgb555(read(reference,'graphics/battle_anims/sprites/spore.png'),(16,32))
  assets=[dict(id=id,path='elemental-'+id+'.rgb555') for id in pixels]
  indexed=[]
- for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32))]:
+ registrations=read(reference,'src/data/battle_anim.h').decode();graphics=read(reference,'src/graphics.c').decode()
+ for stem,symbol,size in [('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source indexed registration differs: '+stem)
+  for suffix,kind in [('4bpp','Gfx'),('gbapal','Pal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source indexed graphics differs: '+stem)
+ for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160))]:
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
-   if im.mode!='P' or im.size!=size:raise ValueError('Invalid indexed music image')
+   if im.mode!='P' or im.size!=size:raise ValueError('Invalid source indexed image')
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];palette=im.getpalette()[:48]
-  if max(indices)>15 or len(palette)!=48:raise ValueError('Invalid music indices/palette')
+  if max(indices)>15 or len(palette)!=48:raise ValueError('Invalid source indices/palette')
   if stem=='music_notes' and any(i>5 for i in indices):raise ValueError('Music notes sample outside source recolored range')
   name=stem.replace('_','-');base='elemental-'+name
   pixels[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2))
