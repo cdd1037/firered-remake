@@ -1,6 +1,6 @@
 # 当前实施顺序
 
-2026-10-16 用户最新要求全面重整导入和资源读取架构，新增内容暂缓，继续在 refactor/project-governance 工作。本轮整合见[导入工具整合](script-consolidation.md)。内容优先级仍为地图与收集养成，待这轮工具整治收敛后再安排；字体暂缓。完整产品目标见[范围](scope.md)，已实现与缺口只维护在[当前状态](first-clear-remaining-scope.md)。
+2026-10-17：导入／资源读取、分派、地图素材、库存脚本与残留精灵所有权的共享重构已完成，当前继续本地非汉化单机内容。最近已补共享命名、Quest灰度／恢复原色与实时／回顾共用跳跃轨迹；专属招式新增当前暂停。现有1／2／3有界检查未再确立新的普通单机功能缺口，不按旧审计的历史缺失表重复开发。实际剩余表现与验收边界见[审计对账](nonlocalized-single-player-completion-audit.md#current-reconciliation--2026-10-17-checkpoint-269b664)和[当前状态](first-clear-remaining-scope.md)；完整产品目标见[范围](scope.md)。
 
 ## 1. 已完成治理后的维护原则
 
