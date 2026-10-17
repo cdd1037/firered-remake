@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 184,
-    "missingDedicatedMoveScripts": 170,
+    "dedicatedMoveScripts": 199,
+    "missingDedicatedMoveScripts": 155,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -22,7 +22,7 @@
   "boundaries": {
     "rules": "Ordinary singles and preset doubles share the current battle frame and execution lifecycle. All move identities have recipe admission and controlled public-turn test rows.",
     "specialModes": "Safari, roaming, scripted/tutorial encounters and Trainer Tower have separate application owners; ordinary-core coverage does not establish all of their outcomes. Dynamic Enigma payloads, player communication and external e-Reader inputs are not ordinary-core completion.",
-    "presentation": "184 source move scripts are dispatched in bounded tested contexts. Future Sight covers successful setup only; its delayed-hit general animation remains open. Wish setup and the separately authenticated delayed-healing general animation are implemented in bounded contexts. Hail covers successful weather setup; its residual-weather general animation remains open. Visual randomness uses a transient identity-seeded animation-local stream, intentionally independent of the original shared gameplay/VBlank stream. Castform event-time static form art, palette and geometry are implemented; its source general form-change transition is implemented with bounded managed coverage. Wish admission covers ordinary turn scheduling; low-level recomposition of ResolveAction on a still-Protected caster lacks an exported native animation-prevention flag. Other moves retain ordinary text/HP/result presentation; no generic-animation parity or full form-transition fidelity is claimed. Growl/Howl/Hyper Voice use source cry modes and original party species; Hyper Beam valid-seven choice and reverse-cry endpoint clamp are explicit user-approved presentation differences. Host PCM tests do not establish real-speaker parity.",
+    "presentation": "199 source move scripts are dispatched in bounded tested contexts. Future Sight covers successful setup only; its delayed-hit general animation remains open. Wish setup and the separately authenticated delayed-healing general animation are implemented in bounded contexts. Hail covers successful weather setup; its residual-weather general animation remains open. Visual randomness uses a transient identity-seeded animation-local stream, intentionally independent of the original shared gameplay/VBlank stream. Castform event-time static form art, palette and geometry are implemented; its source general form-change transition is implemented with bounded managed coverage. Wish admission covers ordinary turn scheduling; low-level recomposition of ResolveAction on a still-Protected caster lacks an exported native animation-prevention flag. Other moves retain ordinary text/HP/result presentation; no generic-animation parity or full form-transition fidelity is claimed. Growl/Howl/Hyper Voice use source cry modes and original party species; Hyper Beam valid-seven choice and reverse-cry endpoint clamp are explicit user-approved presentation differences. Host PCM tests do not establish real-speaker parity.",
     "verification": "Maintained tests contain controlled states. Neither their count nor this inventory proves natural full-game travel, original-frame parity or real-speaker audio.",
     "userDeferrals": "Chinese is deferred. The user resumed remaining single-player content, including animation and presentation, on 2026-10-16; completion still requires explicit evidence.",
     "approvedRules": "Keep the existing approved project differences, including end-of-turn doubles KO replacement; this inventory grants no new rule changes.",
@@ -493,7 +493,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_BITE",
@@ -793,7 +793,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_GROWTH",
@@ -953,7 +953,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_FISSURE",
@@ -1053,7 +1053,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_TELEPORT",
@@ -1383,7 +1383,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_AMNESIA",
@@ -1523,7 +1523,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_SPORE",
@@ -2273,7 +2273,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_MAGNITUDE",
@@ -2283,7 +2283,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_DYNAMIC_PUNCH",
@@ -2343,7 +2343,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_RAPID_SPIN",
@@ -2883,7 +2883,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_ENDEAVOR",
@@ -3003,7 +3003,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_LUSTER_PURGE",
@@ -3083,7 +3083,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_SLACK_OFF",
@@ -3133,7 +3133,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_HYDRO_CANNON",
@@ -3193,7 +3193,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_AIR_CUTTER",
@@ -3443,7 +3443,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_BULK_UP",

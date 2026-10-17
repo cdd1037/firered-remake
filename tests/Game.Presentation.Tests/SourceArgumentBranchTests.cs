@@ -23,6 +23,22 @@ public sealed class SourceArgumentBranchTests
         var frame=Runtime(script).Tick();Assert.AreEqual(-1,(int)frame.AnimationArguments[argument]);Assert.AreEqual(0,(int)frame.AnimationArguments[2]);Assert.AreEqual(11,(int)frame.AnimationArguments[3]);Assert.AreEqual(22,(int)frame.AnimationArguments[4]);
     }
     [TestMethod]
+    public void SafeExtendedRegisterPolicyPreservesLastSlotAcrossCallbackOperandsAndClearsOnCancel()
+    {
+        // Magnitude authors index15 although the original declaration has eight
+        // arguments. This checks the bounded remake policy, not native aliasing.
+        var script=new SourceAnimationScript(1,"safe-register",[C("setarg","15","0xFFFF"),
+            C("createvisualtask","AnimTask_BlendMonInAndOut","3","0","RGB_WHITE","3","2","2"),
+            C("jumpargeq","15","-1","matched"),C("setarg","14","999"),C("delay","2"),C("end")])
+            {Labels=new Dictionary<string,int>{{"matched",4}}};
+        var runtime=Runtime(script);var frame=runtime.Tick();
+        Assert.AreEqual(16,frame.AnimationArguments.Length);Assert.AreEqual((short)-1,frame.AnimationArguments[15]);
+        Assert.AreEqual((short)0,frame.AnimationArguments[14]);Assert.AreEqual((short)32767,frame.AnimationArguments[1]);
+        runtime.Cancel();CollectionAssert.AreEqual(new short[16],runtime.Snapshot().AnimationArguments);
+        Assert.AreEqual((short)-1,frame.AnimationArguments[15]);
+        Assert.ThrowsExactly<SourceAnimationException>(()=>Runtime(new(1,"outside-register",[C("setarg","16","1"),C("end")])));
+    }
+    [TestMethod]
     public void LocalHelperLabelsAllowBackwardReturnAndCannotEscapeIntoRootScope()
     {
         var helper=new[]{C("jumpargeq","7","1","selected"),C("return"),C("setarg","1","41"),C("goto","finish")};
@@ -40,7 +56,7 @@ public sealed class SourceArgumentBranchTests
         Assert.ThrowsExactly<InvalidDataException>(()=>Runtime(new(1,"return",[C("return"),C("end")])));
         var foreign=fall with{SubroutineLabels=new Dictionary<string,IReadOnlyDictionary<string,int>>{{"absent",new Dictionary<string,int>{{"x",0}}}}};Assert.ThrowsExactly<InvalidDataException>(()=>Runtime(foreign));
     }
-    [TestMethod][DataRow("-1","0","done")][DataRow("8","0","done")][DataRow("0","65536","done")][DataRow("0","-32769","done")][DataRow("0","0","missing")]
+    [TestMethod][DataRow("-1","0","done")][DataRow("16","0","done")][DataRow("0","65536","done")][DataRow("0","-32769","done")][DataRow("0","0","missing")]
     public void InvalidArgumentWidthsAndForeignLabelsFailClosed(string index,string value,string label)
     {
         var script=new SourceAnimationScript(1,"invalid-branch",[C("jumpargeq",index,value,label),C("end")]){Labels=new Dictionary<string,int>{{"done",1}}};

@@ -10,7 +10,13 @@ namespace Game.Application;
 /// It adds no Domain event, command, RNG draw, saved field or authoritative acknowledgement.</summary>
 public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequence, long AttackSequence,
     long PpSequence, long ResultSequence, int SourceMoveId, BattlerSlot Actor, BattlerSlot Target,
-    bool HitsSubstitute) { public byte? MoveTurn {get;init;} public bool AcknowledgesCurrentReceipt=>MoveTurn is null; }
+    bool HitsSubstitute)
+{
+    public byte? MoveTurn {get;init;}
+    public ushort? MovePower {get;init;}
+    public int? MoveDamage {get;init;}
+    public bool AcknowledgesCurrentReceipt {get;init;} = true;
+}
 public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch? Dispatch, string Reason);
 
 public static partial class CampaignMoveAnimationPresentation
@@ -187,10 +193,9 @@ public static partial class CampaignMoveAnimationPresentation
             var result=eligible[0];var ownPp=pp.Single(p=>p.Target==result.Target);
             return new(new(battle.Id,used.Sequence,attack.Sequence,ownPp.Sequence,result.Sequence,move,used.Actor,result.Target,false),"committed-source-animation");
         }
-        if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].PpOwner != used.Actor ||
-            pp[0].Target != used.Target || pp[0].CurrentMove != used.Move || pp[0].ChosenMove != used.Move ||
-            pp[0].PpSlot != used.Slot || pp[0].Before != used.PpBefore || pp[0].After != used.PpAfter ||
-            pp[0].Before is <1 or >255 || pp[0].After is <0 or >255 || pp[0].CommandCost is <1 or >2 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
+        if(definition!.Effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE")
+            return GroundSpreadAnimation(battle,used,attack,definition,action,pp);
+        if (!ValidSingleInvocationPp(pp,used,2))
             return new(null, "unmatched-source-pp-command");
         if(move==273)
         {
@@ -268,6 +273,15 @@ public static partial class CampaignMoveAnimationPresentation
                 after!=((changed.Before??new WildBattleCalledOverlay()) with{Type1=after.Type1,Type2=after.Type1}))
                 return new(null,"unmatched-source-type-change-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_LEECH_SEED")
+        {
+            var seeds=action.OfType<SourceLeechSeedChangedEvent>().ToArray();
+            if(definition.Target!="MOVE_TARGET_SELECTED"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||used.Actor==used.Target||
+                seeds.Length!=1||seeds[0] is not {Before:null,Reason:"move"} seed||seed.Side!=used.Target||seed.After!=used.Actor||
+                action.Length<2||action[0]!=pp[0]||action[1]!=seed)
+                return new(null,"unmatched-source-leech-seed-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,seed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(definition.Effect=="EFFECT_MEAN_LOOK")
         {
@@ -355,7 +369,8 @@ public static partial class CampaignMoveAnimationPresentation
         if (hits.Length != 1 || hits[0].Sequence <= pp[0].Sequence) return new(null, "unmatched-source-hit-result");
         // Damage and HP deltas are deliberately not eligibility inputs. Endure and substitute can
         // leave actual Pokémon HP unchanged while the original attack animation still executes.
-        return new(new(battle.Id, used.Sequence, attack.Sequence, pp[0].Sequence, hits[0].Sequence, move,
-            used.Actor, used.Target, hits[0] is SourceSubstituteDamagedEvent), "committed-source-animation");
+        var dispatch=new CampaignMoveAnimationDispatch(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,hits[0].Sequence,move,
+            used.Actor,used.Target,hits[0] is SourceSubstituteDamagedEvent);
+        return WithCommittedHitInputs(battle,used,attack,definition!,hits[0],dispatch);
     }
 }

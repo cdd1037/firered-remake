@@ -112,9 +112,9 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({24,273,309,154,292,162,305,331,28,189,5,25,299,42,333,40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({89,99,222,228,24,273,309,154,292,162,305,331,28,189,5,25,299,42,333,40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
   for s in scripts:
-   self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
+   self.assertTrue(any(c['op']=='end' for c in s['commands']));self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data)
   for move in [20,35]:
@@ -239,7 +239,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertNotIn(111,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('callback:MissingGrayscale',next(b for b in blocked if b['moveId']==111)['missing'])
  def test_attached_callbacks_reuse_frame_and_affine_recipes_without_admitting_unclosed_roots(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data);roots={s['moveId'] for s in pack['scripts']}
-  self.assertTrue({207,321}<=roots);self.assertFalse(roots&{99,137,184,218,259,269})
+  self.assertTrue({99,207,321}<=roots);self.assertFalse(roots&{137,184,218,259,269})
   eye=next(r for r in pack['spriteRecipes'] if r['template']=='gEyeSparkleSpriteTemplate');anger=next(r for r in pack['spriteRecipes'] if r['template']=='gAngerMarkSpriteTemplate')
   self.assertEqual([0,4,8,4,0],[f['tile'] for f in eye['animations'][0]]);self.assertEqual([4]*5,[f['duration'] for f in eye['animations'][0]])
   self.assertEqual('AnimAngerMark',anger['callback']);self.assertFalse(anger['affineDoubleSize'])
@@ -456,7 +456,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertEqual(['AnimTask_IsContest','AnimTask_IsTargetPlayerSide'],[r['args'][0] for r in body if r['op']=='createvisualtask'])
   self.assertEqual([['7','0','SetImpactOpponentBG'],['7','1','SetImpactPlayerBG']],[r['args'] for r in body if r['op']=='jumpargeq'])
   self.assertEqual('return',body[labels['SetImpactBackgroundRet']]['op']);self.assertEqual('goto',body[-1]['op'])
-  self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_COSMIC':16},pack['backgroundSymbols'])
+  self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_COSMIC':16},pack['backgroundSymbols'])
   self.assertFalse(any('Contests' in str(r) for r in body));self.assertNotIn('BG_IMPACT_CONTESTS',pack['backgroundSymbols'])
  def test_helper_missing_targets_cycles_and_nested_calls_are_not_admitted(self):
   raw=imp.read_sources(REFERENCE)
@@ -570,4 +570,38 @@ class PhysicalImportTests(unittest.TestCase):
    self.assertIn(old,raw[path]);changed=dict(raw);changed[path]=raw[path].replace(old,new)
    with patch.object(imp,'read_sources',return_value=changed):
     with self.assertRaisesRegex(ValueError,'strike source|Swipe source'):imp.build(REFERENCE)
+ def test_power_shake_roots_keep_native_operands_branch_graphs_and_existing_materials(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);rows={s['moveId']:s for s in pack['scripts']}
+  quake=rows[89];self.assertEqual('Move_EARTHQUAKE',quake['label'])
+  self.assertEqual([['AnimTask_HorizontalShake','5','(MAX_BATTLERS_COUNT + 1)','10','50'],['AnimTask_HorizontalShake','5','MAX_BATTLERS_COUNT','10','50']],[c['args'] for c in quake['commands'] if c['op']=='createvisualtask'])
+  self.assertEqual({'SE_M_EARTHQUAKE'},set(quake['soundEffects']))
+  rage=rows[99];self.assertEqual(['AnimTask_ShakeTargetBasedOnMovePowerOrDmg','2','TRUE','1','10','1','0'],next(c['args'] for c in rage['commands'] if c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ShakeTargetBasedOnMovePowerOrDmg'))
+  magnitude=rows[222];self.assertEqual([['15','FALSE','MagnitudeRegular'],['15','TRUE','MagnitudeIntense']],[c['args'] for c in magnitude['commands'] if c['op']=='jumpargeq'])
+  self.assertEqual('end',magnitude['commands'][magnitude['labels']['MagnitudeEnd']]['op']);self.assertEqual('goto',magnitude['commands'][-1]['op'])
+  for name,count in [('MagnitudeRegular',0),('MagnitudeIntense',2)]:
+   start=magnitude['labels'][name];block=[]
+   for c in magnitude['commands'][start:]:
+    block.append(c)
+    if c['op']=='goto':break
+   self.assertEqual(count,sum(c['op']=='createsprite' for c in block));self.assertTrue(all(c['args'][3]=='0' for c in block if c['op']=='createvisualtask'))
+  pursuit=rows[228];self.assertEqual(['PursuitNormal','PursuitOnSwitchout'],next(c['args'] for c in pursuit['commands'] if c['op']=='choosetwoturnanim'))
+  for label,scale in [('PursuitNormal','2'),('PursuitOnSwitchout','1')]:
+   start=pursuit['labels'][label];self.assertEqual(scale,pursuit['commands'][start+1]['args'][-1]);self.assertEqual(['AnimTask_ShakeTargetBasedOnMovePowerOrDmg','5','FALSE','1','6','1','0'],pursuit['commands'][start+2]['args'])
+  self.assertEqual(1,pack['backgroundSymbols']['BG_DARK']);self.assertEqual({'ANIM_TAG_IMPACT','ANIM_TAG_ANGER'},set(rage['spriteTags']))
+
+ def test_power_shake_mutated_dependency_abi_or_branch_blocks_whole_root(self):
+  raw=imp.read_sources(REFERENCE);base,_=imp.build(REFERENCE);expected={s['moveId'] for s in json.loads(base)['scripts']}
+  cases=[(b'AnimTask_HorizontalShake,',b'UnknownHorizontalShake,',{89,222}),
+   (b'AnimTask_ShakeTargetBasedOnMovePowerOrDmg,',b'UnknownPowerShake,',{99,228}),
+   (b'AnimTask_IsPowerOver99,',b'UnknownPowerPredicate,',{222}),
+   (b'AnimTask_ShakeTargetBasedOnMovePowerOrDmg, 2, TRUE, 1, 10, 1, 0',b'AnimTask_ShakeTargetBasedOnMovePowerOrDmg, 2, TRUE, 1, 10',{99}),
+   (b'jumpargeq 15, FALSE, MagnitudeRegular',b'jumpargeq 16, FALSE, MagnitudeRegular',{222}),
+   (b'jumpargeq 15, FALSE, MagnitudeRegular',b'jumpargeq 15, FALSE, MissingMagnitude',{222}),
+   (b'goto MagnitudeEnd',b'goto MagnitudeRegular',{222}),
+   (b'choosetwoturnanim PursuitNormal, PursuitOnSwitchout',b'choosetwoturnanim PursuitNormal, MissingPursuit',{228})]
+  for before,after,missing in cases:
+   self.assertIn(before,raw['data/battle_anim_scripts.s']);changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(before,after)
+   with patch.object(imp,'read_sources',return_value=changed):data,_=imp.build(REFERENCE)
+   self.assertEqual(expected-missing,{s['moveId'] for s in json.loads(data)['scripts']},str(before))
+
 if __name__=='__main__':unittest.main()

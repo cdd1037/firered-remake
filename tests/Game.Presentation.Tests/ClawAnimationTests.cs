@@ -90,7 +90,7 @@ public sealed class ClawAnimationTests
             Assert.AreEqual(0,audio.Cues.Count);var frame=runtime.Tick();var cue=audio.Cues.Single();
             Assert.AreEqual("SE_GENERATED_WRAPPER_PROBE",cue.Id);Assert.AreEqual(0,cue.Frame);Assert.AreEqual(1,cue.PanningPlayer!.Value);
             int pan=actor%2==0?(target%2==0?-64:63):(target%2==0?-63:63);Assert.AreEqual(pan,cue.Pan);
-            CollectionAssert.AreEqual(new short[]{129,63,222,0,0,0,666,777},frame.AnimationArguments);
+            CollectionAssert.AreEqual(new short[]{129,63,222,0,0,0,666,777}.Concat(new short[8]).ToArray(),frame.AnimationArguments);
             Assert.AreEqual(0,runtime.ActiveVisualCount);Assert.AreEqual(0,frame.Sprites.Length);
             for(int i=0;i<12&&runtime.Active;i++)runtime.Tick();Assert.IsFalse(runtime.Active);Assert.AreEqual(1,audio.Cues.Count);
         }

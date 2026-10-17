@@ -46,7 +46,7 @@ public sealed class SlidingEffectTests
             var runtime=new SourceBattleAnimation(script,new("blend",1,322,new(actor),new(actor)),b,true,new Audio());
             for(int tick=1;tick<=11;tick++)
             {
-                var frame=runtime.Tick();CollectionAssert.AreEqual(new short[]{2,2,0,3,0,77,0,0},frame.AnimationArguments);int coefficient=Math.Max(0,(tick+1)/3-1);
+                var frame=runtime.Tick();CollectionAssert.AreEqual(new short[]{2,2,0,3,0,77,0,0}.Concat(new short[8]).ToArray(),frame.AnimationArguments);int coefficient=Math.Max(0,(tick+1)/3-1);
                 if(coefficient==0){Assert.AreEqual(0,frame.PaletteBlends.Length);continue;}
                 CollectionAssert.AreEquivalent(Enumerable.Range(16,4).Where(p=>p!=16+actor).ToArray(),frame.PaletteBlends.Select(p=>p.Palette).ToArray());Assert.IsTrue(frame.PaletteBlends.All(p=>p.Coefficient==coefficient&&p.Color==0));
             }

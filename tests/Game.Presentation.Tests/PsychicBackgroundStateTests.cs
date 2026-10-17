@@ -17,7 +17,7 @@ public sealed class PsychicBackgroundStateTests
     public void PaletteTaskStartsOnLoadFrameRotatesOnlyElevenEntriesAndStopsAfterSharedArgument()
     {
         var runtime=Runtime(C("delay","3"),C("setarg","7","0xFFFF"),C("delay","8"),C("waitbgfadein"),C("end"));
-        CollectionAssert.AreEqual(new short[8],runtime.Snapshot().AnimationArguments);
+        CollectionAssert.AreEqual(new short[16],runtime.Snapshot().AnimationArguments);
         var frames=new List<SourceAnimationFrame>();while(runtime.Active&&frames.Count<100)frames.Add(runtime.Tick());
         CollectionAssert.AreEqual(Colors(),frames[19].MoveBackground!.FadedPalette);
         CollectionAssert.AreEqual(Colors(),frames[21].MoveBackground!.FadedPalette);
@@ -35,7 +35,7 @@ public sealed class PsychicBackgroundStateTests
         var frames=new List<SourceAnimationFrame>();while(runtime.Active&&frames.Count<100)frames.Add(runtime.Tick());
         var blended=Colors().Select(c=>SourcePaletteMath.Blend(c,8,32767)).ToArray();
         CollectionAssert.AreEqual(blended,frames[24].MoveBackground!.FadedPalette);
-        CollectionAssert.AreEqual(new short[]{1,0,8,8,32767,0,0,1234},frames[24].AnimationArguments);
+        CollectionAssert.AreEqual(new short[]{1,0,8,8,32767,0,0,1234}.Concat(new short[8]).ToArray(),frames[24].AnimationArguments);
         ushort last=blended[11];for(int i=10;i>0;i--)blended[i+1]=blended[i];blended[1]=last;
         CollectionAssert.AreEqual(blended,frames[26].MoveBackground!.FadedPalette);
     }
@@ -47,6 +47,6 @@ public sealed class PsychicBackgroundStateTests
         var restored=frames.First(f=>f.MoveBackground!.Revision==2);
         CollectionAssert.AreEqual(Colors(16),restored.MoveBackground!.FadedPalette);
         Assert.IsNull(frames[^1].MoveBackground!.Id);Assert.AreEqual((short)-1,frames[^1].AnimationArguments[7]);
-        runtime.Cancel();CollectionAssert.AreEqual(new short[8],runtime.Snapshot().AnimationArguments);Assert.AreEqual(0,runtime.Snapshot().MoveBackground!.FadedPalette.Length);
+        runtime.Cancel();CollectionAssert.AreEqual(new short[16],runtime.Snapshot().AnimationArguments);Assert.AreEqual(0,runtime.Snapshot().MoveBackground!.FadedPalette.Length);
     }
 }

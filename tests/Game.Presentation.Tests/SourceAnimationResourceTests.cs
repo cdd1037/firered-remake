@@ -53,7 +53,9 @@ public sealed class SourceAnimationResourceTests
             var resolved=resources.Resolve(script.MoveId);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
             assets.Add("background",new(240,112,new ushort[240*112]));foreach(var battler in battlers)assets.Add(battler.Asset,new(64,64,Enumerable.Repeat((ushort)0x801f,4096).ToArray()));
             var surface=resources.CreateBackgroundSurface(0);
-            var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null};
+            // Controlled invocation inputs exercise resource composition; receipt-derived
+            // values and both branch thresholds are checked by dedicated family tests.
+            var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){MovePower=100,MoveDamage=24,MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null};
             cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
             var scene=new SourceBattleAnimation.SpriteScene();
             // Composition uses controlled finite cry liveness. Source-mode PCM

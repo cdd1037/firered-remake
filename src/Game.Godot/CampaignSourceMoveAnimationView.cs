@@ -256,7 +256,7 @@ public partial class CampaignView
         var resolved=_sourceAnimationResources!.Resolve(dispatch.SourceMoveId);
         var script=resolved.Script;foreach(var asset in resolved.Assets)assets[asset.Key]=asset.Value;
         var backgroundSurface=SourceTerrainSurface(assets["background"]);var backgroundPalette=Enumerable.Range(0,16).Select(i=>backgroundSurface.PaletteColor(2,i)).ToArray();
-        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn};
+        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn,MovePower=dispatch.MovePower,MoveDamage=dispatch.MoveDamage};
         cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         try

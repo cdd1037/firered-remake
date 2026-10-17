@@ -8,6 +8,10 @@ spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/import
 spec=importlib.util.spec_from_file_location('source_animation_affine',ROOT/'scripts/lib/source_animation_affine.py');affine=importlib.util.module_from_spec(spec);spec.loader.exec_module(affine)
 task_affine_program=affine.task_affine_program
 TEMPLATES={
+ 'gFirePlumeSpriteTemplate':('battle_anim_fire.c','AnimFirePlume'),
+ 'gLargeFlameSpriteTemplate':('battle_anim_fire.c','AnimLargeFlame'),
+ 'gLargeFlameScatterSpriteTemplate':('battle_anim_fire.c','AnimLargeFlame'),
+ 'gLeechSeedSpriteTemplate':('battle_anim_effects_1.c','AnimLeechSeed'),
  'gDizzyPunchDuckSpriteTemplate':('battle_anim_fight.c','AnimDizzyPunchDuck'),
  'gConstrictBindingSpriteTemplate':('battle_anim_effects_1.c','AnimConstrictBinding'),
  'gKnockOffStrikeSpriteTemplate':('battle_anim_effects_3.c','AnimKnockOffStrike'),
@@ -191,7 +195,8 @@ SOUNDS|={'SE_M_BITE','SE_M_VICEGRIP'}
 GFX|={'ANIM_TAG_FOCUS_ENERGY'}
 SOUNDS|={'SE_M_DRAGON_RAGE'}
 SOUNDS|={'SE_M_GUST','SE_M_GUST2','SE_M_STRING_SHOT','SE_M_ICY_WIND','SE_M_BUBBLE_BEAM2'}
-GFX|={'ANIM_TAG_FIRE_PLUME'}
+GFX|={'ANIM_TAG_FIRE_PLUME','ANIM_TAG_FIRE','ANIM_TAG_SEED'}
+SOUNDS|={'SE_M_SACRED_FIRE'}
 SOUNDS|={'SE_M_FLAME_WHEEL2'}
 TASKS|={'AnimTask_BlendMonInAndOut'}
 GFX|={'ANIM_TAG_MAGENTA_HEART','ANIM_TAG_ITEM_BAG'}
@@ -361,7 +366,7 @@ def build(reference):
   colors=[int(c) for row in rows[3:] for c in row.split()]
   if len(colors)!=48:raise ValueError('Invalid palette length')
   return colors
- for asset,png,shape,pal in [('duck','duck',(16,48),None),('tendrils','tendrils',(64,128),None),('slam-hit-2','slam_hit_2',(64,128),None),('green-spike','green_spike',(16,16),None),('roots','roots',(32,128),None),('leer','leer',(32,160),None),('circle-of-light','circle_of_light',(64,64),'electric_orbs'),('thought-bubble','thought_bubble',(32,128),None),('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
+ for asset,png,shape,pal in [('fire','fire',(32,256),None),('duck','duck',(16,48),None),('tendrils','tendrils',(64,128),None),('slam-hit-2','slam_hit_2',(64,128),None),('green-spike','green_spike',(16,16),None),('roots','roots',(32,128),None),('leer','leer',(32,160),None),('circle-of-light','circle_of_light',(64,64),'electric_orbs'),('thought-bubble','thought_bubble',(32,128),None),('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
   if pal in ('electric_orbs','water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+pal+'.png'))) as im:colors=im.getpalette()[:48]
   else:colors=palette(pal) if pal else None
@@ -389,6 +394,13 @@ def build(reference):
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Impact source registration differs: '+stem)
   for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
    if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Impact source material differs: '+stem)
+ # Fire/seed callbacks share existing plume/seed materials; verify the actual
+ # sheet registrations and shared fire palette before admitting the new roots.
+ for stem,symbol,pal,size in [('fire','Fire','Fire',0x1000),('fire_plume','FirePlume','Fire',0x0a00),('seed','Seed','Seed',0x0180)]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal+r',\s*'+tag+r'\}',registrations):raise ValueError('Fire/seed source registration differs: '+stem)
+  for kind,symbol,path,suffix in [('Gfx',symbol,stem,'4bpp'),('Pal',pal,'fire' if pal=='Fire' else 'seed','gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Fire/seed source material differs: '+stem)
  # Sonic Boom's material is AIR_WAVE, not the separate AIR_WAVE_2 crescent.
  if not re.search(r'\{gBattleAnimSpriteGfx_AirWave,\s*0x0100,\s*ANIM_TAG_AIR_WAVE\}',registrations) or not re.search(r'\{gBattleAnimSpritePal_AirWave,\s*ANIM_TAG_AIR_WAVE\}',registrations):raise ValueError('Sonic Boom source registration differs')
  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:

@@ -68,7 +68,7 @@ public static partial class CampaignMoveAnimationPresentation
         int ordinal=Array.FindIndex(hits,h=>h.Sequence==current.Sequence);
         if(ordinal<0)return Reject("unmatched-source-multihit-result");
         return new(new(battle,current.Sequence,attack.Sequence,pp.Sequence,current.Sequence,move,new(used.Actor),new(used.Target),
-            current.Kind=="substitute"){MoveTurn=checked((byte)ordinal)},"committed-source-multihit-animation");
+            current.Kind=="substitute"){MoveTurn=checked((byte)ordinal),AcknowledgesCurrentReceipt=false},"committed-source-multihit-animation");
     }
     private static MultiHitRow MultiHitRead(SourceBattleEvent e)=>e switch
     {

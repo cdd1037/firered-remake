@@ -22,7 +22,9 @@ def read_sources(reference):
                if (reference/'.git').exists() else (reference/path).read_bytes()) for path in paths}
 SPRITES={'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gGrantingStarsSpriteTemplate','gMeteorMashStarSpriteTemplate','gArmThrustHandSpriteTemplate','gFurySwipesSpriteTemplate','gFangSpriteTemplate','gSuperFangSpriteTemplate','gBulletSeedSpriteTemplate','gSandAttackDirtSpriteTemplate','gMudSlapMudSpriteTemplate','gMegaPunchKickSpriteTemplate','gSpinningHandOrFootSpriteTemplate','gFireSpreadSpriteTemplate','gPinMissileSpriteTemplate','gIcicleSpearSpriteTemplate','gLinearStingerSpriteTemplate','gHandleInvertHitSplatSpriteTemplate','gPoisonBubbleSpriteTemplate','gClawSlashSpriteTemplate','gFireSpinSpriteTemplate','gShakeMonOrTerrainSpriteTemplate','gSpinningBoneSpriteTemplate','gFistFootSpriteTemplate','gEyeSparkleSpriteTemplate','gAngerMarkSpriteTemplate','gEclipsingOrbSpriteTemplate','gBreathPuffSpriteTemplate','gHealingBlueStarSpriteTemplate','gMudsportMudSpriteTemplate','gKarateChopSpriteTemplate','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSimplePaletteBlendSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gBasicHitSplatSpriteTemplate','gHorizontalLungeSpriteTemplate','gSlideMonToOffsetSpriteTemplate','gSlideMonToOriginalPosSpriteTemplate','gComplexPaletteBlendSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate'}
 TASKS={'AnimTask_MeditateStretchAttacker','AnimTask_BlendMonInAndOut','AnimTask_BlendColorCycle','AnimTask_IsContest','AnimTask_IsTargetPlayerSide','AnimTask_MetallicShine','AnimTask_BlendBattleAnimPal','SoundTask_PlaySE1WithPanning','AnimTask_RockMonBackAndForth','AnimTask_DefenseCurlDeformMon','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','AnimTask_ScaleMonAndRestore','AnimTask_SwayMon','AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+TASKS|={'AnimTask_HorizontalShake','AnimTask_ShakeTargetBasedOnMovePowerOrDmg','AnimTask_IsPowerOver99'}
 NEW= {'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gMeteorMashStarSpriteTemplate','gArmThrustHandSpriteTemplate','gFurySwipesSpriteTemplate','gFangSpriteTemplate','gSuperFangSpriteTemplate','gBulletSeedSpriteTemplate','gSandAttackDirtSpriteTemplate','gMudSlapMudSpriteTemplate','gMegaPunchKickSpriteTemplate','gSpinningHandOrFootSpriteTemplate','gPinMissileSpriteTemplate','gIcicleSpearSpriteTemplate','gLinearStingerSpriteTemplate','gHandleInvertHitSplatSpriteTemplate','gClawSlashSpriteTemplate','gSpinningBoneSpriteTemplate','jumpifmoveturn','choosetwoturnanim','gEyeSparkleSpriteTemplate','gAngerMarkSpriteTemplate','AnimTask_DefenseCurlDeformMon','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','gMudsportMudSpriteTemplate','goto','gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+NEW|={'AnimTask_HorizontalShake','AnimTask_ShakeTargetBasedOnMovePowerOrDmg','AnimTask_IsPowerOver99'}
 def sprite_recipe(source,template,asset,expected_callback):
  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
  if match is None:raise ValueError('Missing sprite recipe '+template)
@@ -236,39 +238,47 @@ def build(reference):
  def source_block(label):
   match=re.search(r'^'+re.escape(label)+r':\n',source,re.M)
   if not match:raise ValueError('Missing source label '+label)
-  result=[]
+  result=[];local={}
   for offset,line in enumerate(source[match.end():].splitlines()):
    text=line.split('@',1)[0].strip()
    if not text:continue
-   if text.endswith(':'):raise ValueError('Unterminated source block '+label)
+   if text.endswith(':'):
+    name=text[:-1]
+    if name.startswith('Move_') or name==label or name in local:raise ValueError('Unterminated or overlapping source block '+label)
+    local[name]=len(result);continue
    op,*tail=text.split(None,1);args=[a.strip() for a in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else []
    result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
-   if op in {'choosetwoturnanim','goto','end','return'}:return result
+   if op in {'choosetwoturnanim','goto','end','return'}:return result,local
   raise ValueError('Unterminated source block '+label)
  def branch_targets(commands):
-  return [target for c in commands for target in (c['args'] if c['op']=='choosetwoturnanim' else c['args'][:1] if c['op']=='goto' else c['args'][1:2] if c['op']=='jumpifmoveturn' else [])]
+  return [target for c in commands for target in (c['args'] if c['op']=='choosetwoturnanim' else c['args'][:1] if c['op']=='goto' else c['args'][1:2] if c['op']=='jumpifmoveturn' else c['args'][2:3] if c['op']=='jumpargeq' else [])]
  for match in re.finditer(r'^(Move_(\w+)):\n',source,re.M):
   commands=[];gaps=set();symbols=set();labels={}
   try:
-   commands=source_block(match[1]);graph={match[1]:branch_targets(commands)};pending=list(graph[match[1]])
+   commands,labels=source_block(match[1]);parsed={match[1]};pending=branch_targets(commands)
    while pending:
     label=pending.pop(0)
-    if label in graph:continue
-    labels[label]=len(commands);block=source_block(label);commands.extend(block)
-    graph[label]=branch_targets(block);pending.extend(graph[label])
+    if label in parsed or label in labels:continue
+    labels[label]=len(commands);block,local=source_block(label)
+    if set(local)&labels.keys():raise ValueError('Overlapping source branch region')
+    labels.update({name:len(commands)+pc for name,pc in local.items()});commands.extend(block);parsed.add(label);pending.extend(branch_targets(block))
     if len(commands)>128:raise ValueError('Source command bound')
    active=set();done=set()
-   def visit(label):
-    if label in active:raise ValueError('Unbounded source branch cycle')
-    if label in done:return
-    active.add(label)
-    for target in graph[label]:visit(target)
-    active.remove(label);done.add(label)
-   visit(match[1])
+   def visit(pc):
+    if pc in active:raise ValueError('Unbounded source branch cycle')
+    if pc in done:return
+    if not 0<=pc<len(commands):raise ValueError('Source branch falls through')
+    active.add(pc);command=commands[pc];op=command['op']
+    for target in branch_targets([command]):visit(0 if target==match[1] else labels[target])
+    if op not in {'goto','choosetwoturnanim','end','return'}:visit(pc+1)
+    active.remove(pc);done.add(pc)
+   visit(0)
   except ValueError:gaps.add('control-flow:unterminated')
   for command in commands:
    op=command['op'];args=command['args']
-   if op not in hit.OPS|{'panse_adjustall','panse','fadetobg','waitplaysewithpan','call','splitbgprio','goto','choosetwoturnanim','jumpifmoveturn','restorebg','waitbgfadein'}:gaps.add('command:'+op)
+   if op not in hit.OPS|{'panse_adjustall','panse','fadetobg','waitplaysewithpan','call','splitbgprio','goto','choosetwoturnanim','jumpifmoveturn','restorebg','waitbgfadein','jumpargeq'}:gaps.add('command:'+op)
+   if op=='jumpargeq':
+    if len(args)!=3 or not args[0].isdigit() or not 0<=int(args[0])<16 or not (args[1] in {'TRUE','FALSE'} or re.fullmatch(r'-?\d+',args[1]) and -32768<=int(args[1])<=32767):gaps.add('control-flow:branch-operands')
    if op=='jumpifmoveturn':
     symbols.add(op)
     if len(args)!=2 or not args[0].isdigit() or not 0<=int(args[0])<=255:gaps.add('control-flow:branch-operands')
@@ -278,14 +288,18 @@ def build(reference):
    if op in ('createsprite','createvisualtask'):
     symbols.add(args[0]);allowed=SPRITES if op=='createsprite' else TASKS
     if args[0] not in allowed:gaps.add('callback:'+args[0])
+    # Source callbacks may read retained argument registers. Admit this family
+    # only when the script explicitly supplies every value consumed by its ABI.
+    widths={'AnimTask_HorizontalShake':5,'AnimTask_ShakeTargetBasedOnMovePowerOrDmg':7,'AnimTask_IsPowerOver99':2}
+    if op=='createvisualtask' and args[0] in widths and len(args)!=widths[args[0]]:gaps.add('callback-arguments:'+args[0])
    if op=='loadspritegfx' and args[0] not in {'ANIM_TAG_SPARKLE_2','ANIM_TAG_GOLD_STARS','ANIM_TAG_SWIPE','ANIM_TAG_FANG_ATTACK','ANIM_TAG_SEED','ANIM_TAG_ICICLE_SPEAR','ANIM_TAG_NEEDLE','ANIM_TAG_CLAW_SLASH','ANIM_TAG_TORN_METAL','ANIM_TAG_BLUE_LIGHT_WALL','ANIM_TAG_SMALL_EMBER','ANIM_TAG_BONE','ANIM_TAG_EYE_SPARKLE','ANIM_TAG_ANGER','ANIM_TAG_ECLIPSING_ORB','ANIM_TAG_BREATH','ANIM_TAG_BLUE_STAR','ANIM_TAG_MUD_SAND','ANIM_TAG_IMPACT','ANIM_TAG_HANDS_AND_FEET','ANIM_TAG_CUT','ANIM_TAG_SLAM_HIT','ANIM_TAG_WHIP_HIT','ANIM_TAG_POISON_POWDER','ANIM_TAG_SLEEP_POWDER','ANIM_TAG_STUN_SPORE','ANIM_TAG_POISON_BUBBLE'}:gaps.add('graphics:'+args[0])
   # Move-turn commands require an admitted invocation contract as well as pixels.
   # Beat Up uses contributor traversal; charge moves use a turn lock, neither is
   # an ordinary EFFECT_MULTI_HIT receipt ordinal. Keep those contexts separate.
   effect=effects.get('MOVE_'+match[2])
-  if 'choosetwoturnanim' in symbols and effect!='EFFECT_MULTI_HIT':gaps.add('invocation:move-turn')
+  if 'choosetwoturnanim' in symbols and effect not in {'EFFECT_MULTI_HIT','EFFECT_PURSUIT'}:gaps.add('invocation:move-turn')
   if 'jumpifmoveturn' in symbols and effect!='EFFECT_TRIPLE_KICK':gaps.add('invocation:move-turn')
-  if not commands or commands[-1]['op']!='end':gaps.add('control-flow:unterminated')
+  if not any(c['op']=='end' for c in commands):gaps.add('control-flow:unterminated')
   if len(commands)>128:gaps.add('command-bound')
   local_subs={};local_labels={}
   for command in commands:

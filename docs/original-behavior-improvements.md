@@ -38,3 +38,11 @@
 - 批准策略由共享反向插值读取器限制端点：保留所有合法样本与既定模式参数；当插值需要起点之外的样本时，使用起点样本。没有按物种或招式伪造声音，没有读取任意主机地址，也不据此宣称宿主音频等同于原硬件的未定义读数。
 - 来源：[光球表及回调](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_anim_effects_1.c)、[原版音频汇编](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/m4a_1.s)。HyperBeamAnimationTests 分别验证原始运动与批准选择策略，AnimationCryTests 分别验证合法倒放采样与端点规则；本批 Audio536／536 和修正后 Presentation65／65（含全部184根脚本合成）通过。
 - 社区核对边界：本次检索未找到针对这两处精确边界的同题公开缺陷报告。公开的 [`Fix CRY_MODE_ECHO`](https://github.com/pret/pokeemerald/commit/342b7da5d36460bb5780ea60da4b6b5be46ddc38) 是常量命名修正，并非倒放端点修复；不能拿它证明本问题已获上游确认。上述策略依据本项目的源码边界审阅和用户批准，不据此宣称原版零售机必然出现可见／可听故障。
+
+## Magnitude 动画寄存器边界的安全解释（2026-10-17）
+
+固定源码 `include/battle_anim.h:67,86` 将动画参数声明为 8 个 `s16`，`src/battle_anim.c:34` 的定义也使用同一长度。`src/battle_anim_ground.c:713–717` 的 `AnimTask_IsPowerOver99` 却把布尔结果写入下标 15；`data/battle_anim_scripts.s:3386–3390` 随后用两个 `jumpargeq 15` 选择普通／强烈震动分支。`Cmd_jumpargeq` 直接读取该下标。源码中的相邻全局变量不能证明这是合法的 16 槽数组，也不足以证明零售版本出现了何种可见故障。
+
+按照既有现代重写与安全修复方向，重制解释采用一个明确有界的 16 槽脚本寄存器文件，保留每条精灵／任务创建指令最多 8 个参数的原始约束。参数写入仍只覆盖提供的前缀，余下寄存器保留到后续脚本读取；取消时统一清零。下标 16 及以上仍被拒绝。这样无需在通用分支解释器加入 Magnitude 特例，也不会访问或模拟相邻全局内存。
+
+大于 99 的判断只读取已提交的 `SourceMagnitudeEvent.Power`，不重新抽取 Magnitude，不修改威力、伤害或战斗 RNG。原始合法运动／寄存器数值的向量与这一安全存储策略的测试分开；不把扩展后的存储长度称为原版内存布局一致。

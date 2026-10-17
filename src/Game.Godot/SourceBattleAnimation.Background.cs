@@ -16,7 +16,11 @@ public sealed partial class SourceBattleAnimation
     private int _backgroundFadeState,_backgroundRevision,_hardwareDarkening;
     private HardwarePaletteFade? _hardwareFade;
     private long _nextTaskOrder;
-    private readonly short[] _animationArgs=new short[8];
+    // The source declares eight callback arguments, but Magnitude writes and
+    // branches on register15. The remake gives authored script registers a
+    // bounded backing instead of aliasing adjacent native globals.
+    private const int AnimationRegisterCount=16, AnimationOperandCount=8;
+    private readonly short[] _animationArgs=new short[AnimationRegisterCount];
     private readonly ushort[]? _initialBackgroundPalette;
     private ushort[]? _unfadedBackgroundPalette,_fadedBackgroundPalette;
     private SourceMoveBackgroundFrame BackgroundFrame=>new(_moveBackground,BackgroundScrollX,BackgroundScrollY,_hardwareDarkening){ScreenSize=BackgroundScreenSize,Revision=_backgroundRevision,FadedPalette=_fadedBackgroundPalette is null?[]:(ushort[])_fadedBackgroundPalette.Clone()};
@@ -24,7 +28,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(command.Op=="setarg")
         {
-            if(command.Args.Length!=2||Number(command.Args[0]) is <0 or >7||AnimationArgument(command.Args[1]) is < -32768 or >65535)Fail(command,"Shared animation argument exceeds source width.");
+            if(command.Args.Length!=2||(Number(command.Args[0])<0||Number(command.Args[0])>=AnimationRegisterCount)||AnimationArgument(command.Args[1]) is < -32768 or >65535)Fail(command,"Shared animation argument exceeds source width.");
             return true;
         }
         if(command.Op=="createvisualtask"&&command.Args.FirstOrDefault()=="AnimTask_SetPsychicBackground")
@@ -44,6 +48,8 @@ public sealed partial class SourceBattleAnimation
     private int AnimationArgument(string value)
     {
         if(value=="TRUE")return 1;if(value=="FALSE")return 0;
+        if(value=="MAX_BATTLERS_COUNT")return 4;
+        if(value=="(MAX_BATTLERS_COUNT + 1)")return 5;
         if(value=="DOUBLE_CRY_GROWL")return 255; // include/constants/sound.h
         if(_script.SpriteTags.TryGetValue(value,out int tag))return tag;
         if(_script.SoundEffects.TryGetValue(value,out int song))return song;
@@ -53,7 +59,7 @@ public sealed partial class SourceBattleAnimation
     }
     private void WriteAnimationArguments(ReadOnlySpan<string> values)
     {
-        if(values.Length>8)throw new InvalidDataException("Source animation has only eight shared arguments.");
+        if(values.Length>AnimationOperandCount)throw new InvalidDataException("Source animation has only eight shared arguments.");
         for(int i=0;i<values.Length;i++)_animationArgs[i]=unchecked((short)AnimationArgument(values[i]));
     }
     private void SetMoveBackground(int? id)
