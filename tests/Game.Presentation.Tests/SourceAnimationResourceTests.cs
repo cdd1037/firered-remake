@@ -46,7 +46,8 @@ public sealed class SourceAnimationResourceTests
             var surface=resources.CreateBackgroundSurface(0);
             var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null};
             cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
-            var runtime=new SourceBattleAnimation(resolved.Script,cue,battlers,true,new Silent(),Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray());
+            var scene=new SourceBattleAnimation.SpriteScene();
+            var runtime=new SourceBattleAnimation(resolved.Script,cue,battlers,true,new Silent(),Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray(),spriteScene:scene,spriteMaterials:assets);
             var composer=AnimationCompositionFixture.Create(resources,resolved,assets,battlers,surface);int ticks=0;
             while(runtime.Active&&ticks++<2048)
             {
@@ -55,7 +56,7 @@ public sealed class SourceAnimationResourceTests
                 Assert.AreEqual(240*112*4,composer.ComposeField(frame).Length,$"Move {script.MoveId}");
             }
             Assert.IsFalse(runtime.Active,$"Move {script.MoveId} did not finish.");
-            while(runtime.HasResidualSprites&&ticks++<4096)composer.ComposeResidualSprites(runtime.TickResidualSprites());
+            while(runtime.HasResidualSprites&&ticks++<4096)composer.ComposeField(scene.TickIdle(battlers,true));
             Assert.IsFalse(runtime.HasResidualSprites);
         }
     }

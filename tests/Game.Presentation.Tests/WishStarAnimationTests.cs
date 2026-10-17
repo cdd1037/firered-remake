@@ -17,12 +17,12 @@ public sealed class WishStarAnimationTests
     private static uint? RandomState(SourceBattleAnimation runtime)
     {var f=typeof(SourceBattleAnimation).GetField("_visualRandom",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(f);if(f.GetValue(runtime) is not SourceVisualRandom rng)return null;var state=typeof(SourceVisualRandom).GetField("_state",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(state);return (uint)state.GetValue(rng)!;}
     private static uint RandomAfter(uint seed,int draws){var rng=new SourceVisualRandom(seed);for(int i=0;i<draws;i++)rng.Next();var f=typeof(SourceVisualRandom).GetField("_state",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(f);return (uint)f.GetValue(rng)!;}
-    private static SourceAnimationFrame Advance(SourceBattleAnimation runtime)=>runtime.Active?runtime.Tick():runtime.TickResidualSprites();
+    private static SourceAnimationFrame Advance(SourceBattleAnimation runtime,SourceBattleAnimation.SpriteScene scene)=>runtime.Active?runtime.Tick():scene.TickIdle(Battlers(),true);
     private static object Registry(SourceBattleAnimation runtime){var f=typeof(SourceBattleAnimation).GetField("_sprites",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(f);var registry=f.GetValue(runtime);Assert.IsNotNull(registry);return registry;}
     private static void AddSprite(SourceBattleAnimation runtime,object sprite){var registry=Registry(runtime);var add=registry.GetType().GetMethod("Add");Assert.IsNotNull(add);add.Invoke(registry,[sprite]);}
     private static void AddParent(SourceBattleAnimation runtime,int slot,int priority=3,bool player=true)
     {var type=typeof(SourceBattleAnimation).GetNestedType("WishStarSprite",BindingFlags.NonPublic);Assert.IsNotNull(type);var sprite=Activator.CreateInstance(type,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[slot,priority,Script().SpriteRecipes[Parent],player],CultureInfo.InvariantCulture);Assert.IsNotNull(sprite);AddSprite(runtime,sprite);}
-    private static SourceBattleAnimation Bare(uint seed=0)=>new(Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()},Cue(seed:seed),Battlers(),true,new Audio());
+    private static SourceBattleAnimation Bare(SourceBattleAnimation.SpriteScene scene,uint seed=0)=>new(Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()},Cue(seed:seed),Battlers(),true,new Audio(),spriteScene:scene);
     private static void FillHelpers(SourceBattleAnimation runtime,int start,int end)
     {var helper=typeof(SourceBattleAnimation).GetNestedType("BubbleHelper",BindingFlags.NonPublic);Assert.IsNotNull(helper);for(int slot=start;slot<=end;slot++){var sprite=Activator.CreateInstance(helper,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[slot],CultureInfo.InvariantCulture);Assert.IsNotNull(sprite);AddSprite(runtime,sprite);}}
 
@@ -36,9 +36,9 @@ public sealed class WishStarAnimationTests
         foreach(var entry in doc.RootElement.GetProperty("cases").EnumerateObject())
         {
             if(entry.Value.GetProperty("kind").GetString()!="single")continue;cases++;var config=entry.Value.GetProperty("config");int actor=config[0].GetInt32();
-            var runtime=new SourceBattleAnimation(source,Cue(actor,seeds[config[1].GetInt32()]),Battlers(),true,new Audio());SourceAnimationFrame first;
+            var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(source,Cue(actor,seeds[config[1].GetInt32()]),Battlers(),true,new Audio(),spriteScene:scene);SourceAnimationFrame first;
             do{first=runtime.Tick();}while(!first.Sprites.Any(s=>s.Template==Parent));
-            var frames=new List<SourceAnimationFrame>{first};while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<160)frames.Add(Advance(runtime));Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.HasResidualSprites);
+            var frames=new List<SourceAnimationFrame>{first};while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<160)frames.Add(Advance(runtime,scene));Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.HasResidualSprites);
             var allocations=entry.Value.GetProperty("allocations").EnumerateArray().Select(v=>v.EnumerateArray().Select(x=>x.GetInt32()).ToArray()).ToDictionary(v=>v[0]);
             var states=entry.Value.GetProperty("states").EnumerateArray().Select(v=>v.EnumerateArray().Select(x=>x.GetInt32()).ToArray()).Where(v=>v[1]>=0&&v[4]==1).GroupBy(v=>(Tick:v[1],Slot:v[3])).Select(g=>g.Last());
             foreach(var v in states)
@@ -60,9 +60,13 @@ public sealed class WishStarAnimationTests
     [TestMethod][DataRow(false)][DataRow(true)]
     public void ImmediateRawInitializationRunsBeforeLowerOrHigherSlotTraversal(bool lower)
     {
-        var runtime=Bare(42);if(lower)FillHelpers(runtime,4,62);AddParent(runtime,lower?63:4);
+        var scene=new SourceBattleAnimation.SpriteScene();var runtime=Bare(scene,42);if(lower)FillHelpers(runtime,4,62);AddParent(runtime,lower?63:4);
         runtime.Tick();runtime.Tick();Assert.IsNull(RandomState(runtime));
-        if(lower){var registry=Registry(runtime);var remove=registry.GetType().GetMethod("RemoveAt");Assert.IsNotNull(remove);remove.Invoke(registry,[4]);}
+        if(lower)
+        {
+            var registry=Registry(runtime);var sprite=((System.Collections.IEnumerable)registry).Cast<object>().Single(s=>(int)s.GetType().GetProperty("Slot")!.GetValue(s)! == 4);
+            var remove=registry.GetType().GetMethod("Remove");Assert.IsNotNull(remove);remove.Invoke(registry,[sprite]);
+        }
         var birth=runtime.Tick().Sprites.Single(s=>s.Template==Child);Assert.AreEqual(lower?4:5,birth.Slot);Assert.AreEqual(4,birth.Subpriority);
         Assert.IsTrue(birth.Tile is 4 or 5);Assert.IsTrue(birth.Visible);Assert.AreEqual(RandomAfter(42,2),RandomState(runtime));
         var next=runtime.Tick().Sprites.Single(s=>s.Template==Child);Assert.AreEqual(lower,next.Visible,"Higher child ages once on birth frame; lower child initializes immediately but ages next pass.");Assert.AreEqual(birth.Tile,next.Tile);Assert.AreEqual(birth.Offset,next.Offset);
@@ -101,13 +105,13 @@ public sealed class WishStarAnimationTests
     [TestMethod]
     public void ExhaustedImmediateAllocationConsumesNoRandomAndCancellationClearsAllCells()
     {
-        var runtime=Bare(42);FillHelpers(runtime,4,62);AddParent(runtime,63);
-        for(int tick=0;tick<65;tick++){var frame=Advance(runtime);Assert.IsFalse(frame.Sprites.Any(s=>s.Template==Child));Assert.IsNull(RandomState(runtime));}
+        var scene=new SourceBattleAnimation.SpriteScene();var runtime=Bare(scene,42);FillHelpers(runtime,4,62);AddParent(runtime,63);
+        for(int tick=0;tick<65;tick++){var frame=Advance(runtime,scene);Assert.IsFalse(frame.Sprites.Any(s=>s.Template==Child));Assert.IsNull(RandomState(runtime));}
         Assert.AreEqual(0,runtime.ActiveVisualCount);runtime.Cancel();Assert.IsFalse(runtime.HasResidualSprites);Assert.AreEqual(0,runtime.Snapshot().Sprites.Length);
         foreach(int stop in new[]{1,20,40,100,170,260,400})
         {
-            var audio=new Audio();var cancelled=new SourceBattleAnimation(Script(),Cue(seed:42),Battlers(),true,audio);int reached=0;
-            while((cancelled.Active||cancelled.HasResidualSprites)&&reached<stop){Advance(cancelled);reached++;}
+            var audio=new Audio();var cancelledScene=new SourceBattleAnimation.SpriteScene();var cancelled=new SourceBattleAnimation(Script(),Cue(seed:42),Battlers(),true,audio,spriteScene:cancelledScene);int reached=0;
+            while((cancelled.Active||cancelled.HasResidualSprites)&&reached<stop){Advance(cancelled,cancelledScene);reached++;}
             Assert.IsTrue(reached==stop||!cancelled.Active&&!cancelled.HasResidualSprites);if(stop<=20)Assert.IsNull(RandomState(cancelled));
             int sounds=audio.Cues.Count;cancelled.Cancel();cancelled.Cancel();Assert.AreEqual(sounds,audio.Cues.Count);Assert.IsFalse(cancelled.Active);Assert.IsFalse(cancelled.HasResidualSprites);Assert.IsNull(RandomState(cancelled));Assert.AreEqual(0,cancelled.Snapshot().Sprites.Length);
         }

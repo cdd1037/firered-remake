@@ -53,13 +53,6 @@ public partial class CampaignView
     private string DoubleTrainerClass => Route16FlyDoubleTrainer is not null ? "YOUNG COUPLE" : TrainerTowerTrainerText("className") ?? SeafoamDoubleTrainerText("className") ?? SevenIslandDoubleText("className") ?? SixIslandDoubleText("className") ?? SeviiRubyDoubleText("className") ?? VictoryRoadDoubleTrainer?.ClassName ?? FirstSeviiDoubleTrainer?.ClassName ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : "TWINS");
     private string DoubleTrainerName => Route16FlyDoubleTrainer?.SourceTrainerName ?? TrainerTowerTrainerText("name") ?? SeafoamDoubleTrainerText("name") ?? SevenIslandDoubleText("name") ?? SixIslandDoubleText("name") ?? SeviiRubyDoubleText("name") ?? VictoryRoadDoubleTrainer?.Name ?? FirstSeviiDoubleTrainer?.Name ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? trainer.SourceTrainerName : "ELI & ANNE");
     private Texture2D DoubleTrainerPortrait => Route16FlyDoubleTrainer is not null ? _forestTrainerPortraits["young-couple-front"] : TrainerTowerTrainerPortrait ?? SeafoamDoubleTrainerPortrait ?? SevenIslandDoublePortrait ?? SixIslandDoublePortrait ?? SeviiRubyDoublePortrait ?? VictoryRoadDoublePortrait ?? FirstSeviiDoublePortrait ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _forestTrainerPortraits[_cinnabarTrainerPortraits[trainer.TrainerPic]] : _doubleTextures["twins-front"]);
-    private bool TryCinnabarPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
-    {
-        if(_catalog.CinnabarRegion?.NewMaps.ContainsKey(map)!=true)return false;
-        string family=map.Value.StartsWith("map.pokemon-mansion-",StringComparison.Ordinal)?"mansion":map.Value=="map.cinnabar-island-gym"?"gym":throw new InvalidDataException("Cinnabar map has no patch atlas.");
-        if(!_cinnabarTiles.TryGetValue((family,edit.SourceMetatileId),out var tile))throw new InvalidDataException("Cinnabar metatile pixels missing.");
-        using var atlas=_cinnabarTileLayers[(family,layer)].GetImage();canvas.BlitRect(atlas,new(tile.X,tile.Y,16,16),new(edit.X*16,edit.Y*16));return true;
-    }
     private void SynchronizeCinnabarPresentation(CampaignState? before,CampaignState after)
     {
         if(!CinnabarLanding){_cinnabarFallId=null;return;}

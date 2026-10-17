@@ -375,6 +375,13 @@ public sealed class CampaignQuestLogPlayback
     private readonly QuestLogSource? _source;
     private readonly CampaignQuestLogScene? _savedScene;
     private CampaignQuestLogTimeline _timeline=null!;
+    private string? _savedCaption;
+    private double _savedWait,_exitFrames;
+    public bool Ending{get;private set;}
+    // Task_EndQuestLog: blank header, 16 one-pixel bar updates, one
+    // removal update, 33 hold updates, then release field controls.
+    public bool HeaderVisible=>!Ending||_exitFrames+1e-7<1;
+    public int BarHeight=>Ending?Math.Clamp(17-(int)Math.Floor(_exitFrames+1e-7),0,16):16;
     public bool SavedGameVisible{get;private set;}
     private CampaignQuestLogScene CurrentScene=>SavedGameVisible?_savedScene!:_log.Scenes[SceneIndex];
     public int SceneIndex{get;private set;}
@@ -385,7 +392,7 @@ public sealed class CampaignQuestLogPlayback
     public double Frame=>_timeline.Frame;
     public string? Layout=>_timeline.Layout;
     public ImmutableArray<FieldMetatileEdit> Tiles=>_timeline.Tiles;
-    public string? Caption=>_timeline.Caption;
+    public string? Caption=>Ending?null:SavedGameVisible?_savedCaption:_timeline.Caption;
     public IEnumerable<CampaignQuestLogActor> Actors=>_timeline.Actors;
     public (CampaignQuestLogActor From,double Fraction)? Movement(string id)=>_timeline.Movement(id);
     public CampaignQuestLogPlayback(CampaignQuestLog log,string playerName="RED",QuestLogSource? source=null,CampaignQuestLogScene? savedScene=null)
@@ -393,24 +400,52 @@ public sealed class CampaignQuestLogPlayback
         if(CampaignQuestLogRecorder.Validate(log,source) is {} error)throw new InvalidDataException(error);
         _log=log;_playerName=playerName;_source=source;_savedScene=savedScene;BeginScene();
     }
-    private void BeginScene()=>_timeline=new(CurrentScene,_playerName,_source,SavedGameVisible);
+    private void BeginScene()
+    {
+        _timeline=new(CurrentScene,_playerName,_source,SavedGameVisible);
+        if(SavedGameVisible){_savedCaption=_timeline.Caption;_savedWait=0;}
+    }
+    private void BeginExit(){Ending=true;_exitFrames=0;}
+    private void AdvanceExit(double frames)
+    {
+        _exitFrames+=frames;
+        if(_exitFrames+1e-7>=52)Finished=true;
+    }
     public void Tick(double seconds)
     {
         if(!double.IsFinite(seconds)||seconds<0)throw new ArgumentOutOfRangeException(nameof(seconds));
         if(Finished)return;
+        if(Ending){_timeline.Tick(seconds);AdvanceExit(seconds*60);return;}
+        if(SavedGameVisible)
+        {
+            _timeline.Tick(seconds);
+            // The source checks timer >=127 before incrementing: the caption
+            // closes on the 128th task update, then EndQuestLog starts next frame.
+            _savedWait+=seconds*60;
+            if(_savedWait+1e-7>=128){BeginExit();AdvanceExit(Math.Max(0,_savedWait-128));}
+            return;
+        }
         _timeline.Tick(seconds);if(_timeline.Finished)NextScene();
     }
     public void NextScene()
     {
-        if(Finished)return;
-        if(SavedGameVisible){Finished=true;return;}
-        if(SceneIndex+1==SceneCount){Skip();return;}
+        if(Finished||Ending)return;
+        if(SavedGameVisible){BeginExit();return;}
+        if(SceneIndex+1==SceneCount)
+        {
+            if(_savedScene is null)Finished=true;
+            else{SavedGameVisible=true;BeginScene();}
+            return;
+        }
         SceneIndex++;BeginScene();
     }
     public void Skip()
     {
-        if(Finished)return;
-        if(_savedScene is not null&&!SavedGameVisible){SavedGameVisible=true;BeginScene();}else Finished=true;
+        if(Finished||Ending)return;
+        if(_savedScene is null){Finished=true;return;}
+        if(!SavedGameVisible){SavedGameVisible=true;BeginScene();}
+        // B selects END_MODE_FINISH, which suppresses the final saved caption.
+        BeginExit();
     }
 }
 

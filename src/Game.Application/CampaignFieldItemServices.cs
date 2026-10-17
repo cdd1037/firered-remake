@@ -76,54 +76,9 @@ public sealed partial class CampaignSession
             next = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", state.PlayerGender) } };
             return true;
         }
-        var args = effect.Args; bool buffer = effect.Opcode.StartsWith("bufferitem", StringComparison.Ordinal);
-        if (buffer ? args.Length is < 2 or > 3 : args.Length is < 1 or > 2)
-            throw new InvalidDataException("field_item_service_effect_arity");
-        int sourceId = Value(args[buffer ? 1 : 0]);
-        string? symbol = service.ItemSymbols.SingleOrDefault(s => _content.TryConstant(s, out int value) && value == sourceId);
-        if (symbol is null) throw new InvalidDataException("field_item_service_item_not_declared");
-        var itemId = new ItemId("pret:" + symbol);
-        var machine = _content.Machines is { } machines ? MachineRules.Definition(machines, itemId) : null;
-        var ordinary = machine is null ? ShopCatalog.Items.SingleOrDefault(i => i.Id == itemId) : null;
-        if (machine is null && ordinary is null) throw new InvalidDataException("field_item_service_item_not_supported");
-        int actualSourceId = machine?.Machine.Item.SourceItemId ?? ordinary!.SourceItemId;
-        string itemName = machine?.Machine.Item.Name ?? ordinary!.Name;
-        string pocket = machine?.Machine.Item.Pocket ?? ordinary!.Pocket;
-        if (actualSourceId != sourceId || pocket == "POCKET_KEY_ITEMS")
-            throw new InvalidDataException("field_item_service_item_not_supported");
-        CampaignState Result(int value) => state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", value) } };
-        if (buffer)
-        {
-            if (args[0] is not ("STR_VAR_1" or "STR_VAR_2" or "STR_VAR_3") || args.Length == 3 && Value(args[2]) != 1)
-                throw new InvalidDataException("field_item_service_buffer_unsupported");
-            next = state with { TextBuffers = state.TextBuffers.SetItem(args[0], itemName) }; return true;
-        }
-        if (effect.Opcode == "checkitemtype") { next = Result(Value(pocket)); return true; }
-        if (state.Inventory is not { } inventory) throw new InvalidDataException("inventory_missing");
-        if (ValidateCampaignInventory(inventory) is { } invalid) throw new InvalidDataException(invalid);
-        int quantity = args.Length == 1 ? 1 : Value(args[1]);
-        if (quantity is < 1 or > 999) throw new InvalidDataException("field_item_service_quantity_invalid");
-        int count = OpeningInventoryRules.Quantity(machine is not null ? inventory.Machines ?? [] :
-            pocket switch { "POCKET_BERRY_POUCH" => inventory.Berries ?? [], "POCKET_POKE_BALLS" => inventory.Balls ?? [], _ => inventory.BagItems }, itemId);
-        if (effect.Opcode == "checkitem") { next = Result(count >= quantity ? 1 : 0); return true; }
-        bool check = effect.Opcode == "checkitemspace", remove = effect.Opcode == "removeitem";
-        InventoryTransactionResult transaction;
-        if (machine is not null)
-        {
-            transaction = check ? new(inventory, MachineRules.CanAddMachine(_content.Machines!, inventory, itemId, quantity), null) :
-                remove ? MachineRules.RemoveMachine(_content.Machines!, inventory, itemId, quantity) :
-                MachineRules.AddMachine(_content.Machines!, inventory, itemId, quantity);
-        }
-        else
-        {
-            var view = inventory;
-            transaction = check ? EarlyInventoryAddRules.CheckSpace(ShopCatalog, view, itemId, quantity) :
-                remove ? EarlyInventoryAddRules.Remove(ShopCatalog, view, itemId, quantity) : EarlyInventoryAddRules.Add(ShopCatalog, view, itemId, quantity);
-            if (transaction.Succeeded && !check) transaction = transaction with { State = transaction.State };
-        }
-        if (!transaction.Succeeded && transaction.Error is not (null or "inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full" or "inventory_insufficient_quantity"))
-            throw new InvalidDataException(transaction.Error);
-        next = CommitInventory(Result(transaction.Succeeded ? 1 : 0), transaction.Succeeded && !check ? transaction.State : inventory);
-        return true;
+        int sourceId = Value(effect.Args[effect.Opcode.StartsWith("bufferitem", StringComparison.Ordinal) ? 1 : 0]);
+        if (!service.ItemSymbols.Any(symbol => _content.TryConstant(symbol, out int value) && value == sourceId))
+            throw new InvalidDataException("field_item_service_item_not_declared");
+        return TryApplyScriptInventoryEffect(state, effect, out next);
     }
 }

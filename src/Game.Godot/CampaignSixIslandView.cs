@@ -85,14 +85,6 @@ public partial class CampaignView
             ? _sixIslandArt!.Files[texture.TexturePath] : null;
     private string? SixIslandDoubleText(string key) => _session.State.DoubleBattle is {} battle && _sixIslandTrainers.TryGetValue(battle.Trainer.Value,out var row) ? row.GetProperty(key).GetString() : null;
     private Texture2D? SixIslandDoublePortrait => SixIslandDoubleText("portrait") is {} id ? _forestTrainerPortraits[id] : null;
-    private bool IsSixIslandPatchedMap(MapId map) => map.Value == "map.six-island-ruin-valley";
-    private bool TrySixIslandPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
-    {
-        if (!IsSixIslandPatchedMap(map)) return false;
-        if (!_sixIslandDoorLayers.TryGetValue((edit.SourceMetatileId,layer),out var texture) || edit.X != 24 || edit.Y != 24)
-            throw new InvalidDataException("Six Island door patch is outside its authenticated source.");
-        using var image = texture.GetImage(); canvas.BlitRect(image,new(0,0,16,16),new(edit.X*16,edit.Y*16)); return true;
-    }
     private Texture2D? SixIslandBattleTerrain(MapId map)
     {
         if (_catalog.SixIslandRegion?.NewMaps.ContainsKey(map) != true) return null;

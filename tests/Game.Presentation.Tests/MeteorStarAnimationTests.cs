@@ -27,7 +27,7 @@ public sealed class MeteorStarAnimationTests
     }
     private static SourceAnimationFrame FirstSprite(SourceBattleAnimation runtime)
     {for(int i=0;i<20;i++){var frame=runtime.Tick();if(frame.Sprites.Length>0)return frame;}throw new InvalidOperationException("Source shooting star did not appear.");}
-    private static SourceAnimationFrame Advance(SourceBattleAnimation runtime)=>runtime.Active?runtime.Tick():runtime.TickResidualSprites();
+    private static SourceAnimationFrame Advance(SourceBattleAnimation runtime,SourceBattleAnimation.SpriteScene scene)=>runtime.Active?runtime.Tick():scene.TickIdle(Battlers(),true);
 
     [TestMethod]
     public void ParentAndRawChildSourceVectorsIncludeBlinkingRngAndNaturalLowerSlotReuse()
@@ -37,9 +37,9 @@ public sealed class MeteorStarAnimationTests
         {
             string kind=entry.Value.GetProperty("kind").GetString()!;var config=entry.Value.GetProperty("config").EnumerateArray().Select(x=>x.GetInt32()).ToArray();
             if(kind!="single"&&(kind!="schedule"||config[2]!=0))continue;
-            int target=config[0];var runtime=new SourceBattleAnimation(Isolated(kind=="schedule"),Cue(target^1,target,seeds[config[1]]),Battlers(),true,new Audio());
+            int target=config[0];var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(Isolated(kind=="schedule"),Cue(target^1,target,seeds[config[1]]),Battlers(),true,new Audio(),spriteScene:scene);
             var frames=new List<SourceAnimationFrame>{FirstSprite(runtime)};
-            while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<180)frames.Add(Advance(runtime));
+            while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<180)frames.Add(Advance(runtime,scene));
             Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.HasResidualSprites);
             var allocations=entry.Value.GetProperty("allocations").EnumerateArray().Select(x=>x.EnumerateArray().Select(y=>y.GetInt32()).ToArray()).ToDictionary(x=>x[0]);
             foreach(var row in entry.Value.GetProperty("states").EnumerateArray())
@@ -87,15 +87,15 @@ public sealed class MeteorStarAnimationTests
     [TestMethod]
     public void IsolatedParentLeavesRawStarsAndCancellationReleasesStreamAndEveryCell()
     {
-        var source=Isolated();var cue=Cue(seed:42);var runtime=new SourceBattleAnimation(source,cue,Battlers(),true,new Audio());int ticks=0;
+        var source=Isolated();var cue=Cue(seed:42);var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(source,cue,Battlers(),true,new Audio(),spriteScene:scene);int ticks=0;
         while(runtime.Active&&ticks++<100)runtime.Tick();Assert.IsFalse(runtime.Active);Assert.IsTrue(runtime.HasResidualSprites);Assert.AreEqual(0,runtime.ActiveVisualCount);
-        uint? state=RandomState(runtime);int residual=0;while(runtime.HasResidualSprites&&residual++<70){runtime.TickResidualSprites();Assert.AreEqual(state,RandomState(runtime));}Assert.IsFalse(runtime.HasResidualSprites);Assert.IsTrue(residual>0);
+        uint? state=RandomState(runtime);int residual=0;while(runtime.HasResidualSprites&&residual++<70){scene.TickIdle(Battlers(),true);Assert.AreEqual(state,RandomState(runtime));}Assert.IsFalse(runtime.HasResidualSprites);Assert.IsTrue(residual>0);
         // Completed-state cancellation is separate from active/residual stops.
         runtime.Cancel();runtime.Cancel();Assert.IsNull(RandomState(runtime));Assert.AreEqual(0,runtime.Snapshot().Sprites.Length);
         foreach(int stop in new[]{1,5,20,32,40,80,100})
         {
-            var audio=new Audio();var cancelled=new SourceBattleAnimation(source,cue,Battlers(),true,audio);int reached=0;
-            while((cancelled.Active||cancelled.HasResidualSprites)&&reached<stop){Advance(cancelled);reached++;}
+            var audio=new Audio();var cancelledScene=new SourceBattleAnimation.SpriteScene();var cancelled=new SourceBattleAnimation(source,cue,Battlers(),true,audio,spriteScene:cancelledScene);int reached=0;
+            while((cancelled.Active||cancelled.HasResidualSprites)&&reached<stop){Advance(cancelled,cancelledScene);reached++;}
             Assert.IsTrue(reached==stop||!cancelled.Active&&!cancelled.HasResidualSprites);if(stop==1)Assert.IsNull(RandomState(cancelled));
             cancelled.Cancel();cancelled.Cancel();Assert.IsFalse(cancelled.Active);Assert.IsFalse(cancelled.HasResidualSprites);Assert.IsNull(RandomState(cancelled));Assert.AreEqual(0,cancelled.Snapshot().Sprites.Length);Assert.AreEqual(0,audio.Cues.Count);
         }
@@ -114,9 +114,9 @@ public sealed class MeteorStarAnimationTests
         foreach(var entry in doc.RootElement.GetProperty("cases").EnumerateObject())
         {
             if(entry.Value.GetProperty("kind").GetString()!="boundary")continue;var config=entry.Value.GetProperty("config");int target=config[0].GetInt32();var p=probes[config[2].GetInt32()];
-            var source=Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()};var runtime=new SourceBattleAnimation(source,Cue(target^1,target,seeds[config[1].GetInt32()]),Battlers(),true,new Audio());
+            var source=Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()};var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(source,Cue(target^1,target,seeds[config[1].GetInt32()]),Battlers(),true,new Audio(),spriteScene:scene);
             NewParent(runtime,4,new(p[0],p[1]),(target&1)==0,p.Skip(2).Select(x=>unchecked((short)x)).ToArray());
-            var frames=new List<SourceAnimationFrame>();do{frames.Add(Advance(runtime));}while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<110);
+            var frames=new List<SourceAnimationFrame>();do{frames.Add(Advance(runtime,scene));}while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<110);
             Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.HasResidualSprites);
             foreach(var row in entry.Value.GetProperty("states").EnumerateArray())
             {var v=row.EnumerateArray().Select(x=>x.GetInt32()).ToArray();if(v[1]<0||v[4]!=1)continue;var actual=frames[v[1]].Sprites.Single(x=>x.Slot==v[3]+4);Assert.AreEqual(new PixelPoint(v[6],v[7]),actual.Position);Assert.AreEqual(new PixelPoint(v[8],v[9]),actual.Offset);Assert.AreEqual(v[16],actual.Tile);Assert.AreEqual(v[21]==0,actual.Visible);}
@@ -127,11 +127,11 @@ public sealed class MeteorStarAnimationTests
     [TestMethod]
     public void FullRegistrySuppressesOnlyFailedRawAllocationsWithoutConsumingRandomValues()
     {
-        var source=Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()};var runtime=new SourceBattleAnimation(source,Cue(seed:0x12345678),Battlers(),true,new Audio());
+        var source=Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()};var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(source,Cue(seed:0x12345678),Battlers(),true,new Audio(),spriteScene:scene);
         var helper=typeof(SourceBattleAnimation).GetNestedType("BubbleHelper",BindingFlags.NonPublic);Assert.IsNotNull(helper);
         for(int slot=4;slot<63;slot++){var sprite=Activator.CreateInstance(helper,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[slot],CultureInfo.InvariantCulture);Assert.IsNotNull(sprite);AddSprite(runtime,sprite);}
         NewParent(runtime,63,new(200,40),false,[-48,-64,72,32,30]);
-        for(int tick=0;tick<=30;tick++){var frame=Advance(runtime);Assert.IsFalse(frame.Sprites.Any(s=>s.Template==Child));Assert.IsNull(RandomState(runtime));}
+        for(int tick=0;tick<=30;tick++){var frame=Advance(runtime,scene);Assert.IsFalse(frame.Sprites.Any(s=>s.Template==Child));Assert.IsNull(RandomState(runtime));}
         Assert.AreEqual(0,runtime.ActiveVisualCount);runtime.Cancel();Assert.IsFalse(runtime.HasResidualSprites);Assert.AreEqual(0,runtime.Snapshot().Sprites.Length);
     }
 

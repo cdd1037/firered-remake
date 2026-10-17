@@ -23,7 +23,7 @@ public static partial class CampaignStatAnimationPresentation
     };
     private static bool AllowsSelectedStatAlly(string move,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)=>
         moves is not null&&moves.TryGetValue(new(move),out var definition)&&SourceMoveDefinitionRules.IsValid(definition)&&definition.Id.Value==move&&
-        definition.SourceMoveId==CampaignMoveAnimationPresentation.SupportedSourceMoveId(move)&&definition.Target=="MOVE_TARGET_SELECTED";
+        definition.Target=="MOVE_TARGET_SELECTED";
 
     private static CampaignStatAnimationDispatch? Secondary(CampaignDoubleBattle battle,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,bool substitute)

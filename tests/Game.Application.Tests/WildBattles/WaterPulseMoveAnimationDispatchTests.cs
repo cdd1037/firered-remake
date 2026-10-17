@@ -108,10 +108,10 @@ public sealed class WaterPulseMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On, moves: Mechanics.Catalog.Moves);
-            Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On),
+            var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On, moves: Mechanics.Catalog.Moves);
+            Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On),
                 "Silent confusion prevention needs no move-specific exception or metadata bypass.");
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
             if (events[index] == used)
             {
                 var dispatch = decision.Dispatch;
@@ -134,10 +134,10 @@ public sealed class WaterPulseMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(decision.Dispatch,
-                    CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On, moves: Mechanics.Catalog.Moves).Dispatch);
+                    AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On, moves: Mechanics.Catalog.Moves).Dispatch);
                 Assert.AreEqual(decision.Dispatch,
-                    CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                    AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(1, count);
@@ -149,13 +149,13 @@ public sealed class WaterPulseMoveAnimationDispatchTests
         string before = JsonSerializer.Serialize(events);
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On,
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On,
                 moves: Mechanics.Catalog.Moves).Dispatch, label);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
             if (!singles) continue;
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On,
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On,
                 moves: Mechanics.Catalog.Moves).Dispatch, label);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events), label);
     }
@@ -346,15 +346,15 @@ public sealed class WaterPulseMoveAnimationDispatchTests
         var single = Single(events, index);
         var doubles = Double(events, index);
         string before = JsonSerializer.Serialize(result);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.Off).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(doubles, SourceBattleScene.Off).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(doubles with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(doubles, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(doubles with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
         foreach (int cursor in new[] { -1, events.Length })
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single with { EventIndex = cursor }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(doubles with { EventIndex = cursor }, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { EventIndex = cursor }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(doubles with { EventIndex = cursor }, SourceBattleScene.On).Dispatch);
         }
         AssertProjection(result);
         Assert.AreEqual(before, JsonSerializer.Serialize(result));

@@ -48,7 +48,7 @@ public sealed class SpreadSecondaryPrefixTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var dispatch = CampaignStatAnimationPresentation.AtResult(battle, moves: moves);
+            var dispatch = AnimationDispatchFixture.StatAtResult(battle, moves: moves);
             if (events[index] is SourceStatChangedEvent && sequences.Contains(events[index].Sequence))
             {
                 var stat = (SourceStatChangedEvent)events[index];
@@ -59,16 +59,16 @@ public sealed class SpreadSecondaryPrefixTests
                 Assert.AreEqual(attack.Sequence, dispatch.AttackSequence);Assert.AreEqual(stat.Target, dispatch.Affected);
                 Assert.AreEqual(moves[pp.CurrentMove].SourceMoveId, dispatch.SourceMoveId);
                 Assert.AreEqual(Argument(stat.Stat), dispatch.AnimationArgument);
-                Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(battle, moves: moves));
+                Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(battle, moves: moves));
             }
             else Assert.IsNull(dispatch, $"Receipt {events[index].Sequence} cannot borrow a different pass's result.");
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle, true, moves));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, moves));
             if (singles)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(single, true, moves: moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, false, moves: moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, true, true, moves));
+                Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(single, true, moves: moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false, moves: moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true, moves));
             }
         }
         Assert.AreEqual(sequences.Length, count);Assert.AreEqual(before, JsonSerializer.Serialize(events));

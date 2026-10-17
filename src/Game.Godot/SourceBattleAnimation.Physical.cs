@@ -1,21 +1,5 @@
-using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
-public static class SourcePhysicalAnimationCatalog
-{
-    public static bool Supports(int move) => move is 273 or 309 or 154 or 292 or 162 or 305 or 331 or 28 or 189 or 5 or 25 or 299 or 42 or 333 or 40 or 41 or 131 or 232 or 306 or 337 or 3 or 4 or 125 or 198 or 167 or 207 or 321 or 111 or 303 or 339 or 150 or 300 or 20 or 35 or 2 or 66 or 77 or 78 or 79 or 29 or 64 or 21 or 22 or 11 or 23 or 26 or 27 or 34 or 36 or 38 or 67 or 70 or 136 or 289;
-    public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
-    {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
-        var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
-        var taskAffinePrograms=doc.RootElement.TryGetProperty("taskAffinePrograms",out var affinePrograms)?SourceTaskAffineProgram.Read(affinePrograms):new Dictionary<string,SourceTaskAffineCommand[]>();
-        var recipes=shared.SpriteRecipes.Concat(SourceHitAnimationCatalog.Recipes(doc.RootElement.GetProperty("spriteRecipes"))).ToDictionary(p=>p.Key,p=>p.Value);
-        var subroutines=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray());
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SoundEffects=r.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),SpriteTags=r.TryGetProperty("spriteTags",out var tags)?tags.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=subroutines,SubroutineLabels=SourceAnimationResources.ReadSubroutineLabels(doc.RootElement),BackgroundSymbols=doc.RootElement.TryGetProperty("backgroundSymbols",out var backgroundSymbols)?backgroundSymbols.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),Labels=r.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()}).ToDictionary(s=>s.MoveId);
-        if(scripts.Count==0||scripts.Keys.Any(id=>!Supports(id)))throw new InvalidDataException("Physical script catalog differs.");
-        return scripts;
-    }
-}
 public sealed partial class SourceBattleAnimation
 {
     private bool ValidatePhysicalOperand(SourceAnimationCommand c)

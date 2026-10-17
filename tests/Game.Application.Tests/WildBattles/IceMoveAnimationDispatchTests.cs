@@ -74,10 +74,10 @@ public sealed class IceMoveAnimationDispatchTests
         for (int i = 0; i < events.Length; i++)
         {
             var battle = Double(events, i);
-            var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
-            Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
+            var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
+            Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (hits.Length > 0 && events[i] == used)
             {
                 var cue = decision.Dispatch; Assert.IsNotNull(cue, decision.Reason); dispatched++;
@@ -301,7 +301,7 @@ public sealed class IceMoveAnimationDispatchTests
                 Assert.AreEqual(5, result.State.Slots[reduction.Target.Value].Body!.SpeedStage);
                 Assert.IsTrue(Hits(result.Events).Any(e => HitTarget(e) == reduction.Target && e.Sequence < reduction.Sequence));
                 int index = result.Events.IndexOf(reduction);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(result.Events, index), SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(result.Events, index), SourceBattleScene.On).Dispatch);
             }
             AssertProjection(result, 196, actor, target);
         }

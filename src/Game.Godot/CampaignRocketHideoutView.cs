@@ -101,14 +101,6 @@ public partial class CampaignView
                 new(tile.GetProperty("x").GetInt32(),tile.GetProperty("y").GetInt32(),tile.GetProperty("width").GetInt32(),tile.GetProperty("height").GetInt32())));
         }
     }
-    private bool TryRocketPatch(Image canvas,Game.Domain.World.FieldMetatileEdit edit,int layer,string mapId)
-    {
-        if(_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(new(mapId))!=true)return false;
-        string tileset=mapId=="map.celadon-city-game-corner"?"game_corner":"silph_co";
-        if(!_rocketTiles.TryGetValue((tileset,edit.SourceMetatileId),out var source))throw new InvalidDataException("Rocket metatile art missing: "+edit.SourceMetatileId);
-        using var atlas=_rocketTileLayers[tileset][layer].GetImage();
-        canvas.BlitRect(atlas,source.Region,new(edit.X*16,edit.Y*16));return true;
-    }
     private void SynchronizeRocketPresentation(CampaignState? before,CampaignState after)
     {
         if(after.RocketSpin?.PresentationId!=_rocketSpinWait)

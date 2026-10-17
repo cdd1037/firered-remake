@@ -79,8 +79,8 @@ public sealed class HailMoveAnimationDispatchTests
 
 
     private static CampaignMoveAnimationDecision Project(ImmutableArray<SourceBattleEvent> events,int index,bool single=false)=>single
-        ?CampaignMoveAnimationPresentation.AtAttackText(Single(events,index),true,SourceBattleScene.On)
-        :CampaignMoveAnimationPresentation.AtAttackText(Double(events,index),SourceBattleScene.On);
+        ?AnimationDispatchFixture.AtAttackText(Single(events,index),true,SourceBattleScene.On)
+        :AnimationDispatchFixture.AtAttackText(Double(events,index),SourceBattleScene.On);
     private static void AssertSetup(SourceKernelResult result,int actor,bool expected,bool single=false)
     {
         string before=JsonSerializer.Serialize(result);int count=0;
@@ -93,7 +93,7 @@ public sealed class HailMoveAnimationDispatchTests
                 var receipt=result.Events.OfType<SourceMtMoonVolatileEvent>().Single(e=>e.Volatile=="hail"&&e.Reason=="move");
                 Assert.AreEqual(receipt.Sequence,cue.ResultSequence);Assert.AreEqual(0,receipt.Before);Assert.AreEqual(5,receipt.After);
             }
-            Assert.AreNotEqual(258,(single?CampaignMoveAnimationPresentation.AtHitResult(Single(result.Events,i),true,SourceBattleScene.On):CampaignMoveAnimationPresentation.AtHitResult(Double(result.Events,i),SourceBattleScene.On)).Dispatch?.SourceMoveId??0);
+            Assert.AreNotEqual(258,(single?AnimationDispatchFixture.AtHitResult(Single(result.Events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtHitResult(Double(result.Events,i),SourceBattleScene.On)).Dispatch?.SourceMoveId??0);
         }
         Assert.AreEqual(expected?1:0,count);Assert.AreEqual(before,JsonSerializer.Serialize(result));
     }
@@ -151,6 +151,6 @@ public sealed class HailMoveAnimationDispatchTests
         var pp=events.OfType<SourcePpCommandEvent>().Single();int pi=events.IndexOf(pp);
         Reject(events.SetItem(pi,pp with{ChosenMove=new("pret:MOVE_METRONOME")}));
         Reject(events.SetItem(pi,pp with{CommandCost=0}));Reject(events.SetItem(pi,pp with{Actor=new(1)}));
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events,at),SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events,at),SourceBattleScene.Off).Dispatch);
     }
 }

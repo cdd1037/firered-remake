@@ -7,6 +7,8 @@ public sealed class ResultAnimationPolicyTests
     [TestMethod]
     [DataRow(CampaignResultAnimationKind.StatChange,SourceBattleScene.On,true)]
     [DataRow(CampaignResultAnimationKind.StatChange,SourceBattleScene.Off,true)]
+    [DataRow(CampaignResultAnimationKind.FormChange,SourceBattleScene.On,true)]
+    [DataRow(CampaignResultAnimationKind.FormChange,SourceBattleScene.Off,true)]
     [DataRow(CampaignResultAnimationKind.HeldItem,SourceBattleScene.On,true)]
     [DataRow(CampaignResultAnimationKind.HeldItem,SourceBattleScene.Off,false)]
     [DataRow(CampaignResultAnimationKind.DelayedHealing,SourceBattleScene.On,true)]

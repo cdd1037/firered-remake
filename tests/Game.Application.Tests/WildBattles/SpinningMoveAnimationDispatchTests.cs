@@ -142,11 +142,11 @@ public sealed class SpinningMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
-            Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch,
+            var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
+            Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch,
                 "A single-hit spinning root cannot be replayed by a result page.");
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (expected && events[index] == used)
             {
                 var cue = decision.Dispatch; Assert.IsNotNull(cue, decision.Reason); roots++;
@@ -157,16 +157,16 @@ public sealed class SpinningMoveAnimationDispatchTests
                 Assert.AreEqual(attack.Sequence, cue.AttackSequence); Assert.AreEqual(pp.Sequence, cue.PpSequence);
                 Assert.IsTrue(cue.AcknowledgesCurrentReceipt); Assert.IsNull(cue.MoveTurn);
                 Assert.AreEqual(hit is SourceSubstituteDamagedEvent, cue.HitsSubstitute);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(
                     battle with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
             }
             else Assert.IsNull(decision.Dispatch, "Secondary, contact, faint and failure pages must not admit another root.");
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(decision.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(expected ? 1 : 0, roots);

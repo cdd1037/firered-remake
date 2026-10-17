@@ -88,11 +88,11 @@ public sealed class MusicMoveAnimationDispatchTests
         var used=events.OfType<SourceMoveUsedEvent>().Single(e=>e.Move==Move(id));var pp=events.OfType<SourcePpCommandEvent>().Single(e=>e.CurrentMove==Move(id));
         for(int i=0;i<events.Length;i++)
         {
-            var decision=single?CampaignMoveAnimationPresentation.AtAttackText(Single(events,i),true,SourceBattleScene.On):CampaignMoveAnimationPresentation.AtAttackText(Double(events,i),SourceBattleScene.On);
-            Assert.IsNull(single?CampaignMoveAnimationPresentation.AtHitResult(Single(events,i),true,SourceBattleScene.On).Dispatch:CampaignMoveAnimationPresentation.AtHitResult(Double(events,i),SourceBattleScene.On).Dispatch);
+            var decision=single?AnimationDispatchFixture.AtAttackText(Single(events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtAttackText(Double(events,i),SourceBattleScene.On);
+            Assert.IsNull(single?AnimationDispatchFixture.AtHitResult(Single(events,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtHitResult(Double(events,i),SourceBattleScene.On).Dispatch);
             if(events[i]==used&&expected){var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);Assert.AreEqual(id,cue.SourceMoveId);Assert.AreEqual(actor,cue.Actor.Value);Assert.AreEqual(used.Target.Value,cue.Target.Value);Assert.AreEqual(pp.Sequence,cue.PpSequence);long receipt=id==187?events.OfType<SourceStatChangedEvent>().Single().Sequence:events.OfType<SourceStatusChangedEvent>().Single().Sequence;Assert.AreEqual(receipt,cue.ResultSequence);count++;}
             else Assert.IsNull(decision.Dispatch);
-            if(id==187)Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events,i),moves:Mechanics.Catalog.Moves),"Belly Drum has no source General_StatsChange command.");
+            if(id==187)Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events,i),moves:Mechanics.Catalog.Moves),"Belly Drum has no source General_StatsChange command.");
         }
         Assert.AreEqual(expected?1:0,count);Assert.AreEqual(before,JsonSerializer.Serialize(events));Assert.AreEqual(state,JsonSerializer.Serialize(result.State));Assert.AreEqual(rng,JsonSerializer.Serialize(result.Trace));
     }
@@ -134,7 +134,7 @@ public sealed class MusicMoveAnimationDispatchTests
     public void BellyDrumReceiptOrderOwnersAndCostArithmeticFailClosed()
     {
         var result=Resolve(Frame(Bodies(187,0)),0,0);var events=result.Events;var stat=events.OfType<SourceStatChangedEvent>().Single();var hp=events.OfType<SourceHpChangedEvent>().Single();int used=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single()),si=events.IndexOf(stat),hi=events.IndexOf(hp);
-        void Reject(ImmutableArray<SourceBattleEvent> malformed)=>Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(malformed,used),SourceBattleScene.On).Dispatch);
+        void Reject(ImmutableArray<SourceBattleEvent> malformed)=>Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(malformed,used),SourceBattleScene.On).Dispatch);
         foreach(var replacement in new[]{stat with{Actor=new(1)},stat with{Target=new(1)},stat with{After=11},stat with{Before=12},stat with{Stat=WildBattleStat.Defense},stat with{Sequence=hp.Sequence+1}})Reject(events.SetItem(si,replacement));
         foreach(var replacement in new[]{hp with{Actor=new(1)},hp with{Target=new(1)},hp with{Damage=0},hp with{HpAfter=hp.HpAfter+1},hp with{Critical=true},hp with{RandomPercent=99},hp with{Move=new("pret:MOVE_RECOVER")},hp with{Sequence=stat.Sequence-1}})Reject(events.SetItem(hi,replacement));
         Reject(events.RemoveAt(si));Reject(events.RemoveAt(hi));Reject(events.Insert(hi,hp));Reject(events.SetItem(si,hp).SetItem(hi,stat));

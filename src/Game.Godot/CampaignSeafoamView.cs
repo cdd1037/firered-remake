@@ -65,21 +65,6 @@ public partial class CampaignView
         ? map.Value + ":" + layout : map.Value;
     private PretWorldMap SeafoamPresentationSourceMap(MapId map) => map == _session.State.World.Player.MapId && _session.State.MapLayout is {} layout
         ? (PretWorldMap)(_catalog.MapLayout(map, layout) ?? throw new InvalidDataException("Map layout art missing.")) : _catalog.SourceMaps[map];
-    private bool IsSeafoamPatchedMap(MapId map) => map == SeafoamFieldRules.B4F;
-    private bool TrySeafoamPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
-    {
-        if (!IsSeafoamPatchedMap(map)) return false;
-        if (!SeafoamFieldRules.OnLoadChanges(map, _session.State.Script.Flags).Any(p =>
-            p.X == edit.X && p.Y == edit.Y && p.MetatileId == edit.SourceMetatileId && p.Collision == edit.Collision && p.Elevation == edit.Elevation))
-            throw new InvalidDataException("Seafoam CalmWater patch is outside its original on-load source.");
-        var source = SeafoamPresentationSourceMap(map);
-        var cell = source.Cells.FirstOrDefault(c => c.MetatileId == edit.SourceMetatileId)
-            ?? throw new InvalidDataException("Seafoam source CalmWater tile missing.");
-        var original = GetMapArt(map);
-        using var pixels = (Image)(layer == 0 ? original.Bottom : layer == 1 ? original.Middle : original.Top).GetImage().Duplicate();
-        canvas.BlitRect(pixels, new(cell.X * 16, cell.Y * 16, 16, 16), new(edit.X * 16, edit.Y * 16));
-        return true;
-    }
     private Texture2D? SeafoamBattleTerrain(MapId map)
     {
         if (!IsSeafoamPresentationMap(map)) return null;

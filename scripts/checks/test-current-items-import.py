@@ -114,6 +114,19 @@ class CurrentItemTests(unittest.TestCase):
         self.assertFalse(symbols & stock)
         self.assertNotIn('ITEM_LIECHI_BERRY', items)
 
+    def test_powder_vendor_rewards_share_inventory_admission_without_enabling_field_use(self):
+        catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
+        items = {row['item']: row for row in catalog['items']}
+        stock = {row['value'] for shop in catalog['shops'] for row in shop['items']}
+        for symbol in ('ENERGY_POWDER', 'ENERGY_ROOT', 'HEAL_POWDER', 'REVIVAL_HERB'):
+            identity = 'pret:ITEM_' + symbol
+            with self.subTest(item=identity):
+                item = items[identity]
+                self.assertEqual(('noFieldUse', [], 0, 0),
+                    (item['useSupport'], item['effectBytes'], item['healHp'], item['cureStatus']))
+                self.assertNotIn(identity, stock)
+                self.assertTrue(item['description'])
+
     def test_recipe_rejects_duplicates_unknown_business_and_use(self):
         original = compiler.read_recipe(ROOT)
         for replacement, error in [({'item': original['items'][0]['item']}, 'Duplicate current item'),

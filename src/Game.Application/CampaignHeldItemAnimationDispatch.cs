@@ -67,7 +67,10 @@ public static class CampaignHeldItemAnimationPresentation
         index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
     internal static bool VisibleAtResult(IReadOnlyList<WildBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
         index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
-    private static bool VisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)
+    internal static bool? SpriteVisibleAtResult(IReadOnlyList<SourceBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
+        index>=0&&index<events.Count&&slot.Value<entry.Count?SpriteVisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry):null;
+    private static bool VisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)=>SpriteVisibleAt(rows,index,slot,entry)==true;
+    private static bool? SpriteVisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)
     {
         var charge=entry.ToArray();var known=Enumerable.Repeat(true,entry.Count).ToArray();
         var lastPp=new MoveId?[entry.Count];var ppTurn=Enumerable.Repeat(-1,entry.Count).ToArray();
@@ -75,7 +78,7 @@ public static class CampaignHeldItemAnimationPresentation
         {
             var r=rows[i];if(r.Kind=="start"){Array.Clear(charge);Array.Fill(known,true);Array.Clear(lastPp);Array.Fill(ppTurn,-1);continue;}
             if(r.Kind is not("pp" or "charge" or "switch"))continue;
-            if(r.Slot<0||r.Slot>=entry.Count)return false;
+            if(r.Slot<0||r.Slot>=entry.Count)return null;
             if(r.Kind=="pp"){lastPp[r.Slot]=r.Move;ppTurn[r.Slot]=r.Turn;continue;}
             if(r.Kind=="switch"){charge[r.Slot]=lastPp[r.Slot]=null;known[r.Slot]=true;ppTurn[r.Slot]=-1;continue;}
             // Sleep/paralysis clear visibility at their explicit charge-clear receipt,
@@ -85,7 +88,7 @@ public static class CampaignHeldItemAnimationPresentation
             {charge[r.Slot]=move;known[r.Slot]=true;}
             else known[r.Slot]=false;
         }
-        return known[slot]&&SourceChargeRules.SemiInvulnerable(charge[slot])==WildBattleSemiInvulnerable.None;
+        return known[slot]?SourceChargeRules.SemiInvulnerable(charge[slot])==WildBattleSemiInvulnerable.None:null;
     }
     private static CampaignHeldItemAnimationDispatch? Match(string id,Row[] rows,int index,IReadOnlyList<MoveId?> entry)
     {

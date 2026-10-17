@@ -27,7 +27,7 @@ public sealed class SceneOptionBattleTests : WildBattleFixture
             string beforeProjection = CanonicalJson.Hash(session.State);
             for (int index = 0; index < battle.Events.Length; index++)
             {
-                var decision = CampaignMoveAnimationPresentation.AtAttackText(battle with { EventIndex = index }, true, SourceBattleScene.Off);
+                var decision = AnimationDispatchFixture.AtAttackText(battle with { EventIndex = index }, true, SourceBattleScene.Off);
                 Assert.IsNull(decision.Dispatch);
                 Assert.AreEqual("animations-disabled", decision.Reason);
             }

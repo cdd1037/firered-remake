@@ -180,3 +180,13 @@ Wish的resolved(1→0)与同回合、紧邻正数Recovered配对时，在原reso
 本次只增加Hail专属根；Wish延迟恢复是命名通用动画，不重复计数。General_Hail残留天气、Future Sight延迟命中及Castform形态改变的一般过渡仍开放；Wish低层仍Protected状态直接重组ResolveAction的预约边界保持。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709；没有新增原生画面或真实声卡验收。用户本次明确要求补入冰雹与延迟回血后同步远端，因此本地验证提交后交给独立同步所有者并暂停，不继续其他家族。
 
 验证：最终完整Presentation793／793（3分5秒），Claw源状态／OAM阶段14／14，有界Application238／238（18秒，含Hail8、Wish延迟恢复14、结果策略、持物、投影与Quest）通过。最终solution刷新零警告／零错误9.23秒；最后仅测试夹具的Presentation刷新4.70秒。首次构建的唯一错误是Hail负例误用不存在的MoveUsed.ChosenMove，改为真实AttackString／PP字段。首次完整呈现650／793，139处旧资源夹具、4处OAM／Hail夹具问题；统一解析器及源阶段修正后789／793，最后4处Claw初始化inUse与未构建OAM的混淆修正后全绿。未改变原C向量来迎合结果。维护elemental33、general7、统一14生产器、布局28全部通过，Hail24组原C输出逐字节复现。日志：/tmp/animation166-refresh-build.log、/tmp/animation166-final-presentation-build.log、/tmp/animation166-claw-phase.log、/tmp/animation166-presentation-final.log、/tmp/animation166-application.log、/tmp/hail-product-import-tests.log、/tmp/wish-heal-import-check-resume.log、/tmp/hail-unified-check.log、/tmp/animation166-layout.log、/tmp/hail-oracle-reproducibility.log。失败日志保留在/tmp/animation166-build.log、/tmp/animation166-presentation.log、/tmp/animation166-presentation-corrected.log。
+
+### Castform命名通用形态过渡（2026-10-17，非新增招式）
+
+General_CastformChange复用现有四形态素材、唯一事件时点身体投影和结果动画门。Forecast能力回执与紧邻同方的形态overlay回执必须一致；不可变前后身体来自当前事件页，不从最终天气或最终Frame反推。单打既有曝光相位、双打既有ACK相位不变；完成后的最终合成帧保留至该消息ACK，避免双打短暂回到旧形态。Scene Off仍执行该控制器通用动画；替身直接保留既有形态更新，不启动过渡；已知隐藏的活体执行立即换图。所有位置的隐藏证据复用既有蓄力回执追踪，未知则拒绝，不新增存档字段。
+
+共享渲染增加BG1／BG2独立mosaic开关、水平／垂直4位大小寄存器及不可变身体素材选择。马赛克按屏幕原点对齐；源回调以每3次更新递增至15，在回调序号46（从0起算）替换frame／palette／默认Y，再递减并在序号92清理。普通OBJ在monbg期间隐藏；源priority2换图后的priority10背景跟随效果由同帧选定材质合成。Transform继续使用行动者shiny身份和white6基色；只复用既有16份素材，不新增像素。取消恢复本动画的初始材料和寄存器。
+
+四个回调／命名根用例覆盖原C八组轨迹、隐藏／可见完整生命周期及缺少替代材料／非法模式拒绝；五个独立合成用例覆盖两BG等级、0／1／7／15大小、负坐标／边缘、透明采样、同伴不变和前后帧不可变。28个Application用例覆盖真实入口／天气／能力压制／切换、Transform身份、四位置、隐藏同伴、替身、重复游标及畸形回执。两条额外结果策略行验证Scene Off政策。专属范围仍166／354；General_Hail残留和Future Sight延迟命中未因此完成。
+
+验证：完整solution构建零警告／零错误72.82秒；有界刷新30.28秒。Application262／262通过（20秒），含上述28行和身体投影、持物／Wish可见性、Quest与box回归。首次六个新夹具失败来自重复reducer生成的ImmutableArray引用比较，改为完整字段结构比较，未改生产语义。首次完整Presentation785／802，17个旧重放序列化失败均为新增材料快照暴露AnimationSlot.Partner递归；将该派生导航标记JsonIgnore，保留全部真实slot／材料数据及独立断言。最终完整Presentation802／802通过（3.1863分钟，零警告／零错误）。维护general10、统一14生产器、布局28通过；八组原C任务轨迹与隐藏／立即探针逐字节复现。日志：/tmp/castform-transition-build.log、/tmp/castform-transition-refresh.log、/tmp/castform-transition-application-corrected.log、/tmp/castform-transition-presentation-corrected.log、/tmp/castform-transition-unified-check.log、/tmp/castform-transition-layout.log。无新Castform原生或真实音频验收；最新完整Application仍1562／1562，完整Battle仍1709／1709。

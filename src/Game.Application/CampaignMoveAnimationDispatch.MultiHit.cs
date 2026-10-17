@@ -1,5 +1,7 @@
 using Game.Domain.Battle;
 using Game.Domain.Options;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 
 namespace Game.Application;
@@ -14,26 +16,28 @@ public static partial class CampaignMoveAnimationPresentation
 
     // The current receipt owns exactly one source attackanimation. Its ordinal is
     // derived from committed hit receipts, never planned hits, HP loss, or Frame.
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignDoubleBattle battle,SourceBattleScene scene)
+    public static CampaignMoveAnimationDecision AtHitResult(CampaignDoubleBattle battle,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return new(null,"not-hit-result");
-        return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,4);
+        return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,4,moves,supports);
     }
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene)
+    public static CampaignMoveAnimationDecision AtHitResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
         if(!sourceRules)return new(null,"historical-rules");
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Phase!=CampaignBattlePhase.Events)return new(null,"not-hit-result");
-        return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,2);
+        return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,2,moves,supports);
     }
-    private static CampaignMoveAnimationDecision MultiHitResult(string battle,MultiHitRow[] rows,int index,int slots)
+    private static CampaignMoveAnimationDecision MultiHitResult(string battle,MultiHitRow[] rows,int index,int slots,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
     {
         CampaignMoveAnimationDecision Reject(string reason)=>new(null,reason);
         if(index<0||index>=rows.Length||!IsMultiHitReceipt(rows[index]))return Reject("not-hit-result");
-        var current=rows[index];var (move,minPlanned,maxPlanned)=current.Move switch
-        {"pret:MOVE_FURY_SWIPES"=>(154,2,5),"pret:MOVE_ARM_THRUST"=>(292,2,5),"pret:MOVE_DOUBLE_SLAP"=>(3,2,5),"pret:MOVE_COMET_PUNCH"=>(4,2,5),"pret:MOVE_FURY_ATTACK"=>(31,2,5),"pret:MOVE_TWINEEDLE"=>(41,2,2),"pret:MOVE_PIN_MISSILE"=>(42,2,5),"pret:MOVE_BULLET_SEED"=>(331,2,5),"pret:MOVE_ROCK_BLAST"=>(350,2,5),"pret:MOVE_ICICLE_SPEAR"=>(333,2,5),"pret:MOVE_SPIKE_CANNON"=>(131,2,5),"pret:MOVE_BONE_RUSH"=>(198,2,5),"pret:MOVE_TRIPLE_KICK"=>(167,3,3),_=>(0,0,0)};
-        if(move==0)return Reject("script-outside-multihit-slice");
+        var current=rows[index];
+        var definition=Definition(new(current.Move),moves);
+        if(definition is null || !supports(definition.SourceMoveId,definition.Id.Value) || MultiHitBounds(definition) is not {} bounds)
+            return Reject("script-outside-multihit-slice");
+        int move=definition.SourceMoveId, minPlanned=bounds.Minimum, maxPlanned=bounds.Maximum;
         int start=index-1;
         while(start>=0&&rows[start].Turn==current.Turn&&!MultiHitBoundary(rows[start]))start--;
         if(start<1||rows[start].Kind!="used")return Reject("unmatched-source-multihit-invocation");

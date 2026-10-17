@@ -99,8 +99,8 @@ public sealed class ClawMoveAnimationDispatchTests
         Assert.AreEqual(0, events.OfType<SourceMultiHitEvent>().Count());
         for (int index = 0; index < events.Length; index++)
         {
-            var battle = Double(events, index); var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            var battle = Double(events, index); var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
             if (events[index] == used)
             {
                 var dispatch = decision.Dispatch; Assert.IsNotNull(dispatch, decision.Reason); count++;
@@ -109,14 +109,14 @@ public sealed class ClawMoveAnimationDispatchTests
                 Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
                 Assert.IsNull(dispatch.MoveTurn); Assert.IsTrue(dispatch.AcknowledgesCurrentReceipt);
                 Assert.AreEqual(hit is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-                Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On));
+                Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
             }
             else Assert.IsNull(decision.Dispatch, "A secondary stat/status/faint page cannot replay the claw root.");
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(decision.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(1, count); Assert.AreEqual(before, JsonSerializer.Serialize(events));
@@ -125,9 +125,9 @@ public sealed class ClawMoveAnimationDispatchTests
     {
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch);
         }
     }
 

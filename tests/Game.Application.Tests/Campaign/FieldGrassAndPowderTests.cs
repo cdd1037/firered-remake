@@ -104,6 +104,49 @@ public sealed class FieldGrassAndPowderTests:WildBattleFixture
         Assert.AreEqual("0",session.State.TextBuffers["STR_VAR_1"]);Send(session,new("menu_ack"));Assert.IsNull(session.State.ItemMenu);
         Assert.IsNull(session.ValidatePlayerSave(session.State));
     }
+    // These balances are controlled fixtures. Berry Crush earning is not exercised.
+    [TestMethod]
+    public void ControlledPositivePowderPurchaseCommitsItemAndCostAndCancelKeepsBoth()
+    {
+        var state=At("map.cerulean-city-house-5",7,5,Direction.North) with{BerryPowder=500};
+        var session=Start(state);Interest(session,1);Finish(session);
+        var item=new ItemId("pret:ITEM_ENERGY_POWDER");
+        int before=OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems,item);
+        Send(session,new("interact"));Until(session,()=>session.SourceMenu is not null);
+        Send(session,new("ack",Choice:0));
+        Until(session,()=>session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&(session.State.Dialogue is not {} d||d.Page+1==d.Pages.Length));
+        Send(session,new("ack",Choice:0));Until(session,()=>session.SourceMenu is not null);
+        Assert.AreEqual(500,session.State.BerryPowder);
+        Assert.AreEqual(before,OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems,item));
+        Send(session,new("ack",Choice:0));
+        Until(session,()=>session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&(session.State.Dialogue is not {} d||d.Page+1==d.Pages.Length));
+        Send(session,new("ack",Choice:1));
+        Until(session,()=>session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&(session.State.Dialogue is not {} d||d.Page+1==d.Pages.Length));
+        Assert.AreEqual(450,session.State.BerryPowder);
+        Assert.AreEqual(before+1,OpeningInventoryRules.Quantity(session.State.Inventory!.BagItems,item));
+        Send(session,new("ack",Choice:0));Finish(session);
+        Assert.IsFalse(session.State.BerryPowderVendor);Assert.IsNull(session.ValidatePlayerSave(session.State));
+    }
+    [TestMethod]
+    public void ControlledPositivePowderFullBagDoesNotChargeOrGrantItem()
+    {
+        var session=Start(At("map.cerulean-city-house-5",7,5,Direction.North) with{BerryPowder=500});
+        Interest(session,1);Finish(session);
+        var item=new ItemId("pret:ITEM_ENERGY_POWDER");
+        var bag=content.Inventory.Items.Values.Where(i=>i.Pocket=="POCKET_ITEMS"&&i.Id!=item)
+            .OrderBy(i=>i.Id.Value,StringComparer.Ordinal).Take(content.Inventory.Limits.BagItemSlots)
+            .Select(i=>new InventoryStack(i.Id,1)).ToImmutableArray();
+        session=Start(session.State with{Inventory=session.State.Inventory! with{BagItems=bag}});
+        var before=CanonicalJson.Hash(session.State.Inventory);
+        Send(session,new("interact"));Until(session,()=>session.SourceMenu is not null);
+        Send(session,new("ack",Choice:0));
+        Until(session,()=>session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&(session.State.Dialogue is not {} d||d.Page+1==d.Pages.Length));
+        Send(session,new("ack",Choice:1));
+        var seen=Until(session,()=>session.State.Script.Completed&&session.State.Script.Wait is null&&session.State.Dialogue is null);
+        CollectionAssert.Contains(seen,"Text_BagIsFull");
+        Assert.AreEqual(500,session.State.BerryPowder);Assert.AreEqual(before,CanonicalJson.Hash(session.State.Inventory));
+        Assert.IsFalse(session.State.BerryPowderVendor);Assert.IsNull(session.ValidatePlayerSave(session.State));
+    }
     [TestMethod]
     public void PowderManDeclineAndNoBerryPouchDoNotGiveJar()
     {

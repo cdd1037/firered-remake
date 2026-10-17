@@ -52,7 +52,7 @@ public sealed class SecondaryStatAnimationDispatchTests
         {
             // An empty committed Frame prevents inference from the final occupant or its stages.
             var battle = Double(events, index);
-            var dispatch = CampaignStatAnimationPresentation.AtResult(battle, moves: catalog);
+            var dispatch = AnimationDispatchFixture.StatAtResult(battle, moves: catalog);
             if (events[index].Sequence == sequence)
             {
                 Assert.IsNotNull(dispatch, $"Missing wave for move {sourceMove}, receipt {sequence}.");
@@ -64,17 +64,17 @@ public sealed class SecondaryStatAnimationDispatchTests
                 Assert.AreEqual(sourceMove, dispatch.SourceMoveId);
                 Assert.AreEqual(affected, dispatch.Affected.Value);
                 Assert.AreEqual(argument, dispatch.AnimationArgument);
-                Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(battle, moves: catalog),
+                Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(battle, moves: catalog),
                     "The pure projection is repeatable; continuation deduplication belongs to the view.");
             }
             else Assert.IsNull(dispatch, $"Unrelated receipt {index} cannot replay the secondary wave.");
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle, true, catalog));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, catalog));
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle));
             if (!singles) continue;
             var single = Single(events, index);
-            Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(single, true, moves: catalog));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, false, moves: catalog));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, true, true, catalog));
+            Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(single, true, moves: catalog));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false, moves: catalog));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true, catalog));
         }
         Assert.AreEqual(1, count);
         Assert.AreEqual(before, JsonSerializer.Serialize(events));
@@ -87,8 +87,8 @@ public sealed class SecondaryStatAnimationDispatchTests
         catalog ??= Moves;
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, index), moves: catalog), reason);
-            if (singles) Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, index), true, moves: catalog), reason);
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, index), moves: catalog), reason);
+            if (singles) Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, index), true, moves: catalog), reason);
         }
     }
 
@@ -146,8 +146,8 @@ public sealed class SecondaryStatAnimationDispatchTests
         var events = Changed(move, WildBattleStat.Attack, true);
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, index)));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, index), true));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, index), moves: null));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, index), true, moves: null));
         }
         AssertNone(events, "An absent dictionary entry cannot authorize a secondary.",
             ImmutableDictionary<MoveId, PokemonMoveDefinition>.Empty);
@@ -465,9 +465,9 @@ public sealed class SecondaryStatAnimationDispatchTests
         var item = events.OfType<SourceHeldItemConsumedEvent>().Single(e => e.Item == "ITEM_LIECHI_BERRY");
         Assert.IsNotNull(item.StatChanges);
         Assert.AreEqual(new SourceItemStatChange(WildBattleStat.Attack, 7, 8), item.StatChanges.Value.Single());
-        var move = CampaignStatAnimationPresentation.AtResult(Double(events, events.IndexOf(increases[0])), moves: Moves);
+        var move = AnimationDispatchFixture.StatAtResult(Double(events, events.IndexOf(increases[0])), moves: Moves);
         Assert.IsNotNull(move); Assert.AreEqual(232, move.SourceMoveId); Assert.AreEqual(15, move.AnimationArgument);
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, events.IndexOf(increases[1])), moves: Moves));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, events.IndexOf(increases[1])), moves: Moves));
         var held = CampaignHeldItemAnimationPresentation.AtResult(Double(events, events.IndexOf(increases[1])),
             SourceBattleScene.On, new MoveId?[4]);
         Assert.IsNotNull(held); Assert.AreEqual(item.Sequence, held.ReceiptSequence);
@@ -715,8 +715,8 @@ public sealed class SecondaryStatAnimationDispatchTests
         // A later complete invocation remains independent of an earlier one.
         var later = good.Select(e => e with { Sequence = e.Sequence + 10, Turn = 2 }).ToImmutableArray();
         var both = good.AddRange(later);
-        Assert.AreEqual(5L, CampaignStatAnimationPresentation.AtResult(Double(both, 4), moves: Moves)!.Sequence);
-        Assert.AreEqual(15L, CampaignStatAnimationPresentation.AtResult(Double(both, 9), moves: Moves)!.Sequence);
+        Assert.AreEqual(5L, AnimationDispatchFixture.StatAtResult(Double(both, 4), moves: Moves)!.Sequence);
+        Assert.AreEqual(15L, AnimationDispatchFixture.StatAtResult(Double(both, 9), moves: Moves)!.Sequence);
     }
 
     [TestMethod]
@@ -739,16 +739,16 @@ public sealed class SecondaryStatAnimationDispatchTests
     public void PhaseIndexSourceRulesAndAffectedSubstituteGatesRemainClosed()
     {
         var events = Changed(Moves[Id("METAL_CLAW")], WildBattleStat.Attack, true);
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, 4) with { Stage = CampaignDoubleBattleStage.Finished }, moves: Moves));
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, 4) with { Phase = CampaignBattlePhase.Results }, true, moves: Moves));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, 4) with { Stage = CampaignDoubleBattleStage.Finished }, moves: Moves));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, 4) with { Phase = CampaignBattlePhase.Results }, true, moves: Moves));
         foreach (int index in new[] { -1, events.Length, events.Length + 1 })
         {
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, index), moves: Moves));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, index), true, moves: Moves));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, index), moves: Moves));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, index), true, moves: Moves));
         }
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, 4), true, Moves));
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, 4), true, true, Moves));
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, 4), false, moves: Moves));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, 4), true, Moves));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, 4), true, true, Moves));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, 4), false, moves: Moves));
         Assert.IsTrue(CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.StatChange, SourceBattleScene.On));
         Assert.IsTrue(CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.StatChange, SourceBattleScene.Off));
         Assert.IsFalse(CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.HeldItem, SourceBattleScene.Off));
@@ -764,14 +764,14 @@ public sealed class SecondaryStatAnimationDispatchTests
         {
             var events = Invocation(move, actor, target,
                 new SourceStatChangedEvent(4, 1, new(actor), new(target), WildBattleStat.SpecialDefense, 6, 4));
-            var dispatch = CampaignStatAnimationPresentation.AtResult(Double(events, 3), moves: Moves);
+            var dispatch = AnimationDispatchFixture.StatAtResult(Double(events, 3), moves: Moves);
             Assert.IsNotNull(dispatch); Assert.AreEqual(319, dispatch.SourceMoveId);
             Assert.AreEqual(50, dispatch.AnimationArgument); Assert.AreEqual(target, dispatch.Affected.Value);
             if (target == (actor ^ 1))
-                Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(Double(events, 3)),
-                    "The existing primary enemy path remains available without optional secondary metadata.");
+                Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(Double(events, 3)),
+                    "The primary enemy path uses the same canonical catalog as the fixture.");
             if (actor < 2 && target < 2)
-                Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(Single(events, 3), true, moves: Moves));
+                Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(Single(events, 3), true, moves: Moves));
         }
     }
 }

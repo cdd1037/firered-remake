@@ -161,8 +161,7 @@ public sealed class SharedAnimationCommandTests
     [TestMethod]
     public void PlainEllipseRetainsScriptDirectionOnBothAttackerSides()
     {
-        var source=SourceHitAnimationCatalog.Read(Path.Combine(TestAssets.Root,"content/generated/battle/animations/hit"));
-        var shared=SourceHitAnimationCatalog.Script(source,1);
+        var shared=AnimationCompositionFixture.Script(1);
         var script=shared with{MoveId=66,Commands=[new("createvisualtask",["AnimTask_TranslateMonElliptical","2","ANIM_ATTACKER","18","6","6","4"],1),new("waitforvisualfinish",[],2),new("end",[],3)]};
         foreach(int actor in new[]{0,1})
         {
@@ -182,31 +181,32 @@ public sealed class SharedAnimationCommandTests
     }
 
     [TestMethod]
-    public void RetiredRawSpritesAdvanceAsTransparentNonblockingLayerWhileNextScriptRuns()
+    public void SceneRetiredRawSpritesHaveBoundedLifetimeAndRestoreTheIdleField()
     {
         string folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-        using var hit=SourceHitAnimationCatalog.Read(Path.Combine(folder,"hit"));
-        var source=SourceElementalAnimationCatalog.Read(Path.Combine(folder,"elemental.json"),hit)[84];
+        using var resources=new SourceAnimationResources(folder);
+        var source=resources.Scripts[84];
         var script=source with{Commands=[new("loadspritegfx",["ANIM_TAG_SPARK"],1),new("createvisualtask",["AnimTask_ElectricBolt","5","0","-44","0"],2),new("waitforvisualfinish",[],3),new("end",[],4)],Subroutines=new Dictionary<string,SourceAnimationCommand[]>()};
+        var resolved=resources.Resolve(script);script=resolved.Script;
         var cue=new CommittedMoveAnimation("retire",1,84,new(0),new(1));var gate=new SourceBattleAnimationGate();
-        Assert.IsTrue(gate.TryStart(cue,()=>new(script,cue,Battlers(),true,new Audio())));
+        var scene=new SourceBattleAnimation.SpriteScene();
+        Assert.IsTrue(gate.TryStart(cue,()=>new(script,cue,Battlers(),true,new Audio(),spriteScene:scene)));
         var retired=gate.Current!;int ticks=0;while(gate.IsBlocking&&ticks++<40)retired.Tick();
         Assert.IsFalse(gate.IsBlocking);Assert.IsTrue(retired.HasResidualSprites);Assert.IsFalse(retired.GraphicsLoaded);int endFrame=retired.Snapshot().Frame;
-        var nextCue=cue with{Sequence=2};var next=script with{Commands=[new("delay",["2"],1),new("end",[],2)]};
-        Assert.IsTrue(gate.TryStart(nextCue,()=>new(next,nextCue,Battlers(),true,new Audio())));
-        var assets=SourceElementalAnimationCatalog.Assets(Path.Combine(folder,"elemental.json")).ToDictionary(p=>p.Key,p=>p.Value);
-        assets.Add("impact",SourceHitAnimationCatalog.Asset(hit,Path.Combine(folder,"hit"),"impact"));assets.Add("background",new(240,112,new ushort[240*112]));foreach(var b in Battlers())assets.Add(b.Asset,new(64,64,new ushort[4096]));
-        var composer=new SourceBattleFrameComposer(assets,Battlers());
-        var first=composer.ComposeResidualSprites(retired.Snapshot());Assert.IsTrue(Enumerable.Range(0,240*112).Any(i=>first[i*4+3]!=0));Assert.AreEqual((byte)0,first[3]);
+        var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
+        assets.Add("background",new(240,112,new ushort[240*112]));foreach(var b in Battlers())assets.Add(b.Asset,new(64,64,new ushort[4096]));
+        var composer=AnimationCompositionFixture.Create(resources,resolved,assets,Battlers());
+        var idle=scene.CaptureIdle(Battlers(),true);
+        var baseline=composer.ComposeField(idle with{Sprites=[]});
+        var first=composer.ComposeField(idle);Assert.IsFalse(first.SequenceEqual(baseline));
         int tailTicks=0;
         while(retired.HasResidualSprites&&tailTicks++<40)
         {
-            if(gate.IsBlocking)gate.Current!.Tick();
-            var frame=retired.TickResidualSprites();Assert.IsFalse(frame.Active);Assert.AreEqual(0,retired.ActiveVisualCount);Assert.AreEqual(endFrame+tailTicks,frame.Frame);
-            composer.ComposeResidualSprites(frame);
+            var frame=scene.TickIdle(Battlers(),true);Assert.IsFalse(frame.Active);Assert.AreEqual(0,retired.ActiveVisualCount);Assert.AreEqual(endFrame,retired.Snapshot().Frame);
+            composer.ComposeField(frame);
         }
-        Assert.AreEqual(11,tailTicks);Assert.IsFalse(gate.IsBlocking);Assert.AreEqual(0,retired.Snapshot().Sprites.Length);Assert.IsFalse(retired.HasResidualSprites);
-        Assert.IsTrue(composer.ComposeResidualSprites(retired.Snapshot()).All(v=>v==0));
+        Assert.AreEqual(11,tailTicks);Assert.IsFalse(gate.IsBlocking);Assert.AreEqual(0,scene.CaptureIdle(Battlers(),true).Sprites.Length);Assert.IsFalse(retired.HasResidualSprites);
+        CollectionAssert.AreEqual(baseline,composer.ComposeField(scene.CaptureIdle(Battlers(),true)));
     }
 
     [TestMethod]
@@ -222,8 +222,7 @@ public sealed class SharedAnimationCommandTests
     [TestMethod]
     public void SwayMonUsesUnsignedPhaseSideSignAndHalfWaveCount()
     {
-        using var hit=SourceHitAnimationCatalog.Read(Path.Combine(TestAssets.Root,"content/generated/battle/animations/hit"));
-        var source=SourceHitAnimationCatalog.Script(hit,1);
+        var source=AnimationCompositionFixture.Script(1);
         var script=source with{Commands=[new("createvisualtask",["AnimTask_SwayMon","5","0","6","2048","2","ANIM_TARGET"],1),new("waitforvisualfinish",[],2),new("end",[],3)]};
         foreach(int actor in new[]{0,1})
         {

@@ -35,26 +35,8 @@ public partial class CampaignView
             var original=new MapArt(source,bottom,middle,top,new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,
                 binding.UsesLocalBorder?new(source.BorderWidth,source.BorderHeight,owner.MapTexture(source.BorderBottomTexturePath),owner.MapTexture(source.BorderMiddleTexturePath),owner.MapTexture(source.BorderTopTexturePath)):null);
             if(playback.Tiles.IsDefaultOrEmpty)return original;
-            Texture2D Patch(Texture2D layerTexture,int layer)
-            {
-                using var canvas=(Image)layerTexture.GetImage().Duplicate();
-                foreach(var edit in playback.Tiles)
-                {
-                    if(source.GetTile(edit.X,edit.Y) is null)continue; // Direct connected-border edits are drawn on their neighboring map below.
-                    if(TryCutGrassPatch(canvas,edit,layer,id))continue;
-                    var existing=source.Cells.FirstOrDefault(c=>c.MetatileId==edit.SourceMetatileId);
-                    if(existing is not null)
-                    {
-                        using var pixels=layerTexture.GetImage();canvas.BlitRect(pixels,new(existing.X*16,existing.Y*16,16,16),new(edit.X*16,edit.Y*16));continue;
-                    }
-                    if(TryCelioMachinePatch(canvas,edit,layer,id)||TryFiveIslandPatch(canvas,edit,layer,id)||TrySixIslandPatch(canvas,edit,layer,id)||TryFourIslandPatch(canvas,edit,layer,id)||TrySeviiRubyPatch(canvas,edit,layer,id)||TryPokemonLeaguePatch(canvas,edit,layer,id)||TryVictoryRoadPatch(canvas,edit,layer,id)||TryCinnabarPatch(canvas,edit,layer,id)||TrySilphPatch(canvas,edit,layer,id)||TryRocketPatch(canvas,edit,layer,id.Value))continue;
-                    var definitions=id.Value=="map.vermilion-city-gym"?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-                    if(definitions is null||!definitions.TryGetValue(edit.SourceMetatileId,out var definition))throw new InvalidDataException("quest_log_metatile_art_missing");
-                    using var tile=owner.Texture(layer==0?definition.BottomTexturePath:layer==1?definition.MiddleTexturePath:definition.TopTexturePath).GetImage();
-                    canvas.BlitRect(tile,new(0,0,16,16),new(edit.X*16,edit.Y*16));
-                }
-                return owner.FromImage(canvas);
-            }
+            var edits=playback.Tiles.Where(edit=>source.GetTile(edit.X,edit.Y) is not null).ToArray();
+            Texture2D Patch(Texture2D texture,int layer)=>PatchMapLayer(owner,source,texture,layer,edits);
             return original with{Bottom=Patch(bottom,0),Middle=Patch(middle,1),Top=Patch(top,2)};
         });
     }
@@ -96,15 +78,8 @@ public partial class CampaignView
                     var original=owner.MapTexture(path);
                     var edits=(_questLogPlayback?.Tiles??[]).Select(edit=>(Edit:edit,At:_catalog.ConnectedFieldMaps is {} maps?ConnectedFieldCoordinates.Resolve(maps,art.Source.Id,edit.X,edit.Y):null)).Where(e=>e.At?.Map==neighbor.Map).ToArray();
                     if(edits.Length==0)return original;
-                    using var canvas=(Image)original.GetImage().Duplicate();
-                    foreach(var row in edits)
-                    {
-                        var edit=row.Edit with{X=row.At!.Value.X,Y=row.At.Value.Y};
-                        if(TryCutGrassPatch(canvas,edit,number,neighbor.Map))continue;
-                        var cell=source.Cells.FirstOrDefault(c=>c.MetatileId==edit.SourceMetatileId)??throw new InvalidDataException("quest_log_neighbor_tile_missing");
-                        using var pixels=original.GetImage();canvas.BlitRect(pixels,new(cell.X*16,cell.Y*16,16,16),new(edit.X*16,edit.Y*16));
-                    }
-                    return owner.FromImage(canvas);
+                    return PatchMapLayer(owner,source,original,number,
+                        edits.Select(row=>row.Edit with{X=row.At!.Value.X,Y=row.At.Value.Y}));
                 }
                 return new MapArt(source,Layer(source.BottomTexturePath,0),Layer(source.MiddleTexturePath,1),Layer(source.TopTexturePath,2),art.Player,[],null);
             });

@@ -22,7 +22,7 @@ public sealed class TripleKickAnimationDispatchTests
         new("triple-kick", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
             null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
     private static CampaignMoveAnimationDecision At(ImmutableArray<SourceBattleEvent> events, int index) =>
-        CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
         events.Select((e, i) => e with { Sequence = i + 1 }).ToImmutableArray();
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
@@ -45,7 +45,7 @@ public sealed class TripleKickAnimationDispatchTests
         {
             Assert.IsNull(At(events, index).Dispatch, $"{reason}: event {index}.");
             if (events[index] is SourceMoveUsedEvent)
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch,
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch,
                     "Triple Kick must never acquire an extra attack-text animation.");
         }
     }
@@ -66,7 +66,7 @@ public sealed class TripleKickAnimationDispatchTests
             {
                 Assert.IsNull(decision.Dispatch, events[index].GetType().Name);
                 if (events[index] is SourceMoveUsedEvent)
-                    Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
+                    Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
                 continue;
             }
             Assert.IsNotNull(decision.Dispatch, decision.Reason);
@@ -104,20 +104,20 @@ public sealed class TripleKickAnimationDispatchTests
             var events = Group(actual, actor); var single = Single(events);
             for (int index = 0; index < events.Length; index++)
                 Assert.AreEqual(At(events, index).Dispatch,
-                    CampaignMoveAnimationPresentation.AtHitResult(single with { EventIndex = index }, true, SourceBattleScene.On).Dispatch);
+                    AnimationDispatchFixture.AtHitResult(single with { EventIndex = index }, true, SourceBattleScene.On).Dispatch);
             var hit = single with { EventIndex = 3 };
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(hit, false, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(hit, true, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(hit with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(hit with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(hit with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single with { EventIndex = 1 }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit, false, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit, true, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { EventIndex = 1 }, true, SourceBattleScene.On).Dispatch);
         }
         var twice = Double(Group(3), 3);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
     }
 
     [TestMethod]

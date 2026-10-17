@@ -32,19 +32,9 @@ public sealed partial class CampaignSession
                 default:return false;
             }
         }
-        if(effect.Opcode is not ("checkitemspace" or "additem" or "bufferitemname" or "bufferitemnameplural" or "checkitemtype"))return false;
-        bool buffer=effect.Opcode.StartsWith("bufferitem",StringComparison.Ordinal);
-        int sourceId=Value(args[buffer?1:0]);
-        var item=_content.Inventory.Items.Values.SingleOrDefault(i=>i.SourceItemId==sourceId)??
-            _content.PresetDoubleItems?.Items.Values.SingleOrDefault(i=>i.SourceItemId==sourceId)?.Item??throw new InvalidDataException("berry_powder_item_missing");
-        if(buffer){next=state with{TextBuffers=state.TextBuffers.SetItem(args[0],item.Name)};return true;}
-        if(effect.Opcode=="checkitemtype"){next=Result(Value(item.Pocket));return true;}
-        var inventory=state.Inventory??throw new InvalidDataException("inventory_missing");
-        int quantity=args.Length>1?Value(args[1]):1;
-        var transaction=effect.Opcode=="checkitemspace"?EarlyInventoryAddRules.CheckSpace(ShopCatalog,inventory,item.Id,quantity):EarlyInventoryAddRules.Add(ShopCatalog,inventory,item.Id,quantity);
-        if(!transaction.Succeeded&&transaction.Error is not ("inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full"))throw new InvalidDataException(transaction.Error);
-        next=CommitInventory(Result(transaction.Succeeded?1:0),transaction.State);return true;
+        return false;
     }
+
     private Decision<CampaignState> UsePowderJar(CampaignState state,CampaignCommand command,bool registered=false)
     {
         if((registered?state.RegisteredItem!=PowderJarId.Value||state.ItemMenu is not null||!IsStableFieldForParty(state):

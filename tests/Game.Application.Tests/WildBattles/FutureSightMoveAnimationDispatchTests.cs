@@ -98,14 +98,14 @@ public sealed class FutureSightMoveAnimationDispatchTests
         for (int i = 0; i < events.Length; i++)
         {
             CampaignMoveAnimationDecision Project(SourceBattleScene scene) => single
-                ? CampaignMoveAnimationPresentation.AtAttackText(Single(events, i), true, scene)
-                : CampaignMoveAnimationPresentation.AtAttackText(Double(events, i), scene);
+                ? AnimationDispatchFixture.AtAttackText(Single(events, i), true, scene)
+                : AnimationDispatchFixture.AtAttackText(Double(events, i), scene);
             var decision = Project(SourceBattleScene.On);
             Assert.AreEqual(decision, Project(SourceBattleScene.On));
             Assert.IsNull(Project(SourceBattleScene.Off).Dispatch);
-            if (single) Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, i), false, SourceBattleScene.On).Dispatch);
-            var hit = single ? CampaignMoveAnimationPresentation.AtHitResult(Single(events, i), true, SourceBattleScene.On)
-                : CampaignMoveAnimationPresentation.AtHitResult(Double(events, i), SourceBattleScene.On);
+            if (single) Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, i), false, SourceBattleScene.On).Dispatch);
+            var hit = single ? AnimationDispatchFixture.AtHitResult(Single(events, i), true, SourceBattleScene.On)
+                : AnimationDispatchFixture.AtHitResult(Double(events, i), SourceBattleScene.On);
             Assert.IsNull(hit.Dispatch);
             if (expected && events[i] == used)
             {
@@ -197,16 +197,16 @@ public sealed class FutureSightMoveAnimationDispatchTests
         var result=Resolve(Frame(Bodies()));var events=result.Events;
         var scheduled=events.OfType<SourceCalledDelayedEvent>().Single();
         int at=events.IndexOf(scheduled),used=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single());
-        Assert.IsNotNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events,used),SourceBattleScene.On).Dispatch);
+        Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(Double(events,used),SourceBattleScene.On).Dispatch);
         foreach(var invalid in new[]{scheduled with{Target=new(0)},scheduled with{Move=new("pret:MOVE_WISH")},
             scheduled with{Before=1},scheduled with{After=2},scheduled with{Reason="resolved"},scheduled with{SourcePartyIndex=0}})
         {
             var changed=events.SetItem(at,invalid);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(changed,used),SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(changed,used),true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(changed,used),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(changed,used),true,SourceBattleScene.On).Dispatch);
         }
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events.RemoveAt(at),used),SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events.Add(scheduled with{Sequence=events[^1].Sequence+1}),used),SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events.RemoveAt(at),used),SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events.Add(scheduled with{Sequence=events[^1].Sequence+1}),used),SourceBattleScene.On).Dispatch);
     }
 
     [TestMethod]
@@ -227,14 +227,14 @@ public sealed class FutureSightMoveAnimationDispatchTests
                 for (int i = 0; i < result.Events.Length; i++)
                 {
                     var battle = Double(result.Events, i);
-                    var cue = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On).Dispatch;
+                    var cue = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On).Dispatch;
                     if (cue?.SourceMoveId == 248)
                     {
                         setupCues++; Assert.AreEqual(0, turn);
                         Assert.IsInstanceOfType<SourceMoveUsedEvent>(result.Events[i]);
                         Assert.IsTrue(result.Events.OfType<SourceCalledDelayedEvent>().Any(e => e.Reason == "scheduled" && e.Sequence == cue.ResultSequence));
                     }
-                    Assert.AreNotEqual(248, CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch?.SourceMoveId ?? 0);
+                    Assert.AreNotEqual(248, AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch?.SourceMoveId ?? 0);
                 }
                 Assert.AreEqual(before, JsonSerializer.Serialize(result));
                 if (result.CompletedCleanTurn) { frame = result.State; break; }

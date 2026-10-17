@@ -379,6 +379,8 @@ public partial class CampaignView
     }
     private void DoubleLines(string text)
     {int y=122;foreach(var line in text.Split('\n')){SourceText(_battleWhite,new(10,y),line);y+=16;}}
+    private static bool DoubleBattlerFaintShown(CampaignDoubleBattle battle,PokemonInstance mon,int slot)=>
+        mon.CurrentHp==0&&!(battle.CurrentEvent is SourceHpChangedEvent {HpBefore:>0} hit&&hit.Target.Value==slot);
     private void DrawDoubleBattle()
     {
         var b=_session.State.DoubleBattle!;
@@ -395,7 +397,7 @@ public partial class CampaignView
         {
             var body=DoubleDisplayedBody(i);var mon=body.Pokemon;
             if(entry&&(_doublePage==0||_doublePage==1&&(i&1)==0)||portrait&&(i&1)!=0)continue;
-            if(mon.CurrentHp==0&&!(b.CurrentEvent is SourceHpChangedEvent {HpBefore:>0} hit&&hit.Target.Value==i))continue;
+            if(DoubleBattlerFaintShown(b,mon,i))continue;
             var asset=DoubleBattleArt(body,i);
             if(!SourceAnimationPresented)
             {
@@ -404,13 +406,12 @@ public partial class CampaignView
             }
             healthForeground.Add(()=>DrawDoubleHealth(i,body));
         }
-        DrawSourceResidualMoveSprites();
         foreach(var drawHealth in healthForeground)drawHealth();
         bool choosing=b.SelectingSlot is not null&&_doubleNotice is null&&_doublePages.IsEmpty;
         if(choosing)_uiCorrections.ClearBattleMenu(this);else _battleSkin.DrawBattleMessage(this);
         if(_doubleMenu is "party" or "learn-moves"){DrawDoublePartyOrMoves(b);return;}
         if(_doubleNotice is not null){DoubleLines(_doubleNotice);return;}
-        if(_sourceResultContinuation is not null)return;
+        if(_sourceResultContinuation is not null&&!_sourceResultCompleted)return;
         if(_doublePages.Length>0)
         {
             if(_doubleRewardStats.TryGetValue(_doublePage,out var stats)){DrawDoubleRewardStats(stats.Level,stats.Totals);return;}

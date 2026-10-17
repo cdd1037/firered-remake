@@ -1,28 +1,4 @@
-using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
-
-public static class SourceElementalAnimationCatalog
-{
-    public static bool Supports(int move)=>move is 258 or 352 or 47 or 187 or 320 or 135 or 208 or 7 or 52 or 53 or 56 or 190 or 324 or 341 or 84 or 86 or 9 or 55 or 85 or 121 or 152 or 192 or 48 or 103 or 319 or 71 or 72 or 202 or 105 or 51 or 61 or 92 or 141 or 145 or 83 or 250 or 328 or 44 or 128 or 116 or 203 or 8 or 58 or 181 or 82 or 126 or 172 or 225 or 204 or 343 or 231 or 342 or 223 or 75 or 129 or 200 or 235 or 147 or 178 or 88 or 157 or 249 or 350;
-    public static IReadOnlyDictionary<string,SourcePixelAsset> Assets(string path)
-    {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(path));
-        return doc.RootElement.GetProperty("assets").EnumerateArray().Select(r=>r.GetProperty("id").GetString()!).ToDictionary(id=>id,id=>SourceHitAnimationCatalog.Asset(doc,Path.GetDirectoryName(path)!,id));
-    }
-    public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string path,JsonDocument hitManifest)
-    {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(path));var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
-        var recipes=shared.SpriteRecipes.Concat(SourceHitAnimationCatalog.Recipes(doc.RootElement.GetProperty("spriteRecipes"))).ToDictionary(p=>p.Key,p=>p.Value);
-        static SourceAnimationCommand[] Commands(JsonElement rows)=>rows.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray();
-        var subs=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value));
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>
-        {
-            var commands=Commands(r.GetProperty("commands"));
-            return new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,commands){SpriteDependencies=SourceAnimationResources.ReadSpriteDependencies(r),SpriteTags=r.TryGetProperty("spriteTags",out var tags)?tags.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),SoundEffects=r.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),SineTable=shared.SineTable,SpriteRecipes=recipes,Subroutines=commands.Where(c=>c.Op=="call").Select(c=>c.Args[0]).Distinct().ToDictionary(name=>name,name=>subs[name])};
-        }).ToDictionary(s=>s.MoveId);
-        if(scripts.Count==0||scripts.Keys.Any(id=>!Supports(id)))throw new InvalidDataException("Unadmitted elemental script.");return scripts;
-    }
-}
 
 public sealed partial class SourceBattleAnimation
 {

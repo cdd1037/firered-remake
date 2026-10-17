@@ -7,7 +7,7 @@ class GeneralImportTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):cls.data,cls.blobs=module.build(ROOT/'content/raw/pokefirered/037335f4');cls.pack=json.loads(cls.data)
  def test_named_root_has_no_move_id(self):
-  self.assertEqual([r['label'] for r in self.pack['generalScripts']],['General_HeldItemEffect','General_WishHeal'])
+  self.assertEqual([r['label'] for r in self.pack['generalScripts']],['General_HeldItemEffect','General_WishHeal','General_CastformChange'])
   for root in self.pack['generalScripts']:self.assertNotIn('moveId',root);self.assertEqual(root['commands'][-1]['op'],'end')
  def test_exact_star_script_operands(self):
   rows=self.pack['subroutines']['GrantingStarsEffect'];self.assertEqual([r['args'][3:] for r in rows if r['op']=='createsprite'],[['-15','0','0','0','32','60'],['12','-5','0','0','32','60']])
@@ -29,4 +29,22 @@ class GeneralImportTests(unittest.TestCase):
  def test_general_wish_has_no_move_root_or_new_material_copy(self):
   self.assertEqual(set(self.blobs),{'general-sparkle-2.rgb555','general-thin-ring.rgb555'})
   self.assertNotIn('moveId',self.pack['generalScripts'][1])
+ def test_castform_branch_preserves_true_operand_labels_and_both_source_paths(self):
+  root=self.pack['generalScripts'][2];rows=root['commands']
+  self.assertEqual(root['labels'],{'General_CastformChange':0,'CastformChangeContinue':3,'CastformChangeSkipAnim':10})
+  self.assertEqual(rows[1]['args'],['7','TRUE','CastformChangeSkipAnim']);self.assertEqual(rows[1]['op'],'jumpargeq')
+  self.assertEqual(rows[6]['args'],['AnimTask_TransformMon','2','1']);self.assertEqual(rows[10]['args'],['AnimTask_CastformGfxChange','2','1'])
+  self.assertEqual(root['soundEffects'],{'SE_M_MINIMIZE':197,'SE_M_TELEPORT':196})
+  self.assertEqual(rows[5]['args'],['SE_M_MINIMIZE','SOUND_PAN_ATTACKER','48'])
+ def test_branched_general_parser_rejects_unknown_missing_cyclic_and_unreachable_source(self):
+  cases=['General_Test:\n goto Missing\n end\n',
+   'General_Test:\n goto General_Test\n',
+   'General_Test:\n end\n delay 1\n',
+   'General_Test:\n mystery\n end\n',
+   'General_Test:\n monbg ANIM_ATTACKER\n']
+  for source in cases:
+   with self.subTest(source=source),self.assertRaises(ValueError):module.branched_program(source,'General_Test')
+ def test_general_compiler_ends_at_next_named_general_root(self):
+  rows,labels=module.branched_program('General_Test:\n jumpreteq TRUE, Hidden\n end\nHidden:\n end\nGeneral_Next:\n mystery\n','General_Test')
+  self.assertEqual(len(rows),3);self.assertEqual(labels,{'General_Test':0,'Hidden':2})
 if __name__=='__main__':unittest.main()

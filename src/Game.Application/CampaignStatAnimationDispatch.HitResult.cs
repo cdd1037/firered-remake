@@ -20,7 +20,6 @@ public static partial class CampaignStatAnimationPresentation
     {
         if(moves is null||!moves.TryGetValue(new(used.Move),out var definition)||
             !SourceMoveDefinitionRules.IsValid(definition)||definition.Id.Value!=used.Move||
-            definition.SourceMoveId!=CampaignMoveAnimationPresentation.SupportedSourceMoveId(used.Move)||
             definition.Effect!="EFFECT_POISON_FANG"||definition.Target!="MOVE_TARGET_SELECTED"||
             definition.Power<=0||definition.SecondaryEffectChance is <1 or >100)return false;
         int index=Array.FindIndex(rows,r=>r.Sequence==sequence);

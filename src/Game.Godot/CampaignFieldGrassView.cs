@@ -7,17 +7,6 @@ using Godot;
 public partial class CampaignView
 {
     private sealed record CutArtBindings(Dictionary<string,int> Layouts,Dictionary<int,int>[] Groups);
-    private CutArtBindings? _cutGrassArt;
-    private Image? _cutGrassSheet;
-    private bool TryCutGrassPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
-    {
-        _cutGrassArt??=JsonSerializer.Deserialize<CutArtBindings>(File.ReadAllBytes(Path.Combine(_root,"content/generated/maps/cut-grass-art.json")),
-            new JsonSerializerOptions{PropertyNameCaseInsensitive=true})??throw new InvalidDataException("cut_grass_art_missing");
-        string layout=_catalog.SourceMaps[map].Events.GetProperty("layout").GetString()!;
-        if(!_cutGrassArt.Layouts.TryGetValue(layout,out int group)||!_cutGrassArt.Groups[group].TryGetValue(edit.SourceMetatileId,out int row))return false;
-        _cutGrassSheet??=NativeImages.LoadPng(File.ReadAllBytes(Path.Combine(_root,"content/generated/maps/cut-grass.png")));
-        canvas.BlitRect(_cutGrassSheet,new(layer*16,row*16,16,16),new(edit.X*16,edit.Y*16));return true;
-    }
     private Texture2D? _cutGrassParticle;
     private int[]? _cutGrassSine;
     private void DrawCutGrassParticles(Vector2 camera)

@@ -101,13 +101,6 @@ public partial class CampaignView
         // battle_main.c: Elite Four victory uses trainer music; Champion uses leader victory.
         return won?(champion?"MUS_VICTORY_GYM_LEADER":"MUS_VICTORY_TRAINER"):(champion?"MUS_VS_CHAMPION":"MUS_VS_GYM_LEADER");
     }
-    private bool TryPokemonLeaguePatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
-    {
-        if(_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(map)!=true)return false;
-        var tile=LeagueManifest.GetProperty("tiles").EnumerateArray().SingleOrDefault(t=>t.GetProperty("metatileId").GetInt32()==edit.SourceMetatileId);
-        if(tile.ValueKind==JsonValueKind.Undefined)throw new InvalidDataException("Pokemon League metatile art missing.");
-        using var image=_leagueTextures["doors-"+layer].GetImage();canvas.BlitRect(image,new(tile.GetProperty("x").GetInt32(),tile.GetProperty("y").GetInt32(),16,16),new(edit.X*16,edit.Y*16));return true;
-    }
     private void SynchronizePokemonLeaguePresentation(CampaignState? before,CampaignState after)
     {
         if(after.PokemonLeagueCompletion is not {} c){_leagueStage=null;_leagueRequestId=null;_leagueSlowFadeSequence=0;return;}

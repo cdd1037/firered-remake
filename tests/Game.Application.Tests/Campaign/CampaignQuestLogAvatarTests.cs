@@ -42,7 +42,7 @@ public sealed class CampaignQuestLogAvatarTests
         Assert.AreEqual("OBJ_EVENT_GFX_RED_BIKE",playback.Actors.First().Graphics);
         playback.Tick(1d/60);Assert.AreEqual(1d,playback.Frame,.00001);
         playback.Skip();Assert.AreEqual("OBJ_EVENT_GFX_RED_NORMAL",playback.Actors.First().Graphics);
-        playback.NextScene();Assert.IsTrue(playback.Finished);Assert.AreEqual(unchanged,JsonSerializer.Serialize(after));
+        playback.NextScene();Assert.IsTrue(playback.Ending);Assert.IsFalse(playback.Finished);playback.Tick(52d/60);Assert.IsTrue(playback.Finished);Assert.AreEqual(unchanged,JsonSerializer.Serialize(after));
         var complete=new CampaignQuestLogPlayback(log,"RED",catalog.QuestLogSource,saved);
         while(!complete.Finished)complete.Tick(10);
         Assert.AreEqual(unchanged,JsonSerializer.Serialize(after));

@@ -48,8 +48,8 @@ public sealed class MultiStrikeMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var text = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
-            var hit = CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On);
+            var text = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
+            var hit = AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On);
             Assert.IsNull(text.Dispatch, "Attack text must not schedule an extra multi-strike root.");
             int ordinal = Array.FindIndex(hits, h => h.Sequence == events[index].Sequence);
             if (ordinal >= 0)
@@ -65,12 +65,12 @@ public sealed class MultiStrikeMoveAnimationDispatchTests
                 Assert.IsFalse(dispatch.AcknowledgesCurrentReceipt, "Per-hit playback cannot submit an extra ACK.");
             }
             else Assert.IsNull(hit.Dispatch, "PP, used, summary, faint and result receipts cannot schedule another root.");
-            Assert.AreEqual(hit, CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On));
+            Assert.AreEqual(hit, AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On));
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(text.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(hits.Length, dispatchCount, "One invocation per committed hit, never per planned hit or visual sprite.");
@@ -81,11 +81,11 @@ public sealed class MultiStrikeMoveAnimationDispatchTests
         string before = JsonSerializer.Serialize(events);
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, branch);
             if (events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value > 1 || e.Target.Value > 1)) continue;
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events));
     }
@@ -304,14 +304,14 @@ public sealed class MultiStrikeMoveAnimationDispatchTests
             foreach (var invalid in malformed) AssertDenied(invalid, "incomplete or malformed multi-strike group");
             AssertDispatches(events, 0, 1);
             int index = events.IndexOf(Hits(events)[0]); var single = Single(events, index); var twice = Double(events, index);
-            Assert.IsNotNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, false, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+            Assert.IsNotNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, false, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
         });
     }
     [TestMethod][DataRow(154)][DataRow(292)]

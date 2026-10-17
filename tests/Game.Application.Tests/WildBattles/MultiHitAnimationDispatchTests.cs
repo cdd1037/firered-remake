@@ -21,7 +21,7 @@ public sealed class MultiHitAnimationDispatchTests
         new("multi-hit", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
             null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
     private static CampaignMoveAnimationDecision At(ImmutableArray<SourceBattleEvent> events, int index) =>
-        CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events, long first = 1) =>
         events.Select((e, i) => e with { Sequence = first + i }).ToImmutableArray();
     private static ImmutableArray<SourceBattleEvent> Group(string name = "DOUBLE_SLAP", int actor = 0, int hits = 3)
@@ -86,7 +86,7 @@ public sealed class MultiHitAnimationDispatchTests
             var events = Group(name, actor, hits);
             string before = JsonSerializer.Serialize(events);
             AssertDispatches(events, id, actor, actor ^ 1);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, 1), SourceBattleScene.On).Dispatch,
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, 1), SourceBattleScene.On).Dispatch,
                 "The attack-text page must not play an extra first hit.");
             Assert.AreEqual(before, JsonSerializer.Serialize(events));
         }
@@ -109,7 +109,7 @@ public sealed class MultiHitAnimationDispatchTests
                 _ => e
             }).ToImmutableArray();
             AssertDispatches(events, id, actor, ally.Value);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, 1), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, 1), SourceBattleScene.On).Dispatch);
         }
     }
 
@@ -124,22 +124,22 @@ public sealed class MultiHitAnimationDispatchTests
             for (int i = 0; i < events.Length; i++)
             {
                 var expected = At(events, i);
-                var actual = CampaignMoveAnimationPresentation.AtHitResult(single with { EventIndex = i }, true, SourceBattleScene.On);
+                var actual = AnimationDispatchFixture.AtHitResult(single with { EventIndex = i }, true, SourceBattleScene.On);
                 Assert.AreEqual(expected.Dispatch, actual.Dispatch);
             }
             var battle = single with { EventIndex = 3 };
-            Assert.AreEqual(id, CampaignMoveAnimationPresentation.AtHitResult(battle, true, SourceBattleScene.On).Dispatch!.SourceMoveId);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, false, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, true, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
+            Assert.AreEqual(id, AnimationDispatchFixture.AtHitResult(battle, true, SourceBattleScene.On).Dispatch!.SourceMoveId);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, false, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, true, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
         }
         var twice = Double(Group(name), 3);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
     }
 
     [TestMethod]
@@ -354,7 +354,7 @@ public sealed class MultiHitAnimationDispatchTests
                 Assert.AreEqual(0, result.Events.OfType<SourceHpChangedEvent>().Single().HpAfter);
                 Assert.AreEqual(target, result.Events.OfType<SourceFaintedEvent>().Single().Side.Value);
                 int usedIndex = result.Events.IndexOf(result.Events.OfType<SourceMoveUsedEvent>().Single());
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(result.Events, usedIndex), SourceBattleScene.On).Dispatch,
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(result.Events, usedIndex), SourceBattleScene.On).Dispatch,
                     "A KO-truncated one-hit action still dispatches only at its hit receipt.");
             }
             else
@@ -397,7 +397,7 @@ public sealed class MultiHitAnimationDispatchTests
             Assert.AreEqual(1, Hits(result.Events).Length);
             AssertDispatches(result.Events, id, actor, target);
             int usedIndex = result.Events.IndexOf(result.Events.OfType<SourceMoveUsedEvent>().Single());
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(result.Events, usedIndex), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(result.Events, usedIndex), SourceBattleScene.On).Dispatch);
         }
     }
 }

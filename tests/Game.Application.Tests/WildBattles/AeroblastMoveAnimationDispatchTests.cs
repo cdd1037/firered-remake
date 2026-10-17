@@ -28,8 +28,8 @@ public sealed class AeroblastMoveAnimationDispatchTests
         Assert.AreEqual(Id("AEROBLAST"),used.Move);Assert.AreEqual(used.Move,pp.CurrentMove);Assert.AreEqual(actor,pp.Actor.Value);Assert.AreEqual(target,pp.Target.Value);
         for(int i=0;i<events.Length;i++)
         {
-            var battle=Double(events,i);var decision=CampaignMoveAnimationPresentation.AtAttackText(battle,SourceBattleScene.On);
-            Assert.AreEqual(decision,CampaignMoveAnimationPresentation.AtAttackText(battle,SourceBattleScene.On));Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle,SourceBattleScene.On).Dispatch);
+            var battle=Double(events,i);var decision=AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On);
+            Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On));Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle,SourceBattleScene.On).Dispatch);
             if(expected&&events[i]==used)
             {
                 var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);dispatched++;var hit=Hits(events).Single();

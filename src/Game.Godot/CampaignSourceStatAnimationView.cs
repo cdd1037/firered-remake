@@ -6,17 +6,19 @@ using Godot;
 public partial class CampaignView
 {
     private readonly SourceBattleAnimationGate _sourceResultAnimationGate=new();
-    private sealed record SourceResultContinuation(string BattleId,long Sequence,long ReceiptSequence,BattlerSlot Affected,string? GeneralLabel,int? StatArgument,CampaignResultAnimationKind Kind);
+    private sealed record SourceResultContinuation(string BattleId,long Sequence,long ReceiptSequence,BattlerSlot Affected,string? GeneralLabel,int? StatArgument,CampaignResultAnimationKind Kind)
+    {public CampaignCastformAnimationDispatch? FormChange {get;init;}};
     private SourceResultContinuation? _sourceResultContinuation;
+    private bool _sourceResultCompleted;
     private bool SourceAnimationBlocking=>_sourceMoveAnimationGate.IsBlocking||_sourceResultAnimationGate.IsBlocking;
-    private bool SourceAnimationPresented=>_sourceMoveContinuation is not null||_sourceResultContinuation is not null;
+    private bool SourceAnimationPresented=>_sourceIdleSpritesPresented||_sourceMoveContinuation is not null||_sourceResultContinuation is not null;
     private void SynchronizeSourceResultPresentation()
     {
         if(_sourceResultContinuation is not null)
         {if(!SourceResultContextMatches())CancelSourceResultAnimation("context-changed");else return;}
         if(_sourceMoveContinuation is not null)return;
         bool doubles=DoubleBattleVisible;
-        SourceResultContinuation? dispatch=HeldItemResultContinuation(doubles)??WishHealingResultContinuation(doubles);
+        SourceResultContinuation? dispatch=CastformResultContinuation(doubles)??HeldItemResultContinuation(doubles)??WishHealingResultContinuation(doubles);
         if(dispatch is null)
         {
             CampaignStatAnimationDispatch? statDispatch=null;
@@ -38,16 +40,17 @@ public partial class CampaignView
         {StatAnimationArgument=dispatch.StatArgument,GeneralAnimationLabel=dispatch.GeneralLabel};
         var (assets,battlers)=CreateSourceAnimationScene(doubles);
         foreach(var (id,asset) in resolved.Assets)assets[id]=asset;
+        var replacements=dispatch.FormChange is {} form?PrepareCastformMaterials(form,assets,battlers,doubles):null;
         SourceBattleAnimationAudioAdapter? sound=null;
         if(!_sourceResultAnimationGate.TryStart(cue,()=>
         {
             sound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceResultAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan})):null;
-            return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio());
+            return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio(),battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets);
         }))return;
-        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask,backgroundSurface:SourceTerrainSurface(assets["background"]));_sourceResultContinuation=dispatch;
+        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask,backgroundSurface:SourceTerrainSurface(assets["background"]));_sourceResultContinuation=dispatch;_sourceResultCompleted=false;
         _sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceResultAnimationGate.Current!.Tick());
-        Write("sourceResultAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,scene=_session.EffectiveOptions.BattleScene.ToString()});
+        Write("sourceResultAnimationStarted",new{dispatch.BattleId,dispatch.Sequence,dispatch.ReceiptSequence,dispatch.Affected,dispatch.GeneralLabel,dispatch.StatArgument,dispatch.Kind,doubles,revision=_sourceMoveRevision,scene=_session.EffectiveOptions.BattleScene.ToString()});
     }
     private bool SourceResultContextMatches()
     {
@@ -59,19 +62,22 @@ public partial class CampaignView
     {
         if(_sourceResultContinuation is not {} pending)return false;
         if(!SourceResultContextMatches()){CancelSourceResultAnimation("context-changed");return false;}
+        if(_sourceResultCompleted)return false;
         _sourceMoveRemainder+=delta;
         while(_sourceMoveRemainder>=SourceBattleAnimation.SourceFrameSeconds&&_sourceResultAnimationGate.IsBlocking)
         {_sourceMoveRemainder-=SourceBattleAnimation.SourceFrameSeconds;PresentSourceMoveFrame(_sourceResultAnimationGate.Current!.Tick());}
         if(!_sourceResultAnimationGate.IsBlocking)
         {
-            _sourceResultContinuation=null;_sourceMoveSession=null;_sourceMoveComposer=null;_sourceMoveSound=null;_wildElapsed=_doubleElapsed=0;
+            _sourceResultCompleted=pending.Kind==CampaignResultAnimationKind.FormChange;
+            if(!_sourceResultCompleted){_sourceResultContinuation=null;_sourceMoveSession=null;_sourceMoveComposer=null;}
+            _sourceMoveSound=null;_wildElapsed=_doubleElapsed=0;
             Write("sourceResultAnimationFinished",new{pending.BattleId,pending.Sequence,sourceFrame=_sourceResultAnimationGate.Current!.Snapshot().Frame,acknowledged=false});
         }
         QueueRedraw();return true;
     }
     private void CancelSourceResultAnimation(string reason)
     {
-        var pending=_sourceResultContinuation;_sourceResultContinuation=null;_sourceResultAnimationGate.Current?.Cancel();
+        var pending=_sourceResultContinuation;_sourceResultContinuation=null;_sourceResultCompleted=false;_sourceResultAnimationGate.Current?.Cancel();
         if(pending is null)return;
         _sourceMoveSession=null;_sourceMoveSound=null;_sourceMoveComposer=null;_sourceMoveRemainder=0;
         Write("sourceResultAnimationCancelled",new{pending.BattleId,pending.Sequence,reason});

@@ -81,15 +81,6 @@ public partial class CampaignView
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,e.HeightDisplay,e.WeightDisplay,e.Description,
             e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
     private byte[]? ReadFourIslandDexTexture(PokedexMenuTexture texture) => _fourIslandDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ? _fourIslandArt!.Files[texture.TexturePath] : null;
-    private bool IsFourIslandPatchedMap(MapId map) => map == FourIslandFieldSource.FirstFloor;
-    private bool TryFourIslandPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
-    {
-        if (!IsFourIslandPatchedMap(map)) return false;
-        if (!_fourIslandIceLayers.TryGetValue((edit.SourceMetatileId,layer),out var texture) || !_catalog.FourIslandRegion!.IceFallPairs.EnumerateArray().Any(p =>
-            p.GetProperty("source").GetProperty("x").GetInt32() == edit.X && p.GetProperty("source").GetProperty("y").GetInt32() == edit.Y))
-            throw new InvalidDataException("Four Island ice patch is outside its authenticated source.");
-        using var image = texture.GetImage(); canvas.BlitRect(image,new(0,0,16,16),new(edit.X*16,edit.Y*16)); return true;
-    }
     private Texture2D? FourIslandBattleTerrain(MapId map)
     {
         if (_catalog.FourIslandRegion?.NewMaps.ContainsKey(map) != true) return null;

@@ -143,7 +143,7 @@ public sealed class CosmicPowerKernelDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var root = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
+            var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             if (events[index] == used)
             {
                 Assert.IsNotNull(root.Dispatch, root.Reason);
@@ -153,8 +153,8 @@ public sealed class CosmicPowerKernelDispatchTests
                 Assert.IsFalse(root.Dispatch.HitsSubstitute);
             }
             else Assert.IsNull(root.Dispatch, "Only the actual attack-text receipt may own the dedicated root.");
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
-            var wave = CampaignStatAnimationPresentation.AtResult(battle);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
+            var wave = AnimationDispatchFixture.StatAtResult(battle);
             if (events[index].Sequence == first)
             {
                 Assert.IsNotNull(wave, "The source wave runs before the first DEF command, even when DEF is capped.");
@@ -163,16 +163,16 @@ public sealed class CosmicPowerKernelDispatchTests
                 Assert.AreEqual(attack.Sequence, wave.AttackSequence); Assert.AreEqual(pp.Sequence, wave.PpSequence);
             }
             else Assert.IsNull(wave, "The second stat command and all later receipts cannot replay the grouped wave.");
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle, true));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true));
             bool cap = events[index] is SourceStatAtMaximumEvent;
             Assert.AreEqual(cap, CampaignStatAnimationPresentation.IsSilentResultReceipt(battle));
             if (actor < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(root.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(wave, CampaignStatAnimationPresentation.AtResult(single, true));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, false));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, true, true));
+                Assert.AreEqual(root.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(wave, AnimationDispatchFixture.StatAtResult(single, true));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true));
                 Assert.AreEqual(cap, CampaignStatAnimationPresentation.IsSilentResultReceipt(single, true));
                 Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single, false));
             }
@@ -263,14 +263,14 @@ public sealed class CosmicPowerKernelDispatchTests
             {
                 var battle = Double(result.Events, index);
                 Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle));
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle));
                 Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle), "The whole-move failure text remains visible.");
                 if (actor >= 2) continue;
                 var single = Single(result.Events, index);
                 Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true));
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, true));
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true));
                 Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single, true));
             }
         }
@@ -326,8 +326,8 @@ public sealed class CosmicPowerKernelDispatchTests
             for (int index = 0; index < itemBatch.Events.Length; index++)
             {
                 var battle = Double(itemBatch.Events, index);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle));
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle));
                 var held = CampaignHeldItemAnimationPresentation.AtResult(battle, SourceBattleScene.On, new MoveId?[4]);
                 if (held is null) continue;
                 heldCount++; Assert.AreEqual(consumed.Sequence, held.ReceiptSequence); Assert.AreEqual(actor, held.Affected.Value);

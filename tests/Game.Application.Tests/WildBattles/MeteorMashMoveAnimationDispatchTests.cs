@@ -106,10 +106,10 @@ public sealed class MeteorMashMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On, moves: Mechanics.Catalog.Moves);
-            Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On),
+            var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On, moves: Mechanics.Catalog.Moves);
+            Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On),
                 "Ordinary damage admission is independent of later Attack-up or contact receipts.");
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
             if (events[index] == used)
             {
                 var dispatch = decision.Dispatch;
@@ -132,10 +132,10 @@ public sealed class MeteorMashMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(decision.Dispatch,
-                    CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On, moves: Mechanics.Catalog.Moves).Dispatch);
+                    AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On, moves: Mechanics.Catalog.Moves).Dispatch);
                 Assert.AreEqual(decision.Dispatch,
-                    CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                    AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(1, count);
@@ -147,13 +147,13 @@ public sealed class MeteorMashMoveAnimationDispatchTests
         string before = JsonSerializer.Serialize(events);
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On,
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On,
                 moves: Mechanics.Catalog.Moves).Dispatch, label);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
             if (!singles) continue;
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On,
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On,
                 moves: Mechanics.Catalog.Moves).Dispatch, label);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events), label);
     }
@@ -163,7 +163,7 @@ public sealed class MeteorMashMoveAnimationDispatchTests
         int count=0;string before=JsonSerializer.Serialize(result.Events);
         for(int i=0;i<result.Events.Length;i++)
         {
-            var dispatch=CampaignStatAnimationPresentation.AtResult(Double(result.Events,i),moves:Mechanics.Catalog.Moves);
+            var dispatch=AnimationDispatchFixture.StatAtResult(Double(result.Events,i),moves:Mechanics.Catalog.Moves);
             if(dispatch is not null)
             {
                 count++;Assert.IsInstanceOfType<SourceStatChangedEvent>(result.Events[i]);
@@ -171,7 +171,7 @@ public sealed class MeteorMashMoveAnimationDispatchTests
                 Assert.AreEqual(result.Events[i].Sequence,dispatch.Sequence);
             }
             if(actor<2&&result.Events.OfType<SourceMoveUsedEvent>().Single().Target.Value<2)
-                Assert.AreEqual(dispatch,CampaignStatAnimationPresentation.AtResult(Single(result.Events,i),true,moves:Mechanics.Catalog.Moves));
+                Assert.AreEqual(dispatch,AnimationDispatchFixture.StatAtResult(Single(result.Events,i),true,moves:Mechanics.Catalog.Moves));
         }
         Assert.AreEqual(expected?1:0,count);Assert.AreEqual(before,JsonSerializer.Serialize(result.Events));
     }
@@ -250,8 +250,8 @@ public sealed class MeteorMashMoveAnimationDispatchTests
     public void OptionsAndMalformedInvocationCannotBorrowAnUnrelatedHit()
     {
         var result=Resolve(Frame(Bodies()));var events=result.Events;int index=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single());
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events,index),SourceBattleScene.Off,moves:Mechanics.Catalog.Moves).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events,index),false,SourceBattleScene.On,moves:Mechanics.Catalog.Moves).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events,index),SourceBattleScene.Off,moves:Mechanics.Catalog.Moves).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events,index),false,SourceBattleScene.On,moves:Mechanics.Catalog.Moves).Dispatch);
         var pp=events.OfType<SourcePpCommandEvent>().Single();int pi=events.IndexOf(pp);
         AssertDenied(events.SetItem(pi,pp with{PpOwner=new(1)}),"foreign PP owner");
         var attack=events.OfType<SourceAttackStringEvent>().Single();int ai=events.IndexOf(attack);

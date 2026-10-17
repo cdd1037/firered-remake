@@ -116,7 +116,7 @@ public sealed partial class CampaignSession
             return next with
             {
                 Script=next.Script with{Flags=flags,Variables=next.Script.Variables.SetItem("VAR_PC_BOX_TO_SEND_MON",box)},
-                TextBuffers=next.TextBuffers.SetItem("STR_VAR_1","BOX"+(box+1)).SetItem("STR_VAR_2",nickname).SetItem("STR_VAR_3","BOX"+(oldBox+1)),
+                TextBuffers=next.TextBuffers.SetItem("STR_VAR_1",PokemonStorageCustomizationRules.BoxName(next.Storage!,box)).SetItem("STR_VAR_2",nickname).SetItem("STR_VAR_3",PokemonStorageCustomizationRules.BoxName(next.Storage!,oldBox)),
                 WildBattle=b with{Capture=c with{Stage=CampaignCaptureStage.SentToPc,Address=received.Address,MessageSymbol=symbol}}
             };
         }

@@ -903,6 +903,7 @@ public sealed partial class CampaignSession
             if(TryApplyCenterEffect(state,effect,out var centerState)){state=centerState;continue;}
             if(TryApplyPewterGymEffect(state,effect,out var gymState)){state=gymState;continue;}
             if(TryApplyParcelEffect(state,effect,out var parcelState)){state=parcelState;continue;}
+            if(TryApplyScriptInventoryEffect(state,effect,out var inventoryScriptState)){state=inventoryScriptState;continue;}
             switch(effect.Opcode)
             {
                 case "multichoice":case "multichoicedefault":

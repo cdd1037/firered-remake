@@ -95,8 +95,8 @@ public sealed class WishMoveAnimationDispatchTests
 
     private static CampaignMoveAnimationDecision Project(ImmutableArray<SourceBattleEvent> events, int index,
         bool single, SourceBattleScene scene = SourceBattleScene.On) => single
-        ? CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, scene, moves: Mechanics.Catalog.Moves)
-        : CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), scene, moves: Mechanics.Catalog.Moves);
+        ? AnimationDispatchFixture.AtAttackText(Single(events, index), true, scene, moves: Mechanics.Catalog.Moves)
+        : AnimationDispatchFixture.AtAttackText(Double(events, index), scene, moves: Mechanics.Catalog.Moves);
 
     private static void AssertProjection(ImmutableArray<SourceBattleEvent> events, SourceBattleFrame state,
         ImmutableArray<RandomTrace> trace, int actor, bool single = false)
@@ -125,10 +125,10 @@ public sealed class WishMoveAnimationDispatchTests
             Assert.IsNull(Project(events, index, single, SourceBattleScene.Off).Dispatch);
             if (single)
             {
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), false, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), false, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch);
             }
-            else Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
+            else Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
             if (events[index] != used) { Assert.IsNull(decision.Dispatch); continue; }
             var cue = decision.Dispatch; Assert.IsNotNull(cue, decision.Reason); dispatched++;
             Assert.AreEqual("wish", cue.BattleId); Assert.AreEqual(273, cue.SourceMoveId);
@@ -150,11 +150,11 @@ public sealed class WishMoveAnimationDispatchTests
             Assert.IsNull(Project(events, index, single).Dispatch, label);
             if (single)
             {
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
                 Assert.IsNull(Project(events, index, false).Dispatch, label + " doubles projection");
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
             }
-            else Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
+            else Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events), label);
     }
@@ -261,8 +261,8 @@ public sealed class WishMoveAnimationDispatchTests
                         Assert.IsTrue(result.Events.OfType<SourceCalledDelayedEvent>().Any(e =>
                             e.Reason == "scheduled" && e.Sequence == decision.Dispatch.ResultSequence));
                     }
-                    var hit = single ? CampaignMoveAnimationPresentation.AtHitResult(Single(result.Events, index), true, SourceBattleScene.On)
-                        : CampaignMoveAnimationPresentation.AtHitResult(Double(result.Events, index), SourceBattleScene.On);
+                    var hit = single ? AnimationDispatchFixture.AtHitResult(Single(result.Events, index), true, SourceBattleScene.On)
+                        : AnimationDispatchFixture.AtHitResult(Double(result.Events, index), SourceBattleScene.On);
                     Assert.AreNotEqual(273, hit.Dispatch?.SourceMoveId ?? 0);
                 }
                 Assert.AreEqual(before, JsonSerializer.Serialize(result)); Assert.AreEqual(rng, result.State.Rng);
@@ -313,9 +313,9 @@ public sealed class WishMoveAnimationDispatchTests
         AssertDenied(events.SetItem(ui, used with { Slot = -1 }), "invalid move slot", single: true);
         AssertDenied(events.RemoveAt(ai), "missing attack header", single: true);
         AssertDenied(events.RemoveAt(pi), "missing PP command", single: true);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, ui) with { Stage = CampaignDoubleBattleStage.Intro }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, -1), true, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, events.Length), SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, ui) with { Stage = CampaignDoubleBattleStage.Intro }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, -1), true, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, events.Length), SourceBattleScene.On).Dispatch);
         AssertProjection(result.Events, result.State, result.Trace, 0, single: true);
     }
 

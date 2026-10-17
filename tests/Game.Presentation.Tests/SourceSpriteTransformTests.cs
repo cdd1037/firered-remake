@@ -50,9 +50,7 @@ public sealed class SourceSpriteTransformTests
     [TestMethod]
     public void AffineDoubleHeightChangesSourceOamTieOrdering()
     {
-        string folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-        using var hit=SourceHitAnimationCatalog.Read(Path.Combine(folder,"hit"));
-        var source=SourceElementalAnimationCatalog.Read(Path.Combine(folder,"elemental.json"),hit)[55];
+        var source=AnimationCompositionFixture.Script(55);
         const string template="gWaterGunDropletSpriteTemplate";
         foreach(bool doubled in new[]{false,true})
         {

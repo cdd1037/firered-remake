@@ -105,8 +105,8 @@ public sealed class FangMoveAnimationDispatchTests
         Assert.AreEqual(0, events.OfType<SourceMultiHitEvent>().Count());
         for (int index = 0; index < events.Length; index++)
         {
-            var battle = Double(events, index); var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On, moves:Mechanics.Catalog.Moves);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            var battle = Double(events, index); var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On, moves:Mechanics.Catalog.Moves);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
             if (events[index] == used)
             {
                 var dispatch = decision.Dispatch; Assert.IsNotNull(dispatch, decision.Reason); count++;
@@ -115,14 +115,14 @@ public sealed class FangMoveAnimationDispatchTests
                 Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
                 Assert.IsNull(dispatch.MoveTurn); Assert.IsTrue(dispatch.AcknowledgesCurrentReceipt);
                 Assert.AreEqual(hit is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-                Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On, moves:Mechanics.Catalog.Moves));
+                Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On, moves:Mechanics.Catalog.Moves));
             }
             else Assert.IsNull(decision.Dispatch, "A secondary stat/status/faint page cannot replay the fang root.");
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(decision.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On, moves:Mechanics.Catalog.Moves).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On, moves:Mechanics.Catalog.Moves).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(1, count); Assert.AreEqual(before, JsonSerializer.Serialize(events));
@@ -131,9 +131,9 @@ public sealed class FangMoveAnimationDispatchTests
     {
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On, moves:Mechanics.Catalog.Moves).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
-            if(singles)Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On, moves:Mechanics.Catalog.Moves).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On, moves:Mechanics.Catalog.Moves).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
+            if(singles)Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On, moves:Mechanics.Catalog.Moves).Dispatch);
         }
     }
 
@@ -240,8 +240,8 @@ public sealed class FangMoveAnimationDispatchTests
         var bodies=Bodies(305);bodies[1]=NaturalMon("BULBASAUR",100,"GROWTH") with{Enduring=true};bodies[1]=bodies[1] with{Pokemon=bodies[1].Pokemon with{CurrentHp=1}};
         var result=Find(Frame(bodies,0),r=>r.Events.OfType<SourceEffectivenessEvent>().Any(e=>e.Effectiveness==WildBattleEffectiveness.NoEffect),"zero-loss late toxic");AssertProjection(result,305);
         var events=result.Events;int used=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single());var wrong=Mechanics.Catalog.Moves.ToDictionary(p=>p.Key,p=>p.Value);wrong[Id("POISON_FANG")]=wrong[Id("POISON_FANG")] with{Effect="EFFECT_HIT"};
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events,used),SourceBattleScene.On).Dispatch);Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events,used),true,SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events,used),SourceBattleScene.On,moves:wrong).Dispatch);Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events,used),true,SourceBattleScene.On,moves:wrong).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events,used),SourceBattleScene.On,moves:null).Dispatch);Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events,used),true,SourceBattleScene.On,moves:null).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events,used),SourceBattleScene.On,moves:wrong).Dispatch);Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events,used),true,SourceBattleScene.On,moves:wrong).Dispatch);
         var survival=events.OfType<SourceMtMoonVolatileEvent>().Single(e=>e.Volatile=="endure"&&e.Reason=="endured");AssertDenied(events.Remove(survival));
         AssertDenied(events.Replace(survival,survival with{Side=new(0)}));var adjusted=events.OfType<SourceDamageAdjustedEvent>().Single();AssertDenied(events.Remove(adjusted));AssertDenied(events.Replace(adjusted,adjusted with{Endured=false}));
         var hit=events.OfType<SourceHpChangedEvent>().Single();AssertDenied(events.Replace(hit,hit with{HpAfter=0}));

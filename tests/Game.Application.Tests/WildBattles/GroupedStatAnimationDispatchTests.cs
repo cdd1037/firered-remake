@@ -88,15 +88,15 @@ public sealed class GroupedStatAnimationDispatchTests
     {
         var battle = Double(events);
         Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
-        var root = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
+        var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
         Assert.IsNotNull(root.Dispatch, root.Reason);
         Assert.AreEqual(id, root.Dispatch.SourceMoveId);
         Assert.AreEqual(4L, root.Dispatch.ResultSequence);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
         for (int index = 0; index < events.Length; index++)
         {
             var current = battle with { EventIndex = index };
-            var dispatch = CampaignStatAnimationPresentation.AtResult(current);
+            var dispatch = AnimationDispatchFixture.StatAtResult(current);
             if (index == trigger)
             {
                 Assert.IsNotNull(dispatch, $"{id}: trigger {index}");
@@ -109,7 +109,7 @@ public sealed class GroupedStatAnimationDispatchTests
                 Assert.AreEqual(argument, dispatch.AnimationArgument);
             }
             else Assert.IsNull(dispatch, $"{id}: unexpected replay at {index}");
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(current, true));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(current, true));
             Assert.AreEqual(IsCap(events[index]), CampaignStatAnimationPresentation.IsSilentResultReceipt(current),
                 $"{id}: only the script's individual caps are silent at {index}");
         }
@@ -118,16 +118,16 @@ public sealed class GroupedStatAnimationDispatchTests
         var single = Single(events);
         Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true));
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, false));
-        var singleRoot = CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On);
+        var singleRoot = AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On);
         Assert.IsNotNull(singleRoot.Dispatch, singleRoot.Reason);
         Assert.AreEqual(4L, singleRoot.Dispatch.ResultSequence);
         for (int index = 0; index < events.Length; index++)
         {
             var current = single with { EventIndex = index };
-            Assert.AreEqual(CampaignStatAnimationPresentation.AtResult(battle with { EventIndex = index }),
-                CampaignStatAnimationPresentation.AtResult(current, true));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(current, false));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(current, true, true));
+            Assert.AreEqual(AnimationDispatchFixture.StatAtResult(battle with { EventIndex = index }),
+                AnimationDispatchFixture.StatAtResult(current, true));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(current, false));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(current, true, true));
             Assert.AreEqual(IsCap(events[index]), CampaignStatAnimationPresentation.IsSilentResultReceipt(current, true));
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(current, false));
         }
@@ -163,19 +163,19 @@ public sealed class GroupedStatAnimationDispatchTests
     {
         var battle = Double(events);
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle), reason);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On).Dispatch, reason);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On).Dispatch, reason);
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle with { EventIndex = index }), reason);
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle with { EventIndex = index }), reason);
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle with { EventIndex = index }), reason);
         }
         if (!checkSingle) return;
         var single = Single(events);
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true), reason);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch, reason);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch, reason);
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single with { EventIndex = index }, true), reason);
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(single with { EventIndex = index }, true), reason);
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single with { EventIndex = index }, true), reason);
         }
     }
@@ -343,11 +343,11 @@ public sealed class GroupedStatAnimationDispatchTests
         var events = first.AddRange(later);
         Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events)));
         Assert.AreEqual<long?>(14L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events, 6)));
-        Assert.AreEqual(57, CampaignStatAnimationPresentation.AtResult(Double(events, 3))!.AnimationArgument);
-        Assert.AreEqual(39, CampaignStatAnimationPresentation.AtResult(Double(events, 8))!.AnimationArgument);
+        Assert.AreEqual(57, AnimationDispatchFixture.StatAtResult(Double(events, 3))!.AnimationArgument);
+        Assert.AreEqual(39, AnimationDispatchFixture.StatAtResult(Double(events, 8))!.AnimationArgument);
         var incomplete = first.RemoveAt(4).AddRange(later);
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(incomplete)));
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(incomplete, 3)));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(incomplete, 3)));
         var switched = first.Insert(4, new SourceCalledPartySwitchedEvent(5, 1, new(1), 0, 1, WildBattleCalledSwitchKind.Forced))
             .SetItem(5, first[4] with { Sequence = 6 });
         AssertRejected(switched, "a result after a switch belongs to a different occupant");
@@ -358,19 +358,19 @@ public sealed class GroupedStatAnimationDispatchTests
     {
         var events = Scenario(339, "attack-cap", 0, 0);
         var finished = Double(events, 3) with { Stage = CampaignDoubleBattleStage.Finished };
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(finished));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(finished));
         Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(finished));
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(finished with { EventIndex = 1 }));
         var singleResults = Single(events, 3) with { Phase = CampaignBattlePhase.Results };
-        Assert.IsNull(CampaignStatAnimationPresentation.AtResult(singleResults, true));
+        Assert.IsNull(AnimationDispatchFixture.StatAtResult(singleResults, true));
         Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(singleResults, true));
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(singleResults with { EventIndex = 1 }, true));
         foreach (int index in new[] { -1, events.Length, events.Length + 1 })
         {
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Double(events, index)));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, index)));
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events, index)));
             Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events, index)));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(Single(events, index), true));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, index), true));
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(events, index), true));
             Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Single(events, index), true));
         }
@@ -379,8 +379,8 @@ public sealed class GroupedStatAnimationDispatchTests
             new SourceMoveUsedEvent(2, 1, new(0), new(0), 0, barrier, 10, 9),
             new SourcePpCommandEvent(3, 1, new(0), new(0), 0, barrier, barrier, 10, 9, 1, 0),
             new SourceStatChangedEvent(4, 1, new(0), new(0), WildBattleStat.Defense, 11, 12)];
-        Assert.AreEqual(40, CampaignStatAnimationPresentation.AtResult(Double(existing, 3))!.AnimationArgument);
-        Assert.AreEqual(40, CampaignStatAnimationPresentation.AtResult(Single(existing, 3), true)!.AnimationArgument);
+        Assert.AreEqual(40, AnimationDispatchFixture.StatAtResult(Double(existing, 3))!.AnimationArgument);
+        Assert.AreEqual(40, AnimationDispatchFixture.StatAtResult(Single(existing, 3), true)!.AnimationArgument);
         Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(existing)));
         Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(existing, 3)));
         var capped = existing.SetItem(3, new SourceStatAtMaximumEvent(4, 1, new(0), new(0), WildBattleStat.Defense));
@@ -477,14 +477,14 @@ public sealed class GroupedStatAnimationDispatchTests
             int usedIndex = events.IndexOf(used), resultIndex = events.IndexOf(first);
             var battle = Double(events, usedIndex);
             Assert.AreEqual<long?>(first.Sequence, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
-            var root = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
+            var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.IsNotNull(root.Dispatch, root.Reason); Assert.AreEqual(first.Sequence, root.Dispatch.ResultSequence);
-            var dispatches = Enumerable.Range(0, events.Length).Select(i => CampaignStatAnimationPresentation.AtResult(battle with { EventIndex = i }))
+            var dispatches = Enumerable.Range(0, events.Length).Select(i => AnimationDispatchFixture.StatAtResult(battle with { EventIndex = i }))
                 .Where(d => d is not null).ToArray();
             Assert.AreEqual(1, dispatches.Length); var dispatch = dispatches[0]!;
             Assert.AreEqual(first.Sequence, dispatch.Sequence); Assert.AreEqual(argument, dispatch.AnimationArgument);
             Assert.AreEqual(target, dispatch.Affected.Value); Assert.AreEqual(id, dispatch.SourceMoveId);
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle with { EventIndex = resultIndex }, true));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle with { EventIndex = resultIndex }, true));
             Assert.AreEqual(events, battle.Events);
         }
     }
@@ -503,9 +503,9 @@ public sealed class GroupedStatAnimationDispatchTests
             Assert.IsTrue(first.Sequence < consumed.Sequence);
             var battle = Double(events, events.IndexOf(used));
             Assert.AreEqual<long?>(first.Sequence, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
-            var root = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
+            var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.IsNotNull(root.Dispatch, root.Reason); Assert.AreEqual(first.Sequence, root.Dispatch.ResultSequence);
-            var stats = Enumerable.Range(0, events.Length).Select(i => CampaignStatAnimationPresentation.AtResult(battle with { EventIndex = i }))
+            var stats = Enumerable.Range(0, events.Length).Select(i => AnimationDispatchFixture.StatAtResult(battle with { EventIndex = i }))
                 .Where(d => d is not null).ToArray();
             Assert.AreEqual(1, stats.Length); Assert.AreEqual(first.Sequence, stats[0]!.Sequence);
             Assert.AreEqual(argument, stats[0]!.AnimationArgument);

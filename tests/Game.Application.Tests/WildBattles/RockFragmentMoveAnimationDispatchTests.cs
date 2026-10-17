@@ -71,12 +71,12 @@ public sealed class RockFragmentMoveAnimationDispatchTests
         {
             // Empty presentation Frame: committed receipts alone determine ownership.
             var battle = Double(events, index);
-            var text = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
-            var hit = CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On);
-            Assert.AreEqual(text, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On));
-            Assert.AreEqual(hit, CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On));
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.Off).Dispatch);
+            var text = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
+            var hit = AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On);
+            Assert.AreEqual(text, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
+            Assert.AreEqual(hit, AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On));
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.Off).Dispatch);
             int ordinal = Array.FindIndex(hits, h => h.Sequence == events[index].Sequence);
             bool eligible = !blocked && (perHit ? ordinal >= 0 : events[index] == used);
             var decision = perHit ? hit : text;
@@ -97,9 +97,9 @@ public sealed class RockFragmentMoveAnimationDispatchTests
             }
             else Assert.IsNull(decision.Dispatch, "Miss, immunity, secondary, item, contact, summary and KO cannot replay the root.");
 
-            var stat = CampaignStatAnimationPresentation.AtResult(battle, moves: Mechanics.Catalog.Moves);
-            Assert.AreEqual(stat, CampaignStatAnimationPresentation.AtResult(battle, moves: Mechanics.Catalog.Moves));
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle, true, Mechanics.Catalog.Moves));
+            var stat = AnimationDispatchFixture.StatAtResult(battle, moves: Mechanics.Catalog.Moves);
+            Assert.AreEqual(stat, AnimationDispatchFixture.StatAtResult(battle, moves: Mechanics.Catalog.Moves));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, Mechanics.Catalog.Moves));
             if (waves.Any(s => s.Sequence == events[index].Sequence))
             {
                 Assert.IsNotNull(stat, "The actual Rock Smash target Defense receipt owns its independent shared wave."); statCount++;
@@ -113,15 +113,15 @@ public sealed class RockFragmentMoveAnimationDispatchTests
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(text.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(stat, CampaignStatAnimationPresentation.AtResult(single, true, moves: Mechanics.Catalog.Moves));
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, false, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.Off).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.Off).Dispatch);
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, false, moves: Mechanics.Catalog.Moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, true, true, Mechanics.Catalog.Moves));
+                Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(stat, AnimationDispatchFixture.StatAtResult(single, true, moves: Mechanics.Catalog.Moves));
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, false, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.Off).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.Off).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false, moves: Mechanics.Catalog.Moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true, Mechanics.Catalog.Moves));
             }
         }
         Assert.AreEqual(blocked ? 0 : perHit ? hits.Length : 1, roots);

@@ -29,7 +29,7 @@ public sealed class WaterPulseAnimationTests
     }
     private static SourceAnimationFrame FirstSprite(SourceBattleAnimation runtime)
     {for(int i=0;i<20;i++){var frame=runtime.Tick();if(frame.Sprites.Length>0)return frame;}throw new InvalidOperationException("Source sprite did not appear.");}
-    private static SourceAnimationFrame Advance(SourceBattleAnimation runtime)=>runtime.Active?runtime.Tick():runtime.TickResidualSprites();
+    private static SourceAnimationFrame Advance(SourceBattleAnimation runtime,SourceBattleAnimation.SpriteScene scene)=>runtime.Active?runtime.Tick():scene.TickIdle(Battlers(),true);
 
     [TestMethod]
     public void FiveAuthoredFloatTrajectoriesIgnoreTheUnusedSeventhArgument()
@@ -39,11 +39,11 @@ public sealed class WaterPulseAnimationTests
         {
             if(entry.Value.GetProperty("kind").GetString()!="float")continue;
             int index=entry.Value.GetProperty("config")[0].GetInt32();var args=configurations[index].EnumerateArray().Select(x=>x.GetInt32().ToString(CultureInfo.InvariantCulture)).ToArray();
-            var runtime=new SourceBattleAnimation(Isolated(Bubble,args),Cue(seed:null),Battlers(),true,new Audio());var frame=FirstSprite(runtime);int tick=0;
+            var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(Isolated(Bubble,args),Cue(seed:null),Battlers(),true,new Audio(),spriteScene:scene);var frame=FirstSprite(runtime);int tick=0;
             foreach(var row in entry.Value.GetProperty("states").EnumerateArray())
             {
                 var v=row.EnumerateArray().Select(x=>x.GetInt32()).ToArray();if(v[1]<0||v[4]!=1)continue;
-                while(tick<v[1]){frame=Advance(runtime);tick++;}
+                while(tick<v[1]){frame=Advance(runtime,scene);tick++;}
                 var sprite=frame.Sprites.Single();Assert.AreEqual(new PixelPoint(v[6],v[7]),sprite.Position);Assert.AreEqual(new PixelPoint(v[8],v[9]),sprite.Offset);Assert.AreEqual(v[16],sprite.Tile);Assert.IsFalse(sprite.Affine);Assert.AreEqual(8,sprite.Width);Assert.AreEqual(8,sprite.Height);
                 Assert.IsNull(RandomState(runtime));
             }
@@ -61,9 +61,9 @@ public sealed class WaterPulseAnimationTests
             string kind=entry.Value.GetProperty("kind").GetString()!;if(kind is not ("ring" or "schedule" or "pair"))continue;
             var config=entry.Value.GetProperty("config").EnumerateArray().Select(x=>x.GetInt32()).ToArray();if(kind=="schedule"&&config[2]!=0)continue;
             int actor=geometry[config[0]][0],target=geometry[config[0]][1];uint seed=seeds[config[1]];
-            var runtime=new SourceBattleAnimation(Isolated(Ring,["0","0","40","15"],kind=="schedule"?3:kind=="pair"?2:1,kind=="pair"?18:5),Cue(actor,target,seed),Battlers(),true,new Audio());
+            var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(Isolated(Ring,["0","0","40","15"],kind=="schedule"?3:kind=="pair"?2:1,kind=="pair"?18:5),Cue(actor,target,seed),Battlers(),true,new Audio(),spriteScene:scene);
             var frames=new List<SourceAnimationFrame>{FirstSprite(runtime)};
-            while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<100)frames.Add(Advance(runtime));
+            while((runtime.Active||runtime.HasResidualSprites)&&frames.Count<100)frames.Add(Advance(runtime,scene));
             Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.HasResidualSprites);
             var allocations=entry.Value.GetProperty("allocations").EnumerateArray().Select(x=>x.EnumerateArray().Select(y=>y.GetInt32()).ToArray()).ToDictionary(x=>x[0]);
             foreach(var row in entry.Value.GetProperty("states").EnumerateArray())
@@ -121,19 +121,19 @@ public sealed class WaterPulseAnimationTests
     [TestMethod]
     public void IsolatedRingReleasesScriptCountWhileRawChildrenContinueAndCancelReleasesBoth()
     {
-        var source=Isolated(Ring,["0","0","40","15"]);var cue=Cue(seed:42);var runtime=new SourceBattleAnimation(source,cue,Battlers(),true,new Audio());int ticks=0;bool sawChildren=false;
+        var source=Isolated(Ring,["0","0","40","15"]);var cue=Cue(seed:42);var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(source,cue,Battlers(),true,new Audio(),spriteScene:scene);int ticks=0;bool sawChildren=false;
         while(runtime.Active&&ticks++<100)
         {
             var frame=runtime.Tick();sawChildren|=frame.Sprites.Any(s=>s.Template==Child);
             Assert.AreEqual(frame.Sprites.Count(s=>s.Template==Ring),runtime.ActiveVisualCount);
         }
         Assert.IsFalse(runtime.Active);Assert.IsTrue(sawChildren);Assert.IsTrue(runtime.HasResidualSprites);Assert.AreEqual(0,runtime.ActiveVisualCount);uint? state=RandomState(runtime);int residual=0;
-        while(runtime.HasResidualSprites&&residual++<25){var frame=runtime.TickResidualSprites();Assert.IsTrue(frame.Sprites.All(s=>s.Template==Child));Assert.AreEqual(state,RandomState(runtime));}
+        while(runtime.HasResidualSprites&&residual++<25){var frame=scene.TickIdle(Battlers(),true);Assert.IsTrue(frame.Sprites.All(s=>s.Template==Child));Assert.AreEqual(state,RandomState(runtime));}
         Assert.IsFalse(runtime.HasResidualSprites);Assert.IsTrue(residual>0);
         foreach(int stop in new[]{1,10,20,25,40,48,55})
         {
-            var audio=new Audio();var cancelled=new SourceBattleAnimation(source,cue,Battlers(),true,audio);int reached=0;
-            while((cancelled.Active||cancelled.HasResidualSprites)&&reached<stop){Advance(cancelled);reached++;}
+            var audio=new Audio();var cancelledScene=new SourceBattleAnimation.SpriteScene();var cancelled=new SourceBattleAnimation(source,cue,Battlers(),true,audio,spriteScene:cancelledScene);int reached=0;
+            while((cancelled.Active||cancelled.HasResidualSprites)&&reached<stop){Advance(cancelled,cancelledScene);reached++;}
             Assert.IsTrue(reached==stop||!cancelled.Active&&!cancelled.HasResidualSprites);if(stop<=20)Assert.IsNull(RandomState(cancelled));
             int sound=audio.Cues.Count;cancelled.Cancel();cancelled.Cancel();Assert.IsFalse(cancelled.Active);Assert.IsFalse(cancelled.HasResidualSprites);Assert.AreEqual(0,cancelled.ActiveVisualCount);Assert.AreEqual(0,cancelled.Snapshot().Sprites.Length);Assert.IsNull(RandomState(cancelled));Assert.AreEqual(sound,audio.Cues.Count);
         }
@@ -146,12 +146,12 @@ public sealed class WaterPulseAnimationTests
         foreach(var entry in doc.RootElement.GetProperty("cases").EnumerateObject())
         {
             if(entry.Value.GetProperty("kind").GetString()!="probe")continue;var data=probes[entry.Value.GetProperty("config")[0].GetInt32()];
-            var script=Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()};var runtime=new SourceBattleAnimation(script,Cue(),Battlers(),true,new Audio());
+            var script=Script() with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>()};var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(script,Cue(),Battlers(),true,new Audio(),spriteScene:scene);
             var type=typeof(SourceBattleAnimation).GetNestedType("WaterPulseSprite",BindingFlags.NonPublic);Assert.IsNotNull(type);
             var sprite=Activator.CreateInstance(type,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[4,19,script.SpriteRecipes[Child],new PixelPoint(100,80),data[1],data[2]],CultureInfo.InvariantCulture);Assert.IsNotNull(sprite);
             var words=type.GetField("_data",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(words);var actualWords=(short[])words.GetValue(sprite)!;for(int i=0;i<5;i++)actualWords[i]=unchecked((short)data[i]);
             var field=typeof(SourceBattleAnimation).GetField("_sprites",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(field);var registry=field.GetValue(runtime);Assert.IsNotNull(registry);var add=registry.GetType().GetMethod("Add");Assert.IsNotNull(add);add.Invoke(registry,[sprite]);
-            var frames=new List<SourceAnimationFrame>();do{frames.Add(Advance(runtime));}while(runtime.Active||runtime.HasResidualSprites);
+            var frames=new List<SourceAnimationFrame>();do{frames.Add(Advance(runtime,scene));}while(runtime.Active||runtime.HasResidualSprites);
             Assert.AreEqual(data[0],frames.Count);Assert.AreEqual(0,frames[^1].Sprites.Length);Assert.IsNull(RandomState(runtime));
             foreach(var row in entry.Value.GetProperty("states").EnumerateArray())
             {

@@ -133,6 +133,9 @@ public partial class CampaignView
         LoadForestBattlePresentation();
     }
 
+    private static bool SingleBattlerFaintShown(CampaignWildBattle battle,PokemonInstance mon,WildBattleSide side)=>
+        mon.CurrentHp==0&&(battle.Phase==CampaignBattlePhase.Results||battle.Phase==CampaignBattlePhase.Events&&
+            battle.Events.Take(battle.EventIndex+1).OfType<WildBattleFaintedEvent>().Any(e=>e.Side==side));
     private bool WildWithdrawing(CampaignWildBattle b) => b.Phase == CampaignBattlePhase.Events &&
         WildCurrentEvent(b) is WildBattlePlayerSwitchedEvent && !SourcePlayerBatonSwitch(b) && _wildPage == 0;
     private PokemonInstance WildDisplayPlayer(CampaignWildBattle b) => WildWithdrawing(b)
@@ -513,7 +516,7 @@ public partial class CampaignView
             if (side == WildBattleSide.Opponent && b.Phase == CampaignBattlePhase.Events &&
                 WildCurrentEvent(b) is not WildBattleCaptureResultEvent &&
                 b.Events.Take(b.EventIndex + 1).OfType<WildBattleCaptureResultEvent>().Any(c => c.Outcome == CaptureOutcome.Caught)) continue;
-            bool faintShown = mon.CurrentHp == 0 && (b.Phase == CampaignBattlePhase.Results || b.Phase == CampaignBattlePhase.Events && b.Events.Take(b.EventIndex + 1).OfType<WildBattleFaintedEvent>().Any(f => f.Side == side));
+            bool faintShown = SingleBattlerFaintShown(b,mon,side);
             if (!faintShown)
             {
                 var asset = SingleBattleArt(b,side,mon);
@@ -522,7 +525,6 @@ public partial class CampaignView
             int hp = WildDisplayedHp(b, mon, side);
             healthForeground.Add(()=>DrawWildHealth(mon,side,hp));
         }
-        DrawSourceResidualMoveSprites();
         foreach(var drawHealth in healthForeground)drawHealth();
         DrawWildCaptureBall(b);
         bool selecting = b.Phase == CampaignBattlePhase.ChooseMove && _wildNotice is null && _wildMenu is "actions" or "moves";
@@ -537,7 +539,7 @@ public partial class CampaignView
         if (_wildNotice is not null) { WildLines(_wildNotice); return; }
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) { DrawWildLearning(b); return; }
         if (WildStatsPage(b)) { DrawWildStats(b, (WildRewardLevelEvent)b.Pages[b.PageIndex].Reward!); return; }
-        if(_sourceResultContinuation is not null)return;
+        if(_sourceResultContinuation is not null&&!_sourceResultCompleted)return;
         if (!_wildPages.IsEmpty)
         {
             if(WildCaptureBallBlocking(b))return;

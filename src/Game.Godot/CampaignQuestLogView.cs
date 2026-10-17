@@ -90,11 +90,15 @@ public partial class CampaignView
             else DrawActor(asset,pose,camera,playback.SavedGameVisible?null:asset.Texture);
         }
         DrawQuestLogLayer(art,camera,2);
-        DrawRect(new(0,0,240,16),QuestLogColor(15));
-        DrawRect(new(0,144,240,16),QuestLogColor(15));
+        int barHeight=playback.BarHeight;
+        if(barHeight>0)
+        {
+            DrawRect(new(0,0,240,barHeight),QuestLogColor(15));
+            DrawRect(new(0,160-barHeight,240,barHeight),QuestLogColor(15));
+        }
         string header=_catalog.QuestLogSource.Texts["PreviouslyOnYourQuest"];
         if(!playback.SavedGameVisible)header+=(playback.SceneCount-playback.SceneIndex).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        SourceText(_questLogFont!,new(2,2),header);
+        if(playback.HeaderVisible)SourceText(_questLogFont!,new(2,2),header);
         if(playback.Caption is {} caption)
         {
             for(int y=0;y<6;y++)for(int x=0;x<30;x++)

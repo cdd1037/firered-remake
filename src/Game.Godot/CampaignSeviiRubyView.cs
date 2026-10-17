@@ -96,17 +96,6 @@ public partial class CampaignView
     private string? SeviiRubyTrainerText(string? id, string key) => id is not null && _seviiRubyTrainers.TryGetValue(id, out var row) ? row.GetProperty(key).GetString() : null;
     private string? SeviiRubyDoubleText(string key) => SeviiRubyTrainerText(_session.State.DoubleBattle?.Trainer.Value, key);
     private Texture2D? SeviiRubyDoublePortrait => SeviiRubyDoubleText("portrait") is {} id ? _forestTrainerPortraits[id] : null;
-    private bool IsSeviiRubyPatchedMap(MapId map) => map.Value is "map.mt-ember-exterior" or "map.one-island-pokemon-center-1f";
-    private bool TrySeviiRubyPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
-    {
-        if (!IsSeviiRubyPatchedMap(map)) return false;
-        var tile = SeviiRubyManifest.GetProperty("tiles").EnumerateArray().SingleOrDefault(t => t.GetProperty("map").GetString() == map.Value && t.GetProperty("metatileId").GetInt32() == edit.SourceMetatileId);
-        if (tile.ValueKind == JsonValueKind.Undefined || tile.GetProperty("x").GetInt32() != edit.X || tile.GetProperty("y").GetInt32() != edit.Y)
-            throw new InvalidDataException("Sevii Ruby dynamic metatile is outside the authenticated source patch.");
-        using var image = _seviiRubyTileLayers[(map.Value, layer)].GetImage();
-        canvas.BlitRect(image, new(0, 0, 16, 16), new(edit.X * 16, edit.Y * 16));
-        return true;
-    }
     private bool SeviiRubyBrailleVisible => FieldDialogueVisible &&
         _session.State.Dialogue?.TextSymbol.StartsWith("Braille_Text_", StringComparison.Ordinal) == true;
     private bool TrySeviiRubyBrailleInput(InputEventKey key)

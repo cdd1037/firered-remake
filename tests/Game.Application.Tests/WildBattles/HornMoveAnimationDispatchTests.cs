@@ -28,9 +28,9 @@ public sealed class HornMoveAnimationDispatchTests
         new("horn-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
             null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
     private static CampaignMoveAnimationDecision AtText(ImmutableArray<SourceBattleEvent> events, int index) =>
-        CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On);
     private static CampaignMoveAnimationDecision AtHit(ImmutableArray<SourceBattleEvent> events, int index) =>
-        CampaignMoveAnimationPresentation.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
         events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
 
@@ -83,8 +83,8 @@ public sealed class HornMoveAnimationDispatchTests
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(text.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(perHit ? hits.Length : 1, count);
@@ -99,8 +99,8 @@ public sealed class HornMoveAnimationDispatchTests
             Assert.IsNull(AtText(events, index).Dispatch, branch + " text");
             Assert.IsNull(AtHit(events, index).Dispatch, branch + " hit");
             if (events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value > 1 || e.Target.Value > 1)) continue;
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events));
     }

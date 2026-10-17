@@ -84,6 +84,12 @@ Tests cover bounded rings/budgets, source variants, actor changes, overlapping t
 
 **Multi-map native sample, 2026-10-17 03:43–03:51 UTC:** ordinary Continue replayed Pallet → house 1F → Pallet with scene count 1 at supported 0.03× time scale, then naturally reached the saved-location caption. Enter returned to Pallet (6,8), North. A separate normal-speed Backspace skip and Right+Enter return preserved the saved position/direction; no gameplay input leakage, disk-save mutation or runtime error was observed. Both processes closed and before/after Debug-file manifests matched. Godot MVID `ba754bfc-63d6-4b32-ad1f-5074bc2c8203`; report and captures: `/workspace/shared/firered-quest-map-native-20261017-0342/REPORT.md`. Audio used Dummy. Normal-speed transition fidelity, entirely input-free final-caption return and exhaustive recap coverage remain unverified.
 
+## Final caption and locked exit phase
+
+The transient playback now preserves the source final-caption timer and exit task: natural caption dismissal occurs on callback 128; the following 52 callbacks blank the header, erase the top/bottom bars one pixel per update, hold the restored field, and finally release controls. A/B dismissal enters the same locked exit; B skip suppresses the saved-location caption, as `END_MODE_FINISH` does. Repeated input during that phase cannot advance gameplay. Save data and recording schemas are unchanged.
+
+`tests/Reference/generate_quest_exit_vectors.py` extracts the pinned `Task_WaitAtEndOfQuestLog`, `Task_EndQuestLog`, and `RestoreScreenAfterPlayback` bodies and produces 180 numerical task observations. Platform rendering calls are stubbed only to observe caption/header/bar/control state. This gate covers window geometry and timing; source palette/weather restoration and warp fades remain open. New native acceptance is pending.
+
 ## Remaining source parity, in priority order
 
 1. Exact warp-entry/exit fades, connected-edge pixel continuity and special forced-transition presentation remain incomplete. Ordinary map changes retain bounded same-scene visual transitions; replay executes no historical gameplay scripts.
@@ -92,3 +98,7 @@ Tests cover bounded rings/budgets, source variants, actor changes, overlapping t
 4. Historical palettes/weather/audio and native full natural recap/map-variant coverage remain. Source-selected actor textures prevent actual-save regional palettes leaking into past scenes. Current automated invariance and bounded native samples do not establish all New Game/Continue/backup/full-buffer/quit combinations. Cosmetic history should not expand the bounded recording architecture.
 
 Reachable used-item callbacks, TM/HM learn/replace and admitted story-item boundaries have source-backed adapters. Inaccessible colored-flute/link-only events and in-game NPC trades are not treated as source link-trade events without evidence.
+
+Final exit-phase automated gate, 2026-10-17: all 165 Quest cases passed, including six new exit rows, within the 203-case combined Application gate (`/tmp/nonmove-quest-box-corrected.log`). Full solution compiled with zero warnings/errors; the 180-frame source oracle reproduced exactly and layout checks passed 28/28. Native observations above predate this exit-phase correction.
+
+**Final-exit native sample, 2026-10-17 13:20–13:24 UTC:** on checkpoint4243e8b, normal-speed uninterrupted capture observed the saved caption, retracting bars and entirely input-free return to saved Pallet facing North. Separate B skip suppressed the saved caption; immediately supplied Right caused no gameplay command or direction leakage. Saves remained byte-identical and logs had no errors. MVID `03912d91-61d2-4449-882c-dffefbca55c4`; evidence `/workspace/shared/firered-quest-exit-native-20261017/REPORT.md`. One all-black screenshot near final release has normal adjacent frames and no established cause; retain it as an unresolved observation. Coarse screenshots do not prove exact128/52 timing or pixel parity. Dummy audio; processes closed before subsequent compilation.

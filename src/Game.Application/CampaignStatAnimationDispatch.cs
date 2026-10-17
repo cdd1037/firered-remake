@@ -36,20 +36,19 @@ public static partial class CampaignStatAnimationPresentation
         var stat=rows[index];var pp=rows[index-1];
         if(stat.Kind!="stat"||stat.Before is <0 or >12||stat.After is <0 or >12||stat.After==stat.Before||
             pp.Kind!="pp"||pp.Actor!=stat.Actor||pp.Target!=stat.Target||pp.Owner!=stat.Actor||pp.Move!=pp.Chosen||pp.Turn!=stat.Turn||pp.Sequence>=stat.Sequence)return null;
-        int sourceMove=CampaignMoveAnimationPresentation.SupportedSourceMoveId(pp.Move);
-        var reduction=CampaignMoveAnimationPresentation.ReductionAnimation(sourceMove);
+        var definition=CampaignMoveAnimationPresentation.Definition(new(pp.Move),moves);
+        if(definition is null)return null;
+        int sourceMove=definition.SourceMoveId;
+        var reduction=CampaignMoveAnimationPresentation.ReductionAnimation(definition);
         var spec=reduction is {} lowered
             ? (Move:sourceMove,Stat:lowered.Stat,Delta:lowered.Delta,Arg:AnimationArgument(lowered.Stat,lowered.Delta))
-            : pp.Move switch
+            : definition.Effect switch
         {
-            "pret:MOVE_AGILITY"=>(Move:97,Stat:WildBattleStat.Speed,Delta:2,Arg:41),
-            "pret:MOVE_GROWTH"=>(Move:74,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
-            "pret:MOVE_MINIMIZE"=>(Move:107,Stat:WildBattleStat.Evasion,Delta:1,Arg:21),
-            "pret:MOVE_WITHDRAW"=>(Move:110,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
-            "pret:MOVE_DEFENSE_CURL"=>(Move:111,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
-            "pret:MOVE_HARDEN"=>(Move:106,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
-            "pret:MOVE_BARRIER"=>(Move:112,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
-            "pret:MOVE_IRON_DEFENSE"=>(Move:334,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
+            "EFFECT_SPEED_UP_2"=>(Move:sourceMove,Stat:WildBattleStat.Speed,Delta:2,Arg:41),
+            "EFFECT_SPECIAL_ATTACK_UP"=>(Move:sourceMove,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
+            "EFFECT_MINIMIZE" or "EFFECT_EVASION_UP"=>(Move:sourceMove,Stat:WildBattleStat.Evasion,Delta:1,Arg:21),
+            "EFFECT_DEFENSE_CURL" or "EFFECT_DEFENSE_UP"=>(Move:sourceMove,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
+            "EFFECT_DEFENSE_UP_2"=>(Move:sourceMove,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
             _=>default
         };
         if(spec.Move==0||spec.Stat!=stat.Stat||stat.After!=Math.Clamp(stat.Before+spec.Delta,0,12)||
@@ -78,7 +77,7 @@ public static partial class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
-        if(Grouped(battle,true) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute);
+        if(Grouped(battle,true) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
             WildBattleDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_DEFENSE_CURL"),
@@ -95,7 +94,7 @@ public static partial class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignDoubleBattle battle,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
-        if(Grouped(battle) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute);
+        if(Grouped(battle) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
             SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),

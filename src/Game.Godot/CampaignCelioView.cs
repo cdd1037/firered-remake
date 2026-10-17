@@ -50,19 +50,6 @@ public partial class CampaignView
     private byte[]? ReadCelioDexTexture(PokedexMenuTexture texture) => _celioDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture)
         ? _celioArt!.Files[texture.TexturePath] : null;
 
-    private bool TryCelioMachinePatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
-    {
-        if (map.Value != "map.one-island-pokemon-center-1f") return false;
-        // The Ruby tile remains owned and authenticated by the predecessor presentation.
-        var tile = CelioManifest.GetProperty("tiles").EnumerateArray().SingleOrDefault(t => t.GetProperty("metatileId").GetInt32() == edit.SourceMetatileId);
-        if (tile.ValueKind == JsonValueKind.Undefined) return false;
-        // The script operand is boolean; committed map edits use the two-bit collision mask.
-        if (edit.Collision != (tile.GetProperty("collision").GetInt32() == 0 ? 0 : 3) ||
-            !tile.GetProperty("positions").EnumerateArray().Any(p => p.GetProperty("x").GetInt32() == edit.X && p.GetProperty("y").GetInt32() == edit.Y) ||
-            !_celioMachineLayers.TryGetValue((edit.SourceMetatileId,layer),out var texture))
-            throw new InvalidDataException("Celio machine patch is outside its authenticated source.");
-        using var image = texture.GetImage(); canvas.BlitRect(image,new(0,0,16,16),new(edit.X*16,edit.Y*16)); return true;
-    }
 
     private void VerifyCelioMoveGeometry()
     {

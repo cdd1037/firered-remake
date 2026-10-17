@@ -99,18 +99,6 @@ public partial class CampaignView
         _fiveIslandDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture) ||
         _fiveIslandArt is not null && FiveIslandManifest.GetProperty("newOpponentOnlySpecies").EnumerateArray().Any(s=>FiveIslandDexPortrait(s.GetInt32())==texture)
             ? _fiveIslandArt!.Files[texture.TexturePath] : null;
-    private bool IsFiveIslandPatchedMap(MapId map) => map.Value is "map.five-island-meadow" or "map.five-island-rocket-warehouse";
-    private bool TryFiveIslandPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
-    {
-        if (!IsFiveIslandPatchedMap(map)) return false;
-        bool permitted = FiveIslandManifest.GetProperty("tiles").EnumerateArray().Any(tile =>
-            tile.GetProperty("map").GetString() == map.Value && tile.GetProperty("metatileId").GetInt32() == edit.SourceMetatileId &&
-            (tile.GetProperty("collision").GetInt32() == 0 ? 0 : 3) == edit.Collision &&
-            tile.GetProperty("positions").EnumerateArray().Any(p => p.GetProperty("x").GetInt32() == edit.X && p.GetProperty("y").GetInt32() == edit.Y));
-        if (!permitted || !_fiveIslandDoorLayers.TryGetValue((edit.SourceMetatileId, layer), out var texture))
-            throw new InvalidDataException("Five Island map patch is outside its authenticated source.");
-        using var image = texture.GetImage(); canvas.BlitRect(image, new(0, 0, 16, 16), new(edit.X * 16, edit.Y * 16)); return true;
-    }
     private Texture2D? FiveIslandBattleTerrain(MapId map)
     {
         if (_catalog.FiveIslandRegion?.NewMaps.ContainsKey(map) != true) return null;

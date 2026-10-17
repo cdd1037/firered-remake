@@ -4,6 +4,42 @@ import argparse,importlib.util,json,re
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('general_elemental',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');shared=importlib.util.module_from_spec(spec);spec.loader.exec_module(shared)
+def branched_program(source,label):
+ # Compile one general root and its physical local labels. Keep executable PCs;
+ # source return comparison aliases use the shared signed argument register7.
+ start=re.search(r'^'+re.escape(label)+r':\n',source,re.M)
+ if not start:raise ValueError('Missing source label '+label)
+ tail=source[start.end():];end=re.search(r'^General_[A-Za-z0-9_]+:',tail,re.M)
+ if end:tail=tail[:end.start()]
+ result=[];labels={label:0}
+ allowed={'createvisualtask','goto','monbg','clearmonbg','playsewithpan','waitplaysewithpan','waitforvisualfinish','end','jumpargeq'}
+ for i,line in enumerate(tail.splitlines()):
+  line=line.split('@',1)[0].strip()
+  if not line:continue
+  if line.endswith(':'):
+   name=line[:-1]
+   if name in labels:raise ValueError('Duplicate general label '+name)
+   labels[name]=len(result);continue
+  op,*rest=line.split(None,1);args=[v.strip() for v in rest[0].split(',')] if rest else []
+  if op=='jumpreteq':op='jumpargeq';args=['7',*args]
+  if op not in allowed:raise ValueError('Uncovered branched general command '+op)
+  result.append(dict(op=op,args=args,line=source[:start.end()].count('\n')+i+1))
+ active=set();done=set()
+ def visit(pc):
+  if pc in active:raise ValueError('Cyclic general source program')
+  if pc in done:return
+  if pc<0 or pc>=len(result):raise ValueError('General source program falls off')
+  active.add(pc);row=result[pc];op=row['op'];args=row['args'];nexts=[]
+  if op in {'goto','jumpargeq'}:
+   if len(args)!=(1 if op=='goto' else 3) or args[-1] not in labels:raise ValueError('Missing general branch target')
+   nexts.append(labels[args[-1]])
+  if op not in {'goto','end'}:nexts.append(pc+1)
+  for target in nexts:visit(target)
+  active.remove(pc);done.add(pc)
+ visit(0)
+ if len(done)!=len(result):raise ValueError('Unreachable general instructions')
+ return result,labels
+
 def build(reference):
  read=lambda p:shared.read(reference,p)
  source=read('data/battle_anim_scripts.s').decode()
@@ -21,6 +57,8 @@ def build(reference):
    if op==terminal:return result
   raise ValueError('Missing general terminator')
  roots={name:commands(name,'end') for name in ['General_HeldItemEffect','General_WishHeal']}
+ castform,castform_labels=branched_program(source,'General_CastformChange')
+ roots['General_CastformChange']=castform
  subs={name:commands(name,'return') for name in ['GrantingStarsEffect','HealingEffect']}
  def dependency_commands(rows):
   flat=list(rows)
@@ -40,6 +78,8 @@ def build(reference):
  blobs={'general-sparkle-2.rgb555':shared.hit.rgb555(read('graphics/battle_anims/sprites/sparkle_1.png'),(32,256),palette),'general-thin-ring.rgb555':shared.hit.rgb555(read('graphics/battle_anims/sprites/thin_ring.png'),(64,64))}
  assets=[dict(id='sparkle-2',path='general-sparkle-2.rgb555'),dict(id='thin-ring',path='general-thin-ring.rgb555')]
  data=dict(schemaVersion=1,generalScripts=[dict(label=name,commands=rows,soundEffects=shared.sound_effects(reference,dependency_commands(rows))) for name,rows in roots.items()],subroutines=subs,spriteRecipes=recipes,assets=assets)
+ for row in data['generalScripts']:
+  if row['label']=='General_CastformChange':row['labels']=castform_labels
  return (json.dumps(data,indent=2)+'\n').encode(),blobs
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();data,blobs=build(a.reference)

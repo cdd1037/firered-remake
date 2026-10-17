@@ -83,10 +83,4 @@ public partial class CampaignView
         }
         _questPocketUi = document;
     }
-    private bool TrySilphPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId mapId)
-    {
-        if (_catalog.SilphRegion?.NewMaps.ContainsKey(mapId) != true) return false;
-        if (!_silphDoorTiles.TryGetValue(edit.SourceMetatileId, out var tile)) throw new InvalidDataException("Silph metatile art missing: " + edit.SourceMetatileId);
-        using var atlas = _silphDoorLayers[layer].GetImage(); canvas.BlitRect(atlas, new(tile.X, tile.Y, tile.Width, tile.Height), new(edit.X * 16, edit.Y * 16)); return true;
-    }
 }

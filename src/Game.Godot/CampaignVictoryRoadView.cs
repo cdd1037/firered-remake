@@ -91,13 +91,4 @@ public partial class CampaignView
     private VictoryRoadTrainerPresentation? VictoryRoadDoubleTrainer => VictoryRoadTrainer(_session.State.DoubleBattle?.Trainer.Value);
     private Texture2D? VictoryRoadDoublePortrait => VictoryRoadDoubleTrainer is {} trainer ? _forestTrainerPortraits[trainer.Portrait] : null;
 
-    private bool TryVictoryRoadPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
-    {
-        if (!IsVictoryRoadCave(map)) return false;
-        if (!_victoryRoadTiles.TryGetValue(edit.SourceMetatileId, out var tile)) throw new InvalidDataException("Victory Road metatile pixels missing.");
-        // BlitRect replaces alpha as well as RGB, so cleared top/middle pixels cannot retain the old barrier.
-        using var atlas = _victoryRoadTileLayers[layer].GetImage();
-        canvas.BlitRect(atlas, new(tile.X, tile.Y, 16, 16), new(edit.X * 16, edit.Y * 16));
-        return true;
-    }
 }

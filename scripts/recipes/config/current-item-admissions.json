@@ -752,6 +752,26 @@
       "item": "pret:ITEM_POWDER_JAR",
       "useSupport": "noFieldUse",
       "icon": true
+    },
+    {
+      "item": "pret:ITEM_ENERGY_POWDER",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_ENERGY_ROOT",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_HEAL_POWDER",
+      "useSupport": "noFieldUse",
+      "icon": true
+    },
+    {
+      "item": "pret:ITEM_REVIVAL_HERB",
+      "useSupport": "noFieldUse",
+      "icon": true
     }
   ],
   "shops": [

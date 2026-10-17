@@ -8,6 +8,7 @@ public sealed class SourceBattleFrameComposer
 {
     private static ushort[]? SelectedSpritePalette(SourceAnimationFrame frame,SourceVisualSpriteFrame sprite,SourcePixelAsset asset)
     {
+        if(sprite.MaterialPalette is {} retained)return retained;
         if(sprite.PaletteSlot is not int slot)return frame.SpritePalettes.GetValueOrDefault(asset.PaletteTag);
         if(slot is <0 or >15||frame.SpritePaletteSlots.Length!=16||frame.SpritePaletteSlots[slot].Length!=16)throw new InvalidDataException("Source explicit sprite palette bank is missing.");
         return frame.SpritePaletteSlots[slot];
@@ -35,22 +36,23 @@ public sealed class SourceBattleFrameComposer
         if(_assets["background"].Width!=240||_assets["background"].Height!=112||_assets["impact"].Width!=32||_assets["impact"].Height!=32)throw new InvalidDataException("Source field/impact shape differs.");
         foreach(var b in battlers)if(_assets[b.Asset].Width!=64||_assets[b.Asset].Height!=64)throw new InvalidDataException("Battler canvas differs.");
     }
-    public SourcePixelAsset Asset(string id)=>_assets[id];
-    public byte[] ComposeResidualSprites(SourceAnimationFrame frame)
+    // GBA BG mosaic is aligned to screen origin, before BG scroll/source sampling.
+    // The rendered source layer already includes scroll and transparent margins.
+    private static void MosaicBackground(ushort[] pixels,int width,int height)
     {
-        if(frame.Active)throw new InvalidOperationException("Residual overlay requires a retired script.");
-        var pixels=new ushort[Width*112];
-        foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).OrderByDescending(s=>s.OamRank))
-        {
-            if(sprite.Blend)throw new InvalidDataException("Residual source blend needs destination layer sampling.");
-            BlitSprite(pixels,_assets[sprite.Asset!],sprite,0,0,false,SelectedSpritePalette(frame,sprite,_assets[sprite.Asset!]));
-        }
-        var rgba=new byte[pixels.Length*4];
-        for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=(byte)((p&0x8000)!=0?255:0);}
-        return rgba;
+        for(int y=0;y<112;y++)for(int x=0;x<Width;x++)
+            pixels[y*Width+x]=pixels[(y-y%height)*Width+x-x%width];
     }
+    public SourcePixelAsset Asset(string id)=>_assets[id];
+    private SourcePixelAsset SpriteMaterial(SourceVisualSpriteFrame sprite)=>sprite.Material??_assets[sprite.Asset!];
     public byte[] ComposeField(SourceAnimationFrame frame)
     {
+        var battlers=frame.Battlers.Length==0?_battlers:frame.Battlers;
+        if(battlers.Length!=_battlers.Length||battlers.Select(b=>b.Slot.Value).Distinct().Count()!=battlers.Length||
+            battlers.Any(b=>!_battlers.Any(original=>original.Slot==b.Slot)||!_assets.TryGetValue(b.Asset,out var asset)||asset.Width!=64||asset.Height!=64))
+            throw new InvalidDataException("Source selected battler material differs.");
+        if(frame.BattlerBackgroundMosaic.Length!=2||frame.BackgroundMosaicHorizontal is <0 or >15||frame.BackgroundMosaicVertical is <0 or >15)
+            throw new InvalidDataException("Source BG mosaic registers differ.");
         var pixels=new ushort[Width*112];
         var palettes=frame.PaletteBlends.ToDictionary(p=>p.Palette);
         if(_backgroundSurface is not null)
@@ -82,12 +84,14 @@ public sealed class SourceBattleFrameComposer
         if(frame.BattlerBackgroundPriorities.Length!=2||frame.BattlerBackgroundPriorities.Any(p=>p is <0 or >3))throw new InvalidDataException("Battler background priorities exceed source registers.");
         var backgroundPriority=_backgroundPriorities;Array.Fill(backgroundPriority,(byte)3);
         var layer=_objectLayer;
-        foreach(var b in _battlers.Where(b=>b.Visible&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
+        foreach(var b in battlers.Where(b=>b.Visible&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
         {
             Array.Clear(layer);var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.Offsets[b.Slot.Value];
             var copy=frame.StaticBackgroundCopies.SingleOrDefault(c=>c.Slot==b.Slot.Value);
             if(copy is not null)offset=copy.Offset;
             Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,copy is null?palettes.GetValueOrDefault(16+b.Slot.Value):copy.Palette,copy?.Greyscale??frame.GreyscaleSlots.Contains(b.Slot.Value),copy?.Inverted??frame.InvertedPalettes.Contains(16+b.Slot.Value));
+            if(frame.BattlerBackgroundMosaic[b.BackgroundRank-1])
+                MosaicBackground(layer,frame.BackgroundMosaicHorizontal+1,frame.BackgroundMosaicVertical+1);
             int priority=frame.BattlerBackgroundPriorities[b.BackgroundRank-1];
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0&&priority<=backgroundPriority[i]){pixels[i]=layer[i];backgroundPriority[i]=(byte)priority;}
         }
@@ -95,7 +99,7 @@ public sealed class SourceBattleFrameComposer
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
         if(frame.Sprites.Any(s=>s.OamPriority is <0 or >3))throw new InvalidDataException("Object priority exceeds source hardware field.");
-        var ordered=_battlers.Where(b=>b.Visible&&(!frame.BackgroundSlots.Contains(b.Slot.Value)||frame.RestoredObjectSlots.Contains(b.Slot.Value)))
+        var ordered=battlers.Where(b=>b.Visible&&(!frame.BackgroundSlots.Contains(b.Slot.Value)||frame.RestoredObjectSlots.Contains(b.Slot.Value)))
             .Select(b=>(Priority:2,Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
             .Concat(frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).Select(s=>(s.OamPriority,s.OamRank,(AnimationBattler?)null,(SourceVisualSpriteFrame?)s)));
         foreach(var item in ordered.OrderByDescending(x=>x.Item1).ThenByDescending(x=>x.Item2))
@@ -114,10 +118,10 @@ public sealed class SourceBattleFrameComposer
                 if(sprite.BattlerCopySlot>=0)
                 {
                     int slot=sprite.BattlerCopySlot;var matrix=new SourceBattlerAffine(false,sprite.Scale,sprite.Scale);
-                    AffineBattler(layer,_assets[sprite.Asset!],center.X,center.Y,matrix,palettes.GetValueOrDefault(16+slot),frame.InvertedPalettes.Contains(16+slot),frame.GreyscaleSlots.Contains(slot));
+                    AffineBattler(layer,SpriteMaterial(sprite),center.X,center.Y,matrix,palettes.GetValueOrDefault(16+slot),frame.InvertedPalettes.Contains(16+slot),frame.GreyscaleSlots.Contains(slot));
                 }
-                else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,_assets[sprite.Asset!],new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
-                else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false,SelectedSpritePalette(frame,sprite,_assets[sprite.Asset!]));
+                else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,SpriteMaterial(sprite),new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
+                else BlitSprite(layer,SpriteMaterial(sprite),sprite,0,0,false,SelectedSpritePalette(frame,sprite,SpriteMaterial(sprite)));
             }
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Item1;}
         }
@@ -126,11 +130,11 @@ public sealed class SourceBattleFrameComposer
         if(frame.StatMask is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} mask)
         {
             if(_statMaterial is null)throw new InvalidDataException("Source stat material missing.");
-            var selected=_battlers.Single(b=>b.Slot.Value==mask.MaskSlot);var center=selected.DisplayCenter??selected.Center(frame.Doubles);
+            var selected=battlers.Single(b=>b.Slot.Value==mask.MaskSlot);var center=selected.DisplayCenter??selected.Center(frame.Doubles);
             var silhouette=_assets[selected.Asset];
             bool Opaque(AnimationBattler b,int x,int y)
             {var p=b.DisplayCenter??b.Center(frame.Doubles);int sx=x-p.X+32,sy=y-p.Y+32;return b.Visible&&sx>=0&&sx<64&&sy>=0&&sy<64&&(_assets[b.Asset].Pixels[sy*64+sx]&0x8000)!=0;}
-            var priority=mask.PriorityPartner<0?null:_battlers.Single(b=>b.Slot.Value==mask.PriorityPartner);
+            var priority=mask.PriorityPartner<0?null:battlers.Single(b=>b.Slot.Value==mask.PriorityPartner);
             for(int y=0;y<64;y++)for(int x=0;x<64;x++)
             {
                 int dx=center.X-32+x,dy=center.Y-32+y;
@@ -142,8 +146,8 @@ public sealed class SourceBattleFrameComposer
         if(frame.Metallic is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} metal)
         {
             if(_metallicMaterial is null)throw new InvalidDataException("Metallic material missing.");
-            var selected=_battlers.Single(b=>b.Slot.Value==metal.MaskSlot);var center=selected.DisplayCenter??selected.Center(frame.Doubles);var silhouette=_assets[selected.Asset];
-            var partner=metal.PriorityPartner<0?null:_battlers.Single(b=>b.Slot.Value==metal.PriorityPartner);
+            var selected=battlers.Single(b=>b.Slot.Value==metal.MaskSlot);var center=selected.DisplayCenter??selected.Center(frame.Doubles);var silhouette=_assets[selected.Asset];
+            var partner=metal.PriorityPartner<0?null:battlers.Single(b=>b.Slot.Value==metal.PriorityPartner);
             for(int y=0;y<64;y++)for(int x=0;x<64;x++)
             {
                 int dx=center.X-32+x,dy=center.Y-32+y;

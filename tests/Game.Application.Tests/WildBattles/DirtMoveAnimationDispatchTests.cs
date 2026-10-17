@@ -146,11 +146,11 @@ public sealed class DirtMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var decision = CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On);
-            Assert.AreEqual(decision, CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(battle, SourceBattleScene.On).Dispatch,
+            var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
+            Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
+            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch,
                 "A single dirt root cannot be replayed by a damage, secondary, cap or faint page.");
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (expected && events[index] == used)
             {
                 var cue = decision.Dispatch; Assert.IsNotNull(cue, decision.Reason); roots++;
@@ -160,14 +160,14 @@ public sealed class DirtMoveAnimationDispatchTests
                 Assert.AreEqual(attack.Sequence, cue.AttackSequence); Assert.AreEqual(pp.Sequence, cue.PpSequence);
                 Assert.IsTrue(cue.AcknowledgesCurrentReceipt); Assert.IsNull(cue.MoveTurn);
                 Assert.AreEqual(resultReceipt is SourceSubstituteDamagedEvent, cue.HitsSubstitute);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(
                     battle with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
             }
             else Assert.IsNull(decision.Dispatch, "Only the matching MoveUsed page can own this root.");
             {
-                var wave = CampaignStatAnimationPresentation.AtResult(battle, moves: Mechanics.Catalog.Moves);
-                Assert.AreEqual(wave, CampaignStatAnimationPresentation.AtResult(battle, moves: Mechanics.Catalog.Moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle, true, Mechanics.Catalog.Moves));
+                var wave = AnimationDispatchFixture.StatAtResult(battle, moves: Mechanics.Catalog.Moves);
+                Assert.AreEqual(wave, AnimationDispatchFixture.StatAtResult(battle, moves: Mechanics.Catalog.Moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, Mechanics.Catalog.Moves));
                 if (statReceipt is not null && events[index] == statReceipt)
                 {
                     Assert.IsNotNull(wave); waves++;
@@ -180,12 +180,12 @@ public sealed class DirtMoveAnimationDispatchTests
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
-                Assert.AreEqual(decision.Dispatch, CampaignMoveAnimationPresentation.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(CampaignStatAnimationPresentation.AtResult(battle, moves: Mechanics.Catalog.Moves),
-                    CampaignStatAnimationPresentation.AtResult(single, true, moves: Mechanics.Catalog.Moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, false, moves: Mechanics.Catalog.Moves));
+                Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(AnimationDispatchFixture.StatAtResult(battle, moves: Mechanics.Catalog.Moves),
+                    AnimationDispatchFixture.StatAtResult(single, true, moves: Mechanics.Catalog.Moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false, moves: Mechanics.Catalog.Moves));
             }
         }
         Assert.AreEqual(expected ? 1 : 0, roots);
@@ -458,8 +458,8 @@ public sealed class DirtMoveAnimationDispatchTests
         foreach (var events in corrupt)
         for (int index = 0; index < events.Length; index++)
         {
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch);
         }
     }
 }

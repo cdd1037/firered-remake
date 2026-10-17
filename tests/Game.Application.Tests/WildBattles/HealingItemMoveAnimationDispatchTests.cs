@@ -90,9 +90,9 @@ public sealed class HealingItemMoveAnimationDispatchTests
         int count=0;
         for(int i=0;i<events.Length;i++)
         {
-            CampaignMoveAnimationDecision At(SourceBattleScene scene)=>single?CampaignMoveAnimationPresentation.AtAttackText(Single(events,i),true,scene):CampaignMoveAnimationPresentation.AtAttackText(Double(events,i),scene);
+            CampaignMoveAnimationDecision At(SourceBattleScene scene)=>single?AnimationDispatchFixture.AtAttackText(Single(events,i),true,scene):AnimationDispatchFixture.AtAttackText(Double(events,i),scene);
             var decision=At(SourceBattleScene.On);Assert.AreEqual(decision,At(SourceBattleScene.On));Assert.IsNull(At(SourceBattleScene.Off).Dispatch);
-            var hit=single?CampaignMoveAnimationPresentation.AtHitResult(Single(events,i),true,SourceBattleScene.On):CampaignMoveAnimationPresentation.AtHitResult(Double(events,i),SourceBattleScene.On);Assert.IsNull(hit.Dispatch);
+            var hit=single?AnimationDispatchFixture.AtHitResult(Single(events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtHitResult(Double(events,i),SourceBattleScene.On);Assert.IsNull(hit.Dispatch);
             if(events[i]==used&&expected){var receipt=events.OfType<SourceRecoveredEvent>().Single(e=>e.Move==move);var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);count++;Assert.AreEqual(id,cue.SourceMoveId);Assert.AreEqual(actor,cue.Actor.Value);Assert.AreEqual(actor,cue.Target.Value);Assert.AreEqual(receipt.Sequence,cue.ResultSequence);Assert.AreEqual(attack.Sequence,cue.AttackSequence);Assert.AreEqual(pp.Sequence,cue.PpSequence);}
             else Assert.IsNull(decision.Dispatch);
         }
@@ -127,9 +127,9 @@ public sealed class HealingItemMoveAnimationDispatchTests
     {
         var result=Resolve(Frame(Bodies(id,0,1)),0,0);var events=result.Events;var receipt=events.OfType<SourceRecoveredEvent>().Single();int index=events.IndexOf(receipt),used=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single(e=>e.Move==Move(id)));
         foreach(var replacement in new[]{receipt with{Side=new(1)},receipt with{Move=new("pret:MOVE_RECOVER")},receipt with{HpAfter=receipt.HpBefore},receipt with{Recovered=receipt.Recovered+1},receipt with{Sequence=0}})
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events.SetItem(index,replacement),used),SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events.RemoveAt(index),used),SourceBattleScene.On).Dispatch);
-        Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(events.Insert(index,receipt),used),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events.SetItem(index,replacement),used),SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events.RemoveAt(index),used),SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events.Insert(index,receipt),used),SourceBattleScene.On).Dispatch);
     }
     [TestMethod][DataRow(135)][DataRow(208)]
     public void RecoveryRequiresSelfTargetEvenWhenMoveAndPpTargetsAgree(int id)
@@ -142,7 +142,7 @@ public sealed class HealingItemMoveAnimationDispatchTests
                 SourceMoveUsedEvent m when m.Move==Move(id)=>(SourceBattleEvent)(m with{Target=new(target)}),
                 SourcePpCommandEvent p when p.CurrentMove==Move(id)=>p with{Target=new(target)},
                 _=>e}).ToImmutableArray();
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(Double(malformed,used),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(malformed,used),SourceBattleScene.On).Dispatch);
         }
     }
 }

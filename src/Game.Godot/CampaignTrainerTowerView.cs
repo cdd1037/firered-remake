@@ -157,16 +157,6 @@ public partial class CampaignView
         return _art.Npcs.Keys.FirstOrDefault(s => _catalog.TrainerTowerRegion.Constants.GetValueOrDefault(s, -1) == value)
             ?? throw new InvalidDataException("Tower dynamic object graphics missing: " + value);
     }
-    private bool TryTrainerTowerPatch(Image canvas, FieldMetatileEdit edit, int layer, MapId map)
-    {
-        if (!IsTrainerTowerPresentationMap(map)) return false;
-        var source = PresentationSourceMap(map);
-        var cell = source.Cells.FirstOrDefault(c => c.MetatileId == edit.SourceMetatileId)
-            ?? throw new InvalidDataException("Tower source patch tile missing: " + edit.SourceMetatileId);
-        var original = GetMapArt(map);
-        using var pixels = (Image)(layer == 0 ? original.Bottom : layer == 1 ? original.Middle : original.Top).GetImage().Duplicate();
-        canvas.BlitRect(pixels, new(cell.X * 16, cell.Y * 16, 16, 16), new(edit.X * 16, edit.Y * 16)); return true;
-    }
 
     private void ProcessTrainerTowerTime(double delta)
     {

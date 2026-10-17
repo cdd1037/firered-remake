@@ -132,3 +132,21 @@ No failing reproduction route is justified by this inspection. Symbol closure an
 The 03:43–03:51 UTC native sample used the existing fresh-game public-command fixture through ordinary Continue. At supported 0.03× time scale, Pallet → house 1F → Pallet remained one scene and naturally reached the saved-location caption; Enter returned to the saved Pallet (6,8), North. A separate normal-speed Backspace skip and Right+Enter dismissal showed no direction leakage, save-file mutation or runtime error. Both game processes were closed and the tested Debug files were unchanged. Godot MVID: `ba754bfc-63d6-4b32-ad1f-5074bc2c8203`; evidence: `/workspace/shared/firered-quest-map-native-20261017-0342/REPORT.md` and its captures/runtime logs.
 
 This closes only the sampled multi-map/skip/return observation. Audio used Dummy; fully input-free final-caption return, normal-speed transition fidelity, native pixel parity and whole-game acceptance remain unverified. No third native run occurred.
+
+## 8. Quest exit and named-box dialogue (2026-10-17)
+
+The transient Quest playback now follows the final-caption/exit task timings: 128 natural wait callbacks, then 52 locked exit callbacks, with source one-pixel bar removal and B-skip caption suppression. A 180-row extracted-C oracle checks caption/header/bar/control state; 30/60/120 Hz tests preserve saved-state serialization. Palette/weather restoration and warp fades remain open. Ordinary/Safari delivery and shared gift text now read saved box names through the existing storage customization authority, including rollover names. Controlled delivery fixtures are not full acquisition playthroughs.
+
+Full solution build: zero warnings/errors, 71.35s (`/tmp/nonmove-quest-box-build.log`). Application refresh: zero warnings/errors, 5.78s. Combined Quest/capture/Safari/gift/box tests: **203/203**, including **165 Quest** and **10 box dialogue** cases (`/tmp/nonmove-quest-box-corrected.log`). The initial 171/175 run found four noncanonical stored-Pokémon fixture projections; using the existing Receive operation corrected only those fixtures. Layout **28/28**; Quest oracle reproduced byte-for-byte. No move root admission change (166/354).
+
+## 9. Bounded native inventory branches (2026-10-17)
+
+Before the above build, native UI checks passed female TM Case color/disc/popup, empty TM Case cleanup/reopen, PC multi-selection with holes and held-exit refusal, party reorder, and storage reentry. These used explicitly controlled fixtures. MVID `d3337854-f2f4-4c40-be98-673ed1e182fc`; before/after DLL SHA256 unchanged. Both runs closed before compiler release at 13:15:06 UTC. Evidence: `/workspace/shared/firered-ui-branches-20261017/ACCEPTANCE.md`. Dummy audio; rival-name Back and Mail/Tutor selectors, exact pixel/frame parity and whole-game acceptance remain unverified. These runs predate the Quest exit change.
+
+## 10. Quest automatic return native sample (2026-10-17)
+
+Checkpoint4243e8b received a second bounded fixed-DLL window. Normal-speed uninterrupted capture observed natural saved-caption expiry, bar retraction and input-free return; B skip suppressed the saved caption and swallowed an immediately supplied Right. Saves remained unchanged; no runtime error. MVID `03912d91-61d2-4449-882c-dffefbca55c4`; `/workspace/shared/firered-quest-exit-native-20261017/REPORT.md`. One all-black capture near release remains unexplained, with normal adjacent samples; no pixel-perfect claim. Exact callback timing remains automated-source evidence. This window did not cover renamed-box UI, rival naming, Mail or Tutor.
+
+## 11. Castform general form transition
+
+The existing event-time body projection now drives the source named general transition. Forecast/overlay receipts authorize immutable before/after materials; the shared renderer implements BG mosaic and the peak frame/palette/Y swap. The result retains its final display through the message ACK, preserving singles/doubles cursor phases. Scene Off, substitute bypass, hidden actors/partners and transformed palette ownership follow their distinct source paths. No dedicated move count changed. The battle completion matrix records source vectors and the final managed gate; native Castform transition and audible acceptance remain unverified.

@@ -27,36 +27,7 @@ public partial class CampaignView
         if(_mapEditKey==key&&ReferenceEquals(_mapEditState,state.MapEdits))return;
         var original=GetMapArt(state.World.Player.MapId);
         if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;_mapEditState=state.MapEdits;return;}
-        var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
-            ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-        if(definitions is null&&!IsSeafoamPatchedMap(state.World.Player.MapId)&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
-        using var tiles=_mapResources.CreateOwner("map-edit-tiles");
-        Texture2D Patch(Texture2D texture,int layer,Game.Domain.Ids.MapId map,IEnumerable<FieldMetatileEdit> edits)
-        {
-            // Dummy/headless GetImage may return the same Image resource. Tower crops
-            // read original layers, so their editable canvas must be a separate resource.
-            using var canvas=(Image)texture.GetImage().Duplicate();
-            foreach(var edit in edits)
-            {
-                if(TryCutGrassPatch(canvas,edit,layer,map))continue;
-                if(TrySeafoamPatch(canvas,edit,layer,map))continue;
-                if(TryTrainerTowerPatch(canvas,edit,layer,map))continue;
-                if(TryCelioMachinePatch(canvas,edit,layer,map))continue;
-                if(TryFiveIslandPatch(canvas,edit,layer,map))continue;
-                if(TrySixIslandPatch(canvas,edit,layer,map))continue;
-                if(TryFourIslandPatch(canvas,edit,layer,map))continue;
-                if(TrySeviiRubyPatch(canvas,edit,layer,map))continue;
-                if(TryPokemonLeaguePatch(canvas,edit,layer,map))continue;
-                if(TryVictoryRoadPatch(canvas,edit,layer,map))continue;
-                if(TryCinnabarPatch(canvas,edit,layer,map))continue;
-                if(TrySilphPatch(canvas,edit,layer,map))continue;
-                if(TryRocketPatch(canvas,edit,layer,map.Value))continue;
-                var d=definitions![edit.SourceMetatileId];var path=layer==0?d.BottomTexturePath:layer==1?d.MiddleTexturePath:d.TopTexturePath;
-                using var tile=tiles.Texture(path).GetImage();canvas.BlitRect(tile,new(0,0,16,16),new(edit.X*16,edit.Y*16));
-            }
-            return replacement.FromImage(canvas);
-        }
         try
         {
             var projected=state.MapEdits.Values.Select(edit=>(Edit:edit,Cell:ConnectedFieldCoordinates.Resolve(_catalog.ConnectedFieldMaps!,state.World.Player.MapId,edit.X,edit.Y)))
@@ -66,7 +37,7 @@ public partial class CampaignView
             {
                 var art=GetMapArt(group.Key);
                 var edits=group.Select(p=>p.Edit with{X=p.Cell!.Value.X,Y=p.Cell.Value.Y}).ToArray();
-                patchedMaps[group.Key]=art with{Bottom=Patch(art.Bottom,0,group.Key,edits),Middle=Patch(art.Middle,1,group.Key,edits),Top=Patch(art.Top,2,group.Key,edits)};
+                patchedMaps[group.Key]=art with{Bottom=PatchMapLayer(replacement,art.Source,art.Bottom,0,edits),Middle=PatchMapLayer(replacement,art.Source,art.Middle,1,edits),Top=PatchMapLayer(replacement,art.Source,art.Top,2,edits)};
             }
             _art=patchedMaps.GetValueOrDefault(state.World.Player.MapId,original);
             ReleaseMapEdits();_borderEditArt=patchedMaps;_mapEditOwner=replacement;_mapEditKey=key;_mapEditState=state.MapEdits;

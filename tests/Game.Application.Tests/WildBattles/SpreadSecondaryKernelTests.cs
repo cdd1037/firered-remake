@@ -139,8 +139,8 @@ public sealed class SpreadSecondaryKernelTests
         for (int i = 0; i < result.Events.Length; i++)
         {
             var battle = Double(result.Events, i);
-            var dispatch = CampaignStatAnimationPresentation.AtResult(battle, moves: Moves);
-            Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(battle, moves: Moves));
+            var dispatch = AnimationDispatchFixture.StatAtResult(battle, moves: Moves);
+            Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(battle, moves: Moves));
             if (expected.TryGetValue(result.Events[i].Sequence, out var stat))
             {
                 count++; Assert.IsNotNull(dispatch, $"Missing {name} wave for actual receipt {stat.Sequence}.");
@@ -152,14 +152,14 @@ public sealed class SpreadSecondaryKernelTests
                     h.Sequence < stat.Sequence && h.Target == stat.Target && h.Move == used.Move && h.HpAfter > 0));
             }
             else Assert.IsNull(dispatch, $"{name}: unrelated receipt {result.Events[i].GetType().Name} cannot borrow a hit.");
-            Assert.IsNull(CampaignStatAnimationPresentation.AtResult(battle, true, Moves));
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, Moves));
             Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle));
             if (singles)
             {
                 var single = Single(result.Events, i);
-                Assert.AreEqual(dispatch, CampaignStatAnimationPresentation.AtResult(single, true, moves: Moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, false, moves: Moves));
-                Assert.IsNull(CampaignStatAnimationPresentation.AtResult(single, true, true, Moves));
+                Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(single, true, moves: Moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false, moves: Moves));
+                Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true, Moves));
             }
         }
         Assert.AreEqual(affected.Length, count);

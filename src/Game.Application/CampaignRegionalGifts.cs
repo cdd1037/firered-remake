@@ -128,7 +128,7 @@ public sealed partial class CampaignSession
                 int index = Value(a[1]);
                 if (a[0] is not ("STR_VAR_1" or "STR_VAR_3") || index is < 0 or >= PokemonStorageState.BoxCount)
                     throw new InvalidDataException("script_gift_box_name_invalid");
-                next = state with { TextBuffers = state.TextBuffers.SetItem(a[0], "BOX" + (index + 1)) }; break;
+                next = state with { TextBuffers = state.TextBuffers.SetItem(a[0], PokemonStorageCustomizationRules.BoxName(state.Storage!, index)) }; break;
             case "specialvar":
                 if (a[0] != "VAR_RESULT" || state.GiftDelivery is not { BoxAddress: { } address } pending)
                     throw new InvalidDataException("script_gift_pc_delivery_missing");
