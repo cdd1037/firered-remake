@@ -21,7 +21,7 @@ def read_sources(reference):
  return {path:(subprocess.check_output(['git','-C',str(reference),'show',hit.COMMIT+':'+path])
                if (reference/'.git').exists() else (reference/path).read_bytes()) for path in paths}
 SPRITES={'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gGrantingStarsSpriteTemplate','gMeteorMashStarSpriteTemplate','gArmThrustHandSpriteTemplate','gFurySwipesSpriteTemplate','gFangSpriteTemplate','gSuperFangSpriteTemplate','gBulletSeedSpriteTemplate','gSandAttackDirtSpriteTemplate','gMudSlapMudSpriteTemplate','gMegaPunchKickSpriteTemplate','gSpinningHandOrFootSpriteTemplate','gFireSpreadSpriteTemplate','gPinMissileSpriteTemplate','gIcicleSpearSpriteTemplate','gLinearStingerSpriteTemplate','gHandleInvertHitSplatSpriteTemplate','gPoisonBubbleSpriteTemplate','gClawSlashSpriteTemplate','gFireSpinSpriteTemplate','gShakeMonOrTerrainSpriteTemplate','gSpinningBoneSpriteTemplate','gFistFootSpriteTemplate','gEyeSparkleSpriteTemplate','gAngerMarkSpriteTemplate','gEclipsingOrbSpriteTemplate','gBreathPuffSpriteTemplate','gHealingBlueStarSpriteTemplate','gMudsportMudSpriteTemplate','gKarateChopSpriteTemplate','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSimplePaletteBlendSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gBasicHitSplatSpriteTemplate','gHorizontalLungeSpriteTemplate','gSlideMonToOffsetSpriteTemplate','gSlideMonToOriginalPosSpriteTemplate','gComplexPaletteBlendSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate'}
-TASKS={'AnimTask_BlendMonInAndOut','AnimTask_BlendColorCycle','AnimTask_IsContest','AnimTask_IsTargetPlayerSide','AnimTask_MetallicShine','AnimTask_BlendBattleAnimPal','SoundTask_PlaySE1WithPanning','AnimTask_RockMonBackAndForth','AnimTask_DefenseCurlDeformMon','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','AnimTask_ScaleMonAndRestore','AnimTask_SwayMon','AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+TASKS={'AnimTask_MeditateStretchAttacker','AnimTask_BlendMonInAndOut','AnimTask_BlendColorCycle','AnimTask_IsContest','AnimTask_IsTargetPlayerSide','AnimTask_MetallicShine','AnimTask_BlendBattleAnimPal','SoundTask_PlaySE1WithPanning','AnimTask_RockMonBackAndForth','AnimTask_DefenseCurlDeformMon','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','AnimTask_ScaleMonAndRestore','AnimTask_SwayMon','AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
 NEW= {'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gMeteorMashStarSpriteTemplate','gArmThrustHandSpriteTemplate','gFurySwipesSpriteTemplate','gFangSpriteTemplate','gSuperFangSpriteTemplate','gBulletSeedSpriteTemplate','gSandAttackDirtSpriteTemplate','gMudSlapMudSpriteTemplate','gMegaPunchKickSpriteTemplate','gSpinningHandOrFootSpriteTemplate','gPinMissileSpriteTemplate','gIcicleSpearSpriteTemplate','gLinearStingerSpriteTemplate','gHandleInvertHitSplatSpriteTemplate','gClawSlashSpriteTemplate','gSpinningBoneSpriteTemplate','jumpifmoveturn','choosetwoturnanim','gEyeSparkleSpriteTemplate','gAngerMarkSpriteTemplate','AnimTask_DefenseCurlDeformMon','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','gMudsportMudSpriteTemplate','goto','gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
 def sprite_recipe(source,template,asset,expected_callback):
  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
@@ -67,30 +67,7 @@ def sprite_recipe(source,template,asset,expected_callback):
  if any(frame_loops):result['frameLoops']=frame_loops
  return result
 
-def task_affine_program(source,name):
- match=re.search(r'const union AffineAnimCmd '+re.escape(name)+r'\[\] =\s*\{(.*?)\};',source,re.S)
- if match is None:raise ValueError('Missing task affine program '+name)
- commands=[]
- for row in match[1].splitlines():
-  row=row.split('//',1)[0].strip().rstrip(',')
-  if not row:continue
-  command=dict(op='',x=0,y=0,rotation=0,duration=0,target=0,count=0)
-  frame=re.fullmatch(r'AFFINEANIMCMD_FRAME\(([^)]+)\)',row)
-  control=re.fullmatch(r'AFFINEANIMCMD_(JUMP|LOOP)\(([^)]+)\)',row)
-  if frame:
-   x,y,rotation,duration=[int(v.strip(),0) for v in frame[1].split(',')]
-   if not -32768<=x<=32764 or not -32768<=y<=32767 or not -128<=rotation<=255 or not 0<=duration<=255:raise ValueError('Task affine frame outside source representation')
-   command.update(op='frame',x=x,y=y,rotation=rotation&255,duration=duration)
-  elif control:
-   value=int(control[2],0)
-   if not 0<=value<=32767:raise ValueError('Task affine control outside source representation')
-   command.update(op=control[1].lower());command['target' if control[1]=='JUMP' else 'count']=value
-  elif row=='AFFINEANIMCMD_END':command['op']='end'
-  else:raise ValueError('Unsupported task affine command '+row)
-  commands.append(command)
- if not commands or len(commands)>256 or commands[-1]['op'] not in {'end','jump'}:raise ValueError('Unterminated task affine program')
- if any(c['op']=='jump' and c['target']>=len(commands) for c in commands):raise ValueError('Invalid task affine jump')
- return commands
+task_affine_program=elemental.task_affine_program
 
 def registered_sprite_pixels(raw,symbol,png,palette=None):
  # The compressed PNG can contain more tiles than LoadSpriteSheet copies.

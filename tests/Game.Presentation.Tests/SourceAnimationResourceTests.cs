@@ -6,7 +6,16 @@ public sealed class SourceAnimationResourceTests
 {
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private sealed class Silent:ISourceAnimationAudio
-    {public bool IsPlaying=>false;public void Play(SourceAnimationSound sound){}public void SetPan(int pan,int frame){}public void StopAnimationEffects(){}}
+    {
+        private int _cryFrames;
+        public bool IsPlaying=>false;
+        public bool SupportsCries=>true;
+        public bool IsCryPlaying=>_cryFrames>0;
+        public void PlayCry(SourceAnimationCry cry)=>_cryFrames=3;
+        public void Advance(){if(_cryFrames>0)_cryFrames--;}
+        public void StopAnimationCries()=>_cryFrames=0;
+        public void Play(SourceAnimationSound sound){}public void SetPan(int pan,int frame){}public void StopAnimationEffects(){}
+    }
     [TestMethod]
     public void SourceRegisteredWideTileSheetRetainsAllPixelsThroughSharedResolver()
     {
@@ -47,11 +56,14 @@ public sealed class SourceAnimationResourceTests
             var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null};
             cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
             var scene=new SourceBattleAnimation.SpriteScene();
-            var runtime=new SourceBattleAnimation(resolved.Script,cue,battlers,true,new Silent(),Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray(),spriteScene:scene,spriteMaterials:assets);
+            // Composition uses controlled finite cry liveness. Source-mode PCM
+            // duration and task ordering have their own dedicated audio vectors.
+            var audio=new Silent();
+            var runtime=new SourceBattleAnimation(resolved.Script,cue,battlers,true,audio,Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray(),spriteScene:scene,spriteMaterials:assets,originalPartySpecies:Enumerable.Range(0,4).ToDictionary(i=>i,_=>4));
             var composer=AnimationCompositionFixture.Create(resources,resolved,assets,battlers,surface);int ticks=0;
             while(runtime.Active&&ticks++<2048)
             {
-                var frame=runtime.Tick();
+                audio.Advance();var frame=runtime.Tick();
                 foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null))Assert.IsTrue(assets.ContainsKey(sprite.Asset!),$"Move {script.MoveId} needs {sprite.Asset} through {sprite.Template}.");
                 Assert.AreEqual(240*112*4,composer.ComposeField(frame).Length,$"Move {script.MoveId}");
             }

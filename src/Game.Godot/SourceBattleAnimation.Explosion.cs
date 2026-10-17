@@ -53,7 +53,7 @@ public sealed partial class SourceBattleAnimation
             if(channels.Length!=3||channels.Any(v=>v is <0 or >31))throw new InvalidDataException("RGB555 expression differs.");
             return channels[0]|channels[1]<<5|channels[2]<<10;
         }
-        return value switch{"F_PAL_BG"=>1,"F_PAL_ATTACKER"=>2,"F_PAL_TARGET"=>4,"F_PAL_ATK_PARTNER"=>8,"F_PAL_DEF_PARTNER"=>16,"F_PAL_ATK_SIDE"=>10,"F_PAL_DEF_SIDE"=>20,"F_PAL_BATTLERS"=>30,"F_PAL_BATTLERS_2"=>1920,"RGB_RED"=>31,"RGB_WHITE"=>32767,"RGB_WHITEALPHA"=>65535,"RGB_BLACK"=>0,_=>Number(value)};
+        return value switch{"F_PAL_BG"=>1,"F_PAL_ATTACKER"=>2,"F_PAL_TARGET"=>4,"F_PAL_ATK_PARTNER"=>8,"F_PAL_DEF_PARTNER"=>16,"F_PAL_ATK_SIDE"=>10,"F_PAL_DEF_SIDE"=>20,"F_PAL_BATTLERS"=>30,"F_PAL_BATTLERS_2"=>1920,"RGB_RED"=>31,"RGB_YELLOW"=>1023,"RGB_WHITE"=>32767,"RGB_WHITEALPHA"=>65535,"RGB_BLACK"=>0,_=>Number(value)};
     }
     // Original UnpackSelectedBattlePalettes and visible position extensions. The
     // selectors name source palette banks, independent of equal RGB colors.

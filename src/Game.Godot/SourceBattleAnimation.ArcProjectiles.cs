@@ -31,7 +31,7 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly SourceSpriteRecipe _recipe;private readonly SourceSpriteFrameProgram _frames;
         private readonly PixelPoint _position;private PixelPoint _offset;private bool _visible;
-        private readonly PhysicalLinear _linear;private readonly int _amplitude,_angleStep;private int _angle;
+        private readonly HorizontalArc _arc;
         private SourceAffineMatrix _matrix=SourceAffineMatrix.FromScaleRotation(256,256,0);
         public ArcProjectile(int slot,int priority,SourceSpriteRecipe recipe,SourceBattleAnimation owner):base(slot,priority)
         {
@@ -41,15 +41,14 @@ public sealed partial class SourceBattleAnimation
             if(!owner._cue.Actor.IsPlayer)a[2]=unchecked((short)-a[2]);
             var target=owner._battlers[owner._cue.Target.Value].Center(owner._doubles,true);
             int x=unchecked((short)(target.X+a[2])),y=unchecked((short)(target.Y+a[3]));
-            _linear=new(x-_position.X,y-_position.Y,a[4]);_amplitude=a[5];_angleStep=unchecked((short)(0x8000/a[4]));
+            _arc=new(x-_position.X,y-_position.Y,a[4],a[5]);
         }
         public override SourceVisualSpriteFrame Frame=>new(Slot,_recipe.Template,_position,_offset,_frames.Frame.Tile,_visible,false,false,256,_recipe.Asset,Subpriority)
             {Width=_recipe.Width,Height=_recipe.Height,Affine=true,MatrixA=_matrix.A,MatrixB=_matrix.B,MatrixC=_matrix.C,MatrixD=_matrix.D};
         private bool Translate(SourceBattleAnimation owner)
         {
-            if(_linear.Step(out var offset))return true;
-            _angle=unchecked((short)(_angle+_angleStep));
-            _offset=new(offset.X,unchecked((short)(offset.Y+((_amplitude*owner._script.SineTable[(byte)(_angle>>8)])>>8))));return false;
+            if(_arc.Step(owner._script.SineTable,out var offset))return true;
+            _offset=offset;return false;
         }
         public override void Step(SourceBattleAnimation owner)
         {
@@ -58,12 +57,12 @@ public sealed partial class SourceBattleAnimation
             // The source snapshots all eight data words, but leaves the second
             // translation's x2/y2 visible. Velocity, amplitude and step are constant;
             // only linear accumulators/remaining and angle need restoring here.
-            var state=_linear.Capture();int angle=_angle;var first=_offset;
+            var state=_arc.Capture();var first=_offset;
             if(!Translate(owner))
             {
                 int rotation=unchecked((ushort)(SourceBiosAngles.ArcTan2Neg(unchecked((short)(_offset.X-first.X)),unchecked((short)(_offset.Y-first.Y)))+0xc000));
                 _matrix=SourceAffineMatrix.FromScaleRotation(256,256,rotation);
-                _linear.Restore(state);_angle=angle;
+                _arc.Restore(state);
             }
             _frames.Step();
         }

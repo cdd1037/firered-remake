@@ -5,8 +5,24 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('background_scripts', ROOT/'scripts/imports/battle/import-source-background-scripts.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=imp.ROOT/'content/raw/pokefirered/037335f4'
 class BackgroundScriptImportTests(unittest.TestCase):
+ def test_self_stat_variants_keep_source_background_closure_task_data_and_sound(self):
+  pack=json.loads(imp.build(REFERENCE));rows={r['moveId']:r for r in pack['scripts']}
+  self.assertEqual({'SE_M_HEADBUTT','SE_M_TAKE_DOWN'},set(rows[96]['soundEffects']));self.assertEqual({'SE_M_METRONOME'},set(rows[133]['soundEffects']))
+  for move in [96,133]:self.assertEqual(['SetPsychicBackground','UnsetPsychicBackground'],[c['args'][0] for c in rows[move]['commands'] if c['op']=='call'])
+  commands=pack['taskAffinePrograms']['sAffineAnim_MeditateStretchAttacker'];self.assertEqual([(-8,10,16),(18,-18,16),(-20,16,8)],[(c['x'],c['y'],c['duration']) for c in commands[:-1]]);self.assertEqual('end',commands[-1]['op'])
+  self.assertEqual(['gQuestionMarkSpriteTemplate','ANIM_ATTACKER','20'],next(c['args'] for c in rows[133]['commands'] if c['op']=='createsprite'))
+ def test_self_stat_variants_unknown_dependencies_and_changed_task_handoff_fail_closed(self):
+  original=imp.elemental.read
+  for before,after,move in [(b'AnimTask_MeditateStretchAttacker,',b'AnimTask_UnknownMeditate,',96),(b'gQuestionMarkSpriteTemplate,',b'gUnknownQuestionMarkSpriteTemplate,',133)]:
+   def read(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path=='data/battle_anim_scripts.s' else data
+   with patch.object(imp.elemental,'read',side_effect=read):self.assertNotIn(move,{r['moveId'] for r in json.loads(imp.build(REFERENCE))['scripts']})
+  def read(reference,path):
+   data=original(reference,path);return data.replace(b'PrepareAffineAnimInTaskData(task, spriteId, sAffineAnim_MeditateStretchAttacker);',b'PrepareAffineAnimInTaskData(task, spriteId, gUnknownAffine);') if path=='src/battle_anim_psychic.c' else data
+  with patch.object(imp.elemental,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
+
  def test_dependency_discovery_and_source_symbols(self):
-  pack=json.loads(imp.build(REFERENCE));self.assertEqual({158,59,60,87,93,94,95,138,149,168,177,196,242,248,322},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_PSYCHIC':3,'BG_THUNDER':11,'BG_COSMIC':16,'BG_SKY':18,'BG_ICE':15,'BG_HIGHSPEED_PLAYER':10,'BG_HIGHSPEED_OPPONENT':9},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
+  pack=json.loads(imp.build(REFERENCE));self.assertEqual({96,133,158,59,60,87,93,94,95,138,149,168,177,196,242,248,322},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_PSYCHIC':3,'BG_THUNDER':11,'BG_COSMIC':16,'BG_SKY':18,'BG_ICE':15,'BG_HIGHSPEED_PLAYER':10,'BG_HIGHSPEED_OPPONENT':9},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
   for script in pack['scripts']:
    commands=script['commands']+[c for name in dict.fromkeys(c['args'][0] for c in script['commands'] if c['op']=='call') for c in pack['subroutines'][name]];ops=[c['op'] for c in commands];self.assertGreaterEqual(ops.count('waitbgfadein'),2);self.assertEqual(1,ops.count('restorebg'))
  def test_uncovered_background_and_sprite_fail_closed(self):

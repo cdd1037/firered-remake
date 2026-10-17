@@ -8,6 +8,23 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class ElementalImportTests(unittest.TestCase):
+ def test_question_mark_dynamic_affine_table_and_indexed_sheet_match_source(self):
+  data,blobs=imp.build(REFERENCE);pack=json.loads(data);recipe=next(r for r in pack['spriteRecipes'] if r['template']=='gQuestionMarkSpriteTemplate')
+  self.assertEqual(('amnesia','AnimQuestionMark',32,32,False,False),(recipe['asset'],recipe['callback'],recipe['width'],recipe['height'],recipe['blend'],recipe['affineDoubleSize']))
+  self.assertEqual([0,16,32,48,64,80,96],[f['tile'] for f in recipe['animations'][0]]);self.assertEqual([6,6,6,6,6,6,18],[f['duration'] for f in recipe['animations'][0]])
+  self.assertEqual([('frame',4,4,0),('frame',252,8,0),('frame',4,4,0),('loop',0,0,2),('end',0,0,0)],[(c['op'],c['rotation'],c['duration'],c['target']) for c in recipe['affineAnimations'][0]])
+  row=next(r for r in pack['indexedAssets'] if r['id']=='amnesia');self.assertEqual((32,256,'ANIM_TAG_AMNESIA'),(row['width'],row['height'],row['paletteTag']))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/amnesia.png') as image:
+   indices=[v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()];palette=image.getpalette()[:48]
+  packed=blobs['amnesia.4bpp'];colors=struct.unpack('<16H',blobs['amnesia.pal16']);self.assertEqual(4096,len(packed))
+  self.assertEqual(indices,[(packed[i//2]>>((i&1)*4))&15 for i in range(len(indices))]);self.assertEqual([sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)],list(colors))
+ def test_question_mark_dynamic_affine_activation_and_registration_fail_closed(self):
+  original=imp.read
+  for path,before,after in [('src/battle_anim_psychic.c',b'sprite->affineAnims = sAffineAnims_QuestionMark;',b'sprite->affineAnims = gDummySpriteAffineAnimTable;'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Amnesia, 0x1000, ANIM_TAG_AMNESIA}',b'{gBattleAnimSpriteGfx_Amnesia, 0x0800, ANIM_TAG_AMNESIA}')]:
+   def read(reference,p):
+    data=original(reference,p);return data.replace(before,after) if p==path else data
+   with patch.object(imp,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
+
  def test_hail_task_child_dependencies_and_native_material(self):
   data,pixels=imp.build(REFERENCE);pack=json.loads(data);row=next(r for r in pack['scripts'] if r['moveId']==258)
   self.assertEqual(['sHailParticleSpriteTemplate','gIceCrystalHitLargeSpriteTemplate'],row['spriteDependencies'])
@@ -82,7 +99,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({81,169,14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({45,304,336,49,63,127,155,212,335,81,169,14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -348,5 +365,56 @@ class ElementalImportTests(unittest.TestCase):
   def changed_palette(ref,path):
    data=original(ref,path);return data.replace(b'{gBattleAnimSpritePal_String, ANIM_TAG_SPIDER_WEB}',b'{gBattleAnimSpritePal_Unknown, ANIM_TAG_SPIDER_WEB}') if path=='src/data/battle_anim.h' else data
   with patch.object(imp,'read',side_effect=changed_palette),self.assertRaises(ValueError):imp.build(REFERENCE)
+
+ def test_trapping_pair_recipes_and_callback_sound_closure(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={r['moveId']:r for r in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  eye=recipes['gMeanLookEyeSpriteTemplate'];block=recipes['gBlockXSpriteTemplate']
+  self.assertEqual(('AnimMeanLookEye',64,64,True,2),(eye['callback'],eye['width'],eye['height'],eye['blend'],len(eye['affineAnimations'])))
+  self.assertEqual([384,-32,24],[c['x'] for c in eye['affineAnimations'][0] if c['op']=='frame']);self.assertEqual([48,32],[c['x'] for c in eye['affineAnimations'][1] if c['op']=='frame'])
+  self.assertEqual(('AnimBlockX',64,64,False,[]),(block['callback'],block['width'],block['height'],block['blend'],block['affineAnimations']))
+  self.assertEqual({'SE_M_SWAGGER','SE_M_SKETCH','SE_M_LEER'},set(roots[335]['soundEffects']));self.assertEqual({'SE_M_PSYBEAM','SE_M_CONFUSE_RAY','SE_M_LEER'},set(roots[212]['soundEffects']))
+
+ def test_trapping_source_pixels_and_nonmatching_palette_alias(self):
+  data,pixels=imp.build(REFERENCE);rows={r['id']:r for r in json.loads(data)['indexedAssets']}
+  for stem,pal in [('eye','eye'),('x_sign','hollow_orb')]:
+   name=stem.replace('_','-');self.assertEqual((64,64),(rows[name]['width'],rows[name]['height']))
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+stem+'.png')) as im:indices=[v for y in range(0,64,8) for x in range(0,64,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+pal+'.png')) as im:palette=im.getpalette()[:48]
+   self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),pixels[name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),pixels[name+'.pal16'])
+
+ def test_trapping_unknown_callback_sound_and_palette_alias_fail_closed(self):
+  original=imp.read
+  for before,after,path in [(b'PlaySE12WithPanning(SE_M_SKETCH,',b'PlaySE12WithPanning(SE_M_UNKNOWN,','src/battle_anim_effects_3.c'),(b'{gBattleAnimSpritePal_HollowOrb, ANIM_TAG_X_SIGN}',b'{gBattleAnimSpritePal_Unknown, ANIM_TAG_X_SIGN}','src/data/battle_anim.h')]:
+   def changed(ref,name):
+    data=original(ref,name);return data.replace(before,after) if name==path else data
+   with patch.object(imp,'read',side_effect=changed),self.assertRaises(ValueError):imp.build(REFERENCE)
+  def missing(ref,name):
+   data=original(ref,name);return data.replace(b'gBlockXSpriteTemplate,',b'gMissingBlockSpriteTemplate,') if name=='data/battle_anim_scripts.s' else data
+  with patch.object(imp,'read',side_effect=missing):data,_=imp.build(REFERENCE)
+  self.assertNotIn(335,{r['moveId'] for r in json.loads(data)['scripts']})
+
+ def test_voice_roots_share_exact_noise_ring_and_inhale_programs(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={r['moveId']:r for r in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  self.assertTrue({45,304,336}<=roots.keys());self.assertNotIn(46,roots)
+  noise=recipes['gRoarNoiseLineSpriteTemplate'];self.assertEqual(('AnimRoarNoiseLine',32,32,False),(noise['callback'],noise['width'],noise['height'],noise['blend']))
+  self.assertEqual([[0,16],[32,48]],[[f['tile'] for f in a] for a in noise['animations']]);self.assertEqual([0,0],noise['loopStarts'])
+  ring=recipes['gHyperVoiceRingSpriteTemplate'];self.assertEqual(('thin-ring',64,64,True), (ring['asset'],ring['width'],ring['height'],ring['affineDoubleSize']))
+  self.assertEqual([(16,16,0),(11,11,45)],[(c['x'],c['y'],c['duration']) for c in ring['affineAnimations'][0] if c['op']=='frame'])
+  program=pack['taskAffinePrograms']['sDeepInhaleAffineAnimCmds'];self.assertEqual([(16,0,4),(0,-3,16),(4,0,4),(0,0,24),(-5,3,16)],[(c['x'],c['y'],c['duration']) for c in program if c['op']=='frame'])
+  self.assertEqual({},roots[336]['soundEffects'])
+ def test_noise_line_preserves_indices_and_source_hit_duplicate_palette(self):
+  data,blobs=imp.build(REFERENCE);row=next(r for r in json.loads(data)['indexedAssets'] if r['id']=='noise-line');self.assertEqual((32,128,'ANIM_TAG_NOISE_LINE'),(row['width'],row['height'],row['paletteTag']))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/noise_line.png') as im:indices=[v for y in range(0,128,8) for x in range(0,32,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/hit_duplicate.png') as im:pal=im.getpalette()[:48]
+  self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),blobs['noise-line.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),blobs['noise-line.pal16'])
+ def test_noise_palette_alias_and_unknown_cry_task_fail_closed(self):
+  original=imp.read
+  def wrong(ref,path):
+   d=original(ref,path);return d.replace(b'{gBattleAnimSpritePal_HitDuplicate, ANIM_TAG_NOISE_LINE}',b'{gBattleAnimSpritePal_Unknown, ANIM_TAG_NOISE_LINE}') if path=='src/data/battle_anim.h' else d
+  with patch.object(imp,'read',side_effect=wrong),self.assertRaises(ValueError):imp.build(REFERENCE)
+  def unknown(ref,path):
+   d=original(ref,path);return d.replace(b'SoundTask_PlayCryHighPitch,',b'SoundTask_UnknownCry,') if path=='data/battle_anim_scripts.s' else d
+  with patch.object(imp,'read',side_effect=unknown):data,_=imp.build(REFERENCE)
+  self.assertNotIn(336,{r['moveId'] for r in json.loads(data)['scripts']})
 
 if __name__=='__main__':unittest.main()

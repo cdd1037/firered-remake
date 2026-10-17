@@ -16,6 +16,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     private readonly Dictionary<int, ActiveCue> _effects = [];
     private readonly FireRedAudio.Resources _resources;
     private readonly NormalCryCatalog _cryCatalog;
+    private readonly bool _supportsAnimationCries;
     private Synth _synth;
     private AudioStreamPlayer? _output;
     private AudioStreamGenerator? _generator;
@@ -80,13 +81,14 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             }
         }
         _synth = NewSynth();
+        _supportsAnimationCries = _catalog.Values.Any(cue => cue.SourcePlayer == 4 && cue.CryMode == 0);
     }
 
     private Synth NewSynth()
     {
         var synth = new Synth(_resources, AudioProfile.SourceFiltered, _cryCatalog) { EnableTrace = false };
         foreach (var cue in _catalog.Values)
-            if (cue.SourcePlayer == 4) synth.PrepareNormalCry(cue.Species);
+            if (cue.SourcePlayer == 4) synth.PrepareAnimationCry(cue.Species);
         return synth;
     }
 
@@ -170,9 +172,31 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         return StartCry(cue, duckBgm: false, pan);
     }
 
+    // Supported presets share the canonical species binding. Both source tone
+    // tables and decoded waves were validated/prepared during composition.
+    public bool SupportsBattleAnimationCries => _supportsAnimationCries && !_faulted && !_shutdown;
+    public bool IsBattleAnimationCryPlaying => _cry is not null && !Completed(_cry);
+
+    public long PlayBattleAnimationCry(int species, int mode, int pan)
+    {
+        if (!SourceAnimationCryPreset.IsSupported(mode)) throw new NotSupportedException("Unsupported animation cry mode");
+        if (pan is < -128 or > 127) throw new ArgumentOutOfRangeException(nameof(pan));
+        string symbol = CrySymbol(species) ?? throw new NotSupportedException("Species has no source cry binding");
+        if (!TryCue(CryId(symbol, 0), 4, out var normal)) return 0;
+        string suffix = mode switch
+        {
+            SourceHighPitchCry.Mode => "HIGH_PITCH", SourceAnimationCryPreset.EchoStart => "ECHO_START",
+            SourceAnimationCryPreset.EchoEnd => "ECHO_END", SourceAnimationCryPreset.Growl1 => "GROWL_1",
+            SourceAnimationCryPreset.Growl2 => "GROWL_2", _ => throw new NotSupportedException("Unsupported animation cry mode")
+        };
+        var cue = normal! with { Id = "CRY_" + symbol["SPECIES_".Length..] + "_" + suffix, CryMode = mode };
+        return StartCry(cue, duckBgm: true, pan);
+    }
+
     private long StartCry(SynthCue cue, bool duckBgm, int pan = 0)
     {
-        if (cue.CryMode == SourceDoublesCry.Mode) _synth.StartDoublesCry(cue.Species, pan, duckBgm: false);
+        if (SourceAnimationCryPreset.IsSupported(cue.CryMode)) _synth.StartAnimationCry(cue.Species, cue.CryMode, pan, duckBgm: false);
+        else if (cue.CryMode == SourceDoublesCry.Mode) _synth.StartDoublesCry(cue.Species, pan, duckBgm: false);
         else if (cue.CryMode == SourceEncounterCry.Mode) _synth.StartEncounterCry(cue.Species, duckBgm: false);
         else _synth.StartNormalCry(cue.Species, duckBgm: false);
         _cry = new ActiveCue(cue, ++_nextToken, _pushedFrames, _synth.GameFrames);

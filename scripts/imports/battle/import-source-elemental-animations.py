@@ -5,7 +5,18 @@ from PIL import Image
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/imports/battle/import-source-hit-animations.py');hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
+spec=importlib.util.spec_from_file_location('source_animation_affine',ROOT/'scripts/lib/source_animation_affine.py');affine=importlib.util.module_from_spec(spec);spec.loader.exec_module(affine)
+task_affine_program=affine.task_affine_program
 TEMPLATES={
+ 'gRoarNoiseLineSpriteTemplate':('battle_anim_effects_3.c','AnimRoarNoiseLine'),
+ 'gHyperVoiceRingSpriteTemplate':('battle_anim_effects_2.c','AnimHyperVoiceRing'),
+ 'gQuestionMarkSpriteTemplate':('battle_anim_psychic.c','AnimQuestionMark'),
+ 'gHyperBeamOrbSpriteTemplate':('battle_anim_effects_1.c','AnimHyperBeamOrb'),
+ 'gSonicBoomSpriteTemplate':('battle_anim_effects_2.c','AnimSonicBoomProjectile'),
+ 'gSmallDriftingBubblesSpriteTemplate':('battle_anim_water.c','AnimSmallDriftingBubbles'),
+ 'gBonemerangSpriteTemplate':('battle_anim_ground.c','AnimBonemerangProjectile'),
+ 'gMeanLookEyeSpriteTemplate':('battle_anim_effects_3.c','AnimMeanLookEye'),
+ 'gBlockXSpriteTemplate':('battle_anim_effects_3.c','AnimBlockX'),
  'gWebThreadSpriteTemplate':('battle_anim_bug.c','AnimTranslateWebThread'),
  'gStringWrapSpriteTemplate':('battle_anim_bug.c','AnimStringWrap'),
  'gSpiderWebSpriteTemplate':('battle_anim_bug.c','AnimSpiderWeb'),
@@ -124,9 +135,16 @@ def recipe(source,name,callback):
    if not frames or loop>=len(frames):raise ValueError('Invalid frame loop')
    animations.append(frames);loops.append(loop)
  affine=[]
- if shape[1]!='Off' and fields['affineAnims']!='gDummySpriteAffineAnimTable':
-  table=re.search(r'const union AffineAnimCmd \*const '+fields['affineAnims']+r'\[\] =\s*\{(.*?)\};',source,re.S)
-  if not table:raise ValueError('Missing affine table '+fields['affineAnims'])
+ affine_table=fields['affineAnims']
+ if callback=='AnimQuestionMark':
+  # This table is activated by the callback after the frame animation ends.
+  step=re.search(r'static void AnimQuestionMark_Step1\(struct Sprite \*sprite\)\s*\{(.*?)^\}',source,re.S|re.M)
+  expected='sprite->oam.affineMode=ST_OAM_AFFINE_NORMAL;sprite->affineAnims=sAffineAnims_QuestionMark;sprite->data[0]=0;InitSpriteAffineAnim(sprite);sprite->callback=AnimQuestionMark_Step2;'
+  if shape[1]!='Off' or affine_table!='gDummySpriteAffineAnimTable' or step is None or re.sub(r'\s+','',step[1])!=expected:raise ValueError('Question mark dynamic affine activation differs')
+  affine_table='sAffineAnims_QuestionMark'
+ if affine_table!='gDummySpriteAffineAnimTable' and (shape[1]!='Off' or callback=='AnimQuestionMark'):
+  table=re.search(r'const union AffineAnimCmd \*const '+affine_table+r'\[\] =\s*\{(.*?)\};',source,re.S)
+  if not table:raise ValueError('Missing affine table '+affine_table)
   for array in re.findall(r'\b([sg]\w+)\s*,',table[1]):
    body=re.search(r'const union AffineAnimCmd '+array+r'\[\] =\s*\{(.*?)\};',source,re.S)[1];commands=[]
    for row in body.splitlines():
@@ -146,9 +164,15 @@ def recipe(source,name,callback):
 SHARED_SPRITES={'gThinRingExpandingSpriteTemplate', 'gShakeMonOrTerrainSpriteTemplate', 'gGrantingStarsSpriteTemplate', 'gSimplePaletteBlendSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate', 'gComplexPaletteBlendSpriteTemplate', 'gFistFootSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gBasicHitSplatSpriteTemplate'}
 TASKS={'AnimTask_ShakeMon', 'AnimTask_InvertScreenColor', 'AnimTask_BlendBattleAnimPal', 'AnimTask_StartSinAnimTimer', 'AnimTask_SwayMon', 'AnimTask_BlendColorCycle', 'AnimTask_ElectricBolt', 'AnimTask_ShakeMon2'}
 SOUNDS={'SE_M_MEGA_KICK2', 'SE_M_CRABHAMMER', 'SE_M_VITAL_THROW2', 'SE_M_HYDRO_PUMP', 'SE_M_FLAME_WHEEL', 'SE_M_HYPER_BEAM', 'SE_M_SCREECH', 'SE_M_ABSORB_2', 'SE_M_COMET_PUNCH', 'SE_M_SUPERSONIC', 'SE_M_TAIL_WHIP', 'SE_M_THUNDERBOLT2', 'SE_M_ABSORB', 'SE_M_GIGA_DRAIN', 'SE_M_EMBER', 'SE_M_TRI_ATTACK2', 'SE_M_FLAMETHROWER', 'SE_M_BUBBLE_BEAM', 'SE_M_THUNDERBOLT', 'SE_M_THUNDER_WAVE', 'SE_M_FIRE_PUNCH', 'SE_M_SELF_DESTRUCT', 'SE_M_BUBBLE3', 'SE_M_BUBBLE', 'SE_M_WHIRLPOOL', 'SE_M_MEGA_KICK'}
+TASKS|={'AnimTask_DeepInhale','SoundTask_PlayCryHighPitch','SoundTask_PlayDoubleCry','SoundTask_PlayCryWithEcho','SoundTask_WaitForCry','AnimTask_ShakeBattleTerrain','AnimTask_ScaleMonAndRestore'}
 GFX={'ANIM_TAG_SPARK', 'ANIM_TAG_METAL_SOUND_WAVES', 'ANIM_TAG_BROWN_ORB', 'ANIM_TAG_LIGHTNING', 'ANIM_TAG_SPARK_2', 'ANIM_TAG_LARGE_FRESH_EGG', 'ANIM_TAG_ICE_CRYSTALS', 'ANIM_TAG_DUCK', 'ANIM_TAG_PURPLE_RING', 'ANIM_TAG_GLOWY_RED_ORB', 'ANIM_TAG_IMPACT', 'ANIM_TAG_SPARK_H', 'ANIM_TAG_BLACK_BALL_2', 'ANIM_TAG_SMALL_EMBER', 'ANIM_TAG_GLOWY_GREEN_ORB', 'ANIM_TAG_WATER_IMPACT', 'ANIM_TAG_BLUE_STAR', 'ANIM_TAG_WATER_ORB', 'ANIM_TAG_HANDS_AND_FEET', 'ANIM_TAG_GRAY_SMOKE', 'ANIM_TAG_SMALL_BUBBLES', 'ANIM_TAG_ORBS', 'ANIM_TAG_BLACK_BALL', 'ANIM_TAG_GOLD_RING', 'ANIM_TAG_EXPLOSION', 'ANIM_TAG_SHOCK_3'}
+GFX|={'ANIM_TAG_AMNESIA'}
+SOUNDS|={'SE_M_METRONOME','SE_M_HEADBUTT','SE_M_TAKE_DOWN'}
+GFX|={'ANIM_TAG_NOISE_LINE'}
 GFX|={'ANIM_TAG_WEB_THREAD','ANIM_TAG_STRING','ANIM_TAG_SPIDER_WEB'}
 SOUNDS|={'SE_M_STRING_SHOT2'}
+GFX|={'ANIM_TAG_EYE','ANIM_TAG_X_SIGN'}
+SOUNDS|={'SE_M_PSYBEAM','SE_M_CONFUSE_RAY','SE_M_LEER','SE_M_SWAGGER'}
 GFX|={'ANIM_TAG_BLUE_RING_2'}
 GFX|={'ANIM_TAG_TOXIC_BUBBLE','ANIM_TAG_POISON_BUBBLE','ANIM_TAG_NEEDLE','ANIM_TAG_BUBBLE'}
 SOUNDS|={'SE_M_TOXIC','SE_M_BUBBLE2'}
@@ -185,6 +209,8 @@ TASKS|={'AnimTask_ConversionAlphaBlend','AnimTask_Conversion2AlphaBlend','AnimTa
 GFX|={'ANIM_TAG_CONVERSION','ANIM_TAG_SWORD','ANIM_TAG_SPHERE_TO_CUBE'}
 SOUNDS|={'SE_M_SWORDS_DANCE'}
 SOUNDS|={'SE_M_BARRIER'}
+GFX|={'ANIM_TAG_AIR_WAVE','ANIM_TAG_BONE'}
+SOUNDS|={'SE_M_WATERFALL','SE_M_BONEMERANG','SE_M_VITAL_THROW'}
 def fold_firered_contest_branches(reference,source,commands,labels):
  # Both native contest tests are constant false in pinned FireRed. Canonical
  # argument comparisons are folded only immediately after the actual predicate
@@ -230,6 +256,14 @@ def sound_effects(reference,commands):
  return {symbol:definitions[symbol] for symbol in sorted(result)}
 GFX|={'ANIM_TAG_BREAKING_EGG','ANIM_TAG_MILK_BOTTLE','ANIM_TAG_THIN_RING'}
 SOUNDS|={'SE_M_MILK_DRINK','SE_M_HORN_ATTACK'}
+def supported_sound_task(args,songs):
+ # The existing task ABI accepts any source-resolved song, not one copied song ID.
+ if args and args[0]=='SoundTask_FireBlast':return args==['SoundTask_FireBlast','SE_M_FLAME_WHEEL','SE_M_FLAME_WHEEL2']
+ if len(args)!=8 or args[0]!='SoundTask_LoopSEAdjustPanning' or args[1] not in songs:return False
+ try:
+  values=[{'SOUND_PAN_ATTACKER':-64,'SOUND_PAN_TARGET':63}.get(v,int(v,0) if re.fullmatch(r'-?(?:0x[0-9a-fA-F]+|\d+)',v) else None) for v in args[2:]]
+ except ValueError:return False
+ return all(v is not None for v in values) and -64<=values[0]<=63 and -64<=values[1]<=63 and -128<=values[2]<=127 and 1<=values[3]<=255 and 0<=values[4]<=255 and 0<=values[5]<=255
 def build(reference):
  source=read(reference,'data/battle_anim_scripts.s').decode()
  def commands(label,end):
@@ -252,6 +286,7 @@ def build(reference):
  sprites=set(TEMPLATES)|SHARED_SPRITES
  tasks=TASKS
  sounds=SOUNDS
+ songs={name for name in re.findall(r'^#define (SE_\w+)\s+\d+\b',read(reference,'include/constants/songs.h').decode(),re.M)}
  gfx=GFX
  scripts=[];subs={}
  for name in re.findall(r'^Move_(\w+):\n',source,re.M):
@@ -264,12 +299,20 @@ def build(reference):
   except ValueError:continue
   flat=root+[c for sub in local.values() for c in sub]
   if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_ElectricBolt','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_Hail'} for c in flat):continue
-  if any(c['op']=='createsoundtask' and not (c['args'][0]=='SoundTask_LoopSEAdjustPanning' and c['args'][1]=='SE_M_BUBBLE_BEAM2' or c['args']==['SoundTask_FireBlast','SE_M_FLAME_WHEEL','SE_M_FLAME_WHEEL2']) or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
+  if any(c['op']=='createsoundtask' and not supported_sound_task(c['args'],songs) or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
   # Spark's zero modulus requires original ARM helper semantics before admission.
   if any(c['op']=='createsprite' and c['args'][0]=='gSparkElectricityFlashingSpriteTemplate' and int(c['args'][-1],0)&32767==0 for c in flat):continue
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=sound_effects(reference,flat),spriteTags={name:tags[name] for name in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})}));subs.update(local)
  for row in scripts:
   flat=row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]]
+  if any(c['op']=='createsprite' and c['args'][0]=='gBlockXSpriteTemplate' for c in flat):
+   effects=read(reference,'src/battle_anim_effects_3.c').decode()
+   init=re.search(r'static void AnimBlockX\(struct Sprite \*sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   step=re.search(r'static void AnimBlockX_Step\(struct Sprite \*sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   if init is None or step is None or 'sprite->callback = AnimBlockX_Step;' not in init[1]:raise ValueError('Block source callback handoff differs')
+   cues=re.findall(r'PlaySE12WithPanning\((SE_\w+), BattleAnimAdjustPanning\(SOUND_PAN_TARGET\)\);',step[1])
+   if cues!=['SE_M_SKETCH','SE_M_SKETCH','SE_M_LEER']:raise ValueError('Block source callback sounds differ')
+   row['soundEffects'].update(sound_effects(reference,[dict(op='playsewithpan',args=[cue,'SOUND_PAN_TARGET']) for cue in cues]))
   if any(c['op']=='createsprite' and c['args'][0]=='gSharpenSphereSpriteTemplate' for c in flat):
    effects=read(reference,'src/battle_anim_effects_1.c').decode()
    init=re.search(r'static void AnimSharpenSphere\(struct Sprite\* sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
@@ -304,7 +347,7 @@ def build(reference):
   colors=[int(c) for row in rows[3:] for c in row.split()]
   if len(colors)!=48:raise ValueError('Invalid palette length')
   return colors
- for asset,png,shape,pal in [('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
+ for asset,png,shape,pal in [('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
   if pal in ('water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+pal+'.png'))) as im:colors=im.getpalette()[:48]
   else:colors=palette(pal) if pal else None
@@ -324,7 +367,14 @@ def build(reference):
  assets=[dict(id=id,path='elemental-'+id+'.rgb555') for id in pixels]
  indexed=[]
  registrations=read(reference,'src/data/battle_anim.h').decode();graphics=read(reference,'src/graphics.c').decode()
- for stem,symbol,size in [('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
+ if not re.search(r'\{gBattleAnimSpriteGfx_NoiseLine,\s*0x0800,\s*ANIM_TAG_NOISE_LINE\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_HitDuplicate,\s*ANIM_TAG_NOISE_LINE\}',registrations):raise ValueError('Source noise line registration differs')
+ for symbol,path,suffix in [('Gfx_NoiseLine','noise_line','4bpp'),('Pal_HitDuplicate','hit_duplicate','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source noise line material differs')
+ # Sonic Boom's material is AIR_WAVE, not the separate AIR_WAVE_2 crescent.
+ if not re.search(r'\{gBattleAnimSpriteGfx_AirWave,\s*0x0100,\s*ANIM_TAG_AIR_WAVE\}',registrations) or not re.search(r'\{gBattleAnimSpritePal_AirWave,\s*ANIM_TAG_AIR_WAVE\}',registrations):raise ValueError('Sonic Boom source registration differs')
+ for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+kind+r'_AirWave\[\] = INCBIN_U32\("graphics/battle_anims/sprites/air_wave\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Sonic Boom source material path differs')
+ for stem,symbol,size in [('orbs','Orbs',0x180),('amnesia','Amnesia',0x1000),('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source indexed registration differs: '+stem)
   for suffix,kind in [('4bpp','Gfx'),('gbapal','Pal')]:
@@ -333,19 +383,28 @@ def build(reference):
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_String,\s*'+tag+r'\}',registrations):raise ValueError('Source web registration differs: '+stem)
   if not re.search(r'gBattleAnimSpriteGfx_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.4bpp\.lz"\)',graphics):raise ValueError('Source web graphics differs: '+stem)
- for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64))]:
+ for stem,symbol,pal in [('eye','Eye','Eye'),('x_sign','XSign','HollowOrb')]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x0800,\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal+r',\s*'+tag+r'\}',registrations):raise ValueError('Source trapping registration differs: '+stem)
+  for kind,name,path,suffix in [('Gfx',symbol,stem,'4bpp'),('Pal',pal,'hollow_orb' if stem=='x_sign' else stem,'gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+name+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source trapping graphics differs: '+stem)
+ for stem,size in [('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
    if im.mode!='P' or im.size!=size:raise ValueError('Invalid source indexed image')
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];palette=im.getpalette()[:48]
   if stem in ('web_thread','spider_web'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/string.png'))) as shared:palette=shared.getpalette()[:48]
+  if stem=='noise_line':
+   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/hit_duplicate.png'))) as shared:palette=shared.getpalette()[:48]
+  if stem=='x_sign':
+   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/hollow_orb.png'))) as shared:palette=shared.getpalette()[:48]
   if max(indices)>15 or len(palette)!=48:raise ValueError('Invalid source indices/palette')
   if stem=='music_notes' and any(i>5 for i in indices):raise ValueError('Music notes sample outside source recolored range')
   name=stem.replace('_','-');base='elemental-'+name
   pixels[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2))
   pixels[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
   indexed.append(dict(id=name,width=size[0],height=size[1],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag='ANIM_TAG_'+stem.upper()))
- return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subs,spriteRecipes=recipes,assets=assets,indexedAssets=indexed),indent=2)+'\n').encode(),pixels
+ return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subs,taskAffinePrograms={'sDeepInhaleAffineAnimCmds':task_affine_program(all_source,'sDeepInhaleAffineAnimCmds')},spriteRecipes=recipes,assets=assets,indexedAssets=indexed),indent=2)+'\n').encode(),pixels
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/elemental.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,pixels=build(a.reference)
  for path,blob in [(a.output,data)]+[(a.output.parent/('elemental-'+id if id.endswith(('.4bpp','.pal16')) else 'elemental-'+id+'.rgb555'),blob) for id,blob in pixels.items()]:

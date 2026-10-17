@@ -29,3 +29,12 @@
 - 这是依据用户允许修复开发中发现的明确问题的总体方向作出的修正；不声称用户曾单独投票批准此具体缺陷。Transform 的原队伍招式、PP 和 PP Ups 保持独立，不因临时招式换位而改变。
 - 验证：`SourceBattleMoveOrderTests.MimicBackupFollowsCopiedSlotInBothDirectionsAndRestoresCorrectly` 覆盖两个选择方向、随后使用两类招式、离场恢复与 JSON 还原；另有 Transform 原样恢复、逆向换位及 PP 使用测试。
 - 来源：[固定原作换位处理](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_controller_player.c#L631-L719)、[PP 写回](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_script_commands.c)。
+
+## 已实现：破坏光线合法帧选择与倒放叫声插值边界（2026-10-17）
+
+- 用户明确批准：破坏光线只选择合法动画；倒放插值到边界时使用边界采样值，不复现越界读取。两项均属于表现层安全策略，战斗规则与 gameplay RNG 不变。
+- 破坏光线：固定源码 `battle_anim_effects_1.c:255–264` 的大光球动画表有7个指针，`AnimHyperBeamOrb:2376–2381` 却使用 `Random()%8`。紧邻的小光球表不能单凭源码顺序证明零售二进制的第8项行为；本项目不声称已经确认原版可见故障。批准策略在7个合法条目中均匀选择，使用独立视觉随机流的拒绝采样，拒绝16位值65534/65535后重抽。原始源向量与这一明确差异的测试分开保留。
+- 倒放叫声：固定 ARM `m4a_1.s:568–602,673–682` 在最后一个反向样本处可将插值 lookahead 变为 `0xffffffff`，随后形成不在提取音频范围内的地址。受控算例中，Sentret 的 Growl 在第11帧（15帧长度内）、Jigglypuff 的 Echo 在第14帧（25帧长度内）到达该边界，包络仍未释放，不能假定这次读取听不见。
+- 批准策略由共享反向插值读取器限制端点：保留所有合法样本与既定模式参数；当插值需要起点之外的样本时，使用起点样本。没有按物种或招式伪造声音，没有读取任意主机地址，也不据此宣称宿主音频等同于原硬件的未定义读数。
+- 来源：[光球表及回调](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_anim_effects_1.c)、[原版音频汇编](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/m4a_1.s)。HyperBeamAnimationTests 分别验证原始运动与批准选择策略，AnimationCryTests 分别验证合法倒放采样与端点规则；本批 Audio536／536 和修正后 Presentation65／65（含全部184根脚本合成）通过。
+- 社区核对边界：本次检索未找到针对这两处精确边界的同题公开缺陷报告。公开的 [`Fix CRY_MODE_ECHO`](https://github.com/pret/pokeemerald/commit/342b7da5d36460bb5780ea60da4b6b5be46ddc38) 是常量命名修正，并非倒放端点修复；不能拿它证明本问题已获上游确认。上述策略依据本项目的源码边界审阅和用户批准，不据此宣称原版零售机必然出现可见／可听故障。

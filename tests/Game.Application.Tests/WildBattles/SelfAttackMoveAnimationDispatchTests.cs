@@ -15,12 +15,15 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     private static SourceMechanicsCatalog Mechanics => CurrentCampaignFixture.Catalog.PokemonContent!.Pokemon.Mechanics;
     private static string Name(int id) => id switch
     {
-        14 => "SWORDS_DANCE", 159 => "SHARPEN", 96 => "MEDITATE",
+        14 => "SWORDS_DANCE", 159 => "SHARPEN", 96 => "MEDITATE", 133 => "AMNESIA", 336 => "HOWL",
         _ => throw new ArgumentOutOfRangeException(nameof(id))
     };
     private static MoveId Move(int id) => new("pret:MOVE_" + Name(id));
-    private static int Increase(int id) => id == 14 ? 2 : 1;
-    private static int Argument(int id) => id == 14 ? 39 : 15;
+    private static int Increase(int id) => id is 14 or 133 ? 2 : 1;
+    private static int Argument(int id) => id == 133 ? 43 : id == 14 ? 39 : 15;
+
+    private static WildBattleStat Stat(int id) => id == 133 ? WildBattleStat.SpecialDefense : WildBattleStat.Attack;
+    private static int Stage(WildBattleCombatant body,int id) => id == 133 ? 6 + body.SpecialDefenseStageDelta : body.AttackStage;
 
     // Deliberately empty committed frames: projection must use the source receipts,
     // never reconstruct a stat change from the already-committed end state.
@@ -47,10 +50,11 @@ public sealed class SelfAttackMoveAnimationDispatchTests
         var bodies = Enumerable.Range(0, 4).Select(_ => NaturalMon("MAGIKARP", 5, "SPLASH")).ToArray();
         var (species, level) = id switch
         {
-            14 => ("FARFETCHD", 31), 159 => ("PORYGON", 24), 96 => ("DROWZEE", 27),
+            14 => ("FARFETCHD", 31), 159 => ("PORYGON", 24), 96 => ("DROWZEE", 27), 133 => ("SLOWPOKE", 36), 336 => ("POOCHYENA", 5),
             _ => throw new ArgumentOutOfRangeException(nameof(id))
         };
-        var body = NaturalMon(species, level, Name(id)) with { AttackStage = stage };
+        var body = NaturalMon(species, level, Name(id));
+        body = id == 133 ? body with { SpecialDefenseStageDelta = stage - 6 } : body with { AttackStage = stage };
         if (pp is {} remaining)
             body = body with { Pokemon = body.Pokemon with
                 { Moves = body.Pokemon.Moves.SetItem(0, body.Pokemon.Moves[0] with { CurrentPp = remaining }) } };
@@ -90,7 +94,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
         Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
         Assert.IsFalse(result.Events.IsEmpty);
         Assert.AreEqual(before, JsonSerializer.Serialize(frame), "The public kernel must not mutate its input frame.");
-        Assert.AreEqual(frame.Rng, result.State.Rng, "Ordinary self Attack increases have no accuracy or effect roll.");
+        Assert.AreEqual(frame.Rng, result.State.Rng, "Ordinary self-stat increases have no accuracy or effect roll.");
         Assert.AreEqual(0, result.Trace.Length);
         Assert.AreEqual(body.Pokemon.Moves[0].CurrentPp - 1, result.State.Slots[actor].Body!.Pokemon.Moves[0].CurrentPp);
         Assert.AreEqual(body.Pokemon.CurrentHp, result.State.Slots[actor].Body!.Pokemon.CurrentHp);
@@ -121,18 +125,18 @@ public sealed class SelfAttackMoveAnimationDispatchTests
         Assert.AreEqual(events.IndexOf(pp) + 1, events.IndexOf(outcome));
         Assert.AreEqual(pp.Sequence + 1, outcome.Sequence); Assert.AreEqual(pp.Turn, outcome.Turn);
         int after = Math.Min(12, stage + Increase(id));
-        Assert.AreEqual(after, result.State.Slots[actor].Body!.AttackStage);
+        Assert.AreEqual(after, Stage(result.State.Slots[actor].Body!,id));
         if (stage == 12)
         {
             Assert.IsInstanceOfType<SourceStatAtMaximumEvent>(outcome);
             var cap = (SourceStatAtMaximumEvent)outcome;
-            Assert.AreEqual(actor, cap.Actor.Value); Assert.AreEqual(actor, cap.Target.Value); Assert.AreEqual(WildBattleStat.Attack, cap.Stat);
+            Assert.AreEqual(actor, cap.Actor.Value); Assert.AreEqual(actor, cap.Target.Value); Assert.AreEqual(Stat(id), cap.Stat);
         }
         else
         {
             Assert.IsInstanceOfType<SourceStatChangedEvent>(outcome);
             var stat = (SourceStatChangedEvent)outcome;
-            Assert.AreEqual(actor, stat.Actor.Value); Assert.AreEqual(actor, stat.Target.Value); Assert.AreEqual(WildBattleStat.Attack, stat.Stat);
+            Assert.AreEqual(actor, stat.Actor.Value); Assert.AreEqual(actor, stat.Target.Value); Assert.AreEqual(Stat(id), stat.Stat);
             Assert.AreEqual(stage, stat.Before); Assert.AreEqual(after, stat.After);
         }
         Assert.AreEqual(0, events.OfType<SourceMoveFailedEvent>().Count());
@@ -205,12 +209,13 @@ public sealed class SelfAttackMoveAnimationDispatchTests
 
     [TestMethod]
     [DataRow(14, "EFFECT_ATTACK_UP_2")] [DataRow(159, "EFFECT_ATTACK_UP")]
+    [DataRow(96, "EFFECT_ATTACK_UP")] [DataRow(133, "EFFECT_SPECIAL_DEFENSE_UP_2")] [DataRow(336, "EFFECT_ATTACK_UP")]
     public void SourceDefinitionsAndGeneratedLabelsOwnDedicatedRootAvailability(int id, string effect)
     {
         var move = Mechanics.Catalog.Moves[Move(id)];
         Assert.AreEqual(id, move.SourceMoveId); Assert.AreEqual(effect, move.Effect);
-        Assert.AreEqual("TYPE_NORMAL", move.Type); Assert.AreEqual("MOVE_TARGET_USER", move.Target);
-        Assert.AreEqual(0, move.Power); Assert.AreEqual(0, move.Accuracy); Assert.AreEqual(30, move.Pp);
+        Assert.AreEqual(id is 96 or 133 ? "TYPE_PSYCHIC" : "TYPE_NORMAL", move.Type); Assert.AreEqual("MOVE_TARGET_USER", move.Target);
+        Assert.AreEqual(0, move.Power); Assert.AreEqual(0, move.Accuracy); Assert.AreEqual(id is 96 or 336?40:id==133?20:30, move.Pp);
         Assert.AreEqual(0, move.SecondaryEffectChance); Assert.AreEqual(0, move.Priority);
         CollectionAssert.AreEqual(new[] { "FLAG_SNATCH_AFFECTED" }, move.Flags.ToArray());
         Assert.IsTrue(SourceMoveDefinitionRules.IsValid(move));
@@ -221,6 +226,9 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     [TestMethod]
     [DataRow(14, 0)] [DataRow(14, 6)] [DataRow(14, 10)] [DataRow(14, 11)] [DataRow(14, 12)]
     [DataRow(159, 0)] [DataRow(159, 6)] [DataRow(159, 11)] [DataRow(159, 12)]
+    [DataRow(96, 0)] [DataRow(96, 6)] [DataRow(96, 11)] [DataRow(96, 12)]
+    [DataRow(133, 0)] [DataRow(133, 6)] [DataRow(133, 10)] [DataRow(133, 11)] [DataRow(133, 12)]
+    [DataRow(336, 0)] [DataRow(336, 6)] [DataRow(336, 11)] [DataRow(336, 12)]
     public void NaturalLearnersOwnFullClampedAndCappedResultsAcrossEveryActorPosition(int id, int stage)
     {
         foreach (bool single in new[] { false, true })
@@ -233,7 +241,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
     public void FinalPpStillBelongsToActorAndCappedAttemptStillSpendsIt(int id)
     {
         foreach (bool single in new[] { false, true })
@@ -244,6 +252,36 @@ public sealed class SelfAttackMoveAnimationDispatchTests
             AssertReceipts(result, id, actor, stage);
             Assert.AreEqual(0, result.State.Slots[actor].Body!.Pokemon.Moves[0].CurrentPp);
             AssertProjection(result, id, actor, stage, single);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
+    public void UserTargetMovesNormalizeAnySelectedLiveSlotToTheActor(int id)
+    {
+        foreach(bool single in new[]{false,true})
+        for(int actor=0;actor<(single?2:4);actor++)
+        for(int selected=0;selected<(single?2:4);selected++)
+        {
+            var frame=Frame(Bodies(id,actor),single);
+            if(selected!=actor)
+            {
+                var direct=SourceBattleKernel.ResolveAction(Mechanics.Catalog,frame,
+                    new(frame.Slots[actor].Occupant!.Value,frame.Revision,0,new(selected)));
+                Assert.IsFalse(direct.Succeeded);Assert.AreEqual("source_kernel_target_mode",direct.Fault);
+            }
+            var choices=frame.Slots.Take(frame.BattlerCount).Select(c=>new SourceActionSelection(c.Occupant!.Value,
+                SourceActionKind.Move,0,new(c.Slot.Value==actor?selected:c.Slot.Value))).ToImmutableArray();
+            var ordered=SourceFourActionTurns.BeginActions(Mechanics.Catalog,frame,frame.Revision,choices);
+            for(int step=0;step<12&&!ordered.Events.OfType<SourceMoveUsedEvent>().Any(e=>e.Actor.Value==actor&&e.Move==Move(id));step++)
+            {
+                Assert.IsTrue(ordered.Succeeded,ordered.Fault);Assert.IsNotNull(ordered.Continuation);
+                ordered=SourceFourActionTurns.Advance(Mechanics.Catalog,ordered.State,ordered.Continuation.Value);
+            }
+            Assert.IsTrue(ordered.Succeeded,ordered.Fault);
+            Assert.IsTrue(ordered.Events.OfType<SourceMoveUsedEvent>().Any(e=>e.Actor.Value==actor&&e.Move==Move(id)));
+            var result=new SourceKernelResult(ordered.State,ordered.Events,ordered.Trace,null,ordered.Fault);
+            AssertReceipts(result,id,actor,6);AssertProjection(result,id,actor,6,single);
         }
     }
 
@@ -270,7 +308,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
     public void ForeignOwnersInvalidStagesAndInterruptedReceiptsCannotBorrowRootOrWave(int id)
     {
         var events = Resolve(Frame(Bodies(id, 0), false), 0).Events;
@@ -302,7 +340,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
             ("foreign stat turn", events.SetItem(si, stat with { Turn = stat.Turn + 1 })),
             ("wrong stat", events.SetItem(si, stat with { Stat = WildBattleStat.Defense })),
             ("unchanged stat", events.SetItem(si, stat with { After = stat.Before })),
-            ("wrong requested magnitude", events.SetItem(si, stat with { After = stat.Before + (id == 14 ? 1 : 2) })),
+            ("wrong requested magnitude", events.SetItem(si, stat with { After = stat.Before + (Increase(id) == 2 ? 1 : 2) })),
             ("out of range before", events.SetItem(si, stat with { Before = -1, After = Increase(id) - 1 })),
             ("out of range after", events.SetItem(si, stat with { Before = 12, After = 13 })),
             ("stat before PP", events.SetItem(si, stat with { Sequence = pp.Sequence })),
@@ -321,7 +359,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
     public void MissingOrMutatedDefinitionCannotAuthorizeDedicatedOrGeneralAnimation(int id)
     {
         var events = Resolve(Frame(Bodies(id, 0), false), 0).Events;
@@ -342,7 +380,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
     public void MissingRendererSuppressesRootWithoutSuppressingCommittedGeneralWave(int id)
     {
         foreach (bool single in new[] { false, true })
@@ -360,12 +398,12 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    public void NaturalMeditateSharesAttackUpSemanticsWithoutAdmittingAnUnpublishedDedicatedRoot()
+    public void NaturalMeditateSharesAttackUpSemanticsWithItsOwnPublishedRoot()
     {
         var meditate = Mechanics.Catalog.Moves[Move(96)];
         Assert.AreEqual(96, meditate.SourceMoveId); Assert.AreEqual("EFFECT_ATTACK_UP", meditate.Effect);
         Assert.AreEqual("TYPE_PSYCHIC", meditate.Type); Assert.AreEqual(40, meditate.Pp);
-        Assert.IsFalse(AnimationDispatchFixture.Supports(96, Move(96).Value), "This family publishes only Swords Dance and Sharpen.");
+        Assert.IsTrue(AnimationDispatchFixture.Supports(96, Move(96).Value), "Meditate requires its own published source root.");
         Assert.IsFalse(AnimationDispatchFixture.Supports(159, Move(96).Value), "Shared effect metadata cannot borrow Sharpen's root label.");
         foreach (bool single in new[] { false, true })
         for (int actor = 0; actor < (single ? 2 : 4); actor++)
@@ -373,7 +411,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
         {
             var result = Resolve(Frame(Bodies(96, actor, stage), single), actor);
             AssertReceipts(result, 96, actor, stage);
-            AssertProjection(result, 96, actor, stage, single, rootAvailable: false);
+            AssertProjection(result, 96, actor, stage, single);
         }
     }
 }

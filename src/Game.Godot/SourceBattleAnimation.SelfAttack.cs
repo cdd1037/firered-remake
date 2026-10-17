@@ -5,6 +5,7 @@ public sealed partial class SourceBattleAnimation
     private const string SwordTemplate="gSwordsDanceBladeSpriteTemplate",SharpenTemplate="gSharpenSphereSpriteTemplate";
     private bool ValidateSelfAttackOperand(SourceAnimationCommand command)
     {
+        if(ValidateQuestionMarkOperand(command))return true;
         var a=command.Args;if(command.Op!="createsprite"||a.FirstOrDefault() is not (SwordTemplate or SharpenTemplate))return false;
         bool sword=a[0]==SwordTemplate;
         if(a.Length!=(sword?5:3)||Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127||a.Skip(3).Any(v=>Number(v) is <short.MinValue or >short.MaxValue)||!_script.SpriteRecipes.ContainsKey(a[0]))Fail(command,"Self Attack sprite operands or source recipe differ.");
@@ -26,6 +27,11 @@ public sealed partial class SourceBattleAnimation
     }
     private bool TryCreateSelfAttackSprite(SourceAnimationCommand command,int slot,int priority)
     {
+        if(command.Args[0]==QuestionMarkTemplate)
+        {
+            if(!_loaded.Contains("ANIM_TAG_AMNESIA"))Fail(command,"Amnesia graphics have not been loaded.");
+            _sprites.Add(new QuestionMark(slot,priority,_script.SpriteRecipes[QuestionMarkTemplate],this));return true;
+        }
         if(command.Args[0] is not (SwordTemplate or SharpenTemplate))return false;
         bool sword=command.Args[0]==SwordTemplate;
         if(!_loaded.Contains(sword?"ANIM_TAG_SWORD":"ANIM_TAG_SPHERE_TO_CUBE"))Fail(command,"Self Attack graphics have not been loaded.");

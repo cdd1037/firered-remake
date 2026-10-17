@@ -6,6 +6,16 @@ namespace Game.Presentation.BattleAnimations;
 public sealed class SourceVisualRandom(uint seed)
 {
     private uint _state=seed;
+    // Explicit safe selection policy for source callbacks with invalid table
+    // choices. Rejection keeps every admitted choice exactly equiprobable.
+    // This is presentation policy, not the source Random() arithmetic below.
+    public int NextBounded(int exclusiveMaximum)
+    {
+        if(exclusiveMaximum is <1 or >65536)throw new ArgumentOutOfRangeException(nameof(exclusiveMaximum));
+        int limit=65536-65536%exclusiveMaximum,value;
+        do{value=Next();}while(value>=limit);
+        return value%exclusiveMaximum;
+    }
     public ushort Next()
     {
         _state=unchecked(_state*1103515245u+24691u);
@@ -40,6 +50,11 @@ public sealed partial class SourceBattleAnimation
     private void RequireVisualSeed(SourceAnimationCommand command)
     {
         if(_validatingInvokedProgram&&_cue.VisualSeed is null)Fail(command,"Source visual randomness requires an explicit presentation seed.");
+    }
+    private int NextVisualChoice(int count)
+    {
+        if(_cue.VisualSeed is not {} seed)throw new InvalidOperationException("Visual RNG callback lacks its validated presentation seed.");
+        return (_visualRandom??=new SourceVisualRandom(seed)).NextBounded(count);
     }
     private ushort NextVisualRandom()
     {

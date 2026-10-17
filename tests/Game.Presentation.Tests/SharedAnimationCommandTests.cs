@@ -14,6 +14,13 @@ public sealed class SharedAnimationCommandTests
         public void StopAnimationEffects(){Stops++;IsPlaying=false;}
     }
     private static AnimationBattler[] Battlers()=>Enumerable.Range(0,4).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
+    [TestMethod][DataRow("RGB_YELLOW")][DataRow("RGB(31, 31, 0)")]
+    public void NamedAndExplicitYellowUseTheSourceRgb555Value(string color)
+    {
+        var script=new SourceAnimationScript(0,"yellow",[new("createvisualtask",["AnimTask_BlendMonInAndOut","3","0",color,"3","2","2"],1),new("waitforvisualfinish",[],2),new("end",[],3)]);
+        var runtime=new SourceBattleAnimation(script,new("yellow",1,0,new(0),new(1)),Battlers(),true,new Audio());
+        runtime.Tick();var frame=runtime.Tick();Assert.AreEqual((ushort)1023,frame.PaletteBlends.Single().Color);
+    }
     [TestMethod]
     public void PaletteFadeCompletesBeforeTaskCallbacksInSourceMainLoop()
     {

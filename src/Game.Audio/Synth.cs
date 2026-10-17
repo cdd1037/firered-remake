@@ -38,6 +38,7 @@ public sealed partial class Synth
     sbyte[]? charmanderSamples;
     readonly NormalCryCatalog? cryCatalog;
     readonly Dictionary<uint, sbyte[]> catalogSamples = new();
+    readonly HashSet<uint> validatedReverseWaves = new();
     public int PreparedCryCount => catalogSamples.Count;
     public int PreparedCryBytes => catalogSamples.Values.Sum(samples => samples.Length);
     int duckFrames;
@@ -83,6 +84,7 @@ public sealed partial class Synth
             charmanderSamples = charmanderSamples
         };
         foreach (var (wave, samples) in catalogSamples) fresh.catalogSamples.Add(wave, samples);
+        foreach (uint wave in validatedReverseWaves) fresh.validatedReverseWaves.Add(wave);
         return fresh;
     }
 
@@ -240,6 +242,29 @@ public sealed partial class Synth
         StartCry(species, song, sequence, duckBgm);
     }
 
+    public void StartAnimationCry(int species, int mode, int pan = 0, bool duckBgm = true)
+    {
+        if (cryCatalog is null) throw new NotSupportedException("Animation cry requires a normal cry catalog");
+        var (song, sequence) = SourceAnimationCryPreset.Build(Resources, cryCatalog, species, mode, pan);
+        if (SourceAnimationCryPreset.UsesReverse(mode)) PrepareAnimationCry(species);
+        StartCry(species, song, sequence, duckBgm);
+    }
+
+    // This is composition/preparation work. A reverse voice shares the same
+    // immutable decoded sample array; only its source table and traversal differ.
+    public void PrepareAnimationCry(int species)
+    {
+        if (cryCatalog is null) throw new NotSupportedException("Animation cry requires a normal cry catalog");
+        var entry = cryCatalog.Get(species);
+        PrepareCatalogCry(entry);
+        var normal = ReadInstrument(entry.ToneAddress);
+        if (validatedReverseWaves.Contains(normal.Data)) return;
+        var reverse = ReadInstrument(entry.ReverseToneAddress);
+        if (reverse != (normal with { Type = 0x30 }))
+            throw new InvalidDataException("Reverse cry tone differs from the original wave and envelope");
+        validatedReverseWaves.Add(normal.Data);
+    }
+
     private void StartCry(int species, Song song, byte[] sequence, bool duckBgm)
     {
         PrepareNormalCry(species);
@@ -371,7 +396,7 @@ public sealed partial class Synth
             {
                 Release = track.ReleaseOverride
             };
-        if (i.Type is not (0 or 8 or 1 or 2 or 3 or 4 or 9 or 10 or 11 or 12 or 0x20))
+        if (i.Type is not (0 or 8 or 1 or 2 or 3 or 4 or 9 or 10 or 11 or 12 or 0x20 or 0x30))
             throw new NotSupportedException($"Unsupported instrument flags {i.Type:X2}");
         int kind = i.Type & 7;
         if (kind is < 0 or > 4)
@@ -386,6 +411,8 @@ public sealed partial class Synth
         if (kind == 0)
         {
             bool compressed = (i.Type & 0x20) != 0;
+            if ((i.Type & 0x10) != 0 && !validatedReverseWaves.Contains(i.Data))
+                throw new NotSupportedException("Reverse PCM requires a prepared source cry tone");
             if (compressed)
             {
                 if (catalogSamples.TryGetValue(i.Data, out var cached))
@@ -403,6 +430,8 @@ public sealed partial class Synth
             sampleLength = checked((int)Resources.U32(i.Data + 12));
             loopStart = checked((int)Resources.U32(i.Data + 8));
             looping = (Resources.U16(i.Data + 2) & 0x4000) != 0;
+            if ((i.Type & 0x10) != 0 && looping)
+                throw new NotSupportedException("Looping reverse PCM is not supported");
             sampleAddress = i.Data + 16;
             if (decoded == null)
                 Resources.Offset(sampleAddress, sampleLength);
@@ -788,7 +817,18 @@ public sealed partial class Synth
                 BeginPseudoEcho(v);
         }
     }
-    double ReadSample(Voice voice, int index) => voice.DecodedSamples is { } decoded ? decoded[index] : Resources.I8(voice.Samples + (uint)index);
+    internal double ReadSample(Voice voice, int index)
+    {
+        if ((voice.Instrument!.Type & 0x10) != 0)
+        {
+            // Original reverse DPCM traversal starts at N-1, excluding the forward
+            // interpolation guard. Approved safe boundary policy holds sample 0
+            // for terminal lookahead instead of reproducing the ARM wrapped read.
+            // Every in-range source sample is unchanged; no reversed copy exists.
+            return voice.DecodedSamples![Math.Max(0, voice.Length - 1 - index)];
+        }
+        return voice.DecodedSamples is { } decoded ? decoded[index] : Resources.I8(voice.Samples + (uint)index);
+    }
 
     // Original asset-table pitch mapping differs slightly from continuous equal temperament.
     // Integer Hz is musically close but prevents cumulative phase drift in long source comparisons.

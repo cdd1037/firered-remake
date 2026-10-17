@@ -64,23 +64,71 @@ public static class SourceEncounterCry
     public const int Mode = 2;
     public const int Length = 140, Release = 225, Pitch = 15600, Chorus = 20, Volume = 90;
 
-    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog, int species)
+    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog, int species) =>
+        SourceCrySequence.Build(resources, catalog.Get(species).ToneAddress, Length, Release, Pitch, Chorus, Volume, 0);
+}
+
+// pret sound.c CRY_MODE_HIGH_PITCH, used by Howl.
+public static class SourceHighPitchCry
+{
+    public const int Mode = 3;
+    public const int Length = 50, Release = 200, Pitch = 15800, Chorus = 20, Volume = 90;
+
+
+}
+
+// Only the source modes used by Howl, Growl and Hyper Voice are admitted.
+// Reverse modes select the original alternate tone table, not another sample.
+public static class SourceAnimationCryPreset
+{
+    public const int EchoStart = 4, EchoEnd = 6, Growl1 = 9, Growl2 = 10;
+    public static bool IsSupported(int mode) => mode is SourceHighPitchCry.Mode or EchoStart or EchoEnd or Growl1 or Growl2;
+    public static bool UsesReverse(int mode)
     {
-        uint tone = catalog.Get(species).ToneAddress;
+        if (!IsSupported(mode)) throw new NotSupportedException("Unsupported animation cry mode");
+        return mode is EchoStart or Growl1;
+    }
+    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog, int species, int mode, int pan = 0)
+    {
+        if (pan is < -128 or > 127) throw new ArgumentOutOfRangeException(nameof(pan));
+        bool reverse = UsesReverse(mode);
+        var entry = catalog.Get(species);
+        var parameters = mode switch
+        {
+            SourceHighPitchCry.Mode => (Length: SourceHighPitchCry.Length, Release: SourceHighPitchCry.Release,
+                Pitch: SourceHighPitchCry.Pitch, Chorus: SourceHighPitchCry.Chorus, Volume: SourceHighPitchCry.Volume),
+            EchoStart => (Length: 25, Release: 100, Pitch: 15600, Chorus: 192, Volume: 90),
+            EchoEnd => (Length: 140, Release: 220, Pitch: 15555, Chorus: 192, Volume: 90),
+            Growl1 => (Length: 15, Release: 125, Pitch: 15200, Chorus: 0, Volume: 120),
+            Growl2 => (Length: 100, Release: 225, Pitch: 15200, Chorus: 0, Volume: 120),
+            _ => throw new NotSupportedException("Unsupported animation cry mode")
+        };
+        return SourceCrySequence.Build(resources, reverse ? entry.ReverseToneAddress : entry.ToneAddress,
+            parameters.Length, parameters.Release, parameters.Pitch, parameters.Chorus, parameters.Volume, pan);
+    }
+}
+
+// Shared m4a SetPokemonCry* field encoding for verified source presets.
+internal static class SourceCrySequence
+{
+    internal static (Song Song, byte[] Sequence) Build(Resources resources, uint tone,
+        int length, int release, int pitch, int chorus, int volume, int pan)
+    {
         var (_, bytes) = NormalCharmanderCry.BuildForTone(resources, tone);
-        // m4a.c SetPokemonCryPitch adds 0x80, then writes key and fine tune;
-        // SetPokemonCryChorus enables part1 and offsets that track's fine tune.
-        int pitch = Pitch + 0x80;
-        bytes[0] = 2;
+        int adjustedPitch = pitch + 0x80;
+        int previousChorus = bytes[0x19] - bytes[0x12];
+        bytes[0] = (byte)(chorus == 0 ? 1 : 2);
         BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(0x0c), NormalCharmanderCry.SequenceBase + 0x18);
-        bytes[0x12] = (byte)((pitch >> 1) & 0x7f);
-        bytes[0x19] = (byte)((bytes[0x12] + Chorus) & 0x7f);
-        bytes[0x1d] = Volume;
-        bytes[0x26] = Release;
-        bytes[0x2a] = (byte)((pitch >> 8) & 0x7f);
-        BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(0x2e), Length);
-        return (new Song(NormalCharmanderCry.SequenceBase, 10, tone,
-            new[] { NormalCharmanderCry.SequenceBase + 0x11, NormalCharmanderCry.SequenceBase + 0x18 }), bytes);
+        bytes[0x12] = (byte)((adjustedPitch >> 1) & 0x7f);
+        bytes[0x19] = (byte)((bytes[0x12] + (chorus == 0 ? previousChorus : chorus)) & 0x7f);
+        bytes[0x1d] = (byte)(volume & 0x7f);
+        bytes[0x26] = (byte)release;
+        bytes[0x28] = (byte)((pan + 64) & 0x7f);
+        bytes[0x2a] = (byte)((adjustedPitch >> 8) & 0x7f);
+        BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(0x2e), (ushort)length);
+        uint[] tracks = chorus == 0 ? new[] { NormalCharmanderCry.SequenceBase + 0x11 } :
+            new[] { NormalCharmanderCry.SequenceBase + 0x11, NormalCharmanderCry.SequenceBase + 0x18 };
+        return (new Song(NormalCharmanderCry.SequenceBase, 10, tone, tracks), bytes);
     }
 }
 

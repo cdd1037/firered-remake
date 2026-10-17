@@ -148,7 +148,7 @@ public sealed partial class SourceBattleAnimation
         private readonly SourceSpriteRecipe _recipe;private readonly SourceSpriteFrameProgram _frames;
         private PixelPoint _position;private PixelPoint _offset;private PhysicalLinear? _linear;
         private bool _animationEnded,_hidden;private readonly SourceSpriteAffineProgram? _affine;
-        private SourceFastLinear? _fast;
+        private SourceFastLinear? _fast;private HorizontalArc? _arc;
         private int _waveStep,_tileOffset,_blink,_blinkDelay;
         private int _remaining,_angle,_amplitudeChange,_fx,_fy,_vx,_vy,_phase,_amplitude,_state;
         public ElementalSprite(int slot,int priority,SourceSpriteRecipe recipe,AnimationSlot createdAt,int[] a,SourceBattleAnimation owner):base(slot,priority)
@@ -231,7 +231,7 @@ public sealed partial class SourceBattleAnimation
                     center=owner.AverageElementalTarget(true);_position=new(center.X+(actor.Slot.IsPlayer?a[0]:-a[0]),center.Y+a[1]);_linear=new(a[2],a[4],a[4]);break;
                 case "AnimAcidPoisonBubble":
                     center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);var acidEnd=owner.AverageElementalTarget(true);
-                    _linear=new(acidEnd.X+(actor.Slot.IsPlayer?a[4]:-a[4])-_position.X,acidEnd.Y+a[5]-_position.Y,a[2]);_amplitude=-30;_waveStep=32768/a[2];break;
+                    _arc=new(acidEnd.X+(actor.Slot.IsPlayer?a[4]:-a[4])-_position.X,acidEnd.Y+a[5]-_position.Y,a[2],-30);break;
                 case "AnimAirWaveCrescent":
                     if(!actor.Slot.IsPlayer)for(int i=0;i<4;i++)owner._animationArgs[i]=unchecked((short)-owner._animationArgs[i]);
                     var airStart=actor.Center(owner._doubles,true);var airEnd=a[6]==0?center:owner.AverageElementalTarget(true);
@@ -246,12 +246,12 @@ public sealed partial class SourceBattleAnimation
                     center=target.Center(owner._doubles,true);int needleSign=target.Slot.IsPlayer?-1:1;_position=new(center.X+needleSign*a[0],center.Y+needleSign*a[1]);_linear=new(-needleSign*a[0],-needleSign*a[1],a[2]);break;
                 case "AnimAbsorptionOrb":
                     _position=new(center.X+direction*a[0],center.Y+a[1]);var absorbEnd=actor.Center(owner._doubles,true);
-                    _linear=new(absorbEnd.X-_position.X,absorbEnd.Y-_position.Y,a[3]);_amplitude=a[2];_waveStep=32768/a[3];break;
+                    _arc=new(absorbEnd.X-_position.X,absorbEnd.Y-_position.Y,a[3],a[2]);break;
                 case "AnimPowerAbsorptionOrb":
                     center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);_linear=new(-direction*a[0],-a[1],a[2]);break;
                 case "AnimThrowProjectile":
                     center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);var arcEnd=target.Center(owner._doubles,true);
-                    _linear=new(arcEnd.X+(actor.Slot.IsPlayer?a[2]:-a[2])-_position.X,arcEnd.Y+a[3]-_position.Y,a[4]);_amplitude=a[5];_waveStep=32768/a[4];break;
+                    _arc=new(arcEnd.X+(actor.Slot.IsPlayer?a[2]:-a[2])-_position.X,arcEnd.Y+a[3]-_position.Y,a[4],a[5]);break;
                 case "AnimIcePunchSwirlingParticle":case "AnimFireSpiralInward":_angle=a[0];_remaining=30;MoveSpiral(owner);break;
                 case "AnimFireSpread":_position=new(center.X+direction*a[0],center.Y+a[1]);_remaining=a[4];_vx=a[2];_vy=a[3];break;
                 case "AnimMoveParticleBeyondTarget":
@@ -388,8 +388,8 @@ public sealed partial class SourceBattleAnimation
                 case "AnimZapCannonSpark":MoveSpark(owner,true);break;
                 case "AnimSparkElectricityFlashing":MoveSpark(owner,false);break;
                 case "AnimAcidPoisonBubble":case "AnimAbsorptionOrb":case "AnimThrowProjectile":
-                    if(_linear!.Step(out var arc)){Finished=true;break;}
-                    _angle=(short)(_angle+_waveStep);_offset=new(arc.X,arc.Y+((owner._script.SineTable[(_angle>>8)&255]*_amplitude)>>8));break;
+                    if(_arc!.Step(owner._script.SineTable,out var arc)){Finished=true;break;}
+                    _offset=arc;break;
                 default:if(_linear!.Step(out var offset))_state=2;else _offset=offset;break;
             }
             if(Finished)return;

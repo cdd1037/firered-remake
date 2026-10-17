@@ -4,6 +4,7 @@ namespace FireRedAudio;
 public readonly record struct NormalCryEntry(int Species, int CryIndex, int SampleCount, int PayloadBytes, bool GuardStored)
 {
     public uint ToneAddress => 0x0848c914 + (uint)CryIndex * 12;
+    public uint ReverseToneAddress => 0x0848db44 + (uint)CryIndex * 12;
 }
 
 // Cry metadata uses a versioned header followed by fixed-size sample records.

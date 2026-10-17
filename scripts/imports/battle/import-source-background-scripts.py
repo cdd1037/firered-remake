@@ -64,7 +64,7 @@ def build(reference):
  tasks=elemental.TASKS|physical.TASKS|{'AnimTask_SetPsychicBackground','AnimTask_StartSlidingBg','AnimTask_ShakeTargetInPattern','AnimTask_BlendNonAttackerPalettes','SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning','AnimTask_GetAttackerSide'}
  sounds=elemental.SOUNDS|{'SE_M_LEER','SE_M_VITAL_THROW','SE_M_COSMIC_POWER','SE_M_JUMP_KICK','SE_M_RAZOR_WIND','SE_M_BLIZZARD','SE_M_BLIZZARD2'}
  gfx=elemental.GFX|{'ANIM_TAG_FANG_ATTACK','ANIM_TAG_IMPACT','ANIM_TAG_AIR_WAVE_2'}
- scripts=[];subs={};symbols={}
+ scripts=[];subs={};symbols={};task_affine_programs={}
  for name in re.findall(r'^Move_(\w+):\n',source,re.M):
   if name not in ids:continue
   try:
@@ -78,10 +78,17 @@ def build(reference):
   if any(c['op']=='createsoundtask' and (c['args'][0]!='SoundTask_LoopSEAdjustPanning' or c['args'][1] not in sounds) for c in flat):continue
   row=dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=elemental.sound_effects(reference,flat),spriteTags={n:tags[n] for n in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})})
   if root_labels:row['labels']=root_labels
+  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_MeditateStretchAttacker' for c in flat):
+   program_name='sAffineAnim_MeditateStretchAttacker'
+   psychic=elemental.read(reference,'src/battle_anim_psychic.c').decode()
+   init=re.search(r'void AnimTask_MeditateStretchAttacker\(u8 taskId\)\s*\{(.*?)^\}',psychic,re.S|re.M)
+   step=re.search(r'static void AnimTask_MeditateStretchAttacker_Step\(u8 taskId\)\s*\{(.*?)^\}',psychic,re.S|re.M)
+   if init is None or step is None or 'PrepareAffineAnimInTaskData(task, spriteId, '+program_name+');' not in init[1] or re.sub(r'\s+','',step[1])!='if(!RunAffineAnimFromTaskData(&gTasks[taskId]))DestroyAnimVisualTask(taskId);':raise ValueError('Meditate task affine handoff differs')
+   task_affine_programs[program_name]=physical.task_affine_program(psychic,program_name)
   scripts.append(row);subs.update(local)
   symbols.update({c['args'][0]:backgrounds[c['args'][0]] for c in flat if c['op']=='fadetobg'})
  if not scripts:raise ValueError('No complete background script dependencies')
- return (json.dumps(dict(schemaVersion=1,scripts=sorted(scripts,key=lambda r:r['moveId']),subroutines=subs,backgroundSymbols=symbols),indent=2)+'\n').encode()
+ return (json.dumps(dict(schemaVersion=1,scripts=sorted(scripts,key=lambda r:r['moveId']),subroutines=subs,backgroundSymbols=symbols,**(dict(taskAffinePrograms=task_affine_programs) if task_affine_programs else {})),indent=2)+'\n').encode()
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();data=build(a.reference)
  if a.check:

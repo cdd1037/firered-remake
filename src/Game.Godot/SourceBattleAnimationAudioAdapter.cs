@@ -3,9 +3,25 @@ using Game.Presentation.BattleAnimations;
 /// <summary>Exact script sound ID/frame/pan through the existing original Synth.
 /// Pan is the signed external m4a panX, applied only to this animation's SE token.</summary>
 public sealed class SourceBattleAnimationAudioAdapter(SynthSourceAudioPlayer backend,
-    Action<SourceAnimationSound>? controlObserver=null):ISourceAnimationAudio
+    Action<SourceAnimationSound>? controlObserver=null, Action<SourceAnimationCry>? cryObserver=null):ISourceAnimationAudio
 {
     private readonly HashSet<long> _ownedTokens=[];
+    private long _ownedCryToken;
+    public bool SupportsCries=>backend.SupportsBattleAnimationCries;
+    // Source tasks wait on the global cry state, including a subsequent owner.
+    public bool IsCryPlaying=>backend.IsBattleAnimationCryPlaying;
+    public void PlayCry(SourceAnimationCry cue)
+    {
+        long token=backend.PlayBattleAnimationCry(cue.Species,cue.Mode,cue.Pan);
+        if(token==0)throw new InvalidOperationException("Source animation cry was not admitted");
+        _ownedCryToken=token;
+        cryObserver?.Invoke(cue);
+    }
+    public void StopAnimationCries()
+    {
+        if(_ownedCryToken>0)backend.CancelCry(_ownedCryToken);
+        _ownedCryToken=0;
+    }
     public bool PanningImplemented=>true;
     public bool IsPlaying=>backend.Snapshot().Effects.Any(x=>x.Playing&&_ownedTokens.Contains(x.Token));
     public void Play(SourceAnimationSound cue)

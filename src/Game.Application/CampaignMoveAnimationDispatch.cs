@@ -15,6 +15,26 @@ public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch
 
 public static partial class CampaignMoveAnimationPresentation
 {
+    // Launch snapshots are taken at the authenticated PP command, before later
+    // outcome/charge receipts. Reuse the same charge replay as general effects.
+    public static bool[]? SpriteVisibilityAtInvocation(IReadOnlyList<SourceBattleEvent> events,
+        CampaignMoveAnimationDispatch dispatch,IReadOnlyList<MoveId?> entryChargeMoves)
+    {
+        int index=-1;
+        for(int i=0;i<events.Count;i++)if(events[i].Sequence==dispatch.PpSequence)
+        {if(index>=0)return null;index=i;}
+        if(index<0||events[index] is not SourcePpCommandEvent pp||pp.Actor!=dispatch.Actor||
+            entryChargeMoves.Count is not (2 or 4))return null;
+        var visibility=new bool[entryChargeMoves.Count];
+        for(int slot=0;slot<visibility.Length;slot++)
+        {
+            var visible=CampaignHeldItemAnimationPresentation.SpriteVisibleAtResult(events,index,new(slot),entryChargeMoves);
+            if(visible is null)return null;
+            visibility[slot]=visible.Value;
+        }
+        return visibility;
+    }
+
     // Primary stat scripts share source effect semantics; numeric identity comes
     // only from the supplied content definition, not another move-name table.
     internal static (WildBattleStat Stat,int Delta)? ReductionAnimation(PokemonMoveDefinition move) => move.Effect switch
@@ -24,6 +44,7 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_DEFENSE_DOWN_2" => (WildBattleStat.Defense,-2),
         "EFFECT_SPEED_DOWN" => (WildBattleStat.Speed,-1),
         "EFFECT_SPEED_DOWN_2" => (WildBattleStat.Speed,-2),
+        "EFFECT_ATTACK_DOWN" => (WildBattleStat.Attack,-1),
         "EFFECT_ATTACK_DOWN_2" => (WildBattleStat.Attack,-2),
         "EFFECT_SPECIAL_DEFENSE_DOWN_2" => (WildBattleStat.SpecialDefense,-2),
         _ => null
@@ -37,6 +58,7 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_MINIMIZE" or "EFFECT_EVASION_UP" => (WildBattleStat.Evasion,1),
         "EFFECT_DEFENSE_CURL" or "EFFECT_DEFENSE_UP" => (WildBattleStat.Defense,1),
         "EFFECT_DEFENSE_UP_2" => (WildBattleStat.Defense,2),
+        "EFFECT_SPECIAL_DEFENSE_UP_2" => (WildBattleStat.SpecialDefense,2),
         _ => null
     };
     private static string? FieldSettingAnimation(int move)=>move switch{54=>"mist",113=>"light-screen",115=>"reflect",258=>"hail",_=>null};

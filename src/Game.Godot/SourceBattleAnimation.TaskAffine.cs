@@ -92,6 +92,7 @@ public sealed partial class SourceBattleAnimation
 {
     private static string? TaskAffineProgramName(string callback)=>callback switch
     {
+        "AnimTask_MeditateStretchAttacker"=>"sAffineAnim_MeditateStretchAttacker",
         "AnimTask_Splash"=>"sSplashEffectAffineAnimCmds",
         "AnimTask_GrowAndShrink"=>"sGrowAndShrinkAffineAnimCmds",
         "AnimTask_DefenseCurlDeformMon"=>"DefenseCurlDeformMonAffineAnimCmds",
@@ -141,7 +142,7 @@ public sealed partial class SourceBattleAnimation
         if(TaskAffineProgramName(c.Args[0]) is not {} programName)return false;
         bool splash=c.Args[0]=="AnimTask_Splash";
         if(splash&&Number(c.Args[3])==0)return true;
-        int participant=c.Args[0] is "AnimTask_GrowAndShrink" or "AnimTask_DefenseCurlDeformMon"?0:Number(c.Args[2]);
+        int participant=c.Args[0] is "AnimTask_GrowAndShrink" or "AnimTask_DefenseCurlDeformMon" or "AnimTask_MeditateStretchAttacker"?0:Number(c.Args[2]);
         if(ResolveShakeParticipant(participant,false) is not {} slot)return true;
         var commands=_script.TaskAffinePrograms[programName];
         _tasks.Add(c.Args[0] switch
