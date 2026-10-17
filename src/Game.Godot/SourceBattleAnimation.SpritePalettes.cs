@@ -5,6 +5,7 @@ public sealed partial class SourceBattleAnimation
     // The renderer owns the animation pool 4..15; battler palettes reserve 0..3.
     // One slot bank is authoritative. Tag views are derived, including duplicate-tag first-match semantics.
     private readonly int[] _spritePaletteTags=Enumerable.Repeat(65535,16).ToArray();
+    private readonly ushort[][] _spritePaletteUnfadedBanks=Enumerable.Range(0,16).Select(_=>new ushort[16]).ToArray();
     private readonly ushort[][] _spritePaletteBanks=Enumerable.Range(0,16).Select(_=>new ushort[16]).ToArray();
     private readonly Dictionary<int,SourceBattlerBackgroundCopy> _staticBackgroundCopies=[];
     private int FindSpritePalette(int tag){for(int i=4;i<16;i++)if(_spritePaletteTags[i]==tag)return i;return 255;}
@@ -24,14 +25,14 @@ public sealed partial class SourceBattleAnimation
     }
     private void FreeLoadedSpritePalettes()
     {foreach(string symbol in _loaded)if(_script.SpriteTags.TryGetValue(symbol,out int tag))FreeSpritePalette(tag);_loaded.Clear();}
-    private void ResetSpritePalettes(){Array.Fill(_spritePaletteTags,65535);foreach(var bank in _spritePaletteBanks)Array.Clear(bank);}
+    private void ResetSpritePalettes(){Array.Fill(_spritePaletteTags,65535);foreach(var bank in _spritePaletteBanks)Array.Clear(bank);foreach(var bank in _spritePaletteUnfadedBanks)Array.Clear(bank);}
     private void LoadSpriteGraphics(string symbol)
     {
         if(!_loaded.Add(symbol))return;
         if(!_script.SpriteTags.TryGetValue(symbol,out int tag))return;
         int slot=FindSpritePalette(tag);if(slot!=255)return;
         slot=AllocateSpritePalette(tag);if(slot==255)return;
-        if(_script.SpritePalettes.TryGetValue(tag,out var palette))WriteFadedSpritePalette(slot,0,palette);
+        if(_script.SpritePalettes.TryGetValue(tag,out var palette)){Array.Copy(palette,_spritePaletteUnfadedBanks[slot],16);WriteFadedSpritePalette(slot,0,palette);}
     }
     private void RotateSpritePalette(int tag,int first,int count)
     {

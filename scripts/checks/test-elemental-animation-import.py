@@ -82,7 +82,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -237,7 +237,7 @@ class ElementalImportTests(unittest.TestCase):
   self.assertEqual(8,len(r['animations']));self.assertEqual([(12,12),(-12,-12)],[(c['x'],c['y']) for c in r['affineAnimations'][0][:2]])
   self.assertTrue(all(a[0]['vFlip'] for a in r['animations'][6:]));self.assertEqual('AnimBellyDrumHand',recipes['gBellyDrumHandSpriteTemplate']['callback'])
  def test_music_indexed_tiles_and_palette_match_every_source_pixel(self):
-  data,blobs=imp.build(REFERENCE);rows=json.loads(data)['indexedAssets'];self.assertEqual(2,len(rows))
+  data,blobs=imp.build(REFERENCE);rows=[r for r in json.loads(data)['indexedAssets'] if r['id'] in {'music-notes','purple-hand-outline'}];self.assertEqual(2,len(rows))
   for row in rows:
    name=row['id'];image=Image.open(REFERENCE/('graphics/battle_anims/sprites/'+name.replace('-','_')+'.png'));indices=image.tobytes();pal=image.getpalette();packed=blobs[name+'.4bpp'];colors=struct.unpack('<16H',blobs[name+'.pal16'])
    self.assertEqual(tuple(image.size),(row['width'],row['height']))
@@ -250,4 +250,26 @@ class ElementalImportTests(unittest.TestCase):
    data=original(reference,path);return data.replace(b'gWavyMusicNotesSpriteTemplate,',b'gUnreviewedMusicSpriteTemplate,') if path=='data/battle_anim_scripts.s' else data
   with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
   ids={r['moveId'] for r in json.loads(data)['scripts']};self.assertFalse({47,320}&ids);self.assertIn(187,ids)
+ def test_conversion_roots_share_source_sheet_and_exact_pause_alpha_protocol(self):
+  data,blobs=imp.build(REFERENCE);pack=json.loads(data);rows={r['moveId']:r for r in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  for move,callback,tiles in [(160,'AnimConversion',[3,2,1,0]),(176,'AnimConversion2',[0,1,2,3])]:
+   row=rows[move];sprites=[c for c in row['commands'] if c['op']=='createsprite'];self.assertEqual(16,len(sprites));r=recipes[sprites[0]['args'][0]]
+   self.assertEqual((callback,8,8,True,True),(r['callback'],r['width'],r['height'],r['blend'],r['affineDoubleSize']));self.assertEqual(tiles,[f['tile'] for f in r['animations'][0]]);self.assertEqual(512,r['affineAnimations'][0][0]['x'])
+   self.assertIn('ANIM_TAG_CONVERSION',row['spriteTags']);self.assertEqual({'SE_M_SWIFT','SE_M_BARRIER'},set(row['soundEffects']))
+  self.assertEqual(list(range(60,136,5)),[int(c['args'][-1]) for c in rows[176]['commands'] if c['op']=='createsprite'])
+  self.assertEqual(128,len(blobs['conversion.4bpp']));self.assertEqual(32,len(blobs['conversion.pal16']))
+ def test_conversion_indexed_art_matches_original_source_every_pixel(self):
+  _,blobs=imp.build(REFERENCE)
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/conversion.png') as image:
+   self.assertEqual((8,32),image.size);indices=image.tobytes();palette=image.getpalette();packed=blobs['conversion.4bpp'];colors=struct.unpack('<16H',blobs['conversion.pal16'])
+  for address,index in enumerate(indices):
+   self.assertEqual(index,(packed[address//2]>>((address&1)*4))&15)
+   self.assertEqual(sum((palette[index*3+c]//8)<<(5*c) for c in range(3)),colors[index])
+ def test_conversion_missing_sprite_or_flash_task_excludes_incomplete_root(self):
+  original=imp.read
+  for before,after,excluded in [(b'gConversionSpriteTemplate,',b'gUnknownConversionSpriteTemplate,',{160}),(b'AnimTask_Conversion2AlphaBlend,',b'AnimTask_UnknownConversionBlend,',{176}),(b'AnimTask_FlashAnimTagWithColor,',b'AnimTask_UnknownFlash,',{160})]:
+   def read(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path=='data/battle_anim_scripts.s' else data
+   with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
+   self.assertFalse(excluded&{r['moveId'] for r in json.loads(data)['scripts']})
 if __name__=='__main__':unittest.main()

@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本166／354，其余188尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本169／354，其余185尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前166快照完整Presentation793／793通过，包含全部生成根逐帧合成；本次有界Application238／238通过。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709。这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
@@ -190,3 +190,19 @@ General_CastformChange复用现有四形态素材、唯一事件时点身体投�
 四个回调／命名根用例覆盖原C八组轨迹、隐藏／可见完整生命周期及缺少替代材料／非法模式拒绝；五个独立合成用例覆盖两BG等级、0／1／7／15大小、负坐标／边缘、透明采样、同伴不变和前后帧不可变。28个Application用例覆盖真实入口／天气／能力压制／切换、Transform身份、四位置、隐藏同伴、替身、重复游标及畸形回执。两条额外结果策略行验证Scene Off政策。专属范围仍166／354；General_Hail残留和Future Sight延迟命中未因此完成。
 
 验证：完整solution构建零警告／零错误72.82秒；有界刷新30.28秒。Application262／262通过（20秒），含上述28行和身体投影、持物／Wish可见性、Quest与box回归。首次六个新夹具失败来自重复reducer生成的ImmutableArray引用比较，改为完整字段结构比较，未改生产语义。首次完整Presentation785／802，17个旧重放序列化失败均为新增材料快照暴露AnimationSlot.Partner递归；将该派生导航标记JsonIgnore，保留全部真实slot／材料数据及独立断言。最终完整Presentation802／802通过（3.1863分钟，零警告／零错误）。维护general10、统一14生产器、布局28通过；八组原C任务轨迹与隐藏／立即探针逐字节复现。日志：/tmp/castform-transition-build.log、/tmp/castform-transition-refresh.log、/tmp/castform-transition-application-corrected.log、/tmp/castform-transition-presentation-corrected.log、/tmp/castform-transition-unified-check.log、/tmp/castform-transition-layout.log。无新Castform原生或真实音频验收；最新完整Application仍1562／1562，完整Battle仍1709／1709。
+
+
+## Double Kick and shared random fist/foot callback — 2026-10-17
+
+Double Kick24 adds one source root, bringing the generated unique-root inventory to167/354. AnimFistOrFootRandomPos uses the existing form-aware battler dimensions and animation-local RNG: four draws in X/Y/sign/sign order, with the source optional fifth frame-selection draw only for negative frame arguments. Its counted parent owns a raw dummy impact child in the single SpriteScene pool; child frame/affine Begin, slot ordering, sentinel allocation failure, duration-zero destruction and cancellation retain source semantics. Existing hands/feet and impact pixels are reused. Thrash shares the callback but is not admitted by this slice.
+
+The canonical catalog/resolver supplies script identity; existing EFFECT_DOUBLE_HIT metadata supplies committed per-hit dispatch. No move ID/support table or gameplay producer changed. Source52-case traces cover callback/player/OAM phases, and the maintained physical importer72/72 preserves all previous scripts/materials. Strict original-C UBSan reproduction is byte-identical. Managed gates passed Presentation94/94 (all167 roots resolved/composed, new10 cases and affected shared scene/RNG/registry/form coverage), Application488/488 (new12 actual-kernel cases and existing dispatch regressions), and layout28/28. Initial full solution compilation found only five MSTest analyzer naming warnings treated as errors; renaming misleading expected-value locals/parameters left assertions unchanged. Final Presentation/Application project refreshes passed with zero warnings/errors; all product projects compiled in the initial build. Evidence: `/tmp/animation167-{build,refresh,presentation,application,layout}.log`, `/tmp/double-kick-{import-check,source-vector-check,product-producer}.log`. No new native frame/audio acceptance is claimed.
+
+
+## Conversion pair and shared indexed OBJ fades — 2026-10-17
+
+Conversion160 and Conversion2 176 add two complete source roots, bringing the generated unique catalog to169/354. Both reuse one indexed conversion sheet, the existing frame/affine/linear players and global palette-fade scheduler. Source callback vectors preserve shared arg7 termination, delayed frame unpause, 30-update translation and the extra destroy-callback handoff. Alpha tasks and FlashAnimTagWithColor retain the source global-fade refusal/wait semantics. Indexed OBJ fades now write the existing faded slot banks from retained unfaded source banks; direct Music writes remain faded-only, free retains bytes, and scene-owned retired materials cannot be recolored by a later invocation. No second compositor tint or palette authority was introduced.
+
+One shared effect-based type-change receipt matcher normalizes singles/doubles and authenticates adjacent self-owned PP→overlay mutation with unchanged unrelated overlay fields. The canonical script catalog remains admission authority; no numeric support list was added. Presentation consumes the committed type and does not rerun Conversion selection or change the approved Conversion2 candidate policy. Legacy singles overlays have no Source field; canonical foreign-Source rejection is tested on doubles rather than inferred from the legacy schema.
+
+Full solution build passed with zero warnings/errors (75.17s). Presentation78/78 passed (48.64s), including all169-root composition, nine new callback/palette/scene cases and Music/indexed-palette regressions. Application523/523 passed (25.03s), including seven natural-kernel/receipt cases and existing move/Castform dispatch coverage. Maintained elemental importer36/36, all14 producers and layout28/28 passed. The original-C oracle reproduced1860 sprite rows,130 alpha rows and19 flash-request rows byte-for-byte. Logs: `/tmp/animation169-{build,presentation,application}.log`, `/tmp/conversion-product-{tests,unified,layout,check}.log`. No new native or real-speaker acceptance is claimed; raw/generated Pokémon materials remain in their existing private local resource paths.

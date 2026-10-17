@@ -11,6 +11,7 @@ public static partial class CampaignMoveAnimationPresentation
     {
         WildBattleAbilityPreventedEvent x => new SourceAbilityPreventedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.Ability),
         WildBattleAttackStringEvent x => new SourceAttackStringEvent(x.Sequence,x.Turn,new((int)x.Actor),x.ChosenMove,x.CurrentMove),
+        WildBattleCalledOverlayChangedEvent x => new SourceCalledOverlayChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Before,x.After),
         WildBattleCalledDelayedEvent x => new SourceCalledDelayedEvent(x.Sequence,x.Turn,new((int)x.Target),x.Move,x.Before,x.After,x.Reason,x.SourcePartyIndex),
         WildBattleConfusionChangedEvent x => new SourceConfusionChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before,x.After,x.Reason),
         WildBattleCriticalHitEvent x => new SourceCriticalHitEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target)),

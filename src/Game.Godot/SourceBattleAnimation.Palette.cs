@@ -40,7 +40,7 @@ public sealed partial class SourceBattleAnimation
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
-        {if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
+        {if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
     }
     // Source AnimTask_Flash / AnimTask_Flash_Step. Only BG palettes 1..3
     // and currently visible battler OBJ palettes are selected; HUD/text stay separate.

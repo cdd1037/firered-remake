@@ -199,6 +199,23 @@ public static partial class CampaignMoveAnimationPresentation
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
                 !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");
+        if(definition!.Effect is "EFFECT_CONVERSION" or "EFFECT_CONVERSION_2" or "EFFECT_CAMOUFLAGE")
+        {
+            // Source type mutation succeeds before attackanimation. The receipt
+            // supplies the chosen type; presentation never samples or reselects it.
+            if(used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target!=used.Actor||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceCalledOverlayChangedEvent changed||
+                changed.Source is not null||changed.Side!=used.Actor||changed.Move!=used.Move||
+                changed.Sequence!=pp[0].Sequence+1||action.OfType<SourceCalledOverlayChangedEvent>().Count()!=1||
+                changed.After is not {} after||after.RulesVersion!=WildBattleRules.CalledMoveKernelRulesVersion||
+                !WildBattleEffective.IsSourceType(after.Type1)||after.Type1!=after.Type2||changed.Before==after||
+                changed.Before is {} before&&(before.RulesVersion!=WildBattleRules.CalledMoveKernelRulesVersion||
+                    before.Type1 is not null&&!WildBattleEffective.IsSourceType(before.Type1)||
+                    before.Type2 is not null&&!WildBattleEffective.IsSourceType(before.Type2))||
+                after!=((changed.Before??new WildBattleCalledOverlay()) with{Type1=after.Type1,Type2=after.Type1}))
+                return new(null,"unmatched-source-type-change-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if(FieldSettingAnimation(move) is not null||move==277)
         {
             long result=0;

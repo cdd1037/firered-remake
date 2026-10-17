@@ -8,6 +8,33 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('physical_import',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class PhysicalImportTests(unittest.TestCase):
+ def test_random_fist_closes_only_double_kick_and_names_the_raw_impact(self):
+  data,blocked=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==24)
+  self.assertEqual(['gBasicHitSplatSpriteTemplate'],script['spriteDependencies'])
+  self.assertEqual([['gFistFootRandomPosSpriteTemplate','ANIM_ATTACKER','3','1','20','1']],[c['args'] for c in script['commands'] if c['op']=='createsprite'])
+  self.assertEqual({'SE_M_VITAL_THROW2':116},script['soundEffects'])
+  self.assertEqual({'ANIM_TAG_HANDS_AND_FEET':10143,'ANIM_TAG_IMPACT':10135},script['spriteTags'])
+  self.assertEqual(2,sum(c['op']=='waitforvisualfinish' for c in script['commands']))
+  self.assertNotIn(37,{s['moveId'] for s in pack['scripts']})
+  self.assertTrue({'callback:AnimTask_ThrashMoveMonHorizontal','callback:AnimTask_ThrashMoveMonVertical'}<=set(next(s for s in blocked if s['moveId']==37)['missing']))
+  parent=next(r for r in pack['spriteRecipes'] if r['template']=='gFistFootRandomPosSpriteTemplate')
+  child=next(r for r in pack['spriteRecipes'] if r['template']=='gBasicHitSplatSpriteTemplate')
+  self.assertEqual(('hands-and-feet',32,32,False,[]),(parent['asset'],parent['width'],parent['height'],parent['blend'],parent['affineAnimations']))
+  self.assertEqual([0,16,32,48,48],[a[0]['tile'] for a in parent['animations']]);self.assertTrue(parent['animations'][4][0]['hFlip'])
+  self.assertEqual(('impact',32,32,True,False),(child['asset'],child['width'],child['height'],child['blend'],child['affineDoubleSize']))
+  self.assertEqual([dict(op='frame',x=0,y=0,rotation=0,duration=8,target=0),dict(op='end',x=0,y=0,rotation=0,duration=0,target=0)],child['affineAnimations'][0])
+ def test_random_fist_unknown_source_callback_keeps_root_out(self):
+  raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createsprite gFistFootRandomPosSpriteTemplate,',b'createsprite gUnknownFistSpriteTemplate,')
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertNotIn(24,{s['moveId'] for s in json.loads(data)['scripts']})
+ def test_random_fist_template_shape_and_frame_identity_are_source_checked(self):
+  import re
+  raw=imp.read_sources(REFERENCE);path='src/battle_anim_fight.c';source=raw[path]
+  block=re.search(rb'const struct SpriteTemplate gFistFootRandomPosSpriteTemplate =\s*\{.*?\};',source,re.S)[0]
+  for old,new in [(b'AffineOff',b'AffineNormal'),(b'AnimFistOrFootRandomPos,',b'UnknownRandomFist,'),(b'sAnims_HandsAndFeet',b'gDummySpriteAnimTable')]:
+   changed=dict(raw);changed[path]=source.replace(block,block.replace(old,new))
+   with patch.object(imp,'read_sources',return_value=changed):
+    with self.assertRaisesRegex(ValueError,'Multi-strike source template'):imp.build(REFERENCE)
  def test_wish_reuses_existing_gold_and_granting_assets_with_exact_source_program(self):
   pack=json.loads(imp.build(REFERENCE)[0]);script=next(s for s in pack['scripts'] if s['moveId']==273)
   self.assertEqual({'SE_M_HEAL_BELL':188,'SE_M_REFLECT':200},script['soundEffects'])
@@ -85,7 +112,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({273,309,154,292,162,305,331,28,189,5,25,299,42,333,40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({24,273,309,154,292,162,305,331,28,189,5,25,299,42,333,40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):

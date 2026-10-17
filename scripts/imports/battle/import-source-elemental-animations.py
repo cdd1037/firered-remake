@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/imports/battle/import-source-hit-animations.py');hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
 TEMPLATES={
+ 'gConversionSpriteTemplate':('battle_anim_effects_1.c','AnimConversion'),
+ 'gConversion2SpriteTemplate':('battle_anim_effects_1.c','AnimConversion2'),
  'sHailParticleSpriteTemplate':('battle_anim_ice.c','AnimHailBegin'),
  'gWaterPulseBubbleSpriteTemplate':('battle_anim_water.c','AnimWaterPulseBubble'),
  'gWaterPulseRingBubbleSpriteTemplate':('battle_anim_water.c','AnimWaterPulseRingBubble'),
@@ -172,6 +174,9 @@ GFX|={'ANIM_TAG_HAIL'}
 SOUNDS|={'SE_M_HAIL'}
 SOUNDS|={'SE_M_SING','SE_M_GRASSWHISTLE','SE_M_BELLY_DRUM'}
 GFX|={'ANIM_TAG_MUSIC_NOTES','ANIM_TAG_PURPLE_HAND_OUTLINE'}
+TASKS|={'AnimTask_ConversionAlphaBlend','AnimTask_Conversion2AlphaBlend','AnimTask_FlashAnimTagWithColor'}
+GFX|={'ANIM_TAG_CONVERSION'}
+SOUNDS|={'SE_M_BARRIER'}
 def fold_firered_contest_branches(reference,source,commands,labels):
  # Both native contest tests are constant false in pinned FireRed. Canonical
  # argument comparisons are folded only immediately after the actual predicate
@@ -302,7 +307,7 @@ def build(reference):
  pixels['spore']=hit.rgb555(read(reference,'graphics/battle_anims/sprites/spore.png'),(16,32))
  assets=[dict(id=id,path='elemental-'+id+'.rgb555') for id in pixels]
  indexed=[]
- for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32))]:
+ for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32))]:
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
    if im.mode!='P' or im.size!=size:raise ValueError('Invalid indexed music image')
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];palette=im.getpalette()[:48]
