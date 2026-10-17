@@ -63,37 +63,4 @@ public partial class CampaignView
         Apply(new("nickname", Text: text));
     }
 
-    private void GiftNicknameGuiInput(InputEvent input)
-    {
-        // LineEdit consumes editing keys before _UnhandledInput. Escape is a naming
-        // cancellation only in this gift panel, submitting the source empty-name result.
-        if (GiftNamingActive && input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
-        {
-            SubmitCampaignNickname("");
-            _nicknameEdit.AcceptEvent();
-        }
-    }
-
-    private bool GiftNicknameInput(InputEventKey key)
-    {
-        if (!GiftNamingActive || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
-        if (key.Pressed && key.Keycode is Key.Enter or Key.KpEnter) SubmitCampaignNickname(_nicknameEdit.Text);
-        else if (key.Pressed && key.Keycode == Key.Escape) SubmitCampaignNickname("");
-        return true;
-    }
-
-    private bool DrawGiftNickname()
-    {
-        if (!GiftNamingActive) return false;
-        var mon = GiftNicknameTarget();
-        DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
-        _battleSkin.DrawStandardFrame(this, new(8, 16, 224, 136));
-        SourceText(_sourceNormal, new(20, 26), _session.State.Nickname!.OriginalName + "'s nickname?");
-        DrawTexture(PresentedPokemonIcon(mon.Pokemon), new(192, 24));
-        SourceText(_sourceSmall, new(20, 98), "Enter: confirm.  Esc: keep original.");
-        SourceText(_sourceSmall, new(20, 114), "Blank keeps " + _session.State.Nickname.OriginalName + ".");
-        if (_status.StartsWith("nickname_", StringComparison.Ordinal))
-            SourceText(_sourceSmall, new(20, 133), _status == "nickname_length" ? "Use at most 10 characters." : "That character is not available.");
-        return true;
-    }
 }

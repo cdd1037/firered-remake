@@ -16,8 +16,7 @@ public partial class CampaignView
     private int _captureBagPocket, _captureBagSelected, _capturePouchSelected;
     private bool _captureBerries;
 
-    // CampaignView combines this with the existing starter naming condition. The shared
-    // LineEdit owns text/edit/submit; global F5/F9/F12/Escape stay with CampaignView.
+    // The shared naming context selects this pending capture; Application owns delivery.
     private bool CaptureNamingActive => (_session.State.WildBattle?.Capture?.Stage == CampaignCaptureStage.Naming || _session.State.SafariBattle?.Capture?.Stage == CampaignCaptureStage.Naming);
 
     private void ResetCaptureBag() { _captureBagPocket = 0; _captureBagSelected = 0; _captureBerries = false; }
@@ -172,7 +171,7 @@ public partial class CampaignView
         if (_session.State.ForestTrainerBattle is null && battle.Capture is { } capture)
         {
             if (capture.Stage == CampaignCaptureStage.DexEntry) DrawCaptureDexEntry(capture.Pokemon.SourceSpeciesId);
-            else if (capture.Stage == CampaignCaptureStage.Naming) DrawCaptureNamingPanel();
+            else if (capture.Stage == CampaignCaptureStage.Naming) DrawNamingScreen();
             else
             {
                 DrawRect(new(0, 0, 240, 160), Colors.Black);
@@ -265,19 +264,6 @@ public partial class CampaignView
             cancel:cancellable,displayed:i=>i==battle.ActivePartyIndex
                 ? PartyPresentationAssets.Displayed(party[i],battle.DisplayPlayer,ForestDisplayedStatus(battle,WildBattleSide.Player))
                 : party[i]);
-    }
-
-    private void DrawCaptureNamingPanel()
-    {
-        DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
-        _battleSkin.DrawStandardFrame(this, new(8, 16, 224, 136));
-        var capture = _session.State.SafariBattle?.Capture ?? _session.State.WildBattle!.Capture!;
-        DrawTexture(PresentedPokemonIcon(capture.Pokemon),new(192,48));
-        SourceText(_sourceNormal, new(20, 26), capture.Origin.DefaultName + "'s nickname?");
-        SourceText(_sourceSmall, new(20, 98), "Type a name, then press Enter.");
-        SourceText(_sourceSmall, new(20, 114), "Leave blank to keep " + capture.Origin.DefaultName + ".");
-        if (_status.StartsWith("nickname_", StringComparison.Ordinal))
-            SourceText(_sourceSmall, new(20, 133), _status == "nickname_length" ? "Use at most 10 characters." : "That character is not available.");
     }
 
     private void DrawCaptureDexEntry(int sourceSpeciesId)

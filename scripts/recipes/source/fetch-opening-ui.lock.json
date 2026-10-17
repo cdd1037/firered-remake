@@ -13,6 +13,24 @@
     },
     {
       "path": "src/quest_log.c"
+    },
+    {
+      "path": "graphics/naming_screen/pc_icon_off.png"
+    },
+    {
+      "path": "graphics/naming_screen/pc_icon_on.png"
+    },
+    {
+      "path": "include/naming_screen.h"
+    },
+    {
+      "path": "include/constants/global.h"
+    },
+    {
+      "path": "include/pokemon_storage_system.h"
+    },
+    {
+      "path": "include/gba/defines.h"
     }
   ]
 }

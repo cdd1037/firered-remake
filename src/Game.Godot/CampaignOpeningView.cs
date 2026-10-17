@@ -7,11 +7,8 @@ public partial class CampaignView
     private readonly Dictionary<string, ImageTexture> _openingTextures = [];
     private readonly List<(string Text, string Portrait)> _openingPages = [];
     private int _openingPage;
-    private OpeningNamingPresentation? _namingGrid;
-    private bool _namingGridActive;
     private OpeningPortraitTransition? _openingPortraitTransition;
     private Action? _openingPortraitCompleted;
-    private SourceGameFont? _openingNamingFont;
     private string _openingNext = "gender";
     private readonly OpeningTitlePresentation _openingTitle = new();
     private readonly OpeningTitleRevealPresentation _openingTitleReveal = new();
@@ -49,7 +46,6 @@ public partial class CampaignView
         _openingFrameRemainder += delta * 60;
         int frames = (int)_openingFrameRemainder; _openingFrameRemainder -= frames;
         _openingVisualFrame += frames;
-        if (_entryMode is "player-name" or "rival-name") _namingGrid!.AdvanceFrames(frames);
         if (_openingPortraitTransition is { Complete: false } transition)
         {
             transition.AdvanceFrames(frames);
@@ -224,14 +220,12 @@ public partial class CampaignView
     private void InitializeOpeningPresentation()
     {
         InitializeIntroMoviePresentation();
-        _opening = PretOpeningPresentation.Load(_root);
-        _namingGrid = new(_opening);
-        _openingNamingFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/ui/font"), foreground: Colors.White, shadow: Color.Color8(98, 98, 98));
+        EnsureNamingPresentation();
         _openingGuideFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/ui/font"), foreground: Colors.White, shadow: Color.Color8(74, 82, 107));
-        foreach (string name in PretOpeningPresentation.TextureNames)
+        foreach (string name in PretOpeningPresentation.TextureNames.Where(name => !name.StartsWith("naming-", StringComparison.Ordinal)))
         {
             using var image = new Image();
-            if (image.LoadPngFromBuffer(_opening.ReadTexture(name)) != Error.Ok) throw new InvalidDataException("Opening texture invalid: " + name);
+            if (image.LoadPngFromBuffer(_opening!.ReadTexture(name)) != Error.Ok) throw new InvalidDataException("Opening texture invalid: " + name);
             _openingTextures.Add(name, ImageTexture.CreateFromImage(image));
         }
     }
@@ -368,54 +362,7 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(26, 16), "YES"); SourceText(_sourceNormal, new(26, 32), "NO");
             SourceText(_sourceNormal, new(12, 16 + _entryCursor * 16), "▶"); return true;
         }
-        if (_entryMode is "player-name" or "rival-name")
-        {
-            DrawOpeningNaming();
-            if (_entryNotice is not null) ItemMessageBox(_entryNotice);
-            return true;
-        }
         return false;
-    }
-    private void DrawOpeningNaming()
-    {
-        var grid = _namingGrid!;
-        DrawRect(new(0, 0, 240, 160), Colors.White);
-        DrawTexture(_openingTextures["naming-background"], Vector2.Zero);
-        SourceText(_sourceNormal, new(73, 33), _entryMode == "player-name" ? "YOUR NAME?" : "RIVAL's NAME?");
-        string icon = _entryMode == "rival-name" ? "rival" : OpeningPlayerPortrait;
-        int iconFrame = OpeningTitlePresentation.AnimationFrame(_opening!.Animations[icon == "rival" ? "naming-rival" : "naming-player"], grid.VisualFrame);
-        DrawTextureRectRegion(_openingTextures["naming-" + icon], new(48, 21, 16, 32), icon == "rival" ? new(0, iconFrame * 32, 16, 32) : new(iconFrame * 16, 0, 16, 32));
-        DrawTexture(_openingTextures["naming-input-arrow"], new(89 + grid.ArrowOffsetX, 52));
-        for (int i = 0; i < 7; i++)
-            DrawTexture(_openingTextures["naming-underscore"], new(97 + i * 8, 56 + (i == _entryNameEdit!.CaretColumn ? grid.UnderscoreOffsetY : 0)));
-        foreach (var layer in grid.Layers(_captureBallAssets.Sine)) DrawNamingKeyboardLayer(layer.Page, layer.OffsetY);
-        string button = new[] { "upper", "lower", "others" }[grid.PageButtonPage];
-        DrawTexture(_openingTextures["naming-page-button-" + button], new(188, 75));
-        if (grid.PageButtonTextVisible)
-            DrawTexture(_openingTextures["naming-page-swap-" + button], new(192, 80 + grid.PageButtonOffsetY));
-        DrawTexture(_openingTextures["naming-page-swap-frame"], new(184, 72));
-        DrawTexture(_openingTextures["naming-back-button"], new(184, 104));
-        DrawTexture(_openingTextures["naming-ok-button"], new(184, 128));
-        if (_namingGridActive && !grid.Swapping)
-        {
-            if (grid.OnAction) DrawRect(new(184, grid.Row == 0 ? 72 : grid.Row == 1 ? 104 : 128, 40, grid.Row == 0 ? 32 : 24), Color.Color8(255, 66, 82), false, 1);
-            else DrawTexture(_openingTextures["naming-cursor"], new(grid.CursorX - 8, 80 + grid.Row * 16));
-        }
-        DrawRect(new(0, 0, 240, 16), Color.Color8(74, 82, 107));
-        SourceText(_openingGuideFont!, new(4, 1), "Tab: type/keys  Enter: OK  Esc: back");
-    }
-    private void DrawNamingKeyboardLayer(int page, int offsetY)
-    {
-        string name = new[] { "upper", "lower", "symbols" }[page];
-        int top = Math.Max(16, offsetY), bottom = Math.Min(160, 160 + offsetY);
-        DrawTextureRectRegion(_openingTextures["naming-keyboard-" + name], new(0, top, 240, bottom - top), new(0, top - offsetY, 240, bottom - top));
-        for (int row = 0; row < 4; row++)
-        {
-            int y = 81 + row * 16 + offsetY;
-            if (y < 16 || y > 145) continue;
-            for (int col = 0; col < _opening!.Keyboard[page][row].Length; col++)
-                SourceText(_openingNamingFont!, new(35 + _opening.NamingColumnOffsets[page][col], y), _opening.Keyboard[page][row][col].ToString());
-        }
     }
     private void DrawOpeningNidoran()
     {
@@ -434,83 +381,6 @@ public partial class CampaignView
             DrawSetTransform(Vector2.Zero);
         }
     }
-    private void ApplyOpeningNameKey(OpeningNameKey key)
-    {
-        if (key.Action == OpeningNameAction.None) return;
-        if (key.Action == OpeningNameAction.ChangePage) SourceSound("SE_WIN_OPEN");
-        var edit = _entryNameEdit!;
-        if (key.Action is OpeningNameAction.Insert or OpeningNameAction.Delete)
-        {
-            bool selected = edit.HasSelection();
-            if (selected) { int from = edit.GetSelectionFromColumn(); edit.DeleteText(from, edit.GetSelectionToColumn()); edit.CaretColumn = from; }
-            if (key.Action == OpeningNameAction.Insert) edit.InsertTextAtCaret(key.Character.ToString());
-            else if (!selected && edit.CaretColumn > 0) { int caret = edit.CaretColumn; edit.DeleteText(caret - 1, caret); edit.CaretColumn = caret - 1; }
-        }
-        else if (key.Action == OpeningNameAction.Submit) SubmitPlayerEntryName(edit.Text);
-        QueueRedraw();
-    }
-    private bool TryOpeningNameGuiInput(InputEvent input)
-    {
-        if (_entryMode is not ("player-name" or "rival-name")) return false;
-        if (input is InputEventKey { Pressed: true, Echo: false } key)
-        {
-            if (key.Keycode == Key.Tab) { _namingGridActive = !_namingGridActive; QueueRedraw(); return true; }
-            if (!_namingGridActive) return false;
-            if (_namingGrid!.Swapping)
-            {
-                if (key.Unicode > 0 && key.Keycode is not (Key.Enter or Key.KpEnter or Key.Backspace))
-                { _namingGridActive = false; return false; }
-                return key.Keycode != Key.Escape;
-            }
-            switch (key.Keycode)
-            {
-                case Key.Left: _namingGrid!.Move(-1, 0); break;
-                case Key.Right: _namingGrid!.Move(1, 0); break;
-                case Key.Up: _namingGrid!.Move(0, -1); break;
-                case Key.Down: _namingGrid!.Move(0, 1); break;
-                case Key.Enter: case Key.KpEnter: ApplyOpeningNameKey(_namingGrid!.Activate()); break;
-                case Key.Backspace: ApplyOpeningNameKey(new(OpeningNameAction.Delete)); break;
-                default: if (key.Unicode > 0) _namingGridActive = false; return false;
-            }
-            QueueRedraw(); return true;
-        }
-        if (input is InputEventJoypadButton joy)
-        {
-            if (!joy.Pressed) return true;
-            _namingGridActive = true;
-            if (_namingGrid!.Swapping) return true;
-            switch (joy.ButtonIndex)
-            {
-                case JoyButton.DpadLeft: _namingGrid!.Move(-1, 0); break;
-                case JoyButton.DpadRight: _namingGrid!.Move(1, 0); break;
-                case JoyButton.DpadUp: _namingGrid!.Move(0, -1); break;
-                case JoyButton.DpadDown: _namingGrid!.Move(0, 1); break;
-                case JoyButton.A: ApplyOpeningNameKey(_namingGrid!.Activate()); break;
-                case JoyButton.B: ApplyOpeningNameKey(new(OpeningNameAction.Delete)); break;
-                case JoyButton.Start: _namingGrid!.SelectSubmit(); break;
-                default: return false;
-            }
-            QueueRedraw(); return true;
-        }
-        return false;
-    }
-    private bool OpeningNamePointer(Vector2 point)
-    {
-        if (_entryMode is not ("player-name" or "rival-name")) return false;
-        if (_namingGrid!.Swapping) return true;
-        if (new Rect2(184, 72, 40, 80).HasPoint(point))
-            _namingGrid.Select(point.Y < 104 ? 0 : point.Y < 128 ? 1 : 2, _namingGrid.Columns);
-        else if (new Rect2(24, 80, 152, 64).HasPoint(point))
-        {
-            int row = (int)((point.Y - 80) / 16);
-            int col = Enumerable.Range(0, _namingGrid.Columns).MinBy(i => Math.Abs(point.X - 38 - _opening!.NamingColumnOffsets[_namingGrid.Page][i]));
-            _namingGrid.Select(row, col);
-        }
-        else return false;
-        _namingGridActive = false; ApplyOpeningNameKey(_namingGrid!.Activate());
-        if (_entryMode is "player-name" or "rival-name") { _entryNameEdit!.GrabFocus(); _entryNameEdit.Edit(); }
-        QueueRedraw(); return true;
-    }
     private void DisposeOpeningPresentation()
-    { DisposeIntroMoviePresentation(); foreach (var texture in _openingTextures.Values) texture.Dispose(); _openingTextures.Clear(); _openingGuideFont?.Dispose(); _openingNamingFont?.Dispose(); }
+    { DisposeIntroMoviePresentation(); foreach (var texture in _openingTextures.Values) texture.Dispose(); _openingTextures.Clear(); _openingGuideFont?.Dispose(); DisposeNamingPresentation(); }
 }

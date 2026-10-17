@@ -28,7 +28,7 @@ public partial class CampaignView
     private string CurrentHelpContext(HelpProgress progress)
     {
         var state = _session.State;
-        if (_nicknameEdit.Visible || _entryNameEdit?.Visible == true) return "HELPCONTEXT_NAMING_SCREEN";
+        if (_nicknameEdit.Visible) return "HELPCONTEXT_NAMING_SCREEN";
         if (PlayerEntryActive) return _entryMode == "menu" ? "HELPCONTEXT_TITLE_SCREEN" : "HELPCONTEXT_NEW_GAME";
         // Native SetHelpContext deliberately retains battle context inside Bag/Party/Summary.
         if (state.SafariBattle is not null) return "HELPCONTEXT_SAFARI_BATTLE";
@@ -78,6 +78,7 @@ public partial class CampaignView
             { SourceSound("SE_HELP_ERROR"); GetViewport().SetInputAsHandled(); return true; }
             if (!seen && !Apply(new("help_intro_seen"))) { _help.Close(); GetViewport().SetInputAsHandled(); return true; }
             _helpReturnFocus = GetViewport().GuiGetFocusOwner(); _helpReturnFocus?.ReleaseFocus();
+            if (NamingScreenActive) _nicknameEdit.Visible = false;
             _held = null; _repeat = 0; ReleaseFieldTextInput(); ReleaseModalHeldInput();
             _helpHeld = CampaignButton.None; _helpRepeat = 0;
             _sourceAudio?.StopSoundEffects();
@@ -123,7 +124,12 @@ public partial class CampaignView
     {
         _help.Close(); _helpHeld = CampaignButton.None; _sourceAudio?.SetHelpDucking(false);
         SourceSound("SE_HELP_CLOSE"); _helpClosedFrame = Engine.GetProcessFrames();
-        if (GodotObject.IsInstanceValid(_helpReturnFocus) && _helpReturnFocus!.IsVisibleInTree()) _helpReturnFocus.GrabFocus();
+        if (NamingScreenActive) _nicknameEdit.Visible = true;
+        if (GodotObject.IsInstanceValid(_helpReturnFocus) && _helpReturnFocus!.IsVisibleInTree())
+        {
+            _helpReturnFocus.GrabFocus();
+            if (_helpReturnFocus == _nicknameEdit) _nicknameEdit.Edit();
+        }
         _helpReturnFocus = null;
     }
     private void DisposeHelpPresentation()

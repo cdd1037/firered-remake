@@ -29,6 +29,64 @@ def palette(path):
     return [v for line in path.read_text().splitlines()[3:] for v in map(int, line.split())]
 
 
+def required(pattern, source, label):
+    match = re.search(pattern, source, re.S)
+    if match is None: raise ValueError('Missing naming source: ' + label)
+    return match
+
+
+def naming_metadata(raw, naming):
+    """Compile the source's five callers into one bounded presentation contract."""
+    strings = (raw / 'src/strings.c').read_text()
+    constants = '\n'.join((raw / path).read_text() for path in
+        ['include/constants/global.h', 'include/pokemon_storage_system.h', 'include/gba/defines.h'])
+    def constant(name):
+        return int(required(r'#define\s+' + name + r'\s+(\d+)\b', constants, name)[1])
+    def function(name):
+        return required(r'\b' + name + r'\(void\)\s*\{(.*?)\n\}', naming, name)[1]
+    def window(name):
+        body = required(r'\[' + name + r'\]\s*=\s*\{([^}]+)\}', naming, name)[1]
+        return tuple(int(required(r'\.' + field + r'\s*=\s*(\d+)', body, field)[1]) * 8
+                     for field in ['tilemapLeft', 'tilemapTop'])
+    title_window, entry_window = window('WIN_TEXT_ENTRY_BOX'), window('WIN_TEXT_ENTRY')
+    title_pos = required(r'FONT_NORMAL_COPY_1, sNamingScreen->template->title,\s*(\d+),\s*(\d+),', function('DrawNormalTextEntryBox'), 'title position')
+    entry_y = int(required(r'i \* 8 \+ xpos \+ extraWidth,\s*(\d+),', function('DrawTextEntry'), 'entry position')[1])
+    gender_pos = required(r'FONT_NORMAL,\s*(0x[0-9A-Fa-f]+|\d+),\s*(\d+),', function('DrawGenderIcon'), 'gender position')
+    entry_formula = required(r'inputCharBaseXPos = \(DISPLAY_WIDTH - sNamingScreen->template->maxChars \* (\d+)\) / 2 \+ (\d+);', function('NamingScreen_Init'), 'entry centering')
+    layout = dict(displayWidth=constant('DISPLAY_WIDTH'), titleX=title_window[0] + int(title_pos[1]),
+                  titleY=title_window[1] + int(title_pos[2]), entryY=entry_window[1] + entry_y,
+                  entryCellWidth=int(entry_formula[1]), entryCenterOffset=int(entry_formula[2]),
+                  genderX=entry_window[0] + int(gender_pos[1], 0), genderY=entry_window[1] + int(gender_pos[2]))
+    # Normalize the source's KBPAGE enum to the existing generated keyboard order.
+    pages = {'KBPAGE_LETTERS_UPPER': 0, 'KBPAGE_LETTERS_LOWER': 1, 'KBPAGE_SYMBOLS': 2}
+    icon_functions = re.findall(r'\bNamingScreen_\w+', required(r'sIconFunctions\[\]\)\(void\)\s*=\s*\{(.*?)\};', naming, 'icon dispatch')[1])
+    box_functions = dict(re.findall(r'\[(NAMING_SCREEN_\w+)\]\s*=\s*(\w+)', required(r'sDrawTextEntryBoxFuncs\[\]\)\(void\)\s*=\s*\{(.*?)\};', naming, 'title dispatch')[1]))
+    bindings = re.findall(r'\[(NAMING_SCREEN_\w+)\]\s*=\s*&([A-Za-z0-9_]+)', required(r'sNamingScreenTemplates\[\]\s*=\s*\{(.*?)\};', naming, 'template dispatch')[1])
+    declared = re.findall(r'#define\s+(NAMING_SCREEN_\w+)\s+\d+', (raw / 'include/naming_screen.h').read_text())
+    if set(name for name, _ in bindings) != set(declared) or len(bindings) != len(declared):
+        raise ValueError('Naming template bindings incomplete or duplicated')
+    templates = {}
+    for name, symbol in bindings:
+        body = required(r'\b' + symbol + r' =\s*\{(.*?)\};', naming, symbol)[1]
+        fields = dict(re.findall(r'\.(\w+)\s*=\s*([A-Za-z0-9_]+)', body))
+        if set(fields) != {'copyExistingString', 'maxChars', 'iconFunction', 'addGenderIcon', 'initialPage', 'title'}:
+            raise ValueError('Naming template fields invalid: ' + name)
+        icon = int(fields['iconFunction'])
+        if icon not in range(1, len(icon_functions)) or fields['initialPage'] not in pages or fields['copyExistingString'] not in ('FALSE', 'TRUE') or fields['addGenderIcon'] not in ('0', '1'):
+            raise ValueError('Naming template selector invalid: ' + name)
+        icon_pos = required(r'(?:CreateObjectGraphicsSprite|CreateSprite|CreateMonIcon)\([^;]*?,\s*(-?\d+),\s*(-?\d+),\s*0\b', function(icon_functions[icon]), 'icon position')
+        title = required(r'\b' + fields['title'] + r'\[\]\s*=\s*_\("((?:\\.|[^"\\])*)"\)', strings, 'title text')[1]
+        if box_functions.get(name) not in ('DrawNormalTextEntryBox', 'DrawMonTextEntryBox'):
+            raise ValueError('Naming title function invalid: ' + name)
+        max_chars = constant(fields['maxChars'])
+        if not 1 <= max_chars <= 10: raise ValueError('Naming character limit invalid: ' + name)
+        templates[name] = dict(copyExistingString=fields['copyExistingString'] == 'TRUE', maxChars=max_chars,
+            iconFunction=icon, addGenderIcon=fields['addGenderIcon'] == '1', initialPage=pages[fields['initialPage']],
+            title=ast.literal_eval('"' + title + '"'), prefixSpeciesName=box_functions[name] == 'DrawMonTextEntryBox',
+            iconX=int(icon_pos[1]), iconY=int(icon_pos[2]))
+    return templates, layout
+
+
 def generate(raw=RAW):
     source = (raw / 'data/text/new_game_intro.inc').read_text()
     texts = {}
@@ -67,7 +125,13 @@ def generate(raw=RAW):
     for key, symbol, code, tiles in [('naming-player', 'sAnim_GoSouth', object_anims, 1), ('naming-rival', 'sAnim_Rival', naming, 8)]:
         body = re.search(r'\b' + symbol + r'\[\] =\s*\{(.*?)\};', code, re.S)[1]
         tracks[key] = [dict(frame=int(a) // tiles, duration=int(b)) for a, b in re.findall(r'ANIMCMD_FRAME\(\s*(\d+),\s*(\d+)\)', body)]
-    value = dict(schemaVersion=1, texts=texts, keyboard=keyboard, animations=tracks, rivalNames=rival_names, namingColumnOffsets=column_offsets)
+    pc_animation = required(r'sAnim_PCIcon\[\] =\s*\{(.*?)\};', naming, 'PC icon animation')[1]
+    tracks['naming-pc'] = [dict(frame=int(a), duration=int(b)) for a, b in re.findall(r'ANIMCMD_FRAME\(\s*(\d+),\s*(\d+)\)', pc_animation)]
+    if not tracks['naming-pc'] or any(f['frame'] not in (0, 1) or not 1 <= f['duration'] <= 60 for f in tracks['naming-pc']):
+        raise ValueError('Naming PC animation invalid')
+    templates, layout = naming_metadata(raw, naming)
+    value = dict(schemaVersion=1, texts=texts, keyboard=keyboard, animations=tracks, rivalNames=rival_names,
+                 namingColumnOffsets=column_offsets, namingTemplates=templates, namingLayout=layout)
     files = {'opening.json': (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()}
     def png(name, image):
         buffer = io.BytesIO(); image.save(buffer, format='PNG'); files[name + '.png'] = buffer.getvalue()
@@ -190,6 +254,28 @@ def generate(raw=RAW):
         png('naming-page-button-' + name, rgba(Image.open(naming_root / 'page_swap_button.png'), palette=palette(naming_root / ('page_swap_' + name + '.pal'))))
     for name, path in [('red', 'red_normal'), ('leaf', 'green_normal')]:
         png('naming-' + name, rgba(Image.open(raw / ('graphics/object_events/pics/people/' + path + '.png')), palette=palette(raw / 'graphics/object_events/palettes/player.pal')))
+    # Three source 16x8 subsprites form each 16x24 PC frame. Keep both frames in
+    # one compact atlas, using the PC sprite's PALTAG_MENU palette.
+    pc_parts = required(r'sSubsprites_PCIcon\[\] =\s*\{(.*?)\n\};', naming, 'PC subsprites')[1]
+    parts = [tuple(map(int, match)) for match in re.findall(r'\.x =\s*(-?\d+),\s*\.y =\s*(-?\d+),\s*\.shape = SPRITE_SHAPE\((\d+)x(\d+)\),\s*\.size = SPRITE_SIZE\(\d+x\d+\),\s*\.tileOffset =\s*(\d+)', pc_parts)]
+    if not parts or any(w <= 0 or h <= 0 or w % 8 or h % 8 for x, y, w, h, tile in parts):
+        raise ValueError('Naming PC subsprite geometry invalid')
+    left, top = min(p[0] for p in parts), min(p[1] for p in parts)
+    width, height = max(x + w for x, y, w, h, tile in parts) - left, max(y + h for x, y, w, h, tile in parts) - top
+    if width > 64 or height > 64: raise ValueError('Naming PC frame geometry invalid')
+    pc_atlas = Image.new('RGBA', (width, height * 2))
+    for frame, name in enumerate(['pc_icon_off', 'pc_icon_on']):
+        source = Image.open(naming_root / (name + '.png'))
+        if source.width % 8 or source.height % 8: raise ValueError('Naming PC frame geometry invalid')
+        source = rgba(source, palette=palette(naming_root / 'menu.pal'))
+        for x, y, w, h, tile in parts:
+            for dy in range(0, h, 8):
+                for dx in range(0, w, 8):
+                    index = tile + dy // 8 * (w // 8) + dx // 8
+                    tx, ty = index % (source.width // 8) * 8, index // (source.width // 8) * 8
+                    if ty + 8 > source.height: raise ValueError('Invalid naming PC tile reference')
+                    pc_atlas.paste(source.crop((tx, ty, tx + 8, ty + 8)), (x - left + dx, frame * height + y - top + dy))
+    png('naming-pc-icon', pc_atlas)
     return files
 
 

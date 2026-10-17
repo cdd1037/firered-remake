@@ -136,13 +136,6 @@ public partial class CampaignView
         return true;
     }
 
-    private void StorageBoxNameGuiInput(InputEvent input)
-    {
-        // Like the existing Name Rater, B/Backspace edit. There is no source
-        // shortcut to leave naming; submitting an empty name keeps the old name.
-        if (StorageBoxNaming && input is InputEventKey { Pressed: true, Keycode: Key.Escape }) _nicknameEdit.AcceptEvent();
-    }
-
     private bool StorageCustomizationInput(InputEventKey key)
     {
         if (!StorageCustomizationOverlayActive) return false;
@@ -272,16 +265,7 @@ public partial class CampaignView
     private void DrawStorageCustomizationOverlay()
     {
         if (!StorageCustomizationOverlayActive) return;
-        if (StorageBoxNaming)
-        {
-            DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
-            _battleSkin.DrawStandardFrame(this, new(8, 16, 224, 136));
-            SourceText(_sourceNormal, new(20, 26), StorageCustomizationText("gText_BoxName"));
-            SourceText(_sourceSmall, new(20, 46), StorageBoxName(_session.State.Pc!.Customization!.BoxIndex));
-            SourceText(_sourceSmall, new(20, 99), "Enter: confirm. Backspace: delete.");
-            SourceText(_sourceSmall, new(20, 114), "Blank keeps the current name.");
-            SourceText(_sourceSmall, new(20, 132), "Up to 8 characters."); return;
-        }
+        if (StorageBoxNaming) { DrawNamingScreen(); return; }
         if (_storageJumpOpen)
         {
             ItemMessageBox(PcText("gText_JumpToWhichBox"));

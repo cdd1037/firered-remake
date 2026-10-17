@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <Compile Include="../../src/Game.Godot/QuestLogPalettePresentation.cs" Link="QuestLogPalettePresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />
     <Compile Include="../../src/Game.Application/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
     <Compile Include="../../src/Game.Godot/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />
     <Compile Include="../../src/Game.Godot/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
     <Compile Include="../../src/Game.Godot/OpeningNidoranPresentation.cs" Link="OpeningNidoranPresentation.cs" />
     <Compile Include="../../src/Game.Godot/OpeningTitlePresentation.cs" Link="OpeningTitlePresentation.cs" />
-    <Compile Include="../../src/Game.Godot/OpeningNamingPresentation.cs" Link="OpeningNamingPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/NamingScreenPresentation.cs" Link="NamingScreenPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/OpeningPortraitTransition.cs" Link="OpeningPortraitTransition.cs" />
     <Compile Include="../../src/Game.Godot/ItemfinderPresentation.cs" Link="ItemfinderPresentation.cs" />
     <Compile Include="../../src/Game.Godot/CaptureBallPresentation.cs" Link="CaptureBallPresentation.cs" />
     <Compile Include="../../src/Game.Godot/EvolutionScenePresentation.cs" Link="EvolutionScenePresentation.cs" />

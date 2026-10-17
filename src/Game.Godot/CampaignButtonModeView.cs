@@ -96,7 +96,7 @@ public partial class CampaignView
     }
 private void ProcessCampaignButtonRepeats(double delta)
     {
-        if (_buttons.Mode != SourceButtonMode.Lr || _help.Active ||
+        if (_buttons.Mode != SourceButtonMode.Lr || _help.Active || NamingScreenActive ||
             _session.State.Pc?.View is not (CampaignPcView.Deposit or CampaignPcView.Withdraw or CampaignPcView.Move or CampaignPcView.MoveItems) ||
             _session.State.Pc.Summary is not null) { _shoulderRepeatDirection = 0; return; }
         int direction = (_buttons.Held & CampaignButton.L) != 0 ? -1 : (_buttons.Held & CampaignButton.R) != 0 ? 1 : 0;
@@ -107,7 +107,7 @@ private void ProcessCampaignButtonRepeats(double delta)
     }
     private void HandleShoulderPage(int direction)
     {
-        if (_busy || _fade > 0) return;
+        if (_busy || _fade > 0 || NamingScreenActive) return;
         Key key = direction < 0 ? Key.Left : Key.Right;
         if (_session.State.Pc?.Summary is not null || _fieldMenuMode == "summary")
         {

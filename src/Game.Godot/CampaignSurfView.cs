@@ -108,14 +108,16 @@ public partial class CampaignView
         DrawSurfPose(pose,camera,_session.State.PlayerGender,phase,blobTile,jumping?pose.DrawYOffset:phase,drawPlayer);
         return true;
     }
-    private void DrawSurfPose(Pose pose,Vector2 camera,int gender,int phase,Vector2 blobTile,float playerYOffset,bool drawPlayer=true)
+    private void DrawSurfPose(Pose pose,Vector2 camera,int gender,int phase,Vector2 blobTile,float playerYOffset,bool drawPlayer=true,Func<Texture2D,Texture2D>? textureTransform=null)
     {
         int direction=pose.Facing switch{Direction.South=>0,Direction.North=>1,_=>2};
-        DrawSurfSheet(_fieldSurfBlob!, blobTile.Floor() + new Vector2(-8, -8) - camera, 32, direction * 2 + phase, pose.Facing == Direction.East);
+        var blob=textureTransform is null?_fieldSurfBlob!:textureTransform(_fieldSurfBlob!);
+        DrawSurfSheet(blob, blobTile.Floor() + new Vector2(-8, -8) - camera, 32, direction * 2 + phase, pose.Facing == Direction.East);
         if (!drawPlayer) return;
         // The source blob's direction is zero: no sinusoidal bob. Its second animation command adds one to player y2.
         var player = pose.Position.Floor() + new Vector2(0, -16 + playerYOffset) - camera;
-        DrawSurfSheet(gender == 0 ? _fieldSurfRed! : _fieldSurfGreen!, player, 16, direction, pose.Facing == Direction.East);
+        var playerSheet=gender==0?_fieldSurfRed!:_fieldSurfGreen!;
+        DrawSurfSheet(textureTransform is null?playerSheet:textureTransform(playerSheet), player, 16, direction, pose.Facing == Direction.East);
     }
     private void DrawFieldSurfLanding(Vector2 camera)
     {

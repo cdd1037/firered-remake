@@ -8,16 +8,28 @@ public partial class CampaignView
 {
     private CampaignQuestLogPlayback? _questArtPlayback;
     private int _questArtScene=-1,_questArtRevision=-1,_questArtSerial;
+    private bool _questArtSavedGameVisible;
     private string? _questArtKey;
-    private MapArt GetQuestLogMapArt(CampaignQuestLogPlayback playback)
+    private void ResetQuestLogArt()
     {
-        if(playback.SavedGameVisible)return _art;
-        if(!ReferenceEquals(playback,_questArtPlayback)||playback.SceneIndex!=_questArtScene||playback.ArtRevision!=_questArtRevision)
+        _questArtPlayback=null;_questArtScene=-1;_questArtRevision=-1;
+        _questArtSavedGameVisible=false;_questArtKey=null;
+    }
+    private string QuestLogNeighborArtKey(MapId map)=>_questArtKey+":"+map.Value+":neighbor";
+    private MapArt GetQuestLogMapArt(CampaignQuestLogPlayback playback,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
+    {
+        if(!ReferenceEquals(playback,_questArtPlayback)||playback.SceneIndex!=_questArtScene||playback.ArtRevision!=_questArtRevision||playback.SavedGameVisible!=_questArtSavedGameVisible)
         {
             _questArtPlayback=playback;_questArtScene=playback.SceneIndex;_questArtRevision=playback.ArtRevision;
+            _questArtSavedGameVisible=playback.SavedGameVisible;
             _questArtKey=playback.Map+":"+(playback.Layout??"base")+":quest:"+(++_questArtSerial);
         }
-        _drawMapPins.Clear();_drawMapPins.Add(_questArtKey!);_drawMapPins.Add(PresentationMapKey(_session.State.World.Player.MapId));MapCache.SetPins(_drawMapPins);
+        _drawMapPins.Clear();_drawMapPins.Add(PresentationMapKey(_session.State.World.Player.MapId));
+        // Pin the complete frame before acquiring anything. Derived palette keys may
+        // borrow these originals until the visible set changes on the following draw.
+        foreach(var neighbor in neighbors)_drawMapPins.Add(QuestLogNeighborArtKey(neighbor.Map));
+        if(playback.SavedGameVisible){MapCache.SetPins(_drawMapPins);return _art;}
+        _drawMapPins.Add(_questArtKey!);MapCache.SetPins(_drawMapPins);
         return MapCache.Get(_questArtKey!,owner=>
         {
             var id=new MapId(playback.Map);
@@ -51,12 +63,11 @@ public partial class CampaignView
             yield return(destination.Id,origin);
         }
     }
-    private void DrawQuestLogLayer(MapArt art,Vector2 camera,int layer)
+    private void DrawQuestLogLayer(MapArt art,Vector2 camera,int layer,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
     {
-        var neighbors=QuestLogNeighbors(art.Source.Id).ToArray();
         if(art.Border is {} border)
         {
-            var texture=layer==0?border.Bottom:layer==1?border.Middle:border.Top;
+            var texture=QuestLogPaletteTexture(layer==0?border.Bottom:layer==1?border.Middle:border.Top);
             for(int y=(int)Math.Floor(camera.Y/16);y<=Math.Floor((camera.Y+159)/16);y++)for(int x=(int)Math.Floor(camera.X/16);x<=Math.Floor((camera.X+239)/16);x++)
             {
                 if(x>=0&&y>=0&&x<art.Source.Width&&y<art.Source.Height)continue;
@@ -67,10 +78,9 @@ public partial class CampaignView
         foreach(var neighbor in neighbors)
         {
             var source=_catalog.SourceMaps[neighbor.Map];
-            if(!new Rect2(neighbor.Origin,new(source.Width*16,source.Height*16)).Intersects(new(camera,new(240,160))))continue;
             // Neighbor layouts are static source connections; never project the current
             // saved session's dynamic layout onto a different historical scene.
-            var key=(_questArtKey??"quest-final")+":"+neighbor.Map.Value+":neighbor";_drawMapPins.Add(key);MapCache.SetPins(_drawMapPins);
+            var key=QuestLogNeighborArtKey(neighbor.Map);
             var texture=MapCache.Get(key,owner=>
             {
                 Texture2D Layer(string path,int number)
@@ -83,8 +93,8 @@ public partial class CampaignView
                 }
                 return new MapArt(source,Layer(source.BottomTexturePath,0),Layer(source.MiddleTexturePath,1),Layer(source.TopTexturePath,2),art.Player,[],null);
             });
-            DrawTexture(layer==0?texture.Bottom:layer==1?texture.Middle:texture.Top,neighbor.Origin-camera);
+            DrawTexture(QuestLogPaletteTexture(layer==0?texture.Bottom:layer==1?texture.Middle:texture.Top),neighbor.Origin-camera);
         }
-        DrawTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,-camera);
+        DrawTexture(QuestLogPaletteTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top),-camera);
     }
 }

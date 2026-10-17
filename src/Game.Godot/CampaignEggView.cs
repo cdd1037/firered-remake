@@ -154,12 +154,6 @@ public partial class CampaignView
         QueueRedraw(); GetViewport().SetInputAsHandled(); return true;
     }
 
-    private void EggNicknameGuiInput(InputEvent input)
-    {
-        if (EggHatchNaming && input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
-        { SubmitCampaignNickname(""); _nicknameEdit.AcceptEvent(); }
-    }
-
     private bool DrawEggHatch()
     {
         if (_session.State.EggHatch is not { } hatch) return false;
@@ -168,17 +162,7 @@ public partial class CampaignView
             throw new InvalidDataException("Hatch presentation identity differs from its Application scene.");
         // daycare.c loads the shared trade shadow map using gba_pal2.
         DrawTexture(EvolutionSceneTexture("hatch"), Vector2.Zero);
-        if (hatch.Stage == CampaignEggHatchStage.Naming)
-        {
-            _battleSkin.DrawStandardFrame(this, new(8,16,224,136));
-            SourceText(_sourceNormal, new(20,26), _session.State.Nickname!.OriginalName + "'s nickname?");
-            DrawTexture(PresentedOwnedIcon(owned), new(192,24));
-            SourceText(_sourceSmall, new(20,98), "Enter: confirm. Esc: keep original.");
-            SourceText(_sourceSmall, new(20,114), "Blank keeps " + _session.State.Nickname.OriginalName + ".");
-            if (_status.StartsWith("nickname_", StringComparison.Ordinal))
-                SourceText(_sourceSmall,new(20,133),_status=="nickname_length"?"Use at most 10 characters.":"That character is not available.");
-            return true;
-        }
+        if (hatch.Stage == CampaignEggHatchStage.Naming) return DrawNamingScreen();
         int frame = hatch.Stage == CampaignEggHatchStage.Animation ? EggHatchFrame : EggHatchEndFrame;
         if (frame < EggHatchRevealFrame)
         {

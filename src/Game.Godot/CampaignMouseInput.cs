@@ -19,6 +19,7 @@ public partial class CampaignView
     public override void _Input(InputEvent input)
     {
         ObserveCampaignButtonInput(input);
+        if (_startupReady && TryNamingJoypadInput(input)) return;
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
         { _menuMousePressed = false; _fieldTextHeld=false; }
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false })
@@ -53,8 +54,8 @@ public partial class CampaignView
         if (_busy && _session?.State.Pc?.View is CampaignPcView.Move or CampaignPcView.MoveItems or CampaignPcView.Deposit or CampaignPcView.Withdraw && mouse is { Pressed: true, DoubleClick: false })
         { _pcNotice = StorageMoveBusyNotice; QueueRedraw(); GetViewport().SetInputAsHandled(); return true; }
         if (mouse is { DoubleClick: true } || _menuMouseActionFrame == Engine.GetProcessFrames() ||
-            _session is null || _busy || _fade > 0 || (_session.State.ScreenIsBlack && !_session.State.TrainerTowerRecordsVisible && !MoveTutorActive) ||
-            _tracks.Any(t => t.Time < t.Duration)) return true;
+            _busy || (!NamingScreenActive && (_session is null || _fade > 0 || (_session.State.ScreenIsBlack && !_session.State.TrainerTowerRecordsVisible && !MoveTutorActive) ||
+            _tracks.Any(t => t.Time < t.Duration)))) return true;
 
         // Godot already removes viewport stretch/letterboxing before _UnhandledInput.
         // Reject the real viewport border before removing the canvas/node transform.
@@ -62,6 +63,20 @@ public partial class CampaignView
         if (!GetViewport().GetVisibleRect().HasPoint(position)) return true;
         Vector2 point = GetGlobalTransformWithCanvas().AffineInverse() * position;
         if (!OpeningItemUiSkin.LogicalRect.HasPoint(point)) return true;
+        if (NamingScreenActive)
+        {
+            if (!motion && !wheel)
+            {
+                if (right)
+                {
+                    if (_namingBinding!.Context.IsOpening) NamingEscape();
+                }
+                else NamingPointer(point);
+                _menuMouseActionFrame = Engine.GetProcessFrames();
+            }
+            QueueRedraw(); GetViewport().SetInputAsHandled(); return true;
+        }
+        if (_session is null) return true;
         if (_session.State.Nickname is { Submitted: false } || CaptureNamingActive || StorageBoxNaming ||
             _session.State.OldManTutorial is not null || _session.State.Evolution is { Stage: not CampaignEvolutionStage.LearnMove } ||
             _session.State.Repel?.Phase == CampaignRepelPhase.UseSound) return true;

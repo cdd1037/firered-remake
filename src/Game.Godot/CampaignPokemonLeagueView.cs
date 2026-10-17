@@ -190,7 +190,7 @@ public partial class CampaignView
         }
         if(c.Stage==CampaignPokemonLeagueCompletionStage.ResetRequested)
         {
-            ResetPlayTimeHost();ResetSourceAudio();_held=null;_repeat=0;_tracks.Clear();_nicknameEdit.Visible=false;
+            ResetPlayTimeHost();ResetSourceAudio();_held=null;_repeat=0;_tracks.Clear();CloseNamingScreen();
             if(_entrySource is null)InitializePlayerEntry("",force:true);else ReadEntrySave();
             _entryActionFrame=Engine.GetProcessFrames();
             Write("pokemonLeagueReturnToEntry",new{verifiedContinue=_entrySave is not null,originalTitleMovieImplemented=false});return true;

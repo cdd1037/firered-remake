@@ -7,6 +7,6 @@ public sealed class OpeningPresentationImportTests
     public Task PinnedOpeningTextKeyboardAndPixelsRegenerateExactly() =>
         PythonResourceCheck.Run("scripts/imports/presentation/import-opening-presentation.py", ["--check"], timeout: TimeSpan.FromMinutes(1));
     [TestMethod]
-    public Task NamingLayersMatchIndependentTilePaletteOracleAndRejectInvalidTile() =>
+    public Task NamingLayersTemplatesAndPcIconMatchSourceOracleAndRejectInvalidInput() =>
         PythonResourceCheck.Run("scripts/checks/test-opening-naming-import.py", timeout: TimeSpan.FromMinutes(1));
 }

@@ -20,7 +20,7 @@ public sealed class CampaignQuestLogExitTests
     public void NaturalCaptionAndExitMatchExtractedOriginalTaskEveryFrame()
     {
         var playback=Playback();playback.NextScene();
-        Assert.IsNotNull(playback.Caption);
+        Assert.IsNotNull(playback.Caption);Assert.AreEqual(16,playback.GrayscaleCoefficient);
         var rows=JsonSerializer.Deserialize<int[][]>(File.ReadAllText(Path.Combine(TestAssets.Root,"tests","Reference","quest-exit-source-vectors.json")))!;
         foreach(var row in rows)
         {
@@ -28,6 +28,7 @@ public sealed class CampaignQuestLogExitTests
             Assert.AreEqual(row[1]!=0,playback.Caption is not null,$"caption frame {row[0]}");
             Assert.AreEqual(row[2]!=0,playback.HeaderVisible,$"header frame {row[0]}");
             Assert.AreEqual(row[3],playback.BarHeight,$"bars frame {row[0]}");
+            Assert.AreEqual(row[3],playback.GrayscaleCoefficient,$"palette frame {row[0]}");
             Assert.AreEqual(row[4]!=0,playback.Finished,$"controls frame {row[0]}");
         }
     }
@@ -42,6 +43,7 @@ public sealed class CampaignQuestLogExitTests
         for(int i=1;i<=51;i++)
         {
             playback.NextScene();playback.Skip();playback.Tick(1d/60);
+            Assert.AreEqual(Math.Clamp(17-i,0,16),playback.GrayscaleCoefficient);
             Assert.IsFalse(playback.Finished,$"frame {i}");
             Assert.AreEqual(map,playback.Map);CollectionAssert.AreEqual(actors,playback.Actors.ToArray());
         }

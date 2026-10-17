@@ -2,6 +2,7 @@
 """Independent naming tile/palette oracle and malformed input rejection."""
 import importlib.util
 import io
+import json
 from pathlib import Path
 import struct
 from unittest.mock import patch
@@ -50,4 +51,55 @@ with patch.object(Path, 'read_bytes', altered):
     else: raise AssertionError('Invalid naming tile was accepted')
 assert Image.open(io.BytesIO(files['naming-cursor.png'])).size == (16, 16)
 assert Image.open(io.BytesIO(files['naming-page-swap-lower.png'])).size == (24, 8)
-print('PASS: naming layers match independent tile/palette oracle; all opening outputs match; malformed tile rejected; source sprite tile extents preserved.')
+# The PC source uses three consecutive 16x8 subsprites and two complete frames.
+# Compare every atlas pixel against the raw image index and actual menu palette.
+pc = Image.open(io.BytesIO(files['naming-pc-icon.png']))
+assert pc.size == (16, 48)
+for frame, name in enumerate(['pc_icon_off', 'pc_icon_on']):
+    original = Image.open(source / (name + '.png'))
+    assert original.mode == 'P' and original.size == (16, 24)
+    for y in range(24):
+        for x in range(16):
+            index = original.getpixel((x, y))
+            assert pc.getpixel((x, y + frame * 24)) == (*colors[index], 255 if index else 0)
+metadata = json.loads(files['opening.json'])
+templates = metadata['namingTemplates']
+assert set(templates) == {'NAMING_SCREEN_' + name for name in ['PLAYER', 'BOX', 'CAUGHT_MON', 'NICKNAME', 'RIVAL']}
+for name, limit, icon, y, title in [('PLAYER', 7, 1, 37, 'YOUR NAME?'), ('BOX', 8, 2, 41, 'BOX NAME?'),
+                                  ('CAUGHT_MON', 10, 3, 40, "'s nickname?"), ('NICKNAME', 10, 3, 40, "'s nickname?"),
+                                  ('RIVAL', 7, 4, 37, "RIVAL's NAME?")]:
+    assert templates['NAMING_SCREEN_' + name] == dict(copyExistingString=False, maxChars=limit, iconFunction=icon,
+        addGenderIcon=icon == 3, initialPage=0, title=title, prefixSpeciesName=icon == 3, iconX=56, iconY=y)
+assert metadata['namingLayout'] == dict(displayWidth=240, titleX=73, titleY=33, entryY=49,
+                                      entryCellWidth=8, entryCenterOffset=6, genderX=168, genderY=49)
+assert metadata['animations']['naming-pc'] == [dict(frame=0, duration=2), dict(frame=1, duration=2)]
+# Source mutations prove these values are parsed rather than repeated runtime constants.
+naming = (raw / 'src/naming_screen.c').read_text()
+read_text = Path.read_text
+def changed_inputs(path, *args, **kwargs):
+    text = read_text(path, *args, **kwargs)
+    if path == raw / 'include/constants/global.h': text = text.replace('PLAYER_NAME_LENGTH   7', 'PLAYER_NAME_LENGTH   6')
+    if path == raw / 'src/strings.c': text = text.replace('YOUR NAME?', 'NEW NAME?')
+    return text
+with patch.object(Path, 'read_text', changed_inputs):
+    altered_templates, _ = module.naming_metadata(raw, naming.replace('SpriteCallbackDummy, 56, 37, 0', 'SpriteCallbackDummy, 58, 37, 0'))
+    assert altered_templates['NAMING_SCREEN_PLAYER']['maxChars'] == 6
+    assert altered_templates['NAMING_SCREEN_PLAYER']['title'] == 'NEW NAME?'
+    assert altered_templates['NAMING_SCREEN_PLAYER']['iconX'] == 58
+for invalid in [naming.replace('.iconFunction = 2,', '.iconFunction = 99,'),
+                naming.replace('.initialPage = KBPAGE_LETTERS_UPPER,', '.initialPage = KBPAGE_UNKNOWN,', 1),
+                naming.replace('[NAMING_SCREEN_NICKNAME]   = &sMonNamingScreenTemplate,', '')]:
+    try: module.naming_metadata(raw, invalid)
+    except ValueError: pass
+    else: raise AssertionError('Invalid naming source template accepted')
+def invalid_pc_tile(path, *args, **kwargs):
+    text = read_text(path, *args, **kwargs)
+    if path == raw / 'src/naming_screen.c':
+        prefix, parts = text.split('static const struct Subsprite sSubsprites_PCIcon[] = {', 1)
+        text = prefix + 'static const struct Subsprite sSubsprites_PCIcon[] = {' + parts.replace('.tileOffset = 0,', '.tileOffset = 999,', 1)
+    return text
+with patch.object(Path, 'read_text', invalid_pc_tile):
+    try: module.generate(raw)
+    except ValueError as error: assert 'Invalid naming PC tile reference' in str(error)
+    else: raise AssertionError('Invalid naming PC tile accepted')
+print('PASS: naming layers and PC atlas match independent pixel oracle; templates/layout are source-derived; malformed tile/template inputs rejected; generated outputs match.')

@@ -17,7 +17,6 @@ public partial class CampaignView
     private int _entryCursor,_entryGender;
     private bool _entryHasExistingFiles,_entryOverwritePending,_entryOverwriteConfirmed;
     private string? _entryObservedSlot,_entryPromptSlot,_entrySaveAttemptSlot;
-    private LineEdit? _entryNameEdit;
     private SourceGameFont? _entryHeadingFont;
     private readonly Dictionary<int,SourceGameFont> _entryGenderFonts=[];
     private SpriteAsset? _femalePlayer;
@@ -49,37 +48,6 @@ public partial class CampaignView
         string fontDirectory=Path.Combine(_root,"content/generated/ui/font");
         _entryHeadingFont=SourceGameFont.Load(fontDirectory,foreground:Rgb(palette[colors.Foreground]),shadow:Rgb(palette[colors.Shadow]));
         foreach(var gender in _entrySource.GenderColors)_entryGenderFonts.Add(gender.Key,SourceGameFont.Load(fontDirectory,foreground:Rgb(gender.Value.Rgb8),shadow:Rgb(palette[colors.Shadow])));
-        _entryNameEdit=new LineEdit{Position=new(94,47),MaxLength=7,Visible=false,KeepEditingOnTextSubmit=true};
-        _entryNameEdit.AddThemeFontOverride("font",_sourceNormal.Font);_entryNameEdit.AddThemeFontSizeOverride("font_size",_sourceNormal.Size);
-        var namingStyle=new StyleBoxFlat{BgColor=Colors.Transparent,ContentMarginLeft=4,ContentMarginRight=0,ContentMarginTop=0,ContentMarginBottom=0};
-        _entryNameEdit.AddThemeStyleboxOverride("normal",namingStyle);
-        // LineEdit measures both normal and read_only styles, even while editable.
-        // Override both before assigning Size so the default 31px minimum cannot
-        // stick and cover the keyboard. The source panel owns its white fill.
-        _entryNameEdit.AddThemeStyleboxOverride("read_only",namingStyle);
-        _entryNameEdit.AddThemeStyleboxOverride("focus",new StyleBoxEmpty());
-        _entryNameEdit.AddThemeColorOverride("font_color",Colors.White);
-        _entryNameEdit.AddThemeColorOverride("font_selected_color",Colors.White);
-        _entryNameEdit.AddThemeColorOverride("caret_color",Color.Color8(66,66,66));
-        _entryNameEdit.AddThemeColorOverride("selection_color",Color.Color8(173,206,247));
-        _entryNameEdit.AddThemeConstantOverride("outline_size",0);
-        _entryNameEdit.TextSubmitted+=SubmitPlayerEntryName;
-        _entryNameEdit.GuiInput+=input=>
-        {
-            if(TryOpeningNameGuiInput(input)){_entryNameEdit.AcceptEvent();return;}
-            if(input is InputEventKey{Pressed:true,Echo:false,Keycode:Key.Escape})
-            {CancelEntryName();_entryNameEdit.AcceptEvent();}
-            if(input is InputEventMouseButton {ButtonIndex:MouseButton.Right} mouse)
-            {
-                // GuiInput positions are local to the LineEdit. Restore viewport
-                // coordinates before using the common entry pointer/focus guards.
-                using var pointer=(InputEventMouseButton)mouse.Duplicate();
-                pointer.Position=_entryNameEdit.GetGlobalTransformWithCanvas()*mouse.Position;
-                TryPlayerEntryInput(pointer);_entryNameEdit.AcceptEvent();
-            }
-        };
-        AddChild(_entryNameEdit);
-        _entryNameEdit.Size=new(104,18);
         ReadEntrySave();
         BeginIntroMovie();
         Write("playerEntryReady",new{mode=_entryMode,hasContinue=_entrySave is not null,backup=_entrySave?.Source.EndsWith(".bak",StringComparison.Ordinal)==true,
@@ -104,12 +72,12 @@ public partial class CampaignView
 
     private void ShowEntryName(string mode)
     {
-        _entryMode=mode;_entryNotice=null;_namingGrid!.Reset();_namingGridActive=false;_entryNameEdit!.Text=mode=="player-name"?_entryPlayerName:_entryRivalName;
-        _entryNameEdit.Visible=true;_entryNameEdit.GrabFocus();_entryNameEdit.Edit();_entryNameEdit.SelectAll();QueueRedraw();
+        _entryMode=mode;_entryNotice=null;
+        OpenNamingScreen(CurrentNamingBinding()!);QueueRedraw();
     }
     private void CancelEntryName()
     {
-        bool player=_entryMode=="player-name";_entryNameEdit!.Visible=false;_entryNameEdit.ReleaseFocus();_entryNotice=null;
+        bool player=_entryMode=="player-name";CloseNamingScreen();_entryNotice=null;
         if(player){_entryMode="gender";_entryCursor=_entryGender;}else BeginRivalNameChoices();QueueRedraw();
     }
     private void SubmitPlayerEntryName(string text)
@@ -119,7 +87,7 @@ public partial class CampaignView
         _entryActionFrame=_entrySubmitFrame;
         if(text.Length is <1 or >7||!text.Any(c=>c!=' ')||text.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))
         {_entryNotice="Use 1-7 supported letters or symbols.";QueueRedraw();return;}
-        bool player=_entryMode=="player-name";_entryNameEdit!.Visible=false;_entryNameEdit.ReleaseFocus();_entryNotice=null;
+        bool player=_entryMode=="player-name";CloseNamingScreen();_entryNotice=null;
         if(player){_entryPlayerName=text;_entryMode="player-confirm";}
         else{_entryRivalName=text;_entryMode="rival-confirm";}
         _entryCursor=0;
@@ -155,7 +123,7 @@ public partial class CampaignView
     private void EnterPlayerSession(CampaignSession session)
     {
         ResetQuestLogPlayback();
-        _entryMode="closed";_entryNotice=null;_entryNameEdit!.Visible=false;_entryNameEdit.ReleaseFocus();
+        _entryMode="closed";_entryNotice=null;CloseNamingScreen();
         _entryFreshFieldFrame=Engine.GetProcessFrames();
         _session=session;ResetPlayTimeHost();_sequence=session.Revision;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;
         ResetSummaryPresentation();ResetSourceAudio();LoadMap(session.State.World.Player.MapId);Synchronize(null,session.State);_held=null;_repeat=0;
@@ -257,7 +225,7 @@ public partial class CampaignView
                 else EntryKey(Key.Backspace);
                 QueueRedraw();GetViewport().SetInputAsHandled();return true;
             }
-            if(!motion&&!wheel&&OpeningNamePointer(point))
+            if(!motion&&!wheel&&NamingPointer(point))
             {_menuMouseActionFrame=Engine.GetProcessFrames();_entryActionFrame=_menuMouseActionFrame;GetViewport().SetInputAsHandled();return true;}
             int selected=-1;
             if(_entryMode=="menu")

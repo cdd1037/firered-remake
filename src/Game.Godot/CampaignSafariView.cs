@@ -179,7 +179,7 @@ public partial class CampaignView
     {
         var battle = _session.State.SafariBattle!;
         if (battle.Capture?.Stage == CampaignCaptureStage.DexEntry) { DrawCaptureDexEntry(battle.State.Target.SourceSpeciesId); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
-        if (battle.Capture?.Stage == CampaignCaptureStage.Naming) { DrawCaptureNamingPanel(); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
+        if (battle.Capture?.Stage == CampaignCaptureStage.Naming) { DrawNamingScreen(); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         _battleSkin.DrawBackground(this); DrawTexture(_session.State.IsSurfing ? _cityBattleScenes["water"] : _wildTerrain, Vector2.Zero);
         DrawSafariCaptureTrainer();

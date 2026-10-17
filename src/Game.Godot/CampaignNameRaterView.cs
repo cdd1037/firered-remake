@@ -63,12 +63,6 @@ public partial class CampaignView
         return true;
     }
 
-    private void NameRaterNicknameGuiInput(InputEvent input)
-    {
-        if (NameRaterNaming && input is InputEventKey { Pressed: true, Keycode: Key.Escape })
-            _nicknameEdit.AcceptEvent();
-    }
-
     private int NameRaterPointerRow(Vector2 point)
         => ServicePartyPointerRow(point);
 
@@ -99,24 +93,4 @@ public partial class CampaignView
         return true;
     }
 
-    private bool DrawNameRaterNickname()
-    {
-        if (!NameRaterNaming) return false;
-        var target = _session.State.NameRater!.Target!;
-        string? error = NameRaterRules.ValidateSelection(_session.State.Party, target.PartyIndex, target.InstanceId);
-        if (error is not null) throw new InvalidDataException(error);
-        var mon = _session.State.Party[target.PartyIndex];
-        DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
-        _battleSkin.DrawStandardFrame(this, new(8, 16, 224, 136));
-        SourceText(_sourceNormal, new(20, 26), target.OriginalName + "'s nickname?");
-        DrawTexture(PresentedPokemonIcon(mon.Pokemon), new(192, 24));
-        SourceText(_sourceSmall, new(20, 46), _catalog.PokemonContent!.SpeciesNames[mon.Pokemon.SourceSpeciesId]);
-        if (mon.Pokemon.Gender != PokemonGender.Genderless)
-            SourceText(mon.Pokemon.Gender == PokemonGender.Female ? _healthFemale : _healthMale, new(168, 46), mon.Pokemon.Gender == PokemonGender.Female ? "♀" : "♂");
-        SourceText(_sourceSmall, new(20, 99), "Enter: confirm. Backspace: delete.");
-        SourceText(_sourceSmall, new(20, 114), "Blank keeps " + target.OriginalName + ".");
-        if (_status.StartsWith("nickname_", StringComparison.Ordinal) || _status.StartsWith("name_rater_", StringComparison.Ordinal))
-            SourceText(_sourceSmall, new(20, 134), _status == "nickname_length" ? "Use at most 10 characters." : "That name could not be submitted.");
-        return true;
-    }
 }

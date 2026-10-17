@@ -382,6 +382,8 @@ public sealed class CampaignQuestLogPlayback
     // removal update, 33 hold updates, then release field controls.
     public bool HeaderVisible=>!Ending||_exitFrames+1e-7<1;
     public int BarHeight=>Ending?Math.Clamp(17-(int)Math.Floor(_exitFrames+1e-7),0,16):16;
+    // RestoreScreenAfterPlayback shares the bar-update phase: header first, then tones 15 through 0.
+    public int GrayscaleCoefficient=>Ending?Math.Clamp(17-(int)Math.Floor(_exitFrames+1e-7),0,16):16;
     public bool SavedGameVisible{get;private set;}
     private CampaignQuestLogScene CurrentScene=>SavedGameVisible?_savedScene!:_log.Scenes[SceneIndex];
     public int SceneIndex{get;private set;}

@@ -40,6 +40,62 @@ public sealed class OpeningPresentationContentTests
     }
 
     [TestMethod]
+    public void SharedNamingTemplatesPreserveSourceLimitsTitlesIconsAndGeometry()
+    {
+        var opening = PretOpeningPresentation.Load(TestAssets.Root);
+        var templates = opening.NamingTemplates;
+        Assert.AreEqual(new NamingScreenTemplate(false, 7, 1, false, 0, "YOUR NAME?", false, 56, 37), templates["NAMING_SCREEN_PLAYER"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 8, 2, false, 0, "BOX NAME?", false, 56, 41), templates["NAMING_SCREEN_BOX"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 10, 3, true, 0, "'s nickname?", true, 56, 40), templates["NAMING_SCREEN_CAUGHT_MON"]);
+        Assert.AreEqual(templates["NAMING_SCREEN_CAUGHT_MON"], templates["NAMING_SCREEN_NICKNAME"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 7, 4, false, 0, "RIVAL's NAME?", false, 56, 37), templates["NAMING_SCREEN_RIVAL"]);
+        Assert.AreEqual(new NamingScreenLayout(240, 73, 33, 49, 8, 6, 168, 49), opening.NamingLayout);
+        Assert.AreEqual(98, opening.NamingLayout.EntryX(templates["NAMING_SCREEN_PLAYER"].MaxChars));
+        Assert.AreEqual(94, opening.NamingLayout.EntryX(templates["NAMING_SCREEN_BOX"].MaxChars));
+        Assert.AreEqual(86, opening.NamingLayout.EntryX(templates["NAMING_SCREEN_NICKNAME"].MaxChars));
+        CollectionAssert.AreEqual(new[] { new OpeningAnimationFrame(0, 2), new OpeningAnimationFrame(1, 2) }, opening.Animations["naming-pc"].ToArray());
+        byte[] pc = opening.ReadTexture("naming-pc-icon");
+        Assert.AreEqual(16, System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(pc.AsSpan(16, 4)));
+        Assert.AreEqual(48, System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(pc.AsSpan(20, 4)));
+    }
+
+    [TestMethod]
+    public void GeneratedOnlyNamingContractRejectsMissingAndOutOfRangeMetadata()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "firered-naming-" + Guid.NewGuid().ToString("N"));
+        string directory = Path.Combine(root, "content/generated/ui/opening");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "opening.json");
+            var source = JsonNode.Parse(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/ui/opening/opening.json")))!;
+            File.WriteAllText(path, source.ToJsonString());
+            Assert.AreEqual(5, PretOpeningPresentation.Load(root).NamingTemplates.Count);
+            void Reject(Action<JsonNode> mutate)
+            {
+                var json = source.DeepClone(); mutate(json);
+                File.WriteAllText(path, json.ToJsonString());
+                Assert.ThrowsExactly<InvalidDataException>(() => PretOpeningPresentation.Load(root));
+            }
+            Reject(json => json.AsObject().Remove("namingTemplates"));
+            Reject(json => json["namingTemplates"]!.AsObject().Remove("NAMING_SCREEN_NICKNAME"));
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!.AsObject().Remove("copyExistingString"));
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!["maxChars"] = 11);
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_BOX"]!["maxChars"] = 9);
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!["initialPage"] = 3);
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!["iconFunction"] = 0);
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_BOX"]!["addGenderIcon"] = true);
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_NICKNAME"]!["title"] = "different title");
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!["title"] = "");
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_RIVAL"]!["iconX"] = 240);
+            Reject(json => json.AsObject().Remove("namingLayout"));
+            Reject(json => json["namingLayout"]!["entryCellWidth"] = 32);
+            Reject(json => json["animations"]!["naming-pc"]![0]!["frame"] = 2);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [TestMethod]
     public void IsolatedGeneratedPackageLoadsAndRejectsIncompleteKeyboard()
     {
         string root = Path.Combine(Path.GetTempPath(), "firered-opening-" + Guid.NewGuid().ToString("N"));
