@@ -22,6 +22,7 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_ACCURACY_DOWN" => (WildBattleStat.Accuracy,-1),
         "EFFECT_DEFENSE_DOWN" => (WildBattleStat.Defense,-1),
         "EFFECT_DEFENSE_DOWN_2" => (WildBattleStat.Defense,-2),
+        "EFFECT_SPEED_DOWN" => (WildBattleStat.Speed,-1),
         "EFFECT_SPEED_DOWN_2" => (WildBattleStat.Speed,-2),
         "EFFECT_ATTACK_DOWN_2" => (WildBattleStat.Attack,-2),
         "EFFECT_SPECIAL_DEFENSE_DOWN_2" => (WildBattleStat.SpecialDefense,-2),
@@ -55,6 +56,17 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_TRIPLE_KICK" => (3,3),
         _ => null
     };
+
+    private static bool ValidSpreadPp(SourcePpCommandEvent[] pp,SourceMoveUsedEvent used,SourceAttackStringEvent attack) =>
+        used.Actor.Value is >=0 and <4&&used.Target.Value is >=0 and <4&&pp.Length is >=1 and <=2&&
+        pp[0].Target==used.Target&&pp.Select(p=>p.Target).Distinct().Count()==pp.Length&&
+        pp.All(p=>p.Actor==used.Actor&&p.PpOwner==used.Actor&&p.CommandCost is >=1 and <=3&&
+            p.Before is >=0 and <=255&&p.After is >=0 and <=255&&p.CurrentMove==used.Move&&
+            p.ChosenMove==attack.ChosenMove&&p.PpSlot==used.Slot&&p.Sequence>used.Sequence&&
+            p.Target.Side!=used.Actor.Side&&(p.Target==used.Target||p.Target==used.Target.Partner))&&
+        pp[0].Before==used.PpBefore&&pp[0].After==used.PpAfter&&pp[0].Before>0&&
+        pp[0].After==Math.Max(0,pp[0].Before-pp[0].CommandCost)&&
+        pp.Skip(1).All(p=>p.Before==pp[0].After&&p.After==p.Before);
 
     public static CampaignMoveAnimationDecision AtAttackText(CampaignWildBattle battle, bool sourceRules,
         SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
@@ -104,10 +116,7 @@ public static partial class CampaignMoveAnimationPresentation
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
             // One visible attack page owns both PP-command visits and one visual invocation.
-            if(used.Actor.Value is <0 or >3||used.Target.Value is <0 or >3||pp.Length is <1 or >2||pp[0].Target!=used.Target||pp.Select(p=>p.Target).Distinct().Count()!=pp.Length||
-                pp.Any(p=>p.Actor!=used.Actor||p.PpOwner!=used.Actor||p.CommandCost is <1 or >3||p.Before is <0 or >255||p.After is <0 or >255||p.CurrentMove!=used.Move||p.ChosenMove!=attack.ChosenMove||p.PpSlot!=used.Slot||p.Sequence<=used.Sequence||
-                    p.Target.Side==used.Actor.Side||p.Target!=used.Target&&p.Target!=used.Target.Partner)||
-                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||pp[0].Before<1||pp[0].After!=Math.Max(0,pp[0].Before-pp[0].CommandCost)||pp.Skip(1).Any(p=>p.Before!=pp[0].After||p.After!=p.Before))
+            if(!ValidSpreadPp(pp,used,attack))
                 return new(null,"unmatched-source-spread-pp");
             var spreadHits=action.Where(e=>e is SourceHpChangedEvent h&&h.Actor==used.Actor&&h.Move==used.Move||e is SourceSubstituteDamagedEvent d&&d.Actor==used.Actor&&d.Move==used.Move)
                 .Select(e=>e switch{SourceHpChangedEvent h=>(h.Target,h.Sequence,Substitute:false),SourceSubstituteDamagedEvent d=>(d.Target,d.Sequence,Substitute:true),_=>throw new InvalidOperationException()}).ToArray();
@@ -126,30 +135,39 @@ public static partial class CampaignMoveAnimationPresentation
             var hit=eligibleHits[0];var hitPp=pp.Single(p=>p.Target==hit.Target);
             return new(new(battle.Id,used.Sequence,attack.Sequence,hitPp.Sequence,hit.Sequence,move,used.Actor,hit.Target,hit.Substitute),"committed-source-animation");
         }
-        if(battle.Slots == 4 && move==39)
+        if(battle.Slots==4&&definition!.Target=="MOVE_TARGET_BOTH"&&ReductionAnimation(definition) is {} spreadStat)
         {
-            // The original BOTH-target stat script revisits ppreduce without spending
-            // again. One visible attack page can own two target passes. Select the
-            // first successful committed result, including when the first target is capped.
-            if(pp.Length is <1 or >2||pp[0].Target!=used.Target||pp.Select(p=>p.Target).Distinct().Count()!=pp.Length||
-                pp.Any(p=>p.Actor!=used.Actor||p.CurrentMove!=used.Move||p.ChosenMove!=attack.ChosenMove||p.PpSlot!=used.Slot||p.Sequence<=used.Sequence||
-                    (p.Target.Value&1)==(used.Actor.Value&1)||p.Target!=used.Target&&p.Target!=new BattlerSlot(used.Target.Value^2))||
-                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||pp.Skip(1).Any(p=>p.Before!=pp[0].After||p.After!=p.Before))
-                return new(null,"unmatched-source-both-stat-pp");
-            var results=action.OfType<SourceStatChangedEvent>().Where(e=>e.Actor==used.Actor&&e.Stat==WildBattleStat.Defense&&e.After<e.Before).ToArray();
-            if(results.Length is <1 or >2||results.Select(r=>r.Target).Distinct().Count()!=results.Length||results.Any(r=>!pp.Any(p=>p.Target==r.Target&&p.Sequence<r.Sequence)))
+            // Primary reductions revisit the same source script once per opposing target.
+            // The dedicated root belongs to the first eligible result; each stat wave
+            // remains owned by its individual PP pass.
+            if(!ValidSpreadPp(pp,used,attack))return new(null,"unmatched-source-both-stat-pp");
+            var itemRows=new HashSet<int>();
+            for(int item=battle.EventIndex+1;item<end;item++)
+            {
+                if(battle.Events[item] is not SourceHeldItemConsumedEvent)continue;
+                int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,item);
+                if(start>battle.EventIndex)for(int i=start;i<=item;i++)itemRows.Add(i);
+            }
+            var results=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1)
+                .Where(i=>!itemRows.Contains(i)).Select(i=>battle.Events[i]).OfType<SourceStatChangedEvent>().ToArray();
+            if(results.Length is <1 or >2||results.Select(r=>r.Target).Distinct().Count()!=results.Length||
+                results.Any(r=>r.Actor!=used.Actor||r.Stat!=spreadStat.Stat||r.Before is <0 or >12||
+                    r.After>=r.Before||r.After!=Math.Clamp(r.Before+spreadStat.Delta,0,12)||
+                    !pp.Any(p=>p.Target==r.Target&&p.Sequence<r.Sequence&&
+                        !pp.Any(next=>next.Sequence>p.Sequence&&next.Sequence<r.Sequence))))
                 return new(null,"unmatched-source-both-stat-result");
-            var result=results[0];var ownPp=pp.Single(p=>p.Target==result.Target);
-            if(action.Any(e=>e is SourceMoveMissedEvent m&&m.Actor==used.Actor&&m.Target==result.Target&&m.Move==used.Move||
-                e is SourceMoveFailedEvent f&&f.Actor==used.Actor&&f.Target==result.Target&&f.Move==used.Move||
-                e is SourceAbilityPreventedEvent a&&a.Actor==used.Actor&&a.Target==result.Target&&a.Move==used.Move))
-                return new(null,"source-no-animation-result");
+            var eligible=results.Where(r=>!action.Any(e=>
+                e is SourceMoveMissedEvent m&&m.Actor==used.Actor&&m.Target==r.Target&&m.Move==used.Move||
+                e is SourceMoveFailedEvent f&&f.Actor==used.Actor&&f.Target==r.Target&&f.Move==used.Move||
+                e is SourceAbilityPreventedEvent a&&a.Actor==used.Actor&&a.Target==r.Target&&a.Move==used.Move)).ToArray();
+            if(eligible.Length==0)return new(null,"source-no-animation-result");
+            var result=eligible[0];var ownPp=pp.Single(p=>p.Target==result.Target);
             return new(new(battle.Id,used.Sequence,attack.Sequence,ownPp.Sequence,result.Sequence,move,used.Actor,result.Target,false),"committed-source-animation");
         }
         if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].PpOwner != used.Actor ||
             pp[0].Target != used.Target || pp[0].CurrentMove != used.Move || pp[0].ChosenMove != used.Move ||
             pp[0].PpSlot != used.Slot || pp[0].Before != used.PpBefore || pp[0].After != used.PpAfter ||
-            pp[0].Before < 1 || pp[0].CommandCost < 1 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
+            pp[0].Before is <1 or >255 || pp[0].After is <0 or >255 || pp[0].CommandCost is <1 or >2 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
             return new(null, "unmatched-source-pp-command");
         if(move==273)
         {
@@ -226,6 +244,14 @@ public static partial class CampaignMoveAnimationPresentation
                 after!=((changed.Before??new WildBattleCalledOverlay()) with{Type1=after.Type1,Type2=after.Type1}))
                 return new(null,"unmatched-source-type-change-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_MEAN_LOOK")
+        {
+            if(used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||used.Actor==used.Target||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceTowerVolatileEvent {Effect:"mean-look",Applied:true,Reason:"move"} trapped||
+                trapped.Side!=used.Target||trapped.Sequence!=pp[0].Sequence+1||action.OfType<SourceTowerVolatileEvent>().Count()!=1)
+                return new(null,"unmatched-source-trapping-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,trapped.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(FieldSettingAnimation(move) is not null||move==277)
         {

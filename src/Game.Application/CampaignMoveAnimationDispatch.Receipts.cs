@@ -32,6 +32,7 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleStatChangedEvent x => new SourceStatChangedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Stat,x.Before,x.After),
         WildBattleStatusChangedEvent x => new SourceStatusChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before,x.After,x.Reason),
         WildBattleSubstituteDamagedEvent x => new SourceSubstituteDamagedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.HpBefore,x.HpAfter,x.Damage,x.Critical,x.RandomPercent),
+        WildBattleTowerVolatileEvent x => new SourceTowerVolatileEvent(x.Sequence,x.Turn,new((int)x.Side),x.Effect,x.Applied,x.Reason),
         WildBattleTurnReadyEvent x => new SourceTurnReadyEvent(x.Sequence,x.Turn,x.RandomTurnNumber),
         _ => new UninterpretedAnimationReceipt(receipt.Sequence,receipt.Turn)
     };

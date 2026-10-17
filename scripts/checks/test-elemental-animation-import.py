@@ -82,7 +82,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({81,169,14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -321,4 +321,32 @@ class ElementalImportTests(unittest.TestCase):
   def read(reference,path):
    return original(reference,'graphics/battle_anims/sprites/conversion.png' if path=='graphics/battle_anims/sprites/sword.png' else path)
   with patch.object(imp,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
+ def test_web_pair_exact_shared_geometry_and_script_dependencies(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={r['moveId']:r for r in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  for template,callback,w,h,blend in [('gWebThreadSpriteTemplate','AnimTranslateWebThread',8,8,False),('gStringWrapSpriteTemplate','AnimStringWrap',64,32,False),('gSpiderWebSpriteTemplate','AnimSpiderWeb',64,64,True)]:
+   r=recipes[template];self.assertEqual((callback,w,h,blend),(r['callback'],r['width'],r['height'],r['blend']))
+  web=recipes['gSpiderWebSpriteTemplate'];self.assertTrue(web['affineDoubleSize']);self.assertEqual([16,6],[c['x'] for c in web['affineAnimations'][0] if c['op']=='frame'])
+  for move,calls,helper,mode in [(81,18,'StringShotThread','1'),(169,14,'SpiderWebThread','0')]:
+   self.assertEqual(calls,sum(c['op']=='call' and c['args']==[helper] for c in roots[move]['commands']))
+   sprite=next(c for c in pack['subroutines'][helper] if c['op']=='createsprite');self.assertEqual(['20','0','512','20',mode],sprite['args'][3:]);self.assertEqual({'SE_M_STRING_SHOT','SE_M_STRING_SHOT2'},set(roots[move]['soundEffects']))
+
+ def test_web_pixels_use_string_palette_for_all_three_source_tags(self):
+  data,pixels=imp.build(REFERENCE);rows={r['id']:r for r in json.loads(data)['indexedAssets']}
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/string.png') as im:palette=im.getpalette()[:48]
+  colors=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
+  for stem,size in [('string',(64,32)),('web_thread',(8,8)),('spider_web',(64,64))]:
+   name=stem.replace('_','-');self.assertEqual(size,(rows[name]['width'],rows[name]['height']));self.assertEqual(colors,pixels[name+'.pal16'])
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+stem+'.png')) as im:indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
+   self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),pixels[name+'.4bpp'])
+
+ def test_web_unknown_callback_or_shared_palette_registration_fails_closed(self):
+  original=imp.read
+  def changed(ref,path):
+   data=original(ref,path);return data.replace(b'gWebThreadSpriteTemplate,',b'gUnknownWebThreadSpriteTemplate,') if path=='data/battle_anim_scripts.s' else data
+  with patch.object(imp,'read',side_effect=changed):data,_=imp.build(REFERENCE)
+  self.assertFalse({81,169}&{r['moveId'] for r in json.loads(data)['scripts']})
+  def changed_palette(ref,path):
+   data=original(ref,path);return data.replace(b'{gBattleAnimSpritePal_String, ANIM_TAG_SPIDER_WEB}',b'{gBattleAnimSpritePal_Unknown, ANIM_TAG_SPIDER_WEB}') if path=='src/data/battle_anim.h' else data
+  with patch.object(imp,'read',side_effect=changed_palette),self.assertRaises(ValueError):imp.build(REFERENCE)
+
 if __name__=='__main__':unittest.main()

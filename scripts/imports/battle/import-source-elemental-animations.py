@@ -6,6 +6,9 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/imports/battle/import-source-hit-animations.py');hit=importlib.util.module_from_spec(spec);spec.loader.exec_module(hit)
 TEMPLATES={
+ 'gWebThreadSpriteTemplate':('battle_anim_bug.c','AnimTranslateWebThread'),
+ 'gStringWrapSpriteTemplate':('battle_anim_bug.c','AnimStringWrap'),
+ 'gSpiderWebSpriteTemplate':('battle_anim_bug.c','AnimSpiderWeb'),
  'gSwordsDanceBladeSpriteTemplate':('battle_anim_effects_2.c','AnimSwordsDanceBlade'),
  'gSharpenSphereSpriteTemplate':('battle_anim_effects_1.c','AnimSharpenSphere'),
  'gConversionSpriteTemplate':('battle_anim_effects_1.c','AnimConversion'),
@@ -144,6 +147,8 @@ SHARED_SPRITES={'gThinRingExpandingSpriteTemplate', 'gShakeMonOrTerrainSpriteTem
 TASKS={'AnimTask_ShakeMon', 'AnimTask_InvertScreenColor', 'AnimTask_BlendBattleAnimPal', 'AnimTask_StartSinAnimTimer', 'AnimTask_SwayMon', 'AnimTask_BlendColorCycle', 'AnimTask_ElectricBolt', 'AnimTask_ShakeMon2'}
 SOUNDS={'SE_M_MEGA_KICK2', 'SE_M_CRABHAMMER', 'SE_M_VITAL_THROW2', 'SE_M_HYDRO_PUMP', 'SE_M_FLAME_WHEEL', 'SE_M_HYPER_BEAM', 'SE_M_SCREECH', 'SE_M_ABSORB_2', 'SE_M_COMET_PUNCH', 'SE_M_SUPERSONIC', 'SE_M_TAIL_WHIP', 'SE_M_THUNDERBOLT2', 'SE_M_ABSORB', 'SE_M_GIGA_DRAIN', 'SE_M_EMBER', 'SE_M_TRI_ATTACK2', 'SE_M_FLAMETHROWER', 'SE_M_BUBBLE_BEAM', 'SE_M_THUNDERBOLT', 'SE_M_THUNDER_WAVE', 'SE_M_FIRE_PUNCH', 'SE_M_SELF_DESTRUCT', 'SE_M_BUBBLE3', 'SE_M_BUBBLE', 'SE_M_WHIRLPOOL', 'SE_M_MEGA_KICK'}
 GFX={'ANIM_TAG_SPARK', 'ANIM_TAG_METAL_SOUND_WAVES', 'ANIM_TAG_BROWN_ORB', 'ANIM_TAG_LIGHTNING', 'ANIM_TAG_SPARK_2', 'ANIM_TAG_LARGE_FRESH_EGG', 'ANIM_TAG_ICE_CRYSTALS', 'ANIM_TAG_DUCK', 'ANIM_TAG_PURPLE_RING', 'ANIM_TAG_GLOWY_RED_ORB', 'ANIM_TAG_IMPACT', 'ANIM_TAG_SPARK_H', 'ANIM_TAG_BLACK_BALL_2', 'ANIM_TAG_SMALL_EMBER', 'ANIM_TAG_GLOWY_GREEN_ORB', 'ANIM_TAG_WATER_IMPACT', 'ANIM_TAG_BLUE_STAR', 'ANIM_TAG_WATER_ORB', 'ANIM_TAG_HANDS_AND_FEET', 'ANIM_TAG_GRAY_SMOKE', 'ANIM_TAG_SMALL_BUBBLES', 'ANIM_TAG_ORBS', 'ANIM_TAG_BLACK_BALL', 'ANIM_TAG_GOLD_RING', 'ANIM_TAG_EXPLOSION', 'ANIM_TAG_SHOCK_3'}
+GFX|={'ANIM_TAG_WEB_THREAD','ANIM_TAG_STRING','ANIM_TAG_SPIDER_WEB'}
+SOUNDS|={'SE_M_STRING_SHOT2'}
 GFX|={'ANIM_TAG_BLUE_RING_2'}
 GFX|={'ANIM_TAG_TOXIC_BUBBLE','ANIM_TAG_POISON_BUBBLE','ANIM_TAG_NEEDLE','ANIM_TAG_BUBBLE'}
 SOUNDS|={'SE_M_TOXIC','SE_M_BUBBLE2'}
@@ -324,10 +329,16 @@ def build(reference):
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source indexed registration differs: '+stem)
   for suffix,kind in [('4bpp','Gfx'),('gbapal','Pal')]:
    if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source indexed graphics differs: '+stem)
- for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160))]:
+ for stem,symbol,size in [('string','String',0x0400),('web_thread','WebThread',0x0020),('spider_web','SpiderWeb',0x0800)]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_String,\s*'+tag+r'\}',registrations):raise ValueError('Source web registration differs: '+stem)
+  if not re.search(r'gBattleAnimSpriteGfx_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.4bpp\.lz"\)',graphics):raise ValueError('Source web graphics differs: '+stem)
+ for stem,size in [('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64))]:
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
    if im.mode!='P' or im.size!=size:raise ValueError('Invalid source indexed image')
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];palette=im.getpalette()[:48]
+  if stem in ('web_thread','spider_web'):
+   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/string.png'))) as shared:palette=shared.getpalette()[:48]
   if max(indices)>15 or len(palette)!=48:raise ValueError('Invalid source indices/palette')
   if stem=='music_notes' and any(i>5 for i in indices):raise ValueError('Music notes sample outside source recolored range')
   name=stem.replace('_','-');base='elemental-'+name

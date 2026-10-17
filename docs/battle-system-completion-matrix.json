@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 171,
-    "missingDedicatedMoveScripts": 183,
+    "dedicatedMoveScripts": 173,
+    "missingDedicatedMoveScripts": 181,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -873,7 +873,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_DRAGON_RAGE",
@@ -1753,7 +1753,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_MIND_READER",
