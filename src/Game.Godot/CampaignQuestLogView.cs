@@ -92,12 +92,12 @@ public partial class CampaignView
             var position=new Vector2(actor.X*16,actor.Y*16);
             var movement=playback.Movement(actor.Id);
             if(movement is {} active)position=new Vector2(active.From.X*16,active.From.Y*16).Lerp(position,(float)active.Fraction);
-            var pose=new Pose{Position=position,Facing=actor.Facing,Visible=true,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0};
+            var pose=new Pose{Position=position,Facing=actor.Facing,Visible=true,DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0};
             if(player&&CampaignQuestLogAvatar.IsSurf(actor.Graphics))
             {
                 // Shared source sheet placement; replay owns no live Surf effect or field clock.
                 int phase=(int)Math.Floor(playback.Frame+1e-7)/48%2;
-                DrawSurfPose(pose,camera,gender,phase,pose.Position,phase,textureTransform:QuestLogPaletteTexture);
+                DrawSurfPose(pose,camera,gender,phase,pose.Position,new CampaignFieldMovementPose(0,pose.DrawYOffset,pose.IsJump).RiderYOffset(phase),textureTransform:QuestLogPaletteTexture);
             }
             else
             {

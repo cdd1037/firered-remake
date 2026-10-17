@@ -13,7 +13,7 @@ public partial class CampaignView:Node2D
     private sealed record SpriteAsset(Texture2D Texture,int Width,int Height,int Count,Vector2 Anchor,bool Inanimate);
     private sealed record BorderArt(int Width,int Height,Texture2D Bottom,Texture2D Middle,Texture2D Top);
     private sealed record MapArt(PretWorldMap Source,Texture2D Bottom,Texture2D Middle,Texture2D Top,SpriteAsset Player,Dictionary<string,SpriteAsset> Npcs,BorderArt? Border);
-    private sealed class Pose{public Vector2 Position;public Direction Facing;public bool Visible=true;public int Frame;public int DrawYOffset;}
+    private sealed class Pose{public Vector2 Position;public Direction Facing;public bool Visible=true;public int Frame;public int DrawYOffset;public bool IsJump;}
     private sealed record Clip(Vector2 From,Vector2 To,Direction Facing,double Duration,bool Visible,string Action);
     private sealed class Track{public required string Actor;public required List<Clip> Clips;public double Time;public double Duration=>Clips.Sum(c=>c.Duration);}
     private PretCampaignCatalog _catalog=null!;
@@ -215,16 +215,16 @@ public partial class CampaignView:Node2D
             foreach(var actor in after.Actors.Values)
             {
                 if(!_poses.TryGetValue(actor.LocalId,out var pose))_poses[actor.LocalId]=pose=new();
-                pose.Position=new(actor.X*16,actor.Y*16);pose.Facing=actor.Facing;pose.Visible=actor.Visible;pose.Frame=0;pose.DrawYOffset=0;
+                pose.Position=new(actor.X*16,actor.Y*16);pose.Facing=actor.Facing;pose.Visible=actor.Visible;pose.Frame=0;pose.DrawYOffset=0;pose.IsJump=false;
             }
             if(!_poses.TryGetValue("LOCALID_PLAYER",out var player))_poses["LOCALID_PLAYER"]=player=new();
-            player.Position=new(after.World.Player.X*16,after.World.Player.Y*16);player.Facing=after.World.Player.Facing;player.Visible=after.PlayerVisible;player.DrawYOffset=0;
+            player.Position=new(after.World.Player.X*16,after.World.Player.Y*16);player.Facing=after.World.Player.Facing;player.Visible=after.PlayerVisible;player.DrawYOffset=0;player.IsJump=false;
             if(normalStep)
             {
                 var from=new Vector2(before!.World.Player.X*16,before.World.Player.Y*16);var to=player.Position;player.Position=from;
-                bool ledge=IsFuchsiaLedgeStep(before,after);
+                bool ledge=IsLedgeStep(before,after);
                 if(after.IsCycling&&!ledge)BeginCityCycleStep();
-                _tracks.Add(new(){Actor="LOCALID_PLAYER",Clips=[new(from,to,after.World.Player.Facing,(ledge?CampaignFieldMovementTiming.LedgeFrames:_fieldStepTicks)/60.0,true,ledge?"ledge-jump":after.IsCycling?(_fieldStepTicks==6?"cycle":"cycle-stairs"):_fieldStepAction)]});
+                _tracks.Add(new(){Actor="LOCALID_PLAYER",Clips=[new(from,to,after.World.Player.Facing,(ledge?CampaignFieldMovementTiming.LedgeFrames:_fieldStepTicks)/60.0,true,ledge?_fieldStepAction:after.IsCycling?(_fieldStepTicks==6?"cycle":"cycle-stairs"):_fieldStepAction)]});
             }
             foreach(var motion in after.Motions)
             {
@@ -322,12 +322,13 @@ public partial class CampaignView:Node2D
         {
             track.Time+=delta;double cursor=track.Time;var clip=track.Clips[^1];
             foreach(var candidate in track.Clips){clip=candidate;if(cursor<=candidate.Duration)break;cursor-=candidate.Duration;}
-            // Original in-place jumps use the same high arc as ledges, over 16 frames instead of 32.
-            var pose=_poses[track.Actor];pose.Position=clip.From.Lerp(clip.To,SeafoamStepFraction(track.Actor,clip.Action,cursor)??SixIslandStepFraction(track.Actor,clip.Action,cursor)??FourIslandStepFraction(track.Actor,clip.Action,cursor)??(clip.Action=="cycle"?CityCycleStepFraction(cursor):(clip.Action.StartsWith("walk_slower_",StringComparison.Ordinal)||clip.Action.StartsWith("jump_special_",StringComparison.Ordinal))?FieldSlowerStepFraction(cursor):(float)CampaignFieldMovementTiming.Fraction(clip.Action,(int)Math.Round(clip.Duration*60),cursor*60)));pose.Facing=clip.Facing;pose.Visible=clip.Visible;pose.DrawYOffset=clip.Action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfJumpYOffset(cursor):clip.Action.StartsWith("jump_in_place_",StringComparison.Ordinal)?FuchsiaLedgeDrawYOffset(cursor*2):clip.Action is "ledge-jump" or "jump_2_down"?FuchsiaLedgeDrawYOffset(cursor):0;
+            // The same source displacement/arc sample drives live field and recorded playback.
+            var movementPose=CampaignFieldMovementTiming.Sample(clip.Action,(int)Math.Round(clip.Duration*60),cursor*60);
+            var pose=_poses[track.Actor];pose.Position=clip.From.Lerp(clip.To,SeafoamStepFraction(track.Actor,clip.Action,cursor)??SixIslandStepFraction(track.Actor,clip.Action,cursor)??FourIslandStepFraction(track.Actor,clip.Action,cursor)??(clip.Action=="cycle"?CityCycleStepFraction(cursor):clip.Action.StartsWith("walk_slower_",StringComparison.Ordinal)?FieldSlowerStepFraction(cursor):(float)movementPose.Fraction));pose.Facing=clip.Facing;pose.Visible=clip.Visible;pose.DrawYOffset=movementPose.DrawYOffset;pose.IsJump=movementPose.IsJump;
             bool moving=clip.From!=clip.To||clip.Action.StartsWith("walk_in_place",StringComparison.Ordinal);
             pose.Frame=clip.Action=="nurse_joy_bow"?(cursor>=8.0/60&&cursor<40.0/60?-9:0):moving?((int)(track.Time*60/(clip.Action is "cycle" or "cycle-stairs"?4:8))+(clip.Action is "cycle" or "cycle-stairs"?_cityCycleStepPhase:0))%4+1:0;
             if(clip.Action is "disable_anim" or "slide_down" or "restore_anim")pose.Frame=0;
-            if(track.Time>=track.Duration||clip.Action is "cycle" or "cycle-stairs"&&track.Time+1e-9>=track.Duration){track.Time=track.Duration;pose.Position=clip.To;pose.Frame=0;pose.DrawYOffset=0;}
+            if(track.Time>=track.Duration||clip.Action is "cycle" or "cycle-stairs"&&track.Time+1e-9>=track.Duration){track.Time=track.Duration;pose.Position=clip.To;pose.Frame=0;pose.DrawYOffset=0;pose.IsJump=false;}
         }
         if(ProcessFieldFlyTravelPresentation(delta)){QueueRedraw();return;}
         if(ProcessNoncombatFieldPresentation(delta)){QueueRedraw();return;}

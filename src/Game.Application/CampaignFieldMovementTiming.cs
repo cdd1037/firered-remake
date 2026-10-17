@@ -3,6 +3,10 @@ using Game.Domain.World;
 namespace Game.Application;
 
 public sealed record CampaignFieldStepTiming(int Frames,string SourceAction);
+public readonly record struct CampaignFieldMovementPose(double Fraction,int DrawYOffset,bool IsJump=false)
+{
+    public int RiderYOffset(int bobOffset)=>IsJump?DrawYOffset:bobOffset;
+}
 
 // Shared live-field / recap timing. It observes an accepted displacement; it never
 // chooses legality, advances RNG, or writes campaign state.
@@ -59,6 +63,27 @@ public static class CampaignFieldMovementTiming
     }
 
     public static bool RunningAllowed(bool held,bool shoes,bool mapAllows,int? behavior)=>held&&shoes&&mapAllows&&behavior is {} b&&b!=0x0a;
+
+    // elapsedFrames counts completed source callbacks, including the initializer's
+    // immediate callback as update one. Zero is the unchanged pre-movement pose.
+    public static CampaignFieldMovementPose Sample(string? action,int duration,double elapsedFrames)
+    {
+        int frame=Math.Clamp((int)Math.Floor(elapsedFrames+1e-7),0,duration);
+        bool far=action is "jump_2_down" or "jump_2_up" or "jump_2_left" or "jump_2_right";
+        bool special=action is "jump_special_down" or "jump_special_up" or "jump_special_left" or "jump_special_right"
+            or "jump_special_with_effect_down" or "jump_special_with_effect_up" or "jump_special_with_effect_left" or "jump_special_with_effect_right";
+        bool inPlace=action is "jump_in_place_down" or "jump_in_place_up" or "jump_in_place_left" or "jump_in_place_right";
+        bool reverse=action is "jump_in_place_down_up" or "jump_in_place_up_down" or "jump_in_place_left_right" or "jump_in_place_right_left";
+        if(!far&&!special&&!inPlace&&!reverse)return new(Fraction(action,duration,elapsedFrames),0);
+        int length=far||special?32:16;
+        int completed=Math.Min(frame,length);
+        double fraction=far?completed/32d:special?((completed+1)/2)/16d:Math.Clamp(elapsedFrames/duration,0,1);
+        if(completed==0||completed==length)return new(fraction,0,true);
+        ReadOnlySpan<int> high=[-4,-6,-8,-10,-11,-12,-12,-12,-11,-10,-9,-8,-6,-4,0,0];
+        ReadOnlySpan<int> normal=[-2,-4,-6,-8,-9,-10,-10,-10,-9,-8,-6,-5,-3,-2,0,0];
+        int index=(completed-1)>>(far||special?1:0);
+        return new(fraction,reverse?normal[index]:high[index],true);
+    }
 
     // Source event_object_movement.c pixel schedules, shared by both renderers.
     public static double Fraction(string? action,int duration,double elapsedFrames)

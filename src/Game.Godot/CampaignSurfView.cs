@@ -86,14 +86,6 @@ public partial class CampaignView
         _fieldMenuNotice = _status == "field_surf_badge_required" ? "This can't be used until a new\nBADGE is obtained." : "Can't use that here.";
     }
 
-    // DoJumpSpecialSpriteMovement: alternate pixel updates and each original high arc entry twice.
-    private static int FieldSurfJumpYOffset(double elapsed)
-    {
-        int[] high = [-4,-6,-8,-10,-11,-12,-12,-12,-11,-10,-9,-8,-6,-4,0,0];
-        int update = (int)Math.Floor(elapsed * 60 + 1e-7);
-        return update >= 32 ? 0 : high[Math.Clamp((update - 1) / 2, 0, 15)];
-    }
-
     private int FieldSurfBlobPhase => (int)Math.Floor(_fieldSurfBlobFrames + 1e-7) / 48 % 2;
 
     private bool DrawFieldSurfActor(string id, Pose pose, Vector2 camera, bool drawPlayer = true)
@@ -101,11 +93,11 @@ public partial class CampaignView
         if (id != "LOCALID_PLAYER" || !FieldSurfRiding) return false;
         var effect = _session.State.SurfEffect;
         int phase = FieldSurfBlobPhase;
-        bool jumping = effect is not null || SeafoamDismountOrigin is not null;
+        bool jumping = pose.IsJump || effect is not null || SeafoamDismountOrigin is not null;
         var blobTile = SeafoamDismountOrigin ?? (effect is null ? pose.Position : new Vector2(
             (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.X : effect.Origin.X) * 16,
             (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.Y : effect.Origin.Y) * 16));
-        DrawSurfPose(pose,camera,_session.State.PlayerGender,phase,blobTile,jumping?pose.DrawYOffset:phase,drawPlayer);
+        DrawSurfPose(pose,camera,_session.State.PlayerGender,phase,blobTile,new CampaignFieldMovementPose(0,pose.DrawYOffset,jumping).RiderYOffset(phase),drawPlayer);
         return true;
     }
     private void DrawSurfPose(Pose pose,Vector2 camera,int gender,int phase,Vector2 blobTile,float playerYOffset,bool drawPlayer=true,Func<Texture2D,Texture2D>? textureTransform=null)

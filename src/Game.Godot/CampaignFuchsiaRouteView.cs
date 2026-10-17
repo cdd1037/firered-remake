@@ -49,15 +49,6 @@ public partial class CampaignView
         return SevenIslandRenderKeys.Appearance(species, appearance.Personality, appearance.OriginalTrainerId);
     }
 
-    private bool IsFuchsiaLedgeStep(CampaignState? before, CampaignState after) => before is not null&&
+    private bool IsLedgeStep(CampaignState? before, CampaignState after) => before is not null&&
         CampaignFieldMovementTiming.Resolve(before,new("move",after.World.Player.Facing),_catalog,after).SourceAction.StartsWith("jump_2_",StringComparison.Ordinal);
-
-    // pret event_object_movement.c: JUMP_DISTANCE_FAR uses 32 one-pixel frames and sJumpY_High[timer >> 1].
-    // Keep y2 separate from the world/camera anchor, just as the original sprite does.
-    private static int FuchsiaLedgeDrawYOffset(double elapsed)
-    {
-        ReadOnlySpan<int> high = [-4, -6, -8, -10, -11, -12, -12, -12, -11, -10, -9, -8, -6, -4, 0, 0];
-        int frame = (int)Math.Floor(elapsed * 60);
-        return frame >= 32 ? 0 : high[Math.Clamp(frame >> 1, 0, 15)];
-    }
 }

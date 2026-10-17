@@ -396,7 +396,7 @@ public sealed class CampaignQuestLogPlayback
     public ImmutableArray<FieldMetatileEdit> Tiles=>_timeline.Tiles;
     public string? Caption=>Ending?null:SavedGameVisible?_savedCaption:_timeline.Caption;
     public IEnumerable<CampaignQuestLogActor> Actors=>_timeline.Actors;
-    public (CampaignQuestLogActor From,double Fraction)? Movement(string id)=>_timeline.Movement(id);
+    public (CampaignQuestLogActor From,double Fraction,int DrawYOffset,bool IsJump)? Movement(string id)=>_timeline.Movement(id);
     public CampaignQuestLogPlayback(CampaignQuestLog log,string playerName="RED",QuestLogSource? source=null,CampaignQuestLogScene? savedScene=null)
     {
         if(CampaignQuestLogRecorder.Validate(log,source) is {} error)throw new InvalidDataException(error);

@@ -22,7 +22,12 @@ internal sealed class CampaignQuestLogTimeline
     public ImmutableArray<FieldMetatileEdit> Tiles{get;private set;}
     public string? Caption=>_captions.Where(c=>c.Start<=_frame&&c.End>_frame).Select(c=>c.Text).FirstOrDefault();
     public bool Finished=>_frame>=_end;
-    public (CampaignQuestLogActor From,double Fraction)? Movement(string id)=>_moving.TryGetValue(id,out var m)&&_frame<m.Start+m.Duration?(m.From,CampaignFieldMovementTiming.Fraction(m.Action,m.Duration,_frame-m.Start)):null;
+    public (CampaignQuestLogActor From,double Fraction,int DrawYOffset,bool IsJump)? Movement(string id)
+    {
+        if(!_moving.TryGetValue(id,out var m)||_frame>=m.Start+m.Duration)return null;
+        var pose=CampaignFieldMovementTiming.Sample(m.Action,m.Duration,_frame-m.Start);
+        return(m.From,pose.Fraction,pose.DrawYOffset,pose.IsJump);
+    }
     public CampaignQuestLogTimeline(CampaignQuestLogScene scene,string player,QuestLogSource? source,bool savedScene=false)
     {
         Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;

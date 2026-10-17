@@ -195,7 +195,7 @@ public partial class CampaignView
             }
         }
         SourceMusic(DesiredSourceMusic(after));
-        if(IsFuchsiaLedgeStep(before,after))SourceSound("SE_LEDGE");
+        if(IsLedgeStep(before,after))SourceSound("SE_LEDGE");
     }
 
     private bool SourceAudioWaitReady()
