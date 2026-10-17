@@ -8,11 +8,82 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class ElementalImportTests(unittest.TestCase):
+ def test_hail_task_child_dependencies_and_native_material(self):
+  data,pixels=imp.build(REFERENCE);pack=json.loads(data);row=next(r for r in pack['scripts'] if r['moveId']==258)
+  self.assertEqual(['sHailParticleSpriteTemplate','gIceCrystalHitLargeSpriteTemplate'],row['spriteDependencies'])
+  self.assertEqual({'SE_M_HAIL'},set(row['soundEffects']))
+  recipes={r['template']:r for r in pack['spriteRecipes']};hail=recipes[row['spriteDependencies'][0]]
+  self.assertEqual(('AnimHailBegin','hail',16,16,False),(hail['callback'],hail['asset'],hail['width'],hail['height'],hail['blend']))
+  self.assertEqual([256,240,224],[p[0]['x'] for p in hail['affineAnimations']])
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/hail.png') as image:
+   palette=image.getpalette();expected=[sum((palette[index*3+c]//8)<<(5*c) for c in range(3))+(32768 if index else 0) for index in image.tobytes()]
+  self.assertEqual((16,16),struct.unpack_from('<HH',pixels['hail']));self.assertEqual(expected,list(struct.unpack_from('<256H',pixels['hail'],4)))
+
+ def test_hail_raw_creation_or_handoff_changes_are_rejected(self):
+  original=imp.read
+  for before,after in [(b'CreateSprite(&sHailParticleSpriteTemplate,',b'CreateSprite(&gUnknownHailSpriteTemplate,'),(b'.callback = AnimHailContinue;',b'.callback = UnknownHailContinue;')]:
+   def read(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path=='src/battle_anim_ice.c' else data
+   with patch.object(imp,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
+
+ def test_rock_roots_preserve_shared_fragment_and_packed_mode_dependencies(self):
+  data,_=imp.build(REFERENCE);rows={r['moveId']:r for r in json.loads(data)['scripts']}
+  for move,count in [(249,8),(350,4)]:
+   fragments=[c for c in rows[move]['commands'] if c['op']=='createsprite' and c['args'][0]=='gRockFragmentSpriteTemplate']
+   self.assertEqual(count,len(fragments))
+  projectile=next(c for c in rows[350]['commands'] if c['op']=='createsprite' and c['args'][0]=='gRockBlastRockSpriteTemplate')
+  self.assertEqual(['16','0','0','0','25','257'],projectile['args'][3:]);self.assertEqual({'SE_M_SWAGGER','SE_M_ROCK_THROW'},set(rows[350]['soundEffects']))
+  original=imp.read
+  def read(reference,path):
+   data=original(reference,path);return data.replace(b'gRockFragmentSpriteTemplate,',b'gMissingRockFragmentSpriteTemplate,') if path=='data/battle_anim_scripts.s' else data
+  with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
+  self.assertFalse({249,350}&{r['moveId'] for r in json.loads(data)['scripts']})
+
+ def test_rock_fragments_and_projectile_share_source_rocks_without_new_pixels(self):
+  blob,pixels=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(blob)['spriteRecipes']}
+  fragment=recipes['gRockFragmentSpriteTemplate'];projectile=recipes['gRockBlastRockSpriteTemplate']
+  self.assertEqual(('rocks',32,32,False),(fragment['asset'],fragment['width'],fragment['height'],fragment['blend']))
+  self.assertEqual([32,48,64],[frames[0]['tile'] for frames in fragment['animations']]);self.assertEqual([],fragment['affineAnimations'])
+  self.assertEqual(('rocks',32,32,False),(projectile['asset'],projectile['width'],projectile['height'],projectile['affineDoubleSize']))
+  self.assertEqual([251,5],[program[0]['rotation'] for program in projectile['affineAnimations']]);self.assertTrue(all(program[-1]['op']=='jump' and program[-1]['target']==0 for program in projectile['affineAnimations']))
+  self.assertEqual((32,192),struct.unpack_from('<HH',pixels['rocks']))
+  source=imp.read(REFERENCE,'src/battle_anim_rock.c').decode()
+  with self.assertRaises(ValueError):imp.recipe(source.replace('.callback = AnimRockFragment,','.callback = MissingRockCallback,'),'gRockFragmentSpriteTemplate','AnimRockFragment')
+
+ def test_healing_callbacks_share_ring_and_preserve_affine_loop_program(self):
+  data,pixels=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
+  egg=recipes['gSoftBoiledEggSpriteTemplate'];milk=recipes['gMilkBottleSpriteTemplate']
+  self.assertEqual(('AnimSoftBoiledEgg',32,32,True,True),(egg['callback'],egg['width'],egg['height'],egg['blend'],egg['affineDoubleSize']))
+  self.assertEqual(('AnimMilkBottle',32,32,True,False),(milk['callback'],milk['width'],milk['height'],milk['blend'],milk['affineDoubleSize']))
+  self.assertEqual([0,1],[c['target'] for c in egg['affineAnimations'][2] if c['op']=='loop'])
+  self.assertNotIn('gThinRingExpandingSpriteTemplate',recipes)
+  self.assertNotIn('thin-ring',pixels)
+  roots={r['moveId']:r for r in pack['scripts']}
+  self.assertTrue(any(c['op']=='setarg' and c['args']==['7','0xFFFF'] for c in roots[135]['commands']))
+  for move in [135,208]:self.assertTrue(any(c['op']=='call' and c['args']==['HealingEffect2'] for c in roots[move]['commands']))
+
+ def test_reachable_graphics_tags_retain_original_numeric_operands(self):
+  import re
+  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  tags={name:10000+int(value) for name,value in re.findall(r'^#define (ANIM_TAG_\w+)\s+\(ANIM_SPRITES_START\s*\+\s*(\d+)\)',imp.read(REFERENCE,'include/constants/battle_anim.h').decode(),re.M)}
+  for row in pack['scripts']:
+   flat=row['commands']+[c for call in row['commands'] if call['op']=='call' for c in pack['subroutines'][call['args'][0]]]
+   names={c['args'][0] for c in flat if c['op']=='loadspritegfx'}
+   if any(c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_MusicNotesRainbowBlend','AnimTask_MusicNotesClearRainbowBlend'} for c in flat):names|={'ANIM_TAG_MUSIC_NOTES','ANIM_TAG_BENT_SPOON','ANIM_TAG_SPHERE_TO_CUBE','ANIM_TAG_LARGE_FRESH_EGG'}
+   self.assertEqual({name:tags[name] for name in names},row['spriteTags'])
+
+ def test_healing_pixels_match_original_indexed_palette(self):
+  _,pixels=imp.build(REFERENCE)
+  for name,shape in [('breaking-egg',(32,96)),('milk-bottle',(32,32))]:
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+name.replace('-','_')+'.png')) as image:
+    palette=image.getpalette();expected=[sum((palette[i*3+c]>>3)<<(5*c) for c in range(3))|(32768 if i else 0) for i in image.tobytes()]
+   blob=pixels[name];self.assertEqual(shape,struct.unpack_from('<HH',blob));self.assertEqual(expected,list(struct.unpack_from('<'+'H'*len(expected),blob,4)))
+
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
-  for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
+  self.assertEqual({258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
   for name in ['gSwirlingDirtSpriteTemplate','gWhirlpoolSpriteTemplate','gFireSpinSpriteTemplate']:self.assertEqual('AnimParticleInVortex',recipes[name]['callback'])
@@ -147,4 +218,36 @@ class ElementalImportTests(unittest.TestCase):
   self.assertEqual((32,32),(rock['width'],rock['height']));self.assertEqual([32,48,64],[a[0]['tile'] for a in rock['animations']]);self.assertEqual(struct.unpack('<HH',assets['rocks'][:4]),(32,192));self.assertNotIn('gShakeMonOrTerrainSpriteTemplate',recipes)
   for move in (88,157):
    root=next(r for r in pack['scripts'] if r['moveId']==move);self.assertIn('SE_M_ROCK_THROW',root['soundEffects']);controller=next(c for c in root['commands'] if c['op']=='createsprite' and c['args'][0]=='gShakeMonOrTerrainSpriteTemplate');self.assertEqual('1',controller['args'][-1])
+ def test_snow_recipes_and_spike_source_palette(self):
+  blob,assets=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(blob)['spriteRecipes']}
+  self.assertEqual('AnimSwirlingSnowball',recipes['gSwirlingSnowballSpriteTemplate']['callback'])
+  spike=recipes['gIceGroundSpikeSpriteTemplate'];self.assertEqual('AnimWaveFromCenterOfTarget',spike['callback']);self.assertEqual((8,16),(spike['width'],spike['height']));self.assertTrue(spike['blend'])
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/ice_spikes.png') as image:indices=image.tobytes()
+  palette=[int(c) for row in (REFERENCE/'graphics/battle_anims/sprites/ice_crystals.pal').read_text().splitlines()[3:] for c in row.split()]
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual((8,64),struct.unpack_from('<HH',assets['ice-spikes']));self.assertEqual(expected,list(struct.unpack_from('<512H',assets['ice-spikes'],4)))
+ def test_music_roots_keep_dynamic_tags_and_shared_palette_tasks(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);rows={r['moveId']:r for r in pack['scripts']}
+  for move in [47,187,320]:
+   row=rows[move];self.assertTrue({'ANIM_TAG_MUSIC_NOTES','ANIM_TAG_BENT_SPOON','ANIM_TAG_SPHERE_TO_CUBE','ANIM_TAG_LARGE_FRESH_EGG'}<=set(row['spriteTags']))
+   tasks=[c['args'][0] for c in row['commands'] if c['op']=='createvisualtask'];self.assertIn('AnimTask_MusicNotesRainbowBlend',tasks);self.assertIn('AnimTask_MusicNotesClearRainbowBlend',tasks)
+  self.assertEqual({'BellyDrumRight','BellyDrumLeft'},{c['args'][0] for c in rows[187]['commands'] if c['op']=='call'})
+ def test_music_affine_signed_literals_and_eight_direct_frame_variants(self):
+  data,_=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(data)['spriteRecipes']};r=recipes['gWavyMusicNotesSpriteTemplate']
+  self.assertEqual(8,len(r['animations']));self.assertEqual([(12,12),(-12,-12)],[(c['x'],c['y']) for c in r['affineAnimations'][0][:2]])
+  self.assertTrue(all(a[0]['vFlip'] for a in r['animations'][6:]));self.assertEqual('AnimBellyDrumHand',recipes['gBellyDrumHandSpriteTemplate']['callback'])
+ def test_music_indexed_tiles_and_palette_match_every_source_pixel(self):
+  data,blobs=imp.build(REFERENCE);rows=json.loads(data)['indexedAssets'];self.assertEqual(2,len(rows))
+  for row in rows:
+   name=row['id'];image=Image.open(REFERENCE/('graphics/battle_anims/sprites/'+name.replace('-','_')+'.png'));indices=image.tobytes();pal=image.getpalette();packed=blobs[name+'.4bpp'];colors=struct.unpack('<16H',blobs[name+'.pal16'])
+   self.assertEqual(tuple(image.size),(row['width'],row['height']))
+   for y in range(image.height):
+    for x in range(image.width):
+     address=((y//8)*(image.width//8)+x//8)*32+(y%8)*4+(x%8)//2;index=(packed[address]>>((x&1)*4))&15;self.assertEqual(indices[y*image.width+x],index);self.assertEqual(sum((pal[index*3+c]//8)<<(5*c) for c in range(3)),colors[index])
+ def test_missing_music_callback_does_not_admit_partial_roots(self):
+  original=imp.read
+  def read(reference,path):
+   data=original(reference,path);return data.replace(b'gWavyMusicNotesSpriteTemplate,',b'gUnreviewedMusicSpriteTemplate,') if path=='data/battle_anim_scripts.s' else data
+  with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
+  ids={r['moveId'] for r in json.loads(data)['scripts']};self.assertFalse({47,320}&ids);self.assertIn(187,ids)
 if __name__=='__main__':unittest.main()

@@ -54,7 +54,7 @@ public sealed partial class CampaignSession
             frame, ProjectCanonicalWildEvents(started.Events), 0, battle.Player.Pokemon, battle.Opponent.Pokemon,
             CampaignBattlePhase.Events, [], 0, started.Trace)
         {
-            SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
+            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
             CelioRoamer = origin, CelioRoamerEncounterTrace = gateTrace, ActivePartyIndex = active,
             Origin = new(_content.MapDefinition(origin.Map).RegionMapSection, SourceRoamerRules.Level,
                 _content.PokemonContent!.SpeciesNames[battle.Opponent.Pokemon.SourceSpeciesId]),

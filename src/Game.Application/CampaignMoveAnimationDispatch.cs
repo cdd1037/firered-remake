@@ -1,5 +1,7 @@
 using Game.Domain.Battle;
 using Game.Domain.Options;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 
 namespace Game.Application;
@@ -16,6 +18,7 @@ public static partial class CampaignMoveAnimationPresentation
     // Shared by single/double projections; zero means no implemented source renderer.
     internal static (WildBattleStat Stat,int Delta)? ReductionAnimation(int move) => move switch
     {
+        28 => (WildBattleStat.Accuracy,-1),
         39 => (WildBattleStat.Defense,-1),
         103 => (WildBattleStat.Defense,-2),
         148 => (WildBattleStat.Accuracy,-1),
@@ -24,18 +27,47 @@ public static partial class CampaignMoveAnimationPresentation
         319 => (WildBattleStat.SpecialDefense,-2),
         _ => null
     };
-    private static string? SideSettingAnimation(int move)=>move switch{54=>"mist",113=>"light-screen",115=>"reflect",_=>null};
-    private static bool IsRecoveryAnimation(int move) => move is 105 or 235 or 303;
+    private static string? FieldSettingAnimation(int move)=>move switch{54=>"mist",113=>"light-screen",115=>"reflect",258=>"hail",_=>null};
+    private static bool IsRecoveryAnimation(int move) => move is 105 or 135 or 208 or 235 or 303;
 
     internal static int SupportedSourceMoveId(string move)=>move switch
     {
+        "pret:MOVE_SOFT_BOILED" => 135,
+        "pret:MOVE_MILK_DRINK" => 208,
+        "pret:MOVE_HYPER_FANG" => 158,
+        "pret:MOVE_SUPER_FANG" => 162,
+        "pret:MOVE_POISON_FANG" => 305,
+        "pret:MOVE_FURY_SWIPES" => 154,
+        "pret:MOVE_ARM_THRUST" => 292,
+        "pret:MOVE_SING" => 47,
+        "pret:MOVE_GRASS_WHISTLE" => 320,
+        "pret:MOVE_BELLY_DRUM" => 187,
+        "pret:MOVE_WATER_PULSE" => 352,
+        "pret:MOVE_METEOR_MASH" => 309,
+        "pret:MOVE_SAND_ATTACK" => 28,
+        "pret:MOVE_MUD_SLAP" => 189,
         "pret:MOVE_HORN_ATTACK" => 30,
         "pret:MOVE_FURY_ATTACK" => 31,
         "pret:MOVE_HORN_DRILL" => 32,
+        "pret:MOVE_MEGAHORN" => 224,
+        "pret:MOVE_AEROBLAST" => 177,
+        "pret:MOVE_BLIZZARD" => 59,
+        "pret:MOVE_ICY_WIND" => 196,
+        "pret:MOVE_FUTURE_SIGHT" => 248,
+        "pret:MOVE_WISH" => 273,
+        "pret:MOVE_HAIL" => 258,
+        "pret:MOVE_MEGA_PUNCH" => 5,
+        "pret:MOVE_MEGA_KICK" => 25,
+        "pret:MOVE_BLAZE_KICK" => 299,
         "pret:MOVE_DOUBLE_SLAP" => 3,
         "pret:MOVE_COMET_PUNCH" => 4,
         "pret:MOVE_POISON_STING" => 40,
         "pret:MOVE_TWINEEDLE" => 41,
+        "pret:MOVE_PIN_MISSILE" => 42,
+        "pret:MOVE_ICICLE_SPEAR" => 333,
+        "pret:MOVE_BULLET_SEED" => 331,
+        "pret:MOVE_ROCK_SMASH" => 249,
+        "pret:MOVE_ROCK_BLAST" => 350,
         "pret:MOVE_SPIKE_CANNON" => 131,
         "pret:MOVE_TRIPLE_KICK" => 167,
         "pret:MOVE_BONE_CLUB" => 125,
@@ -170,7 +202,7 @@ public static partial class CampaignMoveAnimationPresentation
     };
 
     public static CampaignMoveAnimationDecision AtAttackText(CampaignWildBattle battle, bool sourceRules,
-        SourceBattleScene scene)
+        SourceBattleScene scene,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if (!sourceRules) return new(null, "historical-rules");
         if (scene != SourceBattleScene.On) return new(null, "animations-disabled");
@@ -181,7 +213,7 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
-        if(move is 3 or 4 or 31 or 41 or 131 or 167 or 198)return new(null,"source-per-hit-animation");
+        if(move is 3 or 4 or 31 or 41 or 42 or 131 or 154 or 292 or 167 or 198 or 331 or 333 or 350)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
             attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
@@ -198,6 +230,28 @@ public static partial class CampaignMoveAnimationPresentation
             pp[0].PpSlot != used.Slot || pp[0].Before != used.PpBefore || pp[0].After != used.PpAfter ||
             pp[0].Before < 1 || pp[0].CommandCost < 1 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
             return new(null, "unmatched-source-pp-command");
+        if(move==273)
+        {
+            // Successful trywish owns the setup root. Countdown and later healing
+            // use a separate general animation and never replay this invocation.
+            if((int)used.Actor is <0 or >=2||used.Target!=used.Actor||
+                action.Length<2||action[0]!=pp[0]||action[1] is not WildBattleCalledDelayedEvent {Before:0,After:2,Reason:"scheduled",SourcePartyIndex:>=0 and <6} scheduled||
+                scheduled.Target!=used.Actor||scheduled.Move!=used.Move||scheduled.Sequence<=pp[0].Sequence||
+                action.OfType<WildBattleCalledDelayedEvent>().Count(e=>e.Reason=="scheduled")!=1)
+                return new(null,"unmatched-source-wish-setup");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,scheduled.Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
+        if(move==248)
+        {
+            // trysetfutureattack precedes attackanimation. The delayed impact is
+            // a separate general animation and cannot replay this setup root.
+            if((int)used.Actor is <0 or >=2||(int)used.Target is <0 or >=2||used.Actor==used.Target||
+                action.Length<2||action[0]!=pp[0]||action[1] is not WildBattleCalledDelayedEvent {Before:0,After:3,Reason:"scheduled",SourcePartyIndex:null} scheduled||
+                scheduled.Target!=used.Target||scheduled.Move!=used.Move||scheduled.Sequence<=pp[0].Sequence||
+                action.OfType<WildBattleCalledDelayedEvent>().Count(e=>e.Reason=="scheduled")!=1)
+                return new(null,"unmatched-source-future-setup");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,scheduled.Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
         if (move is 120 or 153)
         {
             // BattleScript_EffectExplosion animates once immediately after setatkhptozero,
@@ -216,12 +270,26 @@ public static partial class CampaignMoveAnimationPresentation
             if(result is null)return new(null,action.Any(e=>e is WildBattleMoveMissedEvent miss&&miss.Actor==used.Actor&&miss.Move==used.Move)?"source-no-animation-result":"unmatched-source-mixed-effect-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Value,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
+        if(move==187)
+        {
+            // maxattackhalvehp authenticates success before attackanimation.
+            // Its later HP update does not invoke General_StatsChange.
+            if(used.Target!=used.Actor||action.Length<3||action[0]!=pp[0]||
+                action[1] is not WildBattleStatChangedEvent {Stat:WildBattleStat.Attack,After:12} stat||
+                stat.Actor!=used.Actor||stat.Target!=used.Actor||stat.Before is <0 or >=12||
+                action[2] is not WildBattleHpChangedEvent {Critical:false,RandomPercent:100} cost||
+                cost.Actor!=used.Actor||cost.Target!=used.Actor||cost.Move!=used.Move||
+                cost.Damage<1||cost.HpBefore<=cost.Damage||cost.HpAfter!=cost.HpBefore-cost.Damage)
+                return new(null,"unmatched-source-belly-drum-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,stat.Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
         if (action.Any(e => e is WildBattleMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is WildBattleMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
-            e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
+            e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
+                !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");
-        if(SideSettingAnimation(move) is not null||move==277)
+        if(FieldSettingAnimation(move) is not null||move==277)
         {
             long result=0;
             if(move==277)
@@ -230,7 +298,7 @@ public static partial class CampaignMoveAnimationPresentation
             }
             else
             {
-                var changed=action.OfType<WildBattleMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==SideSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+                var changed=action.OfType<WildBattleMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==FieldSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
                 if(changed.Length==1)result=changed[0].Sequence;
             }
             if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
@@ -246,7 +314,7 @@ public static partial class CampaignMoveAnimationPresentation
             if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
         }
-        if(move is 77 or 78 or 79 or 86 or 92 or 95 or 147)
+        if(move is 47 or 77 or 78 or 79 or 86 or 92 or 95 or 147 or 320)
         {
             bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<WildBattleStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
@@ -282,6 +350,7 @@ public static partial class CampaignMoveAnimationPresentation
         }
         if(IsRecoveryAnimation(move))
         {
+            if(used.Target!=used.Actor)return new(null,"unmatched-source-recovery-target");
             var results=action.OfType<WildBattleRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
             if(results.Length!=1)return new(null,"unmatched-source-recovery-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
@@ -302,7 +371,7 @@ public static partial class CampaignMoveAnimationPresentation
             new((int)used.Actor), new((int)used.Target), hits[0] is WildBattleSubstituteDamagedEvent), "committed-source-animation");
     }
     public static CampaignMoveAnimationDecision AtAttackText(CampaignDoubleBattle battle,
-        SourceBattleScene scene)
+        SourceBattleScene scene,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if (scene != SourceBattleScene.On) return new(null, "animations-disabled");
         if (battle.Stage != CampaignDoubleBattleStage.Combat || battle.EventIndex < 0 || battle.EventIndex >= battle.Events.Length)
@@ -312,7 +381,7 @@ public static partial class CampaignMoveAnimationPresentation
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
         int move = SupportedSourceMoveId(used.Move.Value);
         if (move == 0) return new(null, "script-outside-slice");
-        if(move is 3 or 4 or 31 or 41 or 131 or 167 or 198)return new(null,"source-per-hit-animation");
+        if(move is 3 or 4 or 31 or 41 or 42 or 131 or 154 or 292 or 167 or 198 or 331 or 333 or 350)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
             attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
@@ -324,25 +393,30 @@ public static partial class CampaignMoveAnimationPresentation
             if(battle.Events[i].Sequence<=battle.Events[i-1].Sequence)return new(null,"unmatched-source-invocation-sequence");
         var action = battle.Events.Skip(battle.EventIndex + 1).Take(end - battle.EventIndex - 1).ToArray();
         var pp = action.OfType<SourcePpCommandEvent>().ToArray();
-        if(move is 51 or 75 or 129 or 145 or 157 or 181)
+        if(move is 51 or 59 or 75 or 129 or 145 or 157 or 181 or 196)
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
             // One visible attack page owns both PP-command visits and one visual invocation.
-            if(pp.Length is <1 or >2||pp[0].Target!=used.Target||pp.Select(p=>p.Target).Distinct().Count()!=pp.Length||
-                pp.Any(p=>p.Actor!=used.Actor||p.CurrentMove!=used.Move||p.ChosenMove!=attack.ChosenMove||p.PpSlot!=used.Slot||p.Sequence<=used.Sequence||
+            if(used.Actor.Value is <0 or >3||used.Target.Value is <0 or >3||pp.Length is <1 or >2||pp[0].Target!=used.Target||pp.Select(p=>p.Target).Distinct().Count()!=pp.Length||
+                pp.Any(p=>p.Actor!=used.Actor||p.PpOwner!=used.Actor||p.CommandCost is <1 or >3||p.Before is <0 or >255||p.After is <0 or >255||p.CurrentMove!=used.Move||p.ChosenMove!=attack.ChosenMove||p.PpSlot!=used.Slot||p.Sequence<=used.Sequence||
                     p.Target.Side==used.Actor.Side||p.Target!=used.Target&&p.Target!=used.Target.Partner)||
-                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||pp.Skip(1).Any(p=>p.Before!=pp[0].After||p.After!=p.Before))
+                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||pp[0].Before<1||pp[0].After!=Math.Max(0,pp[0].Before-pp[0].CommandCost)||pp.Skip(1).Any(p=>p.Before!=pp[0].After||p.After!=p.Before))
                 return new(null,"unmatched-source-spread-pp");
             var spreadHits=action.Where(e=>e is SourceHpChangedEvent h&&h.Actor==used.Actor&&h.Move==used.Move||e is SourceSubstituteDamagedEvent d&&d.Actor==used.Actor&&d.Move==used.Move)
                 .Select(e=>e switch{SourceHpChangedEvent h=>(h.Target,h.Sequence,Substitute:false),SourceSubstituteDamagedEvent d=>(d.Target,d.Sequence,Substitute:true),_=>throw new InvalidOperationException()}).ToArray();
             if(spreadHits.Length==0)return new(null,"source-no-animation-result");
             if(spreadHits.Length>2||spreadHits.Select(h=>h.Target).Distinct().Count()!=spreadHits.Length||spreadHits.Any(h=>!pp.Any(p=>p.Target==h.Target&&p.Sequence<h.Sequence)))
                 return new(null,"unmatched-source-spread-hit");
-            var hit=spreadHits[0];var hitPp=pp.Single(p=>p.Target==hit.Target);
-            if(action.Any(e=>e is SourceMoveMissedEvent m&&m.Actor==used.Actor&&m.Target==hit.Target&&m.Move==used.Move||
+            // A prevented target may still export a zero-loss HP receipt. Choose the first
+            // eligible source pass by its typed outcomes, never by the damage amount: Endure
+            // and Focus Band can legitimately animate with no remaining HP loss.
+            var eligibleHits=spreadHits.Where(hit=>!action.Any(e=>
+                e is SourceMoveMissedEvent m&&m.Actor==used.Actor&&m.Target==hit.Target&&m.Move==used.Move||
                 e is SourceMoveFailedEvent f&&f.Actor==used.Actor&&f.Target==hit.Target&&f.Move==used.Move||
-                e is SourceAbilityPreventedEvent a&&a.Actor==used.Actor&&a.Target==hit.Target&&a.Move==used.Move))
-                return new(null,"source-no-animation-result");
+                e is SourceAbilityPreventedEvent a&&a.Actor==used.Actor&&a.Target==hit.Target&&a.Move==used.Move||
+                e is SourceEffectivenessEvent {Effectiveness:WildBattleEffectiveness.NoEffect} effect&&effect.Actor==used.Actor&&effect.Target==hit.Target&&effect.Move==used.Move)).ToArray();
+            if(eligibleHits.Length==0)return new(null,"source-no-animation-result");
+            var hit=eligibleHits[0];var hitPp=pp.Single(p=>p.Target==hit.Target);
             return new(new(battle.Id,used.Sequence,attack.Sequence,hitPp.Sequence,hit.Sequence,move,used.Actor,hit.Target,hit.Substitute),"committed-source-animation");
         }
         if(move==39)
@@ -370,6 +444,28 @@ public static partial class CampaignMoveAnimationPresentation
             pp[0].PpSlot != used.Slot || pp[0].Before != used.PpBefore || pp[0].After != used.PpAfter ||
             pp[0].Before < 1 || pp[0].CommandCost < 1 || pp[0].After != Math.Max(0,pp[0].Before-pp[0].CommandCost))
             return new(null, "unmatched-source-pp-command");
+        if(move==273)
+        {
+            // Successful trywish owns the setup root. Countdown and later healing
+            // use a separate general animation and never replay this invocation.
+            if(used.Actor.Value is <0 or >=4||used.Target!=used.Actor||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceCalledDelayedEvent {Before:0,After:2,Reason:"scheduled",SourcePartyIndex:>=0 and <6} scheduled||
+                scheduled.Target!=used.Actor||scheduled.Move!=used.Move||scheduled.Sequence<=pp[0].Sequence||
+                action.OfType<SourceCalledDelayedEvent>().Count(e=>e.Reason=="scheduled")!=1)
+                return new(null,"unmatched-source-wish-setup");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,scheduled.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(move==248)
+        {
+            // trysetfutureattack precedes attackanimation. The delayed impact is
+            // a separate general animation and cannot replay this setup root.
+            if(used.Actor.Value is <0 or >=4||used.Target.Value is <0 or >=4||used.Actor==used.Target||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceCalledDelayedEvent {Before:0,After:3,Reason:"scheduled",SourcePartyIndex:null} scheduled||
+                scheduled.Target!=used.Target||scheduled.Move!=used.Move||scheduled.Sequence<=pp[0].Sequence||
+                action.OfType<SourceCalledDelayedEvent>().Count(e=>e.Reason=="scheduled")!=1)
+                return new(null,"unmatched-source-future-setup");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,scheduled.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if (move is 120 or 153)
         {
             // BattleScript_EffectExplosion animates once immediately after setatkhptozero,
@@ -388,12 +484,26 @@ public static partial class CampaignMoveAnimationPresentation
             if(result is null)return new(null,action.Any(e=>e is SourceMoveMissedEvent miss&&miss.Actor==used.Actor&&miss.Move==used.Move)?"source-no-animation-result":"unmatched-source-mixed-effect-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Value,move,used.Actor,used.Target,false),"committed-source-animation");
         }
+        if(move==187)
+        {
+            // maxattackhalvehp authenticates success before attackanimation.
+            // Its later HP update does not invoke General_StatsChange.
+            if(used.Target!=used.Actor||action.Length<3||action[0]!=pp[0]||
+                action[1] is not SourceStatChangedEvent {Stat:WildBattleStat.Attack,After:12} stat||
+                stat.Actor!=used.Actor||stat.Target!=used.Actor||stat.Before is <0 or >=12||
+                action[2] is not SourceHpChangedEvent {Critical:false,RandomPercent:100} cost||
+                cost.Actor!=used.Actor||cost.Target!=used.Actor||cost.Move!=used.Move||
+                cost.Damage<1||cost.HpBefore<=cost.Damage||cost.HpAfter!=cost.HpBefore-cost.Damage)
+                return new(null,"unmatched-source-belly-drum-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,stat.Sequence,move,new(used.Actor.Value),new(used.Target.Value),false),"committed-source-animation");
+        }
         if (action.Any(e => e is SourceMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is SourceMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
-            e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
+            e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
+                !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");
-        if(SideSettingAnimation(move) is not null||move==277)
+        if(FieldSettingAnimation(move) is not null||move==277)
         {
             long result=0;
             if(move==277)
@@ -402,7 +512,7 @@ public static partial class CampaignMoveAnimationPresentation
             }
             else
             {
-                var changed=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==SideSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
+                var changed=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==FieldSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
                 if(changed.Length==1)result=changed[0].Sequence;
             }
             if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
@@ -418,7 +528,7 @@ public static partial class CampaignMoveAnimationPresentation
             if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 77 or 78 or 79 or 86 or 92 or 95 or 147)
+        if(move is 47 or 77 or 78 or 79 or 86 or 92 or 95 or 147 or 320)
         {
             bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<SourceStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
@@ -454,6 +564,7 @@ public static partial class CampaignMoveAnimationPresentation
         }
         if(IsRecoveryAnimation(move))
         {
+            if(used.Target!=used.Actor)return new(null,"unmatched-source-recovery-target");
             var results=action.OfType<SourceRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
             if(results.Length!=1)return new(null,"unmatched-source-recovery-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");

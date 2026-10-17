@@ -42,8 +42,8 @@ public sealed partial class SourceBattleAnimation
             {
                 if(_wait!=0){_wait--;return;}
                 var battler=owner._battlers[(participant==0?owner._cue.Actor:owner._cue.Target).Value];
-                int slot=Enumerable.Range(0,64).FirstOrDefault(i=>(!owner._battlers.TryGetValue(i,out var b)||!b.Visible)&&owner._sprites.All(s=>s.Slot!=i),-1);
-                if(battler.Visible&&slot>=0){owner._sprites.Add(new TraceMonClone(slot,battler,owner._doubles,owner._offsets[battler.Slot.Value],lifetime,this));LiveCopies++;}
+                int slot=owner.FindFreeSpriteSlot();
+                if(battler.Visible&&slot<SourceSpriteRegistry<VisualSprite>.Capacity){owner._sprites.Add(new TraceMonClone(slot,battler,owner._doubles,owner._offsets[battler.Slot.Value],lifetime,this));LiveCopies++;}
                 _remaining--;_wait=spacing;
             }
             else if(LiveCopies==0)Finished=true;

@@ -34,6 +34,41 @@ def rgb555(data,size,palette=None):
    values.append((red>>3)|((green>>3)<<5)|((blue>>3)<<10)|(0x8000 if index else 0))
   return struct.pack('<HH',*size)+struct.pack('<'+'H'*len(values),*values)
 
+def castform_assets(raw, generic_geometry, rgb555):
+    import re
+    read=raw.__getitem__
+    source=read('src/battle_anim_mons.c').decode()
+    constants=read('include/constants/battle.h').decode()
+    species=int(re.search(r'^#define SPECIES_CASTFORM\s+(\d+)',read('include/constants/species.h').decode(),re.M)[1])
+    def table(name): return re.search(r'\b'+name+r'\[[^\]]+\]\s*=\s*\{(.*?)\};',source,re.S)[1]
+    front={k:tuple(map(int,(w,h,y))) for k,w,h,y in re.findall(r'\[(CASTFORM_\w+)\]\s*=\s*\{\s*\.size\s*=\s*MON_COORDS_SIZE\((\d+),\s*(\d+)\),\s*\.y_offset\s*=\s*(\d+)',table('gCastformFrontSpriteCoords'))}
+    elev={k:int(v) for k,v in re.findall(r'\[(CASTFORM_\w+)\]\s*=\s*(\d+)',table('sCastformElevations'))}
+    backy={k:int(v) for k,v in re.findall(r'\[(CASTFORM_\w+)\]\s*=\s*(\d+)',table('sCastformBackSpriteYCoords'))}
+    rules=read('graphics_file_rules.mk').decode()
+    folders=re.findall(r'\$\(CASTFORMGFXDIR\)/(\w+)/front\.4bpp',rules)
+    symbols=sorted(front,key=lambda k:int(re.search(r'^#define '+k+r'\s+(\d+)',constants,re.M)[1]))
+    if len(symbols)!=4 or len(folders)!=4 or set(front)!=set(elev) or set(front)!=set(backy):raise ValueError('Castform source form tables differ')
+    for path in ['back.4bpp','normal.gbapal','shiny.gbapal']:
+        order=re.findall(r'\$\(CASTFORMGFXDIR\)/(\w+)/'+re.escape(path),rules)
+        if order!=folders:raise ValueError('Castform frame/palette concatenation differs')
+    base=next(r for r in generic_geometry if r['species']==species and r['side']=='back')
+    geometry=[];assets=[];blobs={}
+    for symbol,folder in zip(symbols,folders):
+        form=int(re.search(r'^#define '+symbol+r'\s+(\d+)',constants,re.M)[1])
+        for side in ['front','back']:
+            w,h,y=front[symbol] if side=='front' else (base['sourceWidth'],base['sourceHeight'],backy[symbol])
+            geometry.append(dict(species=species,form=form,side=side,sourceWidth=w,sourceHeight=h,yOffset=y,elevation=elev[symbol] if side=='front' else 0))
+            for variant in ['normal','shiny']:
+                text=read(f'graphics/pokemon/castform/{folder}/{variant}.pal').decode().splitlines()
+                if text[:3]!=['JASC-PAL','0100','16']:raise ValueError('Castform palette shape differs')
+                palette=[int(v) for line in text[3:] for v in line.split()]
+                if len(palette)!=48 or any(v<0 or v>255 for v in palette):raise ValueError('Castform palette values differ')
+                identity=f'castform-{form}-{side}-{variant}'
+                data=rgb555(read(f'graphics/pokemon/castform/{folder}/{side}.png'),(64,64),palette)
+                blobs[identity+'.rgb555']=data
+                assets.append(dict(id=identity,path=identity+'.rgb555',species=species,form=form,side=side,paletteVariant=variant))
+    return geometry,assets,blobs
+
 def build(reference):
  raw=read_sources(reference);script=raw['data/battle_anim_scripts.s'].decode();scripts=[]
  macros=set(re.findall(r'^\s*\.macro (\w+)',raw['asm/macros/battle_anim_script.inc'].decode(),re.M))
@@ -116,9 +151,10 @@ def build(reference):
  sines=[int(float(x)*256) for x in re.findall(r'Q_8_8\((-?[\d.]+)\)',raw['src/trig.c'].decode().split('};',1)[0])]
  if len(sines)!=320:raise ValueError('Original sine table differs')
  anim={'sineTable':sines,'schemaVersion':1,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
- art={'schemaVersion':1,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back)]}
+ forms,form_assets,form_blobs=castform_assets(raw,geometry,rgb555)
+ art={'schemaVersion':1,'formGeometry':forms,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back),*form_assets]}
  def encode(x):return (json.dumps(x,separators=(',',':'))+'\n').encode()
- return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back}}
+ return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back,**form_blobs}}
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('legacy_reference',type=Path,nargs='?');p.add_argument('legacy_output',type=Path,nargs='?');p.add_argument('--reference',type=Path);p.add_argument('--output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()

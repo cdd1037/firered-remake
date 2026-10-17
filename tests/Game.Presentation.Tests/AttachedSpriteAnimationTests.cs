@@ -8,8 +8,7 @@ public sealed class AttachedSpriteAnimationTests
     private sealed class Audio:ISourceAnimationAudio
     {public List<SourceAnimationSound> Cues{get;}=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound cue)=>Cues.Add(cue);public void StopAnimationEffects(){}}
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-    private static SourceAnimationScript Script(int move)
-    {using var hit=SourceHitAnimationCatalog.Read(Path.Combine(Folder,"hit"));return SourcePhysicalAnimationCatalog.Read(Path.Combine(Folder,"physical.json"),hit)[move];}
+    private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
     private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/attached-physical-original-vectors.json")));
     [TestMethod]

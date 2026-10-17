@@ -162,10 +162,18 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
             SourceBattleEvent first=firstMisses?new SourceMoveMissedEvent(4,1,actor,target,move):new SourceHpChangedEvent(4,1,actor,target,move,10,5,5,false,100);
             var battle=new CampaignDoubleBattle("spread",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,
                 [new SourceAttackStringEvent(1,1,actor,move,move),new SourceMoveUsedEvent(2,1,actor,target,0,move,10,9),new SourcePpCommandEvent(3,1,actor,target,0,move,move,10,9,1,0),first,
-                 new SourcePpCommandEvent(5,1,actor,partner,0,move,move,9,9,0,0),new SourceHpChangedEvent(6,1,actor,partner,move,10,5,5,false,100)],1,[],[],0,0,[],[],[],[],0);
+                 new SourcePpCommandEvent(5,1,actor,partner,0,move,move,9,9,1,0),new SourceHpChangedEvent(6,1,actor,partner,move,10,5,5,false,100)],1,[],[],0,0,[],[],[],[],0);
             var decision=CampaignMoveAnimationPresentation.AtAttackText(battle,SourceBattleScene.On);Assert.IsNotNull(decision.Dispatch,decision.Reason);Assert.AreEqual(id,decision.Dispatch.SourceMoveId);Assert.AreEqual(firstMisses?3:1,decision.Dispatch.Target.Value);Assert.AreEqual(firstMisses?6L:4L,decision.Dispatch.ResultSequence);
             var extraPp=battle with{Events=battle.Events.SetItem(4,new SourcePpCommandEvent(5,1,actor,partner,0,move,move,9,8,1,0))};
             Assert.AreEqual("unmatched-source-spread-pp",CampaignMoveAnimationPresentation.AtAttackText(extraPp,SourceBattleScene.On).Reason);
+            // Suppressed repeat ppreduce retains a positive calculated cost;
+            // only the PP delta is suppressed, and ownership remains exact.
+            foreach(int index in new[]{2,4})
+            {
+                var own=(SourcePpCommandEvent)battle.Events[index];
+                foreach(var invalid in new[]{own with{PpOwner=partner},own with{CommandCost=0},own with{CommandCost=4},own with{CommandCost=255},own with{CommandCost=int.MaxValue},own with{Before=256},own with{After=256}})
+                    Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(battle with{Events=battle.Events.SetItem(index,invalid)},SourceBattleScene.On).Dispatch);
+            }
             if(firstMisses)
             {var bothMiss=battle with{Events=battle.Events.SetItem(5,new SourceMoveMissedEvent(6,1,actor,partner,move))};Assert.IsNull(CampaignMoveAnimationPresentation.AtAttackText(bothMiss,SourceBattleScene.On).Dispatch);}
         }

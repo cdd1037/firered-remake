@@ -88,7 +88,9 @@ public partial class CampaignView
             return index == 0 ? PresentedBattleSpeciesName(WildBattleTransformationRules.PersistentPokemon(battle.State.Opponent).SourceSpeciesId)
                 : throw new InvalidDataException("Source wild opponent party display index differs.");
         }
-        return SourceTrainerPresentationModel.Describe(battle.Events, battle.EventIndex, WildPrefixedName, MoveName, PartyName, RockTunnelHeldItemName);
+        string? PrefixedPartyName(WildBattleSide side,int index)=>CampaignWishResolutionPresentation.CasterAvailable(battle.Frame,new((int)side),index)
+            ?(side==WildBattleSide.Opponent?battle.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?"Foe ":"Wild ":"")+PartyName(side,index):null;
+        return SourceTrainerPresentationModel.Describe(battle.Events, battle.EventIndex, WildPrefixedName, MoveName, PartyName, RockTunnelHeldItemName, PrefixedPartyName);
     }
 
     private bool SourceTrainerEventPages(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source,

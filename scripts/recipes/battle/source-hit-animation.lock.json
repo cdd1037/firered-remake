@@ -101,6 +101,60 @@
     },
     {
       "path": "include/gba/types.h"
+    },
+    {
+      "path": "include/constants/battle.h"
+    },
+    {
+      "path": "graphics_file_rules.mk"
+    },
+    {
+      "path": "graphics/pokemon/castform/normal/front.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/normal/back.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/normal/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/normal/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/sunny/front.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/sunny/back.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/sunny/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/sunny/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/rainy/front.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/rainy/back.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/rainy/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/rainy/shiny.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/snowy/front.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/snowy/back.png"
+    },
+    {
+      "path": "graphics/pokemon/castform/snowy/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/castform/snowy/shiny.pal"
     }
   ]
 }

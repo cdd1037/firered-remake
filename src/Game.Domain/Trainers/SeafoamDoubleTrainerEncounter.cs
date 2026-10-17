@@ -65,13 +65,14 @@ public static class SeafoamDoubleTrainerEncounter
                         SpecialBadgeBoost = side == BattleSide.Player && specialBadgeBoost });
                 }).ToImmutableArray()
             };
+            var entrySlots = frame.Slots;
             var entry = SourceFourEntryAbilities.InitializeEntry(catalog, frame, frame.Revision);
             if (!entry.Succeeded) return Fail(entry.Fault!);
             var turnNumber = Gen3Rng.Next(entry.State.Rng, "seafoam-double.entry.random-turn-number");
             var ready = SourceBattleEventHooks.Publish(entry.State with { Rng = turnNumber.State, RandomTurnNumber = turnNumber.Value },
                 (n, t) => new SourceTurnReadyEvent(n, t, turnNumber.Value));
             return new(ready.State, ready.State.Rng, [.. entry.Events, ready.Event],
-                [.. setupTrace, .. generated.Trace, .. entry.Trace, turnNumber.Trace], null);
+                [.. setupTrace, .. generated.Trace, .. entry.Trace, turnNumber.Trace], null) { EntrySlots = entrySlots };
         }
         catch (OverflowException) { return Fail("seafoam_double_rng_or_counter_exhausted"); }
         catch (ArgumentException) { return Fail("seafoam_double_invalid_generation"); }

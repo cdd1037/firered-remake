@@ -516,8 +516,7 @@ public partial class CampaignView
             bool faintShown = mon.CurrentHp == 0 && (b.Phase == CampaignBattlePhase.Results || b.Phase == CampaignBattlePhase.Events && b.Events.Take(b.EventIndex + 1).OfType<WildBattleFaintedEvent>().Any(f => f.Side == side));
             if (!faintShown)
             {
-                var appearance=FuchsiaBattleAppearance(b,side,mon);
-                var asset = _battleArt[(appearance.Species, side == WildBattleSide.Player ? "back" : "front", appearance.Shiny)];
+                var asset = SingleBattleArt(b,side,mon);
                 if(!(side==WildBattleSide.Opponent && DrawCapturedTarget(b,asset.Texture,asset.Position)) && !SourceAnimationPresented && !DrawSourceSubstitute(side) && (side!=WildBattleSide.Opponent||!DrawPokemonTowerOpponent(b)))DrawTexture(asset.Texture, asset.Position);
             }
             int hp = WildDisplayedHp(b, mon, side);

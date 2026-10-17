@@ -26,8 +26,8 @@ public sealed partial class SourceBattleAnimation
     }
     private int AllocateElectricSprite(int excluded=-1)
     {
-        for(int i=0;i<64;i++)if(i!=excluded&&(!_battlers.TryGetValue(i,out var reserved)||!reserved.Visible)&&_sprites.All(s=>s.Slot!=i)){_oamY[i]=0;return i;}
-        return -1;
+        int slot=FindFreeSpriteSlot(excluded);if(slot==SourceSpriteRegistry<VisualSprite>.Capacity)return -1;
+        _oamY[slot]=0;return slot;
     }
     private bool TryCreateElectricSprite(SourceAnimationCommand c,int slot,int priority)
     {

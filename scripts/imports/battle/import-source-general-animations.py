@@ -20,7 +20,16 @@ def build(reference):
    result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+i+1))
    if op==terminal:return result
   raise ValueError('Missing general terminator')
- root=commands('General_HeldItemEffect','end');subs={'GrantingStarsEffect':commands('GrantingStarsEffect','return')};flat=root+subs['GrantingStarsEffect']
+ roots={name:commands(name,'end') for name in ['General_HeldItemEffect','General_WishHeal']}
+ subs={name:commands(name,'return') for name in ['GrantingStarsEffect','HealingEffect']}
+ def dependency_commands(rows):
+  flat=list(rows)
+  for row in rows:
+   if row['op']=='call':
+    name=row['args'][0]
+    if name not in subs:raise ValueError('Uncovered general subroutine '+name)
+    flat+=subs[name]
+  return flat
  recipes=[]
  for file,name,callback in [('battle_anim_effects_1.c','gGrantingStarsSpriteTemplate','AnimGrantingStars'),('battle_anim_effects_2.c','gThinRingExpandingSpriteTemplate','AnimSpriteOnMonPos')]:
   code=read('src/'+file).decode()
@@ -30,7 +39,7 @@ def build(reference):
  palette=[int(v) for row in rows[3:] for v in row.split()]
  blobs={'general-sparkle-2.rgb555':shared.hit.rgb555(read('graphics/battle_anims/sprites/sparkle_1.png'),(32,256),palette),'general-thin-ring.rgb555':shared.hit.rgb555(read('graphics/battle_anims/sprites/thin_ring.png'),(64,64))}
  assets=[dict(id='sparkle-2',path='general-sparkle-2.rgb555'),dict(id='thin-ring',path='general-thin-ring.rgb555')]
- data=dict(schemaVersion=1,generalScripts=[dict(label='General_HeldItemEffect',commands=root,soundEffects=shared.sound_effects(reference,flat))],subroutines=subs,spriteRecipes=recipes,assets=assets)
+ data=dict(schemaVersion=1,generalScripts=[dict(label=name,commands=rows,soundEffects=shared.sound_effects(reference,dependency_commands(rows))) for name,rows in roots.items()],subroutines=subs,spriteRecipes=recipes,assets=assets)
  return (json.dumps(data,indent=2)+'\n').encode(),blobs
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();data,blobs=build(a.reference)
@@ -38,4 +47,4 @@ if __name__=='__main__':
   if a.check:
    if path.read_bytes()!=blob:raise SystemExit('General runtime output differs: '+str(path))
   else:path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(blob)
- print(json.dumps(dict(passed=True,generalAnimations=1)))
+ print(json.dumps(dict(passed=True,generalAnimations=len(json.loads(data)['generalScripts']))))

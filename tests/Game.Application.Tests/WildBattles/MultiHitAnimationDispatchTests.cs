@@ -249,7 +249,7 @@ public sealed class MultiHitAnimationDispatchTests
             substitute with { Actor = new(2) }, substitute with { Target = new(3) },
             substitute with { Move = Id("COMET_PUNCH") }
         }) AssertDenied(good.SetItem(3, invalid), "wrong substitute hit identity");
-        foreach (string unsupported in new[] { "FURY_SWIPES", "BULLET_SEED", "TACKLE" })
+        foreach (string unsupported in new[] { "TACKLE" })
             AssertDenied(Group(unsupported), "outside admitted per-hit slice: " + unsupported);
     }
 

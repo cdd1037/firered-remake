@@ -7,8 +7,7 @@ public sealed class SpriteFrameLoopTests
 {
     private sealed class Audio:ISourceAnimationAudio
     {public bool IsPlaying=>false;public void Play(SourceAnimationSound cue){}public void StopAnimationEffects(){}}
-    private static SourceAnimationScript Script()
-    {using var hit=SourceHitAnimationCatalog.Read(Path.Combine(TestAssets.Root,"content/generated/battle/animations/hit"));return SourcePhysicalAnimationCatalog.Read(Path.Combine(TestAssets.Root,"content/generated/battle/animations/physical.json"),hit)[111];}
+    private static SourceAnimationScript Script()=>AnimationCompositionFixture.Script(111);
     private static SourceSpriteRecipe Recipe(string name,SourceSpriteRecipe source)=>name switch
     {
         "orb"=>source,

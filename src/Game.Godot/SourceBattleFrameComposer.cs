@@ -6,6 +6,13 @@ public sealed record SourcePixelAsset(int Width,int Height,ushort[] Pixels)
 /// <summary>Bounded 240x112 source RGB555 field. Existing HUD/text remain later layers.</summary>
 public sealed class SourceBattleFrameComposer
 {
+    private static ushort[]? SelectedSpritePalette(SourceAnimationFrame frame,SourceVisualSpriteFrame sprite,SourcePixelAsset asset)
+    {
+        if(sprite.PaletteSlot is not int slot)return frame.SpritePalettes.GetValueOrDefault(asset.PaletteTag);
+        if(slot is <0 or >15||frame.SpritePaletteSlots.Length!=16||frame.SpritePaletteSlots[slot].Length!=16)throw new InvalidDataException("Source explicit sprite palette bank is missing.");
+        return frame.SpritePaletteSlots[slot];
+    }
+
     public const int Width=240,Height=160;
     private readonly Dictionary<string,SourcePixelAsset> _assets=[];
     private readonly AnimationBattler[] _battlers;
@@ -36,7 +43,7 @@ public sealed class SourceBattleFrameComposer
         foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).OrderByDescending(s=>s.OamRank))
         {
             if(sprite.Blend)throw new InvalidDataException("Residual source blend needs destination layer sampling.");
-            BlitSprite(pixels,_assets[sprite.Asset!],sprite,0,0,false,frame.SpritePalettes.GetValueOrDefault(_assets[sprite.Asset!].PaletteTag));
+            BlitSprite(pixels,_assets[sprite.Asset!],sprite,0,0,false,SelectedSpritePalette(frame,sprite,_assets[sprite.Asset!]));
         }
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=(byte)((p&0x8000)!=0?255:0);}
@@ -110,7 +117,7 @@ public sealed class SourceBattleFrameComposer
                     AffineBattler(layer,_assets[sprite.Asset!],center.X,center.Y,matrix,palettes.GetValueOrDefault(16+slot),frame.InvertedPalettes.Contains(16+slot),frame.GreyscaleSlots.Contains(slot));
                 }
                 else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,_assets[sprite.Asset!],new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
-                else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false,frame.SpritePalettes.GetValueOrDefault(_assets[sprite.Asset!].PaletteTag));
+                else BlitSprite(layer,_assets[sprite.Asset!],sprite,0,0,false,SelectedSpritePalette(frame,sprite,_assets[sprite.Asset!]));
             }
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Item1;}
         }

@@ -6,7 +6,7 @@ public static partial class CampaignStatAnimationPresentation
 {
     private sealed record StatGroup(string Battle,long Attack,long Pp,int Move,int Affected,long First,long? Animation,int? Argument,long[] Silent);
     private sealed record GroupRow(long Sequence,int Turn,string Kind,int Actor=-1,int Target=-1,string Move="",string Chosen="",
-        int Owner=-1,int Slot=-1,int Before=0,int After=0,int Cost=0,WildBattleStat Stat=default,string Detail="");
+        int Owner=-1,int Slot=-1,int Before=0,int After=0,int Cost=0,WildBattleStat Stat=default,string Detail="",int Damage=0,bool Critical=false,bool Endured=false,bool HungOn=false,int Percent=100);
     private static CampaignStatAnimationDispatch? GroupAnimation(StatGroup group,long current,bool substitute)=>
         !substitute&&group.Animation==current&&group.Argument is {} arg
             ?new(group.Battle,current,group.Attack,group.Pp,group.Move,new(group.Affected),arg):null;
@@ -26,9 +26,7 @@ public static partial class CampaignStatAnimationPresentation
         int invocation=battle.EventIndex;
         while(invocation>=0&&battle.Events[invocation] is not (SourceMoveUsedEvent or SourceAttackStringEvent))invocation--;
         if(invocation<0||battle.Events[invocation] is not SourceMoveUsedEvent {Move.Value:"pret:MOVE_COSMIC_POWER" or "pret:MOVE_BULK_UP" or "pret:MOVE_TICKLE" or "pret:MOVE_SWAGGER"})return null;
-        var itemReceipts=new HashSet<long>();
-        for(int end=0;end<battle.Events.Length;end++)if(battle.Events[end] is SourceHeldItemConsumedEvent)
-        {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,end);if(start>=0)for(int i=start;i<=end;i++)itemReceipts.Add(battle.Events[i].Sequence);}
+        var itemReceipts=ItemReceiptSequences(battle.Events);
         return ReadGroup(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,4,itemReceipts);
     }
     private static StatGroup? Grouped(CampaignWildBattle battle,bool sourceRules)
@@ -37,10 +35,22 @@ public static partial class CampaignStatAnimationPresentation
         int invocation=battle.EventIndex;
         while(invocation>=0&&battle.Events[invocation] is not (WildBattleMoveUsedEvent or WildBattleAttackStringEvent))invocation--;
         if(invocation<0||battle.Events[invocation] is not WildBattleMoveUsedEvent {Move.Value:"pret:MOVE_COSMIC_POWER" or "pret:MOVE_BULK_UP" or "pret:MOVE_TICKLE" or "pret:MOVE_SWAGGER"})return null;
-        var itemReceipts=new HashSet<long>();
-        for(int end=0;end<battle.Events.Length;end++)if(battle.Events[end] is WildBattleHeldItemConsumedEvent)
-        {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,end);if(start>=0)for(int i=start;i<=end;i++)itemReceipts.Add(battle.Events[i].Sequence);}
+        var itemReceipts=ItemReceiptSequences(battle.Events);
         return ReadGroup(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,itemReceipts);
+    }
+    private static HashSet<long> ItemReceiptSequences(IReadOnlyList<SourceBattleEvent> events)
+    {
+        var result=new HashSet<long>();
+        for(int end=0;end<events.Count;end++)if(events[end] is SourceHeldItemConsumedEvent)
+        {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(events,end);if(start>=0)for(int i=start;i<=end;i++)result.Add(events[i].Sequence);}
+        return result;
+    }
+    private static HashSet<long> ItemReceiptSequences(IReadOnlyList<WildBattleEvent> events)
+    {
+        var result=new HashSet<long>();
+        for(int end=0;end<events.Count;end++)if(events[end] is WildBattleHeldItemConsumedEvent)
+        {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(events,end);if(start>=0)for(int i=start;i<=end;i++)result.Add(events[i].Sequence);}
+        return result;
     }
     private static bool GroupBoundary(GroupRow row)=>row.Kind is "attack" or "used" or "boundary";
     private static StatGroup? ReadGroup(string battle,GroupRow[] rows,int index,int slots,HashSet<long> items)
@@ -108,6 +118,13 @@ public static partial class CampaignStatAnimationPresentation
         SourceAttackStringEvent x=>new(x.Sequence,x.Turn,"attack",x.Actor.Value,Move:x.CurrentMove.Value,Chosen:x.ChosenMove.Value),
         SourceMoveUsedEvent x=>new(x.Sequence,x.Turn,"used",x.Actor.Value,x.Target.Value,x.Move.Value,Slot:x.Slot,Before:x.PpBefore,After:x.PpAfter),
         SourcePpCommandEvent x=>new(x.Sequence,x.Turn,"pp",x.Actor.Value,x.Target.Value,x.CurrentMove.Value,x.ChosenMove.Value,x.PpOwner.Value,x.PpSlot,x.Before,x.After,x.CommandCost),
+        SourceHpChangedEvent x=>new(x.Sequence,x.Turn,"hp",x.Actor.Value,x.Target.Value,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage,Critical:x.Critical,Percent:x.RandomPercent),
+        SourceSubstituteDamagedEvent x=>new(x.Sequence,x.Turn,"substitute",x.Actor.Value,x.Target.Value,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage,Critical:x.Critical,Percent:x.RandomPercent),
+        SourceCriticalHitEvent x=>new(x.Sequence,x.Turn,"critical",x.Actor.Value,x.Target.Value),
+        SourceEffectivenessEvent x=>new(x.Sequence,x.Turn,"effectiveness",x.Actor.Value,x.Target.Value,x.Move.Value,Detail:x.Effectiveness.ToString()),
+        SourceDamageAdjustedEvent x=>new(x.Sequence,x.Turn,"adjustment",Target:x.Target.Value,Move:x.Move.Value,Before:x.DamageBefore,After:x.DamageAfter,Detail:x.Item,Endured:x.Endured,HungOn:x.HungOn),
+        SourceHeldItemSurvivalEvent x=>new(x.Sequence,x.Turn,"survival",Target:x.Target.Value,Move:x.Move.Value,Detail:x.Item),
+        SourceMtMoonVolatileEvent {Volatile:"endure",Before:1,After:1,Reason:"endured"} x=>new(x.Sequence,x.Turn,"endured",Target:x.Side.Value),
         SourceStatChangedEvent x=>new(x.Sequence,x.Turn,"stat",x.Actor.Value,x.Target.Value,Before:x.Before,After:x.After,Stat:x.Stat),
         SourceStatAtMinimumEvent x=>new(x.Sequence,x.Turn,"minimum",x.Actor.Value,x.Target.Value,Stat:x.Stat),
         SourceStatAtMaximumEvent x=>new(x.Sequence,x.Turn,"maximum",x.Actor.Value,x.Target.Value,Stat:x.Stat),
@@ -126,6 +143,13 @@ public static partial class CampaignStatAnimationPresentation
         WildBattleAttackStringEvent x=>new(x.Sequence,x.Turn,"attack",(int)x.Actor,Move:x.CurrentMove.Value,Chosen:x.ChosenMove.Value),
         WildBattleMoveUsedEvent x=>new(x.Sequence,x.Turn,"used",(int)x.Actor,(int)x.Target,x.Move.Value,Slot:x.Slot,Before:x.PpBefore,After:x.PpAfter),
         WildBattlePpCommandEvent x=>new(x.Sequence,x.Turn,"pp",(int)x.Actor,(int)x.Target,x.CurrentMove.Value,x.ChosenMove.Value,(int)x.PpOwner,x.PpSlot,x.Before,x.After,x.CommandCost),
+        WildBattleHpChangedEvent x=>new(x.Sequence,x.Turn,"hp",(int)x.Actor,(int)x.Target,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage,Critical:x.Critical,Percent:x.RandomPercent),
+        WildBattleSubstituteDamagedEvent x=>new(x.Sequence,x.Turn,"substitute",(int)x.Actor,(int)x.Target,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage,Critical:x.Critical,Percent:x.RandomPercent),
+        WildBattleCriticalHitEvent x=>new(x.Sequence,x.Turn,"critical",(int)x.Actor,(int)x.Target),
+        WildBattleEffectivenessEvent x=>new(x.Sequence,x.Turn,"effectiveness",(int)x.Actor,(int)x.Target,x.Move.Value,Detail:x.Effectiveness.ToString()),
+        WildBattleDamageAdjustedEvent x=>new(x.Sequence,x.Turn,"adjustment",Target:(int)x.Target,Move:x.Move.Value,Before:x.DamageBefore,After:x.DamageAfter,Detail:x.Item,Endured:x.Endured,HungOn:x.HungOn),
+        WildBattleHeldItemSurvivalEvent x=>new(x.Sequence,x.Turn,"survival",Target:(int)x.Target,Move:x.Move.Value,Detail:x.Item),
+        WildBattleMtMoonVolatileEvent {Volatile:"endure",Before:1,After:1,Reason:"endured"} x=>new(x.Sequence,x.Turn,"endured",Target:(int)x.Side),
         WildBattleStatChangedEvent x=>new(x.Sequence,x.Turn,"stat",(int)x.Actor,(int)x.Target,Before:x.Before,After:x.After,Stat:x.Stat),
         WildBattleStatAtMinimumEvent x=>new(x.Sequence,x.Turn,"minimum",(int)x.Actor,(int)x.Target,Stat:x.Stat),
         WildBattleStatAtMaximumEvent x=>new(x.Sequence,x.Turn,"maximum",(int)x.Actor,(int)x.Target,Stat:x.Stat),

@@ -113,7 +113,7 @@ public sealed partial class CampaignSession
             if (!sent.Contains(switched.IncomingIndex)) sent = sent.Add(switched.IncomingIndex);
             seen = seen.Add(result.State.Party(BattleSide.Opponent).Members[switched.IncomingIndex].Pokemon.SourceSpeciesId);
         }
-        b = b with { Frame = result.State, SourceEvents = result.Events, Events = ProjectTrainerWildEvents(result.Events, trainer.Frame), EventIndex = 0,
+        b = b with { DisplayBatch = BeginDisplayBatch(b), Frame = result.State, SourceEvents = result.Events, Events = ProjectTrainerWildEvents(result.Events, trainer.Frame), EventIndex = 0,
             Phase = CampaignBattlePhase.Events, Pages = pages.ToImmutable(), PageIndex = 0,
             Replacement = null, RandomTrace = b.RandomTrace.AddRange(result.Trace),
             LastSwitch = result.Events.OfType<SourceCalledPartySwitchedEvent>().Any(e => e.Side.Value == 0 && e.Kind != WildBattleCalledSwitchKind.Voluntary) ? null : b.LastSwitch };

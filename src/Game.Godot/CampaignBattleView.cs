@@ -71,6 +71,7 @@ public partial class CampaignView
         // Unlike the mixed-ownership _battleArt, these derived textures are all owned here.
         foreach(var art in _battleDarkArt.Values)art.Texture.Dispose();
         _battleDarkArt.Clear();
+        DisposeBattleForms();
     }
     private string BattleName(FirstBattleSide side)=>side==FirstBattleSide.Player?_session.State.Battle!.OwnedBefore.Nickname:_catalog.PokemonContent!.SpeciesNames[_session.State.Battle!.State.Opponent.Pokemon.SourceSpeciesId];
     private ImmutableArray<string> BattleSourcePages(string symbol,params (string Key,string Value)[] extra)

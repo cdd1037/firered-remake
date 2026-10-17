@@ -34,22 +34,6 @@ public sealed class ElementalMoveAnimationTests
         }
     }
     [TestMethod]
-    public void EveryElementalFamilyComposesItsRealGeneratedSpriteSheets()
-    {
-        string folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-        using var resources=new SourceAnimationResources(folder);
-        foreach(var script in resources.Scripts.Values.Where(s=>SourceElementalAnimationCatalog.Supports(s.MoveId)))
-        {
-            var resolved=resources.Resolve(script.MoveId);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
-            assets.Add("background",new(240,112,new ushort[240*112]));
-            foreach(var b in Battlers(true))assets.Add(b.Asset,new(64,64,new ushort[4096]));
-            var composer=new SourceBattleFrameComposer(assets,Battlers(true),resolved.StatMask,resolved.Metallic,resources.CreateBackgroundSurface(0),resolved.Backgrounds);
-            var runtime=new SourceBattleAnimation(resolved.Script,new("pixels",1,script.MoveId,new(2),new(3)),Battlers(true),true,new Audio());
-            int frames=0;while(runtime.Active&&frames++<1500)Assert.AreEqual(240*112*4,composer.ComposeField(runtime.Tick()).Length);
-            Assert.IsFalse(runtime.Active,script.Label);
-        }
-    }
-    [TestMethod]
     public void FireSpreadUsesSignedEightBitFractionsAndSourceAnimationLoop()
     {
         var source=Script(7);var sprite=source.Subroutines["FireSpreadEffect"][1];
@@ -95,7 +79,7 @@ public sealed class ElementalMoveAnimationTests
         var script=source with{Commands=[new("loadspritegfx",["ANIM_TAG_SPARK"],1),new("createvisualtask",["AnimTask_ElectricBolt","5","0","-44","0"],2),new("waitforvisualfinish",[],3),new("playsewithpan",["SE_M_THUNDERBOLT","SOUND_PAN_TARGET"],4),new("end",[],5)],Subroutines=new Dictionary<string,SourceAnimationCommand[]>()};
         var audio=new Audio();var runtime=new SourceBattleAnimation(script,new("raw",1,84,new(0),new(1)),Battlers(false),false,audio);
         for(int tick=0;tick<3;tick++)Assert.AreEqual(0,runtime.Tick().Sprites.Length);
-        var created=runtime.Tick();Assert.AreEqual(1,created.Sprites.Length);Assert.IsFalse(created.Sprites[0].Visible);Assert.AreEqual(1,runtime.ActiveVisualCount);
+        var created=runtime.Tick();Assert.AreEqual(0,created.Sprites.Length);Assert.AreEqual(1,runtime.ActiveVisualCount);
         var visible=runtime.Tick();Assert.IsTrue(visible.Sprites[0].Visible);Assert.AreEqual(8,visible.Sprites[0].Width);Assert.AreEqual(16,visible.Sprites[0].Height);
         int frames=0;while(runtime.Active&&frames++<100)runtime.Tick();
         Assert.IsFalse(runtime.Active);Assert.AreEqual(14,audio.Cues.Single().Frame);Assert.AreEqual(0,runtime.ActiveVisualCount);

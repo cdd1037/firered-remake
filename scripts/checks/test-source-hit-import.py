@@ -59,6 +59,10 @@ for name,asset in [('hit','graphics/battle_anims/sprites/impact.png'),('explosio
         expected_status=result.returncode!=0 if name=='hit' else result.returncode==0
         check(expected_status and before=={p.relative_to(output):p.read_bytes() for p in output.rglob('*') if p.is_file()},name+' repeated CLI retains identical bytes')
 
+form_result=subprocess.run([sys.executable,str(ROOT/'scripts/checks/test-castform-art.py'),
+    '--root',str(ROOT),'--reference',str(args.reference_root)],capture_output=True,text=True)
+check(form_result.returncode==0,'source form pixels, geometry, cache and malformed inputs: '+form_result.stderr[-300:])
+
 report=dict(passed=True,checks=len(checks),details=checks)
 (args.output/'result.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report))

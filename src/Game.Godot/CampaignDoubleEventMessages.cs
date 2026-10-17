@@ -220,9 +220,15 @@ public partial class CampaignView
     }
     private SourceTrainerEventDisplay? DoubleDelayedMessage(CampaignDoubleBattle b,SourceCalledDelayedEvent x)
     {
-        if(x.Reason=="countdown")return DoubleSilent;
-        if(x.Move.Value=="pret:MOVE_WISH")return x.Reason=="scheduled"?DoubleText("sText_PkmnMadeWish",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Target))):
-            x.Reason=="resolved"&&x.SourcePartyIndex is {} member?DoubleText("sText_PkmnWishCameTrue",("B_BUFF1",DoublePartyName(b,x.Target.Side,member))):null;
+        if(SourceTrainerPresentationModel.IsSilentDelayedReceipt(x.Move,x.Reason))return DoubleSilent;
+        if(x.Move.Value=="pret:MOVE_WISH")
+        {
+            var wish=CampaignWishResolutionPresentation.At(b.Events,b.EventIndex);
+            if(wish?.Kind==CampaignWishResolutionKind.Expired)return DoubleSilent;
+            if(wish is {Kind:CampaignWishResolutionKind.Recovery or CampaignWishResolutionKind.FullHp,CasterPartyIndex:{} member}&&CampaignWishResolutionPresentation.CasterAvailable(b.Frame,x.Target,member))
+                return DoubleText("sText_PkmnWishCameTrue",("B_BUFF1",(x.Target.Side==BattleSide.Opponent?b.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?"Foe ":"Wild ":"")+DoublePartyName(b,x.Target.Side,member)));
+            return new([],true);
+        }
         if(x.Reason=="resolved")return DoubleText("sText_PkmnTookAttack",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_BUFF1",MoveName(x.Move)));
         if(x.Reason=="scheduled"&&DoubleInvocation(b,x) is {} invocation)return DoubleText(x.Move.Value=="pret:MOVE_FUTURE_SIGHT"?"sText_PkmnForesawAttack":"sText_PkmnChoseXAsDestiny",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(invocation.Actor)),("B_CURRENT_MOVE",MoveName(x.Move)));
         return null;

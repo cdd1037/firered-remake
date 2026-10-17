@@ -59,6 +59,23 @@ class BackgroundImportTests(unittest.TestCase):
             with Image.open(REFERENCE / ('graphics/battle_anims/backgrounds/' + name + '.png')) as image: colors = image.getpalette()
             expected = [sum((colors[i*3+c]//8) << (c*5) for c in range(3)) for i in range(16)]
             self.assertEqual(expected, list(struct.unpack('<16H', self.block(row, 'palette'))))
+    def test_ice_native_tilemap_indices_and_palette_ownership(self):
+        row = next(r for r in self.manifest['moves'] if r['id'] == 15)
+        tiles, tilemap = self.block(row, 'tiles'), self.block(row, 'tilemap')
+        self.assertEqual((REFERENCE/'graphics/battle_anims/backgrounds/ice.bin').read_bytes(), tilemap)
+        palette = struct.unpack('<16H', self.block(row, 'palette'))
+        with Image.open(REFERENCE/'graphics/battle_anims/backgrounds/ice.png') as image:
+            colors = image.getpalette()
+            for y in range(256):
+                for x in range(256):
+                    entry = struct.unpack_from('<H', tilemap, 2*((y//8)*32+x//8))[0]
+                    tile, bank = entry & 1023, entry >> 12
+                    xx, yy = (7-x%8 if entry & 1024 else x%8), (7-y%8 if entry & 2048 else y%8)
+                    actual = (tiles[tile*32+yy*4+xx//2] >> (4*(xx%2))) & 15
+                    expected = image.getpixel(((tile % (image.width//8))*8+xx, (tile//(image.width//8))*8+yy))
+                    self.assertEqual(expected, actual); self.assertIn(bank, (0,2))
+                    if bank == 2:
+                        self.assertEqual(sum((colors[expected*3+c]//8) << (5*c) for c in range(3)), palette[actual])
     def test_existing_scene_textures_match_canonical_raw_vectors(self):
         vectors = json.loads((ROOT / 'tests/Game.Presentation.Tests/Fixtures/source-background-vectors.json').read_bytes())
         expected = {row['id']: row['sha256'] for row in vectors['terrains']}

@@ -16,6 +16,8 @@ public sealed record SourceTwinsTrainerDefinition(
 public sealed record SourceTwinsEncounterResult(SourceBattleFrame? State, RngState Rng,
     ImmutableArray<SourceBattleEvent> Events, ImmutableArray<RandomTrace> Trace, string? Fault)
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ImmutableArray<SourceBattleSlot> EntrySlots { get; init; } = [];
     public bool Succeeded => Fault is null;
 }
 public sealed record SourceTwinsEnemyChoice(BattlerSlot Actor, BattlerSlot ScoredTarget,
@@ -97,13 +99,14 @@ public static class SourceTwinsTrainerEncounter
                         SpeedBadgeBoost = side == BattleSide.Player && speedBadgeBoost });
                 }).ToImmutableArray()
             };
+            var entrySlots = frame.Slots;
             var entry = SourceFourEntryAbilities.InitializeEntry(catalog, frame, frame.Revision);
             if (!entry.Succeeded) return Fail(entry.Fault!);
             var turnNumber = Gen3Rng.Next(entry.State.Rng, "twins.entry.random-turn-number");
             var ready = SourceBattleEventHooks.Publish(entry.State with { Rng = turnNumber.State, RandomTurnNumber = turnNumber.Value },
                 (n, t) => new SourceTurnReadyEvent(n, t, turnNumber.Value));
             return new(ready.State, ready.State.Rng, [.. entry.Events, ready.Event],
-                [.. setupTrace, .. generated.Trace, .. entry.Trace, turnNumber.Trace], null);
+                [.. setupTrace, .. generated.Trace, .. entry.Trace, turnNumber.Trace], null) { EntrySlots = entrySlots };
         }
         catch (OverflowException) { return Fail("source_twins_rng_or_counter_exhausted"); }
         catch (ArgumentException) { return Fail("source_twins_invalid_generation"); }

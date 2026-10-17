@@ -26,6 +26,7 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,Sourc
         get=>_frame;
         init=>_frame=value??throw new InvalidDataException("canonical_battle_frame_required");
     }
+    [JsonIgnore] public CampaignBattleDisplayBatch? DisplayBatch { get; init; }
     [JsonIgnore] public WildBattleState State=>CampaignWildReadProjection.From(Frame);
     [JsonIgnore] public ImmutableArray<WildPendingMove> PendingMoves=>Frame.Rewards?.Pending?.Moves??[];
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<int> EntryLevels{get;init;}
@@ -119,7 +120,7 @@ public sealed partial class CampaignSession
         var frame=PrepareCanonicalWildFrame(state,started.State!);
         var battle=CampaignWildReadProjection.From(frame);
         var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,frame,ProjectCanonicalWildEvents(started.Events),0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,[],0,[..generated.RandomTrace,..started.Trace])
-        {RockSmashReceipt=rockSmashReceipt,SourceTableReceipt=sourceTableReceipt,SeafoamReceipt=seafoamReceipt,PowerPlantReceipt=powerPlantReceipt,EventIslandReceipt=eventIslandReceipt,SevenIslandReceipt=sevenIslandOrigin is null?null:new(sevenIslandGenerationRng??state.World.Rng,generated.GlobalRng,generated.Pokemon),MewtwoReceipt=mewtwoReceipt,SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]),FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
+        {RockSmashReceipt=rockSmashReceipt,SourceTableReceipt=sourceTableReceipt,SeafoamReceipt=seafoamReceipt,PowerPlantReceipt=powerPlantReceipt,EventIslandReceipt=eventIslandReceipt,SevenIslandReceipt=sevenIslandOrigin is null?null:new(sevenIslandGenerationRng??state.World.Rng,generated.GlobalRng,generated.Pokemon),MewtwoReceipt=mewtwoReceipt,DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]),FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
         if(fishingPokemon is null&&surfPokemon is null&&scriptedPokemon is null)exploration=exploration with{EarlyEncounter=CompleteCurrentLandCandidate(exploration.EarlyEncounter!,state.World.Player.MapId)};
         return PrepareWildPresentation(state with{WildBattle=b,Exploration=exploration with{NextWildBattleId=checked(exploration.NextWildBattleId+1)},World=state.World with{Rng=battle.Rng},UnownPokedexPersonality=generated.Pokemon.SourceSpeciesId==201&&!state.SeenSpecies.Contains(201)?generated.Pokemon.Personality:state.UnownPokedexPersonality,SeenSpecies=towerBattle&&!PokemonTowerBattleContract.Policy(kind).RegisterSeen?state.SeenSpecies:state.SeenSpecies.Add(battle.Opponent.Pokemon.SourceSpeciesId),Motions=[],PresentationTicks=0});
     }
@@ -216,6 +217,7 @@ public sealed partial class CampaignSession
         while(b.EventIndex<b.Events.Length)
         {
             var e=b.Events[b.EventIndex];
+            b=AdvanceDisplayThrough(b,e.Sequence);
             if(HiddenEarlyPartyEvent(e)){b=b with{EventIndex=b.EventIndex+1};continue;}
             if(e is WildBattleStatusChangedEvent {Reason:"sleep-countdown"} or WildBattleLeechSeedChangedEvent {Reason:not "move"}){b=b with{EventIndex=b.EventIndex+1};continue;}
             if(e is WildBattleOrderEvent or WildBattleTurnReadyEvent or WildBattleEndedEvent or WildBattleDefenseCurledEvent || e is WildBattleBindingChangedEvent binding && binding.Reason is not("bind" or "wrap" or "expired")){b=b with{EventIndex=b.EventIndex+1};continue;}
@@ -249,7 +251,7 @@ public sealed partial class CampaignSession
             }
             return state with{WildBattle=b};
         }
-        return ContinueCanonicalWild(state with{WildBattle=b});
+        return ContinueCanonicalWild(state with{WildBattle=AdvanceDisplayThrough(b,long.MaxValue)});
     }
     private CampaignState SettleWildBattle(CampaignState state)
     {

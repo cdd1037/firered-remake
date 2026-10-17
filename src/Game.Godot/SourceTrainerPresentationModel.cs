@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
+using Game.Application;
 using Game.Domain.WildBattle;
 
 internal sealed record SourceTrainerText(string Symbol, params (string Key, string Value)[] Values);
@@ -14,6 +15,10 @@ internal static class SourceTrainerPresentationModel
     internal const string UnsupportedNotice = "This battle event is not\nsupported yet.";
     private static readonly SourceTrainerEventDisplay Silent = new([]);
     private static readonly SourceTrainerEventDisplay Unsupported = new([], true);
+    // EffectWish schedules, animates and returns to MoveEnd without a setup text.
+    // Delayed resolution remains on its existing text/healing presentation path.
+    internal static bool IsSilentDelayedReceipt(MoveId move, string reason) =>
+        reason == "countdown" || move.Value == "pret:MOVE_WISH" && reason == "scheduled";
     internal static uint DisplayStatus(uint status) => WildBattleSourceFieldEffects.IsValidToxic(status) ? WildBattleStatus.Poison : status;
     internal static string AbilityName(string source) => source switch {
         "ABILITY_NONE" => "-------", "ABILITY_COMPOUND_EYES" => "COMPOUNDEYES", "ABILITY_LIGHTNING_ROD" => "LIGHTNINGROD",
@@ -67,7 +72,7 @@ internal static class SourceTrainerPresentationModel
 
     internal static SourceTrainerEventDisplay? Describe(IReadOnlyList<WildBattleEvent> events, int index,
         Func<WildBattleSide, string> name, Func<MoveId, string> moveName, Func<WildBattleSide, int, string> partyName,
-        Func<string, string>? itemName = null)
+        Func<string, string>? itemName = null, Func<WildBattleSide, int, string?>? prefixedPartyName = null)
     {
         if (index < 0 || index >= events.Count) throw new ArgumentOutOfRangeException(nameof(index));
         SourceTrainerEventDisplay Atk(string symbol, WildBattleSide side) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(side)));
@@ -179,10 +184,18 @@ internal static class SourceTrainerPresentationModel
                     return Text("sText_XFoundOneY", ("B_ATK_NAME_WITH_PREFIX", name(party.Side)), ("B_LAST_ITEM", itemName(recycled)));
                 return party.Reason is "active-sync" or "consumed-item" or "steal-party-write" or "knock-off-battle-only" ? Silent : Unsupported;
             case WildBattleCalledDelayedEvent delayed:
-                if (delayed.Reason == "countdown") return Silent;
+                if (IsSilentDelayedReceipt(delayed.Move, delayed.Reason)) return Silent;
                 if (delayed.Move.Value == "pret:MOVE_WISH")
-                    return delayed.Reason == "scheduled" ? Atk("sText_PkmnMadeWish", delayed.Target) : delayed.Reason == "resolved" && delayed.SourcePartyIndex is { } sourceIndex
-                        ? Text("sText_PkmnWishCameTrue", ("B_BUFF1", partyName(delayed.Target, sourceIndex))) : Unsupported;
+                {
+                    var wish = CampaignWishResolutionPresentation.At(events, index);
+                    if (wish?.Kind == CampaignWishResolutionKind.Expired) return Silent;
+                    if (wish is { Kind: CampaignWishResolutionKind.Recovery or CampaignWishResolutionKind.FullHp, CasterPartyIndex: { } sourceIndex })
+                    {
+                        string? caster = prefixedPartyName is null ? partyName(delayed.Target, sourceIndex) : prefixedPartyName(delayed.Target, sourceIndex);
+                        return caster is null ? Unsupported : Text("sText_PkmnWishCameTrue", ("B_BUFF1", caster));
+                    }
+                    return Unsupported;
+                }
                 if (delayed.Move.Value is "pret:MOVE_FUTURE_SIGHT" or "pret:MOVE_DOOM_DESIRE")
                 {
                     if (delayed.Reason == "resolved") return Text("sText_PkmnTookAttack", ("B_DEF_NAME_WITH_PREFIX", name(delayed.Target)), ("B_BUFF1", moveName(delayed.Move)));

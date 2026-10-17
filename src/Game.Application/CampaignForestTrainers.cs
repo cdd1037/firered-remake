@@ -133,7 +133,7 @@ public sealed partial class CampaignSession
         var presentation = new CampaignWildBattle(id, owned, combat, ProjectTrainerWildEvents(prepared.Events), 0,
             combat.Get(new(0)).Body!.Pokemon, combat.Get(new(1)).Body!.Pokemon, CampaignBattlePhase.Events,
             [], 0, prepared.Trace)
-        { SourceEvents = prepared.Events, ActivePartyIndex = active,
+        { DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), SourceEvents = prepared.Events, ActivePartyIndex = active,
             FaintedMembers = state.Party.Where(p => p.Pokemon.CurrentHp == 0).Select(p => p.InstanceId).ToImmutableSortedSet(), OpponentHpAtLastSwitch = combat.Get(new(1)).Body!.Pokemon.CurrentHp };
         var battle = new CampaignForestTrainerBattle(id, trainer, actorId, presentation,
             CampaignForestTrainerStage.Intro, state.Party.Select(p => p.Pokemon.Level).ToImmutableArray(),
@@ -246,6 +246,8 @@ public sealed partial class CampaignSession
         while (b.EventIndex < b.Events.Length || trainer.TrainerEventIndex < trainer.TrainerEvents.Length)
         {
             trainer = trainer with { Presentation = b };
+            b=AdvanceDisplayThrough(b,trainer.CurrentTrainerEvent?.Sequence ?? b.Events[b.EventIndex].Sequence);
+            trainer = trainer with { Presentation = b };
             if (trainer.CurrentTrainerEvent is { } te)
             {
                 if(te is SsAnneTrainerPlayerForcedOutEvent forced)return state with{ForestTrainerBattle=trainer with{Presentation=b with{DisplayPlayer=BattleDisplayPokemon(forced.Replacement),DisplayPlayerAppearance=null}}};
@@ -290,6 +292,7 @@ public sealed partial class CampaignSession
             }
             return state with { ForestTrainerBattle = trainer with { Presentation = b } };
         }
+        b=AdvanceDisplayThrough(b,long.MaxValue);
         state = state with { ForestTrainerBattle = trainer with { Presentation = b with
         { DisplayPlayer = BattleDisplayPokemon(trainer.Combat.Battle.Player), DisplayOpponent = BattleDisplayPokemon(trainer.Combat.Battle.Opponent),DisplayPlayerAppearance=BattleAppearance(trainer.Combat.Battle.Player),DisplayOpponentAppearance=BattleAppearance(trainer.Combat.Battle.Opponent) } } };
         return ContinueCanonicalTrainer(state);

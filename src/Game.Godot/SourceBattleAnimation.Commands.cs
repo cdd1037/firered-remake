@@ -37,19 +37,27 @@ public sealed partial class SourceBattleAnimation
         {if(a.Length!=0)Fail(c,"Unconditional background priority split takes no operands.");return true;}
         if(c.Op is "splitbgprio" or "splitbgprio_foes")
         {if(a.Length!=1||a[0] is not ("ANIM_ATTACKER" or "ANIM_TARGET"))Fail(c,"Background priority participant differs.");return true;}
+        if(c.Op=="panse_adjustall")
+        {
+            if(a.Length!=5||!_script.SoundEffects.ContainsKey(a[0])||SoundPan(a[1]) is < -128 or >127||SoundPan(a[2]) is < -128 or >127||Number(a[3]) is < -128 or >127||Number(a[4]) is <0 or >255)Fail(c,"Source adjusted pan sweep operands differ.");
+            int start=AdjustPanning2(SoundPan(a[1])),end=AdjustPanning2(SoundPan(a[2])),step=AdjustPanning2(Number(a[3]));
+            if(step!=0&&(start==end||(start<end)!=(step>0)))Fail(c,"Adjusted source pan sweep must reach its target.");
+            return true;
+        }
         if(c.Op=="panse")
         {
-            if(a.Length!=5||a[0] is not ("SE_M_FLAMETHROWER" or "SE_M_HYDRO_PUMP" or "SE_M_WHIRLPOOL" or "SE_M_BUBBLE_BEAM" or "SE_M_SCREECH" or "SE_M_GUST")||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||a[2] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[3]) is < -127 or >127||Number(a[4]) is <0 or >255)Fail(c,"Source pan sweep operands differ.");
+            if(a.Length!=5||!_script.SoundEffects.ContainsKey(a[0])||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||a[2] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[3]) is < -127 or >127||Number(a[4]) is <0 or >255)Fail(c,"Source pan sweep operands differ.");
             return true;
         }
         if(c.Op=="waitplaysewithpan")
         {if(a.Length!=3||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET")||Number(a[2]) is <0 or >255||a[0] is not ("SE_M_DOUBLE_TEAM" or "SE_M_COMET_PUNCH"))return false;return true;}
+        if(ValidateArgumentCommand(c))return true;
         if(c.Op=="jumpifmoveturn")
-        {if(_cue.MoveTurn is null||a.Length!=2||Number(a[0]) is <0 or >255||!_script.Labels.TryGetValue(a[1],out int target)||target<0||target>=_script.Commands.Length)Fail(c,"Move-turn branch needs committed turn, byte comparison and valid source label.");return true;}
+        {if(_cue.MoveTurn is null||a.Length!=2||Number(a[0]) is <0 or >255||!ValidProgramLabel(a[1]))Fail(c,"Move-turn branch needs committed turn, byte comparison and valid source label.");return true;}
         if(c.Op=="choosetwoturnanim")
-        {if(_cue.MoveTurn is null||a.Length!=2||a.Any(label=>!_script.Labels.TryGetValue(label,out int target)||target<0||target>=_script.Commands.Length))Fail(c,"Two-turn branch needs committed turn and two valid source labels.");return true;}
+        {if(_cue.MoveTurn is null||a.Length!=2||a.Any(label=>!ValidProgramLabel(label)))Fail(c,"Two-turn branch needs committed turn and two valid source labels.");return true;}
         if(c.Op=="goto")
-        {if(a.Length!=1||!_script.Labels.TryGetValue(a[0],out int target)||target<0||target>=_script.Commands.Length)Fail(c,"Missing or invalid source label target.");return true;}
+        {if(a.Length!=1||!ValidProgramLabel(a[0]))Fail(c,"Missing or invalid source label target.");return true;}
         if(c.Op=="playsewithpan"&&a.FirstOrDefault()=="SE_M_BIND")
         {if(a.Length!=2||a[1] is not ("SOUND_PAN_ATTACKER" or "SOUND_PAN_TARGET"))Fail(c,"Binding sound operands differ.");return true;}
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_RockMonBackAndForth")
@@ -165,17 +173,21 @@ public sealed partial class SourceBattleAnimation
     }
     // Cmd_panse creates the source priority-1 task without an immediate initializer.
     // It updates the owned SE channels once in RunTasks, including the creation frame.
-    private sealed class PanSweep(int initial,int target,int step,int delay):SoundTask
+    // BattleAnimAdjustPanning2 keeps the full signed-byte result and depends only
+    // on actor side for ordinary move roots; unlike AdjustPanning it never clamps.
+    private int AdjustPanning2(int pan)=>_cue.Actor.IsPlayer?pan:unchecked((sbyte)-pan);
+    private sealed class PanSweep(int initial,int target,int step,int delay,bool normalizeIncrement=true):SoundTask
     {
         private int _pan=initial,_counter;
         private readonly int _target=target;
-        private readonly int _increment=initial<target?Math.Abs(step):initial>target?-Math.Abs(step):0;
+        private readonly int _initial=initial;
+        private readonly int _increment=normalizeIncrement?(initial<target?Math.Abs(step):initial>target?-Math.Abs(step):0):step;
         public override void Step(SourceBattleAnimation owner)
         {
             if(_counter++<delay)return;
-            _counter=0;_pan+=_increment;
-            if(_increment==0||(_increment>0?_pan>=_target:_pan<=_target)){_pan=_target;Finished=true;}
-            owner._audio.SetPan(_pan,owner._frame);
+            _counter=0;_pan=unchecked((short)(_pan+_increment));int output=_pan;
+            if(_increment==0||(_initial<_target?_pan>=_target:_pan<=_target)){output=_target;Finished=true;}
+            owner._audio.SetPan(unchecked((sbyte)output),owner._frame);
         }
     }
 }

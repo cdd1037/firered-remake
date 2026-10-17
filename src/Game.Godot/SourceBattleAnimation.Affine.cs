@@ -70,7 +70,7 @@ public sealed partial class SourceBattleAnimation
                 case 0:
                     if(_counter is 0 or 3 or 6)
                     {
-                        int slot=Enumerable.Range(0,64).First(i=>(!owner._battlers.TryGetValue(i,out var b)||!b.Visible)&&owner._sprites.All(s=>s.Slot!=i));
+                        int slot=owner.RequireFreeSpriteSlot();
                         owner._sprites.Add(new MinimizeClone(slot,owner._battlers[_slot].Subpriority-_copies++,owner._battlers[_slot],owner._doubles,owner._offsets[_slot],_scale,this));LiveCopies++;
                     }
                     _counter++;_scale+=40;owner.SetBattlerRotScale(_slot,_scale,_scale,0);owner.SetBattlerYOffsetFromScale(_slot);

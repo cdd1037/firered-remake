@@ -164,7 +164,7 @@ public partial class CampaignView
         { DrawCaptureParty(battle, true); if(_wildNotice is not null)DrawNativePartyMessage(_wildNotice); }
         else
         {
-            var mon = WildDisplayPlayer(battle); var appearance = FuchsiaBattleAppearance(battle, WildBattleSide.Player, mon); var asset = _battleArt[(appearance.Species, "back", appearance.Shiny)];
+            var mon = WildDisplayPlayer(battle); var asset = SingleBattleArt(battle,WildBattleSide.Player,mon);
             DrawTexture(asset.Texture, asset.Position); DrawWildHealth(mon, WildBattleSide.Player, mon.CurrentHp);
             _battleSkin.DrawBattleMessage(this); WildLines(_wildPages[_wildPage]);
             if (_wildPage + 1 == _wildPages.Length) DrawCaptureYesNo();

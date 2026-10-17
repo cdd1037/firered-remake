@@ -9,6 +9,8 @@ public sealed class ResultAnimationPolicyTests
     [DataRow(CampaignResultAnimationKind.StatChange,SourceBattleScene.Off,true)]
     [DataRow(CampaignResultAnimationKind.HeldItem,SourceBattleScene.On,true)]
     [DataRow(CampaignResultAnimationKind.HeldItem,SourceBattleScene.Off,false)]
+    [DataRow(CampaignResultAnimationKind.DelayedHealing,SourceBattleScene.On,true)]
+    [DataRow(CampaignResultAnimationKind.DelayedHealing,SourceBattleScene.Off,false)]
     public void SourceResultEffectsRetainTheirDistinctBattleScenePolicy(CampaignResultAnimationKind kind,SourceBattleScene scene,bool expected)
         =>Assert.AreEqual(expected,CampaignResultAnimationPolicy.Allows(kind,scene));
     [TestMethod]

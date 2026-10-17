@@ -32,7 +32,7 @@ public static partial class CampaignMoveAnimationPresentation
         CampaignMoveAnimationDecision Reject(string reason)=>new(null,reason);
         if(index<0||index>=rows.Length||!IsMultiHitReceipt(rows[index]))return Reject("not-hit-result");
         var current=rows[index];var (move,minPlanned,maxPlanned)=current.Move switch
-        {"pret:MOVE_DOUBLE_SLAP"=>(3,2,5),"pret:MOVE_COMET_PUNCH"=>(4,2,5),"pret:MOVE_FURY_ATTACK"=>(31,2,5),"pret:MOVE_TWINEEDLE"=>(41,2,2),"pret:MOVE_SPIKE_CANNON"=>(131,2,5),"pret:MOVE_BONE_RUSH"=>(198,2,5),"pret:MOVE_TRIPLE_KICK"=>(167,3,3),_=>(0,0,0)};
+        {"pret:MOVE_FURY_SWIPES"=>(154,2,5),"pret:MOVE_ARM_THRUST"=>(292,2,5),"pret:MOVE_DOUBLE_SLAP"=>(3,2,5),"pret:MOVE_COMET_PUNCH"=>(4,2,5),"pret:MOVE_FURY_ATTACK"=>(31,2,5),"pret:MOVE_TWINEEDLE"=>(41,2,2),"pret:MOVE_PIN_MISSILE"=>(42,2,5),"pret:MOVE_BULLET_SEED"=>(331,2,5),"pret:MOVE_ROCK_BLAST"=>(350,2,5),"pret:MOVE_ICICLE_SPEAR"=>(333,2,5),"pret:MOVE_SPIKE_CANNON"=>(131,2,5),"pret:MOVE_BONE_RUSH"=>(198,2,5),"pret:MOVE_TRIPLE_KICK"=>(167,3,3),_=>(0,0,0)};
         if(move==0)return Reject("script-outside-multihit-slice");
         int start=index-1;
         while(start>=0&&rows[start].Turn==current.Turn&&!MultiHitBoundary(rows[start]))start--;

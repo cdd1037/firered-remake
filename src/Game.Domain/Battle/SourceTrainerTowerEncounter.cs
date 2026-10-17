@@ -99,12 +99,13 @@ public static class SourceTrainerTowerEncounter
             };
             var started = SourceBattleEventHooks.Publish(frame, (n, t) => new SourceTrainerStartedEvent(n, t, created.Trainer.Id, enemy.Length));
             var start = SourceBattleEventHooks.Publish(started.State, (n, t) => new SourceStartedEvent(n, t));
+            var entrySlots = start.State.Slots;
             var entry = SourceFourEntryAbilities.InitializeEntry(catalog, start.State, start.State.Revision);
             if (!entry.Succeeded) return Fail(entry.Fault!);
             var draw = Gen3Rng.Next(entry.State.Rng, "trainer-tower.entry.random-turn-number");
             var ready = SourceBattleEventHooks.Publish(entry.State with { Rng = draw.State, RandomTurnNumber = draw.Value },
                 (n, t) => new SourceTurnReadyEvent(n, t, draw.Value));
-            return new(ready.State, ready.State.Rng, [started.Event, start.Event, .. entry.Events, ready.Event], [.. trace, .. entry.Trace, draw.Trace], null);
+            return new(ready.State, ready.State.Rng, [started.Event, start.Event, .. entry.Events, ready.Event], [.. trace, .. entry.Trace, draw.Trace], null) { EntrySlots = entrySlots };
         }
         catch (OverflowException) { return Fail("source_tower_counter_exhausted"); }
         catch (ArgumentException e) { return Fail("source_tower_invalid_entry:" + e.Message); }

@@ -15,7 +15,7 @@ public sealed class TaskAffineAnimationTests
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/task-affine-vectors.json")));
     private static SourceAnimationScript Script(int move)
-    {using var hit=SourceHitAnimationCatalog.Read(Path.Combine(Folder,"hit"));return SourcePhysicalAnimationCatalog.Read(Path.Combine(Folder,"physical.json"),hit)[move];}
+    =>AnimationCompositionFixture.Script(move);
     private static AnimationBattler[] Battlers(bool doubles,int yOffset=12)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,yOffset,0,64,64)).ToArray();
     private static SourceTaskAffineCommand[] Program(string name)=>name switch
     {

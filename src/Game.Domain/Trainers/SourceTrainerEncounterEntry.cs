@@ -23,6 +23,8 @@ public sealed class SourceTrainerEntryPreparation
 public sealed record SourceTrainerEncounterEntryResult(SourceBattleFrame? State, RngState Rng,
     ImmutableArray<SourceBattleEvent> Events, ImmutableArray<RandomTrace> Trace, string? Fault)
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ImmutableArray<SourceBattleSlot> EntrySlots { get; init; } = [];
     public bool Succeeded => Fault is null;
 }
 public sealed record SourceTrainerStartedEvent(long Sequence, int Turn, TrainerId Trainer, int OpponentCount)
@@ -96,13 +98,14 @@ public static class SourceTrainerEncounterEntry
             if (SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } invalid) return Fail(invalid);
             var trainer = SourceBattleEventHooks.Publish(frame, (n, t) => new SourceTrainerStartedEvent(n, t, created.Trainer.Id, enemies.Length));
             var start = SourceBattleEventHooks.Publish(trainer.State, (n, t) => new SourceStartedEvent(n, t));
+            var entrySlots = start.State.Slots;
             var entry = SourceFourEntryAbilities.InitializeEntry(catalog, start.State, start.State.Revision);
             if (!entry.Succeeded) return Fail(entry.Fault!);
             var draw = Gen3Rng.Next(entry.State.Rng, "wild-battle.entry.random-turn-number");
             var ready = SourceBattleEventHooks.Publish(entry.State with { Rng = draw.State, RandomTurnNumber = draw.Value },
                 (n, t) => new SourceTurnReadyEvent(n, t, draw.Value));
             return new(ready.State, ready.State.Rng, [trainer.Event, start.Event, .. entry.Events, ready.Event],
-                [.. setup.Trace, .. created.Trace, .. entry.Trace, draw.Trace], null);
+                [.. setup.Trace, .. created.Trace, .. entry.Trace, draw.Trace], null) { EntrySlots = entrySlots };
         }
         catch (OverflowException) { return Fail("source_trainer_entry_counter_exhausted"); }
         catch (ArgumentException) { return Fail("source_trainer_entry_invalid_state"); }

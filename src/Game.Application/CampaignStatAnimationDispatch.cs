@@ -1,3 +1,5 @@
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
 using Game.Domain.Battle;
 using Game.Domain.WildBattle;
 namespace Game.Application;
@@ -17,7 +19,7 @@ public static partial class CampaignStatAnimationPresentation
         // the resulting stage was clamped at zero.
         return (delta switch{1=>15,2=>39,-1=>22,-2=>46,_=>throw new ArgumentOutOfRangeException(nameof(delta))})+statIndex;
     }
-    private static CampaignStatAnimationDispatch? Match(string battleId,Row[] rows,int index,bool substitute)
+    private static CampaignStatAnimationDispatch? Match(string battleId,Row[] rows,int index,bool substitute,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)
     {
         if(substitute||index<3||index>=rows.Length)return null;
         // Typed self-state receipts can occur before or after PP in the committed
@@ -51,7 +53,7 @@ public static partial class CampaignStatAnimationPresentation
             _=>default
         };
         if(spec.Move==0||spec.Stat!=stat.Stat||stat.After!=Math.Clamp(stat.Before+spec.Delta,0,12)||
-            (spec.Delta>0?stat.Target!=stat.Actor:(stat.Target&1)==(stat.Actor&1)))return null;
+            (spec.Delta>0?stat.Target!=stat.Actor:stat.Target==stat.Actor||(stat.Target&1)==(stat.Actor&1)&&!AllowsSelectedStatAlly(pp.Move,moves)))return null;
         int used=index-2;
         // Tail Whip can have a second target pass after the first target's result/cap.
         while(used>=0&&rows[used].Kind!="used")
@@ -73,7 +75,7 @@ public static partial class CampaignStatAnimationPresentation
         if(rows.Skip(used+1).Take(index-used-1).Any(r=>r.Kind=="stat"&&r.Target==stat.Target))return null;
         return new(battleId,stat.Sequence,attack.Sequence,pp.Sequence,spec.Move,new(stat.Target),spec.Arg);
     }
-    public static CampaignStatAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,bool affectedBehindSubstitute=false)
+    public static CampaignStatAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
         if(Grouped(battle,true) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute);
@@ -88,9 +90,9 @@ public static partial class CampaignStatAnimationPresentation
             WildBattleStatAtMinimumEvent c=>new(c.Sequence,c.Turn,"cap",(int)c.Actor,(int)c.Target),
             WildBattleStatAtMaximumEvent c=>new(c.Sequence,c.Turn,"cap",(int)c.Actor,(int)c.Target),
             _=>new Row(e.Sequence,e.Turn,"boundary")
-        }).ToArray(),battle.EventIndex,affectedBehindSubstitute);
+        }).ToArray(),battle.EventIndex,affectedBehindSubstitute,moves)??Secondary(battle,moves,affectedBehindSubstitute);
     }
-    public static CampaignStatAnimationDispatch? AtResult(CampaignDoubleBattle battle,bool affectedBehindSubstitute=false)
+    public static CampaignStatAnimationDispatch? AtResult(CampaignDoubleBattle battle,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
         if(Grouped(battle) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute);
@@ -107,6 +109,6 @@ public static partial class CampaignStatAnimationPresentation
             SourceMoveFailedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
             SourceAbilityPreventedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
             _=>new Row(e.Sequence,e.Turn,"boundary")
-        }).ToArray(),battle.EventIndex,affectedBehindSubstitute);
+        }).ToArray(),battle.EventIndex,affectedBehindSubstitute,moves)??Secondary(battle,moves,affectedBehindSubstitute);
     }
 }

@@ -33,6 +33,17 @@ public sealed class SourceSpriteFrameProgram
         // remains zero; it never underflows the source six-bit delay counter.
         DelayCounter=Math.Max(0,Frame.Duration-1);
     }
+    // SeekSpriteAnim direct-FRAME path. This argument is a normalized frame
+    // index, not an original command index: callers must prove/map that source
+    // operand before calling. LOOP/JUMP/END operands are not accepted here.
+    public void SeekFrame(int frameIndex)
+    {
+        if(frameIndex<0||frameIndex>=_frames.Length)throw new InvalidDataException("Source seek must select an admitted frame.");
+        _index=frameIndex;Ended=false;
+        DelayCounter=Frame.Duration>=2?Frame.Duration:0;
+        // Source preserves its loop counter and restores the caller's pause flag.
+        // Paused callers continue to control whether Step is invoked.
+    }
     public void Step()
     {
         if(Ended)return;

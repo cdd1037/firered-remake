@@ -48,6 +48,8 @@ public sealed record SourceWildEncounterContext
 public sealed record SourceWildEntryResult(SourceBattleFrame? State, ImmutableArray<SourceBattleEvent> Events,
     ImmutableArray<RandomTrace> Trace, string? Fault)
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ImmutableArray<SourceBattleSlot> EntrySlots { get; init; } = [];
     public bool Succeeded => Fault is null;
 }
 public sealed record SourceCaptureSelection(CaptureBall Ball, WildBattleCaptureContext Context);
@@ -139,13 +141,14 @@ public static partial class SourceWildBattlePolicy
                     Parties = frame.Parties.SetItem(1, party with { Members = party.Members.SetItem(0, party.Members[0] with { HeldItem = item }) }) };
             }
             var started = SourceBattleEventHooks.Publish(frame, (n, t) => new SourceStartedEvent(n, t));
+            var entrySlots = started.State.Slots;
             var entry = SourceFourEntryAbilities.InitializeEntry(mechanics.Catalog, started.State, started.State.Revision);
             if (!entry.Succeeded) return EntryFail(entry.Fault!);
             frame = entry.State; trace.AddRange(entry.Trace);
             ushort ready = Draw("wild-battle.entry.random-turn-number");
             frame = frame with { RandomTurnNumber = ready };
             var published = SourceBattleEventHooks.Publish(frame, (n, t) => new SourceTurnReadyEvent(n, t, ready));
-            return new(published.State, [started.Event, .. entry.Events, published.Event], trace.ToImmutable(), null);
+            return new(published.State, [started.Event, .. entry.Events, published.Event], trace.ToImmutable(), null) { EntrySlots = entrySlots };
         }
         catch (Exception e) when (e is ArgumentException or OverflowException or NotSupportedException)
         { return EntryFail(e.Message); }

@@ -32,7 +32,7 @@ public sealed partial class SourceBattleAnimation
             if(command.Args.Length!=2||Number(command.Args[1]) is <0 or >255||_script.BackgroundPalettes.Count==0||_initialBackgroundPalette is null)Fail(command,"Psychic palette task lacks source colors or priority.");
             return true;
         }
-        if(command.Op=="fadetobg")
+        if(command.Op is "fadetobg" or "changebg")
         {
             if(command.Args.Length!=1||!_script.BackgroundSymbols.ContainsKey(command.Args[0]))Fail(command,"Missing generated source background definition.");
             return true;
@@ -55,6 +55,8 @@ public sealed partial class SourceBattleAnimation
         if(values.Length>8)throw new InvalidDataException("Source animation has only eight shared arguments.");
         for(int i=0;i<values.Length;i++)_animationArgs[i]=unchecked((short)AnimationArgument(values[i]));
     }
+    private void SetMoveBackground(int? id)
+    {_moveBackground=id;_backgroundRevision++;LoadBackgroundPalette(id);}
     private void LoadBackgroundPalette(int? id)
     {
         int lastBank=id is null?4:2;
@@ -148,7 +150,7 @@ public sealed partial class SourceBattleAnimation
             if(_state==1){_state=2;owner._backgroundFadeState=2;}
             else if(_state==2)
             {
-                owner._moveBackground=id;owner._backgroundRevision++;owner.LoadBackgroundPalette(id);
+                owner.SetMoveBackground(id);
                 owner.BeginHardwareFade(16,0,true);_state=3;return;
             }
             if(owner.PaletteFadeActive)return;

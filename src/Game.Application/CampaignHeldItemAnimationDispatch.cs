@@ -47,6 +47,26 @@ public static class CampaignHeldItemAnimationPresentation
         end>=0&&end<events.Count?GroupStart(events.Select(Read).ToArray(),end):-1;
     internal static int ConsumedGroupStart(IReadOnlyList<WildBattleEvent> events,int end)=>
         end>=0&&end<events.Count?GroupStart(events.Select(Read).ToArray(),end):-1;
+    // An invalid same-owner consumption span cannot authenticate its stat
+    // prelude as a move result. A foreign recipient's later item is independent.
+    internal static bool HasMalformedConsumedPrelude(IReadOnlyList<SourceBattleEvent> events,int index)=>
+        HasMalformedConsumedPrelude(events.Select(Read).ToArray(),index);
+    internal static bool HasMalformedConsumedPrelude(IReadOnlyList<WildBattleEvent> events,int index)=>
+        HasMalformedConsumedPrelude(events.Select(Read).ToArray(),index);
+    private static bool HasMalformedConsumedPrelude(Row[] rows,int index)
+    {
+        if(index<0||index>=rows.Length)return false;
+        var stat=rows[index];if(stat.Kind!="stat"||stat.Slot!=stat.Other)return false;
+        int end=index+1;
+        while(end<rows.Length&&rows[end].Turn==stat.Turn&&Prelude(rows[end]))end++;
+        return end<rows.Length&&rows[end].Kind=="consumed"&&rows[end].Turn==stat.Turn&&rows[end].Slot==stat.Slot&&GroupStart(rows,end)<0;
+    }
+    // Shared Cmd_playanimation visibility policy for ordinary general effects.
+    // Callers validate the entry snapshot's battle-layout width.
+    internal static bool VisibleAtResult(IReadOnlyList<SourceBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
+        index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
+    internal static bool VisibleAtResult(IReadOnlyList<WildBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
+        index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
     private static bool VisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)
     {
         var charge=entry.ToArray();var known=Enumerable.Repeat(true,entry.Count).ToArray();

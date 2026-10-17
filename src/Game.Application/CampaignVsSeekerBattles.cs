@@ -133,7 +133,7 @@ public sealed partial class CampaignSession
         string id = "forest-trainer-battle:" + ((state.ForestTrainerHistory?.Length ?? 0) + 1);
         var presentation = new CampaignWildBattle(id, state.Party[active], frame, ProjectTrainerWildEvents(prepared.Events), 0,
             frame.Get(new(0)).Body!.Pokemon, frame.Get(new(1)).Body!.Pokemon, CampaignBattlePhase.Events, [], 0, prepared.Trace) {
-            SourceEvents = prepared.Events, ActivePartyIndex = active,
+            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), SourceEvents = prepared.Events, ActivePartyIndex = active,
             FaintedMembers = state.Party.Where(p => p.Pokemon.CurrentHp == 0).Select(p => p.InstanceId).ToImmutableSortedSet(),
             OpponentHpAtLastSwitch = frame.Get(new(1)).Body!.Pokemon.CurrentHp };
         var battle = new CampaignForestTrainerBattle(id, trainer, actor.LocalId, presentation, CampaignForestTrainerStage.Intro,
@@ -164,7 +164,7 @@ public sealed partial class CampaignSession
         string id = "double-trainer-battle:" + ((state.DoubleBattleHistory?.Length ?? 0) + 1), intro = occurrence.Arguments[1];
         return state with { DoubleBattle = new(id, trainer, actor.LocalId, frame, CampaignDoubleBattleStage.Intro,
             prepared.Events, 0, [], state.Party.Select(p => p.Pokemon.Level).ToImmutableArray(), 0, 0,
-            frame.Slots.Select(c => c.Body!).ToImmutableArray(), frame.Slots.Select(c => c.Member!.Value).ToImmutableArray(),
+            prepared.EntrySlots.Select(c=>c.Body!).ToImmutableArray(), prepared.EntrySlots.Select(c=>c.Member!.Value).ToImmutableArray(),
             prepared.Trace, [], 0) { VsSeeker = receipt, VsSeekerParty = made, VsSeekerInventory = SourceTrainerItemInventory.Create(made.Trainer),
                 VsSeekerCurrentMove = SourceTrainerEncounterPolicy.NoMove },
             Dialogue = new(intro, _content.TextPages(intro), 0, false, false),

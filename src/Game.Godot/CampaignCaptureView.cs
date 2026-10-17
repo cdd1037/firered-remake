@@ -177,8 +177,7 @@ public partial class CampaignView
             {
                 DrawRect(new(0, 0, 240, 160), Colors.Black);
                 _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
-                var playerAppearance = FuchsiaBattleAppearance(battle, WildBattleSide.Player, battle.DisplayPlayer);
-                var player = _battleArt[(playerAppearance.Species, "back", playerAppearance.Shiny)];
+                var player = SingleBattleArt(battle,WildBattleSide.Player,battle.DisplayPlayer);
                 DrawTexture(player.Texture, player.Position);
                 DrawWildHealth(battle.DisplayPlayer, Game.Domain.WildBattle.WildBattleSide.Player, battle.DisplayPlayer.CurrentHp);
                 _battleSkin.DrawBattleMessage(this);
@@ -200,8 +199,7 @@ public partial class CampaignView
             else
             {
                 _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
-                var opponentAppearance = FuchsiaBattleAppearance(battle, WildBattleSide.Opponent, battle.DisplayOpponent);
-                var asset = _battleArt[(opponentAppearance.Species, "front", opponentAppearance.Shiny)];
+                var asset = SingleBattleArt(battle,WildBattleSide.Opponent,battle.DisplayOpponent);
                 DrawTexture(asset.Texture, asset.Position); DrawWildHealth(battle.DisplayOpponent, Game.Domain.WildBattle.WildBattleSide.Opponent, battle.DisplayOpponent.CurrentHp);
                 _battleSkin.DrawBattleMessage(this); WildLines(string.Join('\n', WildSourcePages("sText_UseNextPkmn"))); DrawCaptureYesNo();
             }

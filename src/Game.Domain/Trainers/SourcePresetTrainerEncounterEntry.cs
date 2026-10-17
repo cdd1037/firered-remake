@@ -59,6 +59,7 @@ public static class SourcePresetTrainerEncounterEntry
             // TrainerStarted is reserved for the frame-owned singles/Tower contexts.
             // Ordinary doubles retain their authenticated creation receipt in the caller.
             var start = SourceBattleEventHooks.Publish(frame, (n, t) => new SourceStartedEvent(n, t));
+            var entrySlots = start.State.Slots;
             var entry = SourceFourEntryAbilities.InitializeEntry(catalog, start.State, start.State.Revision);
             if (!entry.Succeeded) return Fail(entry.Fault!);
             var draw = Gen3Rng.Next(entry.State.Rng, "preset-trainer.entry.random-turn-number");
@@ -66,7 +67,7 @@ public static class SourcePresetTrainerEncounterEntry
                 (n, t) => new SourceTurnReadyEvent(n, t, draw.Value));
             if (ValidateFrame(source, created, ready.State, owned) is { } invalid) return Fail(invalid);
             return new(ready.State, ready.State.Rng, [start.Event, .. entry.Events, ready.Event],
-                [.. setup.Trace, .. created.Trace, .. entry.Trace, draw.Trace], null);
+                [.. setup.Trace, .. created.Trace, .. entry.Trace, draw.Trace], null) { EntrySlots = entrySlots };
         }
         catch (OverflowException) { return Fail("source_preset_trainer_counter_exhausted"); }
         catch (ArgumentException) { return Fail("source_preset_trainer_invalid_state"); }

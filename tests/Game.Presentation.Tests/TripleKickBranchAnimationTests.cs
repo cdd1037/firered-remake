@@ -10,8 +10,7 @@ public sealed class TripleKickBranchAnimationTests
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
     private static CommittedMoveAnimation Cue(byte turn,int actor=0,int? target=null)=>new("triple-kick",turn+1,167,new(actor),new(target??(actor^1))){MoveTurn=turn};
-    private static SourceAnimationScript Script()
-    {using var hit=SourceHitAnimationCatalog.Read(Path.Combine(Folder,"hit"));return SourcePhysicalAnimationCatalog.Read(Path.Combine(Folder,"physical.json"),hit)[167];}
+    private static SourceAnimationScript Script()=>AnimationCompositionFixture.Script(167);
     private static SourceAnimationFrame FirstHit(SourceBattleAnimation runtime)
     {
         for(int tick=0;tick<20&&runtime.Active;tick++){var frame=runtime.Tick();if(frame.HitSplats.Length!=0)return frame;}

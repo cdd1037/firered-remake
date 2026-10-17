@@ -84,7 +84,7 @@ public sealed partial class CampaignSession
             else if(e is SourceRewardLearningEvent {Outcome:SourceRewardLearningOutcome.Added} learned)
                 pages.Add(new($"{state.Party[learned.Recipient.Index].Nickname} learned\n{BattleContent.MoveNames[learned.Candidate.Move.Value]}!",null,learned.Recipient.Index));
         }
-        var next=b with{Frame=result.State,SourceEvents=result.Events,Events=ProjectCanonicalWildEvents(result.Events),EventIndex=0,
+        var next=b with{DisplayBatch=BeginDisplayBatch(b),Frame=result.State,SourceEvents=result.Events,Events=ProjectCanonicalWildEvents(result.Events),EventIndex=0,
             Phase=CampaignBattlePhase.Events,Pages=pages.ToImmutable(),PageIndex=0,
             LastSwitch=result.Events.OfType<SourceCalledPartySwitchedEvent>().Any(e=>e.Side.Value==0&&e.Kind!=WildBattleCalledSwitchKind.Voluntary)?null:b.LastSwitch,
             ExperienceGained=checked(b.ExperienceGained+result.Events.OfType<SourceRewardAppliedEvent>().Sum(e=>e.Reward.ExperienceCredited)),

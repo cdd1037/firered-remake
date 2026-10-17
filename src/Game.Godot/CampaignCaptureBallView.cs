@@ -33,8 +33,7 @@ public partial class CampaignView
         if(_captureBallPlaybackKey!=key)
         {
             ClearCaptureTargetTints();
-            var appearance=FuchsiaBattleAppearance(battle,WildBattleSide.Opponent,battle.DisplayOpponent);
-            var art=_battleArt[(appearance.Species,"front",appearance.Shiny)];
+            var art=SingleBattleArt(battle,WildBattleSide.Opponent,battle.DisplayOpponent);
             _captureBallPlayback=new(result.Ball,result.Outcome,result.AnimationCode,_captureBallAssets.Sine,
                 (int)art.Position.X+32,(int)art.Position.Y+32);
             _captureBallPlaybackKey=key;_captureBallCueTick=-1;

@@ -125,3 +125,10 @@ Static inspection: **18:59–19:03 UTC**, working tree based on `88cfbae74bda9c5
 ### Limits
 
 No failing reproduction route is justified by this inspection. Symbol closure and selected handler inspection do **not** prove physical reachability, every legal precondition partition, correct durable deltas, callback continuation, repeat/cancel/full-capacity behavior, save/reload behavior or presentation parity. Those require the bounded executable cases described in section 4. This follow-up ran **no builds, tests, game commands, native windows, downloads or uploads** and changed only this document after the inspection. It leaves whole-game acceptance and actual audio-output gates unchanged.
+
+
+## 7. Bounded Quest Log native follow-up (2026-10-17)
+
+The 03:43–03:51 UTC native sample used the existing fresh-game public-command fixture through ordinary Continue. At supported 0.03× time scale, Pallet → house 1F → Pallet remained one scene and naturally reached the saved-location caption; Enter returned to the saved Pallet (6,8), North. A separate normal-speed Backspace skip and Right+Enter dismissal showed no direction leakage, save-file mutation or runtime error. Both game processes were closed and the tested Debug files were unchanged. Godot MVID: `ba754bfc-63d6-4b32-ad1f-5074bc2c8203`; evidence: `/workspace/shared/firered-quest-map-native-20261017-0342/REPORT.md` and its captures/runtime logs.
+
+This closes only the sampled multi-map/skip/return observation. Audio used Dummy; fully input-free final-caption return, normal-speed transition fidelity, native pixel parity and whole-game acceptance remain unverified. No third native run occurred.

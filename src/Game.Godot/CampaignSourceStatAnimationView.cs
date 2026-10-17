@@ -6,7 +6,7 @@ using Godot;
 public partial class CampaignView
 {
     private readonly SourceBattleAnimationGate _sourceResultAnimationGate=new();
-    private sealed record SourceResultContinuation(string BattleId,long Sequence,long ReceiptSequence,BattlerSlot Affected,string? GeneralLabel,int? StatArgument);
+    private sealed record SourceResultContinuation(string BattleId,long Sequence,long ReceiptSequence,BattlerSlot Affected,string? GeneralLabel,int? StatArgument,CampaignResultAnimationKind Kind);
     private SourceResultContinuation? _sourceResultContinuation;
     private bool SourceAnimationBlocking=>_sourceMoveAnimationGate.IsBlocking||_sourceResultAnimationGate.IsBlocking;
     private bool SourceAnimationPresented=>_sourceMoveContinuation is not null||_sourceResultContinuation is not null;
@@ -16,22 +16,22 @@ public partial class CampaignView
         {if(!SourceResultContextMatches())CancelSourceResultAnimation("context-changed");else return;}
         if(_sourceMoveContinuation is not null)return;
         bool doubles=DoubleBattleVisible;
-        SourceResultContinuation? dispatch=HeldItemResultContinuation(doubles);
+        SourceResultContinuation? dispatch=HeldItemResultContinuation(doubles)??WishHealingResultContinuation(doubles);
         if(dispatch is null)
         {
             CampaignStatAnimationDispatch? statDispatch=null;
             if(doubles&&_session.State.DoubleBattle is {} d)
-                statDispatch=CampaignStatAnimationPresentation.AtResult(d);
+                statDispatch=CampaignStatAnimationPresentation.AtResult(d,moves:_catalog.PokemonContent!.Catalog.Moves);
             else if(PresentedWildBattle is {} b)
-                statDispatch=CampaignStatAnimationPresentation.AtResult(b,SourceTrainerPresentationActive(b));
+                statDispatch=CampaignStatAnimationPresentation.AtResult(b,SourceTrainerPresentationActive(b),moves:_catalog.PokemonContent!.Catalog.Moves);
             if(statDispatch is {} result)
             {
                 bool substitute=doubles?DoubleDisplayedBody(result.Affected.Value).CalledVolatile?.SubstituteHp>0:
                     _sourceSubstituteHp.GetValueOrDefault((WildBattleSide)result.Affected.Value)>0;
-                if(!substitute)dispatch=new(result.BattleId,result.Sequence,result.Sequence,result.Affected,null,result.AnimationArgument);
+                if(!substitute)dispatch=new(result.BattleId,result.Sequence,result.Sequence,result.Affected,null,result.AnimationArgument,CampaignResultAnimationKind.StatChange);
             }
         }
-        if(dispatch is null||!CampaignResultAnimationPolicy.Allows(dispatch.GeneralLabel is null?CampaignResultAnimationKind.StatChange:CampaignResultAnimationKind.HeldItem,_session.EffectiveOptions.BattleScene))return;
+        if(dispatch is null||!CampaignResultAnimationPolicy.Allows(dispatch.Kind,_session.EffectiveOptions.BattleScene))return;
         EnsureSourceMoveAssets();
         var resolved=dispatch.GeneralLabel is {} label?_sourceAnimationResources!.ResolveGeneral(label):_sourceAnimationResources!.Resolve(0);
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.ReceiptSequence,0,new(dispatch.Affected.Value),new(dispatch.Affected.Value))

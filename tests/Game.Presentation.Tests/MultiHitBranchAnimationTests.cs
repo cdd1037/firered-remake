@@ -8,8 +8,7 @@ public sealed class MultiHitBranchAnimationTests
     private sealed class Audio:ISourceAnimationAudio
     {public List<SourceAnimationSound> Sounds{get;}=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound cue)=>Sounds.Add(cue);public void StopAnimationEffects(){}}
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-    private static SourceAnimationScript Script(int move)
-    {using var hit=SourceHitAnimationCatalog.Read(Path.Combine(Folder,"hit"));return SourcePhysicalAnimationCatalog.Read(Path.Combine(Folder,"physical.json"),hit)[move];}
+    private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
     private static CommittedMoveAnimation Cue(int move,byte turn,int actor=0,long sequence=1,int? target=null)=>new("multi-hit",sequence,move,new(actor),new(target??(actor^1))){MoveTurn=turn};
     private static SourceAnimationFrame FirstHit(SourceBattleAnimation runtime)

@@ -227,11 +227,11 @@ public sealed partial class CampaignSession
         var next=ResetFieldPoisonCounterForBattle(state) with{TrainerTower=tower,Dialogue=null,Motions=[],PresentationTicks=0,World=state.World with{Rng=frame.Rng},Music="MUS_VS_TRAINER"};
         if(format==TrainerTowerBattleFormat.Double)
             return next with{DoubleBattle=new(id,made.Trainer.Id,actor,frame,CampaignDoubleBattleStage.Combat,entry.Events.Where(e=>e is not SourceTrainerStartedEvent).ToImmutableArray(),0,[],state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),0,0,
-                frame.Slots.Select(s=>s.Body!).ToImmutableArray(),frame.Slots.Select(s=>s.Member!.Value).ToImmutableArray(),entry.Trace,[],0),
+                entry.EntrySlots.Select(c=>c.Body!).ToImmutableArray(), entry.EntrySlots.Select(c=>c.Member!.Value).ToImmutableArray(),entry.Trace,[],0),
                 SeenSpecies=state.SeenSpecies.Union(frame.Party(BattleSide.Opponent).Members.Select(m=>m.Pokemon.SourceSpeciesId))};
         int active=frame.Get(new(0)).Member!.Value.Index;
         var view=new CampaignWildBattle(id,state.Party[active],frame,ProjectTrainerWildEvents(entry.Events),0,frame.Get(new(0)).Body!.Pokemon,frame.Get(new(1)).Body!.Pokemon,
-            CampaignBattlePhase.Events,[],0,entry.Trace){SourceEvents=entry.Events,ActivePartyIndex=active,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=frame.Get(new(1)).Body!.Pokemon.CurrentHp};
+            CampaignBattlePhase.Events,[],0,entry.Trace){DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(entry.EntrySlots)), SourceEvents=entry.Events,ActivePartyIndex=active,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=frame.Get(new(1)).Body!.Pokemon.CurrentHp};
         return PrepareForestTrainerPresentation(ProjectSourceTrainerOwnedParty(next with{ForestTrainerBattle=new(id,made.Trainer.Id,actor,view,CampaignForestTrainerStage.Combat,state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
             ProjectTrainerEvents(frame,entry.Events),0,0,[0]),SeenSpecies=state.SeenSpecies.Add(frame.Get(new(1)).Body!.Pokemon.SourceSpeciesId)}));
     }

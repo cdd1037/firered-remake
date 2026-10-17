@@ -56,6 +56,6 @@ public partial class CampaignView
         if(dispatch is null)return null;
         bool substitute=doubles?DoubleDisplayedBody(dispatch.Affected.Value).CalledVolatile?.SubstituteHp>0:
             _sourceSubstituteHp.GetValueOrDefault((WildBattleSide)dispatch.Affected.Value)>0;
-        return substitute?null:new(dispatch.BattleId,dispatch.Sequence,dispatch.ReceiptSequence,dispatch.Affected,"General_HeldItemEffect",null);
+        return substitute?null:new(dispatch.BattleId,dispatch.Sequence,dispatch.ReceiptSequence,dispatch.Affected,"General_HeldItemEffect",null,CampaignResultAnimationKind.HeldItem);
     }
 }

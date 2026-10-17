@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <Compile Include="../../src/Game.Godot/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />
+    <Compile Include="../../src/Game.Application/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
     <Compile Include="../../src/Game.Godot/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />
     <Compile Include="../../src/Game.Godot/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
     <Compile Include="../../src/Game.Godot/OpeningNidoranPresentation.cs" Link="OpeningNidoranPresentation.cs" />
@@ -10,6 +11,7 @@
     <Compile Include="../../src/Game.Godot/CaptureBallPresentation.cs" Link="CaptureBallPresentation.cs" />
     <Compile Include="../../src/Game.Godot/EvolutionScenePresentation.cs" Link="EvolutionScenePresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceBattleAnimation*.cs" Exclude="../../src/Game.Godot/SourceBattleAnimationAudioAdapter.cs" Link="Animations/%(Filename)%(Extension)" />
+    <Compile Include="../../src/Game.Godot/SourceBattleFormCatalog.cs" Link="Animations/SourceBattleFormCatalog.cs" />
     <Compile Include="../../src/Game.Godot/SourceBattleFrameComposer.cs" Link="Animations/SourceBattleFrameComposer.cs" />
     <Compile Include="../../src/Game.Godot/CampaignButtonInput.cs" Link="CampaignButtonInput.cs" />
     <Compile Include="../../src/Game.Godot/SourceHelpPresentation.cs" Link="SourceHelpPresentation.cs" />

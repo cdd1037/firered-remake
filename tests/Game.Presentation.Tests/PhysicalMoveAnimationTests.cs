@@ -11,11 +11,7 @@ public sealed class PhysicalMoveAnimationTests
         public void Play(SourceAnimationSound cue)=>Cues.Add(cue);
         public void StopAnimationEffects(){}
     }
-    private static SourceAnimationScript Script(int move)
-    {
-        using var hit=SourceHitAnimationCatalog.Read(Path.Combine(TestAssets.Root,"content/generated/battle/animations/hit"));
-        return SourcePhysicalAnimationCatalog.Read(Path.Combine(TestAssets.Root,"content/generated/battle/animations/physical.json"),hit)[move];
-    }
+    private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
     [TestMethod]
     [DataRow(20)][DataRow(35)][DataRow(2)][DataRow(66)][DataRow(77)][DataRow(78)][DataRow(79)][DataRow(289)][DataRow(29)][DataRow(64)][DataRow(38)][DataRow(21)][DataRow(22)][DataRow(11)][DataRow(23)][DataRow(26)][DataRow(27)][DataRow(70)][DataRow(34)][DataRow(36)][DataRow(67)][DataRow(136)]
@@ -34,24 +30,6 @@ public sealed class PhysicalMoveAnimationTests
             var final=runtime.Snapshot();
             if(move==289)Assert.AreEqual(new PixelPoint((actor&1)==0?0:-1,1),final.Offsets[actor]);
             else Assert.IsTrue(final.Offsets.All(p=>p==default));Assert.AreEqual(0,final.Sprites.Length);Assert.AreEqual(0,final.BackgroundSlots.Length);Assert.IsFalse(final.BlendEnabled);Assert.IsFalse(runtime.GraphicsLoaded);
-        }
-    }
-    [TestMethod]
-    public void EveryPhysicalFamilyComposesItsRealGeneratedSpriteSheets()
-    {
-        string folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-        using var resources=new SourceAnimationResources(folder);
-        using var hit=SourceHitAnimationCatalog.Read(Path.Combine(folder,"hit"));
-        foreach(var move in SourcePhysicalAnimationCatalog.Read(Path.Combine(folder,"physical.json"),hit).Keys)
-        {
-            var resolved=resources.Resolve(move);var script=resolved.Script;
-            var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);
-            assets.Add("background",new(240,112,new ushort[240*112]));
-            foreach(var battler in Battlers(true))assets.Add(battler.Asset,new(64,64,new ushort[4096]));
-            var composer=new SourceBattleFrameComposer(assets,Battlers(true),resolved.StatMask,resolved.Metallic);
-            var runtime=new SourceBattleAnimation(script,new("pixels",1,script.MoveId,new(2),new(3)){MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null},Battlers(true),true,new Audio());
-            int frames=0;while(runtime.Active&&frames++<1000)Assert.AreEqual(240*112*4,composer.ComposeField(runtime.Tick()).Length);
-            Assert.IsFalse(runtime.Active,script.Label);
         }
     }
     [TestMethod]

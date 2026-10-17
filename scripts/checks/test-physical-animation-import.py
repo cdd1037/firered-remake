@@ -8,10 +8,84 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('physical_import',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class PhysicalImportTests(unittest.TestCase):
+ def test_wish_reuses_existing_gold_and_granting_assets_with_exact_source_program(self):
+  pack=json.loads(imp.build(REFERENCE)[0]);script=next(s for s in pack['scripts'] if s['moveId']==273)
+  self.assertEqual({'SE_M_HEAL_BELL':188,'SE_M_REFLECT':200},script['soundEffects'])
+  self.assertEqual({'ANIM_TAG_GOLD_STARS':10233,'ANIM_TAG_SPARKLE_2':10049},script['spriteTags'])
+  self.assertEqual([['SE_M_REFLECT','SOUND_PAN_TARGET','SOUND_PAN_ATTACKER','-3','0']],[c['args'] for c in script['commands'] if c['op']=='panse_adjustall'])
+  self.assertEqual([['gWishStarSpriteTemplate','ANIM_ATTACKER','40']],[c['args'] for c in script['commands'] if c['op']=='createsprite' and c['args'][0]=='gWishStarSpriteTemplate'])
+  self.assertEqual([['60']],[c['args'] for c in script['commands'] if c['op']=='delay'])
+  self.assertEqual(2,sum(c['op']=='createsprite' and c['args'][0]=='gGrantingStarsSpriteTemplate' for c in pack['subroutines']['GrantingStarsEffect']))
+  recipe=next(r for r in pack['spriteRecipes'] if r['template']=='gWishStarSpriteTemplate')
+  self.assertEqual(('gold-stars','AnimWishStar',16,16,False,[]),(recipe['asset'],recipe['callback'],recipe['width'],recipe['height'],recipe['affineDoubleSize'],recipe['affineAnimations']))
+  self.assertEqual([[dict(tile=0,duration=1,hFlip=False,vFlip=False)]],recipe['animations']);self.assertEqual([0],recipe['loopStarts'])
+ def test_wish_missing_called_dependency_or_load_keeps_root_out(self):
+  for old,new in [(b'createsprite gWishStarSpriteTemplate,',b'createsprite gUnknownWishSpriteTemplate,'),(b'createsprite gGrantingStarsSpriteTemplate,',b'createsprite gUnknownGrantingStarTemplate,'),(b'loadspritegfx ANIM_TAG_SPARKLE_2',b'loadspritegfx ANIM_TAG_UNKNOWN_WISH')]:
+   raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+   self.assertNotIn(273,{s['moveId'] for s in json.loads(data)['scripts']})
+ def test_wish_template_source_shape_and_dummy_frames_fail_closed(self):
+  import re
+  raw=imp.read_sources(REFERENCE);source=raw['src/battle_anim_effects_3.c'];block=re.search(rb'const struct SpriteTemplate gWishStarSpriteTemplate =\s*\{.*?\};',source,re.S)[0]
+  for old,new in [(b'AffineOff',b'AffineNormal'),(b'AnimWishStar,',b'UnknownWishStar,'),(b'gDummySpriteAnimTable',b'UnknownFrameTable')]:
+   changed=dict(raw);changed['src/battle_anim_effects_3.c']=source.replace(block,block.replace(old,new))
+   with patch.object(imp,'read_sources',return_value=changed):
+    with self.assertRaisesRegex(ValueError,'star|Star'):imp.build(REFERENCE)
+ def test_adjustall_sound_is_shared_generated_dependency_not_a_callback_fallback(self):
+  self.assertEqual({'SE_M_REFLECT':200},imp.elemental.sound_effects(REFERENCE,[dict(op='panse_adjustall',args=['SE_M_REFLECT','63','-64','-3','0'])]))
+  with self.assertRaisesRegex(ValueError,'Undefined source sound dependency'):imp.elemental.sound_effects(REFERENCE,[dict(op='panse_adjustall',args=['SE_UNKNOWN_WISH','63','-64','-3','0'])])
+ def test_meteor_source_dependency_closure_and_authored_schedule(self):
+  pack=json.loads(imp.build(REFERENCE)[0]);script=next(s for s in pack['scripts'] if s['moveId']==309)
+  self.assertEqual({'SE_M_BARRIER':201,'SE_M_VITAL_THROW2':116},script['soundEffects'])
+  self.assertEqual({'ANIM_TAG_GOLD_STARS':10233,'ANIM_TAG_HANDS_AND_FEET':10143,'ANIM_TAG_IMPACT':10135},script['spriteTags'])
+  self.assertEqual(16,pack['backgroundSymbols']['BG_COSMIC'])
+  self.assertEqual([['-48','-64','72','32','30'],['-112','-64','8','32','30'],['-80','-64','40','32','30']],[c['args'][3:] for c in script['commands'] if c['op']=='createsprite' and c['args'][0]=='gMeteorMashStarSpriteTemplate'])
+  self.assertEqual(['10','40','20','10'],[c['args'][0] for c in script['commands'] if c['op']=='delay'])
+  self.assertEqual(1,sum(c['op']=='restorebg' for c in script['commands']))
+  for name,size,callback in [('gMeteorMashStarSpriteTemplate',16,'AnimMeteorMashStar'),('gMiniTwinklingStarSpriteTemplate',8,'AnimMiniTwinklingStar')]:
+   r=next(r for r in pack['spriteRecipes'] if r['template']==name)
+   self.assertEqual(('gold-stars',callback,size,size,False,[]),(r['asset'],r['callback'],r['width'],r['height'],r['affineDoubleSize'],r['affineAnimations']))
+   self.assertEqual([[dict(tile=0,duration=1,hFlip=False,vFlip=False)]],r['animations']);self.assertEqual([0],r['loopStarts'])
+ def test_gold_star_mixed_obj_sizes_share_exact_registered_source_sheet(self):
+  blob=imp.build_assets(REFERENCE)['gold-stars'];self.assertEqual((16,24),struct.unpack_from('<HH',blob));self.assertEqual(4+0xc0*4,len(blob))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/gold_stars.png') as image:
+   palette=image.getpalette();indices=list(image.tobytes())
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual(expected,list(struct.unpack_from('<384H',blob,4)))
+ def test_meteor_shape_and_registration_mutations_fail_closed(self):
+  for path,old,new in [('src/battle_anim_effects_3.c',b'.oam = &gOamData_AffineOff_ObjNormal_16x16,\n    .anims = gDummySpriteAnimTable,\n    .images = NULL,\n    .affineAnims = gDummySpriteAffineAnimTable,\n    .callback = AnimMeteorMashStar,',b'.oam = &gOamData_AffineNormal_ObjNormal_16x16,\n    .anims = gDummySpriteAnimTable,\n    .images = NULL,\n    .affineAnims = gDummySpriteAffineAnimTable,\n    .callback = AnimMeteorMashStar,'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_GoldStars, 0x00c0, ANIM_TAG_GOLD_STARS}',b'{gBattleAnimSpriteGfx_GoldStars, 0x0100, ANIM_TAG_GOLD_STARS}')]:
+   raw=imp.read_sources(REFERENCE);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=raw):
+    with self.assertRaisesRegex(ValueError,'star|Star'):imp.build(REFERENCE)
+ def test_meteor_missing_parent_callback_is_a_dependency_gap(self):
+  raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createsprite gMeteorMashStarSpriteTemplate,',b'createsprite gUnknownMeteorSpriteTemplate,',1)
+  with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
+  self.assertNotIn(309,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('callback:gUnknownMeteorSpriteTemplate',next(s for s in blocked if s['moveId']==309)['missing'])
+ def test_bullet_seed_retains_authored_particles_and_callback_only_sound(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==331)
+  self.assertEqual({'SE_M_HORN_ATTACK':159},script['soundEffects'])
+  self.assertFalse(any(c['op'].startswith('playse') for c in script['commands']))
+  particles=[c for c in script['commands'] if c['op']=='createsprite']
+  self.assertEqual(10,len(particles));self.assertTrue(all(c['args']==['gBulletSeedSpriteTemplate','ANIM_TARGET','2','20','0'] for c in particles))
+  self.assertEqual(9,sum(c['op']=='delay' and c['args']==['5'] for c in script['commands']))
+  recipe=next(r for r in pack['spriteRecipes'] if r['template']=='gBulletSeedSpriteTemplate')
+  self.assertEqual(('seed',16,16,False),(recipe['asset'],recipe['width'],recipe['height'],recipe['affineDoubleSize']))
+  self.assertEqual([{'op':'frame','x':0,'y':0,'rotation':20,'duration':1,'target':0},{'op':'jump','x':0,'y':0,'rotation':0,'duration':0,'target':0}],recipe['affineAnimations'][0])
+  self.assertEqual(4+0x180*4,len(imp.build_assets(REFERENCE)['seed']))
+ def test_bullet_seed_callback_sound_is_extracted_not_a_fallback(self):
+  raw=imp.read_sources(REFERENCE)
+  raw['src/battle_anim_effects_2.c']=raw['src/battle_anim_effects_2.c'].replace(b'PlaySE12WithPanning(SE_M_HORN_ATTACK,',b'PlaySE12WithPanning(SE_M_UNKNOWN_SEED,')
+  with patch.object(imp,'read_sources',return_value=raw):
+   with self.assertRaisesRegex(ValueError,'Undefined source sound dependency'):imp.build(REFERENCE)
+ def test_bullet_seed_source_oam_and_registered_sheet_are_not_approximated(self):
+  for path,old,new in [('src/battle_anim_effects_2.c',b'.oam = &gOamData_AffineNormal_ObjNormal_16x16,\n    .anims = gDummySpriteAnimTable,\n    .images = NULL,\n    .affineAnims = sBulletSeedAffineAnimTable,',b'.oam = &gOamData_AffineOff_ObjNormal_16x16,\n    .anims = gDummySpriteAnimTable,\n    .images = NULL,\n    .affineAnims = sBulletSeedAffineAnimTable,'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Seed, 0x0180, ANIM_TAG_SEED}',b'{gBattleAnimSpriteGfx_Seed, 0x0100, ANIM_TAG_SEED}')]:
+   raw=imp.read_sources(REFERENCE);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=raw):
+    with self.assertRaisesRegex(ValueError,'[Ss]eed source'):imp.build(REFERENCE)
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({273,309,154,292,162,305,331,28,189,5,25,299,42,333,40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertEqual('end',s['commands'][-1]['op']);self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
@@ -246,7 +320,7 @@ class PhysicalImportTests(unittest.TestCase):
   data,_=imp.build(REFERENCE);pack=json.loads(data)
   for root in pack['scripts']:
    commands=root['commands']+[row for c in root['commands'] if c['op']=='call' for row in pack['subroutines'][c['args'][0]]]
-   self.assertEqual(imp.elemental.sound_effects(REFERENCE,commands),root['soundEffects'])
+   self.assertEqual(imp.physical_sound_effects(REFERENCE,commands,imp.read_sources(REFERENCE)['src/battle_anim_effects_2.c'].decode()),root['soundEffects'])
    self.assertEqual({c['args'][0] for c in commands if c['op']=='loadspritegfx'},set(root['spriteTags']))
   slack=next(s for s in pack['scripts'] if s['moveId']==303)
   self.assertIn('SE_M_ABSORB_2',slack['soundEffects'])
@@ -309,4 +383,164 @@ class PhysicalImportTests(unittest.TestCase):
   for file,template,callback in [('battle_anim_bug.c','gLinearStingerSpriteTemplate','AnimTranslateStinger'),('battle_anim_normal.c','gHandleInvertHitSplatSpriteTemplate','AnimHitSplatHandleInvert')]:
    source=imp.read_sources(REFERENCE)['src/'+file].decode()
    with self.assertRaises(ValueError):imp.elemental.recipe(source.replace('.callback = '+callback, '.callback = UnknownNeedleCallback'),template,callback)
+ def test_arc_projectiles_share_exact_callback_and_three_authored_particles(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
+  for move,template,asset,size,sound in [(42,'gPinMissileSpriteTemplate','needle',16,'SE_M_JUMP_KICK'),(333,'gIcicleSpearSpriteTemplate','icicle-spear',32,'SE_M_ICY_WIND')]:
+   r=recipes[template];self.assertEqual(('AnimMissileArc',asset,size,size,False,False,[]),(r['callback'],r['asset'],r['width'],r['height'],r['blend'],r['affineDoubleSize'],r['affineAnimations']))
+   script=next(s for s in pack['scripts'] if s['moveId']==move)
+   particles=[c['args'][3:] for c in script['commands'] if c['op']=='createsprite' and c['args'][0]==template]
+   self.assertEqual([['20','-8','-8','-8','20','-32'],['20','-8','8','8','20','-40'],['20','-8','0','0','20','-32']],particles)
+   self.assertEqual(3,sum(c['op']=='createsprite' and c['args'][0]=='gBasicHitSplatSpriteTemplate' for c in script['commands']))
+   self.assertEqual(3,sum(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ShakeMon2' for c in script['commands']))
+   self.assertEqual({'ANIM_TAG_IMPACT','ANIM_TAG_'+asset.upper().replace('-','_')},set(script['spriteTags']))
+   self.assertEqual({'SE_M_HORN_ATTACK',sound},set(script['soundEffects']))
+ def test_icicle_registered_sheet_preserves_source_palette_indices(self):
+  blob=imp.build_assets(REFERENCE)['icicle-spear'];self.assertEqual((32,32),struct.unpack_from('<HH',blob));self.assertEqual(2052,len(blob))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/icicle_spear.png') as image:indices=list(image.tobytes());palette=image.getpalette()
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual(expected,list(struct.unpack_from('<1024H',blob,4)))
+  self.assertEqual(blob,(ROOT/'content/generated/battle/animations/physical-icicle-spear.rgb555').read_bytes())
+ def test_missing_arc_callback_or_icicle_load_cannot_admit_partial_root(self):
+  for old,new,expected in [(b'createsprite gPinMissileSpriteTemplate',b'createsprite MissingArc',{42}),(b'createsprite gIcicleSpearSpriteTemplate',b'createsprite MissingArc',{333}),(b'loadspritegfx ANIM_TAG_ICICLE_SPEAR',b'loadspritegfx ANIM_TAG_UNKNOWN_ICICLE',{333})]:
+   raw=imp.read_sources(REFERENCE);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=raw):data,_=imp.build(REFERENCE)
+   self.assertFalse(expected&{s['moveId'] for s in json.loads(data)['scripts']})
+ def test_arc_templates_and_registered_palette_must_match_source_oam_contract(self):
+  raw=imp.read_sources(REFERENCE)
+  for old,new in [(b'.callback = AnimMissileArc',b'.callback = UnknownArc'),(b'&gOamData_AffineNormal_ObjNormal_16x16',b'&gOamData_AffineOff_ObjNormal_16x16'),(b'&gOamData_AffineNormal_ObjNormal_32x32',b'&gOamData_AffineDouble_ObjNormal_32x32')]:
+   changed=dict(raw);changed['src/battle_anim_bug.c']=raw['src/battle_anim_bug.c'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):
+    with self.assertRaisesRegex(ValueError,'Arc-projectile source template'):imp.build(REFERENCE)
+  changed=dict(raw);changed['src/data/battle_anim.h']=raw['src/data/battle_anim.h'].replace(b'{gBattleAnimSpritePal_IcicleSpear, ANIM_TAG_ICICLE_SPEAR}',b'{gBattleAnimSpritePal_IcicleSpear, ANIM_TAG_NEEDLE}')
+  with patch.object(imp,'read_sources',return_value=changed):
+   with self.assertRaisesRegex(ValueError,'Icicle source sheet or palette'):imp.build_assets(REFERENCE)
+ def test_spinning_family_uses_shared_frames_and_exact_affine_programs(self):
+  data,blocked=imp.build(REFERENCE);pack=json.loads(data)
+  self.assertTrue({5,25,299}<={r['moveId'] for r in pack['scripts']})
+  for name,delta in [('gMegaPunchKickSpriteTemplate',-4),('gSpinningHandOrFootSpriteTemplate',-8)]:
+   recipe=next(r for r in pack['spriteRecipes'] if r['template']==name)
+   self.assertEqual(('hands-and-feet','AnimSpinningKickOrPunch',32,32,True),(recipe['asset'],recipe['callback'],recipe['width'],recipe['height'],recipe['affineDoubleSize']))
+   self.assertEqual([0,16,32,48,48],[r[0]['tile'] for r in recipe['animations']]);self.assertEqual([-1]*5,recipe['loopStarts'])
+   self.assertEqual([('frame',256,256,0,0,0),('frame',delta,delta,20,1,0),('jump',0,0,0,0,1)],[(r['op'],r['x'],r['y'],r['rotation'],r['duration'],r['target']) for r in recipe['affineAnimations'][0]])
+  self.assertIn('FireSpreadEffect',pack['subroutines'])
+ def test_impact_helper_preserves_scoped_return_and_exact_target_side_predicates(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);body=pack['subroutines']['SetImpactBackground'];labels=pack['subroutineLabels']['SetImpactBackground']
+  self.assertEqual({'SetImpactBackgroundRet':5,'SetImpactOpponentBG':6,'SetImpactPlayerBG':8},labels)
+  self.assertEqual(['AnimTask_IsContest','AnimTask_IsTargetPlayerSide'],[r['args'][0] for r in body if r['op']=='createvisualtask'])
+  self.assertEqual([['7','0','SetImpactOpponentBG'],['7','1','SetImpactPlayerBG']],[r['args'] for r in body if r['op']=='jumpargeq'])
+  self.assertEqual('return',body[labels['SetImpactBackgroundRet']]['op']);self.assertEqual('goto',body[-1]['op'])
+  self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_COSMIC':16},pack['backgroundSymbols'])
+  self.assertFalse(any('Contests' in str(r) for r in body));self.assertNotIn('BG_IMPACT_CONTESTS',pack['backgroundSymbols'])
+ def test_helper_missing_targets_cycles_and_nested_calls_are_not_admitted(self):
+  raw=imp.read_sources(REFERENCE)
+  for replacement in [b'goto MissingImpactLabel',b'goto SetImpactOpponentBG',b'call SetImpactBackground']:
+   changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'goto SetImpactBackgroundRet',replacement)
+   with patch.object(imp,'read_sources',return_value=changed):data,blocked=imp.build(REFERENCE)
+   self.assertFalse({5,25}&{r['moveId'] for r in json.loads(data)['scripts']});self.assertIn(299,{r['moveId'] for r in json.loads(data)['scripts']})
+   self.assertTrue(all('control-flow:subroutine' in next(r for r in blocked if r['moveId']==move)['missing'] for move in [5,25]))
+ def test_contest_dead_branch_folding_requires_source_false_invariant(self):
+  read=imp.elemental.read
+  def changed(reference,path):
+   data=read(reference,path)
+   return data.replace(b'bool8 IsContest(void)\n{\n    return FALSE;',b'bool8 IsContest(void)\n{\n    return TRUE;') if path=='src/battle_anim.c' else data
+  with patch.object(imp.elemental,'read',side_effect=changed):data,blocked=imp.build(REFERENCE)
+  self.assertFalse({5,25}&{r['moveId'] for r in json.loads(data)['scripts']});self.assertIn(299,{r['moveId'] for r in json.loads(data)['scripts']})
+ def test_impact_backgrounds_share_native_tiles_palette_and_keep_distinct_maps(self):
+  atlas=imp.module('physical_impact_backgrounds',ROOT/'scripts/imports/battle/import-source-animation-backgrounds.py');files=atlas.build(REFERENCE)
+  manifest=json.loads(files['manifest.json']);blob=files['atlas.bin'];moves={r['id']:r for r in manifest['moves']}
+  self.assertNotIn(6,moves);self.assertEqual(moves[4]['tiles'],moves[5]['tiles']);self.assertEqual(moves[4]['palette'],moves[5]['palette']);self.assertNotEqual(moves[4]['tilemap'],moves[5]['tilemap'])
+  def read(part):start,count=part;return blob[start:start+count]
+  self.assertEqual(atlas.indexed_tiles((REFERENCE/'graphics/battle_anims/backgrounds/impact.png').read_bytes())[0],read(moves[4]['tiles']))
+  for id,name in [(4,'opponent'),(5,'player')]:self.assertEqual((REFERENCE/f'graphics/battle_anims/backgrounds/impact_{name}.bin').read_bytes(),read(moves[id]['tilemap']))
+ def test_dirt_roots_reuse_one_random_callback_and_existing_mixed_sheet(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  for move,name,sub,size,tile,loop in [(28,'gSandAttackDirtSpriteTemplate','SandAttackDirt',8,0,0),(189,'gMudSlapMudSpriteTemplate','MudSlapMud',16,1,-1)]:
+   root=next(r for r in pack['scripts'] if r['moveId']==move);recipe=next(r for r in pack['spriteRecipes'] if r['template']==name)
+   self.assertEqual(('mud-sand','AnimDirtScatter',size,size,False),(recipe['asset'],recipe['callback'],recipe['width'],recipe['height'],recipe['affineDoubleSize']))
+   self.assertEqual([[dict(tile=tile,duration=1,hFlip=False,vFlip=False)]],recipe['animations']);self.assertEqual([loop],recipe['loopStarts']);self.assertEqual([],recipe['affineAnimations'])
+   self.assertEqual(6,sum(c['op']=='call' and c['args']==[sub] for c in root['commands']))
+   particles=[c for c in pack['subroutines'][sub] if c['op']=='createsprite'];self.assertEqual(5,len(particles));self.assertTrue(all(c['args'][0]==name and c['args'][3:6]==['15','15','20'] for c in particles))
+   self.assertEqual(5,len({tuple(c['args'][6:8]) for c in particles}),'Source authors varied the ignored target offsets; retain them as shared argument writes.')
+   self.assertEqual(['ANIM_TAG_MUD_SAND'],[c['args'][0] for c in root['commands'] if c['op']=='loadspritegfx'])
+ def test_dirt_templates_require_source_affine_off_oam_and_shared_tags(self):
+  import re
+  raw=imp.read_sources(REFERENCE)
+  for template,size in [('gSandAttackDirtSpriteTemplate',8),('gMudSlapMudSpriteTemplate',16)]:
+   source=raw['src/battle_anim_ground.c'];block=re.search(rb'const struct SpriteTemplate '+template.encode()+rb' =\s*\{.*?\};',source,re.S)[0]
+   for old,new in [(f'AffineOff_ObjNormal_{size}x{size}','AffineNormal_ObjNormal_'+str(size)+'x'+str(size)),('ObjNormal_','ObjBlend_'),('ANIM_TAG_MUD_SAND','ANIM_TAG_IMPACT'),('AnimDirtScatter','UnknownDirtCallback')]:
+    changed=dict(raw);changed['src/battle_anim_ground.c']=source.replace(block,block.replace(old.encode(),new.encode()))
+    with patch.object(imp,'read_sources',return_value=changed):
+     with self.assertRaisesRegex(ValueError,'Dirt-scatter source template'):imp.build(REFERENCE)
+ def test_uncovered_dirt_callback_keeps_both_roots_out(self):
+  raw=imp.read_sources(REFERENCE);changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'createsprite gSandAttackDirtSpriteTemplate',b'createsprite UnknownDirt',1).replace(b'createsprite gMudSlapMudSpriteTemplate',b'createsprite UnknownDirt',1)
+  with patch.object(imp,'read_sources',return_value=changed):data,blocked=imp.build(REFERENCE)
+  self.assertFalse({28,189}&{r['moveId'] for r in json.loads(data)['scripts']})
+  self.assertTrue(all('callback:UnknownDirt' in next(r for r in blocked if r['moveId']==move)['missing'] for move in [28,189]))
+ def test_fang_shared_sheet_and_distinct_source_end_lifetimes(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
+  for name,durations,affine in [('gFangSpriteTemplate',[8,16,4,4],True),('gSuperFangSpriteTemplate',[2,2,2,2],False)]:
+   r=recipes[name];self.assertEqual(('fang-attack',32,32,False,affine),(r['asset'],r['width'],r['height'],r['blend'],r['affineDoubleSize']))
+   self.assertEqual([0,16,32,48],[f['tile'] for f in r['animations'][0]]);self.assertEqual(durations,[f['duration'] for f in r['animations'][0]]);self.assertEqual([-1],r['loopStarts']);self.assertEqual(int(affine),len(r['affineAnimations']))
+  self.assertEqual([(512,512,0),(-32,-32,8)],[(c['x'],c['y'],c['duration']) for c in recipes['gFangSpriteTemplate']['affineAnimations'][0] if c['op']=='frame'])
+  blob=imp.build_assets(REFERENCE)['fang-attack'];self.assertEqual((32,128),struct.unpack_from('<HH',blob));self.assertEqual(8196,len(blob))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/fang_attack.png') as image:indices=list(image.tobytes());palette=image.getpalette()
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
+  self.assertEqual(expected,list(struct.unpack_from('<4096H',blob,4)))
+ def test_missing_fang_template_or_sheet_cannot_admit_root(self):
+  raw=imp.read_sources(REFERENCE)
+  for old,new in [(b'createsprite gFangSpriteTemplate',b'createsprite UnknownFang'),(b'createsprite gSuperFangSpriteTemplate',b'createsprite UnknownFang'),(b'loadspritegfx ANIM_TAG_FANG_ATTACK',b'loadspritegfx ANIM_TAG_UNKNOWN_FANG')]:
+   changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):data,_=imp.build(REFERENCE)
+   ids={r['moveId'] for r in json.loads(data)['scripts']};self.assertFalse(({305} if b'gFangSprite' in old else {162} if b'gSuperFang' in old else {162,305})&ids)
+ def test_fang_source_shape_palette_and_callback_are_verified(self):
+  raw=imp.read_sources(REFERENCE)
+  for path,old,new in [('src/battle_anim_effects_3.c',b'.callback = AnimFang,',b'.callback = UnknownFang,'),('src/battle_anim_effects_1.c',b'.callback = AnimSuperFang,',b'.callback = UnknownFang,'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_FangAttack, 0x0800, ANIM_TAG_FANG_ATTACK}',b'{gBattleAnimSpriteGfx_FangAttack, 0x0400, ANIM_TAG_FANG_ATTACK}'),('src/data/battle_anim.h',b'{gBattleAnimSpritePal_FangAttack, ANIM_TAG_FANG_ATTACK}',b'{gBattleAnimSpritePal_FangAttack, ANIM_TAG_IMPACT}')]:
+   self.assertIn(old,raw[path]);changed=dict(raw);changed[path]=raw[path].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):
+    with self.assertRaisesRegex(ValueError,'Fang source'):imp.build(REFERENCE)
+ def test_shared_contest_comparison_fold_preserves_task_and_remaps_labels(self):
+  task=dict(op='createvisualtask',args=['AnimTask_IsContest','2'],line=1);compare=dict(op='jumpargeq',args=['7','1','Dead'],line=2);end=dict(op='return',args=[],line=3)
+  rows,labels=imp.elemental.fold_firered_contest_branches(REFERENCE,'Dead:\n', [task,compare,end],{'Later':2})
+  self.assertEqual([task,end],rows);self.assertEqual({'Later':1},labels)
+  rows,labels=imp.elemental.fold_firered_contest_branches(REFERENCE,'Dead:\n',[task,dict(compare,args=['7','0','Dead']),end],{'Later':2})
+  self.assertEqual(dict(compare,op='goto',args=['Dead']),rows[1]);self.assertEqual({'Later':2},labels)
+  unrelated=dict(task,args=['AnimTask_IsTargetPlayerSide','2']);rows,_=imp.elemental.fold_firered_contest_branches(REFERENCE,'Dead:\n',[unrelated,compare,end],{})
+  self.assertEqual(compare,rows[1])
+ def test_contest_comparison_alternate_entry_cannot_bypass_predicate(self):
+  rows=[dict(op='createvisualtask',args=['AnimTask_IsContest','2']),dict(op='jumpargeq',args=['7','1','Dead']),dict(op='return',args=[])]
+  with self.assertRaisesRegex(ValueError,'alternate entry'):imp.elemental.fold_firered_contest_branches(REFERENCE,'Dead:\n',rows,{'BypassPredicate':1})
+ def test_contest_task_arg_write_and_destroy_are_part_of_fold_proof(self):
+  read=imp.elemental.read
+  for old,new in [(b'gBattleAnimArgs[ARG_RET_ID] = FALSE;',b'gBattleAnimArgs[ARG_RET_ID] = TRUE;'),(b'DestroyAnimVisualTask(taskId);',b'DestroyTask(taskId);')]:
+   def changed(reference,path):
+    data=read(reference,path)
+    return data.replace(old,new) if path=='src/battle_anim_utility_funcs.c' else data
+   rows=[dict(op='createvisualtask',args=['AnimTask_IsContest','2']),dict(op='jumpargeq',args=['7','1','Dead'])]
+   with patch.object(imp.elemental,'read',side_effect=changed):
+    with self.assertRaisesRegex(ValueError,'FireRed contest predicate'):imp.elemental.fold_firered_contest_branches(REFERENCE,'Dead:\n',rows,{})
+ def test_multi_strike_recipes_preserve_unmirrored_swipe_and_hand_frame_parity(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']};swipe=recipes['gFurySwipesSpriteTemplate'];hand=recipes['gArmThrustHandSpriteTemplate']
+  self.assertEqual(('swipe','AnimFurySwipes',32,32,False),(swipe['asset'],swipe['callback'],swipe['width'],swipe['height'],swipe['affineDoubleSize']));self.assertEqual([],swipe['affineAnimations'])
+  self.assertEqual([[0,16,32,48]]*2,[[f['tile'] for f in a] for a in swipe['animations']]);self.assertEqual([[False]*4,[True]*4],[[f['hFlip'] for f in a] for a in swipe['animations']]);self.assertTrue(all(f['duration']==4 for a in swipe['animations'] for f in a))
+  self.assertEqual(('hands-and-feet','AnimArmThrustHit',False),(hand['asset'],hand['callback'],hand['affineDoubleSize']));self.assertEqual([0,16,32,48,48],[a[0]['tile'] for a in hand['animations']]);self.assertEqual([False,False,False,False,True],[a[0]['hFlip'] for a in hand['animations']]);self.assertEqual([],hand['affineAnimations'])
+ def test_arm_branch_and_two_authored_swipes_remain_per_invocation(self):
+  data,_=imp.build(REFERENCE);pack=json.loads(data);rows={r['moveId']:r for r in pack['scripts']};arm=rows[292];swipe=rows[154]
+  self.assertEqual(2,sum(c['op']=='createsprite' and c['args'][0]=='gFurySwipesSpriteTemplate' for c in swipe['commands']));self.assertEqual([['16','0','1'],['-16','0','0']],[c['args'][3:] for c in swipe['commands'] if c['op']=='createsprite' and c['args'][0]=='gFurySwipesSpriteTemplate'])
+  self.assertEqual([['ArmThrustRight','ArmThrustLeft']],[c['args'] for c in arm['commands'] if c['op']=='choosetwoturnanim']);self.assertEqual([['10','-8','14','3']],[c['args'][3:] for c in arm['commands'] if c['op']=='createsprite' and c['args'][0]=='gArmThrustHandSpriteTemplate']);self.assertEqual({'SE_M_DOUBLE_SLAP','SE_M_SWAGGER'},set(arm['soundEffects']))
+ def test_swipe_registered_sheet_keeps_even_unsampled_source_tiles(self):
+  blob=imp.build_assets(REFERENCE)['swipe'];self.assertEqual((32,160),struct.unpack_from('<HH',blob));self.assertEqual(10244,len(blob))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/swipe.png') as image:indices=list(image.tobytes());palette=image.getpalette()
+  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices];self.assertEqual(expected,list(struct.unpack_from('<5120H',blob,4)))
+ def test_missing_strike_callback_or_sheet_blocks_only_complete_root(self):
+  raw=imp.read_sources(REFERENCE)
+  for old,new,missing in [(b'createsprite gFurySwipesSpriteTemplate',b'createsprite MissingStrike',{154}),(b'createsprite gArmThrustHandSpriteTemplate',b'createsprite MissingStrike',{292}),(b'loadspritegfx ANIM_TAG_SWIPE',b'loadspritegfx ANIM_TAG_UNKNOWN_SWIPE',{154})]:
+   changed=dict(raw);changed['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):data,_=imp.build(REFERENCE)
+   self.assertFalse(missing&{r['moveId'] for r in json.loads(data)['scripts']})
+ def test_strike_source_oam_callback_and_registration_fail_closed(self):
+  raw=imp.read_sources(REFERENCE)
+  for path,old,new in [('src/battle_anim_fight.c',b'.callback = AnimArmThrustHit,',b'.callback = UnknownStrike,'),('src/battle_anim_effects_2.c',b'.callback = AnimFurySwipes,',b'.callback = UnknownStrike,'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Swipe, 0x0a00, ANIM_TAG_SWIPE}',b'{gBattleAnimSpriteGfx_Swipe, 0x0800, ANIM_TAG_SWIPE}')]:
+   self.assertIn(old,raw[path]);changed=dict(raw);changed[path]=raw[path].replace(old,new)
+   with patch.object(imp,'read_sources',return_value=changed):
+    with self.assertRaisesRegex(ValueError,'strike source|Swipe source'):imp.build(REFERENCE)
 if __name__=='__main__':unittest.main()

@@ -7,8 +7,7 @@ public sealed class RotationTaskAnimationTests
 {
     private sealed class Audio:ISourceAnimationAudio
     {public bool IsPlaying=>false;public void Play(SourceAnimationSound cue){}public void StopAnimationEffects(){}}
-    private static SourceAnimationScript Source()
-    {var folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");using var hit=SourceHitAnimationCatalog.Read(Path.Combine(folder,"hit"));return SourcePhysicalAnimationCatalog.Read(Path.Combine(folder,"physical.json"),hit)[64];}
+    private static SourceAnimationScript Source()=>AnimationCompositionFixture.Script(64);
     private static AnimationBattler[] Battlers()=>Enumerable.Range(0,4).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
     private static SourceAnimationCommand Task(bool restore,int duration,int speed,int selector,int mode)=>new("createvisualtask",[restore?"AnimTask_RotateMonToSideAndRestore":"AnimTask_RotateMonSpriteToSide","2",duration.ToString(),speed.ToString(),selector.ToString(),mode.ToString()],1);
     private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/rotation-task-original-vectors.json")));

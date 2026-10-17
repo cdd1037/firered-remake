@@ -168,7 +168,7 @@ public partial class CampaignView
     private void AcknowledgeWildAttackText()
     {
         var b=PresentedWildBattle!;
-        var decision=CampaignMoveAnimationPresentation.AtAttackText(b,SourceTrainerPresentationActive(b),_session.EffectiveOptions.BattleScene);
+        var decision=CampaignMoveAnimationPresentation.AtAttackText(b,SourceTrainerPresentationActive(b),_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves);
         if(decision.Dispatch is not {} dispatch){AcknowledgePresentedSingleBattle();return;}
         if(SourceAnimationBlocking)return;
         EnsureSourceMoveAssets();var (assets,battlers)=CreateSourceAnimationScene(false);
@@ -177,7 +177,7 @@ public partial class CampaignView
     private void AcknowledgeDoubleAttackText()
     {
         var b=_session.State.DoubleBattle!;
-        var decision=CampaignMoveAnimationPresentation.AtAttackText(b,_session.EffectiveOptions.BattleScene);
+        var decision=CampaignMoveAnimationPresentation.AtAttackText(b,_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves);
         if(decision.Dispatch is not {} dispatch){DoubleSubmit(new("ack"));return;}
         if(SourceAnimationBlocking)return;
         EnsureSourceMoveAssets();var (assets,battlers)=CreateSourceAnimationScene(true);
@@ -193,8 +193,11 @@ public partial class CampaignView
         foreach(var (side,mon) in new[]{(WildBattleSide.Player,WildDisplayPlayer(b)),(WildBattleSide.Opponent,b.DisplayOpponent)})
         {
             var appearance=FuchsiaBattleAppearance(b,side,mon);string face=side==WildBattleSide.Player?"back":"front";
-            var displayed=_battleArt[(appearance.Species,face,appearance.Shiny)];
-            var geometry=_sourceBattlerGeometry[(appearance.Species,face)] with{Asset="battler-"+(int)side};
+            var displayed=SingleBattleArt(b,side,mon);
+            var sourceGeometry=BattleForms.HasForms(appearance.Species)
+                ?FormBattleMaterial(SingleDisplayedBody(b,side)??throw new InvalidDataException("Source form display body is missing."),new((int)side)).Geometry
+                :_sourceBattlerGeometry[(appearance.Species,face)];
+            var geometry=sourceGeometry with{Asset="battler-"+(int)side};
             var center=geometry.Center(false);
             if(displayed.Position!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated campaign/source battler geometry differs.");
             bool substitute=hit?.Target.Value==(int)side?hit.HitsSubstitute:_sourceSubstituteHp.GetValueOrDefault(side)>0;
@@ -213,8 +216,10 @@ public partial class CampaignView
             // DisplayedSlots is the event-time snapshot, before this hit/KO is acknowledged.
             // The committed frame may already contain damage and later action results.
             var body=DoubleDisplayedBody(slot);var mon=body.Pokemon;var appearance=body.Transform?.CopiedPokemon??mon;string face=(slot&1)==0?"back":"front";
-            var displayed=_battleArt[(PresentedRenderSpecies(appearance),face,appearance.IsShiny)];
-            var geometry=_sourceBattlerGeometry[(PresentedRenderSpecies(appearance),face)] with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
+            var displayed=DoubleBattleArt(body,slot);
+            var sourceGeometry=BattleForms.HasForms(PresentedRenderSpecies(appearance))
+                ?FormBattleMaterial(body,new(slot)).Geometry:_sourceBattlerGeometry[(PresentedRenderSpecies(appearance),face)];
+            var geometry=sourceGeometry with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
             var center=geometry.Center(true);
             if(displayed.Position+DoubleSpriteOffsets[slot]!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated doubles/source battler geometry differs.");
             bool substitute=hit?.Target.Value==slot?hit.HitsSubstitute:body.CalledVolatile?.SubstituteHp>0;
@@ -235,6 +240,7 @@ public partial class CampaignView
         var script=resolved.Script;foreach(var asset in resolved.Assets)assets[asset.Key]=asset.Value;
         var backgroundSurface=SourceTerrainSurface(assets["background"]);var backgroundPalette=Enumerable.Range(0,16).Select(i=>backgroundSurface.PaletteColor(2,i)).ToArray();
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn};
+        cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio(),backgroundPalette)))return false;
         _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;

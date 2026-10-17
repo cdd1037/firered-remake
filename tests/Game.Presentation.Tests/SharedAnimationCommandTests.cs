@@ -89,11 +89,27 @@ public sealed class SharedAnimationCommandTests
     [TestMethod][DataRow(0)][DataRow(1)]
     public void PanSweepUsesSourceCreationFrameStepAndExactAsymmetricEndpoints(int actor)
     {
-        var script=new SourceAnimationScript(53,"pan",[new("panse",["SE_M_FLAMETHROWER","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","+2","0"],1),new("end",[],2)]);
+        var script=new SourceAnimationScript(53,"pan",[new("panse",["SE_M_FLAMETHROWER","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","+2","0"],1),new("end",[],2)]){SoundEffects=new Dictionary<string,int>{{"SE_M_FLAMETHROWER",139}}};
         var audio=new Audio();var runtime=new SourceBattleAnimation(script,new("pan",1,53,new(actor),new(actor^1)),Battlers(),true,audio);
         int frames=0;while(runtime.Active&&frames++<100)runtime.Tick();
         Assert.IsFalse(runtime.Active);Assert.AreEqual(1,audio.Sounds.Count);Assert.AreEqual(actor==0?-64:63,audio.Sounds[0].Pan);
         Assert.AreEqual(actor==0?64:63,audio.Pans.Count);Assert.AreEqual((actor==0?-62:61,0),audio.Pans[0]);Assert.AreEqual((actor==0?63:-63,actor==0?63:62),audio.Pans[^1]);
+    }
+    [TestMethod]
+    public void PanSweepUsesGeneratedSongDependenciesAndRejectsMissingOrMalformedOperands()
+    {
+        var command=new SourceAnimationCommand("panse",["SE_M_BLIZZARD","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","2","0"],1);
+        var script=new SourceAnimationScript(59,"pan-dependency",[command,new("end",[],2)])
+        {SoundEffects=new Dictionary<string,int>{{"SE_M_BLIZZARD",146}}};
+        var cue=new CommittedMoveAnimation("pan",1,59,new(0),new(1));var audio=new Audio();
+        var runtime=new SourceBattleAnimation(script,cue,Battlers(),true,audio);runtime.Tick();
+        Assert.AreEqual("SE_M_BLIZZARD",audio.Sounds.Single().Id);runtime.Cancel();
+        Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(script with{SoundEffects=new Dictionary<string,int>()},cue,Battlers(),true,new Audio()));
+        foreach(var args in new[]{
+            new[]{"SE_NOT_REGISTERED","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","2","0"},
+            new[]{"SE_M_BLIZZARD","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","128","0"},
+            new[]{"SE_M_BLIZZARD","SOUND_PAN_ATTACKER","SOUND_PAN_TARGET","2","256"}})
+            Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(script with{Commands=[command with{Args=args},new("end",[],2)]},cue,Battlers(),true,new Audio()));
     }
     [TestMethod][DataRow(0)][DataRow(1)][DataRow(2)][DataRow(3)]
     public void SplitBackgroundPriorityAppliesOnlyForSourceLeadPositions(int target)
@@ -265,8 +281,13 @@ public sealed class SharedAnimationCommandTests
         var runtime=new SourceBattleAnimation(script,new("jump",1,20,new(0),new(1)),Battlers(),true,new Audio());
         int ticks=0;while(runtime.Active&&ticks++<10)runtime.Tick();Assert.IsFalse(runtime.Active);Assert.IsTrue(ticks<6);
         Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(script with{Labels=new Dictionary<string,int>()},new("bad",1,20,new(0),new(1)),Battlers(),true,new Audio()));
+        var joined=script with{Commands=[new("goto",["alternate"],1),new("end",[],2),new("delay",["1"],3),new("goto",["finish"],4)],Labels=new Dictionary<string,int>{{"alternate",2},{"finish",1}}};
+        var joinedRuntime=new SourceBattleAnimation(joined,new("joined",1,20,new(0),new(1)),Battlers(),true,new Audio());
+        int joinedTicks=0;while(joinedRuntime.Active&&joinedTicks++<10)joinedRuntime.Tick();Assert.IsFalse(joinedRuntime.Active);
+        var falloff=joined with{Commands=[new("delay",["1"],1)],Labels=new Dictionary<string,int>()};
+        Assert.Throws<InvalidDataException>(()=>new SourceBattleAnimation(falloff,new("falloff",1,20,new(0),new(1)),Battlers(),true,new Audio()));
         var cycle=script with{Commands=[new("goto",["shared"],1),new("end",[],2)],Labels=new Dictionary<string,int>{{"shared",0}}};
-        var loop=new SourceBattleAnimation(cycle,new("bounded",1,20,new(0),new(1)),Battlers(),true,new Audio());Assert.Throws<InvalidDataException>(()=>loop.Tick());
+        Assert.Throws<InvalidDataException>(()=>new SourceBattleAnimation(cycle,new("bounded",1,20,new(0),new(1)),Battlers(),true,new Audio()));
     }
     [TestMethod]
     public void ParameterizedScaleUsesIndependentSignedAxesAndRestoresSelectedBattler()

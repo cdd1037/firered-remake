@@ -20,11 +20,7 @@ public sealed class ClawSourceVectorTests
         public void StopAnimationEffects() { }
     }
     private static string Folder => Path.Combine(TestAssets.Root, "content/generated/battle/animations");
-    private static SourceAnimationScript Script(int move)
-    {
-        using var hit = SourceHitAnimationCatalog.Read(Path.Combine(Folder, "hit"));
-        return SourcePhysicalAnimationCatalog.Read(Path.Combine(Folder, "physical.json"), hit)[move];
-    }
+    private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
     private static JsonDocument Vectors() => JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
         "tests/Game.Presentation.Tests/Fixtures/claw-shake-source-vectors.json")));
     private static int[] Numbers(JsonElement values) => values.EnumerateArray().Select(v => v.GetInt32()).ToArray();
@@ -145,7 +141,8 @@ public sealed class ClawSourceVectorTests
         var controller = Activator.CreateInstance(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
             null, new object[] { 4, 2, args, runtime }, null)
             ?? throw new InvalidOperationException("Could not initialize original shake controller adapter.");
-        ((IList)Field<object>(runtime, "_sprites")).Add(controller);
+        var registry=Field<object>(runtime,"_sprites");
+        registry.GetType().GetMethod("Add")!.Invoke(registry,[controller]);
         return controller;
     }
     private static SourceBattleAnimation HoldScript(SourceAnimationScript source, int actor, int target) =>
@@ -161,7 +158,9 @@ public sealed class ClawSourceVectorTests
         Assert.AreEqual(v[4], (int)unchecked((short)globalY), context);
         Assert.AreEqual(v[5], EnabledMask(runtime), context);
         Assert.AreEqual(v[6], runtime.ActiveVisualCount, context);
-        Assert.AreEqual(v[6], frame.Sprites.Length, context);
+        // The source row records live inUse. A reflection-created controller
+        // has not entered the public OAM pass at init (-1).
+        Assert.AreEqual(v[0] < 0 ? 0 : v[6], frame.Sprites.Length, context);
         bool finished = (bool)(controller.GetType().GetProperty("Finished")!.GetValue(controller)!);
         Assert.AreEqual(v[6] == 0, finished, context);
         var controllerFrame = (SourceVisualSpriteFrame)controller.GetType().GetProperty("Frame")!.GetValue(controller)!;
@@ -245,7 +244,7 @@ public sealed class ClawSourceVectorTests
             var v = Numbers(row);
             if (v[0] < 0) continue;
             var frame = runtime.Tick();
-            controller ??= ((IList)Field<object>(runtime, "_sprites"))[0]!;
+            controller ??= ((IEnumerable)Field<object>(runtime,"_sprites")).Cast<object>().First();
             AssertShakeRow(runtime, controller, frame, v, "native VM tick " + v[0]);
             CollectionAssert.AreEqual(args, frame.AnimationArguments.Take(5).Select(a => (int)a).ToArray());
         }

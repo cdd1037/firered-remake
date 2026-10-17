@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[3]
 def module(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/'scripts/imports/battle'/file);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
 shared=module('flying_elemental','import-source-elemental-animations.py')
-TEMPLATES={'gEllipticalGustSpriteTemplate':'AnimEllipticalGust','gGustToTargetSpriteTemplate':'AnimGustToTarget'}
+TEMPLATES={'gEllipticalGustSpriteTemplate':'AnimEllipticalGust','gGustToTargetSpriteTemplate':'AnimGustToTarget','gAirWaveCrescentSpriteTemplate':'AnimAirWaveCrescent'}
 def build(reference):
  read=lambda name:shared.read(reference,name)
  source=read('data/battle_anim_scripts.s').decode()
@@ -33,12 +33,22 @@ def build(reference):
   if any(c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in {'ANIM_TAG_GUST','ANIM_TAG_IMPACT'} or c['op'] in {'playsewithpan','loopsewithpan'} and c['args'][0] not in sounds for c in rows):continue
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=rows,soundEffects=shared.sound_effects(reference,rows),spriteTags={n:tags[n] for n in sorted({c['args'][0] for c in rows if c['op']=='loadspritegfx'})}))
  csource=read('src/battle_anim_flying.c').decode();recipes=[shared.recipe(csource,name,callback) for name,callback in TEMPLATES.items()]
- with Image.open(io.BytesIO(read('graphics/battle_anims/sprites/gust.png'))) as image:
-  if image.mode!='P' or image.size!=(32,64):raise ValueError('Unexpected source gust image')
-  indices=[v for y in range(0,64,8) for x in range(0,32,8) for v in image.crop((x,y,x+8,y+8)).tobytes()];palette=image.getpalette()[:48]
- if max(indices)>15 or len(palette)!=48:raise ValueError('Invalid source gust indexed material')
- blobs={'flying-gust.4bpp':bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),'flying-gust.pal16':struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])}
- data=dict(schemaVersion=1,scripts=sorted(scripts,key=lambda r:r['moveId']),subroutines={},spriteRecipes=recipes,assets=[],indexedAssets=[dict(id='gust',width=32,height=64,indicesPath='flying-gust.4bpp',palettePath='flying-gust.pal16',paletteTag='ANIM_TAG_GUST')])
+ blobs={};assets=[]
+ for stem,width,height in [('gust',32,64),('air_wave_2',32,16)]:
+  with Image.open(io.BytesIO(read('graphics/battle_anims/sprites/'+stem+'.png'))) as image:
+   if image.mode!='P' or image.size!=(width,height):raise ValueError('Unexpected source flying image')
+   indices=[v for y in range(0,height,8) for x in range(0,width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()];palette=image.getpalette()[:48]
+  if max(indices)>15 or len(palette)!=48:raise ValueError('Invalid source flying indexed material')
+  name=stem.replace('_','-');file='flying-'+name;blobs[file+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));blobs[file+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
+  assets.append(dict(id=name,width=width,height=height,indicesPath=file+'.4bpp',palettePath=file+'.pal16',paletteTag='ANIM_TAG_'+stem.upper()))
+ body=re.search(r'static const union AnimCmd sAffineAnim_AirWaveCrescent\[\] =\s*\{(.*?)\};',csource,re.S)
+ if body is None:raise ValueError('Missing air-wave source command array')
+ raw=[line.split('//',1)[0].strip().rstrip(',') for line in body[1].splitlines() if line.split('//',1)[0].strip()]
+ if len(raw)!=5 or any(not re.fullmatch(r'ANIMCMD_FRAME\([^)]*\)',line) for line in raw[:4]) or raw[4]!='ANIMCMD_JUMP(0)':raise ValueError('Air-wave seek requires four direct source FRAME commands')
+ # SeekSpriteAnim operands 0..3 select direct FRAME commands before the JUMP.
+ air=next(r for r in recipes if r['callback']=='AnimAirWaveCrescent')
+ if len(air['animations'])!=1 or len(air['animations'][0])!=4 or air['loopStarts']!=[0] or any(f['duration']!=3 for f in air['animations'][0]):raise ValueError('Air-wave source direct-frame seek mapping differs')
+ data=dict(schemaVersion=1,scripts=sorted(scripts,key=lambda r:r['moveId']),subroutines={},spriteRecipes=recipes,assets=[],indexedAssets=assets)
  if not scripts:raise ValueError('No complete gust source roots')
  return (json.dumps(data,indent=2)+'\n').encode(),blobs
 if __name__=='__main__':
