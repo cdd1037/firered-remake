@@ -55,6 +55,7 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_ATTACK_UP_2" => (WildBattleStat.Attack,2),
         "EFFECT_SPEED_UP_2" => (WildBattleStat.Speed,2),
         "EFFECT_SPECIAL_ATTACK_UP" => (WildBattleStat.SpecialAttack,1),
+        "EFFECT_SPECIAL_ATTACK_UP_2" => (WildBattleStat.SpecialAttack,2),
         "EFFECT_MINIMIZE" or "EFFECT_EVASION_UP" => (WildBattleStat.Evasion,1),
         "EFFECT_DEFENSE_CURL" or "EFFECT_DEFENSE_UP" => (WildBattleStat.Defense,1),
         "EFFECT_DEFENSE_UP_2" => (WildBattleStat.Defense,2),
@@ -246,7 +247,8 @@ public static partial class CampaignMoveAnimationPresentation
         }
         if (action.Any(e => e is SourceMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is SourceMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move && !(move==150&&f.Target==used.Actor&&f.Reason=="nothing-happened") ||
-            e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
+            e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move &&
+                !CampaignStatAnimationPresentation.IsPreventedItemSecondary(action,used,a.Sequence,moves) ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
                 !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");

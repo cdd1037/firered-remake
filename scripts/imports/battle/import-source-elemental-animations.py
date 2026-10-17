@@ -8,6 +8,14 @@ spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/import
 spec=importlib.util.spec_from_file_location('source_animation_affine',ROOT/'scripts/lib/source_animation_affine.py');affine=importlib.util.module_from_spec(spec);spec.loader.exec_module(affine)
 task_affine_program=affine.task_affine_program
 TEMPLATES={
+ 'gDizzyPunchDuckSpriteTemplate':('battle_anim_fight.c','AnimDizzyPunchDuck'),
+ 'gConstrictBindingSpriteTemplate':('battle_anim_effects_1.c','AnimConstrictBinding'),
+ 'gKnockOffStrikeSpriteTemplate':('battle_anim_effects_3.c','AnimKnockOffStrike'),
+ 'gNeedleArmSpikeSpriteTemplate':('battle_anim_effects_1.c','AnimNeedleArmSpike'),
+ 'gFrenzyPlantRootSpriteTemplate':('battle_anim_effects_1.c','AnimFrenzyPlantRoot'),
+ 'gLeerSpriteTemplate':('battle_anim_effects_3.c','AnimLeer'),
+ 'gTailGlowOrbSpriteTemplate':('battle_anim_bug.c','AnimTailGlowOrb'),
+ 'gTearDropSpriteTemplate':('battle_anim_dark.c','AnimTearDrop'),
  'gRoarNoiseLineSpriteTemplate':('battle_anim_effects_3.c','AnimRoarNoiseLine'),
  'gHyperVoiceRingSpriteTemplate':('battle_anim_effects_2.c','AnimHyperVoiceRing'),
  'gQuestionMarkSpriteTemplate':('battle_anim_psychic.c','AnimQuestionMark'),
@@ -128,7 +136,7 @@ def recipe(source,name,callback):
    for row in body.splitlines():
     row=row.strip().rstrip(',')
     if not row:continue
-    f=re.fullmatch(r'ANIMCMD_FRAME\((\d+), (\d+)((?:, \.[hv]Flip = TRUE)*)\)',row)
+    f=re.fullmatch(r'ANIMCMD_FRAME\((\d+),\s*(\d+)((?:, \.[hv]Flip = TRUE)*)\)',row)
     if f:frames.append(dict(tile=int(f[1]),duration=int(f[2]),hFlip='.hFlip' in f[3],vFlip='.vFlip' in f[3]))
     elif re.fullmatch(r'ANIMCMD_JUMP\((\d+)\)',row):loop=int(re.fullmatch(r'ANIMCMD_JUMP\((\d+)\)',row)[1])
     elif row!='ANIMCMD_END':raise ValueError('Unsupported frame '+row)
@@ -209,8 +217,14 @@ TASKS|={'AnimTask_ConversionAlphaBlend','AnimTask_Conversion2AlphaBlend','AnimTa
 GFX|={'ANIM_TAG_CONVERSION','ANIM_TAG_SWORD','ANIM_TAG_SPHERE_TO_CUBE'}
 SOUNDS|={'SE_M_SWORDS_DANCE'}
 SOUNDS|={'SE_M_BARRIER'}
+GFX|={'ANIM_TAG_TENDRILS','ANIM_TAG_SLAM_HIT_2','ANIM_TAG_GREEN_SPIKE','ANIM_TAG_ROOTS'}
+SOUNDS|={'SE_M_SCRATCH','SE_M_BIND','SE_M_DOUBLE_SLAP'}
+TASKS|={'AnimTask_ShakeMonInPlace'}
 GFX|={'ANIM_TAG_AIR_WAVE','ANIM_TAG_BONE'}
 SOUNDS|={'SE_M_WATERFALL','SE_M_BONEMERANG','SE_M_VITAL_THROW'}
+GFX|={'ANIM_TAG_LEER','ANIM_TAG_CIRCLE_OF_LIGHT','ANIM_TAG_THOUGHT_BUBBLE'}
+TASKS|={'AnimTask_BlendParticle'}
+SOUNDS|={'SE_M_MORNING_SUN'}
 def fold_firered_contest_branches(reference,source,commands,labels):
  # Both native contest tests are constant false in pinned FireRed. Canonical
  # argument comparisons are folded only immediately after the actual predicate
@@ -347,8 +361,8 @@ def build(reference):
   colors=[int(c) for row in rows[3:] for c in row.split()]
   if len(colors)!=48:raise ValueError('Invalid palette length')
   return colors
- for asset,png,shape,pal in [('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
-  if pal in ('water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire'):
+ for asset,png,shape,pal in [('duck','duck',(16,48),None),('tendrils','tendrils',(64,128),None),('slam-hit-2','slam_hit_2',(64,128),None),('green-spike','green_spike',(16,16),None),('roots','roots',(32,128),None),('leer','leer',(32,160),None),('circle-of-light','circle_of_light',(64,64),'electric_orbs'),('thought-bubble','thought_bubble',(32,128),None),('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
+  if pal in ('electric_orbs','water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+pal+'.png'))) as im:colors=im.getpalette()[:48]
   else:colors=palette(pal) if pal else None
   pixels[asset]=hit.rgb555(read(reference,'graphics/battle_anims/sprites/'+png+'.png'),shape,colors)
@@ -370,15 +384,23 @@ def build(reference):
  if not re.search(r'\{gBattleAnimSpriteGfx_NoiseLine,\s*0x0800,\s*ANIM_TAG_NOISE_LINE\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_HitDuplicate,\s*ANIM_TAG_NOISE_LINE\}',registrations):raise ValueError('Source noise line registration differs')
  for symbol,path,suffix in [('Gfx_NoiseLine','noise_line','4bpp'),('Pal_HitDuplicate','hit_duplicate','gbapal')]:
   if not re.search(r'gBattleAnimSprite'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source noise line material differs')
+ for stem,symbol,size in [('duck','Duck',0x0180),('tendrils','Tendrils',0x1000),('slam_hit_2','SlamHit2',0x1000),('green_spike','GreenSpike',0x0080),('roots','Roots',0x0800)]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Impact source registration differs: '+stem)
+  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Impact source material differs: '+stem)
  # Sonic Boom's material is AIR_WAVE, not the separate AIR_WAVE_2 crescent.
  if not re.search(r'\{gBattleAnimSpriteGfx_AirWave,\s*0x0100,\s*ANIM_TAG_AIR_WAVE\}',registrations) or not re.search(r'\{gBattleAnimSpritePal_AirWave,\s*ANIM_TAG_AIR_WAVE\}',registrations):raise ValueError('Sonic Boom source registration differs')
  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
   if not re.search(r'gBattleAnimSprite'+kind+r'_AirWave\[\] = INCBIN_U32\("graphics/battle_anims/sprites/air_wave\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Sonic Boom source material path differs')
- for stem,symbol,size in [('orbs','Orbs',0x180),('amnesia','Amnesia',0x1000),('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
+ for stem,symbol,size in [('leer','Leer',0xa00),('thought_bubble','ThoughtBubble',0x800),('small_bubbles','SmallBubbles',0x140),('orbs','Orbs',0x180),('amnesia','Amnesia',0x1000),('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source indexed registration differs: '+stem)
   for suffix,kind in [('4bpp','Gfx'),('gbapal','Pal')]:
    if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source indexed graphics differs: '+stem)
+ if not re.search(r'\{gBattleAnimSpriteGfx_CircleOfLight,\s*0x0800,\s*ANIM_TAG_CIRCLE_OF_LIGHT\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_ElectricOrbs,\s*ANIM_TAG_CIRCLE_OF_LIGHT\}',registrations):raise ValueError('Tail Glow shared source palette differs')
+ for kind,symbol,stem,suffix in [('Gfx','CircleOfLight','circle_of_light','4bpp'),('Pal','ElectricOrbs','electric_orbs','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_U32\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Tail Glow source material path differs')
  for stem,symbol,size in [('string','String',0x0400),('web_thread','WebThread',0x0020),('spider_web','SpiderWeb',0x0800)]:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_String,\s*'+tag+r'\}',registrations):raise ValueError('Source web registration differs: '+stem)
@@ -388,10 +410,12 @@ def build(reference):
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x0800,\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal+r',\s*'+tag+r'\}',registrations):raise ValueError('Source trapping registration differs: '+stem)
   for kind,name,path,suffix in [('Gfx',symbol,stem,'4bpp'),('Pal',pal,'hollow_orb' if stem=='x_sign' else stem,'gbapal')]:
    if not re.search(r'gBattleAnimSprite'+kind+'_'+name+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source trapping graphics differs: '+stem)
- for stem,size in [('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
+ for stem,size in [('leer',(32,160)),('circle_of_light',(64,64)),('thought_bubble',(32,128)),('small_bubbles',(16,40)),('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
    if im.mode!='P' or im.size!=size:raise ValueError('Invalid source indexed image')
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];palette=im.getpalette()[:48]
+  if stem=='circle_of_light':
+   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/electric_orbs.png'))) as shared:palette=shared.getpalette()[:48]
   if stem in ('web_thread','spider_web'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/string.png'))) as shared:palette=shared.getpalette()[:48]
   if stem=='noise_line':

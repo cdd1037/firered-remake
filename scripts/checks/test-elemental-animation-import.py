@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Source-backed elemental import and RGB555 checks; no reference code execution."""
-import importlib.util,json,struct,unittest
+import importlib.util,io,json,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
@@ -8,6 +8,54 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class ElementalImportTests(unittest.TestCase):
+ def test_primary_stat_roots_keep_authored_particles_tasks_sounds_and_unused_loads(self):
+  data,_=imp.build(REFERENCE);rows={r['moveId']:r for r in json.loads(data)['scripts']}
+  for move,label,template,count,sound in [(43,'LEER','gLeerSpriteTemplate',1,'SE_M_LEER'),(294,'TAIL_GLOW','gTailGlowOrbSpriteTemplate',1,'SE_M_MORNING_SUN'),(313,'FAKE_TEARS','gTearDropSpriteTemplate',8,'SE_M_TAIL_WHIP')]:
+   row=rows[move];self.assertEqual('Move_'+label,row['label']);self.assertEqual({sound},set(row['soundEffects']))
+   self.assertEqual(count,sum(c['op']=='createsprite' and c['args'][0]==template for c in row['commands']))
+  tear=rows[313]['commands'];self.assertEqual(['ANIM_TAG_SMALL_BUBBLES','ANIM_TAG_THOUGHT_BUBBLE','ANIM_TAG_MUSIC_NOTES'],[c['args'][0] for c in tear if c['op']=='loadspritegfx'])
+  blend=next(c for c in tear if c['op']=='createvisualtask');self.assertEqual(['AnimTask_BlendParticle','5','ANIM_TAG_SMALL_BUBBLES','0','4','4','RGB(12, 11, 31)'],blend['args'])
+  self.assertEqual([0,1,2,3,0,1,2,3],[int(c['args'][-1]) for c in tear if c['op']=='createsprite'])
+  self.assertEqual(['18'],next(c['args'] for c in rows[294]['commands'] if c['op']=='delay'))
+  self.assertEqual(2,sum(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ShakeMon2' for c in rows[43]['commands']))
+
+ def test_primary_stat_recipes_preserve_source_frame_affine_and_shared_tear_sheet(self):
+  data,_=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(data)['spriteRecipes']}
+  leer=recipes['gLeerSpriteTemplate'];self.assertEqual(('AnimLeer','leer',32,32,False,False),(leer['callback'],leer['asset'],leer['width'],leer['height'],leer['blend'],leer['affineDoubleSize']))
+  self.assertEqual([0,16,32,48,64],[f['tile'] for f in leer['animations'][0]]);self.assertEqual([3]*5,[f['duration'] for f in leer['animations'][0]]);self.assertEqual([-1],leer['loopStarts']);self.assertEqual([],leer['affineAnimations'])
+  glow=recipes['gTailGlowOrbSpriteTemplate'];self.assertEqual(('AnimTailGlowOrb','circle-of-light',64,64,True,False),(glow['callback'],glow['asset'],glow['width'],glow['height'],glow['blend'],glow['affineDoubleSize']))
+  self.assertEqual([('frame',16,16,0,0),('frame',8,8,18,0),('loop',0,0,0,0),('frame',-5,-5,8,0),('frame',5,5,8,0),('loop',0,0,0,5),('end',0,0,0,0)],[(c['op'],c['x'],c['y'],c['duration'],c['target']) for c in glow['affineAnimations'][0]])
+  tear=recipes['gTearDropSpriteTemplate'];self.assertEqual(('AnimTearDrop','small-bubbles',16,16,False,False),(tear['callback'],tear['asset'],tear['width'],tear['height'],tear['blend'],tear['affineDoubleSize']))
+  self.assertEqual([80,176],[p[0]['rotation'] for p in tear['affineAnimations']]);self.assertEqual([254,2],[p[1]['rotation'] for p in tear['affineAnimations']]);self.assertEqual([8,8],[p[1]['duration'] for p in tear['affineAnimations']])
+
+ def test_primary_stat_indexed_materials_match_native_tiles_and_shared_glow_palette(self):
+  data,blobs=imp.build(REFERENCE);indexed={r['id']:r for r in json.loads(data)['indexedAssets']}
+  for stem,size in [('leer',(32,160)),('circle_of_light',(64,64)),('thought_bubble',(32,128)),('small_bubbles',(16,40))]:
+   asset=stem.replace('_','-');row=indexed[asset];self.assertEqual((*size,'ANIM_TAG_'+stem.upper()),(row['width'],row['height'],row['paletteTag']))
+   with Image.open(io.BytesIO(imp.read(REFERENCE,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
+    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];linear=list(im.tobytes());palette=im.getpalette()[:48]
+   if stem=='circle_of_light':
+    with Image.open(io.BytesIO(imp.read(REFERENCE,'graphics/battle_anims/sprites/electric_orbs.png'))) as shared:palette=shared.getpalette()[:48]
+   packed=blobs[asset+'.4bpp'];self.assertEqual(indices,[(packed[i//2]>>((i&1)*4))&15 for i in range(len(indices))]);colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(colors,list(struct.unpack('<16H',blobs[asset+'.pal16'])))
+   self.assertEqual(size,struct.unpack_from('<HH',blobs[asset]));self.assertEqual([colors[i]|(32768 if i else 0) for i in linear],list(struct.unpack_from('<'+'H'*len(linear),blobs[asset],4)))
+
+ def test_primary_stat_source_registration_palette_paths_and_callbacks_fail_closed(self):
+  original=imp.read
+  changes=[('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Leer, 0x0A00, ANIM_TAG_LEER}',b'{gBattleAnimSpriteGfx_Leer, 0x0800, ANIM_TAG_LEER}'),('src/data/battle_anim.h',b'{gBattleAnimSpritePal_ElectricOrbs, ANIM_TAG_CIRCLE_OF_LIGHT}',b'{gBattleAnimSpritePal_Leer, ANIM_TAG_CIRCLE_OF_LIGHT}'),('src/graphics.c',b'graphics/battle_anims/sprites/electric_orbs.gbapal.lz',b'graphics/battle_anims/sprites/leer.gbapal.lz'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_ThoughtBubble, 0x0800, ANIM_TAG_THOUGHT_BUBBLE}',b'{gBattleAnimSpriteGfx_ThoughtBubble, 0x0400, ANIM_TAG_THOUGHT_BUBBLE}'),('src/battle_anim_effects_3.c',b'.callback = AnimLeer,',b'.callback = MissingLeer,'),('src/battle_anim_bug.c',b'.callback = AnimTailGlowOrb,',b'.callback = MissingTailGlowOrb,'),('src/battle_anim_dark.c',b'.callback = AnimTearDrop,',b'.callback = MissingTearDrop,')]
+  for path,before,after in changes:
+   self.assertIn(before,original(REFERENCE,path),path)
+   def changed(reference,p):
+    data=original(reference,p);return data.replace(before,after) if p==path else data
+   with patch.object(imp,'read',side_effect=changed),self.assertRaises(ValueError,msg=path):imp.build(REFERENCE)
+
+ def test_primary_stat_unreviewed_dependencies_omit_only_the_incomplete_root(self):
+  data,_=imp.build(REFERENCE);expected={r['moveId'] for r in json.loads(data)['scripts']};original=imp.read
+  for move,template in [(43,'gLeerSpriteTemplate'),(294,'gTailGlowOrbSpriteTemplate'),(313,'gTearDropSpriteTemplate')]:
+   def changed(reference,path):
+    data=original(reference,path);return data.replace(('createsprite '+template+',').encode(),b'createsprite gUnreviewedPrimaryStatSpriteTemplate,') if path=='data/battle_anim_scripts.s' else data
+   with patch.object(imp,'read',side_effect=changed):data,_=imp.build(REFERENCE)
+   self.assertEqual(expected-{move},{r['moveId'] for r in json.loads(data)['scripts']})
+
  def test_question_mark_dynamic_affine_table_and_indexed_sheet_match_source(self):
   data,blobs=imp.build(REFERENCE);pack=json.loads(data);recipe=next(r for r in pack['spriteRecipes'] if r['template']=='gQuestionMarkSpriteTemplate')
   self.assertEqual(('amnesia','AnimQuestionMark',32,32,False,False),(recipe['asset'],recipe['callback'],recipe['width'],recipe['height'],recipe['blend'],recipe['affineDoubleSize']))
@@ -99,7 +147,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({45,304,336,49,63,127,155,212,335,81,169,14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({132,146,282,302,338,43,294,313,45,304,336,49,63,127,155,212,335,81,169,14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}

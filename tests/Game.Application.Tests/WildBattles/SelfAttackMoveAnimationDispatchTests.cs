@@ -15,15 +15,15 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     private static SourceMechanicsCatalog Mechanics => CurrentCampaignFixture.Catalog.PokemonContent!.Pokemon.Mechanics;
     private static string Name(int id) => id switch
     {
-        14 => "SWORDS_DANCE", 159 => "SHARPEN", 96 => "MEDITATE", 133 => "AMNESIA", 336 => "HOWL",
+        14 => "SWORDS_DANCE", 159 => "SHARPEN", 96 => "MEDITATE", 133 => "AMNESIA", 336 => "HOWL", 294 => "TAIL_GLOW",
         _ => throw new ArgumentOutOfRangeException(nameof(id))
     };
     private static MoveId Move(int id) => new("pret:MOVE_" + Name(id));
-    private static int Increase(int id) => id is 14 or 133 ? 2 : 1;
-    private static int Argument(int id) => id == 133 ? 43 : id == 14 ? 39 : 15;
+    private static int Increase(int id) => id is 14 or 133 or 294 ? 2 : 1;
+    private static int Argument(int id) => id == 294 ? 42 : id == 133 ? 43 : id == 14 ? 39 : 15;
 
-    private static WildBattleStat Stat(int id) => id == 133 ? WildBattleStat.SpecialDefense : WildBattleStat.Attack;
-    private static int Stage(WildBattleCombatant body,int id) => id == 133 ? 6 + body.SpecialDefenseStageDelta : body.AttackStage;
+    private static WildBattleStat Stat(int id) => id == 294 ? WildBattleStat.SpecialAttack : id == 133 ? WildBattleStat.SpecialDefense : WildBattleStat.Attack;
+    private static int Stage(WildBattleCombatant body,int id) => id == 294 ? 6 + body.SpecialAttackStageDelta : id == 133 ? 6 + body.SpecialDefenseStageDelta : body.AttackStage;
 
     // Deliberately empty committed frames: projection must use the source receipts,
     // never reconstruct a stat change from the already-committed end state.
@@ -50,11 +50,11 @@ public sealed class SelfAttackMoveAnimationDispatchTests
         var bodies = Enumerable.Range(0, 4).Select(_ => NaturalMon("MAGIKARP", 5, "SPLASH")).ToArray();
         var (species, level) = id switch
         {
-            14 => ("FARFETCHD", 31), 159 => ("PORYGON", 24), 96 => ("DROWZEE", 27), 133 => ("SLOWPOKE", 36), 336 => ("POOCHYENA", 5),
+            14 => ("FARFETCHD", 31), 159 => ("PORYGON", 24), 96 => ("DROWZEE", 27), 133 => ("SLOWPOKE", 36), 336 => ("POOCHYENA", 5), 294 => ("VOLBEAT", 21),
             _ => throw new ArgumentOutOfRangeException(nameof(id))
         };
         var body = NaturalMon(species, level, Name(id));
-        body = id == 133 ? body with { SpecialDefenseStageDelta = stage - 6 } : body with { AttackStage = stage };
+        body = id == 294 ? body with { SpecialAttackStageDelta = stage - 6 } : id == 133 ? body with { SpecialDefenseStageDelta = stage - 6 } : body with { AttackStage = stage };
         if (pp is {} remaining)
             body = body with { Pokemon = body.Pokemon with
                 { Moves = body.Pokemon.Moves.SetItem(0, body.Pokemon.Moves[0] with { CurrentPp = remaining }) } };
@@ -185,7 +185,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
                 Assert.AreEqual("self-attack", wave.BattleId); Assert.AreEqual(id, wave.SourceMoveId);
                 Assert.AreEqual(stat!.Sequence, wave.Sequence); Assert.AreEqual(attack.Sequence, wave.AttackSequence);
                 Assert.AreEqual(pp.Sequence, wave.PpSequence); Assert.AreEqual(actor, wave.Affected.Value);
-                Assert.AreEqual(Argument(id), wave.AnimationArgument, "Requested +2 stays argument 39 even when 11 -> 12 is clamped.");
+                Assert.AreEqual(Argument(id), wave.AnimationArgument, "Requested stat magnitude stays source-coded even when 11 -> 12 is clamped.");
                 Assert.IsTrue(CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.StatChange, SourceBattleScene.Off),
                     "Source Cmd_playanimation exempts General_StatsChange from Battle Scene Off.");
             }
@@ -209,13 +209,13 @@ public sealed class SelfAttackMoveAnimationDispatchTests
 
     [TestMethod]
     [DataRow(14, "EFFECT_ATTACK_UP_2")] [DataRow(159, "EFFECT_ATTACK_UP")]
-    [DataRow(96, "EFFECT_ATTACK_UP")] [DataRow(133, "EFFECT_SPECIAL_DEFENSE_UP_2")] [DataRow(336, "EFFECT_ATTACK_UP")]
+    [DataRow(96, "EFFECT_ATTACK_UP")] [DataRow(133, "EFFECT_SPECIAL_DEFENSE_UP_2")] [DataRow(336, "EFFECT_ATTACK_UP")] [DataRow(294, "EFFECT_SPECIAL_ATTACK_UP_2")]
     public void SourceDefinitionsAndGeneratedLabelsOwnDedicatedRootAvailability(int id, string effect)
     {
         var move = Mechanics.Catalog.Moves[Move(id)];
         Assert.AreEqual(id, move.SourceMoveId); Assert.AreEqual(effect, move.Effect);
-        Assert.AreEqual(id is 96 or 133 ? "TYPE_PSYCHIC" : "TYPE_NORMAL", move.Type); Assert.AreEqual("MOVE_TARGET_USER", move.Target);
-        Assert.AreEqual(0, move.Power); Assert.AreEqual(0, move.Accuracy); Assert.AreEqual(id is 96 or 336?40:id==133?20:30, move.Pp);
+        Assert.AreEqual(id == 294 ? "TYPE_BUG" : id is 96 or 133 ? "TYPE_PSYCHIC" : "TYPE_NORMAL", move.Type); Assert.AreEqual("MOVE_TARGET_USER", move.Target);
+        Assert.AreEqual(0, move.Power); Assert.AreEqual(id == 294 ? 100 : 0, move.Accuracy); Assert.AreEqual(id == 294 ? 20 : id is 96 or 336?40:id==133?20:30, move.Pp);
         Assert.AreEqual(0, move.SecondaryEffectChance); Assert.AreEqual(0, move.Priority);
         CollectionAssert.AreEqual(new[] { "FLAG_SNATCH_AFFECTED" }, move.Flags.ToArray());
         Assert.IsTrue(SourceMoveDefinitionRules.IsValid(move));
@@ -229,6 +229,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     [DataRow(96, 0)] [DataRow(96, 6)] [DataRow(96, 11)] [DataRow(96, 12)]
     [DataRow(133, 0)] [DataRow(133, 6)] [DataRow(133, 10)] [DataRow(133, 11)] [DataRow(133, 12)]
     [DataRow(336, 0)] [DataRow(336, 6)] [DataRow(336, 11)] [DataRow(336, 12)]
+    [DataRow(294, 0)] [DataRow(294, 6)] [DataRow(294, 10)] [DataRow(294, 11)] [DataRow(294, 12)]
     public void NaturalLearnersOwnFullClampedAndCappedResultsAcrossEveryActorPosition(int id, int stage)
     {
         foreach (bool single in new[] { false, true })
@@ -241,7 +242,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)] [DataRow(294)]
     public void FinalPpStillBelongsToActorAndCappedAttemptStillSpendsIt(int id)
     {
         foreach (bool single in new[] { false, true })
@@ -256,7 +257,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)] [DataRow(294)]
     public void UserTargetMovesNormalizeAnySelectedLiveSlotToTheActor(int id)
     {
         foreach(bool single in new[]{false,true})
@@ -308,7 +309,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)] [DataRow(294)]
     public void ForeignOwnersInvalidStagesAndInterruptedReceiptsCannotBorrowRootOrWave(int id)
     {
         var events = Resolve(Frame(Bodies(id, 0), false), 0).Events;
@@ -359,7 +360,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)] [DataRow(294)]
     public void MissingOrMutatedDefinitionCannotAuthorizeDedicatedOrGeneralAnimation(int id)
     {
         var events = Resolve(Frame(Bodies(id, 0), false), 0).Events;
@@ -380,7 +381,7 @@ public sealed class SelfAttackMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)]
+    [DataRow(14)] [DataRow(159)] [DataRow(96)] [DataRow(133)] [DataRow(336)] [DataRow(294)]
     public void MissingRendererSuppressesRootWithoutSuppressingCommittedGeneralWave(int id)
     {
         foreach (bool single in new[] { false, true })

@@ -7,6 +7,26 @@ namespace Game.Application;
 
 public static partial class CampaignStatAnimationPresentation
 {
+    internal static bool IsPreventedItemSecondary(IReadOnlyList<SourceBattleEvent> action,
+        SourceMoveUsedEvent used,long sequence,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)
+    {
+        if(moves is null||!moves.TryGetValue(used.Move,out var definition)||
+            !SourceMoveDefinitionRules.IsValid(definition)||definition.Id!=used.Move||
+            definition.Effect is not("EFFECT_KNOCK_OFF" or "EFFECT_THIEF")||
+            definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0)return false;
+        var rows=action.Select(GroupRead).ToArray();int index=Array.FindIndex(rows,r=>r.Sequence==sequence);
+        if(index<2||rows[0].Kind!="pp"||rows[index] is not {Kind:"ability",Detail:"ABILITY_STICKY_HOLD"} result||
+            result.Actor!=used.Actor.Value||result.Target!=used.Target.Value||result.Move!=used.Move.Value)return false;
+        // The source item effect runs after the successful damage/result-message
+        // prefix. Sticky Hold blocks the item mutation, not that attack animation.
+        // Require the actual HP hit: a substitute hit cannot authorize this suffix.
+        int hitIndex=rows[1].Kind=="adjustment"?2:1;
+        if(hitIndex>=index||rows[hitIndex].Kind!="hp")return false;
+        int cursor=1;
+        return ReadSuccessfulDamagePrefix(rows,ref cursor,index,used.Actor.Value,used.Target.Value,used.Move.Value,
+            requireLivingTarget:definition.Effect=="EFFECT_KNOCK_OFF")&&cursor==index;
+    }
+
     internal static bool IsFailedToxicSecondary(IReadOnlyList<SourceBattleEvent> action,
         SourceMoveUsedEvent used,long sequence,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)=>
         IsFailedToxicSecondary(action.Select(GroupRead).ToArray(),GroupRead(used),sequence,moves);

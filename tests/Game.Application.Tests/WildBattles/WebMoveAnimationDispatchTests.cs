@@ -15,7 +15,11 @@ namespace FireRed.Tests.Application.WildBattles;
 public sealed class WebMoveAnimationDispatchTests
 {
     private static SourceMechanicsCatalog Mechanics=>TestAssets.Cached(()=>SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
-    private static MoveId Move(int id)=>new("pret:MOVE_"+(id==81?"STRING_SHOT":"SPIDER_WEB"));
+    private static string Name(int id)=>id switch {43=>"LEER",81=>"STRING_SHOT",169=>"SPIDER_WEB",313=>"FAKE_TEARS",_=>throw new ArgumentOutOfRangeException(nameof(id))};
+    private static MoveId Move(int id)=>new("pret:MOVE_"+Name(id));
+    private static bool Reduction(int id)=>id!=169;
+    private static bool Spread(int id)=>id is 43 or 81;
+    private static WildBattleStat ReducedStat(int id)=>id switch {43=>WildBattleStat.Defense,313=>WildBattleStat.SpecialDefense,_=>WildBattleStat.Speed};
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> e,int i)=>new("web",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,e,i,[],[],0,0,[],[],[],[],0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> e,int i)=>new("web",null!,new(),e.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),i,null!,null!,CampaignBattlePhase.Events,[],0,[]){SourceEvents=e};
     private static WildBattleCombatant Mon(string species,params string[] names)
@@ -27,7 +31,7 @@ public sealed class WebMoveAnimationDispatchTests
     private static WildBattleCombatant[] Bodies(int id,int actor=0)
     {
         var bodies=Enumerable.Range(0,4).Select(_=>Mon("SNORLAX","TACKLE")).ToArray();
-        bodies[actor]=Mon("SPINARAK",id==81?"STRING_SHOT":"SPIDER_WEB") with {AccuracyStage=12};
+        bodies[actor]=Mon(id is 43 or 313?"TEDDIURSA":"SPINARAK",Name(id)) with {AccuracyStage=12};
         return bodies;
     }
     private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, bool single = false)
@@ -59,12 +63,12 @@ public sealed class WebMoveAnimationDispatchTests
     }
 
 
-    private static SourceStatChangedEvent[] Reductions(SourceKernelResult r,int actor) =>
-        r.Events.OfType<SourceStatChangedEvent>().Where(s=>s.Actor.Value==actor&&s.Target.Value!=actor&&s.Stat==WildBattleStat.Speed&&s.After<s.Before).ToArray();
+    private static SourceStatChangedEvent[] Reductions(SourceKernelResult r,int actor,int id=81) =>
+        r.Events.OfType<SourceStatChangedEvent>().Where(s=>s.Actor.Value==actor&&s.Target.Value!=actor&&s.Stat==ReducedStat(id)&&s.After<s.Before).ToArray();
     private static void Check(SourceKernelResult result,int id,int actor,bool single=false)
     {
         string snapshot=JsonSerializer.Serialize(result);var e=result.Events;var used=e.OfType<SourceMoveUsedEvent>().Single(x=>x.Move==Move(id));
-        SourceBattleEvent[] outcomes=id==81?Reductions(result,actor).Cast<SourceBattleEvent>().ToArray():e.OfType<SourceTowerVolatileEvent>().Where(v=>v.Effect=="mean-look"&&v.Applied).Cast<SourceBattleEvent>().ToArray();
+        SourceBattleEvent[] outcomes=Reduction(id)?Reductions(result,actor,id).Cast<SourceBattleEvent>().ToArray():e.OfType<SourceTowerVolatileEvent>().Where(v=>v.Effect=="mean-look"&&v.Applied).Cast<SourceBattleEvent>().ToArray();
         int roots=0,waves=0;
         for(int i=0;i<e.Length;i++)
         {
@@ -80,14 +84,14 @@ public sealed class WebMoveAnimationDispatchTests
             }
             else Assert.IsNull(decision.Dispatch);
             var wave=single?AnimationDispatchFixture.StatAtResult(Single(e,i),true):AnimationDispatchFixture.StatAtResult(Double(e,i));
-            if(id==81&&outcomes.Contains(e[i]))
+            if(Reduction(id)&&outcomes.Contains(e[i]))
             {
-                Assert.IsNotNull(wave);var stat=(SourceStatChangedEvent)e[i];Assert.AreEqual(81,wave.SourceMoveId);Assert.AreEqual(stat.Target,wave.Affected);Assert.AreEqual(24,wave.AnimationArgument);
+                Assert.IsNotNull(wave);var stat=(SourceStatChangedEvent)e[i];Assert.AreEqual(id,wave.SourceMoveId);Assert.AreEqual(stat.Target,wave.Affected);Assert.AreEqual(id==43?23:id==313?50:24,wave.AnimationArgument);
                 Assert.AreEqual(stat.Sequence,wave.Sequence);Assert.AreEqual(e.OfType<SourcePpCommandEvent>().Single(p=>p.Target==stat.Target).Sequence,wave.PpSequence);waves++;
             }
             else Assert.IsNull(wave);
         }
-        Assert.AreEqual(outcomes.Length>0?1:0,roots);Assert.AreEqual(id==81?outcomes.Length:0,waves);
+        Assert.AreEqual(outcomes.Length>0?1:0,roots);Assert.AreEqual(Reduction(id)?outcomes.Length:0,waves);
         Assert.AreEqual(snapshot,JsonSerializer.Serialize(result),"Presentation must not mutate state, RNG, trace or receipts.");
     }
     private static void Pp(SourceKernelResult r,int actor,int visits,int cost)
@@ -99,15 +103,63 @@ public sealed class WebMoveAnimationDispatchTests
         foreach(var row in rows.Skip(1)){Assert.AreEqual(rows[0].After,row.Before);Assert.AreEqual(row.Before,row.After);}
         Assert.AreEqual(rows[^1].After,r.State.Slots[actor].Body!.Pokemon.Moves[0].CurrentPp);
     }
-    [TestMethod][DataRow(81)][DataRow(169)]
-    public void NaturalSpinarakAllFourPositionsAndBothSinglesSidesProjectCommittedResults(int id)
+    [TestMethod][DataRow(43)][DataRow(81)][DataRow(169)][DataRow(313)]
+    public void NaturalPrimaryStatusLearnersAllFourPositionsAndBothSinglesSidesProjectCommittedResults(int id)
     {
         foreach(bool single in new[]{false,true})for(int actor=0;actor<(single?2:4);actor++)
         {
             var r=Resolve(Frame(Bodies(id,actor),single),actor,actor^1);
             Assert.IsFalse(r.Events.OfType<SourceMoveFailedEvent>().Any());
-            Assert.AreEqual(id==81&&!single?2:1,id==81?Reductions(r,actor).Length:r.Events.OfType<SourceTowerVolatileEvent>().Count(x=>x.Effect=="mean-look"));
-            Pp(r,actor,id==81&&!single?2:1,1);Check(r,id,actor,single);
+            Assert.AreEqual(Spread(id)&&!single?2:1,Reduction(id)?Reductions(r,actor,id).Length:r.Events.OfType<SourceTowerVolatileEvent>().Count(x=>x.Effect=="mean-look"));
+            Pp(r,actor,Spread(id)&&!single?2:1,1);Check(r,id,actor,single);
+        }
+    }
+    [TestMethod][DataRow(43)][DataRow(313)]
+    public void PrimaryReductionStageCapsAndHerbRestorationKeepRequestedWave(int id)
+    {
+        foreach(bool single in new[]{false,true})foreach(int stage in new[]{0,1,6})
+        {
+            var b=Bodies(id);
+            for(int slot=1;slot<4;slot+=2)b[slot]=id==43?b[slot] with{DefenseStage=stage}:b[slot] with{SpecialDefenseStageDelta=stage-6};
+            var r=Resolve(Frame(b,single));var reductions=Reductions(r,0,id);
+            Assert.AreEqual(stage==0?0:Spread(id)&&!single?2:1,reductions.Length);
+            foreach(var result in reductions){Assert.AreEqual(stage,result.Before);Assert.AreEqual(Math.Max(0,stage-(id==313?2:1)),result.After);}
+            Check(r,id,0,single);
+        }
+        var bodies=Bodies(id);bodies[1]=bodies[1] with{HeldItem="ITEM_WHITE_HERB"};
+        var herb=Resolve(Frame(bodies));Assert.AreEqual(1,herb.Events.OfType<SourceHeldItemConsumedEvent>().Count());
+        Assert.IsTrue(herb.Events.OfType<SourceStatChangedEvent>().Any(e=>e.Actor.Value==1&&e.Target.Value==1&&e.Stat==ReducedStat(id)&&e.After==6));
+        Check(herb,id,0);
+    }
+    [TestMethod][DataRow(43,"protect")][DataRow(43,"substitute")][DataRow(43,"clear-body")]
+    [DataRow(313,"protect")][DataRow(313,"substitute")][DataRow(313,"clear-body")]
+    public void PrimaryReductionPreventionKeepsSuccessfulSpreadPartnerOnly(int id,string reason)
+    {
+        foreach(bool single in new[]{false,true})
+        {
+            var b=Bodies(id);b[1]=reason switch {"protect"=>b[1] with{Protected=true},
+                "substitute"=>b[1] with{CalledVolatile=new(){SubstituteHp=1}},
+                _=>Mon("TENTACOOL","ACID")};
+            var r=Resolve(Frame(b,single));var rows=Reductions(r,0,id);
+            Assert.AreEqual(Spread(id)&&!single?1:0,rows.Length);if(rows.Length>0)Assert.AreEqual(3,rows[0].Target.Value);
+            Assert.IsTrue(reason=="clear-body"?r.Events.OfType<SourceAbilityPreventedEvent>().Any():r.Events.OfType<SourceMoveFailedEvent>().Any());
+            Check(r,id,0,single);
+        }
+    }
+    [TestMethod]
+    public void FakeTearsSelectedAllyAndMalformedResultStayReceiptOwned()
+    {
+        for(int actor=0;actor<4;actor++)
+        {
+            var result=Resolve(Frame(Bodies(313,actor)),actor,actor^2);
+            Assert.AreEqual(actor^2,Reductions(result,actor,313).Single().Target.Value);Check(result,313,actor);
+        }
+        foreach(bool single in new[]{false,true})
+        {
+            var e=Resolve(Frame(Bodies(313),single)).Events;int at=Array.FindIndex(e.ToArray(),x=>x is SourceStatChangedEvent);var row=(SourceStatChangedEvent)e[at];
+            foreach(var bad in new[]{row with{Actor=new(1)},row with{Target=new(0)},row with{Stat=WildBattleStat.Defense},row with{After=row.Before-1},row with{After=row.Before},row with{Before=13}})
+                Reject(e.SetItem(at,bad),single);
+            Reject(e.RemoveAt(at),single);Reject(e.Insert(at+1,row with{Sequence=row.Sequence+1}),single);
         }
     }
     [TestMethod]
@@ -221,7 +273,7 @@ public sealed class WebMoveAnimationDispatchTests
         int used=Array.FindIndex(events.ToArray(),e=>e is SourceMoveUsedEvent);
         Assert.IsNull(single?AnimationDispatchFixture.AtAttackText(Single(events,used),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtAttackText(Double(events,used),SourceBattleScene.On).Dispatch);
     }
-    [TestMethod][DataRow(81)][DataRow(169)]
+    [TestMethod][DataRow(43)][DataRow(81)][DataRow(169)][DataRow(313)]
     public void MalformedPpOwnershipMoveSlotAmountAndOrderingFailClosed(int id)
     {
         foreach(bool single in new[]{false,true})
@@ -230,7 +282,7 @@ public sealed class WebMoveAnimationDispatchTests
             SourcePpCommandEvent[] bad=[p with{Actor=new(1)},p with{PpOwner=new(1)},p with{Target=new(0)},p with{ChosenMove=new("pret:MOVE_TACKLE")},p with{CurrentMove=new("pret:MOVE_TACKLE")},p with{PpSlot=1},p with{Turn=p.Turn+1},p with{Sequence=p.Sequence+1},p with{Before=p.Before+1},p with{After=p.After-1},p with{CommandCost=0},p with{CommandCost=4}];
             foreach(var row in bad)Reject(e.SetItem(at,row),single);
             Reject(e.RemoveAt(at),single);Reject(e.Insert(at+1,p),single);Reject(e.SetItem(at,e[at+1]).SetItem(at+1,p),single);
-            if(id==81&&!single)
+            if(Spread(id)&&!single)
             {
                 int second=Array.FindLastIndex(e.ToArray(),x=>x is SourcePpCommandEvent);var q=(SourcePpCommandEvent)e[second];
                 foreach(var row in new[]{q with{PpOwner=new(1)},q with{Target=p.Target},q with{Before=q.Before+1},q with{After=q.After-1},q with{CommandCost=0}})Reject(e.SetItem(second,row));
@@ -260,7 +312,7 @@ public sealed class WebMoveAnimationDispatchTests
             Reject(e.Insert(at+1,s with{Sequence=s.Sequence+1}),single);
         }
     }
-    [TestMethod][DataRow(81)][DataRow(169)]
+    [TestMethod][DataRow(43)][DataRow(81)][DataRow(169)][DataRow(313)]
     public void MissingMetadataOrMissingResolvedRootCannotAdmitAnimation(int id)
     {
         var r=Resolve(Frame(Bodies(id)));int used=Array.FindIndex(r.Events.ToArray(),e=>e is SourceMoveUsedEvent);var b=Double(r.Events,used);
