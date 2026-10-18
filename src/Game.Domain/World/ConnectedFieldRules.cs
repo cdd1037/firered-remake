@@ -23,7 +23,8 @@ public sealed record ConnectedFieldMap(MapId Id, int Width, int Height, Immutabl
 public sealed record ConnectedFieldEvent(CommandId CausedByCommandId, ConnectedFieldEventKind Kind,
     TilePosition Before, TilePosition After, int StepsAdded, string Reason);
 public sealed record ConnectedFieldTransition(TransitionStatus Status, WorldSnapshot State,
-    ImmutableArray<ConnectedFieldEvent> Events, bool MapChanged, bool RequiresEncounterCheck, Diagnostic? Diagnostic);
+    ImmutableArray<ConnectedFieldEvent> Events, bool MapChanged, bool RequiresEncounterCheck, Diagnostic? Diagnostic)
+{ public FieldTransitionReceipt? Presentation { get; init; } }
 
 /// <summary>
 /// Bounded, completed ordinary walking/turning/ledge actions. No input adapter, door dispatch, scripts,
@@ -77,7 +78,8 @@ public static class ConnectedFieldRules
             var next = state with { Revision = state.Revision + 1, StepCount = state.StepCount + steps, Player = position };
             return new(TransitionStatus.Accepted, next, [new(intent.CommandId, kind, state.Player, position, steps, reason)],
                 position.MapId != state.Player.MapId, (kind is ConnectedFieldEventKind.Walked or ConnectedFieldEventKind.Turned or ConnectedFieldEventKind.JumpedLedge) &&
-                (!enableSpinTiles || !RocketSpinRules.IsArrow(maps[position.MapId].CellAt(position.X,position.Y)!.SourceBehavior)), null);
+                (!enableSpinTiles || !RocketSpinRules.IsArrow(maps[position.MapId].CellAt(position.X,position.Y)!.SourceBehavior)), null)
+            { Presentation=position.MapId!=state.Player.MapId?new(FieldTransitionCause.ConnectedEdge,FieldTransitionDeparture.Immediate,FieldTransitionArrival.Plain,state.Player,position,position):null };
         }
         ConnectedFieldTransition Blocked(string reason) => Accepted(ConnectedFieldEventKind.Blocked,
             state.Player with { Facing = intent.Direction }, 0, reason);

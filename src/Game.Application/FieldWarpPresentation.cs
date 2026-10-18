@@ -1,0 +1,116 @@
+namespace Game.Application;
+
+/// <summary>
+/// Shared delay-zero normal-palette and ordinary warp callbacks from the pinned
+/// palette.c, field_fadetransition.c and field_weather.c. This owns presentation
+/// time only. The caller supplies music readiness and owns the actual map swap.
+/// Animated doors, directional stairs, weather-specific fades and previews are
+/// separate source paths and are deliberately not represented here.
+/// </summary>
+public static class FieldWarpPresentation
+{
+    public const int MinimumDepartureFrames=24;
+    public const int PlainArrivalFrames=24;
+    public readonly record struct PhaseSample(int Frames,int TaskPhase,int BackgroundBlend,
+        int ObjectBlend,bool PaletteActive,bool Complete);
+
+    /// <summary>Replay an observed map-transfer boundary through the same live callbacks.</summary>
+    public static PhaseSample SampleRecorded(int switchFrame,int elapsedFrames)
+    {
+        if(switchFrame<MinimumDepartureFrames)throw new ArgumentOutOfRangeException(nameof(switchFrame));
+        if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
+        if(elapsedFrames<switchFrame)
+        {
+            var departure=new Departure();
+            // Readiness is the recorded observation, never a new audio query.
+            // Task phase1 admits it one callback before the transfer callback.
+            for(int frame=1;frame<=elapsedFrames;frame++)departure.Advance(frame>=switchFrame-1);
+            return departure.Sample;
+        }
+        var arrival=new PlainArrival();
+        int frames=Math.Min(PlainArrivalFrames,elapsedFrames-switchFrame);
+        for(int frame=0;frame<frames;frame++)arrival.Advance();
+        return arrival.Sample;
+    }
+
+    public sealed class NormalPalette
+    {
+        private int _y,_target,_finishingCounter;
+        private bool _object,_finishing;
+        public bool Active {get;private set;}=true;
+        public int BackgroundBlend {get;private set;}
+        public int ObjectBlend {get;private set;}
+
+        public NormalPalette(bool fromBlack)
+        {
+            _y=fromBlack?16:0;_target=fromBlack?0:16;
+            BackgroundBlend=ObjectBlend=_y;
+            Advance(); // BeginNormalPaletteFade immediately updates the BG half.
+        }
+
+        public void Advance()
+        {
+            if(!Active)return;
+            if(_finishing)
+            {
+                if(_finishingCounter==4){Active=false;_finishing=false;_finishingCounter=0;}
+                else _finishingCounter++;
+                return;
+            }
+            if(_object)ObjectBlend=_y;else BackgroundBlend=_y;
+            _object=!_object;
+            if(_object)return;
+            if(_y==_target)_finishing=true;
+            else _y+=_target>_y?2:-2;
+        }
+    }
+
+    public sealed class Departure
+    {
+        // The constructor boundary includes the first Task_Teleport2Warp callback
+        // which freezes actors. This preserves the existing common-fall clock.
+        private int _phase=1;
+        public NormalPalette Palette {get;}=new(false);
+        public int Frames {get;private set;}
+        public int Phase=>_phase;
+        public bool Complete {get;private set;}
+        public PhaseSample Sample=>new(Frames,Phase,Palette.BackgroundBlend,Palette.ObjectBlend,Palette.Active,Complete);
+
+        public void Advance(bool musicReady)
+        {
+            if(Complete)return;
+            Frames++;
+            // Tasks observe readiness before this frame's palette update. In the
+            // source BGMusicStopped means no pending music-stop request, so an
+            // unchanged song can be ready while it continues playing.
+            if(_phase==1){if(!Palette.Active&&musicReady)_phase=2;}
+            else if(_phase==2)Complete=true;
+            Palette.Advance();
+        }
+    }
+
+    public sealed class PlainArrival
+    {
+        private int _phase;
+        private bool _weatherInitialized,_weatherReady;
+        public NormalPalette Palette {get;}=new(true);
+        public int Frames {get;private set;}
+        public int Phase=>_phase;
+        public bool Complete {get;private set;}
+        public PhaseSample Sample=>new(Frames,Phase,Palette.BackgroundBlend,Palette.ObjectBlend,Palette.Active,Complete);
+
+        public void Advance()
+        {
+            if(Complete)return;
+            Frames++;
+            // Task_ExitNonDoor(priority10), WeatherInit/Main(priority80), then
+            // UpdatePaletteFade. NONE/SUNNY use the normal-palette branch. The
+            // first weather callback initializes; later callbacks expose readiness.
+            if(_phase==0)_phase=1;
+            else if(_weatherReady)Complete=true;
+            if(!_weatherInitialized)_weatherInitialized=true;
+            else if(!Palette.Active)_weatherReady=true;
+            Palette.Advance();
+        }
+    }
+}

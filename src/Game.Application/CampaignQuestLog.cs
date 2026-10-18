@@ -27,6 +27,7 @@ public sealed record CampaignQuestLogAction(int ActorIndex,int X,int Y,Direction
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? Graphics{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignQuestLogActor? Spawn{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignQuestLogMapProjection? Transition{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignQuestLogTransitionTiming? TransitionTiming{get;init;}
 }
 public sealed record CampaignQuestLogScene(string Map,ImmutableArray<CampaignQuestLogActor> Actors,ImmutableArray<CampaignQuestLogAction> Actions)
 {
@@ -70,11 +71,13 @@ public static partial class CampaignQuestLogRecorder
                 var action=scene.Actions[actionIndex];
                 if(action is null||action.Frames is <1 or >255||action.StartFrame is <0 or >65535||action.SourceAction is {} opcode&&!Identifier(opcode)||!Enum.IsDefined(action.Event)||!Enum.IsDefined(action.Facing))return "save_quest_log_action_invalid";
                 if(!IsCaption(action)&&action.StartFrame<segmentStart)return "save_quest_log_transition_time_invalid";
+                if(action.TransitionTiming is not null&&action.Transition is null)return "save_quest_log_transition_timing_invalid";
                 if(action.Transition is {} transition)
                 {
-                    if(action.Event!=CampaignQuestLogEvent.None||action.ActorIndex!=-1||action.X!=0||action.Y!=0||action.Visible||action.Frames!=1||action.Repeat||action.Tile is not null||action.Layout is not null||action.Graphics is not null||action.Spawn is not null||action.TextKey is not null||action.SourceAction is not null||action.LocationId is not null||!action.Arguments.IsDefault)return "save_quest_log_transition_invalid";
+                    if(ValidateTransitionTiming(action) is {} timingError)return timingError;
+                    if(action.Event!=CampaignQuestLogEvent.None||action.ActorIndex!=-1||action.X!=0||action.Y!=0||action.Visible||action.TransitionTiming is null&&action.Frames!=1||action.Repeat||action.Tile is not null||action.Layout is not null||action.Graphics is not null||action.Spawn is not null||action.TextKey is not null||action.SourceAction is not null||action.LocationId is not null||!action.Arguments.IsDefault)return "save_quest_log_transition_invalid";
                     if(action.StartFrame<priorMovementEnd)return "save_quest_log_transition_time_invalid";
-                    segmentStart=action.StartFrame;priorMovementEnd=action.StartFrame+1;
+                    segmentStart=action.StartFrame+(action.TransitionTiming?.EndFrame??0);priorMovementEnd=action.StartFrame+action.Frames;
                     projection=ProjectionScene(transition);
                     if(ValidateProjection(projection,source,catalog) is {} transitionError)return transitionError;
                     if(source?.DisabledMaps.Contains(projection.Map)==true)return "save_quest_log_transition_disabled";
@@ -104,7 +107,7 @@ public static partial class CampaignQuestLogRecorder
         }
         return null;
     }
-    public static int Budget(ImmutableArray<CampaignQuestLogAction> actions,QuestLogSource? source=null)=>InitialActionBytes+QuestLogSource.SceneEndBytes+actions.Sum(a=>a is null?257:(source?.EventSizes.GetValueOrDefault((int)a.Event,257)??(IsCaption(a)?16:8))-(a.Repeat?4:0)+(a.Graphics is null?0:8)+(a.Spawn is null?0:8));
+    public static int Budget(ImmutableArray<CampaignQuestLogAction> actions,QuestLogSource? source=null)=>InitialActionBytes+QuestLogSource.SceneEndBytes+actions.Sum(a=>a is null?257:(source?.EventSizes.GetValueOrDefault((int)a.Event,257)??(IsCaption(a)?16:8))-(a.Repeat?4:0)+(a.Graphics is null?0:8)+(a.Spawn is null?0:8)+(a.TransitionTiming is null?0:8));
     private static bool Identifier(string? text)=>text is {Length:>0 and <=128}&&!text.Any(char.IsControl);
     private static bool ValidActor(CampaignQuestLogActor? actor)=>actor is not null&&Identifier(actor.Id)&&Identifier(actor.Graphics)&&actor.X is >=-32 and <=1024&&actor.Y is >=-32 and <=1024&&Enum.IsDefined(actor.Facing);
     private static ImmutableArray<CampaignQuestLogActor> Actors(CampaignState state,QuestLogSource? source)
@@ -138,7 +141,7 @@ public static partial class CampaignQuestLogRecorder
 
         var scenes=log?.Scenes??[];
         bool transitioned=false;
-        if(recordingOpen&&!scenes.IsEmpty&&!scenes[^1].Closed&&CurrentProjection(scenes[^1]).Map!=after.World.Player.MapId.Value)
+        if(recordingOpen&&!scenes.IsEmpty&&!scenes[^1].Closed&&(CurrentProjection(scenes[^1]).Map!=after.World.Player.MapId.Value||after.FieldTransition is {} acceptedTransition&&!ReferenceEquals(before.FieldTransition,acceptedTransition)&&acceptedTransition.From==before.World.Player&&acceptedTransition.To==after.World.Player))
         {
             if(!TryRecordMapTransition(scenes[^1],after,source,recordingFrame,out var crossed)){startGate?.EndRecording();return Close(log);}
             scenes=scenes.SetItem(scenes.Length-1,crossed);log=new(scenes);transitioned=true;
@@ -392,6 +395,8 @@ public sealed class CampaignQuestLogPlayback
     public string Map=>_timeline.Map;
     public int ArtRevision=>_timeline.ArtRevision;
     public double Frame=>_timeline.Frame;
+    public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_timeline.ActiveTransitionTiming;
+    public double TransitionElapsedFrames=>_timeline.TransitionElapsedFrames;
     public string? Layout=>_timeline.Layout;
     public ImmutableArray<FieldMetatileEdit> Tiles=>_timeline.Tiles;
     public string? Caption=>Ending?null:SavedGameVisible?_savedCaption:_timeline.Caption;
@@ -465,11 +470,15 @@ public sealed partial class CampaignSession
     private CampaignQuestLogStartGate? _questLogStartGate;
     private CampaignQuestLogShopCapture? _questLogShop;
     private bool _questLogPlayedSlots;
-    public void StopQuestLogRecording(){_questLogRecordingOpen=false;_questLogFieldClock.Reset();_questLogStartGate?.EndRecording();}
+    public void StopQuestLogRecording(){DiscardUnfinishedFieldTransitionObservation();_questLogRecordingOpen=false;_questLogFieldClock.Reset();_questLogStartGate?.EndRecording();}
     private Decision<CampaignState> DecideWithQuestLogRecording(CampaignState state,CampaignCommand command)
     {
+        var previousLog=state.QuestLog;
+        state=ReconcileFieldTransitionObservation(state);
+        if(state.FieldTransition is not null)state=state with{FieldTransition=null};
         var result=DecideWithWildHistoryRetention(state,command);
         if(result.Status!=CommandStatus.Accepted)return result;
+        if(state.FieldWeather is not null&&result.State.FieldTransition is {Cause:FieldTransitionCause.PlainWarp})result=result with{State=result.State with{FieldTransition=null}};
         _questLogStartGate??=new(state.QuestLog);
         if((result.State.SlotMachine?.PlayedSpins??0)>(state.SlotMachine?.PlayedSpins??0))_questLogPlayedSlots=true;
         var departure=(_content as ICampaignQuestLogCatalog)?.QuestLogSource is {} departureSource?
@@ -479,7 +488,7 @@ public sealed partial class CampaignSession
             id=>QuestLogTrainer(id),_questLogRecordingOpen,suppliedEvent:departure.Item2,playedSlots:_questLogPlayedSlots,recordingFrame:_questLogFieldClock.Frame,startGate:_questLogStartGate);
         if(departure.Item3)_questLogPlayedSlots=false;
         var shop=CampaignQuestLogShopCapture.Observe(_questLogShop,state,result.State,_content);
-        bool recordingOpen=ReferenceEquals(log,state.QuestLog)?_questLogRecordingOpen:log is not null&&!log.Scenes[^1].Closed;
+        bool recordingOpen=ReferenceEquals(log,previousLog)?_questLogRecordingOpen:log is not null&&!log.Scenes[^1].Closed;
         var followUps=shop.Events;
         // Map-load departure runs before the new map's first-arrival script event.
         // Both may occur in one accepted host command; retain both bounded captions.
@@ -491,12 +500,14 @@ public sealed partial class CampaignSession
         bool inputBoundary=command.Kind is "field_start_menu" or "use_registered" || (command.Kind is "interact" or "move" or "cycle_input") && QuestLogFieldControlsAvailable(state)&&(!QuestLogFieldControlsAvailable(result.State)||state.Battle is null&&result.State.Battle is not null||state.SafariBattle is null&&result.State.SafariBattle is not null||state.WildBattle is null&&result.State.WildBattle is not null||state.DoubleBattle is null&&result.State.DoubleBattle is not null||state.ForestTrainerBattle is null&&result.State.ForestTrainerBattle is not null);
         if(inputBoundary)log=CampaignQuestLogRecorder.RecordFieldInput(log,followUpFrame,(_content as ICampaignQuestLogCatalog)?.QuestLogSource,recordingOpen);
         _questLogShop=shop.Capture;
-        if(!ReferenceEquals(log,state.QuestLog))
+        if(!ReferenceEquals(log,previousLog))
         {
             _questLogRecordingOpen=log is not null&&!log.Scenes[^1].Closed;
-            SynchronizeQuestLogFieldClock(state.QuestLog,log);
+            SynchronizeQuestLogFieldClock(previousLog,log);
         }
         CompleteQuestLogScriptDelay(state,result.State,log);
-        return ReferenceEquals(log,result.State.QuestLog)?result:result with{State=result.State with{QuestLog=log}};
+        result=ReferenceEquals(log,result.State.QuestLog)?result:result with{State=result.State with{QuestLog=log}};
+        CaptureFieldTransitionObservation(state,result.State,command);
+        return result;
     }
 }

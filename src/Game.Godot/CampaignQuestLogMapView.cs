@@ -6,37 +6,40 @@ using Godot;
 
 public partial class CampaignView
 {
-    private CampaignQuestLogPlayback? _questArtPlayback;
-    private int _questArtScene=-1,_questArtRevision=-1,_questArtSerial;
-    private bool _questArtSavedGameVisible;
-    private string? _questArtKey;
+    // One detached field projection serves recap and live map transitions. Poses
+    // belong to the visible snapshot, never to the already-committed destination.
+    private sealed record FieldSnapshot(object Owner,int Scene,int Revision,bool SavedGameVisible,
+        CampaignQuestLogMapProjection Projection,IReadOnlyDictionary<string,Pose> Poses,double Frame,int PlayerGender);
+    private (object Owner,int Scene,int Revision,bool Saved)? _fieldSnapshotArtState;
+    private int _fieldSnapshotArtSerial;
+    private string? _fieldSnapshotArtKey;
     private void ResetQuestLogArt()
     {
-        _questArtPlayback=null;_questArtScene=-1;_questArtRevision=-1;
-        _questArtSavedGameVisible=false;_questArtKey=null;
+        _fieldSnapshotArtState=null;_fieldSnapshotArtKey=null;
     }
-    private string QuestLogNeighborArtKey(MapId map)=>_questArtKey+":"+map.Value+":neighbor";
-    private MapArt GetQuestLogMapArt(CampaignQuestLogPlayback playback,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
+    private string FieldSnapshotNeighborArtKey(MapId map)=>_fieldSnapshotArtKey+":"+map.Value+":neighbor";
+    private MapArt GetFieldSnapshotMapArt(FieldSnapshot snapshot,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
     {
-        if(!ReferenceEquals(playback,_questArtPlayback)||playback.SceneIndex!=_questArtScene||playback.ArtRevision!=_questArtRevision||playback.SavedGameVisible!=_questArtSavedGameVisible)
+        var state=(snapshot.Owner,snapshot.Scene,snapshot.Revision,snapshot.SavedGameVisible);
+        var projection=snapshot.Projection;
+        if(_fieldSnapshotArtState!=state)
         {
-            _questArtPlayback=playback;_questArtScene=playback.SceneIndex;_questArtRevision=playback.ArtRevision;
-            _questArtSavedGameVisible=playback.SavedGameVisible;
-            _questArtKey=playback.Map+":"+(playback.Layout??"base")+":quest:"+(++_questArtSerial);
+            _fieldSnapshotArtState=state;
+            _fieldSnapshotArtKey=projection.Map+":"+(projection.Layout??"base")+":snapshot:"+(++_fieldSnapshotArtSerial);
         }
         _drawMapPins.Clear();_drawMapPins.Add(PresentationMapKey(_session.State.World.Player.MapId));
         // Pin the complete frame before acquiring anything. Derived palette keys may
         // borrow these originals until the visible set changes on the following draw.
-        foreach(var neighbor in neighbors)_drawMapPins.Add(QuestLogNeighborArtKey(neighbor.Map));
-        if(playback.SavedGameVisible){MapCache.SetPins(_drawMapPins);return _art;}
-        _drawMapPins.Add(_questArtKey!);MapCache.SetPins(_drawMapPins);
-        return MapCache.Get(_questArtKey!,owner=>
+        foreach(var neighbor in neighbors)_drawMapPins.Add(FieldSnapshotNeighborArtKey(neighbor.Map));
+        if(snapshot.SavedGameVisible){MapCache.SetPins(_drawMapPins);return _art;}
+        _drawMapPins.Add(_fieldSnapshotArtKey!);MapCache.SetPins(_drawMapPins);
+        return MapCache.Get(_fieldSnapshotArtKey!,owner=>
         {
-            var id=new MapId(playback.Map);
-            var source=playback.Layout is {} layout?(PretWorldMap)(_catalog.MapLayout(id,layout)??throw new InvalidDataException("quest_log_layout_art_missing")):_catalog.SourceMaps[id];
+            var id=new MapId(projection.Map);
+            var source=projection.Layout is {} layout?(PretWorldMap)(_catalog.MapLayout(id,layout)??throw new InvalidDataException("quest_log_layout_art_missing")):_catalog.SourceMaps[id];
             var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
             var npcs=LoadWorldNpcs(source,binding.OverworldCatalogPath,owner);
-            foreach(var graphics in playback.Actors.Where(a=>a.Id!=CampaignQuestLogRecorder.PlayerId).Select(a=>a.Graphics).Distinct(StringComparer.Ordinal))
+            foreach(var graphics in projection.Actors.Where(a=>a.Id!=CampaignQuestLogRecorder.PlayerId).Select(a=>a.Graphics).Distinct(StringComparer.Ordinal))
             {
                 if(npcs.ContainsKey(graphics))continue;
                 var sprite=_overworldSprites![graphics];var r=sprite.Region;
@@ -46,13 +49,13 @@ public partial class CampaignView
             var bottom=owner.MapTexture(source.BottomTexturePath);var middle=owner.MapTexture(source.MiddleTexturePath);var top=owner.MapTexture(source.TopTexturePath);
             var original=new MapArt(source,bottom,middle,top,new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,
                 binding.UsesLocalBorder?new(source.BorderWidth,source.BorderHeight,owner.MapTexture(source.BorderBottomTexturePath),owner.MapTexture(source.BorderMiddleTexturePath),owner.MapTexture(source.BorderTopTexturePath)):null);
-            if(playback.Tiles.IsDefaultOrEmpty)return original;
-            var edits=playback.Tiles.Where(edit=>source.GetTile(edit.X,edit.Y) is not null).ToArray();
+            if(projection.Tiles.IsDefaultOrEmpty)return original;
+            var edits=projection.Tiles.Where(edit=>source.GetTile(edit.X,edit.Y) is not null).ToArray();
             Texture2D Patch(Texture2D texture,int layer)=>PatchMapLayer(owner,source,texture,layer,edits);
             return original with{Bottom=Patch(bottom,0),Middle=Patch(middle,1),Top=Patch(top,2)};
         });
     }
-    private IEnumerable<(MapId Map,Vector2 Origin)> QuestLogNeighbors(MapId map)
+    private IEnumerable<(MapId Map,Vector2 Origin)> FieldSnapshotNeighbors(MapId map)
     {
         if(_catalog.ConnectedFieldMaps is not {} maps||!maps.TryGetValue(map,out var current))yield break;
         foreach(var connection in current.Connections)
@@ -63,11 +66,11 @@ public partial class CampaignView
             yield return(destination.Id,origin);
         }
     }
-    private void DrawQuestLogLayer(MapArt art,Vector2 camera,int layer,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
+    private void DrawFieldSnapshotLayer(FieldSnapshot snapshot,MapArt art,Vector2 camera,int layer,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
     {
         if(art.Border is {} border)
         {
-            var texture=QuestLogPaletteTexture(layer==0?border.Bottom:layer==1?border.Middle:border.Top);
+            var texture=FieldSnapshotPaletteTexture(layer==0?border.Bottom:layer==1?border.Middle:border.Top,true);
             for(int y=(int)Math.Floor(camera.Y/16);y<=Math.Floor((camera.Y+159)/16);y++)for(int x=(int)Math.Floor(camera.X/16);x<=Math.Floor((camera.X+239)/16);x++)
             {
                 if(x>=0&&y>=0&&x<art.Source.Width&&y<art.Source.Height)continue;
@@ -80,21 +83,21 @@ public partial class CampaignView
             var source=_catalog.SourceMaps[neighbor.Map];
             // Neighbor layouts are static source connections; never project the current
             // saved session's dynamic layout onto a different historical scene.
-            var key=QuestLogNeighborArtKey(neighbor.Map);
+            var key=FieldSnapshotNeighborArtKey(neighbor.Map);
             var texture=MapCache.Get(key,owner=>
             {
                 Texture2D Layer(string path,int number)
                 {
                     var original=owner.MapTexture(path);
-                    var edits=(_questLogPlayback?.Tiles??[]).Select(edit=>(Edit:edit,At:_catalog.ConnectedFieldMaps is {} maps?ConnectedFieldCoordinates.Resolve(maps,art.Source.Id,edit.X,edit.Y):null)).Where(e=>e.At?.Map==neighbor.Map).ToArray();
+                    var edits=snapshot.Projection.Tiles.Select(edit=>(Edit:edit,At:_catalog.ConnectedFieldMaps is {} maps?ConnectedFieldCoordinates.Resolve(maps,art.Source.Id,edit.X,edit.Y):null)).Where(e=>e.At?.Map==neighbor.Map).ToArray();
                     if(edits.Length==0)return original;
                     return PatchMapLayer(owner,source,original,number,
                         edits.Select(row=>row.Edit with{X=row.At!.Value.X,Y=row.At.Value.Y}));
                 }
                 return new MapArt(source,Layer(source.BottomTexturePath,0),Layer(source.MiddleTexturePath,1),Layer(source.TopTexturePath,2),art.Player,[],null);
             });
-            DrawTexture(QuestLogPaletteTexture(layer==0?texture.Bottom:layer==1?texture.Middle:texture.Top),neighbor.Origin-camera);
+            DrawTexture(FieldSnapshotPaletteTexture(layer==0?texture.Bottom:layer==1?texture.Middle:texture.Top,true),neighbor.Origin-camera);
         }
-        DrawTexture(QuestLogPaletteTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top),-camera);
+        DrawTexture(FieldSnapshotPaletteTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,true),-camera);
     }
 }

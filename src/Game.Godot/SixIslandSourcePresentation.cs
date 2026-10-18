@@ -1,63 +1,16 @@
+using Game.Application;
 using Game.Domain.World;
 
 /// <summary>Original normal palette, weather and FallWarp task callbacks. No gameplay or map-load authority.</summary>
 internal static class SixIslandSourcePresentation
 {
-    internal sealed class NormalPalette
-    {
-        private int _y, _target, _finishingCounter;
-        private bool _object, _finishing;
-        internal bool Active { get; private set; } = true;
-        internal int BackgroundBlend { get; private set; }
-        internal int ObjectBlend { get; private set; }
-        internal NormalPalette(bool fromBlack)
-        {
-            _y=fromBlack?16:0; _target=fromBlack?0:16;
-            BackgroundBlend=ObjectBlend=_y;
-            Advance(); // BeginNormalPaletteFade immediately calls UpdatePaletteFade.
-        }
-        internal void Advance()
-        {
-            if (!Active) return;
-            if (_finishing)
-            {
-                if (_finishingCounter==4) { Active=false; _finishing=false; _finishingCounter=0; }
-                else _finishingCounter++;
-                return;
-            }
-            if (_object) ObjectBlend=_y; else BackgroundBlend=_y;
-            _object=!_object;
-            if (_object) return;
-            if (_y==_target) _finishing=true;
-            else _y+=_target>_y?2:-2;
-        }
-    }
-
-    internal sealed class Departure
-    {
-        private int _phase=1; // DoDiveWarp creates Task_Teleport2Warp; its first callback freezes actors.
-        internal NormalPalette Palette { get; } = new(false);
-        internal int Frames { get; private set; }
-        internal int Phase => _phase;
-        internal bool Complete { get; private set; }
-        internal void Advance(bool musicReady)
-        {
-            if (Complete) return;
-            Frames++;
-            // Source task observes readiness before this frame's palette update.
-            if (_phase==1) { if (!Palette.Active && musicReady) _phase=2; }
-            else if (_phase==2) Complete=true;
-            Palette.Advance();
-        }
-    }
-
     internal sealed class Landing
     {
         private readonly int _initialOffset;
         private readonly int[] _offsets;
         private int _phase, _offsetIndex, _panIndex;
         private bool _weatherInitialized, _weatherReady;
-        internal NormalPalette Palette { get; } = new(true);
+        internal FieldWarpPresentation.NormalPalette Palette { get; } = new(true);
         internal int Frames { get; private set; }
         internal int OffsetY { get; private set; }
         internal int CameraY { get; private set; }

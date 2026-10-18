@@ -71,7 +71,7 @@ public partial class CampaignView
             if(cue.Ship)SourceSound("SE_SHIP");
             if(cue.FadeMusic)
             {
-                if(_sourceAudio is SynthSourceAudioPlayer synth)synth.BeginSeagallopMusicFade();
+                if(_sourceAudio is SynthSourceAudioPlayer synth)synth.BeginSourceMusicFade();
                 else if(_sourceAudio is not null&&!_audioFaulted)throw new InvalidDataException("First-Sevii ferry requires source-tick synthesized audio.");
                 _audioMusic=null;
                 Write("seagallopFade",new{id=_seagallopId,clock.Tick,clock.TravelTicks,sourceFadeSpeed=4,waitsForActualBackendStop=true,audioBypassed});

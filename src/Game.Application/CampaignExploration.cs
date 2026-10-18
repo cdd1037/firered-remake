@@ -146,7 +146,7 @@ public sealed partial class CampaignSession
             if(VisibleActorAt(state,x,y) is not null)return new(CommandStatus.Accepted,state with{World=state.World with{Revision=checked(state.World.Revision+1),Player=before with{Facing=command.Direction}}});
             var transition=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),movementMaps,true,true,true, destination => MapLayoutForArrival(state, destination));
             if(transition.Status!=TransitionStatus.Accepted)return new(transition.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,transition.Diagnostic?.Code);
-            moved=state with{World=transition.State};changed=transition.MapChanged;
+            moved=state with{World=transition.State,FieldTransition=transition.Presentation};changed=transition.MapChanged;
             if(changed)moved=RecordEscapeWarp(state,moved,command.Direction);
             checkEncounter=!changed&&(before.X!=transition.State.Player.X||before.Y!=transition.State.Player.Y);trigger=EncounterCheckTrigger.WalkingStepCompleted;
         }
@@ -155,7 +155,7 @@ public sealed partial class CampaignSession
             var action=turn?ConnectedFieldAction.TurnInPlace:ConnectedFieldAction.Walk;
             var transition=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("field:"+state.World.Revision),state.World.Revision,action,command.Direction),OccupiedFieldMaps(state),true,true,biking:state.IsCycling,enableSpinTiles:true,activeSpin:state.RocketSpin?.Forced,enableCardinalLedges:true,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
             if(transition.Status!=TransitionStatus.Accepted)return new(transition.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,transition.Diagnostic?.Code);
-            moved=state with{World=transition.State with{RulesVersion=RuleVersions.GridWorldV0}};changed=transition.MapChanged;checkEncounter=transition.RequiresEncounterCheck;
+            moved=state with{World=transition.State with{RulesVersion=RuleVersions.GridWorldV0},FieldTransition=transition.Presentation};changed=transition.MapChanged;checkEncounter=transition.RequiresEncounterCheck;
             trigger=turn?EncounterCheckTrigger.TurnInPlaceCompleted:EncounterCheckTrigger.WalkingStepCompleted;
         }
         if(!_content.IsNpcTradeStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"npc_trade_access_boundary_not_open");

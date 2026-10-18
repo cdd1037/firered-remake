@@ -168,7 +168,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         var signs = e.GetProperty("bg_events").EnumerateArray().Select(x => RegionalBackgroundTrigger(x, SupportsRegionalFlavor(map.Id))).ToImmutableArray();
         return new(map.Id, map.SourceMapSymbol, actors, coords, signs, new(Target("MAP_SCRIPT_ON_TRANSITION"), Target("MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE"), Target("MAP_SCRIPT_ON_FRAME_TABLE"), Target("MAP_SCRIPT_ON_LOAD"), Target("MAP_SCRIPT_ON_RESUME"), Target("MAP_SCRIPT_ON_RETURN_TO_FIELD")), e.GetProperty("music").GetString()!, e.GetProperty("region_map_section").GetString()!)
         {
-            MapType = e.GetProperty("map_type").GetString()!,RequiresFlash = e.GetProperty("requires_flash").GetBoolean()
+            MapType = e.GetProperty("map_type").GetString()!,Weather = e.GetProperty("weather").GetString(),RequiresFlash = e.GetProperty("requires_flash").GetBoolean()
         };
     }
 

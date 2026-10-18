@@ -31,6 +31,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     ImmutableArray<CampaignMotion> Motions,int PresentationTicks,string LastHealingLocation,string TextColor,string Music,
     string PlayerName,string RivalName,int Money,string SavedMusic,ImmutableArray<CampaignPresentation> PresentationEffects,bool PlayerVisible)
 {
+    [JsonIgnore] public FieldTransitionReceipt? FieldTransition { get; init; }
     [JsonRequired] public CampaignPlayTime PlayTime{get;init;}=CampaignPlayTime.NewGame;
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignQuestLog? QuestLog{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RegisteredItem{get;init;}
@@ -311,7 +312,7 @@ public sealed partial class CampaignSession
     }
     private CampaignSession(ICampaignCatalog content,CampaignState state,long revision,CampaignCatalogBinding binding)
     {
-        _content=content;_binding=binding;_ = TrainerOccurrences;_ = DoubleTrainers;state=BindBattleContext(state);state=state with {MapLayout=RestoreMapLayout(state)};var error=ValidatePlayerSave(state, layoutResolved: true);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
+        _content=content;_binding=binding;_ = TrainerOccurrences;_ = DoubleTrainers;state=BindBattleContext(state);state=state with {MapLayout=RestoreMapLayout(state),FieldTransition=null};var error=ValidatePlayerSave(state, layoutResolved: true);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
     // Runtime catalog context is deliberately not persisted; restoration supplies the current
@@ -662,7 +663,7 @@ public sealed partial class CampaignSession
                 }
                 var movement=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),_content.Maps);
                 if(movement.Status!=TransitionStatus.Accepted)return new(movement.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,movement.Diagnostic?.Code);
-                var moved=RefreshActors(state with{World=movement.State});
+                var moved=RefreshActors(state with{World=movement.State,FieldTransition=movement.Presentation});
                 if(movement.MapChanged)return new(CommandStatus.Accepted,Pump(EnterMap(moved,movement.State.Player.Facing)));
                 if(movement.State.Player.X!=before.X||movement.State.Player.Y!=before.Y)
                 {

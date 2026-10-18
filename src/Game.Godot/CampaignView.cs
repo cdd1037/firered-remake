@@ -40,7 +40,7 @@ public partial class CampaignView:Node2D
     private double _repeat,_waitElapsed,_waitDuration,_fade,_fanfareRemaining;
     private long _lastFanfareSequence;
     private bool _busy,_choiceYes=true;
-    private bool FieldPresentationInputLocked=>SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in";
+    private bool FieldPresentationInputLocked=>FieldWarpInputLocked||SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in";
     // Cut's MSGBOX_YESNO uses new_menu_helpers.c's default (21,9), 6x4-tile window.
     // CreateYesNoMenu prints at interior y+2 with FONT_NORMAL's 14-pixel row pitch.
     // Keep other field/script choices at their existing positions.
@@ -140,6 +140,7 @@ public partial class CampaignView:Node2D
     // These resources are constructed directly, not borrowed from SceneTextures.
     private void DisposeCorePresentation()
     {
+        ResetFieldWarpPresentation();
         DisposeQuestLogPresentation();
         DisposeInventoryPresentation();
         DisposeTrainerCardPresentation();
@@ -185,7 +186,7 @@ public partial class CampaignView:Node2D
             return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
         });
     }
-    private void LoadMap(MapId id)
+    private void LoadMap(MapId id,bool fade=true)
     {
         EnsurePlayerGenderArt();
         ResetFieldMenu();
@@ -193,22 +194,24 @@ public partial class CampaignView:Node2D
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)).Concat(_art is null?[]:[PresentationMapKey(_art.Source.Id)]));
         var next=GetMapArt(id);ReleaseMapEdits();_art=next;
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)));
-        _poses.Clear();_tracks.Clear();_held=null;_repeat=0;_fade=.16;
+        _poses.Clear();_tracks.Clear();_held=null;_repeat=0;_fade=fade ? .16 : 0;
     }
     private void Synchronize(CampaignState? before,CampaignState after)
     {
+        if(before is null)ResetFieldWarpPresentation();
+        if(BeginFieldWarpPresentation(before,after))return;
         if(BeginSilphPadPresentation(before,after))return;
         SynchronizeSourceResultState(before,after);
         SynchronizeSourceMovePresentation();
         bool changed=before is not null&&before.World.Player.MapId!=after.World.Player.MapId;
-        if(changed)LoadMap(after.World.Player.MapId);
+        if(changed)LoadMap(after.World.Player.MapId,!_fieldWarpSynchronizing&&!ConnectedFieldTransition(before,after));
         ApplyMapEdits(after);
         // Intro page acknowledgements retain the same application motion list. Keep
         // its presentation progress and settled poses instead of starting the walk again.
         bool preserveIntroMotion=!changed&&before?.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} previousIntro&&
             after.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} currentIntro&&
             previousIntro.Id==currentIntro.Id&&before.Motions.SequenceEqual(after.Motions);
-        bool normalStep=before is not null&&!changed&&(before.World.Player.X!=after.World.Player.X||before.World.Player.Y!=after.World.Player.Y)&&after.Motions.IsEmpty;
+        bool normalStep=before is not null&&!changed&&!_fieldWarpSynchronizing&&(before.World.Player.X!=after.World.Player.X||before.World.Player.Y!=after.World.Player.Y)&&after.Motions.IsEmpty;
         if(!preserveIntroMotion)
         {
             _tracks.Clear();
@@ -272,6 +275,9 @@ public partial class CampaignView:Node2D
         if(_quitRequested||_startupExited)return;
         if(!_startupReady){ProcessStartup();return;}
         if(TickQuestLogPlayback(delta))return;
+        // Keep observing physics play-time ticks, but do not transact while the
+        // immutable origin presentation still owns this accepted transition.
+        if(ProcessFieldWarpPresentation(delta))return;
         if(!PlayerEntryActive&&!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
         if(ProcessHelpPresentation(delta))return;
         AdvanceInventoryPresentation(delta);
@@ -404,6 +410,11 @@ public partial class CampaignView:Node2D
             GetViewport().SetInputAsHandled();return;
         }
         if(TrySystemScreenshotInput(input))return;
+        if(FieldWarpInputLocked)
+        {
+            if(input is InputEventKey{Pressed:true,Echo:false,Keycode:Key.Escape})RequestQuit();
+            _held=null;GetViewport().SetInputAsHandled();return;
+        }
         if(TryNamingJoypadInput(input))return;
         var physicalInput=input;
         if(!NormalizeCampaignButtonInput(ref input))return;
@@ -508,7 +519,7 @@ public partial class CampaignView:Node2D
     }
     private bool Apply(CampaignCommand command)
     {
-        if(_quitRequested||_busy)return false;
+        if(_quitRequested||_busy||FieldWarpInputLocked)return false;
         if(!CommitPlayTime(true))return false;
         CommitTrainerTowerTime(true);_busy=true;
         command=CyclingRoadInput(command);
@@ -526,7 +537,7 @@ public partial class CampaignView:Node2D
             if(_diagnostics.Verbose)Write("slotFrame",new{command.SlotInput,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),phase=result.State.SlotMachine?.Phase.ToString(),step=result.State.SlotMachine?.MainStep,coins=result.State.Coins});
         }
         else Write("command",_diagnostics.Payload(new{command,status=result.Status.ToString(),result.Error,result.Revision},()=>new{command,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),state=result.State}));
-        if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
+        if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);if(ConnectedFieldTransition(before,result.State))_session.CompleteFieldTransitionPresentation(result.State.FieldTransition!,0,1);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
         else if(result.Error=="sevii_first_visit_not_yet_available")
         {_regionalServiceNotice="The trip to ONE ISLAND is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
         else if(result.Error=="seagallop_destination_not_yet_available")
@@ -552,12 +563,13 @@ public partial class CampaignView:Node2D
             if(_font is not null)DrawString(_font,new(58,83),"Loading game...",fontSize:14,modulate:Colors.White);
             _loadingDrawn=true;return;
         }
-        BeginMapFrame();
+        BeginMapFrame();ReleaseFinishedFieldSnapshot();
         if(_session is null)return;
         if(DrawHelp())return;
         if(DrawNamingScreen())return;
         if(PlayerEntryActive){DrawPlayerEntry();return;}
         if(DrawQuestLogPlayback())return;
+        if(DrawFieldWarpPresentation())return;
         if(_session.EasyChatEditor is not null){DrawEasyChatEditorScreen();return;}
         if(_session.State.ItemMenu?.Toss?.BattleOwner is not null && DrawBagToss())return;
         if(DrawDiploma())return;

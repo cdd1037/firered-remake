@@ -21,6 +21,7 @@ public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,Immutabl
     ImmutableArray<FieldCoordTrigger> CoordTriggers,ImmutableArray<FieldBackgroundTrigger> BackgroundTriggers,FieldMapPrograms Programs,string Music,string RegionMapSection="")
 {
     public string MapType { get; init; } = "MAP_TYPE_NONE";
+    public string? Weather { get; init; }
     public bool RequiresFlash { get; init; }
 }
 public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames);

@@ -131,7 +131,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         CancelFanfare(resumeMusic: false);
         CancelCry();
         _synth.Stop(0);
-        _seagallopMusicFade=null;
+        _sourceMusicFade=null;
         _musicGain = 1; _fadeRemaining = 0; _fadePauseAtEnd = _musicTemporarilyPaused = false;
         _music = Start(cue!, "music");
         ApplyMusicGain();
@@ -229,7 +229,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public void FadeOutMusic(double seconds, bool temporarily = false)
     {
-        _seagallopMusicFade=null;
+        _sourceMusicFade=null;
         if (!double.IsFinite(seconds) || seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
         if (_music is null) return;
         _fadeTargetGain = 0; _fadePauseAtEnd = temporarily;
@@ -240,7 +240,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     /// <summary>Source temporary fade resumes the retained sequence; it does not start its song again.</summary>
     public void FadeInMusic(double seconds)
     {
-        _seagallopMusicFade=null;
+        _sourceMusicFade=null;
         if (!double.IsFinite(seconds) || seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
         if (_music is null) return;
         _musicTemporarilyPaused = _fadePauseAtEnd = false;
@@ -277,7 +277,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     private void ClearPlayback()
     {
-        _seagallopMusicFade=null;
+        _sourceMusicFade=null;
         _generation++;
         _fanfareToken = _fanfareMusicToken = 0; _fanfareCounter = 0; _fanfareCue = null;
         _music = _cry = null; _effects.Clear(); _cryDucking = _renderCryDucking = false; _cryGrace = 0;
@@ -293,7 +293,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public void AdvanceSourceFrame()
     {
-        AdvanceSeagallopMusicFade();
+        AdvanceSourceMusicFade();
         if (_fanfareToken != 0)
         {
             if (_fanfareCounter > 0) _fanfareCounter--;

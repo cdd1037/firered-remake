@@ -10,9 +10,9 @@ public partial class CampaignView
     private double _sixIslandFieldFrames;
     private int _sixIslandProcessedFrames;
     private bool _sixIslandCry, _sixIslandFallSound, _sixIslandLandSound;
-    private SixIslandSourcePresentation.Departure? _sixIslandDeparture;
+    private FieldWarpPresentation.Departure? _sixIslandDeparture;
     private SixIslandSourcePresentation.Landing? _sixIslandLanding;
-    private SeagallopSourceMusicFade? _sixIslandMusicFade;
+    private SourceMusicFade? _sixIslandMusicFade;
     private long _sixIslandShakeSequence=-1;
     private double _sixIslandShakeFrames=37;
     private bool SixIslandFieldLocked => _session?.State.RuinValleyCut is not null || CommonFall(_session?.State) is not null;
@@ -92,7 +92,7 @@ public partial class CampaignView
                     {
                         // Underground is not IsMapTypeIndoors: source speed4, identical m4a fade as Seagallop.
                         _sixIslandMusicFade=new();
-                        if (_sourceAudio is SynthSourceAudioPlayer synth) synth.BeginSeagallopMusicFade();
+                        if (_sourceAudio is SynthSourceAudioPlayer synth) synth.BeginSourceMusicFade();
                     }
                 }
                 else if (frame>delay)

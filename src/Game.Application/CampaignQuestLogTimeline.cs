@@ -15,6 +15,10 @@ internal sealed class CampaignQuestLogTimeline
     private readonly int _end;
     private int _move;
     private double _frame;
+    private CampaignQuestLogAction? _transition;
+    private bool _transitionSwitched;
+    public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_transition?.TransitionTiming is {} timing&&_frame<_transition.StartFrame+timing.EndFrame?timing:null;
+    public double TransitionElapsedFrames=>_transition is {} transition?Math.Max(0,_frame-transition.StartFrame):0;
     public IEnumerable<CampaignQuestLogActor> Actors=>_actors.Values;
     public int ArtRevision{get;private set;}
     public double Frame=>_frame;
@@ -55,14 +59,14 @@ internal sealed class CampaignQuestLogTimeline
     public void Tick(double seconds)
     {
         _frame+=seconds*60;
+        SwitchPendingTransition();
         while(_move<_moves.Length&&_moves[_move].StartFrame<=_frame)
         {
             var action=_moves[_move++];
-            if(action.Transition is {} transition)
+            if(action.Transition is not null)
             {
-                Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;
-                _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
-                _moving.Clear();ArtRevision++;continue;
+                _transition=action;_transitionSwitched=false;
+                SwitchPendingTransition();continue;
             }
             if(action.Layout is {} layout){ArtRevision++;Layout=layout.Length==0?null:layout;continue;}
             if(action.Tile is {} tile){ArtRevision++;Tiles=Tiles.Where(t=>t.X!=tile.X||t.Y!=tile.Y).ToImmutableArray();if(tile.SourceMetatileId>=0)Tiles=Tiles.Add(tile);continue;}
@@ -72,5 +76,14 @@ internal sealed class CampaignQuestLogTimeline
             _moving[initial.Id]=(prior,action.StartFrame,action.Frames,action.SourceAction);
             _actors[initial.Id]=prior with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible,Graphics=action.Graphics??prior.Graphics};
         }
+    }
+    private void SwitchPendingTransition()
+    {
+        if(_transition is not {Transition:{} transition} action||_transitionSwitched||
+            _frame<action.StartFrame+(action.TransitionTiming?.SwitchFrame??0))return;
+        _transitionSwitched=true;
+        Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;
+        _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
+        _moving.Clear();ArtRevision++;
     }
 }

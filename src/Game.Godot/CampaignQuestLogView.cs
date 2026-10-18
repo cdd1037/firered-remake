@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Game.Application;
 using Game.Domain.Ids;
 using Godot;
@@ -72,40 +73,20 @@ public partial class CampaignView
     {
         if(_questLogPlayback is not {} playback)return false;
         EnsureQuestLogArt();
-        var id=new MapId(playback.Map);
-        var actors=playback.Actors.ToArray();var hero=actors.Single(a=>a.Id==CampaignQuestLogRecorder.PlayerId);
-        var heroPosition=new Vector2(hero.X*16,hero.Y*16);
-        if(playback.Movement(hero.Id) is {} movingHero)heroPosition=new Vector2(movingHero.From.X*16,movingHero.From.Y*16).Lerp(heroPosition,(float)movingHero.Fraction);
-        var camera=heroPosition+new Vector2(8-120,8-80);
-        var neighbors=QuestLogNeighbors(id).Where(neighbor=>new Rect2(neighbor.Origin,new(_catalog.Maps[neighbor.Map].Width*16,_catalog.Maps[neighbor.Map].Height*16)).Intersects(new(camera,new(240,160)))).ToArray();
-        PrepareQuestLogPalette(playback,neighbors);
-        var art=GetQuestLogMapArt(playback,neighbors);
-        DrawRect(new(0,0,240,160),Colors.Black);
-        DrawQuestLogLayer(art,camera,0,neighbors);DrawQuestLogLayer(art,camera,1,neighbors);
-        foreach(var actor in actors.Where(a=>a.Visible).OrderBy(a=>a.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
+        var actors=playback.Actors.ToImmutableArray();
+        var poses=new Dictionary<string,Pose>(StringComparer.Ordinal);
+        foreach(var actor in actors)
         {
-            bool player=actor.Id==CampaignQuestLogRecorder.PlayerId;
-            int gender=CampaignQuestLogAvatar.Gender(actor.Graphics,_session.State.PlayerGender);
-            SpriteAsset? asset=player?(CampaignQuestLogAvatar.IsBike(actor.Graphics)?_cityCycleSprites.GetValueOrDefault(gender):gender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
-            if(asset is null)throw new InvalidDataException("quest_log_actor_art_missing:"+actor.Graphics);
-            // Local pose only; the actual saved scene's _poses remain untouched.
-            var position=new Vector2(actor.X*16,actor.Y*16);
             var movement=playback.Movement(actor.Id);
+            var position=new Vector2(actor.X*16,actor.Y*16);
             if(movement is {} active)position=new Vector2(active.From.X*16,active.From.Y*16).Lerp(position,(float)active.Fraction);
-            var pose=new Pose{Position=position,Facing=actor.Facing,Visible=true,DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0};
-            if(player&&CampaignQuestLogAvatar.IsSurf(actor.Graphics))
-            {
-                // Shared source sheet placement; replay owns no live Surf effect or field clock.
-                int phase=(int)Math.Floor(playback.Frame+1e-7)/48%2;
-                DrawSurfPose(pose,camera,gender,phase,pose.Position,new CampaignFieldMovementPose(0,pose.DrawYOffset,pose.IsJump).RiderYOffset(phase),textureTransform:QuestLogPaletteTexture);
-            }
-            else
-            {
-                var original=playback.SavedGameVisible?SixIslandPaletteTexture(asset.Texture,false):asset.Texture;
-                DrawActor(asset,pose,camera,QuestLogPaletteTexture(original));
-            }
+            poses.Add(actor.Id,new Pose{Position=position,Facing=actor.Facing,Visible=actor.Visible,
+                DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0});
         }
-        DrawQuestLogLayer(art,camera,2,neighbors);
+        var snapshot=new FieldSnapshot(playback,playback.SceneIndex,playback.ArtRevision,playback.SavedGameVisible,
+            new(playback.Map,actors,playback.Layout,playback.Tiles),poses,playback.Frame,_session.State.PlayerGender);
+        var warp=QuestLogFieldWarpSample(playback);
+        DrawFieldSnapshot(snapshot,playback.GrayscaleCoefficient,warp.BackgroundBlend,warp.ObjectBlend);
         int barHeight=playback.BarHeight;
         if(barHeight>0)
         {
@@ -123,5 +104,38 @@ public partial class CampaignView
             for(int i=0;i<lines.Length;i++)SourceText(_questLogFont!,new(2,112+top+i*16),lines[i]);
         }
         return true;
+    }
+    private void DrawFieldSnapshot(FieldSnapshot snapshot,int grayscale,int backgroundBlend,int objectBlend)
+    {
+        var projection=snapshot.Projection;
+        var hero=snapshot.Poses[CampaignQuestLogRecorder.PlayerId];
+        var camera=(hero.Position+new Vector2(8-120,8-80)).Floor();
+        var neighbors=FieldSnapshotNeighbors(new MapId(projection.Map)).Where(neighbor=>new Rect2(neighbor.Origin,
+            new(_catalog.Maps[neighbor.Map].Width*16,_catalog.Maps[neighbor.Map].Height*16)).Intersects(new(camera,new(240,160)))).ToArray();
+        PrepareFieldSnapshotPalette(snapshot,grayscale,backgroundBlend,objectBlend,neighbors);
+        var art=GetFieldSnapshotMapArt(snapshot,neighbors);
+        DrawRect(new(0,0,240,160),Colors.Black);
+        DrawFieldSnapshotLayer(snapshot,art,camera,0,neighbors);DrawFieldSnapshotLayer(snapshot,art,camera,1,neighbors);
+        foreach(var actor in projection.Actors.Where(a=>a.Visible&&snapshot.Poses[a.Id].Visible)
+            .OrderBy(a=>snapshot.Poses[a.Id].Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
+        {
+            bool player=actor.Id==CampaignQuestLogRecorder.PlayerId;
+            int gender=CampaignQuestLogAvatar.Gender(actor.Graphics,snapshot.PlayerGender);
+            SpriteAsset? asset=player?(CampaignQuestLogAvatar.IsBike(actor.Graphics)?_cityCycleSprites.GetValueOrDefault(gender):gender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
+            if(asset is null)throw new InvalidDataException("field_snapshot_actor_art_missing:"+actor.Graphics);
+            var pose=snapshot.Poses[actor.Id];
+            if(player&&CampaignQuestLogAvatar.IsSurf(actor.Graphics))
+            {
+                int phase=(int)Math.Floor(snapshot.Frame+1e-7)/48%2;
+                DrawSurfPose(pose,camera,gender,phase,pose.Position,new CampaignFieldMovementPose(0,pose.DrawYOffset,pose.IsJump).RiderYOffset(phase),
+                    textureTransform:texture=>FieldSnapshotPaletteTexture(texture,false));
+            }
+            else
+            {
+                var original=snapshot.SavedGameVisible?SixIslandPaletteTexture(asset.Texture,false):asset.Texture;
+                DrawActor(asset,pose,camera,FieldSnapshotPaletteTexture(original,false));
+            }
+        }
+        DrawFieldSnapshotLayer(snapshot,art,camera,2,neighbors);
     }
 }

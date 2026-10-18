@@ -84,7 +84,7 @@ public sealed partial class CampaignSession
         state with{MapEdits=edits.RemoveRange(edits.Where(p=>p.Key==p.Value.X+":"+p.Value.Y&&IsCutGrassEdit(state,p.Value)).Select(p=>p.Key))};
     public CampaignState PrepareFieldSave()
     {
-        var state=State;var player=state.World.Player;
+        var state=ReconcileFieldTransitionObservation(State);var player=state.World.Player;
         if(state.MapEdits is not {Count:>0} edits)return state;
         var outside=edits.Where(p=>IsCutGrassEdit(state,p.Value)&&!InSavedGrassView(p.Value,player)).Select(p=>p.Key).ToArray();
         return outside.Length==0?state:state with{MapEdits=edits.RemoveRange(outside)};

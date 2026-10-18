@@ -8,7 +8,8 @@ public interface IFieldMap:IWorldMap
     int? SourceEncounterTypeAt(int x,int y)=>SourceBehaviorAt(x,y)==2?1:0;
     ImmutableArray<FieldWarp> FieldWarps {get;}
 }
-public sealed record FieldMovementTransition(TransitionStatus Status,WorldSnapshot State,ImmutableArray<WorldEvent> Events,bool MapChanged,Diagnostic? Diagnostic);
+public sealed record FieldMovementTransition(TransitionStatus Status,WorldSnapshot State,ImmutableArray<WorldEvent> Events,bool MapChanged,Diagnostic? Diagnostic)
+{ public FieldTransitionReceipt? Presentation { get; init; } }
 /// <summary>Bounded door, arrow and directional stair rules. Entry scripts are applied by Application.</summary>
 public static class FieldMovementRules
 {
@@ -60,9 +61,12 @@ public static class FieldMovementRules
             var tile=destination.GetTile(x,y);
             if(tile is null||tile.Blocked)return Fail("warp_arrival_blocked",$"{destination.Id}:{x},{y}");
             var position=new TilePosition(destination.Id,x,y,tile.Elevation,facing);
+            var cause=caveStep?(map.SourceBehaviorAt(frontX,frontY)==0x60?FieldTransitionCause.NonAnimatedDoor:FieldTransitionCause.PlainWarp):here is >=0x6c and <=0x6f?FieldTransitionCause.StairWarp:warp.X==frontX&&warp.Y==frontY&&map.SourceBehaviorAt(frontX,frontY)==0x69&&intent.Direction==Direction.North?FieldTransitionCause.AnimatedDoor:FieldTransitionCause.PlainWarp;
+            var arrivalKind=behavior switch{0x69=>FieldTransitionArrival.AnimatedDoor,0x60=>FieldTransitionArrival.NonAnimatedDoor,>=0x6c and <=0x6f=>FieldTransitionArrival.Stair,_=>FieldTransitionArrival.Plain};
+            var receipt=new FieldTransitionReceipt(cause,caveStep?FieldTransitionDeparture.StepOntoWarp:FieldTransitionDeparture.Immediate,arrivalKind,state.Player,position,new(destination.Id,arrival.X,arrival.Y,arrival.Elevation,facing));
             var next=state with{Revision=state.Revision+1,Player=position,StepCount=checked(state.StepCount+(caveStep?1:0))};
             // Warp/door automatic arrival is an event transition, not a normal player step or RNG draw.
-            return new(TransitionStatus.Accepted,next,[new(intent.CommandId,WorldEventKind.Moved,state.Player,position,caveStep?"cave-step-warp":"warp")],true,null);
+            return new(TransitionStatus.Accepted,next,[new(intent.CommandId,WorldEventKind.Moved,state.Player,position,caveStep?"cave-step-warp":"warp")],true,null){Presentation=receipt};
         }
         if(here is >=0x6c and <=0x6f && DirectionFor(here)==intent.Direction)
         {

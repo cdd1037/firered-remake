@@ -57,3 +57,7 @@ The finite current findings are reconciled in [the completion audit](nonlocalize
 ## Evolution intro completion ownership
 
 The fixed intro timer and competing automatic intro-music selection are replaced by one completion-driven presentation sequence using the existing text printer, cry/SE liveness and normal palette scheduler. Missing audio cannot strand the cosmetic scene. See [evolution introduction](evolution-and-hatch-presentation.md#completion-driven-intro-follow-up-2026-10-18). This corrects a confirmed presentation ordering difference; no progression/save defect was established. The next bounded Quest proposal is shared live transition cause/phase authority before recording door/warp phases, with an explicit seamless-border control case. Destination-only recordings cannot supply that distinction retrospectively. No such Quest implementation is included here.
+
+## Authenticated plain warp and connection follow-up
+
+The next bounded transition slice now supplies accepted movement causes, source-backed split-bank palette/task phases and actual music-stop timing to one live/recap renderer. Connected edges no longer receive a blanket map-change fade. Older unknown recordings remain unchanged. Complete animated-door/preview/weather transitions and seamless pixel continuity remain open; see [scope and validation](plain-field-transition-presentation.md).
