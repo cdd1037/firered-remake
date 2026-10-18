@@ -140,7 +140,7 @@ public sealed class SourceAnimationResources:IDisposable
         bool stats=commands.Any(c=>c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_StatsChange");
         if(metallic)_metallic??=new(File.ReadAllBytes(_materials["AnimTask_MetallicShine"]));
         if(stats)_statMask??=new(File.ReadAllBytes(_materials["AnimTask_StatsChange"]));
-        var backgrounds=commands.Where(c=>c.Op is "fadetobg" or "changebg").Select(c=>script.BackgroundSymbols[c.Args[0]]).Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Move(id));
+        var backgrounds=commands.Where(c=>c.Op is "fadetobg" or "changebg" or "fadetobgfromset").SelectMany(c=>c.Args.Take(c.Op=="fadetobgfromset"?2:1)).Select(name=>script.BackgroundSymbols[name]).Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Move(id));
         var overlays=script.OverlayDependencies.Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Overlay(id));
         var pixels=names.ToDictionary(id=>id,Asset);
         var spritePalettes=new Dictionary<int,ushort[]>();

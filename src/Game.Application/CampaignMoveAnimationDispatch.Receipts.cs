@@ -19,6 +19,7 @@ public static partial class CampaignMoveAnimationPresentation
                 x.Invocation.ChosenMove,x.Invocation.CurrentMove,x.Invocation.CalledMove,new((int)x.Invocation.Target),
                 x.Invocation.CancellerPhase,x.Invocation.Flags) { PpOwner=new((int)x.Invocation.PpOwner) }),
         WildBattleSleepTalkEvent x => new SourceSleepTalkEvent(x.Sequence,x.Turn,new((int)x.Side),x.CalledSlot,x.CalledMove),
+        WildBattleCalledSpikesChangedEvent x => new SourceCalledSpikesChangedEvent(x.Sequence,x.Turn,(BattleSide)x.Side,x.Before,x.After),
         WildBattleCalledPartyChangedEvent x => new SourceCalledPartyChangedEvent(x.Sequence,x.Turn,(BattleSide)x.Side,x.PartyIndex,x.Reason,x.Before,x.After),
         WildBattleCalledOverlayChangedEvent x => new SourceCalledOverlayChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Before,x.After),
         WildBattleCalledDelayedEvent x => new SourceCalledDelayedEvent(x.Sequence,x.Turn,new((int)x.Target),x.Move,x.Before,x.After,x.Reason,x.SourcePartyIndex),
@@ -55,6 +56,7 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleSubstituteDamagedEvent x => new SourceSubstituteDamagedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.HpBefore,x.HpAfter,x.Damage,x.Critical,x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter },
         WildBattleTowerVolatileEvent x => new SourceTowerVolatileEvent(x.Sequence,x.Turn,new((int)x.Side),x.Effect,x.Applied,x.Reason),
         WildBattleTransformedEvent x => new SourceTransformedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.OriginalSpecies,x.AppearanceSpecies,x.AppearancePersonality,x.AppearanceOriginalTrainerId,x.BattleView),
+        WildBattleYawnEvent x => new SourceYawnEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before,x.After,x.Reason),
         WildBattleTurnReadyEvent x => new SourceTurnReadyEvent(x.Sequence,x.Turn,x.RandomTurnNumber),
         _ => new UninterpretedAnimationReceipt(receipt.Sequence,receipt.Turn)
     };

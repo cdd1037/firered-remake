@@ -17,7 +17,7 @@ namespace FireRed.Tests.Application.WildBattles;
 public sealed class HornMoveAnimationDispatchTests
 {
     private static readonly (string Name, int Id, int Level, int Pp)[] Moves =
-        [("HORN_ATTACK", 30, 1, 25), ("FURY_ATTACK", 31, 15, 20), ("HORN_DRILL", 32, 100, 5)];
+        [("HORN_ATTACK", 30, 1, 25), ("FURY_ATTACK", 31, 15, 20), ("HORN_DRILL", 32, 100, 5), ("GUILLOTINE", 12, 100, 5)];
     private static MoveId Id(string name) => new("pret:MOVE_" + name);
     private static SourceMechanicsCatalog Mechanics =>
         TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
@@ -125,7 +125,7 @@ public sealed class HornMoveAnimationDispatchTests
     {
         var move = Moves.Single(m => m.Id == id);
         var bodies = Enumerable.Range(0, 4).Select(_ => NaturalMon("SNORLAX", 100, "DEFENSE_CURL") with { SpeedStage = 0 }).ToArray();
-        bodies[actor] = NaturalMon("RHYHORN", move.Level, move.Name) with { AccuracyStage = 12, SpeedStage = 12 };
+        bodies[actor] = NaturalMon(id==12?"KRABBY":"RHYHORN", move.Level, move.Name) with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
     private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
@@ -192,12 +192,12 @@ public sealed class HornMoveAnimationDispatchTests
             Assert.AreEqual("MOVE_TARGET_SELECTED", definition.Target);
             Assert.AreEqual(move.Id == 30 ? "EFFECT_HIT" : move.Id == 31 ? "EFFECT_MULTI_HIT" : "EFFECT_OHKO", definition.Effect);
             Assert.IsTrue(definition.Flags.Contains("FLAG_MAKES_CONTACT"));
-            Assert.AreEqual(move.Id != 32, definition.Flags.Contains("FLAG_KINGS_ROCK_AFFECTED"));
+            Assert.AreEqual(move.Id is not(12 or 32), definition.Flags.Contains("FLAG_KINGS_ROCK_AFFECTED"));
             Assert.AreEqual(0, definition.SecondaryEffectChance);
             SourceFourActionResult? result = null;
             // Ordering consumes its own source RNG. Discover a successful OHKO only after
             // running the real selection/order boundary, never by rewriting its receipts.
-            for (uint seed = 0; seed < (move.Id == 32 ? 1024U : 1U); seed++)
+            for (uint seed = 0; seed < (move.Id is 12 or 32 ? 1024U : 1U); seed++)
             {
                 var candidate = Ordered(Frame(Bodies(move.Id, actor), seed), actor, target);
                 if (Hits(candidate.Events).Length > 0) { result = candidate; break; }
@@ -205,7 +205,7 @@ public sealed class HornMoveAnimationDispatchTests
             Assert.IsNotNull(result, "The bounded real turn must observe a successful horn invocation.");
             var pp = result.Events.OfType<SourcePpCommandEvent>().Single();
             Assert.AreEqual(move.Pp, pp.Before); Assert.AreEqual(move.Pp - 1, pp.After); Assert.AreEqual(1, pp.CommandCost);
-            if (move.Id == 32) Assert.AreEqual(0, result.Events.OfType<SourceHpChangedEvent>().Single().HpAfter);
+            if (move.Id is 12 or 32) Assert.AreEqual(0, result.Events.OfType<SourceHpChangedEvent>().Single().HpAfter);
             AssertReadOnly(result.State, result.Trace, () => AssertDispatches(result.Events, move.Id, actor, target));
         }
     }
@@ -236,7 +236,7 @@ public sealed class HornMoveAnimationDispatchTests
     [TestMethod]
     public void SubstituteBreakAndEarlyTargetKoRetainOnlyCommittedReceiptOwnership()
     {
-        foreach (int id in new[] { 30, 31, 32 })
+        foreach (int id in new[] { 30, 31, 32, 12 })
         for (int actor = 0; actor < 4; actor++)
         foreach (bool ko in new[] { false, true })
         {
@@ -270,7 +270,7 @@ public sealed class HornMoveAnimationDispatchTests
     [TestMethod]
     public void OneHpEndureCommitsAZeroLossVisualAndStopsOrdinaryMultihit()
     {
-        foreach (int id in new[] { 30, 31, 32 })
+        foreach (int id in new[] { 30, 31, 32, 12 })
         for (int actor = 0; actor < 4; actor++)
         {
             var bodies = Bodies(id, actor); int target = actor ^ 1;
@@ -286,11 +286,12 @@ public sealed class HornMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    public void HornDrillEndureAppliesBehindSubstituteAndKeepsTheZeroLossSubstituteReceipt()
+    [DataRow(32),DataRow(12)]
+    public void HornDrillEndureAppliesBehindSubstituteAndKeepsTheZeroLossSubstituteReceipt(int id)
     {
         for (int actor = 0; actor < 4; actor++)
         {
-            var bodies = Bodies(32, actor); int target = actor ^ 1;
+            var bodies = Bodies(id, actor); int target = actor ^ 1;
             bodies[target] = bodies[target] with { Enduring = true, Pokemon = bodies[target].Pokemon with { CurrentHp = 1 },
                 CalledVolatile = new() { SubstituteHp = 1 } };
             var result = Resolve(Frame(bodies, 0), actor, target);
@@ -298,14 +299,14 @@ public sealed class HornMoveAnimationDispatchTests
             Assert.AreEqual(1, sub.HpBefore); Assert.AreEqual(1, sub.HpAfter); Assert.AreEqual(0, sub.Damage);
             Assert.AreEqual(0, result.Events.OfType<SourceHpChangedEvent>().Count());
             Assert.IsTrue(result.Events.OfType<SourceDamageAdjustedEvent>().Single().Endured);
-            AssertDispatches(result.Events, 32, actor, target);
+            AssertDispatches(result.Events, id, actor, target);
         }
     }
 
     [TestMethod]
     public void ProtectAndNaturalGhostImmunityNeverCreateAnInvocation()
     {
-        foreach (int id in new[] { 30, 31, 32 })
+        foreach (int id in new[] { 30, 31, 32, 12 })
         for (int actor = 0; actor < 4; actor++)
         foreach (bool protect in new[] { false, true })
         {
@@ -320,7 +321,7 @@ public sealed class HornMoveAnimationDispatchTests
                 if (id == 31) Assert.AreEqual(0, result.Events.OfType<SourceMultiHitEvent>().Single().ActualHits);
             }
             else Assert.AreEqual(0, Hits(result.Events).Length);
-            if (id == 32) Assert.IsFalse(result.Trace.Any(t => t.Purpose.EndsWith(".ohko", StringComparison.Ordinal)),
+            if (id is 12 or 32) Assert.IsFalse(result.Trace.Any(t => t.Purpose.EndsWith(".ohko", StringComparison.Ordinal)),
                 "Protect/type immunity branches before Cmd_tryKO.");
             AssertReadOnly(result.State, result.Trace, () => AssertDenied(result.Events, protect ? "Protect" : "Normal/Ghost immunity"));
         }
@@ -342,18 +343,18 @@ public sealed class HornMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    [DataRow(0, 1, true)]
-    [DataRow(14, 29, true)]
-    [DataRow(193, 30, false)]
-    [DataRow(116, 100, false)]
-    public void HornDrillUsesStrictOriginalOhkoChanceAndNeverOrdinaryAccuracy(int seed, int sourceRoll, bool succeeds)
+    [DataRow(32,0, 1, true),DataRow(12,0,1,true)]
+    [DataRow(32,14, 29, true),DataRow(12,14,29,true)]
+    [DataRow(32,193, 30, false),DataRow(12,193,30,false)]
+    [DataRow(32,116, 100, false),DataRow(12,116,100,false)]
+    public void HornDrillUsesStrictOriginalOhkoChanceAndNeverOrdinaryAccuracy(int id, int seed, int sourceRoll, bool succeeds)
     {
         // Source Random + verbatim Cmd_tryKO reference, recorded in horn-dispatch source audit.
         // Equal levels: Random()%100+1 < 30, not <=30. Accuracy stages are irrelevant.
         for (int actor = 0; actor < 4; actor++)
         foreach (int accuracyStage in new[] { 0, 12 })
         {
-            var bodies = Bodies(32, actor); bodies[actor] = bodies[actor] with { AccuracyStage = accuracyStage };
+            var bodies = Bodies(id, actor); bodies[actor] = bodies[actor] with { AccuracyStage = accuracyStage };
             var result = Resolve(Frame(bodies, (uint)seed), actor, actor ^ 1);
             var ohko = result.Trace.Single(t => t.Purpose.EndsWith(".ohko", StringComparison.Ordinal));
             Assert.AreEqual(sourceRoll, ohko.Raw % 100 + 1);
@@ -363,7 +364,7 @@ public sealed class HornMoveAnimationDispatchTests
                 var hp = result.Events.OfType<SourceHpChangedEvent>().Single();
                 Assert.AreEqual(hp.HpBefore, hp.Damage); Assert.AreEqual(0, hp.HpAfter);
                 Assert.AreEqual(2, result.Trace.Length, "Successful tryKO reaches zero-chance seteffectwithchance.");
-                AssertReadOnly(result.State, result.Trace, () => AssertDispatches(result.Events, 32, actor, actor ^ 1));
+                AssertReadOnly(result.State, result.Trace, () => AssertDispatches(result.Events, id, actor, actor ^ 1));
             }
             else
             {
@@ -375,18 +376,19 @@ public sealed class HornMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    public void HornDrillSturdyAndHigherTargetLevelAreFailedInvocations()
+    [DataRow(32),DataRow(12)]
+    public void HornDrillSturdyAndHigherTargetLevelAreFailedInvocations(int id)
     {
         for (int actor = 0; actor < 4; actor++)
         foreach (bool sturdy in new[] { false, true })
         {
-            var bodies = Bodies(32, actor); int target = actor ^ 1;
+            var bodies = Bodies(id, actor); int target = actor ^ 1;
             if (sturdy)
             {
                 bodies[target] = NaturalMon("PINECO", 100, "TACKLE");
                 Assert.AreEqual("ABILITY_STURDY", bodies[target].Pokemon.AbilityId);
             }
-            else bodies[actor] = NaturalMon("RHYHORN", 38, "HORN_DRILL");
+            else bodies[actor] = NaturalMon(id==12?"KRABBY":"RHYHORN",id==12?34:38,id==12?"GUILLOTINE":"HORN_DRILL");
             var result = Resolve(Frame(bodies, 0), actor, target);
             Assert.AreEqual(sturdy ? "ohko-sturdy" : "ohko-level", result.Events.OfType<SourceMoveFailedEvent>().Single().Reason);
             Assert.AreEqual(0, Hits(result.Events).Length);

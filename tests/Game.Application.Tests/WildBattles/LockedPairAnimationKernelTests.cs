@@ -16,11 +16,11 @@ namespace FireRed.Tests.Application.WildBattles;
 [TestClass, TestCategory("Game")]
 public sealed class LockedPairAnimationKernelTests
 {
-    private static MoveId Move(int id) => Kernel.Id(id == 37 ? "THRASH" : "BIDE");
+    private static MoveId Move(int id) => Kernel.Id(id == 37 ? "THRASH" : id == 80 ? "PETAL_DANCE" : "BIDE");
     private static WildBattleCombatant[] Bodies(int id, int actor = 0)
     {
         var bodies = Enumerable.Range(0, 4).Select(_ => Kernel.Mon("WAILORD", "SPLASH", 100) with { SpeedStage = 0 }).ToArray();
-        bodies[actor] = Kernel.Mon(id == 37 ? "NIDOKING" : "PINECO", id == 37 ? "THRASH" : "BIDE") with { AccuracyStage = 12, SpeedStage = 12 };
+        bodies[actor] = Kernel.Mon(id == 37 ? "NIDOKING" : id == 80 ? "ODDISH" : "PINECO", id == 37 ? "THRASH" : id == 80 ? "PETAL_DANCE" : "BIDE", id == 80 ? 39 : 50) with { AccuracyStage = 12, SpeedStage = 12 };
         if (id == 117) bodies[actor ^ 1] = Kernel.Mon("RATTATA", "TACKLE", 20) with { AccuracyStage = 12, SpeedStage = 0 };
         return bodies;
     }
@@ -76,7 +76,7 @@ public sealed class LockedPairAnimationKernelTests
         var frame = substitute ? Body(first.State, actor ^ 1, b => b with { CalledVolatile = new() { SubstituteHp = 100 } }) : first.State;
         return (first, Envelope.Resolve(frame, actor, actor ^ 1));
     }
-    [TestMethod, DataRow(37), DataRow(117)]
+    [TestMethod, DataRow(37), DataRow(80), DataRow(117)]
     public void InitialPpOwnedBranchesUseTheirRealResultAcrossAllPresentPositions(int id)
     {
         foreach (bool single in new[] { false, true }) for (int actor = 0; actor < (single ? 2 : 4); actor++)
@@ -84,9 +84,24 @@ public sealed class LockedPairAnimationKernelTests
             var result = Envelope.Resolve(Kernel.Frame(Bodies(id, actor), single), actor, id == 117 ? actor : actor ^ 1);
             var used = result.Events.OfType<SourceMoveUsedEvent>().Single(); var pp = result.Events.OfType<SourcePpCommandEvent>().Single();
             Assert.AreEqual(Move(id), used.Move); Assert.AreEqual(pp.Before - pp.CommandCost, pp.After);
-            SourceBattleEvent outcome = id == 37 ? Envelope.Hits(result.Events).Single() : result.Events.OfType<SourceMtMoonVolatileEvent>().Single(e => e.Volatile == "called-bide" && e.Reason == "move");
+            SourceBattleEvent outcome = id != 117 ? Envelope.Hits(result.Events).Single() : result.Events.OfType<SourceMtMoonVolatileEvent>().Single(e => e.Volatile == "called-bide" && e.Reason == "move");
             Check(result.Events, single, id, used, outcome, CampaignMoveAnimationBoundary.AfterAttackText, id == 117 ? (byte)0 : null);
             if (id == 117) { Assert.AreEqual(used.Actor, used.Target); Assert.AreEqual(pp.Sequence + 1, outcome.Sequence); }
+        }
+    }
+    [TestMethod, DataRow(false), DataRow(true)]
+    public void PetalDanceRetainedRandomTargetUsesItsActualNoPpHitAndRejectsBorrowedReceipts(bool substitute)
+    {
+        foreach(bool single in new[]{false,true})for(int actor=0;actor<(single?2:4);actor++)
+        {
+            var first=Envelope.Resolve(Kernel.Frame(Bodies(80,actor),single),actor,actor^1);
+            Assert.AreEqual(WildBattleCalledLockKind.Rampage,first.State.Slots[actor].Registers.Turn!.Lock!.Kind);
+            var frame=first.State;
+            if(substitute)foreach(int target in single?new[]{actor^1}:new[]{actor^1,actor^3})frame=Body(frame,target,b=>b with{CalledVolatile=new(){SubstituteHp=100}});
+            var repeat=Envelope.Resolve(frame,actor,actor^1);var hit=Envelope.Hits(repeat.Events).Single();var attack=repeat.Events.OfType<SourceAttackStringEvent>().Single();
+            Assert.IsFalse(repeat.Events.Any(e=>e is SourceMoveUsedEvent or SourcePpCommandEvent));Assert.AreEqual(first.State.Slots[actor].Body!.Pokemon.Moves[0].CurrentPp,repeat.State.Slots[actor].Body!.Pokemon.Moves[0].CurrentPp);
+            var cue=Check(repeat.Events,single,80,attack,hit,CampaignMoveAnimationBoundary.AfterRetainedAttackText,null);Assert.AreEqual(substitute,cue.HitsSubstitute);Assert.AreNotEqual(cue.Actor.Side,cue.Target.Side);
+            int at=repeat.Events.IndexOf(hit);Deny(repeat.Events.RemoveAt(at),single);Deny(Shared.Number(repeat.Events.Insert(at,first.Events.OfType<SourcePpCommandEvent>().Single())),single);
         }
     }
     [TestMethod, DataRow(false), DataRow(true)]

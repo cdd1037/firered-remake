@@ -195,7 +195,7 @@ public static partial class CampaignMoveAnimationPresentation
              used.Actor.Side==used.Target.Side||action.Length<2||pp.Length!=1||action[0]!=pp[0]))
             return new(null,"unmatched-source-forced-invocation");
         bool chargeRelease=HasChargeAnimation(definition!);
-        if(chargeRelease&&(!AuthenticatedChargeRelease(battle,used)||action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Side==used.Actor&&e.Volatile=="called-charge")))return new(null,"unmatched-source-charge-release");
+        if(chargeRelease&&(!AuthenticatedChargeRelease(battle,used,definition,action)||action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Side==used.Actor&&e.Volatile=="called-charge")))return new(null,"unmatched-source-charge-release");
         if(battle.Slots == 4 && definition!.Target == "MOVE_TARGET_BOTH" && definition.Power > 0)
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
@@ -252,6 +252,8 @@ public static partial class CampaignMoveAnimationPresentation
             return GroundSpreadAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_HELPING_HAND" or "EFFECT_IMPRISON" or "EFFECT_TEETER_DANCE")
             return SupportStatusAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect is "EFFECT_YAWN" or "EFFECT_SKILL_SWAP" or "EFFECT_GRUDGE" or "EFFECT_SPIKES")
+            return UtilityAnimation(battle,used,attack,definition,action,pp);
         if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
             return new(null, "unmatched-source-pp-command");
         if(definition.Effect is "EFFECT_REFRESH" or "EFFECT_HEAL_BELL")

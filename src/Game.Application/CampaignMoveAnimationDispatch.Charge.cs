@@ -7,7 +7,7 @@ namespace Game.Application;
 public static partial class CampaignMoveAnimationPresentation
 {
     private static bool HasChargeAnimation(PokemonMoveDefinition definition)=>
-        definition.Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SKULL_BASH" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_SKY_ATTACK";
+        definition.Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SKULL_BASH" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_SKY_ATTACK" or "EFFECT_SOLAR_BEAM";
 
     // The first attackanimation precedes the charging text and has no attack
     // string. Its PP command is the launch snapshot, not a fabricated MoveUsed.
@@ -18,6 +18,7 @@ public static partial class CampaignMoveAnimationPresentation
         CampaignMoveAnimationDecision Deny()=>new(null,"unmatched-source-charge-setup");
         if(index==0||rows[index-1] is not SourcePpCommandEvent pp||Definition(pp.CurrentMove,moves) is not {} definition||
             !HasChargeAnimation(definition))return Deny();
+        if(definition.Effect=="EFFECT_SOLAR_BEAM"&&(definition.Power<=0||definition.Target!="MOVE_TARGET_SELECTED"))return Deny();
         if(!supports(definition.SourceMoveId,definition.Id.Value))return new(null,"script-outside-slice");
         int maxCost=definition.Target=="MOVE_TARGET_BOTH"?3:2;
         if(charge.Before!=0||charge.After!=1||charge.Side!=pp.Actor||charge.Turn!=pp.Turn||charge.Sequence<=pp.Sequence||
@@ -46,11 +47,12 @@ public static partial class CampaignMoveAnimationPresentation
             {MoveTurn=0,Boundary=CampaignMoveAnimationBoundary.BeforeChargeResult},"committed-source-charge-setup");
     }
 
-    private static bool AuthenticatedChargeRelease(Invocation battle,SourceMoveUsedEvent used)
+    private static bool AuthenticatedChargeRelease(Invocation battle,SourceMoveUsedEvent used,PokemonMoveDefinition definition,SourceBattleEvent[] action)
     {
         int marker=battle.EventIndex-2;
         if(marker<0||battle.Events[marker] is not SourceMtMoonVolatileEvent {Volatile:"called-charge",Before:1,After:0,Reason:"released"} released||
             released.Side!=used.Actor||released.Turn!=used.Turn||released.Sequence>=battle.Events[marker+1].Sequence)return false;
+        if(definition.Effect=="EFFECT_SOLAR_BEAM"&&!SolarChargePrefix(battle,used,definition,action,ref marker))return false;
         for(int i=marker-1;i>=0&&battle.Events[i].Turn==used.Turn&&!InvocationBoundary(battle.Events[i]);i--)
         {
             if(battle.Events[i] is SourcePpCommandEvent foreign&&foreign.Actor!=used.Actor)break;

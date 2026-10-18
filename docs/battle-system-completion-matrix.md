@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本294／354，其余60尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本302／354，其余52尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前166快照完整Presentation793／793通过，包含全部生成根逐帧合成；本次有界Application238／238通过。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709。这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
@@ -444,3 +444,9 @@ Maintained original-C generators exercise complete representative callback trace
 The affected sweep also caught an obsolete round-shadow family sound guard intercepting the older Explosion script. Its duplicate load/sound cases were removed so the existing shared metadata validator and Explosion command authority handle their respective commands; no additional sound-ID exception was introduced.
 
 Validation: solution refresh passed with zero warnings/errors (31.74 seconds, following the 53.20-second integrated build). Affected Application128/128 passed in6.6699 seconds. The107-row Presentation run passed106 and exposed the obsolete sound guard; the final affected25/25 refresh, including every generated root's every-frame compositor, passed in1.6093 minutes. Together these cover the107 affected rows after the correction. Maintained importer entrypoints4/4 passed in42.1023 seconds (charged7, cure8, psychic4 source checks, plus28 hit/explosion checks); changed producers passed exact regeneration. Generated catalog has294 unique positive roots, no duplicates, and Git contains no generated vector outputs. Logs: `/tmp/animation294-{final-refresh-build,application-final,presentation-final,presentation-refresh,import-gate}.log`.
+
+## 2026-10-18：302根有界批次
+
+新增Solar Beam76、Guillotine12、Petal Dance80、Ice Ball301、Yawn281、Skill Swap285、Grudge288、Spikes191。共享原始帧／仿射／线性玩家与场景对象所有权；新增三选背景操作按目标方选择前两项，第三项为未使用的Contest资源。Solar Beam分别证明普通蓄力／释放、晴天提前PP与继承蓄力回执；不从最终天气猜测调用。Utility结果验证使用原有逐事件回执，Spikes允许经验证的双打Pressure耗PP，Skill Swap保留双方覆盖字段。
+
+同一串行编译后Application160／160通过（8.36秒），受影响Presentation39／39通过（27.92秒），包含新根完整生命周期、原始C逐帧比较、共享场景／OAM及规范资源解析。Solar代表25场景与按需全量225场景使用同一比较器，全量1／1通过（4.66秒）。ResourceImport5／5通过（54.84秒），另有背景导入8／8。初次Presentation六处失败均为Utility测试的初始地形调色板、空背景ID及隐藏槽分配前提；修正夹具后全部原语义断言保留。生成期望仅保存在忽略目录，普通测试不运行C，缺失数据明确失败并给生成命令。未运行本批原生UI或真实声音验收。

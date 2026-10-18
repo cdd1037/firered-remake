@@ -66,6 +66,11 @@ public sealed partial class SourceBattleAnimation
             if(command.Args.Length!=2||Number(command.Args[1]) is <0 or >255||_script.BackgroundPalettes.Count==0||_initialBackgroundPalette is null)Fail(command,"Psychic palette task lacks source colors or priority.");
             return true;
         }
+        if(command.Op=="fadetobgfromset")
+        {
+            if(command.Args.Length!=3||command.Args.Any(a=>!_script.BackgroundSymbols.TryGetValue(a,out int id)||id is <0 or >255))Fail(command,"Background set requires three source byte identities.");
+            return true;
+        }
         if(command.Op is "fadetobg" or "changebg")
         {
             if(command.Args.Length!=1||!_script.BackgroundSymbols.ContainsKey(command.Args[0]))Fail(command,"Missing generated source background definition.");

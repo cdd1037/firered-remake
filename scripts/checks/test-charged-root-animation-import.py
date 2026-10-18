@@ -20,7 +20,7 @@ class ChargedRootAnimationImportTests(unittest.TestCase):
     self.assertEqual((op,args),(c['op'],c['args']))
   self.assertEqual(1,sum(c['op']=='choosetwoturnanim' for c in self.rows[143]['commands']));self.assertEqual(2,sum(c['op']=='jumpifmoveturn' for c in self.rows[255]['commands']))
   self.assertEqual({'SetSkyBg','UnsetSkyBg'},{c['args'][0] for c in self.rows[143]['commands'] if c['op']=='call'});self.assertEqual(18,self.pack['backgroundSymbols']['BG_SKY'])
-  self.assertNotIn(91,self.rows);self.assertNotIn(76,self.rows);self.assertNotIn(177,self.rows)
+  self.assertNotIn(91,self.rows);self.assertIn(76,self.rows);self.assertNotIn(177,self.rows)
  def test_spit_up_retained_duration_is_kept_in_original_branch_text(self):
   orbs=[c for c in self.rows[255]['commands'] if c['op']=='createsprite' and c['args'][0]=='gSpitUpOrbSpriteTemplate']
   self.assertEqual(20,len(orbs));self.assertEqual(8,sum(len(c['args'])==5 for c in orbs));self.assertEqual(12,sum(len(c['args'])==4 for c in orbs));self.assertEqual({'12'},{c['args'][4] for c in orbs if len(c['args'])==5})
