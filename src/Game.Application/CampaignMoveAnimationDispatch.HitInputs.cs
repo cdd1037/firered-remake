@@ -144,6 +144,16 @@ public static partial class CampaignMoveAnimationPresentation
             // move-power register. Animation turn is independent of ACK ownership.
             dispatch=dispatch with{MovePower=checked((ushort)definition.Power),MoveTurn=turn};
         }
+        if(definition.Effect=="EFFECT_PRESENT")
+        {
+            if(definition.Power!=1||definition.Type!="TYPE_NORMAL"||definition.Target!="MOVE_TARGET_SELECTED"||
+                hit.Turn!=used.Turn||CommittedHit(hit,battle.Slots) is not {} owned||owned.Actor!=used.Actor||owned.Target!=used.Target||owned.Move!=used.Move)
+                return new(null,"unmatched-source-present-hit");
+            var hp=hit switch{SourceHpChangedEvent h=>(h.HpBefore,h.HpAfter,h.Damage),SourceSubstituteDamagedEvent h=>(h.HpBefore,h.HpAfter,h.Damage),_=>throw new InvalidOperationException()};
+            if(hp.HpAfter!=Math.Max(0,(long)hp.HpBefore-hp.Damage))return new(null,"unmatched-source-present-damage");
+            dispatch=dispatch with{IsHealingMove=hp.Damage<=0};
+        }
+
         return new(dispatch,"committed-source-animation");
     }
 }

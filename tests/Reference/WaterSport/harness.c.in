@@ -1,0 +1,46 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8; typedef int8_t s8; typedef uint16_t u16; typedef int16_t s16; typedef uint32_t u32; typedef int32_t s32; typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define NUM_TASKS 16
+#define HEAD_SENTINEL 0xFE
+#define TAIL_SENTINEL 0xFF
+#define B_SIDE_PLAYER 0
+#define BATTLER_COORD_X_2 2
+#define BATTLER_COORD_Y_PIC_OFFSET 3
+#define sTransl_Speed data[0]
+#define sTransl_InitX data[1]
+#define sTransl_DestX data[2]
+#define sTransl_InitY data[3]
+#define sTransl_DestY data[4]
+#define sTransl_ArcAmpl data[5]
+@DEFINES@
+struct Sprite; typedef void (*SpriteCallback)(struct Sprite *); typedef void (*TaskFunc)(u8);
+struct SpriteTemplate { SpriteCallback callback; };
+struct Sprite {s16 x,y,x2,y2,data[8];bool8 inUse;u8 subpriority;SpriteCallback callback;};
+struct Task {TaskFunc func;bool8 isActive;u8 prev,next,priority;s16 data[16];};
+static struct Sprite gSprites[MAX_SPRITES];static struct Task gTasks[NUM_TASKS];
+static u8 gBattleAnimAttacker,gAnimVisualTaskCount;static u32 gRngValue;
+static int doubles,yoff,elevation,frame,allocated,instance[64],failures;
+static bool8 IsContest(void){return FALSE;}
+static u8 GetBattlerSide(u8 slot){return slot&1;}
+static int Base(u8 slot,int xy){static const int p[2][4][2]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};return p[doubles][slot][xy];}
+static u8 GetBattlerSpriteCoord(u8 slot,u8 coord){if(coord==2)return Base(slot,0);int y=(Base(slot,1)+yoff-((slot&1)?elevation:0))&255;if(!(slot&1))y+=8;return y>104?104:y;}
+static void Reserved(struct Sprite*s){(void)s;}
+static void AnimateSprite(struct Sprite*s){(void)s;} // Native dummy ANIM_END stays inert.
+static void AnimSmallWaterOrb(struct Sprite*s){abort();} // Replaced before dispatch.
+static const struct SpriteTemplate gSmallWaterOrbSpriteTemplate={AnimSmallWaterOrb};
+static void DestroySprite(struct Sprite*s){s->inUse=FALSE;}
+static u8 CreateSpriteAt(u8 slot,const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){struct Sprite*s=&gSprites[slot];memset(s,0,sizeof(*s));s->inUse=TRUE;s->callback=t->callback;s->x=x;s->y=y;s->subpriority=priority;instance[slot]=++allocated;return slot;}
+@PROTOTYPES@
+@TABLE@
+@FUNCTIONS@
+static void vector(const s16*d,int length){putchar('[');for(int i=0;i<length;i++)printf("%s%d",i?",":"",d[i]);putchar(']');}
+static void row(void){printf("{\"frame\":%d,\"alive\":%d,\"rng\":%u,\"allocated\":%d,\"task\":",frame,gTasks[0].isActive,gRngValue,allocated);vector(gTasks[0].data,16);printf(",\"sprites\":[");int separator=0;for(int slot=0;slot<64;slot++){struct Sprite*s=&gSprites[slot];if(!s->inUse||s->callback==Reserved)continue;if(separator++)putchar(',');printf("{\"slot\":%d,\"instance\":%d,\"phase\":%d,\"position\":[%d,%d],\"offset\":[%d,%d],\"data\":",slot,instance[slot],s->callback==AnimWaterSportDroplet_Step,s->x,s->y,s->x2,s->y2);vector(s->data,8);putchar('}');}puts("]}");}
+int main(int argc,char**argv){assert(argc==8);doubles=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gRngValue=(u32)strtoul(argv[3],NULL,10);yoff=atoi(argv[4]);elevation=atoi(argv[5]);int occupied=atoi(argv[6]),release=atoi(argv[7]);int battlers=doubles?4:2;assert(occupied>=0&&occupied+battlers<=64);ResetTasks();for(int i=0;i<battlers+occupied;i++){gSprites[i].inUse=TRUE;gSprites[i].callback=Reserved;}gAnimVisualTaskCount=1;assert(CreateTask(AnimTask_WaterSport,5)==0);gTasks[0].func(0);row();
+ for(frame=1;frame<1000;frame++){if(release&&frame==release)gSprites[63].inUse=FALSE;AnimateSprites();RunTasks();row();if(!gTasks[0].isActive){assert(gAnimVisualTaskCount==0);return 0;}}abort();}

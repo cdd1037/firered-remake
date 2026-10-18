@@ -148,7 +148,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({7, 8, 9, 14, 18, 43, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 58, 61, 62, 63, 71, 72, 73, 75, 81, 82, 83, 84, 85, 86, 88, 92, 100, 101, 102, 103, 104, 105, 109, 114, 116, 118, 121, 126, 127, 128, 129, 132, 135, 137, 139, 141, 142, 144, 145, 146, 147, 152, 155, 156, 157, 159, 160, 164, 169, 171, 172, 176, 178, 181, 184, 186, 187, 190, 192, 193, 200, 201, 202, 203, 204, 205, 208, 212, 213, 214, 219, 221, 223, 225, 231, 234, 235, 236, 240, 241, 249, 250, 257, 258, 259, 266, 269, 270, 272, 275, 282, 293, 294, 296, 297, 298, 302, 304, 307, 308, 313, 315, 316, 319, 320, 324, 328, 335, 336, 338, 341, 342, 343, 347, 350, 352},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({7, 8, 9, 14, 18, 43, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 58, 61, 62, 63, 71, 72, 73, 75, 80, 81, 82, 83, 84, 85, 86, 88, 92, 100, 101, 102, 103, 104, 105, 108, 109, 114, 116, 118, 121, 126, 127, 128, 129, 132, 134, 135, 137, 139, 141, 142, 144, 145, 146, 147, 152, 155, 156, 157, 159, 160, 164, 169, 171, 172, 176, 178, 181, 184, 186, 187, 190, 192, 193, 200, 201, 202, 203, 204, 205, 208, 212, 213, 214, 219, 221, 223, 225, 227, 230, 231, 234, 235, 236, 240, 241, 244, 249, 250, 257, 258, 259, 260, 261, 266, 268, 269, 270, 272, 274, 275, 282, 284, 293, 294, 295, 296, 297, 298, 302, 304, 307, 308, 313, 315, 316, 319, 320, 323, 324, 328, 335, 336, 338, 341, 342, 343, 346, 347, 350, 351, 352},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -465,5 +465,36 @@ class ElementalImportTests(unittest.TestCase):
    d=original(ref,path);return d.replace(b'SoundTask_PlayCryHighPitch,',b'SoundTask_UnknownCry,') if path=='data/battle_anim_scripts.s' else d
   with patch.object(imp,'read',side_effect=unknown):data,_=imp.build(REFERENCE)
   self.assertNotIn(336,{r['moveId'] for r in json.loads(data)['scripts']})
+
+ def test_water_sport_discovers_existing_indexed_orb_and_exact_sounds_without_new_materials(self):
+  scripts,_=imp.discover_scripts(REFERENCE);row=next(r for r in scripts if r['moveId']==346)
+  self.assertEqual('Move_WATER_SPORT',row['label']);self.assertEqual(['gSmallWaterOrbSpriteTemplate'],row['spriteDependencies'])
+  self.assertEqual({'SE_M_SURF':156},row['soundEffects']);self.assertEqual({'ANIM_TAG_GLOWY_BLUE_ORB':10268},row['spriteTags'])
+  self.assertEqual([['8'],['44'],['44'],['44']],[c['args'] for c in row['commands'] if c['op']=='delay'])
+  self.assertEqual([['AnimTask_WaterSport','5']],[c['args'] for c in row['commands'] if c['op']=='createvisualtask'])
+  self.assertEqual(3,sum(c['op']=='playsewithpan' for c in row['commands']))
+  self.assertEqual(['SE_M_SURF','SOUND_PAN_ATTACKER','SOUND_PAN_TARGET','+2','0'],next(c['args'] for c in row['commands'] if c['op']=='panse'))
+  self.assertFalse(any(c['op']=='createsprite' for c in row['commands']))
+  data,blobs=imp.build(REFERENCE);pack=json.loads(data)
+  orb=next(r for r in pack['spriteRecipes'] if r['template']=='gSmallWaterOrbSpriteTemplate')
+  self.assertEqual(('glowy-blue-orb','AnimSmallWaterOrb',8,8,False),(orb['asset'],orb['callback'],orb['width'],orb['height'],orb['blend']))
+  self.assertEqual([],orb['affineAnimations']);self.assertEqual([0],orb['loopStarts'])
+  self.assertEqual(32,len(blobs['glowy-blue-orb.4bpp']));self.assertEqual(32,len(blobs['glowy-blue-orb.pal16']))
+
+ def test_water_sport_raw_child_arc_rng_and_sole_task_scan_fail_closed(self):
+  commands=[dict(op='createvisualtask',args=['AnimTask_WaterSport','5'])];original=imp.read
+  changes=[(b'spriteId = CreateSprite(&gSmallWaterOrbSpriteTemplate, task->data[3], task->data[4], 10);',b'spriteId = CreateSprite(&gUnknownSpriteTemplate, task->data[3], task->data[4], 10);'),
+   (b'gSprites[spriteId].data[0] = 16;',b'gSprites[spriteId].data[0] = 15;'),
+   (b'sprite->data[2] = (Random() & 0x1F) - 16 + sprite->x;',b'sprite->data[2] = (Random() & 0x0F) - 16 + sprite->x;'),
+   (b'sprite->data[5] = ~(Random() & 7);',b'sprite->data[5] = ~(Random() & 3);'),
+   (b'gTasks[i].func == AnimTask_WaterSport_Step',b'gTasks[i].func == AnimTask_UnknownWaterStep'),
+   (b'gTasks[i].data[8]--;',b'gTasks[i].data[8]++;')]
+  for before,after in changes:
+   self.assertIn(before,original(REFERENCE,'src/battle_anim_water.c'))
+   def changed(reference,path):
+    data=original(reference,path);return data.replace(before,after) if path=='src/battle_anim_water.c' else data
+   with patch.object(imp,'read',side_effect=changed),self.assertRaises(ValueError):imp.water_sport_dependencies(REFERENCE,commands)
+  self.assertEqual(['gSmallWaterOrbSpriteTemplate'],imp.water_sport_dependencies(REFERENCE,commands))
+
 
 if __name__=='__main__':unittest.main()

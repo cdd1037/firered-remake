@@ -42,9 +42,9 @@ public sealed partial class SourceBattleAnimation
         }
         public void Cancel()
         {
-            var owners=Sprites.Select(s=>s.Owner!).Append(_current).OfType<SourceBattleAnimation>().Distinct().ToArray();
+            var owners=Sprites.Select(s=>s.Owner!).Concat(_dynamicSpriteGraphics.Values).Append(_current).OfType<SourceBattleAnimation>().Distinct().ToArray();
             foreach(var owner in owners)owner.Cancel();
-            Sprites.Clear();ResetScanlines();_current=null;_idleBattlers=null;
+            Sprites.Clear();_dynamicSpriteGraphics.Clear();ResetScanlines();_current=null;_idleBattlers=null;
             Order=Enumerable.Range(0,64).ToArray();Array.Fill(Y,160);
         }
     }

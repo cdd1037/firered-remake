@@ -1,0 +1,12 @@
+{
+  "src/battle_anim_fight.c": "343a674d3230233af2ecd681c104f550b13e51485b011534c1d60d68ba65f5f5",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
+  "include/battle_anim.h": "15d0a815fec54ed669e1cf7130d323070d799ecfba0f3a935da4b9c28d6f09a7",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "src/data/battle_anim.h": "c4cfe40d12623423e80d72946c4554783fc06b0d8cd80b48309295c475508ec1",
+  "src/graphics.c": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
+  "graphics/battle_anims/sprites/meteor.png": "37d7905d88c2266f54bb0ca91b51ed6930d36a30544740f6d32d12a7e6cd59de",
+  "graphics/battle_anims/sprites/flat_rock.png": "89c4aa0aa52b74c864a8d454e692871f7874a0a8e58565d860eed86c8a0651b5"
+}

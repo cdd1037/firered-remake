@@ -19,6 +19,8 @@ public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequenc
     public byte? FuryCutterCounter {get;init;}
     public byte? RolloutCounter {get;init;}
     public int? MoveDamage {get;init;}
+    // The source damage-register predicate, including a zero-damage result.
+    public bool? IsHealingMove {get;init;}
     public CampaignMoveAnimationBoundary Boundary {get;init;} = CampaignMoveAnimationBoundary.AfterAttackText;
     public bool AcknowledgesCurrentReceipt => Boundary is CampaignMoveAnimationBoundary.AfterAttackText or CampaignMoveAnimationBoundary.AfterCallerText or CampaignMoveAnimationBoundary.AfterRetainedAttackText;
     public long SnapshotSequence => PpSequence ?? AttackSequence ?? Sequence;
@@ -476,16 +478,28 @@ public static partial class CampaignMoveAnimationPresentation
             if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 150 or 300)
+        if(definition.Effect is "EFFECT_MUD_SPORT" or "EFFECT_WATER_SPORT")
         {
-            // Splash's source animation precedes its intentional nothing-happened
-            // message. Field sports animate only after the committed state change.
-            var results=action.Where(e=>move==150
-                ? e is SourceMoveFailedEvent splash&&splash.Actor==used.Actor&&splash.Target==used.Actor&&splash.Move==used.Move&&splash.Reason=="nothing-happened"&&splash.Sequence>pp[0].Sequence
-                : e is SourceMtMoonVolatileEvent sport&&sport.Side==used.Actor&&sport.Volatile=="mud-sport"&&sport.Before==0&&sport.After==1&&sport.Reason=="move"&&sport.Sequence>pp[0].Sequence).ToArray();
+            string sport=definition.Effect=="EFFECT_MUD_SPORT"?"mud-sport":"water-sport";
+            // settypebasedhalvers commits after ppreduce and before attackanimation.
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<2||action[0]!=pp[0]||
+                action[1] is not SourceMtMoonVolatileEvent changed||changed.Side!=used.Actor||
+                changed.Volatile!=sport||changed.Before!=0||changed.After!=1||changed.Reason!="move"||
+                changed.Sequence!=pp[0].Sequence+1||action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile==sport)!=1||
+                !CureMoveEndTail(action,2,used,battle.Slots))
+                return new(null,"unmatched-source-self-action-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_SPLASH")
+        {
+            // Splash intentionally animates before the nothing-happened message.
+            var results=action.OfType<SourceMoveFailedEvent>().Where(splash=>splash.Actor==used.Actor&&
+                splash.Target==used.Actor&&splash.Move==used.Move&&splash.Reason=="nothing-happened"&&splash.Sequence>pp[0].Sequence).ToArray();
             if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
+
         if(definition.Effect is "EFFECT_SLEEP" or "EFFECT_POISON" or "EFFECT_TOXIC" or "EFFECT_PARALYZE" or "EFFECT_WILL_O_WISP")
         {
             if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Actor==used.Target||used.Target.Value<0||used.Target.Value>=battle.Slots)
@@ -649,6 +663,8 @@ public static partial class CampaignMoveAnimationPresentation
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,
                 used.Actor,used.Target,false),"committed-source-animation");
         }
+        if(definition.Effect=="EFFECT_PRESENT"&&action.OfType<SourceRecoveredEvent>().Any(e=>e.Side==used.Target&&e.Move==used.Move))
+            return PresentRecoveryAnimation(battle,used,attack,definition,action,pp);
         var hits = action.Where(e => e is SourceHpChangedEvent h && h.Actor == used.Actor && h.Target == used.Target && h.Move == used.Move ||
             e is SourceSubstituteDamagedEvent s && s.Actor == used.Actor && s.Target == used.Target && s.Move == used.Move).ToArray();
         if (hits.Length != 1 || hits[0].Sequence <= pp[0].Sequence) return new(null, "unmatched-source-hit-result");

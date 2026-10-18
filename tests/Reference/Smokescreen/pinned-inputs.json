@@ -1,0 +1,13 @@
+{
+  "src/battle_anim_smokescreen.c": "d588ae484a4d09f6b7619b2d111487cb3ec6bd45c45c4e34cb4735e99ef1bacd",
+  "src/util.c": "de0b72b691ec879404be2391a4dfa4d6b5b633d3a919351e1693c88ad671bf09",
+  "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "graphics/battle_anims/sprites/smokescreen_impact.png": "c54b121a96c9419535de4d87d5a8eee6ad53d15629092e22469f4b9f1c6bb580",
+  "graphics/battle_anims/sprites/black_smoke.png": "2e95e06879fc7a91d1ea29b14baa97f5e5b640405fcbf0aca04197a389afa166",
+  "src/trig.c": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",
+  "src/battle_anim.c": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5"
+}

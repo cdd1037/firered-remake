@@ -20,7 +20,7 @@ public sealed partial class SourceBattleAnimation
         "gOctazookaBallSpriteTemplate" or "gZapCannonBallSpriteTemplate"=>"TranslateAnimSpriteToTargetMonLocation",
         "gToxicBubbleSpriteTemplate" or "gHealingBlueStarSpriteTemplate" or "gOctazookaSmokeSpriteTemplate" or "gExplosionSpriteTemplate"=>"AnimSpriteOnMonPos",
         "gWaterHitSplatSpriteTemplate"=>"AnimHitSplatBasic",
-        "gWaterGunProjectileSpriteTemplate" or "gEggThrowSpriteTemplate"=>"AnimThrowProjectile",
+        "gWaterGunProjectileSpriteTemplate" or "gEggThrowSpriteTemplate" or "gBlackBallSpriteTemplate"=>"AnimThrowProjectile",
         "gWaterGunDropletSpriteTemplate"=>"AnimWaterGunDroplet",
         "gSmallBubblePairSpriteTemplate"=>"AnimSmallBubblePair",
         "gZapCannonSparkSpriteTemplate"=>"AnimZapCannonSpark",
