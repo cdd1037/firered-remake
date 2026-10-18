@@ -1,5 +1,6 @@
 using Game.Application;
 using Game.Content;
+using Game.Domain.Options;
 using Game.Presentation.BattleAnimations;
 using Godot;
 
@@ -13,6 +14,10 @@ public partial class CampaignView
     private EvolutionScenePresentation? _evolutionAnimation;
     private bool _evolutionCommitRequested, _evolutionCompletionCue, _evolutionCryStarted;
     private double _evolutionFanfare;
+    private bool _evolutionIntroCueAvailable, _evolutionIntroTextPressed;
+    private string EvolutionSourceMusic => _evolutionAnimation is
+        { Phase: EvolutionScenePhase.Intro, IntroStage: not EvolutionIntroStage.BackgroundFade }
+        ? "MUS_NONE" : "MUS_EVOLUTION";
     private PretEvolutionScene? _evolutionSceneAssets;
     private readonly Dictionary<string, Texture2D> _evolutionSceneTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<Texture2D, SourcePixelAsset> _evolutionSourcePixels = new();
@@ -77,10 +82,14 @@ public partial class CampaignView
         _evolutionFanfare = Math.Max(0, _evolutionFanfare - delta);
         if (_evolutionAnimation is { Animating: true } animation && !_busy && !_lastCommandFault)
         {
-            var before = animation.Phase; animation.Advance(delta);
+            var before = animation.Phase;
+            bool held = Input.IsKeyPressed(Key.Enter) || Input.IsKeyPressed(Key.A) ||
+                Input.IsKeyPressed(Key.Backspace) || Input.IsKeyPressed(Key.B);
+            if (animation.Advance(delta, ReadEvolutionIntroSignals, DispatchEvolutionIntroCue, held, _evolutionIntroTextPressed) > 0)
+                _evolutionIntroTextPressed = false;
             if (before != animation.Phase)
             {
-                if (animation.Phase == EvolutionScenePhase.Spiral) { SourceMusic("MUS_EVOLUTION"); SourceSound("SE_M_MEGA_KICK"); }
+                if (animation.Phase == EvolutionScenePhase.Spiral) SourceSound("SE_M_MEGA_KICK");
                 if (animation.Phase == EvolutionScenePhase.Arc) SourceSound("SE_M_BUBBLE_BEAM2");
                 if (animation.Phase == EvolutionScenePhase.Circle) SourceSound("SE_SHINY");
                 if (animation.Phase == EvolutionScenePhase.Reveal) SourceSound("SE_M_PETAL_DANCE");
@@ -108,6 +117,37 @@ public partial class CampaignView
         QueueRedraw();
     }
 
+    private EvolutionIntroSignals ReadEvolutionIntroSignals()
+    {
+        if (_sourceAudio is null || _audioFaulted || !_evolutionIntroCueAvailable)
+            return EvolutionIntroSignals.Unavailable;
+        var audio = _sourceAudio.Snapshot();
+        // sound.c:IsSEPlaying observes both ordinary SE players, not just this cue.
+        return new(true, audio.Cry is { Playing: true },
+            audio.Effects.Any(effect => effect.SourcePlayer is 1 or 2 && effect.Playing));
+    }
+
+    private void DispatchEvolutionIntroCue(EvolutionIntroCue cue)
+    {
+        switch (cue)
+        {
+            case EvolutionIntroCue.Cry:
+                SourceCrySymbol(_session.State.Evolution!.Proposal.PreviousSpecies.Value.Replace("pret:", "", StringComparison.Ordinal));
+                // A missing/disabled/faulted cry must not strand the cosmetic scene.
+                // SourceCrySymbol/EnsureAudio retain their existing fault/missing evidence.
+                _evolutionIntroCueAvailable = _sourceAudio is not null && !_audioFaulted &&
+                    _sourceAudio.Snapshot().Cry is { Playing: true };
+                break;
+            case EvolutionIntroCue.Sound:
+                _evolutionIntroCueAvailable = EnsureAudio("MUS_EVOLUTION_INTRO");
+                if (_evolutionIntroCueAvailable) _sourceAudio!.PlaySoundEffect("MUS_EVOLUTION_INTRO");
+                break;
+            case EvolutionIntroCue.Music:
+                SourceMusic("MUS_EVOLUTION");
+                break;
+        }
+    }
+
     private void SynchronizeEvolutionView(CampaignState? before = null)
     {
         if (_session.State.Evolution is not { } scene)
@@ -127,10 +167,11 @@ public partial class CampaignView
             _evolutionIntroName = before?.Party.FirstOrDefault(p => p.InstanceId == scene.Proposal.InstanceId)?.Nickname
                 ?? _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId).Nickname;
             _evolutionCommitRequested = false; _evolutionCompletionCue = false; _evolutionCryStarted = false; _evolutionFanfare = 0;
+            _evolutionIntroCueAvailable = true; _evolutionIntroTextPressed = false;
             // Ordinary saved result pages must not propose or commit evolution a second time.
             _evolutionAnimation = scene.Stage == CampaignEvolutionStage.Proposal || scene.ItemUse is not null && scene.PageIndex == 0
-                ? new EvolutionScenePresentation(scene.ItemUse is null) : null;
-            if (_evolutionAnimation is not null) { SourceCrySymbol(scene.Proposal.PreviousSpecies.Value.Replace("pret:", "", StringComparison.Ordinal)); }
+                ? new EvolutionScenePresentation(scene.ItemUse is null, $"What? {_evolutionIntroName}\nis evolving!",
+                    _session.EffectiveOptions.TextSpeed switch { SourceTextSpeed.Slow => 8, SourceTextSpeed.Mid => 4, _ => 1 }) : null;
         }
         string key = $"{animationKey}:{scene.ProposalIndex}:{scene.Stage}:{scene.PageIndex}:{scene.PendingMoves.Length}";
         if (_evolutionViewKey == key) return;
@@ -148,6 +189,8 @@ public partial class CampaignView
         SynchronizeEvolutionView(); _held = null;
         bool confirm = key.Keycode is Key.Enter or Key.A;
         bool cancel = key.Keycode is Key.Backspace or Key.B;
+        if ((confirm || cancel) && _evolutionAnimation is { IntroTextComplete: false })
+            _evolutionIntroTextPressed = true;
         if (_wildNotice is not null)
         {
             if (confirm || cancel) _wildNotice = null;
@@ -267,7 +310,7 @@ public partial class CampaignView
             DrawEvolutionPokemon(scene, owned);
         }
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
-        string text = _evolutionAnimation?.Animating == true ? $"What? {_evolutionIntroName ?? owned.Nickname}\nis evolving!" : scene.Stage switch
+        string text = _evolutionAnimation?.Animating == true ? _evolutionAnimation.IntroVisibleText : scene.Stage switch
         {
             CampaignEvolutionStage.Proposal => $"What? {_evolutionIntroName ?? owned.Nickname}\nis evolving!",
             CampaignEvolutionStage.LearnMove => MoveLearningPrompt(scene.PendingMoves[0].Move),

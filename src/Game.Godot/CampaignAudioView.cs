@@ -119,7 +119,7 @@ public partial class CampaignView
         if (OpeningSourceMusic is {} openingMusic) return openingMusic;
         if(s.TeachyTv is not null)return s.Music;
         if(s.NpcTrade is {Phase:CampaignNpcTradePhase.Presenting})return "MUS_EVOLUTION";
-        if(s.Evolution is not null)return _evolutionAnimation?.Phase == EvolutionScenePhase.Intro ? "MUS_EVOLUTION_INTRO" : "MUS_EVOLUTION";
+        if(s.Evolution is not null)return EvolutionSourceMusic;
         if(s.EggHatch is {} hatch)return hatch.Stage==CampaignEggHatchStage.Animation&&EggHatchFrame<61?"MUS_EVOLUTION_INTRO":"MUS_EVOLUTION";
         if(PokemonLeagueMusic(s) is {} leagueMusic)return leagueMusic;
         if(s.OldManTutorial is not null)return s.Music;

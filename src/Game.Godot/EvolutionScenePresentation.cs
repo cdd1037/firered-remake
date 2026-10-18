@@ -4,6 +4,15 @@ using Game.Presentation.BattleAnimations;
 /// <summary>Read-only 60 Hz evolution scene. Never owns a Pokemon, inventory,
 /// gameplay RNG or an evolution decision.</summary>
 public enum EvolutionScenePhase { Intro, Spiral, Arc, Morph, Circle, Reveal, Complete, Cancelled }
+public enum EvolutionIntroStage { Text, Cry, Sound, BackgroundFade, Complete }
+public enum EvolutionIntroCue { Cry, Sound, Music }
+
+/// <summary>Current playback liveness, read again after every dispatched cue.
+/// Unavailable audio is explicit and never substitutes a guessed clip duration.</summary>
+public readonly record struct EvolutionIntroSignals(bool AudioAvailable, bool CryPlaying, bool SoundEffectsPlaying)
+{
+    public static EvolutionIntroSignals Unavailable => new(false, false, false);
+}
 public readonly record struct EvolutionSparkle(int X, int Y, int MatrixIndex, int Subpriority)
 {
     // evolution_graphics.c: reciprocal OAM matrices 0x3C0 through 0x100.
@@ -48,6 +57,9 @@ public sealed class EvolutionScenePresentation
 {
     public EvolutionScenePhase Phase { get; private set; } = EvolutionScenePhase.Intro;
     public int PhaseFrame { get; private set; }
+    public EvolutionIntroStage IntroStage { get; private set; } = EvolutionIntroStage.Text;
+    public string IntroVisibleText => _introText.VisibleText;
+    public bool IntroTextComplete => _introText.Complete;
     public int BackgroundFrame { get; private set; }
     public int PreviousScale { get; private set; } = 256;
     public int TargetScale { get; private set; } = 16;
@@ -65,15 +77,17 @@ public sealed class EvolutionScenePresentation
     // The up-flash mask 0xFFF90F1C excludes portrait banks 17/18 but includes
     // sparkle bank 20. The return mask 0xFFFF0F1C includes all three OBJ banks.
     public int SparkleWhiteCoefficient => Phase == EvolutionScenePhase.Reveal ? _fade?.ObjectBlend ?? 0 : 0;
+    private readonly SourceTextProgress _introText = new();
     private readonly bool _allowCancellation;
     private readonly ImmutableArray<(int Spawn, int Velocity, int Height)> _spray;
     private EvolutionPaletteFade? _fade;
     private double _fraction;
     private int _speed = 8;
     private bool _direction, _choose = true;
-    public EvolutionScenePresentation(bool canCancel, uint visualSeed = 0x45564F)
+    public EvolutionScenePresentation(bool canCancel, string introText, int textSpeed, uint visualSeed = 0x45564F)
     {
         _allowCancellation = canCancel;
+        _introText.Reset(introText, textSpeed);
         // Source Random() recurrence, privately seeded: no domain RNG reads or writes.
         int Random() { visualSeed = unchecked(visualSeed * 1103515245 + 24691); return (int)(visualSeed >> 16); }
         var spray = ImmutableArray.CreateBuilder<(int, int, int)>();
@@ -93,16 +107,21 @@ public sealed class EvolutionScenePresentation
         PreviousScale = 256; TargetScale = 0;
         return true;
     }
-    public void Advance(double seconds)
+    public int Advance(double seconds, Func<EvolutionIntroSignals> readIntroSignals,
+        Action<EvolutionIntroCue> dispatchIntroCue, bool speedButtonHeld = false, bool speedButtonPressed = false)
     {
         if (!double.IsFinite(seconds) || seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
         _fraction += Math.Min(seconds, .25) * 60;
         int frames = (int)(_fraction + 1e-9); _fraction -= frames;
-        AdvanceFrames(frames);
+        AdvanceFrames(frames, readIntroSignals, dispatchIntroCue, speedButtonHeld, speedButtonPressed);
+        return frames;
     }
-    public void AdvanceFrames(int frames)
+    public void AdvanceFrames(int frames, Func<EvolutionIntroSignals> readIntroSignals,
+        Action<EvolutionIntroCue> dispatchIntroCue, bool speedButtonHeld = false, bool speedButtonPressed = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(frames);
+        ArgumentNullException.ThrowIfNull(readIntroSignals);
+        ArgumentNullException.ThrowIfNull(dispatchIntroCue);
         for (int i = 0; i < frames && Animating; i++)
         {
             PhaseFrame++;
@@ -110,7 +129,12 @@ public sealed class EvolutionScenePresentation
             _fade?.AdvanceFrame();
             switch (Phase)
             {
-                case EvolutionScenePhase.Intro: if (PhaseFrame >= 90) Enter(EvolutionScenePhase.Spiral); break;
+                case EvolutionScenePhase.Intro:
+                    // Dispatch synchronously before the next snapshot. A multi-frame
+                    // host update must not reuse pre-cry/pre-SE "not playing" evidence.
+                    if (AdvanceIntro(readIntroSignals(), speedButtonHeld, speedButtonPressed && i == 0) is {} cue)
+                        dispatchIntroCue(cue);
+                    break;
                 case EvolutionScenePhase.Spiral: if (PhaseFrame >= 162) Enter(EvolutionScenePhase.Arc); break;
                 case EvolutionScenePhase.Arc: if (PhaseFrame >= 99) Enter(EvolutionScenePhase.Morph); break;
                 case EvolutionScenePhase.Morph:
@@ -134,6 +158,33 @@ public sealed class EvolutionScenePresentation
                     break;
             }
         }
+    }
+    private EvolutionIntroCue? AdvanceIntro(EvolutionIntroSignals signals, bool held, bool pressed)
+    {
+        // evolution_scene.c:675-709: printer EOS -> cry -> SE1/SE2 idle ->
+        // music + normal fade -> spiral. The initial terrain palette is not modeled.
+        switch (IntroStage)
+        {
+            case EvolutionIntroStage.Text:
+                _introText.AdvanceFrames(1, held, pressed);
+                if (!_introText.Complete) break;
+                IntroStage = EvolutionIntroStage.Cry;
+                return EvolutionIntroCue.Cry;
+            case EvolutionIntroStage.Cry:
+                if (signals.AudioAvailable && signals.CryPlaying) break;
+                IntroStage = EvolutionIntroStage.Sound;
+                return EvolutionIntroCue.Sound;
+            case EvolutionIntroStage.Sound:
+                if (signals.AudioAvailable && signals.SoundEffectsPlaying) break;
+                IntroStage = EvolutionIntroStage.BackgroundFade;
+                _fade = new(0, 16, 4);
+                return EvolutionIntroCue.Music;
+            case EvolutionIntroStage.BackgroundFade:
+                if (_fade is { Active: false })
+                { IntroStage = EvolutionIntroStage.Complete; Enter(EvolutionScenePhase.Spiral); }
+                break;
+        }
+        return null;
     }
     private void Enter(EvolutionScenePhase phase)
     {
