@@ -6,17 +6,37 @@ namespace Game.Presentation.BattleAnimations;
 public sealed class SourceCompletedBattlerState
 {
     private sealed record Pose(PixelPoint Offset,PixelPoint ObjectOffset,
-        SourceBattlerVisibilityFrame Visibility,SourceBattlerAffine Affine);
+        SourceBattlerVisibilityFrame? Visibility,SourceBattlerAffine Affine);
     private sealed record Material(AnimationBattler Geometry,SourcePixelAsset Pixels);
     private readonly Pose?[] _poses=new Pose?[4];
     private readonly Material?[] _materials=new Material?[4];
+    private readonly SourceBattlerVisibilityFrame?[] _retainedVisibility=new SourceBattlerVisibilityFrame?[4];
     private bool _doubles;
-    public bool HasState=>_poses.Any(p=>p is not null)||_materials.Any(m=>m is not null);
-    public int[] Slots=>Enumerable.Range(0,4).Where(i=>_poses[i] is not null||_materials[i] is not null).ToArray();
-    public void Clear(){Array.Clear(_poses);Array.Clear(_materials);}
+    public bool HasState=>_poses.Any(p=>p is not null)||_materials.Any(m=>m is not null)||_retainedVisibility.Any(v=>v is not null);
+    public int[] Slots=>Enumerable.Range(0,4).Where(i=>_poses[i] is not null||_materials[i] is not null||_retainedVisibility[i] is not null).ToArray();
+    public void Clear(){ClearTransient();Array.Clear(_retainedVisibility);}
+    /// <summary>Superseding invocations release transient geometry/materials, but a
+    /// separately authenticated visibility owner can survive unrelated animations.</summary>
+    public void ClearTransient(){Array.Clear(_poses);Array.Clear(_materials);}
+    public bool RetainVisibility(SourceAnimationFrame completed,int slot)
+    {
+        ValidateSlot(slot);
+        if(completed.Active||!Shape(completed)||!CleanMaterials(completed)||slot>=(completed.Doubles?4:2)||
+            HasState&&_doubles!=completed.Doubles)return false;
+        var visibility=Visibility(completed,slot);
+        if(!visibility.Present||!visibility.SpriteInvisible)return false;
+        _doubles=completed.Doubles;_retainedVisibility[slot]=visibility;
+        // Transfer flag ownership out of the transient pose. Releasing the hold
+        // cannot uncover a duplicate stale invisible flag from the same capture.
+        if(_poses[slot] is {} pose&&pose.Visibility==visibility)
+            _poses[slot]=pose.Offset==default&&pose.ObjectOffset==default&&pose.Affine==new SourceBattlerAffine(false,256,256)
+                ?null:pose with{Visibility=null};
+        return true;
+    }
+    public void DropVisibility(int slot){ValidateSlot(slot);_retainedVisibility[slot]=null;}
     public void DropSlot(int slot)
     {
-        ValidateSlot(slot);_poses[slot]=null;_materials[slot]=null;
+        ValidateSlot(slot);_poses[slot]=null;_materials[slot]=null;_retainedVisibility[slot]=null;
     }
     public bool HasMaterial(int slot){ValidateSlot(slot);return _materials[slot] is not null;}
     /// <summary>The displayed material-result receipt has caught up. Independent terminal
@@ -31,7 +51,7 @@ public sealed class SourceCompletedBattlerState
     public bool Capture(SourceAnimationFrame initial,SourceAnimationFrame completed,
         IReadOnlyDictionary<string,SourcePixelAsset>? materials=null)
     {
-        Clear();
+        ClearTransient();
         if(completed.Active||!Shape(initial)||!Shape(completed)||initial.Doubles!=completed.Doubles||
             !CleanMaterials(initial)||!CleanMaterials(completed))return false;
         int count=initial.Doubles?4:2;
@@ -48,6 +68,7 @@ public sealed class SourceCompletedBattlerState
             var beforePose=Read(initial,slot);var afterPose=Read(completed,slot);
             if(afterPose!=beforePose)poses[slot]=afterPose;
         }
+        if(_retainedVisibility.Any(v=>v is not null)&&_doubles!=initial.Doubles)return false;
         // Commit only after every changed slot has a complete detached replacement.
         _doubles=initial.Doubles;Array.Copy(poses,_poses,4);Array.Copy(heldMaterials,_materials,4);
         return HasState;
@@ -81,9 +102,11 @@ public sealed class SourceCompletedBattlerState
                 // Offsets include raw x/y plus x2/y2; ObjectOffsets retain the separate
                 // built-OAM latch. Neither can replace the other during idle sorting.
                 offsets[slot]=pose.Offset;objects[slot]=pose.ObjectOffset;
-                visibility[slot]=pose.Visibility with{Present=pose.Visibility.Present&&visibility[slot].Present};
+                if(pose.Visibility is {} flags)visibility[slot]=flags with{Present=flags.Present&&visibility[slot].Present};
                 affine[slot]=pose.Affine;
             }
+            if(_retainedVisibility[slot] is {} held)
+                visibility[slot]=held with{Present=held.Present&&visibility[slot].Present};
             if(_materials[slot] is {} material)
             {
                 if(ReferenceEquals(battlers,liveIdle.Battlers))battlers=(AnimationBattler[])battlers.Clone();

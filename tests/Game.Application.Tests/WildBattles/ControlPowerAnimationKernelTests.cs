@@ -15,7 +15,7 @@ namespace FireRed.Tests.Application.WildBattles;
 [TestClass, TestCategory("Game")]
 public sealed class ControlPowerAnimationKernelTests
 {
-    [TestMethod, DataRow(175), DataRow(269), DataRow(266), DataRow(213), DataRow(259)]
+    [TestMethod, DataRow(175), DataRow(179), DataRow(182), DataRow(247), DataRow(269), DataRow(266), DataRow(213), DataRow(259)]
     public void SelectedNaturalLearnersOwnOneRootAcrossEverySlotSinglesAndSelectedAllies(int id)
     {
         var definition = Kernel.Mechanics.Catalog.Moves[Move(id)]; Assert.AreEqual(id, definition.SourceMoveId); Assert.AreEqual(Spec(id).Effect, definition.Effect);
@@ -201,7 +201,7 @@ public sealed class ControlPowerAnimationKernelTests
         }
     }
 
-    [TestMethod, DataRow(175)]
+    [TestMethod, DataRow(175), DataRow(179), DataRow(247)]
     public void NewHitsUseActualSubstituteProtectImmunityAndMissReceipts(int id)
     {
         foreach (bool single in new[] { false, true }) foreach (string branch in new[] { "substitute", "protect", "immune", "miss" })
@@ -260,7 +260,7 @@ public sealed class ControlPowerAnimationKernelTests
         SourceHpChangedEvent hit => hit with { PreparedBasePower = power }, SourceSubstituteDamagedEvent sub => sub with { PreparedBasePower = power },
         _ => throw new InvalidOperationException() };
 
-    [TestMethod, DataRow(175)]
+    [TestMethod, DataRow(175), DataRow(179)]
     public void FlailFamilyCarriesFrozenPowerAtEverySourceHpThresholdIncludingSubstitute(int id)
     {
         foreach (bool single in new[] { false, true }) foreach (bool substitute in new[] { false, true })
@@ -284,7 +284,7 @@ public sealed class ControlPowerAnimationKernelTests
         }
     }
 
-    [TestMethod, DataRow(175)]
+    [TestMethod, DataRow(175), DataRow(179)]
     public void FlailFamilyRequiresLegalCommittedPowerAndNeverRecomputesItAfterShellBellHealing(int id)
     {
         foreach (bool single in new[] { false, true }) foreach (bool substitute in new[] { false, true })

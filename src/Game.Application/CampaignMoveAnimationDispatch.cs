@@ -44,10 +44,25 @@ public static partial class CampaignMoveAnimationPresentation
                     (events[index] is SourceHpChangedEvent hp&&hp.Actor==dispatch.Actor&&hp.Target==dispatch.Target||
                      events[index] is SourceSubstituteDamagedEvent sub&&sub.Actor==dispatch.Actor&&sub.Target==dispatch.Target);
         if(!anchor)return null;
+        // clearsemiinvulnerablebit changes status3, not the sprite's invisible
+        // flag. A successful release retains its actor's preceding charge pose
+        // until the authored callback/visible command restores it. Other slots
+        // still use the ordinary authenticated PP boundary.
+        int actorIndex=index;
+        if(dispatch.MoveTurn==1&&events[index] is SourcePpCommandEvent releasePp&&
+            SourceChargeRules.SemiInvulnerable(releasePp.CurrentMove)!=WildBattleSemiInvulnerable.None)
+        {
+            int attackIndex=-1;
+            for(int i=0;i<index;i++)if(events[i].Sequence==dispatch.AttackSequence){if(attackIndex>=0)return null;attackIndex=i;}
+            if(attackIndex<1||events[attackIndex] is not SourceAttackStringEvent text||text.Actor!=dispatch.Actor||text.CurrentMove!=releasePp.CurrentMove||
+                events[attackIndex-1] is not SourceMtMoonVolatileEvent {Volatile:"called-charge",Before:1,After:0,Reason:"released"} release||
+                release.Side!=dispatch.Actor||release.Turn!=text.Turn||release.Sequence>=text.Sequence)return null;
+            actorIndex=attackIndex-1;
+        }
         var visibility=new bool[entryChargeMoves.Count];
         for(int slot=0;slot<visibility.Length;slot++)
         {
-            var visible=CampaignHeldItemAnimationPresentation.SpriteVisibleAtResult(events,index,new(slot),entryChargeMoves);
+            var visible=CampaignHeldItemAnimationPresentation.SpriteVisibleAtResult(events,slot==dispatch.Actor.Value?actorIndex:index,new(slot),entryChargeMoves);
             if(visible is null)return null;
             visibility[slot]=visible.Value;
         }
@@ -562,6 +577,8 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-identification-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,identified.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
+        if(definition.Effect is "EFFECT_STOCKPILE" or "EFFECT_SWALLOW")
+            return StockpileAnimation(battle,used,attack,definition,action,pp[0]);
         if(definition.Effect=="EFFECT_REST")
         {
             // trysetrest prints the sleep result and updates the status icon before

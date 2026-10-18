@@ -11,6 +11,7 @@ public partial class CampaignView
 {
     private readonly SourceBattleAnimation.SpriteScene _sourceSpriteScene=new();
     private readonly SourceCompletedBattlerState _sourceCompletedState=new();
+    private readonly CampaignChargeAnimationPoseLifetime _sourceChargePoseLifetime=new();
     private readonly Dictionary<int,PartyMemberKey> _sourceCompletedMembers=[];
     private SourceAnimationFrame? _sourceMoveInitialFrame;
     private IReadOnlyDictionary<string,SourcePixelAsset>? _sourceMoveMaterials;
@@ -41,8 +42,16 @@ public partial class CampaignView
         if(_sourceIdleSpritesPresented)PresentSourceMovePixels(composer.ComposeField(frame));
         QueueRedraw();
     }
-    private void ClearCompletedSourceState()
-    {_sourceCompletedState.Clear();_sourceCompletedMembers.Clear();_sourceMoveInitialFrame=null;_sourceMoveMaterials=null;_sourceCompletedMaterialSequence=null;}
+    private void ClearCompletedSourceState(bool preserveChargeVisibility=false)
+    {
+        if(preserveChargeVisibility)
+        {
+            _sourceCompletedState.ClearTransient();
+            foreach(int slot in _sourceCompletedMembers.Keys.Where(s=>!_sourceCompletedState.Slots.Contains(s)).ToArray())_sourceCompletedMembers.Remove(slot);
+        }
+        else{_sourceCompletedState.Clear();_sourceChargePoseLifetime.Clear();_sourceCompletedMembers.Clear();}
+        _sourceMoveInitialFrame=null;_sourceMoveMaterials=null;_sourceCompletedMaterialSequence=null;
+    }
     private PartyMemberKey SourceDisplayedMember(bool doubles,int slot)=>doubles
         ?_session.State.DoubleBattle!.DisplayedMembers[slot]
         :PresentedWildBattle!.DisplayBatch!.Display.Members[slot];
@@ -51,6 +60,17 @@ public partial class CampaignView
         if(!_sourceCompletedState.HasState)return;
         if(!doubles&&PresentedWildBattle is null){ClearCompletedSourceState();return;}
         bool changed=false;
+        var chargeEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
+        long? currentChargeReceipt=doubles?_session.State.DoubleBattle!.CurrentEvent?.Sequence:WildCurrentEvent(PresentedWildBattle!)?.Sequence;
+        // No source MOVEEND visibility receipt is exposed. The charge-owned hold
+        // is released conservatively after the complete result batch is ACKed,
+        // never at the earlier status3-clear marker or while result text is open.
+        while(_sourceChargePoseLifetime.Observe(chargeEvents,currentChargeReceipt) is {} releasedSlot)
+        {
+            _sourceCompletedState.DropVisibility(releasedSlot);
+            if(!_sourceCompletedState.Slots.Contains(releasedSlot))_sourceCompletedMembers.Remove(releasedSlot);
+            changed=true;
+        }
         // Singles applies the receipt before exposing it; doubles applies it on ACK.
         // Until then the terminal material belongs to the completed visual invocation.
         long? displayedSequence=doubles?_session.State.DoubleBattle!.CurrentEvent?.Sequence:WildCurrentEvent(PresentedWildBattle!)?.Sequence;
@@ -73,7 +93,7 @@ public partial class CampaignView
                 WildBattlePlayerSwitchedEvent=>slot==0&&!WildWithdrawing(PresentedWildBattle!),
                 _=>false
             };
-            if(replaced){_sourceCompletedState.DropSlot(slot);_sourceCompletedMembers.Remove(slot);changed=true;}
+            if(replaced){_sourceChargePoseLifetime.DropSlot(slot);_sourceCompletedState.DropSlot(slot);_sourceCompletedMembers.Remove(slot);changed=true;}
             else if(materialCommitted&&_sourceCompletedState.HasMaterial(slot)){_sourceCompletedState.DropMaterial(slot);changed=true;}
         }
         if(materialCommitted)_sourceCompletedMaterialSequence=null;
@@ -335,7 +355,7 @@ public partial class CampaignView
         {
             Write("sourceMoveAnimationUnavailable",new{dispatch,e.Diagnostic});return false;
         }
-        ClearCompletedSourceState();_sourceMoveInitialFrame=_sourceMoveAnimationGate.Current!.Snapshot();_sourceMoveMaterials=assets;
+        ClearCompletedSourceState(preserveChargeVisibility:true);_sourceMoveInitialFrame=_sourceMoveAnimationGate.Current!.Snapshot();_sourceMoveMaterials=assets;
         _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds,overlays:resolved.Overlays);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();return true;
@@ -372,8 +392,12 @@ public partial class CampaignView
             // sees no pending continuation; the gameplay move transaction is never replayed.
             var completed=_sourceMoveAnimationGate.Current!.Snapshot();
             int finishedFrame=completed.Frame;
-            if(_sourceMoveInitialFrame is {} initial&&_sourceCompletedState.Capture(initial,completed,_sourceMoveMaterials))
-                foreach(int slot in _sourceCompletedState.Slots)_sourceCompletedMembers[slot]=SourceDisplayedMember(_sourceMoveDoubles,slot);
+            var completedEvents=_sourceMoveDoubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
+            if(completed.BattlerVisibility.Any(v=>v.Slot==pending.Actor.Value&&!v.SpriteInvisible)&&_sourceChargePoseLifetime.CompleteRelease(pending,completedEvents))_sourceCompletedState.DropVisibility(pending.Actor.Value);
+            if(_sourceMoveInitialFrame is {} initial)_sourceCompletedState.Capture(initial,completed,_sourceMoveMaterials);
+            if(_sourceChargePoseLifetime.Capture(pending,completedEvents)&&!_sourceCompletedState.RetainVisibility(completed,pending.Actor.Value))
+                _sourceChargePoseLifetime.DropSlot(pending.Actor.Value);
+            foreach(int slot in _sourceCompletedState.Slots)_sourceCompletedMembers[slot]=SourceDisplayedMember(_sourceMoveDoubles,slot);
             _sourceCompletedMaterialSequence=pending.ResultSequence;
             _sourceMoveInitialFrame=null;_sourceMoveMaterials=null;
             RetainResidualMoveSprites();

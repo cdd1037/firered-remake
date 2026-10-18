@@ -113,7 +113,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({2,3,4,5,6,11,13,20,21,22,23,24,25,26,27,28,29,34,35,36,37,38,40,41,42,50,64,65,66,67,70,77,78,79,89,99,111,117,122,125,130,131,136,140,150,154,161,162,165,167,175,189,197,198,207,210,216,218,222,228,232,237,238,239,246,251,252,263,265,273,280,289,292,299,300,303,305,306,309,310,317,321,327,331,333,337,339,345,348,353},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({2,3,4,5,6,11,13,19,20,21,22,23,24,25,26,27,28,29,34,35,36,37,38,40,41,42,50,64,65,66,67,70,77,78,79,89,99,111,117,122,125,130,131,136,140,150,154,161,162,165,167,175,179,182,189,197,198,207,210,216,218,222,228,232,237,238,239,246,247,251,252,254,256,263,265,273,280,289,291,292,299,300,303,305,306,309,310,317,321,327,331,333,337,339,340,345,348,353},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertTrue(any(c['op']=='end' for c in s['commands']));self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):

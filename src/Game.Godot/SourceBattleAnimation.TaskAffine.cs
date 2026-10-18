@@ -94,6 +94,8 @@ public sealed partial class SourceBattleAnimation
     {
         "AnimTask_MeditateStretchAttacker"=>"sAffineAnim_MeditateStretchAttacker",
         "AnimTask_Splash"=>"sSplashEffectAffineAnimCmds",
+        "AnimTask_StockpileDeformMon"=>"sStockpileDeformMonAffineAnimCmds",
+        "AnimTask_SwallowDeformMon"=>"sSwallowDeformMonAffineAnimCmds",
         "AnimTask_GrowAndShrink"=>"sGrowAndShrinkAffineAnimCmds",
         "AnimTask_DefenseCurlDeformMon"=>"DefenseCurlDeformMonAffineAnimCmds",
         "AnimTask_SlackOffSquish"=>"sSlackOffSquishAffineAnimCmds",
@@ -109,6 +111,8 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=count||Number(a[1]) is <0 or >255||(count>=3&&Number(a[2]) is <0 or >3)||(count==4&&Number(a[3]) is <0 or >32767))Fail(c,"Task affine operands differ.");
             if(!_script.TaskAffinePrograms.TryGetValue(programName,out var program))Fail(c,"Missing generated task affine program.");
             SourceTaskAffineProgram.Validate(program!);
+            if(a[0]=="AnimTask_StockpileDeformMon"&&!program!.SequenceEqual([new SourceTaskAffineCommand("frame",8,-8,0,12),new("frame",-16,16,0,12),new("frame",8,-8,0,12),new("loop",Count:1),new("end")]))Fail(c,"Stockpile source affine program differs.");
+            if(a[0]=="AnimTask_SwallowDeformMon"&&!program!.SequenceEqual([new SourceTaskAffineCommand("frame",0,6,0,20),new("frame",0,0,0,20),new("frame",7,-30,0,6),new("frame",0,0,0,20),new("frame",-2,3,0,20),new("end")]))Fail(c,"Swallow source affine program differs.");
             if(a[0]=="AnimTask_StretchTargetUp"&&!program!.SequenceEqual([new SourceTaskAffineCommand("frame",10,-13,0,10),new SourceTaskAffineCommand("frame",-10,13,0,10),new SourceTaskAffineCommand("end")]))Fail(c,"Target stretch source affine program differs.");
             return true;
         }
@@ -145,7 +149,7 @@ public sealed partial class SourceBattleAnimation
         if(TaskAffineProgramName(c.Args[0]) is not {} programName)return false;
         bool splash=c.Args[0]=="AnimTask_Splash";
         if(splash&&Number(c.Args[3])==0)return true;
-        int participant=c.Args[0]=="AnimTask_StretchTargetUp"?1:c.Args[0] is "AnimTask_GrowAndShrink" or "AnimTask_DefenseCurlDeformMon" or "AnimTask_MeditateStretchAttacker"?0:Number(c.Args[2]);
+        int participant=c.Args[0]=="AnimTask_StretchTargetUp"?1:c.Args[0] is "AnimTask_GrowAndShrink" or "AnimTask_DefenseCurlDeformMon" or "AnimTask_MeditateStretchAttacker" or "AnimTask_StockpileDeformMon" or "AnimTask_SwallowDeformMon"?0:Number(c.Args[2]);
         if(ResolveShakeParticipant(participant,false) is not {} slot)return true;
         var commands=_script.TaskAffinePrograms[programName];
         _tasks.Add(c.Args[0] switch

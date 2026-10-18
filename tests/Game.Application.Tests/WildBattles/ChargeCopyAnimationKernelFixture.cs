@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Game.Application;
 using Game.Domain.Battle;
 using Game.Domain.Ids;
@@ -11,12 +12,16 @@ using Envelope = FireRed.Tests.Application.WildBattles.OverlayHitAnimationKernel
 
 namespace FireRed.Tests.Application.WildBattles;
 
-// Actual public turn commands with natural source learners. Controlled speed,
+// Actual public turn commands with source-compatible learners. Controlled speed,
 // PP, status and substitute are integration fixtures, not natural-route evidence.
+// Dive uses a source-HM-compatible entrant because HM08 is not product-admitted.
 internal static class ChargeCopyAnimationKernelFixture
 {
     internal static readonly int[] All = [13, 130, 101, 102, 104, 354];
     internal static (string Name, string Species, string Effect) Spec(int id) => id switch {
+        19 => ("FLY", "PIDGEOT", "EFFECT_SEMI_INVULNERABLE"),
+        291 => ("DIVE", "WAILMER", "EFFECT_SEMI_INVULNERABLE"),
+        340 => ("BOUNCE", "SPOINK", "EFFECT_SEMI_INVULNERABLE"),
         13 => ("RAZOR_WIND", "NUZLEAF", "EFFECT_RAZOR_WIND"),
         130 => ("SKULL_BASH", "SQUIRTLE", "EFFECT_SKULL_BASH"),
         101 => ("NIGHT_SHADE", "GASTLY", "EFFECT_LEVEL_DAMAGE"),
@@ -29,9 +34,22 @@ internal static class ChargeCopyAnimationKernelFixture
     internal static WildBattleCombatant[] Bodies(int id, int actor = 0)
     {
         var bodies = Enumerable.Range(0, 4).Select(_ => Kernel.Mon("WAILORD", "SPLASH", 100) with { SpeedStage = 0 }).ToArray();
-        var spec = Spec(id); var user = id == 315 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "TM50", spec.Name, "SCRATCH") : Kernel.Mon(spec.Species, spec.Name);
+        var spec = Spec(id); var user = id == 291 ? DiveSourceCompatibleEntrant() : id == 19 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "HM02", spec.Name, "GUST") : id == 315 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "TM50", spec.Name, "SCRATCH") : Kernel.Mon(spec.Species, spec.Name);
         bodies[actor] = user with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
+    }
+    private static WildBattleCombatant DiveSourceCompatibleEntrant()
+    {
+        var body=Kernel.Mon("WAILMER","SPLASH",100);
+        // Source evidence only: no natural level-up/egg learner has Dive in this
+        // revision. Wailmer is HM08-compatible, while the campaign deliberately
+        // omits that item. This controlled legal entrant does not replay teaching,
+        // trading, or a natural route, and does not expand any product catalog.
+        string source=File.ReadAllText(Path.Combine(TestAssets.Root,"content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h"));
+        var row=Regex.Match(source,@"\[SPECIES_WAILMER\]\s*=\s*TMHM_LEARNSET\(.*?\)\),",RegexOptions.Singleline);
+        Assert.IsTrue(row.Success);Assert.IsTrue(row.Value.Contains("TMHM(HM08_DIVE)",StringComparison.Ordinal));
+        var move=Kernel.Id("DIVE");int pp=Kernel.Mechanics.Catalog.Moves[move].Pp;
+        return body with{Pokemon=body.Pokemon with{Moves=[new(move,pp,pp)]}};
     }
     internal static SourceBattleFrame Body(SourceBattleFrame frame, int slot, Func<WildBattleCombatant, WildBattleCombatant> change)
     {

@@ -18,6 +18,10 @@ public sealed class PowerGuardAnimationTests
     }
     [TestMethod]
     [DataRow(175,80)]
+    [DataRow(179,20)]
+    [DataRow(179,200)]
+    [DataRow(182,80)]
+    [DataRow(247,80)]
     public void EverySourceBranchResolvesRendersAndReplaysAcrossSidesAndDoubles(int move,int power)
     {
         using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(move);
@@ -43,6 +47,10 @@ public sealed class PowerGuardAnimationTests
     }
     [TestMethod]
     [DataRow(175,80)]
+    [DataRow(179,20)]
+    [DataRow(179,200)]
+    [DataRow(182,80)]
+    [DataRow(247,80)]
     public void CancellationAtEveryTickRestoresSharedSceneAndAffineState(int move,int power)
     {
         using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(move);var battlers=Battlers(true);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);foreach(var b in battlers)assets.Add(b.Asset,new(64,64,Enumerable.Repeat((ushort)0x83e0,4096).ToArray()));var cue=Cue(move,power);var length=new SourceBattleAnimation(resolved.Script,cue,battlers,true,new Audio(),spriteMaterials:assets);int ticks=0;while(length.Active&&ticks++<700)length.Tick();Assert.IsFalse(length.Active);

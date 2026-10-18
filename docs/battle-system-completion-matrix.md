@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本273／354，其余81尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本286／354，其余68尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前166快照完整Presentation793／793通过，包含全部生成根逐帧合成；本次有界Application238／238通过。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709。这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
@@ -420,3 +420,15 @@ Fake Out adds a bounded shared WIN0/color-effect state. Its original task and VB
 Elemental metadata discovery is now reusable without generating pixels. The background producer defers to that discovered ownership, fixing a regeneration overlap introduced when Teleport's callback became available; no copied move-ID exclusion table or manual generated-row filtering was added. Existing generated rows/materials are unchanged except the two new roots and one existing-art fist recipe.
 
 Validation: solution build85.33s, bounded test-project refreshes8.82s/9.89s/8.35s, all zero warnings/errors. Final Presentation66/66 (17.78s) and Application20/20 (4.67s) passed. Initial failures were test fixtures: opponent literal63 panning negates to−63; Fake Out requires an ordered flinch queue; the immune queued Gastly needed a legal self-target move (natural Destiny Bond) rather than Lick. Runtime/golden assertions were not weakened. Focus import6/6, window import3/3, background suite15/15 and physical regeneration/inventory1/1 passed; the initial mistyped unittest method lookup is retained as a failed command, not counted. Logs: `/tmp/animation278-{build,application-verified,presentation-final,focus-import,fakeout-import,background-import,physical-inventory-verified}.log`. No full Presentation, full application, native-window, audio-output or download claim is added.
+
+## Round-shadow charge, orb-defense and restored local inputs — 286 roots
+
+Adds Fly19, Reversal179, Protect182, Shadow Ball247, Stockpile254, Swallow256, Dive291 and Bounce340. Existing PowerGuard callbacks close three roots using restored pinned local inputs; OrbDefense and RoundShadowCharge reuse the canonical resolver, shared sprite/affine players and scene-owned lifetimes. No duplicate support-ID table or gameplay RNG is introduced.
+
+Stockpile authenticates the owned increment; Swallow authenticates the exact consumed stockpile count and positive recovery, preserving the committed count for animation context. Empty/full-HP failures do not borrow a successful root. Charge setup and release have separate PP/marker owners. Successful release callbacks restore their sprite; failed/status-cancelled release retains only its owned visibility through the actual clear batch's ACK. Sleep clears at public end-turn preparation rather than the earlier blocked-action page. The protocol has no dedicated native MOVEEND visibility receipt, so this conservative batch boundary remains an explicit presentation timing limit.
+
+Dive kernel fixtures use a source-HM08-compatible controlled Wailmer entrant. The campaign intentionally does not admit HM08 and has no natural level-up/egg Dive learner; these tests establish committed rule/animation behavior, not a new acquisition route. No machine/item admission changed.
+
+Original-C oracles retain 440 OrbDefense configurations / 18,210 rows and 210 RoundShadowCharge configurations / 15,050 rows with O0/O2 equality. Generated evidence is local and ignored under the shared governance; generators and explicit comparison tests are tracked. Source END parks its command index before the marker while the managed player parks on END; tests compare the explicit encoding without changing source vectors. Focused import checks OrbDefense6, Charge6 and physical inventory1 pass, and changed producer parity passes.
+
+Validation: refreshed solution build passed with zero warnings/errors (85.16 seconds); affected Application182/182 (7.5481 seconds), Presentation116/116 (35.7075 seconds). Initial failures exposed fixture HM availability, actual late sleep-clear ownership, resolver shared-impact dependency and equivalent affine-END register encoding; all corrected assertions retain genuine source values. No new native UI or real-speaker claim. Logs: `/tmp/animation286-{refresh-build,application-final,presentation-final}.log`.

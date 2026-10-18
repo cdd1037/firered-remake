@@ -47,7 +47,7 @@ public partial class CampaignView
             sound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceResultAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan})):null;
             return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio(),battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets);
         }))return;
-        ClearCompletedSourceState();
+        ClearCompletedSourceState(preserveChargeVisibility:true);
         _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask,backgroundSurface:SourceTerrainSurface(assets["background"]));_sourceResultContinuation=dispatch;_sourceResultCompleted=false;
         _sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceResultAnimationGate.Current!.Tick());
