@@ -21,18 +21,20 @@ public sealed class SourceBattleFrameComposer
     private readonly SourceMetallicMaterial? _metallicMaterial;
     private readonly SourceAnimationBackgroundSurface? _backgroundSurface;
     private readonly IReadOnlyDictionary<int,SourceBackgroundAsset> _moveBackgrounds;
+    private readonly IReadOnlyDictionary<string,SourceOverlayAsset> _overlays;
     private int _backgroundRevision;
     private readonly ushort[] _objectLayer=new ushort[Width*112],_objectPixels=new ushort[Width*112];
     private readonly bool[] _objectTranslucency=new bool[Width*112];
-    private readonly byte[] _backgroundPriorities=new byte[Width*112],_objectPriorities=new byte[Width*112];
-    public SourceBattleFrameComposer(IReadOnlyDictionary<string,SourcePixelAsset> assets,AnimationBattler[] battlers,SourceStatMaskMaterial? statMaterial=null,SourceMetallicMaterial? metallicMaterial=null,SourceAnimationBackgroundSurface? backgroundSurface=null,IReadOnlyDictionary<int,SourceBackgroundAsset>? moveBackgrounds=null)
+    private readonly byte[] _objectPriorities=new byte[Width*112],_baseLayerMasks=new byte[Width*112];
+    private readonly ushort[][] _battlerBackgroundLayers=[new ushort[Width*112],new ushort[Width*112]];
+    public SourceBattleFrameComposer(IReadOnlyDictionary<string,SourcePixelAsset> assets,AnimationBattler[] battlers,SourceStatMaskMaterial? statMaterial=null,SourceMetallicMaterial? metallicMaterial=null,SourceAnimationBackgroundSurface? backgroundSurface=null,IReadOnlyDictionary<int,SourceBackgroundAsset>? moveBackgrounds=null,IReadOnlyDictionary<string,SourceOverlayAsset>? overlays=null)
     {
         foreach(var (id,asset) in assets)
         {
             if(asset.Width is <1 or >240||asset.Height is <1 or >512||asset.Pixels.Length!=asset.Width*asset.Height)throw new InvalidDataException("Campaign animation asset shape differs.");
             _assets.Add(id,asset);
         }
-        _battlers=battlers;_statMaterial=statMaterial;_metallicMaterial=metallicMaterial;_backgroundSurface=backgroundSurface;_moveBackgrounds=moveBackgrounds??new Dictionary<int,SourceBackgroundAsset>();
+        _battlers=battlers;_statMaterial=statMaterial;_metallicMaterial=metallicMaterial;_backgroundSurface=backgroundSurface;_moveBackgrounds=moveBackgrounds??new Dictionary<int,SourceBackgroundAsset>();_overlays=overlays??new Dictionary<string,SourceOverlayAsset>();
         if(_assets["background"].Width!=240||_assets["background"].Height!=112||_assets["impact"].Width!=32||_assets["impact"].Height!=32)throw new InvalidDataException("Source field/impact shape differs.");
         foreach(var b in battlers)if(_assets[b.Asset].Width!=64||_assets[b.Asset].Height!=64)throw new InvalidDataException("Battler canvas differs.");
     }
@@ -53,7 +55,7 @@ public sealed class SourceBattleFrameComposer
             throw new InvalidDataException("Source selected battler material differs.");
         if(frame.BattlerBackgroundMosaic.Length!=2||frame.BackgroundMosaicHorizontal is <0 or >15||frame.BackgroundMosaicVertical is <0 or >15)
             throw new InvalidDataException("Source BG mosaic registers differ.");
-        var pixels=new ushort[Width*112];
+        var pixels=new ushort[Width*112];Array.Fill(_baseLayerMasks,(byte)8);
         var palettes=frame.PaletteBlends.ToDictionary(p=>p.Palette);
         if(_backgroundSurface is not null)
         {
@@ -65,11 +67,11 @@ public sealed class SourceBattleFrameComposer
                 else _backgroundSurface.Restore();
                 _backgroundRevision=background.Revision;
             }
-            _backgroundSurface.Render(pixels,240,112,background.ScrollX,background.ScrollY,background.ScreenSize,background.Darkening,frame.PaletteBlends,frame.InvertedPalettes,background.FadedPalette);
+            _backgroundSurface.Render(pixels,240,112,background.ScrollX,background.ScrollY,background.ScreenSize,background.Darkening,frame.PaletteBlends,frame.InvertedPalettes,background.FadedPalette,_baseLayerMasks,frame.BackgroundPaletteEntries);
         }
         else
         {
-            if(frame.MoveBackground is {Id:not null} or {Darkening:>0} or {ScrollX:not 0} or {ScrollY:not 0})throw new InvalidDataException("Move background requires its indexed source surface.");
+            if(frame.BackgroundPaletteEntries.Length>0||frame.MoveBackground is {Id:not null} or {Darkening:>0} or {ScrollX:not 0} or {ScrollY:not 0})throw new InvalidDataException("Move background requires its indexed source surface.");
         // The flattened terrain contains source BG palette banks 1..3 only. Every
         // admitted selector transforms all three identically. Fail closed if a later
         // script requests distinct banks; it then needs per-pixel bank provenance.
@@ -82,7 +84,7 @@ public sealed class SourceBattleFrameComposer
         // BG copies retain their original 64x64 tiles. PrepareBattlerSpriteForRotScale
         // can expose a distinct affine OBJ while this copy continues scrolling.
         if(frame.BattlerBackgroundPriorities.Length!=2||frame.BattlerBackgroundPriorities.Any(p=>p is <0 or >3))throw new InvalidDataException("Battler background priorities exceed source registers.");
-        var backgroundPriority=_backgroundPriorities;Array.Fill(backgroundPriority,(byte)3);
+        foreach(var backgroundLayer in _battlerBackgroundLayers)Array.Clear(backgroundLayer);
         var layer=_objectLayer;
         foreach(var b in battlers.Where(b=>b.Visible&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
         {
@@ -92,20 +94,26 @@ public sealed class SourceBattleFrameComposer
             Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,copy is null?palettes.GetValueOrDefault(16+b.Slot.Value):copy.Palette,copy?.Greyscale??frame.GreyscaleSlots.Contains(b.Slot.Value),copy?.Inverted??frame.InvertedPalettes.Contains(16+b.Slot.Value));
             if(frame.BattlerBackgroundMosaic[b.BackgroundRank-1])
                 MosaicBackground(layer,frame.BackgroundMosaicHorizontal+1,frame.BackgroundMosaicVertical+1);
-            int priority=frame.BattlerBackgroundPriorities[b.BackgroundRank-1];
-            for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0&&priority<=backgroundPriority[i]){pixels[i]=layer[i];backgroundPriority[i]=(byte)priority;}
+            var backgroundLayer=_battlerBackgroundLayers[b.BackgroundRank-1];
+            for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0)backgroundLayer[i]=layer[i];
+        }
+        if(frame.Overlay is {} overlay)
+        {
+            if(!_overlays.TryGetValue(overlay.MaterialId,out var material))throw new InvalidDataException("Source BG1 overlay material missing.");
+            material.Render(_battlerBackgroundLayers[0],Width,112,overlay.ScrollX,overlay.ScrollY,_backgroundSurface,frame.PaletteBlends,frame.InvertedPalettes,frame.BackgroundPaletteEntries);
+            if(frame.BattlerBackgroundMosaic[0])MosaicBackground(_battlerBackgroundLayers[0],frame.BackgroundMosaicHorizontal+1,frame.BackgroundMosaicVertical+1);
         }
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
         if(frame.Sprites.Any(s=>s.OamPriority is <0 or >3))throw new InvalidDataException("Object priority exceeds source hardware field.");
         var ordered=battlers.Where(b=>b.Visible&&(!frame.BackgroundSlots.Contains(b.Slot.Value)||frame.RestoredObjectSlots.Contains(b.Slot.Value)))
-            .Select(b=>(Priority:2,Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
-            .Concat(frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).Select(s=>(s.OamPriority,s.OamRank,(AnimationBattler?)null,(SourceVisualSpriteFrame?)s)));
-        foreach(var item in ordered.OrderByDescending(x=>x.Item1).ThenByDescending(x=>x.Item2))
+            .Select(b=>(Priority:2,Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Fragment:0,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
+            .Concat(frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).SelectMany(ExpandSubsprites).Select(p=>(Priority:p.Frame.OamPriority,Rank:p.Frame.OamRank,Fragment:p.Index,Battler:(AnimationBattler?)null,Sprite:(SourceVisualSpriteFrame?)p.Frame)));
+        foreach(var item in ordered.OrderByDescending(x=>x.Priority).ThenByDescending(x=>x.Rank).ThenByDescending(x=>x.Fragment))
         {
             Array.Clear(layer);bool blend;
-            if(item.Item3 is {} b)
+            if(item.Battler is {} b)
             {
                 int slot=b.Slot.Value;var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.ObjectOffsets.Length>slot?frame.ObjectOffsets[slot]:frame.Offsets[slot];
                 var matrix=frame.BattlerAffine.Length>slot?frame.BattlerAffine[slot]:new(false,256,256);
@@ -114,19 +122,52 @@ public sealed class SourceBattleFrameComposer
             }
             else
             {
-                var sprite=item.Item4!;blend=sprite.Blend;var center=new PixelPoint(sprite.Position.X+sprite.Offset.X,sprite.Position.Y+sprite.Offset.Y);
+                var sprite=item.Sprite!;blend=sprite.Blend;var center=new PixelPoint(sprite.Position.X+sprite.Offset.X,sprite.Position.Y+sprite.Offset.Y);
                 if(sprite.BattlerCopySlot>=0)
                 {
                     int slot=sprite.BattlerCopySlot;var matrix=new SourceBattlerAffine(false,sprite.Scale,sprite.Scale);
                     AffineBattler(layer,SpriteMaterial(sprite),center.X,center.Y,matrix,palettes.GetValueOrDefault(16+slot),frame.InvertedPalettes.Contains(16+slot),frame.GreyscaleSlots.Contains(slot));
                 }
-                else if(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate")AffineImpact(layer,SpriteMaterial(sprite),new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
+                else if(sprite.Subsprites.Length==0&&(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate"))AffineImpact(layer,SpriteMaterial(sprite),new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
                 else BlitSprite(layer,SpriteMaterial(sprite),sprite,0,0,false,SelectedSpritePalette(frame,sprite,SpriteMaterial(sprite)));
             }
-            for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Item1;}
+            for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Priority;}
         }
-        for(int i=0;i<pixels.Length;i++)if((objects[i]&0x8000)!=0&&objectPriority[i]<=backgroundPriority[i])
-            pixels[i]=translucent[i]&&frame.BlendEnabled?Blend(objects[i],pixels[i],frame.AlphaA,frame.AlphaB):objects[i];
+        if((frame.BlendFirstTargets&~63)!=0||(frame.BlendSecondTargets&~63)!=0)throw new InvalidDataException("Source alpha targets exceed hardware masks.");
+        if(frame.Overlay is null&&frame.BlendFirstTargets==0&&frame.BlendSecondTargets==63)
+        {
+            // The common source setalpha mode only blends semi-transparent OBJ.
+            // Keep its bounded fast path while sharing the same retained BG planes.
+            int p1=frame.BattlerBackgroundPriorities[0],p2=frame.BattlerBackgroundPriorities[1];
+            for(int i=0;i<pixels.Length;i++)
+            {
+                int priority=3;
+                if((_battlerBackgroundLayers[1][i]&0x8000)!=0){pixels[i]=_battlerBackgroundLayers[1][i];priority=p2;}
+                if((_battlerBackgroundLayers[0][i]&0x8000)!=0&&p1<=priority){pixels[i]=_battlerBackgroundLayers[0][i];priority=p1;}
+                if((objects[i]&0x8000)!=0&&objectPriority[i]<=priority)
+                    pixels[i]=translucent[i]&&frame.BlendEnabled?Blend(objects[i],pixels[i],frame.AlphaA,frame.AlphaB):objects[i];
+            }
+        }
+        else for(int i=0;i<pixels.Length;i++)
+        {
+            // Select the two frontmost visible layers. An unselected second layer
+            // blocks blending rather than allowing a search through it. OBJ wins
+            // equal BG priority; lower numbered BG wins a BG/BG tie.
+            ushort first=pixels[i],second=0;int firstKey=3*4+3,secondKey=int.MaxValue,firstMask=_baseLayerMasks[i],secondMask=0;
+            void Insert(ushort color,int priority,int rank,int mask)
+            {
+                if((color&0x8000)==0)return;
+                int key=priority*4+rank;
+                if(key<firstKey){second=first;secondKey=firstKey;secondMask=firstMask;first=color;firstKey=key;firstMask=mask;}
+                else if(key<secondKey){second=color;secondKey=key;secondMask=mask;}
+            }
+            Insert(_battlerBackgroundLayers[0][i],frame.BattlerBackgroundPriorities[0],1,2);
+            Insert(_battlerBackgroundLayers[1][i],frame.BattlerBackgroundPriorities[1],2,4);
+            Insert(objects[i],objectPriority[i],0,16);
+            bool selected=(firstMask&frame.BlendFirstTargets)!=0||(firstMask==16&&translucent[i]);
+            pixels[i]=frame.BlendEnabled&&selected&&(secondMask&frame.BlendSecondTargets)!=0
+                ?Blend(first,second,frame.AlphaA,frame.AlphaB):first;
+        }
         if(frame.StatMask is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} mask)
         {
             if(_statMaterial is null)throw new InvalidDataException("Source stat material missing.");
@@ -160,6 +201,31 @@ public sealed class SourceBattleFrameComposer
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;
     }
+    private static IEnumerable<(SourceVisualSpriteFrame Frame,int Index)> ExpandSubsprites(SourceVisualSpriteFrame frame)
+    {
+        if(frame.Subsprites.Length==0){yield return(frame,0);yield break;}
+        if(frame.Affine||frame.DoubleSize||frame.BattlerCopySlot>=0||frame.Subsprites.Length>128)
+            throw new InvalidDataException("Source subsprite mode is outside the non-affine OAM closure.");
+        // AddSubspritesToOamBuffer uses the parent's center, then each table's
+        // top-left offset. Table order is OAM order, not a new logical sprite.
+        for(int i=0;i<frame.Subsprites.Length;i++)
+        {
+            var part=frame.Subsprites[i];
+            if(part.X is <sbyte.MinValue or >sbyte.MaxValue||part.Y is <sbyte.MinValue or >sbyte.MaxValue||
+                !ValidObjectShape(part.Width,part.Height)||part.TileOffset is <0 or >1023||part.Priority is <0 or >3)
+                throw new InvalidDataException("Source subsprite table exceeds OAM fields.");
+            int x=(frame.Position.X+frame.Offset.X+(frame.HFlip?-(part.X+part.Width):part.X))&511;
+            int y=(frame.Position.Y+frame.Offset.Y+(frame.VFlip?-(part.Y+part.Height):part.Y))&255;
+            if(x>255)x-=512;if(y>=160)y-=256;
+            yield return(frame with{Position=new(x+part.Width/2,y+part.Height/2),Offset=default,
+                Width=part.Width,Height=part.Height,Tile=(frame.Tile+part.TileOffset)&1023,
+                OamPriority=part.Priority},i);
+        }
+    }
+    private static bool ValidObjectShape(int width,int height)=>(width,height) is
+        (8,8) or (16,16) or (32,32) or (64,64) or
+        (16,8) or (32,8) or (32,16) or (64,32) or
+        (8,16) or (8,32) or (16,32) or (32,64);
     private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null,bool greyscale=false,bool inverted=false)
     {
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
@@ -221,6 +287,7 @@ public sealed class SourceBattleFrameComposer
 
     private static ushort Blend(int pixel,int under,int eva,int evb)
     {
+        eva=Math.Clamp(eva,0,16);evb=Math.Clamp(evb,0,16);
         int result=0x8000;
         for(int shift=0;shift<=10;shift+=5)result|=Math.Min(31,((((pixel>>shift)&31)*eva+((under>>shift)&31)*evb)>>4))<<shift;
         return (ushort)result;

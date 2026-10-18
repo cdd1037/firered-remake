@@ -9,6 +9,36 @@ public sealed record SourceMoveBackgroundFrame(int? Id,int ScrollX,int ScrollY,i
 
 public sealed partial class SourceBattleAnimation
 {
+    private SourceAnimationOverlayFrame? _overlay;
+    private int _blendFirstTargets,_blendSecondTargets=63;
+    private void BeginOverlay(string materialId)
+    {
+        if(!_script.OverlayDependencies.Contains(materialId)||!_script.OverlayPalettes.TryGetValue(materialId,out var palette)||palette.Length!=16)
+            throw new InvalidDataException("Source BG1 overlay dependency is missing.");
+        _overlay=new(materialId,0,0);
+        // LoadPalette replaces the faded and unfaded source bank; it does not
+        // retain a blend or inversion from the previous owner of bank eight.
+        ClearBackgroundPaletteEntries(8);_paletteBlends.Remove(8);_invertedPalettes.Remove(8);
+    }
+    private void SetOverlayScroll(int x,int y)
+    {
+        if(_overlay is null)throw new InvalidOperationException("Source overlay is not loaded.");
+        _overlay=_overlay with{ScrollX=unchecked((ushort)x),ScrollY=unchecked((ushort)y)};
+    }
+    private void EndOverlay(bool clearBg1AndBg2)
+    {
+        _overlay=null;
+        if(clearBg1AndBg2)ClearBattlerBackgrounds();
+    }
+    private void SetAlphaBlend(int firstTargets,int secondTargets,int a,int b)
+    {
+        if((firstTargets&~63)!=0||(secondTargets&~63)!=0||a is <0 or >16||b is <0 or >16)
+            throw new InvalidDataException("Source alpha blend registers differ.");
+        _blendFirstTargets=firstTargets;_blendSecondTargets=secondTargets;_alphaA=a;_alphaB=b;_blendEnabled=true;
+    }
+    private void ClearAlphaBlend()
+    {_blendEnabled=false;_blendFirstTargets=0;_blendSecondTargets=63;_alphaA=_alphaB=0;}
+
     private int? _moveBackground;
     private ushort BackgroundScrollX {get;set;}
     private ushort BackgroundScrollY {get;set;}
@@ -67,7 +97,7 @@ public sealed partial class SourceBattleAnimation
     private void LoadBackgroundPalette(int? id)
     {
         int lastBank=id is null?4:2;
-        for(int bank=2;bank<=lastBank;bank++){_paletteBlends.Remove(bank);_invertedPalettes.Remove(bank);}
+        for(int bank=2;bank<=lastBank;bank++){ClearBackgroundPaletteEntries(bank);_paletteBlends.Remove(bank);_invertedPalettes.Remove(bank);}
         if(id is {} selected&&_script.BackgroundPalettes.TryGetValue(selected,out var colors))
         {
             if(colors.Length!=16)throw new InvalidDataException("Move background needs one source palette bank.");
@@ -93,7 +123,7 @@ public sealed partial class SourceBattleAnimation
             {
                 _counter=0;
                 if(owner._fadedBackgroundPalette is {} palette)
-                {ushort last=palette[11];for(int i=10;i>0;i--)palette[i+1]=palette[i];palette[1]=last;}
+                {ushort last=palette[11];for(int i=10;i>0;i--)palette[i+1]=palette[i];palette[1]=last;owner.ClearBackgroundPaletteEntries(2);}
             }
             if(unchecked((ushort)owner._animationArgs[7])==65535)Finished=true;
         }

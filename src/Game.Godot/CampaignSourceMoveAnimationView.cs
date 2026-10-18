@@ -115,7 +115,7 @@ public partial class CampaignView
             var current=_session.State.DoubleBattle!;
             if(_sourceVisualBattle!=current.Id){ResetSourceMoveAnimation("battle-replaced");_sourceVisualBattle=current.Id;}
             if(_sourceMoveContinuation is not null&&!SourceMoveContextMatches())CancelSourceMoveAnimation("context-changed");
-            if(TryStartSourceHitPresentation(true))return;
+            if(TryStartSourceResultMovePresentation(true))return;
             SynchronizeSourceResultPresentation();return;
         }
         var b=PresentedWildBattle;
@@ -144,16 +144,16 @@ public partial class CampaignView
             else if(e is WildBattleFaintedEvent faint)_sourceSubstituteHp[faint.Side]=0;
             _sourceVisualSequence=e.Sequence;
         }
-        if(TryStartSourceHitPresentation(false))return;
+        if(TryStartSourceResultMovePresentation(false))return;
         SynchronizeSourceResultPresentation();
     }
     private bool SourceMoveScriptAvailable(int id,string move)=>_sourceAnimationResources!.Scripts.TryGetValue(id,out var script)&&move.StartsWith("pret:MOVE_",StringComparison.Ordinal)&&script.Label=="Move_"+move[10..];
-    private bool TryStartSourceHitPresentation(bool doubles)
+    private bool TryStartSourceResultMovePresentation(bool doubles)
     {
         if(_sourceMoveContinuation is not null||_sourceResultContinuation is not null)return true;
         EnsureSourceMoveAssets();
-        var decision=doubles?CampaignMoveAnimationPresentation.AtHitResult(_session.State.DoubleBattle!,_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves,SourceMoveScriptAvailable):
-            CampaignMoveAnimationPresentation.AtHitResult(PresentedWildBattle!,SourceTrainerPresentationActive(PresentedWildBattle!),_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves,SourceMoveScriptAvailable);
+        var decision=doubles?CampaignMoveAnimationPresentation.AtResult(_session.State.DoubleBattle!,_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves,SourceMoveScriptAvailable):
+            CampaignMoveAnimationPresentation.AtResult(PresentedWildBattle!,SourceTrainerPresentationActive(PresentedWildBattle!),_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves,SourceMoveScriptAvailable);
         if(decision.Dispatch is not {} dispatch)return false;
         EnsureSourceMoveAssets();var (assets,battlers)=CreateSourceAnimationScene(doubles,dispatch);
         return StartSourceMoveAnimation(dispatch,assets,battlers,doubles);
@@ -200,7 +200,7 @@ public partial class CampaignView
             var geometry=sourceGeometry with{Asset="battler-"+(int)side,Visible=!SingleBattlerFaintShown(b,mon,side)};
             var center=geometry.Center(false);
             if(displayed.Position!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated campaign/source battler geometry differs.");
-            bool substitute=hit?.Target.Value==(int)side?hit.HitsSubstitute:_sourceSubstituteHp.GetValueOrDefault(side)>0;
+            bool substitute=hit is {Boundary:CampaignMoveAnimationBoundary.BeforeHitResult}&&hit.Target.Value==(int)side?hit.HitsSubstitute:_sourceSubstituteHp.GetValueOrDefault(side)>0;
             assets.Add(geometry.Asset,substitute?_sourceMoveAssets["substitute-"+face]:SourcePixels(displayed.Texture,64,64));
             if(substitute)geometry=geometry with{DisplayCenter=new(side==WildBattleSide.Player?72:176,side==WildBattleSide.Player?97:56)};
             battlers.Add(geometry);
@@ -222,7 +222,7 @@ public partial class CampaignView
             var geometry=sourceGeometry with{Slot=new(slot),Asset="battler-"+slot,Visible=!DoubleBattlerFaintShown(_session.State.DoubleBattle!,mon,slot)};
             var center=geometry.Center(true);
             if(displayed.Position+DoubleSpriteOffsets[slot]!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated doubles/source battler geometry differs.");
-            bool substitute=hit?.Target.Value==slot?hit.HitsSubstitute:body.CalledVolatile?.SubstituteHp>0;
+            bool substitute=hit is {Boundary:CampaignMoveAnimationBoundary.BeforeHitResult}&&hit.Target.Value==slot?hit.HitsSubstitute:body.CalledVolatile?.SubstituteHp>0;
             assets.Add(geometry.Asset,substitute?_sourceMoveAssets["substitute-"+face]:SourcePixels(displayed.Texture,64,64));
             if(substitute)
             {
@@ -267,7 +267,7 @@ public partial class CampaignView
         {
             Write("sourceMoveAnimationUnavailable",new{dispatch,e.Diagnostic});return false;
         }
-        _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
+        _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds,overlays:resolved.Overlays);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();return true;
     }

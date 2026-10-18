@@ -106,6 +106,35 @@ public sealed class SourceAnimationBackgroundTests
         Assert.AreEqual((ushort)0xc000, pixels[8]);
     }
     [TestMethod]
+    public void DirectFadedEntriesKeepIndexZeroAndUnselectedBanksAndPrecedeHardwareDarkening()
+    {
+        var tiles=new byte[64];Array.Fill(tiles,(byte)0x11,32,32);
+        var map=new byte[4096];
+        for(int bank=2;bank<=4;bank++)BinaryPrimitives.WriteUInt16LittleEndian(map.AsSpan((bank-2)*2),(ushort)((bank<<12)|1));
+        var surface=new SourceAnimationBackgroundSurface(new(tiles,map,Enumerable.Repeat((ushort)0x421,48).ToArray()),
+            Enumerable.Repeat((ushort)0x123,32).ToArray());
+        var entries=Enumerable.Range(1,15).Select(index=>new SourcePaletteEntry(32+index,0x7fff)).ToArray();
+        var pixels=new ushort[32];
+        surface.Render(pixels,32,1,blends:[new(2,16,31)],inverted:[2],fadedEntries:entries);
+        Assert.AreEqual((ushort)0xffff,pixels[0]);
+        Assert.AreEqual((ushort)0x8421,pixels[8]);Assert.AreEqual((ushort)0x8421,pixels[16]);
+        Assert.AreEqual((ushort)0x8123,pixels[24],"Index zero retains the backdrop palette.");
+        surface.Render(pixels,32,1,darkening:8,fadedEntries:entries);
+        Assert.AreEqual((ushort)(0x8000|SourceAnimationBackgroundSurface.Darken(0x7fff,8)),pixels[0]);
+        Assert.AreEqual((ushort)0x421,surface.PaletteColor(2,1),"Direct faded writes never mutate unfaded source colors.");
+    }
+    [TestMethod]
+    public void OverlayDirectWritesUseIndexedBankMembershipAndKeepTransparentPixels()
+    {
+        var tiles=new byte[32];Array.Fill(tiles,(byte)0x11);tiles[0]=0x10;
+        var map=new byte[2048];BinaryPrimitives.WriteUInt16LittleEndian(map,(ushort)(8<<12));
+        var overlay=new SourceOverlayAsset(tiles,map,Enumerable.Repeat((ushort)0x421,16).ToArray());
+        var pixels=new ushort[8];
+        overlay.Render(pixels,8,1,0,0,null,[new(8,16,31)],[],[new(129,0x3e0)]);
+        Assert.AreEqual((ushort)0,pixels[0]);
+        for(int i=1;i<8;i++)Assert.AreEqual((ushort)0x83e0,pixels[i]);
+    }
+    [TestMethod]
     public void HardwareDarkeningRoundsBeforeSubtractingAndPreservesOpacity()
     {
         Assert.AreEqual((ushort)0x421, SourceAnimationBackgroundSurface.Darken(0x421, 8));

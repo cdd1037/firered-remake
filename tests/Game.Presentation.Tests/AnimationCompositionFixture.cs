@@ -17,5 +17,5 @@ internal static class AnimationCompositionFixture
         SourceResolvedAnimation resolved,IReadOnlyDictionary<string,SourcePixelAsset> assets,
         AnimationBattler[] battlers,SourceAnimationBackgroundSurface? surface=null)
         =>new(assets,battlers,resolved.StatMask,resolved.Metallic,
-            surface??resources.CreateBackgroundSurface(0),resolved.Backgrounds);
+            surface??resources.CreateBackgroundSurface(0),resolved.Backgrounds,overlays:resolved.Overlays);
 }

@@ -6,7 +6,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Application;
 
-/// <summary>Read-only projection of a committed source invocation, consumed after its attack text.
+public enum CampaignMoveAnimationBoundary { AfterAttackText, BeforeHitResult, BeforeRecoveryResult }
+
+/// <summary>Read-only projection of a committed source invocation at its authored presentation boundary.
 /// It adds no Domain event, command, RNG draw, saved field or authoritative acknowledgement.</summary>
 public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequence, long AttackSequence,
     long PpSequence, long ResultSequence, int SourceMoveId, BattlerSlot Actor, BattlerSlot Target,
@@ -15,7 +17,8 @@ public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequenc
     public byte? MoveTurn {get;init;}
     public ushort? MovePower {get;init;}
     public int? MoveDamage {get;init;}
-    public bool AcknowledgesCurrentReceipt {get;init;} = true;
+    public CampaignMoveAnimationBoundary Boundary {get;init;} = CampaignMoveAnimationBoundary.AfterAttackText;
+    public bool AcknowledgesCurrentReceipt => Boundary == CampaignMoveAnimationBoundary.AfterAttackText;
 }
 public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch? Dispatch, string Reason);
 
@@ -68,8 +71,13 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_SPECIAL_DEFENSE_UP_2" => (WildBattleStat.SpecialDefense,2),
         _ => null
     };
-    private static string? FieldSettingAnimation(int move)=>move switch{54=>"mist",113=>"light-screen",115=>"reflect",258=>"hail",_=>null};
-    private static bool IsRecoveryAnimation(int move) => move is 105 or 135 or 208 or 235 or 303;
+    private static string? FieldSettingAnimation(PokemonMoveDefinition move)=>move.Effect switch
+    {
+        "EFFECT_MIST"=>"mist", "EFFECT_LIGHT_SCREEN"=>"light-screen", "EFFECT_REFLECT"=>"reflect",
+        "EFFECT_RAIN_DANCE"=>"rain", "EFFECT_SANDSTORM"=>"sandstorm", "EFFECT_SUNNY_DAY"=>"sun", "EFFECT_HAIL"=>"hail", _=>null
+    };
+    private static bool IsRecoveryAnimation(PokemonMoveDefinition move) => move.Effect is
+        "EFFECT_RESTORE_HP" or "EFFECT_SOFTBOILED" or "EFFECT_MORNING_SUN" or "EFFECT_SYNTHESIS" or "EFFECT_MOONLIGHT";
 
     private sealed record Invocation(string Id, SourceBattleEvent[] Events, int EventIndex, int Slots,
         Func<long?> GroupedResult, Func<int,CampaignStatAnimationDispatch?> StatResult);
@@ -121,7 +129,8 @@ public static partial class CampaignMoveAnimationPresentation
     }
 
     private static CampaignMoveAnimationDecision AtAttackText(Invocation battle,
-        IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
+        IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports,
+        CampaignMoveAnimationBoundary boundary = CampaignMoveAnimationBoundary.AfterAttackText)
     {
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
@@ -129,6 +138,8 @@ public static partial class CampaignMoveAnimationPresentation
         var definition = Definition(used.Move, moves);
         int move = definition?.SourceMoveId ?? 0;
         if (move == 0 || !supports(move,used.Move.Value)) return new(null, "script-outside-slice");
+        if(definition!.Effect=="EFFECT_REST"&&boundary!=CampaignMoveAnimationBoundary.BeforeRecoveryResult)
+            return new(null,"source-before-recovery-animation");
         if(MultiHitBounds(definition!) is not null)return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
@@ -257,6 +268,37 @@ public static partial class CampaignMoveAnimationPresentation
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
                 !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");
+        if(definition.Effect=="EFFECT_HAZE")
+        {
+            // The source resets changed stages in slot/stat order, then emits one
+            // all-stages-reset receipt even when every stage was already neutral.
+            var markers=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Volatile=="haze").ToArray();
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<2||action[0]!=pp[0]||markers.Length!=1||
+                markers[0].Side!=used.Actor||markers[0].Before!=0||markers[0].After!=0||markers[0].Reason!="all-stat-stages-reset")
+                return new(null,"unmatched-source-stat-reset-result");
+            int markerIndex=Array.IndexOf(action,markers[0]),previous=-1;
+            WildBattleStat[] order=[WildBattleStat.Attack,WildBattleStat.Defense,WildBattleStat.Speed,WildBattleStat.SpecialAttack,WildBattleStat.SpecialDefense,WildBattleStat.Accuracy,WildBattleStat.Evasion];
+            if(markerIndex<1)return new(null,"unmatched-source-stat-reset-result");
+            foreach(var row in action[1..markerIndex])
+            {
+                if(row is not SourceStatChangedEvent stat||stat.Actor!=used.Actor||stat.Target.Value<0||stat.Target.Value>=battle.Slots||
+                    stat.Before is <0 or >12 or 6||stat.After!=6||!order.Contains(stat.Stat))
+                    return new(null,"unmatched-source-stat-reset-result");
+                int position=stat.Target.Value*order.Length+Array.IndexOf(order,stat.Stat);
+                if(position<=previous)return new(null,"unmatched-source-stat-reset-result");
+                previous=position;
+            }
+            var itemSuffix=new HashSet<int>();
+            for(int item=markerIndex+1;item<action.Length;item++)if(action[item] is SourceHeldItemConsumedEvent)
+            {
+                int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(action,item);
+                if(start>markerIndex)for(int row=start;row<=item;row++)itemSuffix.Add(row);
+            }
+            if(Enumerable.Range(markerIndex+1,action.Length-markerIndex-1).Any(i=>action[i] is SourceStatChangedEvent&&!itemSuffix.Contains(i)))
+                return new(null,"unmatched-source-stat-reset-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,markers[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if(definition!.Effect is "EFFECT_CONVERSION" or "EFFECT_CONVERSION_2" or "EFFECT_CAMOUFLAGE")
         {
             // Source type mutation succeeds before attackanimation. The receipt
@@ -291,7 +333,7 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-trapping-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,trapped.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(FieldSettingAnimation(move) is not null||move==277)
+        if(FieldSettingAnimation(definition!) is not null||move==277)
         {
             long result=0;
             if(move==277)
@@ -300,8 +342,16 @@ public static partial class CampaignMoveAnimationPresentation
             }
             else
             {
-                var changed=action.OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Side==used.Actor&&e.Volatile==FieldSettingAnimation(move)&&e.Before==0&&e.After==5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
-                if(changed.Length==1)result=changed[0].Sequence;
+                string field=FieldSettingAnimation(definition!)!;
+                // Source set-weather/screen commands precede attackanimation. A
+                // suppressed weather still commits; an already-set one does not.
+                // Forecast and other move-end outcomes follow this owned marker.
+                if(definition!.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||
+                    action.Length<2||action[0]!=pp[0]||action[1] is not SourceMtMoonVolatileEvent changed||
+                    changed.Side!=used.Actor||changed.Volatile!=field||changed.Before!=0||changed.After!=5||changed.Reason!="move"||
+                    changed.Sequence!=pp[0].Sequence+1||action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile==field)!=1)
+                    return new(null,"unmatched-source-wall-state");
+                result=changed.Sequence;
             }
             if(used.Target!=used.Actor||result==0)return new(null,"unmatched-source-wall-state");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result,move,used.Actor,used.Target,false),"committed-source-animation");
@@ -316,9 +366,11 @@ public static partial class CampaignMoveAnimationPresentation
             if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 47 or 77 or 78 or 79 or 86 or 92 or 95 or 147 or 320)
+        if(definition.Effect is "EFFECT_SLEEP" or "EFFECT_POISON" or "EFFECT_TOXIC" or "EFFECT_PARALYZE")
         {
-            bool Matches(uint status)=>move switch{77=>status==WildBattleStatus.Poison,92=>status==WildBattleSourceFieldEffects.ToxicPoison,78 or 86=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Actor==used.Target||used.Target.Value<0||used.Target.Value>=battle.Slots)
+                return new(null,"unmatched-source-primary-status-target");
+            bool Matches(uint status)=>definition.Effect switch{"EFFECT_POISON"=>status==WildBattleStatus.Poison,"EFFECT_TOXIC"=>status==WildBattleSourceFieldEffects.ToxicPoison,"EFFECT_PARALYZE"=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<SourceStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
             if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
@@ -350,12 +402,33 @@ public static partial class CampaignMoveAnimationPresentation
             if(results.Length!=1)return new(null,"unmatched-source-confusion-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(IsRecoveryAnimation(move))
+        if(definition.Effect=="EFFECT_REST")
         {
-            if(used.Target!=used.Actor)return new(null,"unmatched-source-recovery-target");
-            var results=action.OfType<SourceRecoveredEvent>().Where(e=>e.Side==used.Actor&&e.Move==used.Move&&e.HpAfter>e.HpBefore&&e.Recovered==e.HpAfter-e.HpBefore&&e.Sequence>pp[0].Sequence).ToArray();
-            if(results.Length!=1)return new(null,"unmatched-source-recovery-result");
-            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+            // trysetrest prints the sleep result and updates the status icon before
+            // attackanimation. The recovery page remains unacknowledged until playback ends.
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<3||action[0]!=pp[0]||
+                action[1] is not SourceStatusChangedEvent {After:3,Reason:"rest"} status||status.Side!=used.Actor||
+                WildBattleStatus.IsSleeping(status.Before)||
+                action[2] is not SourceRecoveredEvent recovery||recovery.Side!=used.Actor||recovery.Move!=used.Move||
+                recovery.HpBefore<=0||recovery.HpAfter<=recovery.HpBefore||recovery.Recovered!=recovery.HpAfter-recovery.HpBefore||
+                action.OfType<SourceStatusChangedEvent>().Count(e=>e.Reason=="rest")!=1||
+                action.OfType<SourceRecoveredEvent>().Count(e=>e.Move==used.Move)!=1)
+                return new(null,"unmatched-source-rest-result");
+            return new(new(battle.Id,recovery.Sequence,attack.Sequence,pp[0].Sequence,recovery.Sequence,move,used.Actor,used.Actor,false)
+                {Boundary=CampaignMoveAnimationBoundary.BeforeRecoveryResult},"committed-source-recovery-animation");
+        }
+        if(IsRecoveryAnimation(definition))
+        {
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots)
+                return new(null,"unmatched-source-recovery-target");
+            if(action.Length<2||action[0]!=pp[0]||action[1] is not SourceRecoveredEvent recovered||
+                recovered.Side!=used.Actor||recovered.Move!=used.Move||recovered.HpBefore<=0||
+                recovered.HpAfter<=recovered.HpBefore||recovered.Recovered!=recovered.HpAfter-recovered.HpBefore||
+                action.OfType<SourceRecoveredEvent>().Count(e=>e.Move==used.Move)!=1)
+                return new(null,"unmatched-source-recovery-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,recovered.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(ReductionAnimation(definition!) is {} reduction)
         {

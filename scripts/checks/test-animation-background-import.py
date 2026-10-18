@@ -27,7 +27,7 @@ class BackgroundImportTests(unittest.TestCase):
     def test_generated_pack_rebuilds_exactly_without_runtime_source_metadata(self):
         for name, content in self.files.items():
             self.assertEqual(content, (ROOT / 'content/generated/battle/animations/backgrounds' / name).read_bytes())
-        self.assertEqual({'schemaVersion','basePalette','terrains','moves'}, set(self.manifest))
+        self.assertEqual({'schemaVersion','basePalette','terrains','moves','overlays'}, set(self.manifest))
         for row in self.manifest['terrains'] + self.manifest['moves']:
             self.assertEqual({'id','tiles','tilemap','palette'}, set(row))
     def test_tiles_keep_nibbles_source_order_and_num_tiles_truncation(self):

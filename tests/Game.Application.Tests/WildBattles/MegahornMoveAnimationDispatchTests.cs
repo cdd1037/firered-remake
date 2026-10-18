@@ -29,7 +29,7 @@ public sealed class MegahornMoveAnimationDispatchTests
         for(int i=0;i<events.Length;i++)
         {
             var battle=Double(events,i);var decision=AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On);
-            Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On));Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle,SourceBattleScene.On).Dispatch);
+            Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On));Assert.IsNull(AnimationDispatchFixture.AtResult(battle,SourceBattleScene.On).Dispatch);
             if(expected&&events[i]==used)
             {
                 var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);dispatched++;var hit=Hits(events).Single();

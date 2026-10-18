@@ -30,7 +30,7 @@ public sealed class NeedleMoveAnimationDispatchTests
     private static CampaignMoveAnimationDecision AtText(ImmutableArray<SourceBattleEvent> events, int index) =>
         AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On);
     private static CampaignMoveAnimationDecision AtHit(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
         events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
@@ -78,7 +78,7 @@ public sealed class NeedleMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(id == 40 ? 1 : hits.Length, count);
@@ -92,7 +92,7 @@ public sealed class NeedleMoveAnimationDispatchTests
             Assert.IsNull(AtHit(events, index).Dispatch, branch + " hit");
             if (events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value > 1 || e.Target.Value > 1)) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
         }
     }
     private static ImmutableArray<SourceBattleEvent> Group(int id, int actor = 0, int? target = null, int planned = 2, int? actual = null)
@@ -470,13 +470,13 @@ public sealed class NeedleMoveAnimationDispatchTests
         {
             var events = Group(move.Id); int index = move.Id == 40 ? 1 : 3; var battle = Single(events, index);
             CampaignMoveAnimationDecision Project(CampaignWildBattle b, bool source = true, SourceBattleScene scene = SourceBattleScene.On) => move.Id == 40
-                ? AnimationDispatchFixture.AtAttackText(b, source, scene) : AnimationDispatchFixture.AtHitResult(b, source, scene);
+                ? AnimationDispatchFixture.AtAttackText(b, source, scene) : AnimationDispatchFixture.AtResult(b, source, scene);
             Assert.IsNotNull(Project(battle).Dispatch);
             Assert.IsNull(Project(battle, false).Dispatch); Assert.IsNull(Project(battle, scene: SourceBattleScene.Off).Dispatch);
             Assert.IsNull(Project(battle with { Phase = CampaignBattlePhase.ChooseMove }).Dispatch);
             Assert.IsNull(Project(battle with { EventIndex = -1 }).Dispatch); Assert.IsNull(Project(battle with { EventIndex = events.Length }).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.Off).Dispatch);
         }
     }
 }

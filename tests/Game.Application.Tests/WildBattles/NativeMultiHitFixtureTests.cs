@@ -63,7 +63,7 @@ public sealed class NativeMultiHitFixtureTests
             for (int ordinal = 0; ordinal < hits.Length; ordinal++)
             {
                 int index = route.Battle.SourceEvents.IndexOf(hits[ordinal]);
-                var decision = AnimationDispatchFixture.AtHitResult(
+                var decision = AnimationDispatchFixture.AtResult(
                     route.Battle with { EventIndex = index }, true, SourceBattleScene.On);
                 Assert.IsNotNull(decision.Dispatch, decision.Reason);
                 Assert.AreEqual(3, decision.Dispatch.SourceMoveId);

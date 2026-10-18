@@ -1,0 +1,23 @@
+{
+  "src/battle_anim_effects_2.c": "50561e4882a0f8813f305af6f4147ed1c394657278e32aae6c733bef31994a04",
+  "src/battle_anim_ice.c": "f63de5b813c8a9c83230c392bbba49d0d7fa0f97c40f91e9dfa7c175173901e7",
+  "include/battle_anim.h": "15d0a815fec54ed669e1cf7130d323070d799ecfba0f3a935da4b9c28d6f09a7",
+  "include/gba/io_reg.h": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0",
+  "include/gba/defines.h": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b",
+  "include/constants/battle.h": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+  "include/palette.h": "3f5ee66bab01538193629ffef3ff3cd6ad7555f7e294f52ae3ccfa36f94ac418",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/battle_anim.c": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "src/battle_main.c": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
+  "src/main.c": "0bfa6c662b1cbd49bd31020b6c2509208004611e6701ad64badce22eca371139",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "graphics/battle_anims/backgrounds/scary_face.png": "b70d16e37a047897b820b3dea59c5ee5bb67426470182ec51ba3ad0b0bf64a06",
+  "graphics/battle_anims/backgrounds/scary_face_player.bin": "c2b75e12d0a4499eb8e4db77dc9cbb7ef26999001b1c5e92e650747aaa84b495",
+  "graphics/battle_anims/backgrounds/scary_face_opponent.bin": "ce63450b3662f2ca1ddcf3591adc73449074712c9e1214e14958b80841ecfc05",
+  "graphics/weather/fog_horizontal.png": "8003147c5092d3db6439f1380cb5f5d4ab68815fafaa3fd3edd2e490b5d60706",
+  "graphics/weather/default.pal": "7b5259232460f57ba96a04be3b6f91dca6c7f2f4c1205bacd94aa2c05fc6adce",
+  "graphics/battle_anims/backgrounds/fog.bin": "0262477e99a1050bd87302826c993c6a10d2c6cf406c82f1d5963c7e17835bd7",
+  "graphics/battle_anims/sprites/small_red_eye.png": "69946c9324aa9d50039123d9c1feda60670baf99efce61394e3f124e8ef7f847",
+  "graphics/battle_anims/sprites/small_bubbles.png": "26d441082a5bc09ac38b6d37813df5a012464f402dc604d5276d38e8d5f2dfe2"
+}

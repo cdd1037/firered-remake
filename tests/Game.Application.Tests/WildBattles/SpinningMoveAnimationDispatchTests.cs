@@ -144,7 +144,7 @@ public sealed class SpinningMoveAnimationDispatchTests
             var battle = Double(events, index);
             var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch,
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch,
                 "A single-hit spinning root cannot be replayed by a result page.");
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (expected && events[index] == used)
@@ -165,7 +165,7 @@ public sealed class SpinningMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
             }
         }

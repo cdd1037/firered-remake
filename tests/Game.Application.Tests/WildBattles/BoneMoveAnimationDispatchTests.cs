@@ -25,7 +25,7 @@ public sealed class BoneMoveAnimationDispatchTests
         new("bone-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
             null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
     private static CampaignMoveAnimationDecision AtHit(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static CampaignMoveAnimationDecision AtText(ImmutableArray<SourceBattleEvent> events, int index) =>
         AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
@@ -111,7 +111,7 @@ public sealed class BoneMoveAnimationDispatchTests
             Assert.IsNull(AtHit(events, index).Dispatch, label + " hit-result " + index);
             if (!singles) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
         }
     }
 
@@ -138,10 +138,10 @@ public sealed class BoneMoveAnimationDispatchTests
                 Assert.AreEqual(AtText(events, index).Dispatch,
                     AnimationDispatchFixture.AtAttackText(current, true, SourceBattleScene.On).Dispatch);
                 Assert.AreEqual(AtHit(events, index).Dispatch,
-                    AnimationDispatchFixture.AtHitResult(current, true, SourceBattleScene.On).Dispatch);
+                    AnimationDispatchFixture.AtResult(current, true, SourceBattleScene.On).Dispatch);
             }
             CampaignMoveAnimationDecision Project(CampaignWildBattle current, bool source = true, SourceBattleScene scene = SourceBattleScene.On) => rush
-                ? AnimationDispatchFixture.AtHitResult(current, source, scene)
+                ? AnimationDispatchFixture.AtResult(current, source, scene)
                 : AnimationDispatchFixture.AtAttackText(current, source, scene);
             var eligible = battle with { EventIndex = rush ? 3 : 1 };
             Assert.IsNotNull(Project(eligible).Dispatch);
@@ -151,9 +151,9 @@ public sealed class BoneMoveAnimationDispatchTests
             Assert.IsNull(Project(eligible with { EventIndex = events.Length }).Dispatch);
             var twice = Double(events, rush ? 3 : 1);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(twice, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(twice, SourceBattleScene.Off).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
         }
     }
 
@@ -175,7 +175,7 @@ public sealed class BoneMoveAnimationDispatchTests
             Assert.AreEqual(AtText(events, index).Dispatch,
                 AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
             Assert.AreEqual(AtHit(events, index).Dispatch,
-                AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
         }
     }
 

@@ -1,0 +1,51 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+@DEFINES@
+@ENUM@
+struct Sprite; typedef void (*SpriteCallback)(struct Sprite *);
+struct Sprite { s16 x,y,x2,y2,data[8]; SpriteCallback callback; bool8 inUse; };
+struct UCoords8 { u8 x,y; };
+@ARRAY@
+u8 gBattleAnimAttacker,gBattleAnimTarget,gAnimVisualTaskCount;
+s16 gBattleAnimArgs[8];
+static u8 isDouble, equalX, divergentCoord2;
+static int events[64][5], nEvents;
+static void event(int op,int a,int b,int c,int d){assert(nEvents<64);int *p=events[nEvents++];p[0]=op;p[1]=a;p[2]=b;p[3]=c;p[4]=d;}
+static u8 GetBattlerSide(u8 battler){return battler&1;}
+static u8 coord(u8 battler,u8 type,int alternate){
+ static const s16 picOffsets[4]={8,3,12,-4};static const s16 alternatePicOffsets[4]={10,7,14,-2};
+ u8 value;if(type==BATTLER_COORD_X || type==BATTLER_COORD_X_2)value=equalX?120:sBattlerCoords[isDouble][battler].x;
+ else if(type==BATTLER_COORD_Y)value=sBattlerCoords[isDouble][battler].y;
+ else value=(u8)(sBattlerCoords[isDouble][battler].y+(alternate&&divergentCoord2?alternatePicOffsets[battler]:picOffsets[battler]));
+ event(alternate?2:1,battler,type,value,0);return value;
+}
+static u8 GetBattlerSpriteCoord(u8 battler,u8 type){return coord(battler,type,0);}
+static u8 GetBattlerSpriteCoord2(u8 battler,u8 type){return coord(battler,type,1);}
+static void FreeSpriteOamMatrix(struct Sprite *sprite){event(5,0,0,0,0);}
+static void DestroySprite(struct Sprite *sprite){sprite->inUse=FALSE;event(6,0,0,0,0);}
+void DestroyAnimSprite(struct Sprite *sprite);
+static void StoreSpriteCallbackInData6(struct Sprite *sprite,SpriteCallback callback){assert(callback==DestroyAnimSprite);sprite->data[6]=1;sprite->data[7]=0;event(3,1,0,0,0);}
+static void SetCallbackToStoredInData6(struct Sprite *sprite){assert(sprite->data[6]==1&&sprite->data[7]==0);sprite->callback=DestroyAnimSprite;event(4,1,0,0,0);}
+void TranslateAnimSpriteToTargetMonLocation(struct Sprite *sprite);
+void StartAnimLinearTranslation(struct Sprite *sprite);
+void AnimTranslateLinear_WithFollowup(struct Sprite *sprite);
+@FUNCTIONS@
+static int callback(SpriteCallback cb){if(cb==AnimThrowMistBall)return 0;if(cb==TranslateAnimSpriteToTargetMonLocation)return 1;if(cb==StartAnimLinearTranslation)return 2;if(cb==AnimTranslateLinear_WithFollowup)return 3;if(cb==DestroyAnimSprite)return 4;abort();}
+static void row(struct Sprite *s,int invocation,int phase,int callbackBefore){
+ printf("{\"invocation\":%d,\"phase\":%d,\"callback_before\":%d,\"callback_after\":%d,\"alive\":%u,\"visual_count\":%u,\"position\":[%d,%d,%d,%d],\"data\":[",invocation,phase,callbackBefore,callback(s->callback),s->inUse,gAnimVisualTaskCount,s->x,s->y,s->x2,s->y2);
+ for(int i=0;i<8;i++)printf("%s%d",i?",":"",s->data[i]);printf("],\"args\":[");for(int i=0;i<8;i++)printf("%s%d",i?",":"",gBattleAnimArgs[i]);printf("],\"events\":[");for(int i=0;i<nEvents;i++)printf("%s[%d,%d,%d,%d,%d]",i?",":"",events[i][0],events[i][1],events[i][2],events[i][3],events[i][4]);puts("]}");nEvents=0;
+}
+int main(int argc,char **argv){
+ assert(argc==12);isDouble=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=atoi(argv[3]);equalX=atoi(argv[4]);for(int i=0;i<6;i++)gBattleAnimArgs[i]=(s16)atoi(argv[i+5]);int mode=atoi(argv[11]);divergentCoord2=(mode&2)!=0;assert(gBattleAnimArgs[4]>0);
+ struct Sprite s={0};s.inUse=TRUE;s.callback=AnimThrowMistBall;s.x=GetBattlerSpriteCoord(gBattleAnimTarget,BATTLER_COORD_X_2);s.y=GetBattlerSpriteCoord(gBattleAnimTarget,BATTLER_COORD_Y_PIC_OFFSET);nEvents=0;gAnimVisualTaskCount=1;row(&s,-1,0,0);
+ s.callback(&s);row(&s,0,1,0);
+ if(mode&1){s.data[0]=2;s.data[1]=-32767;s.data[2]=32766;s.data[3]=-2;s.data[4]=-2;s.callback=AnimTranslateLinear_WithFollowup;s.data[6]=1;s.data[7]=0;row(&s,0,3,1);}
+ for(int i=1;s.inUse && i<1024;i++){int before=callback(s.callback);s.callback(&s);row(&s,i,2,before);}
+ assert(!s.inUse);assert(gAnimVisualTaskCount==0);return 0;
+}

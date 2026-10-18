@@ -76,7 +76,7 @@ public sealed class IceMoveAnimationDispatchTests
             var battle = Double(events, i);
             var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (hits.Length > 0 && events[i] == used)
             {

@@ -109,7 +109,7 @@ public sealed class MeteorMashMoveAnimationDispatchTests
             var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On, moves: Mechanics.Catalog.Moves);
             Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On),
                 "Ordinary damage admission is independent of later Attack-up or contact receipts.");
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch);
             if (events[index] == used)
             {
                 var dispatch = decision.Dispatch;
@@ -135,7 +135,7 @@ public sealed class MeteorMashMoveAnimationDispatchTests
                     AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On, moves: Mechanics.Catalog.Moves).Dispatch);
                 Assert.AreEqual(decision.Dispatch,
                     AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(1, count);
@@ -149,11 +149,11 @@ public sealed class MeteorMashMoveAnimationDispatchTests
         {
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On,
                 moves: Mechanics.Catalog.Moves).Dispatch, label);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch, label);
             if (!singles) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On,
                 moves: Mechanics.Catalog.Moves).Dispatch, label);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events), label);
     }

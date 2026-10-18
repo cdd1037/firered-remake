@@ -22,7 +22,7 @@ public sealed class TripleKickAnimationDispatchTests
         new("triple-kick", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
             null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
     private static CampaignMoveAnimationDecision At(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
         events.Select((e, i) => e with { Sequence = i + 1 }).ToImmutableArray();
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
@@ -104,20 +104,20 @@ public sealed class TripleKickAnimationDispatchTests
             var events = Group(actual, actor); var single = Single(events);
             for (int index = 0; index < events.Length; index++)
                 Assert.AreEqual(At(events, index).Dispatch,
-                    AnimationDispatchFixture.AtHitResult(single with { EventIndex = index }, true, SourceBattleScene.On).Dispatch);
+                    AnimationDispatchFixture.AtResult(single with { EventIndex = index }, true, SourceBattleScene.On).Dispatch);
             var hit = single with { EventIndex = 3 };
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit, false, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit, true, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(hit with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(hit, false, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(hit, true, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(hit with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(hit with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(hit with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { EventIndex = 1 }, true, SourceBattleScene.On).Dispatch);
         }
         var twice = Double(Group(3), 3);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
     }
 
     [TestMethod]

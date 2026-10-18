@@ -97,6 +97,7 @@ public sealed partial class SourceBattleAnimation
         "AnimTask_GrowAndShrink"=>"sGrowAndShrinkAffineAnimCmds",
         "AnimTask_DefenseCurlDeformMon"=>"DefenseCurlDeformMonAffineAnimCmds",
         "AnimTask_SlackOffSquish"=>"sSlackOffSquishAffineAnimCmds",
+        "AnimTask_StretchTargetUp"=>"sAffineAnims_StretchBattlerUp",
         _=>null
     };
     private bool ValidateTaskAffineOperand(SourceAnimationCommand c)
@@ -107,7 +108,9 @@ public sealed partial class SourceBattleAnimation
             int count=a[0]=="AnimTask_Splash"?4:a[0]=="AnimTask_SlackOffSquish"?3:2;
             if(a.Length!=count||Number(a[1]) is <0 or >255||(count>=3&&Number(a[2]) is <0 or >3)||(count==4&&Number(a[3]) is <0 or >32767))Fail(c,"Task affine operands differ.");
             if(!_script.TaskAffinePrograms.TryGetValue(programName,out var program))Fail(c,"Missing generated task affine program.");
-            SourceTaskAffineProgram.Validate(program!);return true;
+            SourceTaskAffineProgram.Validate(program!);
+            if(a[0]=="AnimTask_StretchTargetUp"&&!program!.SequenceEqual([new SourceTaskAffineCommand("frame",10,-13,0,10),new SourceTaskAffineCommand("frame",-10,13,0,10),new SourceTaskAffineCommand("end")]))Fail(c,"Target stretch source affine program differs.");
+            return true;
         }
         if(c.Op=="createsprite"&&a.FirstOrDefault()=="gEclipsingOrbSpriteTemplate")
         {
@@ -142,11 +145,12 @@ public sealed partial class SourceBattleAnimation
         if(TaskAffineProgramName(c.Args[0]) is not {} programName)return false;
         bool splash=c.Args[0]=="AnimTask_Splash";
         if(splash&&Number(c.Args[3])==0)return true;
-        int participant=c.Args[0] is "AnimTask_GrowAndShrink" or "AnimTask_DefenseCurlDeformMon" or "AnimTask_MeditateStretchAttacker"?0:Number(c.Args[2]);
+        int participant=c.Args[0]=="AnimTask_StretchTargetUp"?1:c.Args[0] is "AnimTask_GrowAndShrink" or "AnimTask_DefenseCurlDeformMon" or "AnimTask_MeditateStretchAttacker"?0:Number(c.Args[2]);
         if(ResolveShakeParticipant(participant,false) is not {} slot)return true;
         var commands=_script.TaskAffinePrograms[programName];
         _tasks.Add(c.Args[0] switch
         {
+            "AnimTask_StretchTargetUp"=>new StretchTargetTask(this,slot,commands),
             "AnimTask_Splash"=>new SplashTask(this,slot,Number(c.Args[3]),commands),
             "AnimTask_SlackOffSquish"=>new SlackOffTask(this,slot,commands),
             _=>new TaskAffinePlayback(this,slot,commands)
@@ -185,6 +189,17 @@ public sealed partial class SourceBattleAnimation
         {Battler=slot.Value;_program=new(commands);owner.PrepareTaskAffine(Battler,_program);}
         public override void Step(SourceBattleAnimation owner)
         {if(!owner.RunTaskAffine(Battler,_program))Finished=true;}
+    }
+    private sealed class StretchTargetTask:VisualTask
+    {
+        private readonly int _slot;private readonly SourceTaskAffineProgram _program;
+        public StretchTargetTask(SourceBattleAnimation o,AnimationSlot slot,SourceTaskAffineCommand[] commands)
+        {_slot=slot.Value;_program=new(commands);o.PrepareTaskAffine(_slot,_program);o._offsets[_slot]=new(4,o._offsets[_slot].Y);}
+        public override void Step(SourceBattleAnimation o)
+        {
+            o._offsets[_slot]=new(-o._offsets[_slot].X,o._offsets[_slot].Y);
+            if(!o.RunTaskAffine(_slot,_program)){o._offsets[_slot]=default;Finished=true;}
+        }
     }
     private sealed class SlackOffTask(SourceBattleAnimation owner,AnimationSlot slot,SourceTaskAffineCommand[] commands):TaskAffinePlayback(owner,slot,commands)
     {

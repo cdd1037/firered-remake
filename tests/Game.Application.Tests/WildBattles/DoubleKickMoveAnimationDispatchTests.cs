@@ -134,7 +134,7 @@ public sealed class DoubleKickMoveAnimationDispatchTests
         {
             var battle = Double(events, index);
             var text = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
-            var hit = AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On);
+            var hit = AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On);
             Assert.IsNull(text.Dispatch, "Attack text must not schedule an extra Double Kick root.");
             int ordinal = Array.FindIndex(hits, h => h.Sequence == events[index].Sequence);
             if (ordinal >= 0)
@@ -149,13 +149,13 @@ public sealed class DoubleKickMoveAnimationDispatchTests
                 Assert.IsFalse(dispatch.AcknowledgesCurrentReceipt, "Per-hit playback resumes the same receipt without an extra ACK.");
             }
             else Assert.IsNull(hit.Dispatch, "Used, PP, contact, summary, faint and other receipts cannot own another kick.");
-            Assert.AreEqual(hit, AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On));
+            Assert.AreEqual(hit, AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On));
             Assert.AreEqual(index, battle.EventIndex, "Projection cannot consume the receipt cursor.");
             if (actor < 2 && target < 2)
             {
                 var single = Single(events, index);
                 Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
                 Assert.AreEqual(index, single.EventIndex);
             }
         }
@@ -170,10 +170,10 @@ public sealed class DoubleKickMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch, branch);
             if (!singles) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events));
     }
@@ -396,27 +396,27 @@ public sealed class DoubleKickMoveAnimationDispatchTests
         var result = Resolve(Frame(Bodies(), single: true)); var events = result.Events; int index = events.IndexOf(Hits(events)[0]);
         var single = Single(events, index); var twice = Double(events, index);
         AssertReadOnly(result.State, result.Trace, () => {
-            Assert.IsNotNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, false, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+            Assert.IsNotNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(single, false, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(single with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(twice, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
             foreach (int cursor in new[] { -1, events.Length })
             {
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single with { EventIndex = cursor }, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = cursor }, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single with { EventIndex = cursor }, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { EventIndex = cursor }, SourceBattleScene.On).Dispatch);
             }
             foreach (IReadOnlyDictionary<MoveId, PokemonMoveDefinition>? moves in new IReadOnlyDictionary<MoveId, PokemonMoveDefinition>?[] {
                 null, new Dictionary<MoveId, PokemonMoveDefinition>(),
                 new Dictionary<MoveId, PokemonMoveDefinition> { [Kick] = Mechanics.Catalog.Moves[Kick] with { SourceMoveId = 25 } }
             })
             {
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On, moves).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.On, moves).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On, moves).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(twice, SourceBattleScene.On, moves).Dispatch);
             }
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(single, true, SourceBattleScene.On, Mechanics.Catalog.Moves, (_, _) => false).Dispatch);
-            Assert.IsNull(CampaignMoveAnimationPresentation.AtHitResult(twice, SourceBattleScene.On, Mechanics.Catalog.Moves, (_, _) => false).Dispatch);
+            Assert.IsNull(CampaignMoveAnimationPresentation.AtResult(single, true, SourceBattleScene.On, Mechanics.Catalog.Moves, (_, _) => false).Dispatch);
+            Assert.IsNull(CampaignMoveAnimationPresentation.AtResult(twice, SourceBattleScene.On, Mechanics.Catalog.Moves, (_, _) => false).Dispatch);
         });
     }
 

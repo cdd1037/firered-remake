@@ -4,6 +4,12 @@ namespace FireRed.Tests.ResourceImport;
 public sealed class NativePresentationImportTests
 {
     [TestMethod]
+    [DataRow("test-recovery-animation-import.py")]
+    [DataRow("test-reaction-animation-import.py")]
+    [DataRow("test-weather-animation-import.py")]
+    [DataRow("test-overlay-animation-import.py")]
+    [DataRow("test-impact-emission-animation-import.py")]
+    [DataRow("test-orbital-particle-animation-import.py")]
     [DataRow("test-fire-seed-animation-import.py")]
     [DataRow("test-physical-animation-import.py")]
     [DataRow("test-elemental-animation-import.py")]

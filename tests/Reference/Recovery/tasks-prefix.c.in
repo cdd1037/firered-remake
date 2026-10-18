@@ -1,0 +1,39 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+@DEFINES@
+@TYPES@
+struct HealthBoxData{bool8 statusAnimActive;};struct BattleSpritesData{struct HealthBoxData healthBoxesData[4];};static struct BattleSpritesData battleSprites;static struct BattleSpritesData *gBattleSpritesDataPtr=&battleSprites;
+struct Task{void(*func)(u8);s16 data[16];}gTasks[16];
+struct SpriteTemplate{int id;};struct Sprite{const struct SpriteTemplate*template;s16 data[8];}gSprites[64];
+static const struct SpriteTemplate gMoonSpriteTemplate={1},gMoonlightSparkleSpriteTemplate={2},foreign={3};
+struct BattleAnimBgData{u8*bgTiles;u16*bgTilemap;u8 paletteId,bgId;u16 tilesOffset,unused;};static u8 tiles[8192];static u16 map[2048];
+#define gBattleAnimBgTileBuffer tiles
+#define gBattleAnimBgTilemapBuffer map
+static const u32 gBattleAnim_MorningSunTilemap[1]={1},gBattleAnim_MorningSunGfx[1]={2},gBattleAnim_MorningSunPal[1]={3};
+u8 gBattleAnimAttacker,gBattleAnimTarget;u16 gBattle_BG1_X,gBattle_BG1_Y;static u16 registers[64],attributes[3][7];s16 gBattleAnimArgs[8];static bool8 alive=TRUE;static int visibleMask,events[64][4],nEvents,frame,kind;
+u16 gPlttBufferUnfaded[512],gPlttBufferFaded[512];struct PaletteFadeControl gPaletteFade;static bool8 sPlttBufferTransferPending;static u8 paletteHardware[1024];
+#undef PLTT
+#define PLTT paletteHardware
+#define SE_M_MORNING_SUN 1
+static void ev(int op,int a,int b,int c){assert(nEvents<64);events[nEvents][0]=op;events[nEvents][1]=a;events[nEvents][2]=b;events[nEvents++][3]=c;}
+static void CpuCopy32(const void*src,void*dest,int size){memcpy(dest,src,size);}static u8 UpdateFastPaletteFade(void){abort();}static u8 UpdateHardwarePaletteFade(void){abort();}static void UpdateBlendRegisters(void){abort();}
+static void StorePointerInVars(s16*a,s16*b,void*p){uintptr_t v=(uintptr_t)p;*a=v&65535;*b=(v>>16)&65535;}static uintptr_t LoadPointerFromVars(s16 a,s16 b){return(u16)a|((u32)(u16)b<<16);}
+static bool8 IsContest(void){return FALSE;}static u8 GetBattlerSide(u8 id){return id&1;}static bool8 IsBattlerSpriteVisible(u8 id){return(visibleMask>>id)&1;}static u8 GetBattlerAtPosition(u8 p){return p;}
+static u8 IndexOfSpritePaletteTag(u16 tag){if(tag==ANIM_TAG_MOON)return 4;if(tag==ANIM_TAG_GREEN_SPARKLE)return 5;if(tag==ANIM_TAG_RAINBOW_RINGS)return 6;abort();}
+static void SetGpuReg(u8 offset,u16 value){registers[offset/2]=value;ev(1,offset,value,0);}static void SetAnimBgAttribute(u8 bg,u8 attr,u8 value){attributes[bg][attr]=value;ev(2,bg,attr,value);}
+static void AnimLoadCompressedBgTilemap(u8 bg,const void*p){assert(p==gBattleAnim_MorningSunTilemap);ev(3,bg,1,0);}static void AnimLoadCompressedBgGfx(u8 bg,const void*p,u16 offset){assert(p==gBattleAnim_MorningSunGfx);ev(4,bg,2,offset);}
+static void LoadCompressedPalette(const void*p,u16 offset,u16 size){assert(p==gBattleAnim_MorningSunPal);ev(5,offset,size,0);}static void RelocateBattleBgPal(u8 p,void*m,int x,int y){abort();}static void InitBattleAnimBg(u8 bg){ev(6,bg,0,0);}
+static void PlaySE12WithPanning(u16 sound,s8 pan){ev(7,sound,pan,0);}static void DestroyAnimVisualTask(u8 id){alive=FALSE;ev(8,id,0,0);}
+@PROTOTYPES@
+@ARRAYS@
+@FUNCTIONS@
+static void row(void){printf("{\"frame\":%d,\"alive\":%u,\"bg1\":[%u,%u],\"registers\":[%u,%u],\"fade\":[%u,%u,%u,%u,%u,%u],\"data\":[",frame,alive,gBattle_BG1_X,gBattle_BG1_Y,registers[REG_OFFSET_BLDCNT/2],registers[REG_OFFSET_BLDALPHA/2],gPaletteFade.active,gPaletteFade.y,gPaletteFade.objPaletteToggle,gPaletteFade.softwareFadeFinishing,gPaletteFade.softwareFadeFinishingCounter,gPaletteFade_selectedPalettes);for(int i=0;i<16;i++)printf("%s%d",i?",":"",gTasks[3].data[i]);printf("],\"signals\":[");for(int i=0;i<5;i++)printf("%s%d",i?",":"",gSprites[i].data[0]);printf("],\"palettes\":[");int banks[]={1,2,3,16,17,18,19,20,21,22};for(int b=0;b<10;b++){printf("%s[",b?",":"");for(int i=0;i<16;i++)printf("%s%u",i?",":"",gPlttBufferFaded[banks[b]*16+i]);printf("]");}printf("],\"events\":[");for(int i=0;i<nEvents;i++)printf("%s[%d,%d,%d,%d]",i?",":"",events[i][0],events[i][1],events[i][2],events[i][3]);puts("]}");nEvents=0;}
+int main(int argc,char**argv){assert(argc==5);kind=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=gBattleAnimAttacker^1;visibleMask=atoi(argv[3]);int prior=atoi(argv[4]);for(int i=0;i<512;i++)gPlttBufferUnfaded[i]=gPlttBufferFaded[i]=((i+3)&31)|(((i*7+5)&31)<<5)|(((i*11+9)&31)<<10);
+ if(kind==0){gTasks[3].func=AnimTask_MorningSunLightBeam;AnimTask_MorningSunLightBeam(3);}else if(kind==1){BlendPalettes(0xe,16,0);for(int i=0;i<5;i++)gSprites[i].template=i==4?&foreign:i&1?&gMoonSpriteTemplate:&gMoonlightSparkleSpriteTemplate;if(prior){BeginNormalPaletteFade(1u<<16,0,0,16,31);sPlttBufferTransferPending=FALSE;}AnimTask_MoonlightEndFade(3);}else if(kind==2){gBattleAnimArgs[1]=16;gBattleAnimArgs[2]=16;gBattleAnimArgs[4]=1;AnimTask_AlphaFadeIn(3);}else{gBattleAnimArgs[0]=130;AnimTask_RotateAuroraRingColors(3);}row();for(frame=1;alive&&frame<300;frame++){sPlttBufferTransferPending=FALSE;UpdatePaletteFade();gTasks[3].func(3);row();}assert(!alive);return 0;}

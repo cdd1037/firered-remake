@@ -166,8 +166,8 @@ public sealed class SelfAttackMoveAnimationDispatchTests
             var root = Root(SourceBattleScene.On);
             Assert.AreEqual(root, Root(SourceBattleScene.On));
             Assert.IsNull(Root(SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(single ? AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch
-                : AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(single ? AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch
+                : AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch);
             if (events[index] == used && stage < 12 && rootAvailable)
             {
                 var cue = root.Dispatch; Assert.IsNotNull(cue, root.Reason); roots++;
@@ -297,8 +297,8 @@ public sealed class SelfAttackMoveAnimationDispatchTests
                 : AnimationDispatchFixture.AtAttackText(twice, SourceBattleScene.On)).Dispatch, reason);
             Assert.IsNull((explicitMetadata ? AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On, moves)
                 : AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On)).Dispatch, reason);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.On).Dispatch, reason);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch, reason);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(twice, SourceBattleScene.On).Dispatch, reason);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch, reason);
             if (!rejectWave) continue;
             Assert.IsNull(explicitMetadata ? AnimationDispatchFixture.StatAtResult(twice, moves)
                 : AnimationDispatchFixture.StatAtResult(twice), reason);

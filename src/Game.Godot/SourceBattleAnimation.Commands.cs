@@ -37,10 +37,11 @@ public sealed partial class SourceBattleAnimation
         {if(a.Length!=0)Fail(c,"Unconditional background priority split takes no operands.");return true;}
         if(c.Op is "splitbgprio" or "splitbgprio_foes")
         {if(a.Length!=1||a[0] is not ("ANIM_ATTACKER" or "ANIM_TARGET"))Fail(c,"Background priority participant differs.");return true;}
-        if(c.Op=="panse_adjustall")
+        if(c.Op is "panse_adjustall" or "panse_adjustnone")
         {
             if(a.Length!=5||!_script.SoundEffects.ContainsKey(a[0])||SoundPan(a[1]) is < -128 or >127||SoundPan(a[2]) is < -128 or >127||Number(a[3]) is < -128 or >127||Number(a[4]) is <0 or >255)Fail(c,"Source adjusted pan sweep operands differ.");
-            int start=AdjustPanning2(SoundPan(a[1])),end=AdjustPanning2(SoundPan(a[2])),step=AdjustPanning2(Number(a[3]));
+            int Adjust(int value)=>c.Op=="panse_adjustall"?AdjustPanning2(value):value;
+            int start=Adjust(SoundPan(a[1])),end=Adjust(SoundPan(a[2])),step=Adjust(Number(a[3]));
             if(step!=0&&(start==end||(start<end)!=(step>0)))Fail(c,"Adjusted source pan sweep must reach its target.");
             return true;
         }

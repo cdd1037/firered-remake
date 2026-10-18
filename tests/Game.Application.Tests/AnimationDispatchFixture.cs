@@ -56,16 +56,16 @@ internal static class AnimationDispatchFixture
         SourceBattleScene scene, IReadOnlyDictionary<MoveId, PokemonMoveDefinition>? moves) =>
         CampaignMoveAnimationPresentation.AtAttackText(battle, scene, moves, Supports);
 
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignWildBattle battle, bool sourceRules,
-        SourceBattleScene scene) => AtHitResult(battle, sourceRules, scene, Moves);
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignWildBattle battle, bool sourceRules,
+    public static CampaignMoveAnimationDecision AtResult(CampaignWildBattle battle, bool sourceRules,
+        SourceBattleScene scene) => AtResult(battle, sourceRules, scene, Moves);
+    public static CampaignMoveAnimationDecision AtResult(CampaignWildBattle battle, bool sourceRules,
         SourceBattleScene scene, IReadOnlyDictionary<MoveId, PokemonMoveDefinition>? moves) =>
-        CampaignMoveAnimationPresentation.AtHitResult(battle, sourceRules, scene, moves, Supports);
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignDoubleBattle battle,
-        SourceBattleScene scene) => AtHitResult(battle, scene, Moves);
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignDoubleBattle battle,
+        CampaignMoveAnimationPresentation.AtResult(battle, sourceRules, scene, moves, Supports);
+    public static CampaignMoveAnimationDecision AtResult(CampaignDoubleBattle battle,
+        SourceBattleScene scene) => AtResult(battle, scene, Moves);
+    public static CampaignMoveAnimationDecision AtResult(CampaignDoubleBattle battle,
         SourceBattleScene scene, IReadOnlyDictionary<MoveId, PokemonMoveDefinition>? moves) =>
-        CampaignMoveAnimationPresentation.AtHitResult(battle, scene, moves, Supports);
+        CampaignMoveAnimationPresentation.AtResult(battle, scene, moves, Supports);
 
     public static CampaignStatAnimationDispatch? StatAtResult(CampaignWildBattle battle, bool sourceRules,
         bool affectedBehindSubstitute = false) => StatAtResult(battle, sourceRules, affectedBehindSubstitute, Moves);

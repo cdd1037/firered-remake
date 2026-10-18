@@ -125,7 +125,7 @@ public sealed class ImpactAdapterMoveAnimationDispatchTests
             var battle = Double(events,index);
             var decision = AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On);
             Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle,SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.Off).Dispatch);
             if (events[index] == used)
             {
@@ -141,7 +141,7 @@ public sealed class ImpactAdapterMoveAnimationDispatchTests
             if (actor >= 2 || target >= 2) continue;
             var single = Single(events,index);
             Assert.AreEqual(decision.Dispatch,AnimationDispatchFixture.AtAttackText(single,true,SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(single,true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(single,true,SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(single,true,SourceBattleScene.Off).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(single,false,SourceBattleScene.On).Dispatch);
         }
@@ -152,10 +152,10 @@ public sealed class ImpactAdapterMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events,index),SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events,index),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events,index),SourceBattleScene.On).Dispatch);
             if (!singles) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events,index),true,SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events,index),true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events,index),true,SourceBattleScene.On).Dispatch);
         }
     }
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>

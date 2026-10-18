@@ -30,7 +30,7 @@ public sealed class ProjectileMoveAnimationDispatchTests
     private static CampaignMoveAnimationDecision AtText(ImmutableArray<SourceBattleEvent> events, int index) =>
         AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On);
     private static CampaignMoveAnimationDecision AtHit(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
         events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
 
@@ -75,7 +75,7 @@ public sealed class ProjectileMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
             }
         }
         Assert.AreEqual(id != 155 ? 1 : hits.Length, count);
@@ -91,7 +91,7 @@ public sealed class ProjectileMoveAnimationDispatchTests
             // including PP ownership and recharge batches without MoveUsed.
             if (!single) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
         }
     }
     private static WildBattleCombatant NaturalMon(string species, int level, string name)

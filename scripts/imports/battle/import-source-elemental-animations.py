@@ -8,6 +8,16 @@ spec=importlib.util.spec_from_file_location('elemental_hit',ROOT/'scripts/import
 spec=importlib.util.spec_from_file_location('source_animation_affine',ROOT/'scripts/lib/source_animation_affine.py');affine=importlib.util.module_from_spec(spec);spec.loader.exec_module(affine)
 task_affine_program=affine.task_affine_program
 TEMPLATES={
+ 'gSleepLetterZSpriteTemplate':('battle_anim_effects_1.c','AnimSleepLetterZ'),
+ 'gGreenStarSpriteTemplate':('battle_anim_effects_3.c','AnimGreenStar'),
+ 'gMoonSpriteTemplate':('battle_anim_effects_1.c','AnimMoon'),
+ 'gMoonlightSparkleSpriteTemplate':('battle_anim_effects_1.c','AnimMoonlightSparkle'),
+ 'gAuroraBeamRingSpriteTemplate':('battle_anim_water.c','AnimAuroraBeamRings'),
+ 'gFlyingSandCrescentSpriteTemplate':('battle_anim_rock.c','AnimFlyingSandCrescent'),
+ 'gRainDropSpriteTemplate':('battle_anim_water.c','AnimRainDrop'),
+ 'gSunlightRaySpriteTemplate':('battle_anim_fire.c','AnimSunlight'),
+ 'gGlareEyeDotSpriteTemplate':('battle_anim_effects_3.c','AnimGlareEyeDot'),
+ 'gMistBallSpriteTemplate':('battle_anim_ice.c','AnimThrowMistBall'),
  'gFirePlumeSpriteTemplate':('battle_anim_fire.c','AnimFirePlume'),
  'gLargeFlameSpriteTemplate':('battle_anim_fire.c','AnimLargeFlame'),
  'gLargeFlameScatterSpriteTemplate':('battle_anim_fire.c','AnimLargeFlame'),
@@ -124,7 +134,7 @@ TEMPLATES={
 def read(reference,path):
  return subprocess.check_output(['git','-C',str(reference),'show',hit.COMMIT+':'+path]) if (reference/'.git').exists() else (reference/path).read_bytes()
 def recipe(source,name,callback):
- match=re.search(r'const struct SpriteTemplate '+name+r' =\s*\{(.*?)\};',source,re.S)
+ match=re.search(r'const struct SpriteTemplate '+name+r'\s*=\s*\{(.*?)\};',source,re.S)
  if not match:raise ValueError('Missing template '+name)
  fields=dict(re.findall(r'\.(\w+) = ([^,]+),',match[1]))
  shape=re.fullmatch(r'&gOamData_Affine(Off|Normal|Double)_Obj(Normal|Blend)_(8|16|32|64)x(8|16|32|64)',fields['oam'])
@@ -172,7 +182,26 @@ def recipe(source,name,callback):
     else:raise ValueError('Unsupported affine operation '+row)
    if not commands or commands[-1]['op'] not in ('jump','end'):raise ValueError('Unterminated affine animation')
    affine.append(commands)
- return dict(template=name,asset=asset,callback=callback,blend=shape[2]=='Blend',width=int(shape[3]),height=int(shape[4]),animations=animations,loopStarts=loops,affineAnimations=affine,affineDoubleSize=shape[1]=='Double')
+ result=dict(template=name,asset=asset,callback=callback,blend=shape[2]=='Blend',width=int(shape[3]),height=int(shape[4]),animations=animations,loopStarts=loops,affineAnimations=affine,affineDoubleSize=shape[1]=='Double')
+ if callback=='AnimFlyingSandCrescent':
+  body=re.search(r'static void '+callback+r'\(struct Sprite \*sprite\)\s*\{(.*?)^\}',source,re.S|re.M)
+  tables=re.findall(r'SetSubspriteTables\(sprite, (\w+)\);',body[1]) if body else []
+  if len(tables)!=1:raise ValueError('Sand crescent subsprite activation differs')
+  table=re.search(r'const struct SubspriteTable '+tables[0]+r'\[\] =\s*\{\s*\{ NELEMS\((\w+)\), \1 \},\s*\};',source,re.S)
+  if table is None:raise ValueError('Sand crescent subsprite table differs')
+  array=re.search(r'const struct Subsprite '+table[1]+r'\[\] =\s*\{(.*?)\n\};',source,re.S)
+  if array is None:raise ValueError('Missing sand crescent subsprites')
+  pieces=[]
+  for entry in re.findall(r'\{(.*?)\}',array[1],re.S):
+   fields=dict(re.findall(r'\.(\w+)\s*=\s*([^,]+),',entry))
+   dimensions=re.fullmatch(r'SPRITE_SHAPE\((8|16|32|64)x(8|16|32|64)\)',fields.get('shape',''))
+   if not dimensions or fields.get('size')!='SPRITE_SIZE('+dimensions[1]+'x'+dimensions[2]+')' or set(fields)!={'x','y','shape','size','tileOffset','priority'}:raise ValueError('Unsupported source subsprite fields')
+   x,y,tile,priority=(int(fields[k],0) for k in ('x','y','tileOffset','priority'))
+   if not -128<=x<=127 or not -128<=y<=127 or not 0<=tile<=1023 or not 0<=priority<=3:raise ValueError('Source subsprite field width differs')
+   pieces.append(dict(x=x,y=y,width=int(dimensions[1]),height=int(dimensions[2]),tileOffset=tile,priority=priority))
+  if pieces!=[dict(x=-16,y=0,width=32,height=16,tileOffset=0,priority=1),dict(x=16,y=0,width=32,height=16,tileOffset=8,priority=1)]:raise ValueError('Sand crescent source subsprite geometry differs')
+  result['subsprites']=pieces
+ return result
 SHARED_SPRITES={'gThinRingExpandingSpriteTemplate', 'gShakeMonOrTerrainSpriteTemplate', 'gGrantingStarsSpriteTemplate', 'gSimplePaletteBlendSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate', 'gComplexPaletteBlendSpriteTemplate', 'gFistFootSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gBasicHitSplatSpriteTemplate'}
 TASKS={'AnimTask_ShakeMon', 'AnimTask_InvertScreenColor', 'AnimTask_BlendBattleAnimPal', 'AnimTask_StartSinAnimTimer', 'AnimTask_SwayMon', 'AnimTask_BlendColorCycle', 'AnimTask_ElectricBolt', 'AnimTask_ShakeMon2'}
 SOUNDS={'SE_M_MEGA_KICK2', 'SE_M_CRABHAMMER', 'SE_M_VITAL_THROW2', 'SE_M_HYDRO_PUMP', 'SE_M_FLAME_WHEEL', 'SE_M_HYPER_BEAM', 'SE_M_SCREECH', 'SE_M_ABSORB_2', 'SE_M_COMET_PUNCH', 'SE_M_SUPERSONIC', 'SE_M_TAIL_WHIP', 'SE_M_THUNDERBOLT2', 'SE_M_ABSORB', 'SE_M_GIGA_DRAIN', 'SE_M_EMBER', 'SE_M_TRI_ATTACK2', 'SE_M_FLAMETHROWER', 'SE_M_BUBBLE_BEAM', 'SE_M_THUNDERBOLT', 'SE_M_THUNDER_WAVE', 'SE_M_FIRE_PUNCH', 'SE_M_SELF_DESTRUCT', 'SE_M_BUBBLE3', 'SE_M_BUBBLE', 'SE_M_WHIRLPOOL', 'SE_M_MEGA_KICK'}
@@ -230,6 +259,18 @@ SOUNDS|={'SE_M_WATERFALL','SE_M_BONEMERANG','SE_M_VITAL_THROW'}
 GFX|={'ANIM_TAG_LEER','ANIM_TAG_CIRCLE_OF_LIGHT','ANIM_TAG_THOUGHT_BUBBLE'}
 TASKS|={'AnimTask_BlendParticle'}
 SOUNDS|={'SE_M_MORNING_SUN'}
+OVERLAY_MATERIALS={'AnimTask_ScaryFace':('scary-face-player','scary-face-opponent'),'AnimTask_HazeScrollingFog':('fog',),'AnimTask_MistBallFog':('fog',),'AnimTask_LoadSandstormBackground':('sandstorm',),'AnimTask_MorningSunLightBeam':('morning-sun',)}
+OVERLAY_TASKS=set(OVERLAY_MATERIALS)
+TASKS|={'AnimTask_AlphaFadeIn','AnimTask_MoonlightEndFade','AnimTask_RotateAuroraRingColors'}
+GFX|={'ANIM_TAG_LETTER_Z','ANIM_TAG_GREEN_STAR','ANIM_TAG_MOON','ANIM_TAG_GREEN_SPARKLE','ANIM_TAG_RAINBOW_RINGS'}
+SOUNDS|={'SE_M_SNORE','SE_M_MOONLIGHT','SE_M_BUBBLE_BEAM'}
+TASKS|={'AnimTask_BlendBackground','AnimTask_MoveHeatWaveTargets','AnimTask_CreateRaindrops'}
+GFX|={'ANIM_TAG_FLYING_DIRT','ANIM_TAG_RAIN_DROPS','ANIM_TAG_SUNLIGHT'}
+SOUNDS|={'SE_M_SANDSTORM','SE_M_HEAT_WAVE','SE_M_RAIN_DANCE','SE_M_PETAL_DANCE'}
+TASKS|=OVERLAY_TASKS|{'AnimTask_GlareEyeDots','AnimTask_ShakeTargetInPattern'}
+SHARED_SPRITES|={'gEyeSparkleSpriteTemplate'}
+GFX|={'ANIM_TAG_EYE_SPARKLE','ANIM_TAG_SMALL_RED_EYE','ANIM_TAG_WHITE_FEATHER'}
+SOUNDS|={'SE_M_HAZE','SE_M_SAND_ATTACK'}
 def fold_firered_contest_branches(reference,source,commands,labels):
  # Both native contest tests are constant false in pinned FireRed. Canonical
  # argument comparisons are folded only immediately after the actual predicate
@@ -265,7 +306,7 @@ def sound_effects(reference,commands):
  result=set()
  for command in commands:
   op,args=command['op'],command['args']
-  if op in {'playse','playsewithpan','loopsewithpan','panse','panse_adjustall','waitplaysewithpan'}:result.add(args[0])
+  if op in {'playse','playsewithpan','loopsewithpan','panse','panse_adjustall','panse_adjustnone','waitplaysewithpan'}:result.add(args[0])
   elif op=='createvisualtask' and args[0] in {'SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning'}:result.add(args[2])
   elif op=='createsoundtask':
    if args[0]=='SoundTask_LoopSEAdjustPanning':result.add(args[1])
@@ -294,7 +335,7 @@ def build(reference):
    if not row:continue
    if row.endswith(':'):raise ValueError('Unexpected label')
    op,*tail=row.split(None,1);args=[a.strip() for a in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else []
-   if op not in hit.OPS|{'call','return','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes','createsoundtask','waitsound','setarg'}:raise ValueError('Unsupported command '+op)
+   if op not in hit.OPS|{'call','return','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes','createsoundtask','waitsound','setarg','panse_adjustnone','fadetobg','waitbgfadein','restorebg'}:raise ValueError('Unsupported command '+op)
    result.append(dict(op=op,args=args,line=source[:m.end()].count('\n')+offset+1))
    if op==end:return result
   raise ValueError('Unterminated '+label)
@@ -317,13 +358,40 @@ def build(reference):
    if any(c['op']=='call' for sub in local.values() for c in sub):continue
   except ValueError:continue
   flat=root+[c for sub in local.values() for c in sub]
-  if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_ElectricBolt','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_Hail'} for c in flat):continue
-  if any(c['op']=='createsoundtask' and not supported_sound_task(c['args'],songs) or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
+  if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_ElectricBolt','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_Hail','AnimTask_CreateRaindrops'}|OVERLAY_TASKS for c in flat):continue
+  if any(c['op']=='createsoundtask' and not supported_sound_task(c['args'],songs) or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','panse_adjustnone','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
+  if any(c['op']=='fadetobg' and c['args']!=['BG_AURORA'] for c in flat):continue
   # Spark's zero modulus requires original ARM helper semantics before admission.
   if any(c['op']=='createsprite' and c['args'][0]=='gSparkElectricityFlashingSpriteTemplate' and int(c['args'][-1],0)&32767==0 for c in flat):continue
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=sound_effects(reference,flat),spriteTags={name:tags[name] for name in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})}));subs.update(local)
  for row in scripts:
   flat=row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]]
+  overlay_tasks={c['args'][0] for c in flat if c['op']=='createvisualtask'} & OVERLAY_TASKS
+  if any(c['op']=='loadspritegfx' and c['args']==['ANIM_TAG_WHITE_FEATHER'] for c in flat):
+   row['materialDependencies']=['white-feather']
+  if overlay_tasks:
+   row['overlayDependencies']=sorted({name for task in overlay_tasks for name in OVERLAY_MATERIALS[task]})
+  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_GlareEyeDots' for c in flat):
+   effects=read(reference,'src/battle_anim_effects_3.c').decode()
+   child=re.search(r'static void AnimTask_GlareEyeDots_Step\(u8 taskId\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   if child is None or re.findall(r'CreateSprite\(&([A-Za-z0-9_]+),',child[1])!=['gGlareEyeDotSpriteTemplate']:raise ValueError('Glare raw child dependency differs')
+   row['spriteDependencies']=['gGlareEyeDotSpriteTemplate']
+  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_CreateRaindrops' for c in flat):
+   water=read(reference,'src/battle_anim_water.c').decode()
+   child=re.search(r'void AnimTask_CreateRaindrops\(u8 taskId\)\s*\{(.*?)^\}',water,re.S|re.M)
+   if child is None or re.findall(r'CreateSprite\(&([A-Za-z0-9_]+),',child[1])!=['gRainDropSpriteTemplate']:raise ValueError('Rain raw child dependency differs')
+   row['spriteDependencies']=['gRainDropSpriteTemplate']
+  if any(c['op']=='createsprite' and c['args'][0]=='gGreenStarSpriteTemplate' for c in flat):
+   effects=read(reference,'src/battle_anim_effects_3.c').decode()
+   child=re.search(r'static void AnimGreenStar\(struct Sprite \*sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   if child is None or re.findall(r'CreateSprite\(&([A-Za-z0-9_]+),',child[1])!=['gGreenStarSpriteTemplate','gGreenStarSpriteTemplate']:raise ValueError('Morning Sun raw child dependency differs')
+   row['spriteDependencies']=['gGreenStarSpriteTemplate']
+  if 'AnimTask_MorningSunLightBeam' in overlay_tasks:
+   effects=read(reference,'src/battle_anim_effects_3.c').decode()
+   beam=re.search(r'void AnimTask_MorningSunLightBeam\(u8 taskId\)\s*\{(.*?)^\}',effects,re.S|re.M)
+   cues=re.findall(r'PlaySE12WithPanning\((SE_\w+), BattleAnimAdjustPanning\(SOUND_PAN_ATTACKER\)\);',beam[1]) if beam else []
+   if cues!=['SE_M_MORNING_SUN','SE_M_MORNING_SUN']:raise ValueError('Morning Sun callback sounds differ')
+   row['soundEffects'].update(sound_effects(reference,[dict(op='playsewithpan',args=[cue,'SOUND_PAN_ATTACKER']) for cue in cues]))
   if any(c['op']=='createsprite' and c['args'][0]=='gBlockXSpriteTemplate' for c in flat):
    effects=read(reference,'src/battle_anim_effects_3.c').decode()
    init=re.search(r'static void AnimBlockX\(struct Sprite \*sprite\)\s*\{(.*?)^\}',effects,re.S|re.M)
@@ -405,7 +473,7 @@ def build(reference):
  if not re.search(r'\{gBattleAnimSpriteGfx_AirWave,\s*0x0100,\s*ANIM_TAG_AIR_WAVE\}',registrations) or not re.search(r'\{gBattleAnimSpritePal_AirWave,\s*ANIM_TAG_AIR_WAVE\}',registrations):raise ValueError('Sonic Boom source registration differs')
  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
   if not re.search(r'gBattleAnimSprite'+kind+r'_AirWave\[\] = INCBIN_U32\("graphics/battle_anims/sprites/air_wave\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Sonic Boom source material path differs')
- for stem,symbol,size in [('leer','Leer',0xa00),('thought_bubble','ThoughtBubble',0x800),('small_bubbles','SmallBubbles',0x140),('orbs','Orbs',0x180),('amnesia','Amnesia',0x1000),('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
+ for stem,symbol,size in [('letter_z','LetterZ',0x0200),('green_star','GreenStar',0x0200),('moon','Moon',0x0800),('green_sparkle','GreenSparkle',0x0200),('rainbow_rings','RainbowRings',0x00c0),('flying_dirt','FlyingDirt',0x0200),('rain_drops','RainDrops',0x0700),('sunlight','Sunlight',0x0200),('small_red_eye','SmallRedEye',0x0020),('white_feather','WhiteFeather',0x0400),('leer','Leer',0xa00),('thought_bubble','ThoughtBubble',0x800),('small_bubbles','SmallBubbles',0x140),('orbs','Orbs',0x180),('amnesia','Amnesia',0x1000),('sword','Sword',0x400),('sphere_to_cube','SphereToCube',0xa00)]:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source indexed registration differs: '+stem)
   for suffix,kind in [('4bpp','Gfx'),('gbapal','Pal')]:
@@ -422,7 +490,12 @@ def build(reference):
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x0800,\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal+r',\s*'+tag+r'\}',registrations):raise ValueError('Source trapping registration differs: '+stem)
   for kind,name,path,suffix in [('Gfx',symbol,stem,'4bpp'),('Pal',pal,'hollow_orb' if stem=='x_sign' else stem,'gbapal')]:
    if not re.search(r'gBattleAnimSprite'+kind+'_'+name+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source trapping graphics differs: '+stem)
- for stem,size in [('leer',(32,160)),('circle_of_light',(64,64)),('thought_bubble',(32,128)),('small_bubbles',(16,40)),('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
+ for stem,symbol,size in [('leaf','Leaf',0x0480),('razor_leaf','RazorLeaf',0x0100)]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source leaf registration differs: '+stem)
+  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source leaf material differs: '+stem)
+ for stem,size in [('letter_z',(32,32)),('green_star',(16,64)),('moon',(64,64)),('green_sparkle',(16,64)),('rainbow_rings',(8,48)),('leaf',(16,144)),('razor_leaf',(32,16)),('flying_dirt',(32,32)),('rain_drops',(16,224)),('sunlight',(32,32)),('small_red_eye',(8,8)),('white_feather',(32,64)),('leer',(32,160)),('circle_of_light',(64,64)),('thought_bubble',(32,128)),('small_bubbles',(16,40)),('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+stem+'.png'))) as im:
    if im.mode!='P' or im.size!=size:raise ValueError('Invalid source indexed image')
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];palette=im.getpalette()[:48]
@@ -440,7 +513,10 @@ def build(reference):
   pixels[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2))
   pixels[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
   indexed.append(dict(id=name,width=size[0],height=size[1],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag='ANIM_TAG_'+stem.upper()))
- return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subs,taskAffinePrograms={'sDeepInhaleAffineAnimCmds':task_affine_program(all_source,'sDeepInhaleAffineAnimCmds')},spriteRecipes=recipes,assets=assets,indexedAssets=indexed),indent=2)+'\n').encode(),pixels
+ background_names={c['args'][0] for row in scripts for c in row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]] if c['op'] in {'fadetobg','changebg'}}
+ definitions={name:int(value) for name,value in re.findall(r'^#define (BG_\w+)\s+(\d+)\b',read(reference,'include/constants/battle_anim.h').decode(),re.M)}
+ if not background_names<=definitions.keys():raise ValueError('Missing source elemental background symbol')
+ return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subs,backgroundSymbols={name:definitions[name] for name in sorted(background_names)},taskAffinePrograms={'sDeepInhaleAffineAnimCmds':task_affine_program(all_source,'sDeepInhaleAffineAnimCmds')},spriteRecipes=recipes,assets=assets,indexedAssets=indexed),indent=2)+'\n').encode(),pixels
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/elemental.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,pixels=build(a.reference)
  for path,blob in [(a.output,data)]+[(a.output.parent/('elemental-'+id if id.endswith(('.4bpp','.pal16')) else 'elemental-'+id+'.rgb555'),blob) for id,blob in pixels.items()]:

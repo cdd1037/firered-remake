@@ -1,0 +1,57 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define DISPLAY_WIDTH 240
+#define MAX_SPRITES 64
+#define NELEMS(a) (sizeof(a)/sizeof((a)[0]))
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite*);
+struct Sprite {struct OamData oam;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse;const struct SubspriteTable *subspriteTables;u8 subspriteTableNum,subspriteMode;};
+struct SpriteTemplate {SpriteCallback callback;};struct Sprite gSprites[64];
+u8 gBattleAnimAttacker,gBattleAnimTarget,gAnimVisualTaskCount,gAnimScriptActive;s16 gBattleAnimArgs[8];
+static const u8 *sBattleAnimScriptPtr;static s8 sAnimFramesToWait;static void (*gAnimScriptCallback)(void);
+static int frame,created,births[7],deaths[7],instances[64],peakRaw,peakVisible;
+static u8 GetBattlerSide(u8 id){return id&1;}static u8 GetBattlerSpriteSubpriority(u8 id){return 130;}
+#define BATTLER_COORD_X_2 0
+#define BATTLER_COORD_Y_PIC_OFFSET 1
+static s16 GetBattlerSpriteCoord(u8 id,u8 kind){return 0;}
+static void AnimateSprite(struct Sprite *s){} /* Flying dirt's single static frame has no callback effects. */
+static void DestroyAnimSprite(struct Sprite *s){assert(s->inUse);s->inUse=FALSE;gAnimVisualTaskCount--;deaths[instances[s-gSprites]]=frame;}
+static u8 CreateSpriteAt(u8 i,const struct SpriteTemplate *t,s16 x,s16 y,u8 p){assert(created<7);memset(&gSprites[i],0,sizeof gSprites[i]);gSprites[i].inUse=TRUE;gSprites[i].callback=t->callback;gSprites[i].x=x;gSprites[i].y=y;instances[i]=created;births[created++]=frame;return i;}
+@PROTOTYPES@
+static const struct SpriteTemplate dirt={AnimFlyingSandCrescent};
+#define T1_READ_16(p) ((u16)((p)[0]|((p)[1]<<8)))
+#define T2_READ_32(p) ((uintptr_t)&dirt)
+#define GET_TRUE_SPRITE_INDEX(x) 0
+static const int gBattleAnimPicTable[1]={0},gBattleAnimPaletteTable[1]={0};
+static void LoadCompressedSpriteSheetUsingHeap(const int *p){}
+static void LoadCompressedSpritePaletteUsingHeap(const int *p){}
+static void AddSpriteIndex(u16 i){}
+/* The authored task and audio instructions never yield. Their resource writes
+   and task lifetimes cannot alter the seven creation instructions. Their full
+   callback state is independently covered by the existing source fixtures. */
+static void IgnoreVisualTask(void){sBattleAnimScriptPtr+=7+2*sBattleAnimScriptPtr[6];}
+static void IgnoreSound(void){sBattleAnimScriptPtr+=4;}
+static void IgnorePan(void){sBattleAnimScriptPtr+=7;}
+static void StopScript(void){gAnimScriptActive=FALSE;}
+static void (*const sScriptCmdTable[28])(void)={[0]=Cmd_loadspritegfx,[2]=Cmd_createsprite,[3]=IgnoreVisualTask,[4]=Cmd_delay,[5]=Cmd_waitforvisualfinish,[8]=StopScript,[25]=IgnoreSound,[27]=IgnorePan};
+@ARRAYS@
+@FUNCTIONS@
+@SCRIPTS@
+static int rawCount(void){int n=0;for(int i=0;i<64;i++)n+=gSprites[i].inUse;return n;}
+static int fieldCount(void){int n=0;for(int i=0;i<64;i++){struct Sprite *s=&gSprites[i];if(s->inUse){int x=s->x+s->x2,y=s->y+s->y2;if(x+32>0&&x-32<240&&y+8>0&&y-8<112)n++;}}return n;}
+int main(int argc,char**argv){assert(argc==3);int root=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=gBattleAnimAttacker^1;gAnimScriptActive=TRUE;gAnimScriptCallback=RunAnimScriptCommand;sBattleAnimScriptPtr=root==201?sandScript:heatScript;memset(deaths,-1,sizeof deaths);
+ for(frame=0;frame<256;frame++){
+  if(gAnimScriptActive)gAnimScriptCallback();int pre=rawCount();if(pre>peakRaw)peakRaw=pre;
+  AnimateSprites();int raw=rawCount(),visible=raw;assert(raw==gAnimVisualTaskCount);if(visible>peakVisible)peakVisible=visible;
+  printf("{\"frame\":%d,\"preSpriteCount\":%d,\"postSpriteCount\":%d,\"visibleOamCount\":%d,\"fieldIntersectCount\":%d,\"created\":%d,\"wait\":%d,\"waitCallback\":%d,\"scriptActive\":%d}\n",frame,pre,raw,visible,fieldCount(),created,sAnimFramesToWait,gAnimScriptCallback==WaitAnimFrameCount,gAnimScriptActive);
+  if(created==7&&!raw)break;
+ }
+ assert(created==7&&frame<256);printf("{\"birthFrames\":[");for(int i=0;i<7;i++)printf("%s%d",i?",":"",births[i]);printf("],\"destructionFrames\":[");for(int i=0;i<7;i++){assert(deaths[i]>=births[i]);printf("%s%d",i?",":"",deaths[i]);}printf("],\"peakRawCount\":%d,\"peakVisibleOamCount\":%d}\n",peakRaw,peakVisible);return 0;
+}

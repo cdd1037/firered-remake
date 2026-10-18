@@ -12,9 +12,9 @@ hit=module('physical_hit_import',ROOT/'scripts/imports/battle/import-source-hit-
 elemental=module('physical_elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py')
 def read_sources(reference):
  # Only actual conversion inputs. The source revision comes from the shared importer.
- paths=('data/battle_anim_scripts.s','src/data/battle_moves.h','include/constants/moves.h','include/constants/battle_anim.h','src/data/battle_anim.h','src/battle_anim_fight.c','src/battle_anim_bug.c','src/battle_anim_normal.c','src/battle_anim_poison.c','src/battle_anim_dark.c','src/battle_anim_rock.c','src/battle_anim_fire.c',
-        'src/battle_anim_effects_1.c','src/battle_anim_effects_2.c','src/battle_anim_ground.c','src/battle_anim_effects_3.c',
-        'graphics/battle_anims/sprites/gold_stars.png','graphics/battle_anims/sprites/swipe.png','graphics/battle_anims/sprites/fang_attack.png','graphics/battle_anims/sprites/seed.png','graphics/battle_anims/sprites/icicle_spear.png','graphics/battle_anims/sprites/claw_slash.png','graphics/battle_anims/sprites/torn_metal.png','graphics/battle_anims/sprites/blue_light_wall.pal','graphics/battle_anims/sprites/bone.png','graphics/battle_anims/sprites/eye_sparkle.png','graphics/battle_anims/sprites/anger.png','graphics/battle_anims/sprites/breath.png','graphics/battle_anims/sprites/eclipsing_orb.png',
+ paths=('data/battle_scripts_1.s','data/battle_anim_scripts.s','src/data/battle_moves.h','include/constants/moves.h','include/constants/battle_anim.h','src/data/battle_anim.h','src/battle_anim_fight.c','src/battle_anim_bug.c','src/battle_anim_normal.c','src/battle_anim_poison.c','src/battle_anim_dark.c','src/battle_anim_rock.c','src/battle_anim_fire.c',
+        'src/graphics.c','src/battle_anim_flying.c','src/battle_anim_effects_1.c','src/battle_anim_effects_2.c','src/battle_anim_ground.c','src/battle_anim_effects_3.c',
+        'graphics/battle_anims/sprites/tri_attack_triangle.png','graphics/battle_anims/sprites/sweat_drop.png','graphics/battle_anims/sprites/tag_hand.png','graphics/battle_anims/sprites/finger.png','graphics/battle_anims/sprites/smellingsalt_effect.png','graphics/battle_anims/sprites/red_orb.png','graphics/battle_anims/sprites/sweat_bead.png','graphics/battle_anims/sprites/splash.png','graphics/battle_anims/sprites/coin.png','graphics/battle_anims/sprites/cross_impact.png','graphics/battle_anims/sprites/red_ball.png','graphics/battle_anims/sprites/whirlwind_lines.png','graphics/battle_anims/sprites/gold_stars.png','graphics/battle_anims/sprites/swipe.png','graphics/battle_anims/sprites/fang_attack.png','graphics/battle_anims/sprites/seed.png','graphics/battle_anims/sprites/icicle_spear.png','graphics/battle_anims/sprites/claw_slash.png','graphics/battle_anims/sprites/torn_metal.png','graphics/battle_anims/sprites/blue_light_wall.pal','graphics/battle_anims/sprites/bone.png','graphics/battle_anims/sprites/eye_sparkle.png','graphics/battle_anims/sprites/anger.png','graphics/battle_anims/sprites/breath.png','graphics/battle_anims/sprites/eclipsing_orb.png',
         'graphics/battle_anims/sprites/mud_sand_0.png','graphics/battle_anims/sprites/mud_sand_1.png','graphics/battle_anims/sprites/mud_sand.pal',
         'graphics/battle_anims/sprites/slam_hit.png','graphics/battle_anims/sprites/whip_hit.pal','graphics/battle_anims/sprites/poison_powder.png',
         'graphics/battle_anims/sprites/sleep_powder.pal','graphics/battle_anims/sprites/stun_spore.pal')
@@ -24,7 +24,42 @@ SPRITES={'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gGranting
 TASKS={'AnimTask_MeditateStretchAttacker','AnimTask_BlendMonInAndOut','AnimTask_BlendColorCycle','AnimTask_IsContest','AnimTask_IsTargetPlayerSide','AnimTask_MetallicShine','AnimTask_BlendBattleAnimPal','SoundTask_PlaySE1WithPanning','AnimTask_RockMonBackAndForth','AnimTask_DefenseCurlDeformMon','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','AnimTask_ScaleMonAndRestore','AnimTask_SwayMon','AnimTask_TranslateMonElliptical','AnimTask_RotateMonToSideAndRestore','AnimTask_ShakeMon','AnimTask_ShakeMon2','AnimTask_TranslateMonEllipticalRespectSide','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
 TASKS|={'AnimTask_HorizontalShake','AnimTask_ShakeTargetBasedOnMovePowerOrDmg','AnimTask_IsPowerOver99'}
 NEW= {'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gMeteorMashStarSpriteTemplate','gArmThrustHandSpriteTemplate','gFurySwipesSpriteTemplate','gFangSpriteTemplate','gSuperFangSpriteTemplate','gBulletSeedSpriteTemplate','gSandAttackDirtSpriteTemplate','gMudSlapMudSpriteTemplate','gMegaPunchKickSpriteTemplate','gSpinningHandOrFootSpriteTemplate','gPinMissileSpriteTemplate','gIcicleSpearSpriteTemplate','gLinearStingerSpriteTemplate','gHandleInvertHitSplatSpriteTemplate','gClawSlashSpriteTemplate','gSpinningBoneSpriteTemplate','jumpifmoveturn','choosetwoturnanim','gEyeSparkleSpriteTemplate','gAngerMarkSpriteTemplate','AnimTask_DefenseCurlDeformMon','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','gMudsportMudSpriteTemplate','goto','gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
+SPRITES|={'gCoinThrowSpriteTemplate','gFallingCoinSpriteTemplate','gCrossChopHandSpriteTemplate','gCrossImpactSpriteTemplate'}
+TASKS|={'AnimTask_DrillPeckHitSplats','AnimTask_BarrageBall'}
+NEW|={'gCoinThrowSpriteTemplate','gFallingCoinSpriteTemplate','gCrossChopHandSpriteTemplate','gCrossImpactSpriteTemplate','AnimTask_DrillPeckHitSplats','AnimTask_BarrageBall'}
 NEW|={'AnimTask_HorizontalShake','AnimTask_ShakeTargetBasedOnMovePowerOrDmg','AnimTask_IsPowerOver99'}
+SPRITES|={'gHiddenPowerOrbSpriteTemplate','gHiddenPowerOrbScatterSpriteTemplate','gSprayWaterDropletSpriteTemplate','gRazorLeafParticleSpriteTemplate','gRazorLeafCutterSpriteTemplate'}
+TASKS|={'AnimTask_CycleMagicalLeafPal','AnimTask_MoveSkyUppercutBg','AnimTask_StretchTargetUp'}
+NEW|={'gHiddenPowerOrbSpriteTemplate','gHiddenPowerOrbScatterSpriteTemplate','gSprayWaterDropletSpriteTemplate','AnimTask_CycleMagicalLeafPal','AnimTask_MoveSkyUppercutBg','AnimTask_StretchTargetUp'}
+# These shared elemental callbacks close Tri Attack's original fire/ice/lightning phases.
+SPRITES|={'gTriAttackTriangleSpriteTemplate','gSmellingSaltsHandSpriteTemplate','gSmellingSaltExclamationSpriteTemplate','gLargeFlameScatterSpriteTemplate','gLightningSpriteTemplate','gIceCrystalHitLargeSpriteTemplate','gIceCrystalHitSmallSpriteTemplate'}
+TASKS|={'AnimTask_SquishAndSweatDroplets','AnimTask_FacadeColorBlend','AnimTask_SmellingSaltsSquish','AnimTask_LeafBlade','AnimTask_ShakeTargetInPattern','AnimTask_InvertScreenColor'}
+NEW|={'gTriAttackTriangleSpriteTemplate','gSmellingSaltsHandSpriteTemplate','gSmellingSaltExclamationSpriteTemplate','AnimTask_SquishAndSweatDroplets','AnimTask_FacadeColorBlend','AnimTask_SmellingSaltsSquish','AnimTask_LeafBlade'}
+REACTION_RECIPES=[('gTriAttackTriangleSpriteTemplate','battle_anim_effects_3.c','AnimTriAttackTriangle'),('gFacadeSweatDropSpriteTemplate','battle_anim_effects_3.c','AnimFacadeSweatDrop'),('gSmellingSaltsHandSpriteTemplate','battle_anim_effects_3.c','AnimSmellingSaltsHand'),('gSmellingSaltExclamationSpriteTemplate','battle_anim_effects_3.c','AnimSmellingSaltExclamation'),('gLeafBladeSpriteTemplate','battle_anim_effects_1.c','SpriteCallbackDummy')]
+REACTION_MATERIALS=[('tri_attack_triangle','TriAttackTriangle',0x0800,(64,64),'TriAttackTriangle','tri_attack_triangle'),('sweat_drop','SweatDrop',0x0020,(8,8),'SweatDrop','sweat_drop'),('tag_hand','TagHand',0x0400,(32,64),'Finger','finger'),('smellingsalt_effect','SmellingsaltEffect',0x0200,(32,32),'SmellingsaltEffect','smellingsalt_effect')]
+def reaction_palette(raw,stem):
+ with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/'+stem+'.png'])) as image:return image.getpalette()[:48]
+def validate_reaction_sources(raw):
+ registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+ for stem,symbol,size,shape,pal_symbol,pal_stem in REACTION_MATERIALS:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal_symbol+r',\s*'+tag+r'\}',registration):raise ValueError('Reaction source sheet/palette registration differs: '+stem)
+  for kind,symbol,name,suffix in [('Gfx',symbol,stem,'4bpp'),('Pal',pal_symbol,pal_stem,'gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+name+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Reaction source material differs: '+stem)
+ colors=re.search(r'const u16 sFacadeBlendColors\[\] =\s*\{(.*?)\};',raw['src/battle_anim_effects_3.c'].decode(),re.S)
+ expected=[(28,25,1),(28,21,5),(27,18,8),(27,14,11),(26,10,15),(26,7,18),(25,3,21),(25,0,25),(25,0,23),(25,0,20),(25,0,16),(25,0,13),(26,0,10),(26,0,6),(26,0,3),(27,0,0),(27,1,0),(27,5,0),(27,9,0),(27,12,0),(28,16,0),(28,19,0),(28,23,0),(29,27,0)]
+ if colors is None or [tuple(map(int,row)) for row in re.findall(r'RGB\(\s*(\d+),\s*(\d+),\s*(\d+)\)',colors[1])]!=expected:raise ValueError('Facade source colors differ')
+
+def requires_uncommitted_power(effect,commands,raw):
+ # Endeavor computes fixed HP-difference damage then enters HitFromAtkAnimation.
+ # Its source animation reads retained gBattleMovePower, not that hit's damage.
+ # Keep this effect unadmitted until a real retained-power receipt exists.
+ reads=any(c['op']=='createvisualtask' and len(c['args'])==7 and c['args'][0]=='AnimTask_ShakeTargetBasedOnMovePowerOrDmg' and c['args'][2] in {'0','FALSE'} for c in commands)
+ if not reads or effect!='EFFECT_ENDEAVOR':return False
+ body=raw['data/battle_scripts_1.s'].decode().split('BattleScript_EffectEndeavor::',1)[1].split('\nBattleScript_',1)[0]
+ if 'setdamagetohealthdifference' not in body or 'adjustsetdamage' not in body or 'goto BattleScript_HitFromAtkAnimation' not in body or re.search(r'^\s*damagecalc\b',body,re.M):raise ValueError('Endeavor source power-provenance boundary differs')
+ return True
+
 def sprite_recipe(source,template,asset,expected_callback):
  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
  if match is None:raise ValueError('Missing sprite recipe '+template)
@@ -84,8 +119,29 @@ def registered_sprite_pixels(raw,symbol,png,palette=None):
  converted=hit.rgb555(data,(width,height),palette)
  return struct.pack('<HH',width,pixels//width)+converted[4:4+pixels*2]
 
+def impact_emission_recipe(raw,template,file,callback):
+ source=raw['src/'+file].decode()
+ if template=='gCrossChopHandSpriteTemplate':
+  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
+  if match is None or '.anims = &sAnims_HandsAndFeet[3],' not in match[1]:raise ValueError('Cross Chop source frame-table offset differs')
+  source=source[:match.start(1)]+match[1].replace('.anims = &sAnims_HandsAndFeet[3],','.anims = sAnims_HandsAndFeet,')+source[match.end(1):]
+  result=elemental.recipe(source,template,callback)
+  if len(result['animations'])!=5:raise ValueError('Cross Chop backing frame-table length differs')
+  result['animations']=result['animations'][3:];result['loopStarts']=result['loopStarts'][3:]
+  return result
+ return elemental.recipe(source,template,callback)
+
+ORBITAL_PARTICLE_RECIPES=[('gHiddenPowerOrbSpriteTemplate','battle_anim_effects_2.c','AnimOrbitFast'),('gHiddenPowerOrbScatterSpriteTemplate','battle_anim_effects_2.c','AnimOrbitScatter'),('gSprayWaterDropletSpriteTemplate','battle_anim_flying.c','AnimSprayWaterDroplet')]
+IMPACT_EMISSION_RECIPES=[
+ ('gCoinThrowSpriteTemplate','battle_anim_effects_2.c','AnimCoinThrow'),
+ ('gFallingCoinSpriteTemplate','battle_anim_effects_2.c','AnimFallingCoin'),
+ ('gCrossChopHandSpriteTemplate','battle_anim_fight.c','AnimCrossChopHand'),
+ ('gCrossImpactSpriteTemplate','battle_anim_normal.c','AnimCrossImpact'),
+ ('gFlashingHitSplatSpriteTemplate','battle_anim_normal.c','AnimFlashingHitSplat'),
+ ('gBarrageBallSpriteTemplate','battle_anim_effects_3.c','SpriteCallbackDummy')]
+
 def build_assets(reference):
- raw=read_sources(reference);png=raw['graphics/battle_anims/sprites/slam_hit.png']
+ raw=read_sources(reference);validate_reaction_sources(raw);png=raw['graphics/battle_anims/sprites/slam_hit.png']
  lines=raw['graphics/battle_anims/sprites/whip_hit.pal'].decode().splitlines()
  if lines[:3]!=['JASC-PAL','0100','16']:raise ValueError('Whip source palette differs')
  palette=[int(c) for line in lines[3:] for c in line.split()]
@@ -99,6 +155,22 @@ def build_assets(reference):
  if not re.search(r'\{gBattleAnimSpriteGfx_FangAttack,\s*0x0800,\s*ANIM_TAG_FANG_ATTACK\}',raw['src/data/battle_anim.h'].decode()) or not re.search(r'\{gBattleAnimSpritePal_FangAttack,\s*ANIM_TAG_FANG_ATTACK\}',raw['src/data/battle_anim.h'].decode()):raise ValueError('Fang source registration differs')
  if not re.search(r'\{gBattleAnimSpriteGfx_Swipe,\s*0x0a00,\s*ANIM_TAG_SWIPE\}',raw['src/data/battle_anim.h'].decode()) or not re.search(r'\{gBattleAnimSpritePal_Swipe,\s*ANIM_TAG_SWIPE\}',raw['src/data/battle_anim.h'].decode()):raise ValueError('Swipe source registration differs')
  assets={'gold-stars':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_GoldStars','gold_stars'),'swipe':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Swipe','swipe'),'fang-attack':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_FangAttack','fang_attack'),'seed':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Seed','seed'),'icicle-spear':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_IcicleSpear','icicle_spear'),'claw-slash':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_ClawSlash','claw_slash'),'torn-metal':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_TornMetal','torn_metal',blue_palette),'bone':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Bone','bone'),'eye-sparkle':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_EyeSparkle','eye_sparkle'),'anger':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Anger','anger'),'eclipsing-orb':hit.rgb555(raw['graphics/battle_anims/sprites/eclipsing_orb.png'],(32,128)),'breath':hit.rgb555(raw['graphics/battle_anims/sprites/breath.png'],(16,64)),'slam-hit':hit.rgb555(png,(32,256)),'whip-hit':hit.rgb555(png,(32,256),palette)}
+ # Match source tile/palette registration and graphic linkage, including the
+ # loaded-but-unused Whirlwind Lines material in Drill Peck's original script.
+ for stem,symbol,size in [('red_orb','RedOrb',0x0080),('coin','Coin',0x0200),('cross_impact','CrossImpact',0x0200),('red_ball','RedBall',0x0200),('whirlwind_lines','WhirlwindLines',0x0300)]:
+  tag='ANIM_TAG_'+stem.upper();registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registration):raise ValueError('Impact emission source registration differs: '+stem)
+  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Impact emission source material differs: '+stem)
+  assets[stem.replace('_','-')]=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_'+symbol,stem)
+ registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+ if not re.search(r'\{gBattleAnimSpriteGfx_SweatBead,\s*0x0020,\s*ANIM_TAG_SWEAT_BEAD\}',registration) or not re.search(r'\{gBattleAnimSpritePal_Splash,\s*ANIM_TAG_SWEAT_BEAD\}',registration):raise ValueError('Water droplet source palette alias differs')
+ for kind,symbol,stem,suffix in [('Gfx','SweatBead','sweat_bead','4bpp'),('Pal','Splash','splash','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Water droplet source material differs')
+ with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/splash.png'])) as image:shared_palette=image.getpalette()[:48]
+ for stem,symbol,size,shape,pal_symbol,pal_stem in REACTION_MATERIALS:
+  assets[stem.replace('_','-')]=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_'+symbol,stem,reaction_palette(raw,pal_stem))
+ assets['sweat-bead']=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_SweatBead','sweat_bead',shared_palette)
  powder=raw['graphics/battle_anims/sprites/poison_powder.png']
  assets['poison-powder']=hit.rgb555(powder,(8,128))
  for name in ['sleep-powder','stun-spore']:
@@ -120,6 +192,22 @@ def build_assets(reference):
  buffer=io.BytesIO();image.save(buffer,format='PNG');assets['mud-sand']=hit.rgb555(buffer.getvalue(),image.size)
  return assets
 
+def build_indexed_assets(reference):
+ raw=read_sources(reference);indexed=[];pixels={}
+ for stem,size in [('red_orb',(16,16)),('sweat_bead',(8,8)),('coin',(16,64)),('cross_impact',(32,32)),('red_ball',(32,32)),('whirlwind_lines',(32,48))]+[(r[0],r[3]) for r in REACTION_MATERIALS]:
+  with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/'+stem+'.png'])) as image:
+   if image.mode!='P' or image.size!=size:raise ValueError('Impact emission indexed source shape differs: '+stem)
+   indices=[v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()];palette=image.getpalette()[:48]
+  if stem=='sweat_bead':
+   with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/splash.png'])) as shared:palette=shared.getpalette()[:48]
+  if max(indices)>15 or len(palette)!=48:raise ValueError('Physical indexed palette differs: '+stem)
+  if stem=='tag_hand':palette=reaction_palette(raw,'finger')
+  name=stem.replace('_','-');base='physical-'+name
+  pixels[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2))
+  pixels[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
+  indexed.append(dict(id=name,width=size[0],height=size[1],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag='ANIM_TAG_'+stem.upper()))
+ return indexed,pixels
+
 def physical_sound_effects(reference,commands,source):
  # Callback sounds are real dependencies even when the authored script has no
  # sound opcode. Feed the source call operands to the shared song-ID extractor.
@@ -132,7 +220,9 @@ def physical_sound_effects(reference,commands,source):
  return elemental.sound_effects(reference,dependencies)
 
 def build(reference):
- raw=read_sources(reference);source=raw['data/battle_anim_scripts.s'].decode()
+ raw=read_sources(reference);validate_reaction_sources(raw);source=raw['data/battle_anim_scripts.s'].decode()
+ colors=re.search(r'const u16 sMagicalLeafBlendColors\[\] =\s*\{(.*?)\};',raw['src/battle_anim_effects_1.c'].decode(),re.S)
+ if colors is None or re.findall(r'RGB\((\d+), (\d+), (\d+)\)',colors[1])!=[('31','0','0'),('31','19','0'),('31','31','0'),('0','31','0'),('5','14','31'),('22','10','31'),('22','21','31')]:raise ValueError('Magical Leaf source blend colors differ')
  for template,size,callback in [('gWishStarSpriteTemplate',16,'AnimWishStar'),('gMeteorMashStarSpriteTemplate',16,'AnimMeteorMashStar'),('gMiniTwinklingStarSpriteTemplate',8,'AnimMiniTwinklingStar')]:
   match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',raw['src/battle_anim_effects_3.c'].decode(),re.S)
   fields={} if match is None else dict(re.findall(r'\.(\w+) = ([^,]+),',match[1]))
@@ -276,7 +366,8 @@ def build(reference):
   except ValueError:gaps.add('control-flow:unterminated')
   for command in commands:
    op=command['op'];args=command['args']
-   if op not in hit.OPS|{'panse_adjustall','panse','fadetobg','waitplaysewithpan','call','splitbgprio','goto','choosetwoturnanim','jumpifmoveturn','restorebg','waitbgfadein','jumpargeq'}:gaps.add('command:'+op)
+   if op=='createsoundtask' and not elemental.supported_sound_task(args,elemental.sound_effects(reference,[command])):gaps.add('sound-task:unreviewed')
+   if op not in hit.OPS|{'panse_adjustall','panse','fadetobg','waitplaysewithpan','call','splitbgprio','goto','choosetwoturnanim','jumpifmoveturn','restorebg','waitbgfadein','waitbgfadeout','setarg','jumpargeq','createsoundtask'}:gaps.add('command:'+op)
    if op=='jumpargeq':
     if len(args)!=3 or not args[0].isdigit() or not 0<=int(args[0])<16 or not (args[1] in {'TRUE','FALSE'} or re.fullmatch(r'-?\d+',args[1]) and -32768<=int(args[1])<=32767):gaps.add('control-flow:branch-operands')
    if op=='jumpifmoveturn':
@@ -290,13 +381,16 @@ def build(reference):
     if args[0] not in allowed:gaps.add('callback:'+args[0])
     # Source callbacks may read retained argument registers. Admit this family
     # only when the script explicitly supplies every value consumed by its ABI.
-    widths={'AnimTask_HorizontalShake':5,'AnimTask_ShakeTargetBasedOnMovePowerOrDmg':7,'AnimTask_IsPowerOver99':2}
+    widths={'AnimTask_SquishAndSweatDroplets':4,'AnimTask_FacadeColorBlend':4,'AnimTask_SmellingSaltsSquish':4,'AnimTask_LeafBlade':2,'AnimTask_HorizontalShake':5,'AnimTask_ShakeTargetBasedOnMovePowerOrDmg':7,'AnimTask_IsPowerOver99':2,'AnimTask_CycleMagicalLeafPal':2,'AnimTask_MoveSkyUppercutBg':3,'AnimTask_StretchTargetUp':2}
     if op=='createvisualtask' and args[0] in widths and len(args)!=widths[args[0]]:gaps.add('callback-arguments:'+args[0])
-   if op=='loadspritegfx' and args[0] not in {'ANIM_TAG_SPARKLE_2','ANIM_TAG_GOLD_STARS','ANIM_TAG_SWIPE','ANIM_TAG_FANG_ATTACK','ANIM_TAG_SEED','ANIM_TAG_ICICLE_SPEAR','ANIM_TAG_NEEDLE','ANIM_TAG_CLAW_SLASH','ANIM_TAG_TORN_METAL','ANIM_TAG_BLUE_LIGHT_WALL','ANIM_TAG_SMALL_EMBER','ANIM_TAG_BONE','ANIM_TAG_EYE_SPARKLE','ANIM_TAG_ANGER','ANIM_TAG_ECLIPSING_ORB','ANIM_TAG_BREATH','ANIM_TAG_BLUE_STAR','ANIM_TAG_MUD_SAND','ANIM_TAG_IMPACT','ANIM_TAG_HANDS_AND_FEET','ANIM_TAG_CUT','ANIM_TAG_SLAM_HIT','ANIM_TAG_WHIP_HIT','ANIM_TAG_POISON_POWDER','ANIM_TAG_SLEEP_POWDER','ANIM_TAG_STUN_SPORE','ANIM_TAG_POISON_BUBBLE'}:gaps.add('graphics:'+args[0])
+    sprite_widths={'gTriAttackTriangleSpriteTemplate':5,'gSmellingSaltsHandSpriteTemplate':6,'gSmellingSaltExclamationSpriteTemplate':6}
+    if op=='createsprite' and args[0] in sprite_widths and len(args)!=sprite_widths[args[0]]:gaps.add('callback-arguments:'+args[0])
+   if op=='loadspritegfx' and args[0] not in {'ANIM_TAG_TRI_ATTACK_TRIANGLE','ANIM_TAG_SWEAT_DROP','ANIM_TAG_TAG_HAND','ANIM_TAG_SMELLINGSALT_EFFECT','ANIM_TAG_FIRE','ANIM_TAG_LIGHTNING','ANIM_TAG_ICE_CRYSTALS','ANIM_TAG_RED_ORB','ANIM_TAG_SWEAT_BEAD','ANIM_TAG_LEAF','ANIM_TAG_RAZOR_LEAF','ANIM_TAG_COIN','ANIM_TAG_CROSS_IMPACT','ANIM_TAG_RED_BALL','ANIM_TAG_WHIRLWIND_LINES','ANIM_TAG_SPARKLE_2','ANIM_TAG_GOLD_STARS','ANIM_TAG_SWIPE','ANIM_TAG_FANG_ATTACK','ANIM_TAG_SEED','ANIM_TAG_ICICLE_SPEAR','ANIM_TAG_NEEDLE','ANIM_TAG_CLAW_SLASH','ANIM_TAG_TORN_METAL','ANIM_TAG_BLUE_LIGHT_WALL','ANIM_TAG_SMALL_EMBER','ANIM_TAG_BONE','ANIM_TAG_EYE_SPARKLE','ANIM_TAG_ANGER','ANIM_TAG_ECLIPSING_ORB','ANIM_TAG_BREATH','ANIM_TAG_BLUE_STAR','ANIM_TAG_MUD_SAND','ANIM_TAG_IMPACT','ANIM_TAG_HANDS_AND_FEET','ANIM_TAG_CUT','ANIM_TAG_SLAM_HIT','ANIM_TAG_WHIP_HIT','ANIM_TAG_POISON_POWDER','ANIM_TAG_SLEEP_POWDER','ANIM_TAG_STUN_SPORE','ANIM_TAG_POISON_BUBBLE'}:gaps.add('graphics:'+args[0])
   # Move-turn commands require an admitted invocation contract as well as pixels.
   # Beat Up uses contributor traversal; charge moves use a turn lock, neither is
   # an ordinary EFFECT_MULTI_HIT receipt ordinal. Keep those contexts separate.
   effect=effects.get('MOVE_'+match[2])
+  if requires_uncommitted_power(effect,commands,raw):gaps.add('invocation:retained-move-power')
   if 'choosetwoturnanim' in symbols and effect not in {'EFFECT_MULTI_HIT','EFFECT_PURSUIT'}:gaps.add('invocation:move-turn')
   if 'jumpifmoveturn' in symbols and effect!='EFFECT_TRIPLE_KICK':gaps.add('invocation:move-turn')
   if not any(c['op']=='end' for c in commands):gaps.add('control-flow:unterminated')
@@ -322,16 +416,17 @@ def build(reference):
   dependencies=commands+[c for sub in local_subs.values() for c in sub]
   loaded=sorted({c['args'][0] for c in dependencies if c['op']=='loadspritegfx'})
   if not set(loaded)<=tags.keys():raise ValueError('Undefined source sprite tag dependency')
-  scripts.append(dict(moveId=move,label=match[1],commands=commands,labels=labels,**({'spriteDependencies':['gBasicHitSplatSpriteTemplate']} if 'gFistFootRandomPosSpriteTemplate' in symbols else {}),soundEffects=physical_sound_effects(reference,dependencies,raw['src/battle_anim_effects_2.c'].decode()),spriteTags={name:tags[name] for name in loaded}));subroutines.update(local_subs);subroutine_labels.update(local_labels);background_symbols.update({c['args'][0]:backgrounds[c['args'][0]] for c in dependencies if c['op'] in {'changebg','fadetobg'}})
+  children=sorted(set((['gBasicHitSplatSpriteTemplate'] if 'gFistFootRandomPosSpriteTemplate' in symbols else [])+(['gFlashingHitSplatSpriteTemplate'] if 'AnimTask_DrillPeckHitSplats' in symbols else [])+(['gBarrageBallSpriteTemplate'] if 'AnimTask_BarrageBall' in symbols else [])+(['gFacadeSweatDropSpriteTemplate'] if 'AnimTask_SquishAndSweatDroplets' in symbols else [])+(['gLeafBladeSpriteTemplate'] if 'AnimTask_LeafBlade' in symbols else [])))
+  scripts.append(dict(moveId=move,label=match[1],commands=commands,labels=labels,**({'spriteDependencies':children} if children else {}),**({'materialDependencies':['whirlwind-lines']} if 'AnimTask_DrillPeckHitSplats' in symbols else {}),soundEffects=physical_sound_effects(reference,dependencies,raw['src/battle_anim_effects_2.c'].decode()),spriteTags={name:tags[name] for name in loaded}));subroutines.update(local_subs);subroutine_labels.update(local_labels);background_symbols.update({c['args'][0]:backgrounds[c['args'][0]] for c in dependencies if c['op'] in {'changebg','fadetobg'}})
  if not scripts:raise ValueError('No supported physical roots')
- return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subroutines,subroutineLabels=subroutine_labels,backgroundSymbols=background_symbols,taskAffinePrograms={name:task_affine_program(raw['src/'+file].decode(),name) for file,name in [('battle_anim_effects_2.c','sSplashEffectAffineAnimCmds'),('battle_anim_effects_2.c','sGrowAndShrinkAffineAnimCmds'),('battle_anim_effects_3.c','sSlackOffSquishAffineAnimCmds'),('battle_anim_effects_3.c','DefenseCurlDeformMonAffineAnimCmds')]},assets=[dict(id=id,path='physical-'+id+'.rgb555') for id in build_assets(reference)]+[dict(id='needle',path='elemental-needle.rgb555'),dict(id='poison-bubble',path='elemental-poison-bubble.rgb555'),dict(id='blue-star',path='elemental-blue-star.rgb555'),dict(id='small-ember',path='elemental-small-ember.rgb555')],spriteRecipes=[elemental.recipe(fight,'gFistFootRandomPosSpriteTemplate','AnimFistOrFootRandomPos'),elemental.recipe(raw['src/battle_anim_normal.c'].decode(),'gBasicHitSplatSpriteTemplate','AnimHitSplatBasic'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gWishStarSpriteTemplate','AnimWishStar'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gMeteorMashStarSpriteTemplate','AnimMeteorMashStar'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gMiniTwinklingStarSpriteTemplate','AnimMiniTwinklingStar'),elemental.recipe(raw['src/battle_anim_fight.c'].decode(),'gArmThrustHandSpriteTemplate','AnimArmThrustHit'),elemental.recipe(raw['src/battle_anim_effects_2.c'].decode(),'gFurySwipesSpriteTemplate','AnimFurySwipes'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gFangSpriteTemplate','AnimFang'),elemental.recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSuperFangSpriteTemplate','AnimSuperFang'),elemental.recipe(raw['src/battle_anim_effects_2.c'].decode(),'gBulletSeedSpriteTemplate','AnimBulletSeed'),elemental.recipe(raw['src/battle_anim_ground.c'].decode(),'gSandAttackDirtSpriteTemplate','AnimDirtScatter'),elemental.recipe(raw['src/battle_anim_ground.c'].decode(),'gMudSlapMudSpriteTemplate','AnimDirtScatter'),elemental.recipe(fight,'gMegaPunchKickSpriteTemplate','AnimSpinningKickOrPunch'),elemental.recipe(fight,'gSpinningHandOrFootSpriteTemplate','AnimSpinningKickOrPunch'),elemental.recipe(raw['src/battle_anim_fire.c'].decode(),'gFireSpreadSpriteTemplate','AnimFireSpread'),elemental.recipe(raw['src/battle_anim_bug.c'].decode(),'gPinMissileSpriteTemplate','AnimMissileArc'),elemental.recipe(raw['src/battle_anim_bug.c'].decode(),'gIcicleSpearSpriteTemplate','AnimMissileArc'),elemental.recipe(raw['src/battle_anim_bug.c'].decode(),'gLinearStingerSpriteTemplate','AnimTranslateStinger'),elemental.recipe(raw['src/battle_anim_normal.c'].decode(),'gHandleInvertHitSplatSpriteTemplate','AnimHitSplatHandleInvert'),elemental.recipe(raw['src/battle_anim_poison.c'].decode(),'gPoisonBubbleSpriteTemplate','AnimBubbleEffect'),elemental.recipe(raw['src/battle_anim_dark.c'].decode(),'gClawSlashSpriteTemplate','AnimClawSlash'),elemental.recipe(raw['src/battle_anim_rock.c'].decode()+raw['src/battle_anim_fire.c'].decode(),'gFireSpinSpriteTemplate','AnimParticleInVortex'),elemental.recipe(raw['src/battle_anim_ground.c'].decode(),'gSpinningBoneSpriteTemplate','AnimBoneHitProjectile'),sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gEyeSparkleSpriteTemplate','eye-sparkle','AnimEyeSparkle'),elemental.recipe(raw['src/battle_anim_effects_2.c'].decode(),'gAngerMarkSpriteTemplate','AnimAngerMark'),sprite_recipe(raw['src/battle_anim_effects_3.c'].decode(),'gEclipsingOrbSpriteTemplate','eclipsing-orb','AnimSpriteOnMonPos'),sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gBreathPuffSpriteTemplate','breath','AnimBreathPuff'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gHealingBlueStarSpriteTemplate','blue-star','AnimSpriteOnMonPos'),sprite_recipe(raw['src/battle_anim_ground.c'].decode(),'gMudsportMudSpriteTemplate','mud-sand','AnimMudSportDirt'),sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gViceGripSpriteTemplate','cut','AnimViceGripPincer'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSlamHitSpriteTemplate','slam-hit','AnimWhipHit'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gVineWhipSpriteTemplate','whip-hit','AnimWhipHit')]+[sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),template,asset,'AnimMovePowderParticle') for template,asset in [('gPoisonPowderParticleSpriteTemplate','poison-powder'),('gSleepPowderParticleSpriteTemplate','sleep-powder'),('gStunSporeParticleSpriteTemplate','stun-spore')]]),indent=2)+'\n').encode(),blocked
+ return (json.dumps(dict(schemaVersion=1,scripts=scripts,subroutines=subroutines,subroutineLabels=subroutine_labels,backgroundSymbols=background_symbols,taskAffinePrograms={name:task_affine_program(raw['src/'+file].decode(),name) for file,name in [('battle_anim_effects_3.c','sFacadeSquishAffineAnimCmds'),('battle_anim_effects_3.c','sSmellingSaltsSquishAffineAnimCmds'),('battle_anim_effects_2.c','sAffineAnims_StretchBattlerUp'),('battle_anim_effects_2.c','sSplashEffectAffineAnimCmds'),('battle_anim_effects_2.c','sGrowAndShrinkAffineAnimCmds'),('battle_anim_effects_3.c','sSlackOffSquishAffineAnimCmds'),('battle_anim_effects_3.c','DefenseCurlDeformMonAffineAnimCmds')]},indexedAssets=build_indexed_assets(reference)[0],assets=[dict(id=id,path='physical-'+id+'.rgb555') for id in build_assets(reference)]+[dict(id='needle',path='elemental-needle.rgb555'),dict(id='poison-bubble',path='elemental-poison-bubble.rgb555'),dict(id='blue-star',path='elemental-blue-star.rgb555'),dict(id='small-ember',path='elemental-small-ember.rgb555')],spriteRecipes=[elemental.recipe(raw['src/'+file].decode(),name,callback) for name,file,callback in REACTION_RECIPES]+[elemental.recipe(raw['src/'+file].decode(),name,callback) for name,file,callback in ORBITAL_PARTICLE_RECIPES]+[impact_emission_recipe(raw,*row) for row in IMPACT_EMISSION_RECIPES]+[elemental.recipe(fight,'gFistFootRandomPosSpriteTemplate','AnimFistOrFootRandomPos'),elemental.recipe(raw['src/battle_anim_normal.c'].decode(),'gBasicHitSplatSpriteTemplate','AnimHitSplatBasic'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gWishStarSpriteTemplate','AnimWishStar'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gMeteorMashStarSpriteTemplate','AnimMeteorMashStar'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gMiniTwinklingStarSpriteTemplate','AnimMiniTwinklingStar'),elemental.recipe(raw['src/battle_anim_fight.c'].decode(),'gArmThrustHandSpriteTemplate','AnimArmThrustHit'),elemental.recipe(raw['src/battle_anim_effects_2.c'].decode(),'gFurySwipesSpriteTemplate','AnimFurySwipes'),elemental.recipe(raw['src/battle_anim_effects_3.c'].decode(),'gFangSpriteTemplate','AnimFang'),elemental.recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSuperFangSpriteTemplate','AnimSuperFang'),elemental.recipe(raw['src/battle_anim_effects_2.c'].decode(),'gBulletSeedSpriteTemplate','AnimBulletSeed'),elemental.recipe(raw['src/battle_anim_ground.c'].decode(),'gSandAttackDirtSpriteTemplate','AnimDirtScatter'),elemental.recipe(raw['src/battle_anim_ground.c'].decode(),'gMudSlapMudSpriteTemplate','AnimDirtScatter'),elemental.recipe(fight,'gMegaPunchKickSpriteTemplate','AnimSpinningKickOrPunch'),elemental.recipe(fight,'gSpinningHandOrFootSpriteTemplate','AnimSpinningKickOrPunch'),elemental.recipe(raw['src/battle_anim_fire.c'].decode(),'gFireSpreadSpriteTemplate','AnimFireSpread'),elemental.recipe(raw['src/battle_anim_bug.c'].decode(),'gPinMissileSpriteTemplate','AnimMissileArc'),elemental.recipe(raw['src/battle_anim_bug.c'].decode(),'gIcicleSpearSpriteTemplate','AnimMissileArc'),elemental.recipe(raw['src/battle_anim_bug.c'].decode(),'gLinearStingerSpriteTemplate','AnimTranslateStinger'),elemental.recipe(raw['src/battle_anim_normal.c'].decode(),'gHandleInvertHitSplatSpriteTemplate','AnimHitSplatHandleInvert'),elemental.recipe(raw['src/battle_anim_poison.c'].decode(),'gPoisonBubbleSpriteTemplate','AnimBubbleEffect'),elemental.recipe(raw['src/battle_anim_dark.c'].decode(),'gClawSlashSpriteTemplate','AnimClawSlash'),elemental.recipe(raw['src/battle_anim_rock.c'].decode()+raw['src/battle_anim_fire.c'].decode(),'gFireSpinSpriteTemplate','AnimParticleInVortex'),elemental.recipe(raw['src/battle_anim_ground.c'].decode(),'gSpinningBoneSpriteTemplate','AnimBoneHitProjectile'),sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gEyeSparkleSpriteTemplate','eye-sparkle','AnimEyeSparkle'),elemental.recipe(raw['src/battle_anim_effects_2.c'].decode(),'gAngerMarkSpriteTemplate','AnimAngerMark'),sprite_recipe(raw['src/battle_anim_effects_3.c'].decode(),'gEclipsingOrbSpriteTemplate','eclipsing-orb','AnimSpriteOnMonPos'),sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gBreathPuffSpriteTemplate','breath','AnimBreathPuff'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gHealingBlueStarSpriteTemplate','blue-star','AnimSpriteOnMonPos'),sprite_recipe(raw['src/battle_anim_ground.c'].decode(),'gMudsportMudSpriteTemplate','mud-sand','AnimMudSportDirt'),sprite_recipe(raw['src/battle_anim_effects_2.c'].decode(),'gViceGripSpriteTemplate','cut','AnimViceGripPincer'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gSlamHitSpriteTemplate','slam-hit','AnimWhipHit'),sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),'gVineWhipSpriteTemplate','whip-hit','AnimWhipHit')]+[sprite_recipe(raw['src/battle_anim_effects_1.c'].decode(),template,asset,'AnimMovePowderParticle') for template,asset in [('gPoisonPowderParticleSpriteTemplate','poison-powder'),('gSleepPowderParticleSpriteTemplate','sleep-powder'),('gStunSporeParticleSpriteTemplate','stun-spore')]]),indent=2)+'\n').encode(),blocked
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/physical.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,blocked=build(a.reference);assets=build_assets(a.reference)
+ p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content/generated/battle/animations/physical.json');p.add_argument('--check',action='store_true');a=p.parse_args();data,blocked=build(a.reference);assets={**build_assets(a.reference),**build_indexed_assets(a.reference)[1]}
  if a.check:
   if a.output.read_bytes()!=data:raise SystemExit('Physical animation pack differs')
   for id,blob in assets.items():
-   if (a.output.parent/('physical-'+id+'.rgb555')).read_bytes()!=blob:raise SystemExit('Physical sprite pixels differ')
+   if (a.output.parent/('physical-'+id if id.endswith(('.4bpp','.pal16')) else 'physical-'+id+'.rgb555')).read_bytes()!=blob:raise SystemExit('Physical sprite pixels differ')
  else:
   a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_bytes(data)
-  for id,blob in assets.items():(a.output.parent/('physical-'+id+'.rgb555')).write_bytes(blob)
+  for id,blob in assets.items():(a.output.parent/('physical-'+id if id.endswith(('.4bpp','.pal16')) else 'physical-'+id+'.rgb555')).write_bytes(blob)
  print(json.dumps(dict(passed=True,roots=[s['moveId'] for s in json.loads(data)['scripts']],blocked=blocked)))

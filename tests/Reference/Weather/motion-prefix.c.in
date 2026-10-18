@@ -1,0 +1,39 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define DISPLAY_WIDTH 240
+#define NELEMS(a) (sizeof(a)/sizeof((a)[0]))
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite*);
+struct Sprite {struct OamData oam;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse;const struct SubspriteTable *subspriteTables;u8 subspriteTableNum,subspriteMode;s8 centerToCornerVecX,centerToCornerVecY;};
+struct Task {void(*func)(u8);s16 data[16];}gTasks[16];struct Sprite gSprites[64];
+struct BattleAnimBgData {u8 *bgTiles;u16 *bgTilemap;u8 paletteId,bgId;u16 tilesOffset,unused;};u8 bgTiles[8192];u16 bgMap[2048];
+#define gBattleAnimBgTileBuffer bgTiles
+#define gBattleAnimBgTilemapBuffer bgMap
+struct OamDimensions {s8 width,height;};
+u8 gBattleAnimAttacker,gBattleAnimTarget,gAnimVisualTaskCount,gOamLimit; s16 gBattleAnimArgs[8];u16 gPlttBufferUnfaded[512],gPlttBufferFaded[512];
+static u8 visibleMask,alive=TRUE,paletteIndex;static int events[64][5],nEvents;
+static void event(int k,int a,int b,int c,int d){int *p=events[nEvents++];assert(nEvents<=64);p[0]=k;p[1]=a;p[2]=b;p[3]=c;p[4]=d;}
+static u8 GetBattlerSide(u8 id){return id&1;}static bool8 IsBattlerSpriteVisible(u8 id){return (visibleMask>>id)&1;}static u8 GetBattlerAtPosition(u8 p){return p;}static bool8 IsBattlerSpritePresent(u8 id){return TRUE;}u8 gBattlerSpriteIds[4]={0,1,2,3};static u8 IndexOfSpritePaletteTag(u16 tag){return paletteIndex;}
+static void DestroyAnimVisualTask(u8 id){alive=FALSE;gAnimVisualTaskCount--;event(1,id,0,0,0);}static void DestroyAnimSprite(struct Sprite *s){s->inUse=FALSE;gAnimVisualTaskCount--;event(2,0,0,0,0);}
+static void BlendPalette(u16,u16,u8,u16);
+@PROTOTYPES@
+@ARRAYS@
+@FUNCTIONS@
+static void BlendPalette(u16 offset,u16 n,u8 coeff,u16 color){event(3,offset,n,coeff,color);SourceBlendPalette(offset,n,coeff,color);}
+static void numbers(const s16 *a,int n){for(int i=0;i<n;i++)printf("%s%d",i?",":"",a[i]);}
+static void printEvents(void){printf("\"events\":[");for(int i=0;i<nEvents;i++){printf("%s[",i?",":"");for(int j=0;j<5;j++)printf("%s%d",j?",":"",events[i][j]);printf("]");}printf("]");nEvents=0;}
+static void spriteRow(int n,struct Sprite *s){printf("{\"invocation\":%d,\"alive\":%d,\"visualCount\":%d,\"callback\":%d,\"position\":[%d,%d,%d,%d],\"flip\":%u,\"subspriteMode\":%u,\"args\":[",n,s->inUse,gAnimVisualTaskCount,s->callback==DestroyAnimSprite,s->x,s->y,s->x2,s->y2,s->oam.matrixNum,s->subspriteMode);numbers(gBattleAnimArgs,8);printf("],\"data\":[");numbers(s->data,8);printf("],");printEvents();puts("}");}
+static void taskRow(int n,int palette){printf("{\"frame\":%d,\"alive\":%d,\"visualCount\":%d,\"data\":[",n,alive,gAnimVisualTaskCount);numbers(gTasks[3].data,16);printf("],\"x2\":[%d,%d,%d,%d],",gSprites[0].x2,gSprites[1].x2,gSprites[2].x2,gSprites[3].x2);printEvents();if(palette){printf(",\"palettes\":[");int ids[]={1,2,3,8,16,17,18,19,31};for(int i=0;i<9;i++){printf("%s[",i?",":"");for(int j=0;j<16;j++)printf("%s%u",j?",":"",gPlttBufferFaded[ids[i]*16+j]);printf("]");}printf("]");}puts("}");}
+int main(int argc,char **argv){assert(argc>=2);int mode=atoi(argv[1]);gAnimVisualTaskCount=1;for(int i=0;i<512;i++)gPlttBufferUnfaded[i]=gPlttBufferFaded[i]=((i+3)&31)|(((i*7+5)&31)<<5)|(((i*11+9)&31)<<10);
+ if(mode==0){assert(argc==7);gBattleAnimAttacker=atoi(argv[2]);for(int i=0;i<4;i++)gBattleAnimArgs[i]=atoi(argv[i+3]);struct Sprite *s=&gSprites[0];s->inUse=TRUE;s->callback=AnimFlyingSandCrescent;spriteRow(-1,s);for(int i=0;s->inUse&&i<256;i++){s->callback(s);spriteRow(i,s);}assert(!s->inUse);}
+ if(mode==1){assert(argc==5);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=atoi(argv[3]);visibleMask=atoi(argv[4]);for(int i=0;i<4;i++)gSprites[i].x2=100+i;AnimTask_MoveHeatWaveTargets(3);taskRow(0,0);for(int i=1;alive&&i<256;i++){gTasks[3].func(3);taskRow(i,0);}assert(!alive);}
+ if(mode==2){assert(argc==6);int kind=atoi(argv[2]);visibleMask=atoi(argv[3]);gBattleAnimAttacker=atoi(argv[4]);gBattleAnimTarget=gBattleAnimAttacker^1;paletteIndex=atoi(argv[5]);if(kind<=3){gBattleAnimArgs[0]=F_PAL_BG|F_PAL_BATTLERS_2;gBattleAnimArgs[1]=kind<2?1:2;gBattleAnimArgs[2]=kind&1?(kind<2?6:4):0;gBattleAnimArgs[3]=kind&1?0:(kind<2?6:4);gBattleAnimArgs[4]=kind<2?0x7FFF:0;AnimTask_BlendBattleAnimPal(3);}else if(kind==4){gBattleAnimArgs[0]=10000;gBattleAnimArgs[1]=0;gBattleAnimArgs[2]=6;gBattleAnimArgs[3]=6;gBattleAnimArgs[4]=31;AnimTask_BlendParticle(3);}else{gBattleAnimArgs[0]=6;gBattleAnimArgs[1]=31;AnimTask_BlendBackground(3);}taskRow(0,1);for(int i=1;alive&&i<128;i++){gTasks[3].func(3);taskRow(i,1);}assert(!alive);}
+ if(mode==3){assert(argc==11);struct Sprite s={0};struct OamData dest[128]={0};int x=atoi(argv[2]),y=atoi(argv[3]),flip=atoi(argv[4]);s.oam.x=x-16;s.oam.y=y-8;s.oam.matrixNum=flip;s.oam.tileNum=atoi(argv[5]);s.oam.priority=atoi(argv[6]);s.oam.paletteNum=11;s.oam.objMode=1;s.oam.mosaic=1;s.oam.affineParam=0x1234;s.centerToCornerVecX=-16;s.centerToCornerVecY=-8;s.subspriteTables=sFlyingSandSubspriteTable;s.subspriteMode=atoi(argv[7]);u8 index=atoi(argv[8]),initial=index;gOamLimit=atoi(argv[9]);if(atoi(argv[10]))s.subspriteTables=sNullSubspriteTable;int result=AddSubspritesToOamBuffer(&s,dest,&index);printf("{\"result\":%d,\"nextIndex\":%u,\"pieces\":[",result,index);for(int i=0;i<index-initial;i++){struct OamData *d=&dest[i];printf("%s[%u,%u,%u,%u,%u,%u,%u,%u,%u,%u]",i?",":"",d->x,d->y,d->shape,d->size,d->tileNum,d->priority,d->paletteNum,d->matrixNum,d->objMode,d->mosaic);}puts("]}");}
+ return 0;}

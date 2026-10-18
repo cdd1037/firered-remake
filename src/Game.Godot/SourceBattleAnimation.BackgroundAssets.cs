@@ -27,6 +27,56 @@ public sealed class SourceBackgroundAsset
     }
 }
 
+/// <summary>One source BG1 character/map load with its actual palette-bank ownership.</summary>
+public sealed class SourceOverlayAsset
+{
+    private readonly byte[] _tiles,_tilemap;
+    private readonly ushort[] _palette;
+    public ReadOnlyMemory<ushort> Palette=>_palette;
+    public int PaletteBank{get;}
+    public SourceOverlayAsset(ReadOnlySpan<byte> tiles,ReadOnlySpan<byte> tilemap,ReadOnlySpan<ushort> palette,int paletteBank=8)
+    {
+        if(tiles.Length is <32 or >8192||tiles.Length%32!=0||tilemap.Length!=2048||palette.Length!=16||paletteBank!=8)
+            throw new InvalidDataException("Source BG1 overlay shape differs.");
+        for(int i=0;i<tilemap.Length;i+=2)
+        {
+            int entry=BinaryPrimitives.ReadUInt16LittleEndian(tilemap[i..]);
+            if((entry&1023)*32>=tiles.Length||(entry>>12) is not (0 or 1 or 8))
+                throw new InvalidDataException("Source BG1 overlay map exceeds its owned tiles or palette banks.");
+        }
+        foreach(ushort color in palette)if((color&0x8000)!=0)throw new InvalidDataException("Source overlay palette is not RGB555.");
+        _tiles=tiles.ToArray();_tilemap=tilemap.ToArray();_palette=palette.ToArray();PaletteBank=paletteBank;
+    }
+    public SourceBackgroundPixel Sample(int x,int y)
+    {
+        x&=255;y&=255;
+        int entry=BinaryPrimitives.ReadUInt16LittleEndian(_tilemap.AsSpan(((y>>3)*32+(x>>3))*2));
+        int tx=x&7,ty=y&7;
+        if((entry&0x400)!=0)tx=7-tx;if((entry&0x800)!=0)ty=7-ty;
+        int packed=_tiles[(entry&1023)*32+ty*4+tx/2],index=(packed>>((tx&1)*4))&15;
+        return new(entry>>12,index);
+    }
+    public void Render(Span<ushort> destination,int width,int height,int scrollX,int scrollY,
+        SourceAnimationBackgroundSurface? background,ReadOnlySpan<SourcePaletteBlend> blends,ReadOnlySpan<int> inverted,ReadOnlySpan<SourcePaletteEntry> fadedEntries=default)
+    {
+        if(width is <1 or >256||height is <1 or >256||destination.Length!=width*height)throw new ArgumentException("Source overlay render shape differs.");
+        Span<ushort> colors=stackalloc ushort[9*16];
+        foreach(int bank in new[]{0,1,8})
+        {
+            SourcePaletteBlend? blend=null;foreach(var candidate in blends)if(candidate.Palette==bank){blend=candidate;break;}
+            for(int i=0;i<16;i++)colors[bank*16+i]=SourcePaletteMath.Apply(bank==8?_palette[i]:background?.PaletteColor(bank,i)??0,blend,inverted.Contains(bank));
+        }
+        foreach(var entry in fadedEntries)
+        {if(entry.Index is <0 or >255)throw new InvalidDataException("Source BG palette entry differs.");if(entry.Index<colors.Length)colors[entry.Index]=entry.Color;}
+        for(int y=0;y<height;y++)for(int x=0;x<width;x++)
+        {
+            var pixel=Sample(x+scrollX,y+scrollY);
+            if(pixel.Index!=0&&pixel.Bank!=8&&background is null)throw new InvalidDataException("Source overlay references an unavailable base palette.");
+            destination[y*width+x]=pixel.Index==0?(ushort)0:(ushort)(colors[pixel.Bank*16+pixel.Index]|0x8000);
+        }
+    }
+}
+
 /// <summary>Scene-owned lazy resources. The atlas stream is closed with its owning scene.</summary>
 public sealed class SourceAnimationBackgroundCatalog : IDisposable
 {
@@ -34,6 +84,8 @@ public sealed class SourceAnimationBackgroundCatalog : IDisposable
     private readonly record struct Entry(Block Tiles, Block Tilemap, Block Palette);
     private readonly Dictionary<int, Entry> _terrains = [], _moves = [];
     private readonly Dictionary<Entry, SourceBackgroundAsset> _assets = [];
+    private readonly Dictionary<string,Entry> _overlays=[];
+    private readonly Dictionary<Entry,SourceOverlayAsset> _overlayAssets=[];
     private readonly FileStream _atlas;
     private readonly Block _basePalette;
     private ushort[]? _baseColors;
@@ -72,6 +124,15 @@ public sealed class SourceAnimationBackgroundCatalog : IDisposable
                 if (entries.Count is <1 or >64) throw new InvalidDataException("Unbounded or empty source background catalog.");
             }
             ReadEntries("terrains", _terrains, true); ReadEntries("moves", _moves, false);
+            if(root.TryGetProperty("overlays",out var overlayRows))foreach(var row in overlayRows.EnumerateArray())
+            {
+                string id=row.GetProperty("id").GetString()??throw new InvalidDataException("Null source overlay id.");
+                if(id.Length is <1 or >80||row.GetProperty("paletteBank").GetInt32()!=8||
+                    !_overlays.TryAdd(id,new(ParseBlock(row.GetProperty("tiles"),32,8192,32),
+                        ParseBlock(row.GetProperty("tilemap"),2048,2048,2),ParseBlock(row.GetProperty("palette"),32,32,2))))
+                    throw new InvalidDataException("Invalid source overlay entry.");
+            }
+            if(_overlays.Count>64)throw new InvalidDataException("Unbounded source overlay catalog.");
         }
         catch { _atlas.Dispose(); throw; }
     }
@@ -97,6 +158,14 @@ public sealed class SourceAnimationBackgroundCatalog : IDisposable
         {
             asset = new(Read(entry.Tiles), Read(entry.Tilemap), Colors(Read(entry.Palette))); _assets.Add(entry, asset);
         }
+        return asset;
+    }
+    public SourceOverlayAsset Overlay(string id)
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        if(!_overlays.TryGetValue(id,out var entry))throw new InvalidDataException($"Missing source overlay {id}.");
+        if(!_overlayAssets.TryGetValue(entry,out var asset))
+        {asset=new(Read(entry.Tiles),Read(entry.Tilemap),Colors(Read(entry.Palette)));_overlayAssets.Add(entry,asset);}
         return asset;
     }
     public SourceBackgroundAsset Move(int id) => Asset(_moves, id);
@@ -173,10 +242,10 @@ public sealed class SourceAnimationBackgroundSurface
     }
     public void Render(Span<ushort> destination, int width, int height, int scrollX = 0, int scrollY = 0,
         int screenSize = 1, int darkening = 0, ReadOnlySpan<SourcePaletteBlend> blends = default,
-        ReadOnlySpan<int> inverted = default, ReadOnlySpan<ushort> fadedBank2 = default)
+        ReadOnlySpan<int> inverted = default, ReadOnlySpan<ushort> fadedBank2 = default, Span<byte> layerMasks = default, ReadOnlySpan<SourcePaletteEntry> fadedEntries = default)
     {
         if (width is <1 or >512 || height is <1 or >256 || destination.Length != width * height || screenSize is not (0 or 1)
-            || darkening is <0 or >16 || fadedBank2.Length is not (0 or 16)) throw new ArgumentException("Source background render shape differs.");
+            || darkening is <0 or >16 || fadedBank2.Length is not (0 or 16) || !layerMasks.IsEmpty && layerMasks.Length != destination.Length) throw new ArgumentException("Source background render shape differs.");
         Span<ushort> colors = stackalloc ushort[80];
         for (int bank = 0; bank < 5; bank++)
         {
@@ -190,10 +259,13 @@ public sealed class SourceAnimationBackgroundSurface
                 colors[bank * 16 + index] = Darken(color, darkening);
             }
         }
+        foreach(var entry in fadedEntries)
+        {if(entry.Index is <0 or >255)throw new InvalidDataException("Source BG palette entry differs.");if(entry.Index<colors.Length)colors[entry.Index]=Darken(entry.Color,darkening);}
         for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
         {
             var pixel = SampleUnchecked(x + scrollX, y + scrollY, screenSize);
             destination[y * width + x] = (ushort)(colors[pixel.Bank * 16 + pixel.Index] | 0x8000);
+            if(!layerMasks.IsEmpty)layerMasks[y*width+x]=(byte)(pixel.Index==0?32:8);
         }
     }
     /// <summary>BLDCNT 0xE8 targets BG3 and backdrop. Hardware darkening rounds before subtraction.</summary>

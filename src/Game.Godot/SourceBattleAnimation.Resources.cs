@@ -3,7 +3,8 @@ namespace Game.Presentation.BattleAnimations;
 
 public sealed record SourceResolvedAnimation(SourceAnimationScript Script,IReadOnlyDictionary<string,SourcePixelAsset> Assets,
     SourceMetallicMaterial? Metallic,SourceStatMaskMaterial? StatMask)
-{ public IReadOnlyDictionary<int,SourceBackgroundAsset> Backgrounds{get;init;}=new Dictionary<int,SourceBackgroundAsset>(); }
+{ public IReadOnlyDictionary<int,SourceBackgroundAsset> Backgrounds{get;init;}=new Dictionary<int,SourceBackgroundAsset>();
+  public IReadOnlyDictionary<string,SourceOverlayAsset> Overlays{get;init;}=new Dictionary<string,SourceOverlayAsset>(); }
 
 // Generated metadata is shared across families. Pixel/material loading follows the
 // selected command dependencies and remains bounded by these scene-owned catalogs.
@@ -45,6 +46,8 @@ public sealed class SourceAnimationResources:IDisposable
     internal static IReadOnlyDictionary<string,IReadOnlyDictionary<string,int>> ReadSubroutineLabels(JsonElement root)=>root.TryGetProperty("subroutineLabels",out var rows)?rows.EnumerateObject().ToDictionary(p=>p.Name,p=>(IReadOnlyDictionary<string,int>)p.Value.EnumerateObject().ToDictionary(l=>l.Name,l=>l.Value.GetInt32())):new Dictionary<string,IReadOnlyDictionary<string,int>>();
     internal static string[] ReadSpriteDependencies(JsonElement row)=>row.TryGetProperty("spriteDependencies",out var dependencies)
         ?dependencies.EnumerateArray().Select(x=>x.GetString()??throw new InvalidDataException("Source sprite dependency is null.")).ToArray():[];
+    private static string[] ReadDependencies(JsonElement row,string key)=>row.TryGetProperty(key,out var values)
+        ?values.EnumerateArray().Select(x=>x.GetString()??throw new InvalidDataException("Null source material dependency.")).ToArray():[];
     private static string RecipeValue(SourceSpriteRecipe recipe)=>JsonSerializer.Serialize(recipe with{LoopStarts=Enumerable.Range(0,recipe.Animations.Length).Select(i=>i<recipe.LoopStarts.Length?recipe.LoopStarts[i]:-1).ToArray(),FrameLoops=Enumerable.Range(0,recipe.Animations.Length).Select(i=>i<recipe.FrameLoops.Length?recipe.FrameLoops[i]:Array.Empty<SourceSpriteFrameLoop>()).ToArray()});
     private void ReadPack(string path)
     {
@@ -81,7 +84,7 @@ public sealed class SourceAnimationResources:IDisposable
             foreach(var (symbol,tag) in spriteTags){if(_spriteTags.TryGetValue(symbol,out int previous)&&previous!=tag)throw new InvalidDataException("Conflicting source sprite palette tag.");_spriteTags[symbol]=tag;}
             int id=row.TryGetProperty("moveId",out var move)?move.GetInt32():0;var commands=Commands(row.GetProperty("commands"));
             var required=SourceAnimationProgramDependencies.RequiredSubroutines(commands,subs);
-            var script=new SourceAnimationScript(id,row.GetProperty("label").GetString()!,commands){SpriteDependencies=ReadSpriteDependencies(row),SpriteTags=spriteTags,SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,SubroutineLabels=subLabels.Where(p=>required.ContainsKey(p.Key)).ToDictionary(p=>p.Key,p=>p.Value),Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()};
+            var script=new SourceAnimationScript(id,row.GetProperty("label").GetString()!,commands){SpriteDependencies=ReadSpriteDependencies(row),MaterialDependencies=ReadDependencies(row,"materialDependencies"),OverlayDependencies=ReadDependencies(row,"overlayDependencies"),SpriteTags=spriteTags,SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,SubroutineLabels=subLabels.Where(p=>required.ContainsKey(p.Key)).ToDictionary(p=>p.Key,p=>p.Value),Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()};
             if(general)_generalScripts.Add(script.Label,script);else _scripts.Add(id,script);
         }
     }
@@ -109,7 +112,7 @@ public sealed class SourceAnimationResources:IDisposable
         ObjectDisposedException.ThrowIf(_disposed,this);
         script=script with{SpriteRecipes=_recipes};
         var commands=script.Commands.Concat(script.Subroutines.Values.SelectMany(x=>x)).ToArray();
-        var names=new HashSet<string>{"impact"}; // The compositor's shared hit primitive.
+        var names=new HashSet<string>(script.MaterialDependencies){"impact"}; // The compositor's shared hit primitive.
         foreach(string template in script.SpriteDependencies)
         {
             if(!_recipes.TryGetValue(template,out var dependency))throw new InvalidDataException($"Missing generated source sprite dependency {template}.");
@@ -129,10 +132,11 @@ public sealed class SourceAnimationResources:IDisposable
         if(metallic)_metallic??=new(File.ReadAllBytes(_materials["AnimTask_MetallicShine"]));
         if(stats)_statMask??=new(File.ReadAllBytes(_materials["AnimTask_StatsChange"]));
         var backgrounds=commands.Where(c=>c.Op is "fadetobg" or "changebg").Select(c=>script.BackgroundSymbols[c.Args[0]]).Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Move(id));
+        var overlays=script.OverlayDependencies.Distinct().ToDictionary(id=>id,id=>BackgroundCatalog.Overlay(id));
         var pixels=names.ToDictionary(id=>id,Asset);
         var spritePalettes=new Dictionary<int,ushort[]>();
         foreach(var asset in pixels.Values.Where(a=>a.PaletteTag>=0)){if(spritePalettes.TryGetValue(asset.PaletteTag,out var previous)&&!previous.SequenceEqual(asset.Palette))throw new InvalidDataException("Conflicting source palette bank.");spritePalettes[asset.PaletteTag]=asset.Palette;}
-        return new(script with{SpritePalettes=spritePalettes,BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},pixels,metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds};
+        return new(script with{OverlayPalettes=overlays.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray()),SpritePalettes=spritePalettes,BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},pixels,metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds,Overlays=overlays};
     }
     public SourceAnimationBackgroundSurface CreateBackgroundSurface(int terrainId)
     {ObjectDisposedException.ThrowIf(_disposed,this);return BackgroundCatalog.CreateSurface(terrainId);}

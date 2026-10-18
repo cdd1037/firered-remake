@@ -92,7 +92,7 @@ public sealed class HealingItemMoveAnimationDispatchTests
         {
             CampaignMoveAnimationDecision At(SourceBattleScene scene)=>single?AnimationDispatchFixture.AtAttackText(Single(events,i),true,scene):AnimationDispatchFixture.AtAttackText(Double(events,i),scene);
             var decision=At(SourceBattleScene.On);Assert.AreEqual(decision,At(SourceBattleScene.On));Assert.IsNull(At(SourceBattleScene.Off).Dispatch);
-            var hit=single?AnimationDispatchFixture.AtHitResult(Single(events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtHitResult(Double(events,i),SourceBattleScene.On);Assert.IsNull(hit.Dispatch);
+            var hit=single?AnimationDispatchFixture.AtResult(Single(events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtResult(Double(events,i),SourceBattleScene.On);Assert.IsNull(hit.Dispatch);
             if(events[i]==used&&expected){var receipt=events.OfType<SourceRecoveredEvent>().Single(e=>e.Move==move);var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);count++;Assert.AreEqual(id,cue.SourceMoveId);Assert.AreEqual(actor,cue.Actor.Value);Assert.AreEqual(actor,cue.Target.Value);Assert.AreEqual(receipt.Sequence,cue.ResultSequence);Assert.AreEqual(attack.Sequence,cue.AttackSequence);Assert.AreEqual(pp.Sequence,cue.PpSequence);}
             else Assert.IsNull(decision.Dispatch);
         }

@@ -74,7 +74,7 @@ public sealed class WebMoveAnimationDispatchTests
         {
             CampaignMoveAnimationDecision At(SourceBattleScene scene)=>single?AnimationDispatchFixture.AtAttackText(Single(e,i),true,scene):AnimationDispatchFixture.AtAttackText(Double(e,i),scene);
             var decision=At(SourceBattleScene.On);Assert.AreEqual(decision,At(SourceBattleScene.On));Assert.IsNull(At(SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(single?AnimationDispatchFixture.AtHitResult(Single(e,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtHitResult(Double(e,i),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(single?AnimationDispatchFixture.AtResult(Single(e,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtResult(Double(e,i),SourceBattleScene.On).Dispatch);
             if(e[i]==used&&outcomes.Length>0)
             {
                 var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);int target=outcomes[0] switch {SourceStatChangedEvent s=>s.Target.Value,SourceTowerVolatileEvent v=>v.Side.Value,_=>throw new InvalidOperationException()};

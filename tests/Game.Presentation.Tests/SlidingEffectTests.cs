@@ -1,4 +1,5 @@
 using Game.Presentation.BattleAnimations;
+using System.Text.Json;
 namespace FireRed.Tests.Presentation;
 [TestClass,TestCategory("Game")]
 public sealed class SlidingEffectTests
@@ -35,6 +36,32 @@ public sealed class SlidingEffectTests
         var b=Enumerable.Range(0,2).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)).ToArray();
         var script=new SourceAnimationScript(87,"pattern-invalid",[C("createvisualtask","AnimTask_ShakeTargetInPattern","2","4","3",vertical,"0"),C("waitforvisualfinish"),C("end")]);
         Assert.ThrowsExactly<SourceAnimationException>(()=>new SourceBattleAnimation(script,new("pattern-invalid",1,87,new(0),new(1)),b,false,new Audio()));
+    }
+    [TestMethod]
+    public void PatternShakePreservesOmittedSignedPatternAndUsesZeroVersusNonzeroSourceBranch()
+    {
+        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/overlay-pattern-shake-source-vectors.json")));
+        int count=0;
+        foreach(var sample in vectors.RootElement.GetProperty("cases").EnumerateArray())foreach(bool explicitPattern in new[]{false,true})
+        {
+            int pattern=sample.GetProperty("pattern").GetInt32();string vertical=sample.GetProperty("vertical").GetInt32().ToString();
+            var arguments=new List<string>{"AnimTask_ShakeTargetInPattern","3","20","1",vertical};if(explicitPattern)arguments.Add(pattern.ToString());
+            var script=new SourceAnimationScript(184,"pattern-retained",[C("setarg","3",pattern.ToString()),new("createvisualtask",arguments.ToArray(),1),C("waitforvisualfinish"),C("end")]);
+            var battlers=Enumerable.Range(0,2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
+            var runtime=new SourceBattleAnimation(script,new("pattern-retained",1,184,new(0),new(1)),battlers,false,new Audio());
+            // Synchronous initializer is callback1; the same Tick runs callback2.
+            int previousX=sample.GetProperty("rows")[0][1].GetInt32(),previousY=sample.GetProperty("rows")[0][2].GetInt32();
+            foreach(var row in sample.GetProperty("rows").EnumerateArray().Skip(1))
+            {
+                var frame=runtime.Tick();Assert.AreEqual((short)pattern,frame.AnimationArguments[3]);
+                Assert.AreEqual(new PixelPoint(row[1].GetInt32(),row[2].GetInt32()),frame.Offsets[1]);
+                int wrappedX=previousX<0?512+previousX:previousX;
+                Assert.AreEqual(new PixelPoint(wrappedX>255?wrappedX-512:wrappedX,previousY&255),frame.ObjectOffsets[1]);
+                Assert.AreEqual(row[3].GetInt32(),runtime.ActiveVisualCount);previousX=row[1].GetInt32();previousY=row[2].GetInt32();
+            }
+            while(runtime.Active)runtime.Tick();Assert.AreEqual(default(PixelPoint),runtime.Snapshot().Offsets[1]);count++;
+        }
+        Assert.AreEqual(16,count);
     }
     [TestMethod]
     public void NonAttackerBlendUsesAllFourBanksAndShiftsSharedArgumentsBeforeImmediateStep()

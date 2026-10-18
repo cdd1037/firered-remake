@@ -1,0 +1,57 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+typedef uint8_t u8; typedef int8_t s8; typedef uint16_t u16; typedef int16_t s16; typedef uint32_t u32; typedef int32_t s32; typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+@DEFINES@
+@ENUM@
+struct BattleAnimBgData { u8 *bgTiles; u16 *bgTilemap; u8 paletteId; u8 bgId; u16 tilesOffset; u16 unused; };
+struct Task { void (*func)(u8); s16 data[16]; } gTasks[16];
+u16 gBattle_BG1_X, gBattle_BG1_Y;
+u8 gBattleAnimAttacker, gBattleAnimTarget;
+static u8 contest, alive;
+static u16 registers[64], attributes[3][7], bgMap[2048];
+static u8 bgTiles[8192];
+#define gBattleAnimBgTileBuffer bgTiles
+#define gBattleAnimBgTilemapBuffer bgMap
+s16 gBattleAnimArgs[8];
+static const u8 gFile_graphics_battle_anims_backgrounds_sandstorm_brew_tilemap[1]={0},gFile_graphics_battle_anims_backgrounds_sandstorm_brew_sheet[1]={0},gBattleAnimSpritePal_FlyingDirt[1]={0};
+static int events[64][5], nEvents;
+static void event(int op,int a,int b,int c,int d){ assert(nEvents<64);int *e=events[nEvents++];e[0]=op;e[1]=a;e[2]=b;e[3]=c;e[4]=d; }
+static int asset(const void *p){
+ const void *assets[]={gFile_graphics_battle_anims_backgrounds_sandstorm_brew_tilemap,gFile_graphics_battle_anims_backgrounds_sandstorm_brew_sheet,gBattleAnimSpritePal_FlyingDirt};
+ for(int i=0;i<3;i++) if(p==assets[i])return i+1; abort();
+}
+static void SetGpuReg(u8 offset,u16 value){registers[offset/2]=value;event(1,offset,value,0,0);}
+static void SetAnimBgAttribute(u8 bg,u8 attribute,u8 value){attributes[bg][attribute]=value;event(2,bg,attribute,value,0);}
+static bool8 IsContest(void){return contest;}
+static u8 GetBattlerSide(u8 battler){return battler&1;}
+static void LZDecompressVram(const void *src,void *dest){assert(dest==bgMap);event(4,asset(src),1,0,0);}
+static void AnimLoadCompressedBgTilemap(u8 bg,const void *src){event(5,bg,asset(src),0,0);}
+static void AnimLoadCompressedBgGfx(u8 bg,const void *src,u16 offset){event(6,bg,asset(src),offset,0);}
+static void LoadCompressedPalette(const void *src,u16 offset,u16 size){event(7,asset(src),offset,size,0);}
+static void RelocateBattleBgPal(u8 palette,void *map,u8 a,u8 b){assert(map==bgMap);event(8,palette,a,b,0);}
+static void LoadBgTiles(u8 bg,const void *src,u32 size,u16 offset){event(9,bg,asset(src),size,offset);}
+static void LoadPalette(const void *src,u16 offset,u16 size){event(10,asset(src),offset,size,0);}
+static void InitBattleAnimBg(u8 bg){event(11,bg,0,0,0);}
+static void DestroyAnimVisualTask(u8 task){alive=0;event(12,task,0,0,0);}
+static void AnimTask_LoadSandstormBackground_Step(u8 taskId);
+@ARRAYS@
+@FUNCTIONS@
+static void row(int frame,int phase){
+ printf("{\"frame\":%d,\"phase\":%d,\"alive\":%d,\"bg1\":[%u,%u],\"registers\":[%u,%u,%u,%u],\"attributes\":[",frame,phase,alive,gBattle_BG1_X,gBattle_BG1_Y,registers[REG_OFFSET_BLDCNT/2],registers[REG_OFFSET_BLDALPHA/2],registers[REG_OFFSET_BG1HOFS/2],registers[REG_OFFSET_BG1VOFS/2]);
+ for(int i=0;i<7;i++)printf("%s%u",i?",":"",attributes[1][i]);
+ printf("],\"data\":[");for(int i=0;i<16;i++)printf("%s%d",i?",":"",gTasks[3].data[i]);
+ printf("],\"events\":[");for(int i=0;i<nEvents;i++)printf("%s[%d,%d,%d,%d,%d]",i?",":"",events[i][0],events[i][1],events[i][2],events[i][3],events[i][4]);puts("]}");nEvents=0;
+}
+int main(int argc,char **argv){
+ assert(argc==6);gBattleAnimArgs[0]=atoi(argv[1]);contest=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);int edge=atoi(argv[5]);
+ memset(gTasks,0,sizeof(gTasks));for(int i=0;i<7;i++)attributes[1][i]=7;gBattle_BG1_X=123;gBattle_BG1_Y=456;alive=1;
+ AnimTask_LoadSandstormBackground(3);row(0,0);
+ if(edge){gBattle_BG1_X=0;gBattle_BG1_Y=65535;gTasks[3].data[12]=2;gTasks[3].data[10]=3;gTasks[3].data[11]=1;row(0,2);}
+ for(int frame=1;alive && frame<1024;frame++){gTasks[3].func(3);row(frame,1);}
+ assert(!alive);return 0;
+}

@@ -76,8 +76,8 @@ public sealed class TrappingMoveAnimationDispatchTests
             Assert.AreEqual(decision, At(SourceBattleScene.On));
             Assert.IsNull(At(SourceBattleScene.Off).Dispatch);
             Assert.IsNull(single
-                ? AnimationDispatchFixture.AtHitResult(Single(events, i), true, SourceBattleScene.On).Dispatch
-                : AnimationDispatchFixture.AtHitResult(Double(events, i), SourceBattleScene.On).Dispatch);
+                ? AnimationDispatchFixture.AtResult(Single(events, i), true, SourceBattleScene.On).Dispatch
+                : AnimationDispatchFixture.AtResult(Double(events, i), SourceBattleScene.On).Dispatch);
             Assert.IsNull(single ? AnimationDispatchFixture.StatAtResult(Single(events, i), true)
                 : AnimationDispatchFixture.StatAtResult(Double(events, i)));
             if (events[i] == used && trapped.Length == 1)

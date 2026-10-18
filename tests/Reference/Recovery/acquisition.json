@@ -1,0 +1,83 @@
+[
+  {
+    "path": "graphics/battle_anims/sprites/letter_z.png",
+    "encoding": "base64",
+    "sha": "e569fea34013255d359ca4ee05f5b8f5d76b374d",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/sprites/letter_z.png",
+    "display_title": "letter_z.png",
+    "bytes": 203,
+    "sha256": "ce8c15cfbe9722bf26ddf8ab2b306330f0d2089aa23470335445679dd5ebd806"
+  },
+  {
+    "path": "graphics/battle_anims/sprites/green_star.png",
+    "encoding": "base64",
+    "sha": "21218ceb6dce9ad5fa122f921948ee8cada620dd",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/sprites/green_star.png",
+    "display_title": "green_star.png",
+    "bytes": 258,
+    "sha256": "36d797470f66a53724305d5ded5329d25fbab88ec0ea7b0db334ef89adf0f649"
+  },
+  {
+    "path": "graphics/battle_anims/sprites/moon.png",
+    "encoding": "base64",
+    "sha": "228013658199cacb74858fb67ec6bf534982eeec",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/sprites/moon.png",
+    "display_title": "moon.png",
+    "bytes": 616,
+    "sha256": "95509d463e7401241bd4955875cc3b23f306e43a16f6da40bf9f64989acdcf2a"
+  },
+  {
+    "path": "graphics/battle_anims/sprites/green_sparkle.png",
+    "encoding": "base64",
+    "sha": "9aefe398ee6952887ae00322b585a0a63d13edad",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/sprites/green_sparkle.png",
+    "display_title": "green_sparkle.png",
+    "bytes": 235,
+    "sha256": "73ac7cbb49e4fef8b1879befa7ebb8c15cf04bd5a5b113ae0385e90fa5b7a299"
+  },
+  {
+    "path": "graphics/battle_anims/sprites/rainbow_rings.png",
+    "encoding": "base64",
+    "sha": "1133f2ee8e0caf1be8ab93918a9921f0befebb5c",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/sprites/rainbow_rings.png",
+    "display_title": "rainbow_rings.png",
+    "bytes": 224,
+    "sha256": "48f611991a49adf6c25666ed087f596222d185e55d2e969016b336ab43c99c3e"
+  },
+  {
+    "path": "graphics/battle_anims/masks/light_beam.png",
+    "encoding": "base64",
+    "sha": "c10b02782a97085bf3739bdb2b4f136e6e744809",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/masks/light_beam.png",
+    "display_title": "light_beam.png",
+    "bytes": 188,
+    "sha256": "b03ca7ed64e2a4f599644228ec71b97da5d8a46fdecc937be160d19e6a1bd2de"
+  },
+  {
+    "path": "graphics/battle_anims/masks/light_beam.bin",
+    "encoding": "base64",
+    "sha": "cfa7b80692463d6f9dfb2566526817fd79161f87",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/masks/light_beam.bin",
+    "display_title": "light_beam.bin",
+    "bytes": 2048,
+    "sha256": "1485c57ca0d47dcbdfec54a9318f6406e6d9e2ad2abb05776fac2e35ed49d963"
+  },
+  {
+    "path": "graphics/battle_anims/backgrounds/aurora.png",
+    "encoding": "base64",
+    "sha": "34f22002a79c7361edc90df559774b7c44c18f2e",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/backgrounds/aurora.png",
+    "display_title": "aurora.png",
+    "bytes": 1998,
+    "sha256": "28697c4f3aeb2b111a3adc460a24c946270199007d633c5749e160cd8e67c59e"
+  },
+  {
+    "path": "graphics/battle_anims/backgrounds/aurora.bin",
+    "encoding": "base64",
+    "sha": "d72acf1715e60249684671fdba1e2b6af962b273",
+    "display_url": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_anims/backgrounds/aurora.bin",
+    "display_title": "aurora.bin",
+    "bytes": 2048,
+    "sha256": "f892158b756a8b826589d6010bc3d17bf9c5bdcfbf85f166405cc14281ed92cf"
+  }
+]

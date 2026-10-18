@@ -72,11 +72,11 @@ public sealed class RockFragmentMoveAnimationDispatchTests
             // Empty presentation Frame: committed receipts alone determine ownership.
             var battle = Double(events, index);
             var text = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
-            var hit = AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On);
+            var hit = AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On);
             Assert.AreEqual(text, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
-            Assert.AreEqual(hit, AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On));
+            Assert.AreEqual(hit, AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On));
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.Off).Dispatch);
             int ordinal = Array.FindIndex(hits, h => h.Sequence == events[index].Sequence);
             bool eligible = !blocked && (perHit ? ordinal >= 0 : events[index] == used);
             var decision = perHit ? hit : text;
@@ -114,12 +114,12 @@ public sealed class RockFragmentMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
                 Assert.AreEqual(stat, AnimationDispatchFixture.StatAtResult(single, true, moves: Mechanics.Catalog.Moves));
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, false, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single, false, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.Off).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.Off).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.Off).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false, moves: Mechanics.Catalog.Moves));
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true, Mechanics.Catalog.Moves));
             }

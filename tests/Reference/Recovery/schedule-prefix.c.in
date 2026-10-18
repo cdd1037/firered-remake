@@ -1,0 +1,13 @@
+#include <stdint.h>
+#include <stdio.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;
+static const u8 *sBattleAnimScriptPtr;static s8 sAnimFramesToWait;static int gAnimScriptActive=1,frame,birth;static void(*gAnimScriptCallback)(void);
+#define T1_READ_16(p) ((u16)((p)[0]|((p)[1]<<8)))
+#define GET_TRUE_SPRITE_INDEX(x) 0
+static const int gBattleAnimPicTable[1],gBattleAnimPaletteTable[1];static void LoadCompressedSpriteSheetUsingHeap(const int*p){}static void LoadCompressedSpritePaletteUsingHeap(const int*p){}static void AddSpriteIndex(u16 i){}
+@PROTOTYPES@
+static void Create(void){birth++;sBattleAnimScriptPtr++;}static void Ignore(void){sBattleAnimScriptPtr++;}static void End(void){gAnimScriptActive=0;}
+static void(*const sScriptCmdTable[9])(void)={[0]=Cmd_loadspritegfx,[2]=Create,[3]=Ignore,[4]=Cmd_delay,[8]=End};
+@FUNCTIONS@
+static const u8 script[]={@SCRIPT@};
+int main(void){sBattleAnimScriptPtr=script;gAnimScriptCallback=RunAnimScriptCommand;for(frame=0;gAnimScriptActive&&frame<1000;frame++){birth=0;gAnimScriptCallback();printf("{\"frame\":%d,\"birth\":%d,\"wait\":%d,\"waitCallback\":%d}\n",frame,birth,sAnimFramesToWait,gAnimScriptCallback==WaitAnimFrameCount);}return gAnimScriptActive;}

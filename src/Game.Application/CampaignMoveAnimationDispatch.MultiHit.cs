@@ -14,20 +14,39 @@ public static partial class CampaignMoveAnimationPresentation
     private static bool MultiHitBoundary(MultiHitRow row)=>row.Kind is "attack" or "used" or "boundary";
     private static bool IsMultiHitReceipt(MultiHitRow row)=>row.Kind is "hp" or "substitute";
 
-    // The current receipt owns exactly one source attackanimation. Its ordinal is
-    // derived from committed hit receipts, never planned hits, HP loss, or Frame.
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignDoubleBattle battle,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
+    // Result-owned attackanimation runs before its current receipt is exposed.
+    // Per-hit ordinals and recovery ownership come only from committed receipts.
+    public static CampaignMoveAnimationDecision AtResult(CampaignDoubleBattle battle,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return new(null,"not-hit-result");
-        return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,4,moves,supports);
+        var rows=battle.Events.ToArray();
+        if(battle.EventIndex>=0&&battle.EventIndex<rows.Length&&rows[battle.EventIndex] is SourceRecoveredEvent)
+            return RecoveryResult(battle.Id,rows,battle.EventIndex,4,moves,supports);
+        return MultiHitResult(battle.Id,rows.Select(MultiHitRead).ToArray(),battle.EventIndex,4,moves,supports);
     }
-    public static CampaignMoveAnimationDecision AtHitResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
+    public static CampaignMoveAnimationDecision AtResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
         if(!sourceRules)return new(null,"historical-rules");
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Phase!=CampaignBattlePhase.Events)return new(null,"not-hit-result");
+        if(battle.EventIndex>=0&&battle.EventIndex<battle.Events.Length&&battle.Events[battle.EventIndex] is WildBattleRecoveredEvent)
+            return RecoveryResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
         return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,2,moves,supports);
+    }
+    private static CampaignMoveAnimationDecision RecoveryResult(string id,SourceBattleEvent[] rows,int index,int slots,
+        IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
+    {
+        if(rows[index] is not SourceRecoveredEvent recovery||Definition(recovery.Move,moves)?.Effect!="EFFECT_REST")
+            return new(null,"not-recovery-animation-result");
+        int start=index-1;
+        while(start>=0&&rows[start].Turn==recovery.Turn&&
+            rows[start] is not (SourceMoveUsedEvent or SourceAttackStringEvent or SourceOrderEvent or SourceTurnReadyEvent))start--;
+        if(start<0||rows[start] is not SourceMoveUsedEvent)return new(null,"unmatched-source-recovery-invocation");
+        var decision=AtAttackText(new(id,rows,start,slots,()=>null,_=>null),moves,supports,
+            CampaignMoveAnimationBoundary.BeforeRecoveryResult);
+        return decision.Dispatch is {} cue&&cue.ResultSequence==recovery.Sequence ? decision :
+            new(null,"unmatched-source-recovery-result");
     }
     private static CampaignMoveAnimationDecision MultiHitResult(string battle,MultiHitRow[] rows,int index,int slots,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
     {
@@ -68,7 +87,7 @@ public static partial class CampaignMoveAnimationPresentation
         int ordinal=Array.FindIndex(hits,h=>h.Sequence==current.Sequence);
         if(ordinal<0)return Reject("unmatched-source-multihit-result");
         return new(new(battle,current.Sequence,attack.Sequence,pp.Sequence,current.Sequence,move,new(used.Actor),new(used.Target),
-            current.Kind=="substitute"){MoveTurn=checked((byte)ordinal),AcknowledgesCurrentReceipt=false},"committed-source-multihit-animation");
+            current.Kind=="substitute"){MoveTurn=checked((byte)ordinal),Boundary=CampaignMoveAnimationBoundary.BeforeHitResult},"committed-source-multihit-animation");
     }
     private static MultiHitRow MultiHitRead(SourceBattleEvent e)=>e switch
     {

@@ -21,7 +21,7 @@ public sealed class MultiHitAnimationDispatchTests
         new("multi-hit", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
             null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
     private static CampaignMoveAnimationDecision At(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On);
+        AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events, long first = 1) =>
         events.Select((e, i) => e with { Sequence = first + i }).ToImmutableArray();
     private static ImmutableArray<SourceBattleEvent> Group(string name = "DOUBLE_SLAP", int actor = 0, int hits = 3)
@@ -124,22 +124,22 @@ public sealed class MultiHitAnimationDispatchTests
             for (int i = 0; i < events.Length; i++)
             {
                 var expected = At(events, i);
-                var actual = AnimationDispatchFixture.AtHitResult(single with { EventIndex = i }, true, SourceBattleScene.On);
+                var actual = AnimationDispatchFixture.AtResult(single with { EventIndex = i }, true, SourceBattleScene.On);
                 Assert.AreEqual(expected.Dispatch, actual.Dispatch);
             }
             var battle = single with { EventIndex = 3 };
-            Assert.AreEqual(id, AnimationDispatchFixture.AtHitResult(battle, true, SourceBattleScene.On).Dispatch!.SourceMoveId);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, false, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, true, SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
+            Assert.AreEqual(id, AnimationDispatchFixture.AtResult(battle, true, SourceBattleScene.On).Dispatch!.SourceMoveId);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, false, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, true, SourceBattleScene.Off).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle with { Phase = CampaignBattlePhase.ChooseMove }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle with { EventIndex = -1 }, true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle with { EventIndex = events.Length }, true, SourceBattleScene.On).Dispatch);
         }
         var twice = Double(Group(name), 3);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice, SourceBattleScene.Off).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtHitResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice, SourceBattleScene.Off).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { EventIndex = -1 }, SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtResult(twice with { EventIndex = twice.Events.Length }, SourceBattleScene.On).Dispatch);
     }
 
     [TestMethod]

@@ -19,8 +19,25 @@ public static class SourcePaletteMath
     }
 }
 
+public readonly record struct SourcePaletteEntry(int Index,ushort Color);
+
 public sealed partial class SourceBattleAnimation
 {
+    // Direct source gPlttBufferFaded writes retain palette indices. Whole-bank
+    // loads/fades replace these entries; snapshots detach their current values.
+    private readonly Dictionary<int,ushort> _fadedBackgroundEntries=[];
+    private void WriteBackgroundPaletteRange(int bank,int start,ReadOnlySpan<ushort> colors)
+    {
+        if(bank is <0 or >15||start is <0 or >15||start+colors.Length>16)
+            throw new ArgumentOutOfRangeException(nameof(start));
+        for(int i=0;i<colors.Length;i++)
+        {
+            ushort color=(ushort)(colors[i]&0x7fff);_fadedBackgroundEntries[bank*16+start+i]=color;
+            if(bank==2&&_fadedBackgroundPalette is {} loaded)loaded[start+i]=color;
+        }
+    }
+    private void ClearBackgroundPaletteEntries(int bank)
+    {for(int i=0;i<16;i++)_fadedBackgroundEntries.Remove(bank*16+i);}
     private readonly HashSet<int> _invertedPalettes=[];
     private void InvertSelectedPalettes(int background,int actor,int target)
     {
@@ -28,7 +45,7 @@ public sealed partial class SourceBattleAnimation
         if((actor&256)!=0)mask|=1u<<(16+_cue.Actor.Value);
         if((target&256)!=0)mask|=1u<<(16+_cue.Target.Value);
         for(int bank=0;bank<32;bank++)if((mask&(1u<<bank))!=0)
-        {if(!_invertedPalettes.Add(bank))_invertedPalettes.Remove(bank);if(bank==2&&_fadedBackgroundPalette is {} colors)for(int i=0;i<16;i++)colors[i]^=0x7fff;}
+        {for(int i=0;i<16;i++)if(_fadedBackgroundEntries.TryGetValue(bank*16+i,out var entry))_fadedBackgroundEntries[bank*16+i]=(ushort)(entry^0x7fff);if(!_invertedPalettes.Add(bank))_invertedPalettes.Remove(bank);if(bank==2&&_fadedBackgroundPalette is {} colors)for(int i=0;i<16;i++)colors[i]^=0x7fff;}
     }
     private readonly Dictionary<int,SourcePaletteBlend> _paletteBlends=[];
     private readonly List<SoundTask> _soundTasks=[];
@@ -40,7 +57,7 @@ public sealed partial class SourceBattleAnimation
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
-        {if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
+        {if(i<16)ClearBackgroundPaletteEntries(i);if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
     }
     // Source AnimTask_Flash / AnimTask_Flash_Step. Only BG palettes 1..3
     // and currently visible battler OBJ palettes are selected; HUD/text stay separate.

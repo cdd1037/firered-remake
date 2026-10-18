@@ -89,7 +89,7 @@ public sealed class MusicMoveAnimationDispatchTests
         for(int i=0;i<events.Length;i++)
         {
             var decision=single?AnimationDispatchFixture.AtAttackText(Single(events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtAttackText(Double(events,i),SourceBattleScene.On);
-            Assert.IsNull(single?AnimationDispatchFixture.AtHitResult(Single(events,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtHitResult(Double(events,i),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(single?AnimationDispatchFixture.AtResult(Single(events,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtResult(Double(events,i),SourceBattleScene.On).Dispatch);
             if(events[i]==used&&expected){var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);Assert.AreEqual(id,cue.SourceMoveId);Assert.AreEqual(actor,cue.Actor.Value);Assert.AreEqual(used.Target.Value,cue.Target.Value);Assert.AreEqual(pp.Sequence,cue.PpSequence);long receipt=id==187?events.OfType<SourceStatChangedEvent>().Single().Sequence:events.OfType<SourceStatusChangedEvent>().Single().Sequence;Assert.AreEqual(receipt,cue.ResultSequence);count++;}
             else Assert.IsNull(decision.Dispatch);
             if(id==187)Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events,i),moves:Mechanics.Catalog.Moves),"Belly Drum has no source General_StatsChange command.");

@@ -1,0 +1,69 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define NUM_TASKS 16
+#define REVISION 0
+#define HEAD_SENTINEL 0xFE
+#define TAIL_SENTINEL 0xFF
+#define DISPLAY_WIDTH 240
+#define DISPLAY_HEIGHT 160
+#define SAFE_DIV(a,b) ((b)?(a)/(b):0)
+#define sAnchorX data[6]
+#define sAnchorY data[7]
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite *);typedef void (*AnimFunc)(struct Sprite *);typedef void (*AnimCmdFunc)(struct Sprite *);typedef void (*AffineAnimCmdFunc)(u8,struct Sprite *);typedef void (*TaskFunc)(u8);
+struct SpriteTemplate {u16 tileTag,paletteTag;const struct OamData *oam;const union AnimCmd *const *anims;const void *images;const union AffineAnimCmd *const *affineAnims;SpriteCallback callback;};
+struct Sprite {struct OamData oam;const union AnimCmd *const *anims;const union AffineAnimCmd *const *affineAnims;const void *images;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse,animBeginning,affineAnimBeginning,usingSheet,animEnded,affineAnimEnded,animPaused,affineAnimPaused,anchored,hFlip,vFlip;u8 animCmdIndex,animNum,animLoopCounter,animDelayCounter,subpriority;u16 sheetTileStart;};
+struct Task {TaskFunc func;bool8 isActive;u8 prev,next,priority;s16 data[16];};
+struct OamMatrix {s16 a,b,c,d;};struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+struct Sprite gSprites[64];struct Task gTasks[16];struct AffineAnimState sAffineAnimStates[32];struct OamMatrix gOamMatrices[32];
+s16 gBattleAnimArgs[8];u8 gAnimVisualTaskCount;u32 gRngValue;bool8 gAffineAnimsDisabled=FALSE;
+static int scenario,frame,activeTask=-1,attempt,failAttempt=-1,instanceCounter,instance[64],occupied,callbackEvents[128][7],nCallbacks;
+static long long events[512][8];static int nEvents;static struct ObjAffineSrcData lastAffine;static int affineCalls;
+static void event(int kind,int a,int b,int c,long long d,int e,int f,int g){assert(nEvents<512);long long *p=events[nEvents++];p[0]=kind;p[1]=a;p[2]=b;p[3]=c;p[4]=d;p[5]=e;p[6]=f;p[7]=g;}
+static void ObjAffineSet(const struct ObjAffineSrcData *src,struct OamMatrix *dest,int count,int offset){assert(count==1&&offset==2);lastAffine=*src;affineCalls++;memset(dest,0,sizeof(*dest));}
+static void UpdateSpriteMatrixAnchorPos(struct Sprite *s,s32 x,s32 y){abort();}
+static void RequestSpriteFrameImageCopy(u16 image,u16 tile,const void *images){abort();}
+static void FreeSpriteOamMatrix(struct Sprite *sprite){event(6,sprite-gSprites,0,0,0,0,0,0);}
+static void DestroySprite(struct Sprite *sprite){event(4,sprite-gSprites,instance[sprite-gSprites],sprite->data[0],sprite->animEnded,0,0,0);sprite->inUse=FALSE;}
+void DestroyAnimSprite(struct Sprite *sprite);
+static void StoreSpriteCallbackInData6(struct Sprite *sprite,SpriteCallback callback){assert(callback==DestroyAnimSprite);sprite->data[6]=1;sprite->data[7]=0;}
+static void SetCallbackToStoredInData6(struct Sprite *sprite){assert(sprite->data[6]==1&&sprite->data[7]==0);sprite->callback=DestroyAnimSprite;}
+static void printRow(int phase);
+static void BuildOamBuffer(void){printRow(1);}
+static void RunTextPrinters(void){}static void UpdatePaletteFade(void){}
+#define JOY_HELD(button) 0
+#define B_BUTTON 2
+#define BATTLE_TYPE_POKEDUDE 0x200000
+#define B_OUTCOME_DREW 3
+#define PALETTES_ALL 0xFFFFFFFFu
+#define RGB_BLACK 0
+static int gBattleTypeFlags,gSpecialVar_Result,gBattleOutcome;
+static void ResetPaletteFadeControl(void){}static void BeginNormalPaletteFade(u32 m,int a,int b,int c,int d){}static void CB2_QuitPokedudeBattle(void){}static void SetMainCallback2(void (*f)(void)){}
+@PROTOTYPES@
+static u16 Random(void);
+static u8 CreateSprite(const struct SpriteTemplate *,s16,s16,u8);
+static u8 CreateSpriteAt(u8,const struct SpriteTemplate *,s16,s16,u8);
+@ARRAYS@
+@FUNCTIONS@
+static u16 Random(void){u16 v=SourceRandom();event(1,activeTask,v,0,gRngValue,0,0,0);return v;}
+static u8 CreateSpriteAt(u8 slot,const struct SpriteTemplate *t,s16 x,s16 y,u8 subpriority){
+ if(attempt==failAttempt)return 64;
+ struct Sprite *s=&gSprites[slot];memset(s,0,sizeof(*s));s->inUse=TRUE;s->animBeginning=TRUE;s->affineAnimBeginning=TRUE;s->usingSheet=TRUE;s->subpriority=subpriority;s->oam=*t->oam;s->anims=t->anims;s->affineAnims=t->affineAnims;s->callback=t->callback;s->x=x;s->y=y;instance[slot]=++instanceCounter;return slot;
+}
+static u8 CreateSprite(const struct SpriteTemplate *t,s16 x,s16 y,u8 subpriority){attempt++;u8 slot=SourceCreateSprite(t,x,y,subpriority);event(2,activeTask,attempt,x,y,subpriority,slot,slot==64?0:instance[slot]);return slot;}
+static void ObservedRain(u8 id){activeTask=id;AnimTask_CreateRaindrops(id);event(3,id,gTasks[id].data[0],gTasks[id].isActive,gAnimVisualTaskCount,0,0,0);activeTask=-1;}
+static void dummySprite(struct Sprite *s){}
+static int callbackId(SpriteCallback p){if(p==AnimRainDrop)return 0;if(p==AnimRainDrop_Step)return 1;if(p==AnimSunlight)return 2;if(p==StartAnimLinearTranslation)return 3;if(p==AnimTranslateLinear_WithFollowup)return 4;if(p==DestroyAnimSprite)return 5;if(p==dummySprite)return 6;abort();}
+static void printSprite(int i){struct Sprite *s=&gSprites[i];printf("[%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",i,instance[i],s->x,s->y,s->x2,s->y2,callbackId(s->callback),s->animCmdIndex,s->animDelayCounter,s->animEnded,s->oam.tileNum,s->subpriority,s->animBeginning,s->inUse);for(int j=0;j<8;j++)printf(",%d",s->data[j]);printf("]");}
+static void printRow(int phase){
+ printf("{\"frame\":%d,\"phase\":%d,\"visualCount\":%d,\"rng\":%u,\"tasks\":[",frame,phase,gAnimVisualTaskCount,gRngValue);for(int i=0;i<2;i++){printf("%s[%d,%d,%d,%d",i?",":"",i,gTasks[i].isActive,gTasks[i].prev,gTasks[i].next);for(int j=0;j<16;j++)printf(",%d",gTasks[i].data[j]);printf("]");}
+ printf("],\"children\":[");int printed=0;for(int i=occupied;i<64;i++)if(gSprites[i].inUse){if(printed++)printf(",");printSprite(i);}printf("],\"events\":[");for(int i=0;i<nEvents;i++){printf("%s[",i?",":"");for(int j=0;j<8;j++)printf("%s%lld",j?",":"",events[i][j]);printf("]");}printf("]}");puts("");nEvents=0;
+}

@@ -147,7 +147,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({132,146,282,302,338,43,294,313,45,304,336,49,63,127,155,212,335,81,169,14,159,160,176,258,352,47,187,320,135,208,249,350,7,52,53,56,190,324,341,84,86,9,55,85,121,152,192,48,103,319,71,72,202,105,51,61,92,141,145,83,250,328,44,128,116,203,8,58,181,82,126,172,225,204,343,231,342,75,129,223,200,235,147,178,88,157},{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertEqual({7, 8, 9, 14, 43, 44, 45, 47, 48, 49, 51, 52, 53, 55, 56, 58, 61, 63, 71, 72, 73, 75, 81, 82, 83, 84, 85, 86, 88, 92, 103, 105, 114, 116, 121, 126, 127, 128, 129, 132, 135, 137, 141, 145, 146, 147, 152, 155, 157, 159, 160, 169, 172, 176, 178, 181, 184, 187, 190, 192, 200, 201, 202, 203, 204, 208, 212, 221, 223, 225, 231, 235, 240, 241, 249, 250, 257, 258, 282, 294, 296, 302, 304, 307, 313, 319, 320, 324, 328, 335, 336, 338, 341, 342, 343, 350, 352},{s['moveId'] for s in json.loads(data)['scripts']})
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}

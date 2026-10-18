@@ -6,7 +6,8 @@ public sealed partial class SourceBattleAnimation
         var a=command.Args;if(command.Op!="createvisualtask"||a.Length==0)return false;
         if(a[0]=="AnimTask_ShakeTargetInPattern")
         {
-            if(a.Length!=6||Number(a[1]) is <0 or >255||Number(a[2]) is <1 or >32767||Number(a[3]) is <short.MinValue or >short.MaxValue||AnimationArgument(a[4]) is <0 or >1||Number(a[5]) is <0 or >1)Fail(command,"Pattern shake source operands differ.");return true;
+            // Omitted arg3 retains the shared source word; any nonzero value selects pattern1.
+            if(a.Length is not (5 or 6)||Number(a[1]) is <0 or >255||Number(a[2]) is <1 or >32767||Number(a[3]) is <short.MinValue or >short.MaxValue||AnimationArgument(a[4]) is <0 or >1||a.Length==6&&Number(a[5]) is <short.MinValue or >short.MaxValue)Fail(command,"Pattern shake source operands differ.");return true;
         }
         if(a[0]=="AnimTask_BlendNonAttackerPalettes")
         {
@@ -18,7 +19,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(command.Args[0]=="AnimTask_ShakeTargetInPattern")
         {
-            var task=new PatternShakeTask(_cue.Target.Value,_animationArgs[0],_animationArgs[2]!=0,_animationArgs[3]);task.Step(this);if(!task.Finished)_tasks.Add(task);return true;
+            var task=new PatternShakeTask(_cue.Target.Value,_animationArgs[0],_animationArgs[2]==1,_animationArgs[3]);task.Step(this);if(!task.Finished)_tasks.Add(task);return true;
         }
         if(command.Args[0]=="AnimTask_BlendNonAttackerPalettes")
         {
@@ -34,7 +35,7 @@ public sealed partial class SourceBattleAnimation
         private int _step;
         public override void Step(SourceBattleAnimation owner)
         {
-            int direction=Patterns[pattern][++_step%10],delta=owner._animationArgs[1]*direction;var p=owner._offsets[slot];
+            int direction=Patterns[pattern==0?0:1][++_step%10],delta=owner._animationArgs[1]*direction;var p=owner._offsets[slot];
             owner._offsets[slot]=vertical?new(p.X,unchecked((short)Math.Abs(delta))):new(unchecked((short)delta),p.Y);
             if(_step==duration){owner._offsets[slot]=default;Finished=true;}
         }

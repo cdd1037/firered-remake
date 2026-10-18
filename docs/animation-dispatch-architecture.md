@@ -17,3 +17,9 @@ Real source distinctions remain explicit: doubles target revisits, setup-only Wi
 Application test fixtures read actual generated script IDs and labels and provide the current content catalog. Tests for missing metadata pass `null` explicitly; they do not receive an implicit fallback. New focused cases check single/double decision parity, foreign PP ownership, missing script support, missing definitions, and a valid-looking numeric ID pointing to another source root.
 
 This is an authority/lifecycle refactor. It adds no move roots, gameplay receipts, RNG draws, save fields, or remote writes. Native UI and audible behavior require their own bounded acceptance; managed structural tests are not a substitute for that evidence.
+
+## Result-owned recovery timing
+
+The public result entry point is `AtResult`. A dispatch carries its genuine source boundary: `AfterAttackText`, `BeforeHitResult`, or `BeforeRecoveryResult`. Only the first acknowledges its current page after playback. The result-owned paths resume the same receipt, and the existing animation gate prevents replay at a repeated cursor. Only a hit boundary overrides the scene's target substitute result; recovery keeps the event-time displayed body.
+
+Recovery-family selection now comes from effect metadata rather than another numeric move list. Ordinary recovery requires an owned PP command immediately followed by positive recovery of a living self-target. Rest has a different source order: `trysetrest`, sleep-result text, status-icon update, then `PresentHealTarget` and attackanimation. Its dedicated script is therefore authenticated by the ordered PP → rest-status (source sleep-counter value 3) → recovery prefix and starts at the recovery cursor. Later Lum/Chesto cures do not move that animation earlier or erase the committed sleep result. Neither healing amount nor weather is recomputed by presentation.

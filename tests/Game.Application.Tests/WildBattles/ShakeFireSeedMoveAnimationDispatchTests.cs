@@ -139,7 +139,7 @@ public sealed class ShakeFireSeedMoveAnimationDispatchTests
         {
             var decision = AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On);
             Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.Off).Dispatch);
             if (events[index] is SourceMoveUsedEvent used && used.Move == move)
             {
@@ -163,7 +163,7 @@ public sealed class ShakeFireSeedMoveAnimationDispatchTests
                 Assert.Fail("Only this root's attack-text receipt may launch it; secondary, drain, switch and recharge pages cannot replay it.");
             if (!single) continue;
             Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), false, SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.Off).Dispatch);
         }
@@ -175,10 +175,10 @@ public sealed class ShakeFireSeedMoveAnimationDispatchTests
         for (int index = 0; index < events.Length; index++)
         {
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Double(events, index), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch);
             if (!single) continue;
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(Single(events, index), true, SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch);
         }
     }
 

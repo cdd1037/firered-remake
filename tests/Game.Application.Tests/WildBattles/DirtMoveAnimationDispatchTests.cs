@@ -148,7 +148,7 @@ public sealed class DirtMoveAnimationDispatchTests
             var battle = Double(events, index);
             var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch,
+            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch,
                 "A single dirt root cannot be replayed by a damage, secondary, cap or faint page.");
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (expected && events[index] == used)
@@ -181,7 +181,7 @@ public sealed class DirtMoveAnimationDispatchTests
             {
                 var single = Single(events, index);
                 Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtHitResult(single, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
                 Assert.AreEqual(AnimationDispatchFixture.StatAtResult(battle, moves: Mechanics.Catalog.Moves),
                     AnimationDispatchFixture.StatAtResult(single, true, moves: Mechanics.Catalog.Moves));

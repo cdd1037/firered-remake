@@ -24,3 +24,29 @@ dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --filte
 ```
 
 `tests/Reference/generate_background_vectors.py` explicitly creates a new candidate reference file from raw PNG/JASC/map data. It does not call the importer or product code and refuses to overwrite an existing file. Ordinary tests read the reviewed vectors under `tests/Game.Presentation.Tests/Fixtures/`; they do not regenerate expected results. Coverage includes all imported terrain renders, retained Dark→Psychic partial writes, terrain restoration, both screen sizes with negative/edge scrolling, source bank ownership, transparency/backdrop behavior, lazy catalog lifetime, invalid input, and allocation-free repeated background rendering.
+
+## BG1 overlays and hardware target selection
+
+The same catalog now owns the source Scary Face player/opponent and fog tile/map/palette resources. Script `overlayDependencies` selects these resources; `materialDependencies` declares load-only OBJ graphics such as White Feather and Whirlwind Lines, so palette allocation is not inferred from task names in the resolver.
+
+BG1 overlays retain source 256×256 wrapping, map flip bits and literal palette banks. Their palette load replaces bank 8; source cleanup clears the overlay and blending. The current admitted overlay closure rejects concurrent `monbg` use rather than conflating its battler-visibility ownership with overlay cleanup.
+
+The composer retains BG1, BG2, BG3/backdrop and frontmost OBJ independently. BLDCNT first/second-target masks select the immediately underlying visible layer; an unselected layer is not skipped to reach a deeper target. BG3 index-zero provenance selects the backdrop bit, even when its color equals an opaque BG3 pixel. Each hardware alpha coefficient clamps to 16 independently, and resulting channels saturate at 31; Mist Ball's coefficient sum of 17 is intentional. The existing common OBJ-alpha path has an equivalent fast path, checked against general target-mask composition.
+
+New source fixtures independently cover task registers, raw Glare allocation/OAM timing, Mist movement, source materials and blending. The shared map/priority/mosaic tests remain applicable; these resources do not imply scanline, window or arbitrary parallel-overlay support.
+
+## Weather overlays and source subsprites
+
+Sandstorm and Heat Wave reuse the BG1 overlay owner and source indexed Flying Dirt palette. Their BG1 map clear and register cleanup are separate callbacks. Heat Wave writes the loaded background palette and moves only the event-time visible target pair. Sky Uppercut uses the existing BG3 scroll/register owner with its source delay and unsigned wrapping; its BG_IN_AIR material remains catalog-owned.
+
+A recipe may carry a source `subsprites` table. The composer expands one logical sprite into ordered non-affine OAM rectangles, preserving top-left table offsets, tile offsets, per-piece priority, both flips, wrapped coordinates, and the parent's retained palette/material. Earlier table pieces win equal-priority ties. This does not allocate new logical sprite cells or visual counters. The admitted sand closure proves a conservative source OAM bound of 22 stable field entries plus twice every authored crescent plus all retained scene fragments, at most 64. Arbitrary affine subsprite tables and unreviewed concurrent emitter closures remain rejected.
+
+Rain uses the shared scene's raw child allocation and pre-task OAM snapshot: each attempt consumes its two animation-local random draws before allocation, and uncounted drops can outlive an isolated emitter. Palette ownership follows the retired invocation while subsequent controllers reuse slots. Sunny Day uses the shared raw signed-pan sweep (`panse_adjustnone`) without actor-side adjustment. Magical Leaf upgrades the existing leaf materials to indexed palettes under their original catalog owner; its cycle writes the authoritative faded banks from retained unfaded colors.
+
+The weather source fixtures include independent native OAM table rows and source-pixel hashes for both the full 240×160 source layer and the renderer's 240×112 battle field. Callback/register vectors are separate from those pixel checks; existing viewport/HUD ownership is unchanged.
+
+## Indexed direct faded-palette writes
+
+Moonlight writes source BG palette banks 1–3 at entries 1–15 while preserving each bank's entry zero. The runtime retains these indexed faded writes and publishes detached frame values; the compositor applies them through actual indexed terrain/overlay membership, before hardware darkening. It never guesses membership from flattened RGB colors. Whole-bank palette loads and normal fades supersede prior direct entries for their selected banks. Bank-2 readers use the same updated faded values, and its palette rotation replaces the corresponding sparse projection. Inversion and cancellation follow the shared palette owner.
+
+The authored Moonlight closure excludes `monbg`, whose palette-copy task ordering would require separate proof for arbitrary synthetic combinations. Morning Sun uses the existing single BG1 overlay owner; Aurora uses a catalog BG3 material and the existing OBJ palette-bank cycle. These additions do not implement scanline effects, arbitrary concurrent background owners, or a new palette compositor.

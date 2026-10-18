@@ -68,7 +68,7 @@ public sealed class ConversionMoveAnimationDispatchTests
         {
             CampaignMoveAnimationDecision At(SourceBattleScene scene)=>single?AnimationDispatchFixture.AtAttackText(Single(e,i),true,scene):AnimationDispatchFixture.AtAttackText(Double(e,i),scene);
             var decision=At(SourceBattleScene.On);Assert.AreEqual(decision,At(SourceBattleScene.On));Assert.IsNull(At(SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(single?AnimationDispatchFixture.AtHitResult(Single(e,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtHitResult(Double(e,i),SourceBattleScene.On).Dispatch);
+            Assert.IsNull(single?AnimationDispatchFixture.AtResult(Single(e,i),true,SourceBattleScene.On).Dispatch:AnimationDispatchFixture.AtResult(Double(e,i),SourceBattleScene.On).Dispatch);
             Assert.IsNull(single?AnimationDispatchFixture.StatAtResult(Single(e,i),true):AnimationDispatchFixture.StatAtResult(Double(e,i)));
             if(e[i]==used&&expected)
             {var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);var overlay=e.OfType<SourceCalledOverlayChangedEvent>().Single(x=>x.Move==Move(id));var pp=e.OfType<SourcePpCommandEvent>().Single(x=>x.CurrentMove==Move(id));Assert.AreEqual(pp.Sequence+1,overlay.Sequence);Assert.AreEqual(actor,pp.PpOwner.Value);Assert.AreEqual(actor,pp.Target.Value);Assert.AreEqual(overlay.Sequence,cue.ResultSequence);Assert.AreEqual(id,cue.SourceMoveId);Assert.AreEqual(actor,cue.Actor.Value);Assert.AreEqual(actor,cue.Target.Value);count++;}

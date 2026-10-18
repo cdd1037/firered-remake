@@ -104,8 +104,8 @@ public sealed class FutureSightMoveAnimationDispatchTests
             Assert.AreEqual(decision, Project(SourceBattleScene.On));
             Assert.IsNull(Project(SourceBattleScene.Off).Dispatch);
             if (single) Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, i), false, SourceBattleScene.On).Dispatch);
-            var hit = single ? AnimationDispatchFixture.AtHitResult(Single(events, i), true, SourceBattleScene.On)
-                : AnimationDispatchFixture.AtHitResult(Double(events, i), SourceBattleScene.On);
+            var hit = single ? AnimationDispatchFixture.AtResult(Single(events, i), true, SourceBattleScene.On)
+                : AnimationDispatchFixture.AtResult(Double(events, i), SourceBattleScene.On);
             Assert.IsNull(hit.Dispatch);
             if (expected && events[i] == used)
             {
@@ -234,7 +234,7 @@ public sealed class FutureSightMoveAnimationDispatchTests
                         Assert.IsInstanceOfType<SourceMoveUsedEvent>(result.Events[i]);
                         Assert.IsTrue(result.Events.OfType<SourceCalledDelayedEvent>().Any(e => e.Reason == "scheduled" && e.Sequence == cue.ResultSequence));
                     }
-                    Assert.AreNotEqual(248, AnimationDispatchFixture.AtHitResult(battle, SourceBattleScene.On).Dispatch?.SourceMoveId ?? 0);
+                    Assert.AreNotEqual(248, AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch?.SourceMoveId ?? 0);
                 }
                 Assert.AreEqual(before, JsonSerializer.Serialize(result));
                 if (result.CompletedCleanTurn) { frame = result.State; break; }

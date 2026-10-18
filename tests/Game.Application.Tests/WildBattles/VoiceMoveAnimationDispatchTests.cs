@@ -120,8 +120,8 @@ public sealed class VoiceMoveAnimationDispatchTests
                 : AnimationDispatchFixture.AtAttackText(Double(events, i), scene);
             var decision = At(SourceBattleScene.On);
             Assert.AreEqual(decision, At(SourceBattleScene.On)); Assert.IsNull(At(SourceBattleScene.Off).Dispatch);
-            Assert.IsNull(single ? AnimationDispatchFixture.AtHitResult(Single(events, i), true, SourceBattleScene.On).Dispatch
-                : AnimationDispatchFixture.AtHitResult(Double(events, i), SourceBattleScene.On).Dispatch);
+            Assert.IsNull(single ? AnimationDispatchFixture.AtResult(Single(events, i), true, SourceBattleScene.On).Dispatch
+                : AnimationDispatchFixture.AtResult(Double(events, i), SourceBattleScene.On).Dispatch);
             if (single) Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, i), false, SourceBattleScene.On).Dispatch);
             if (events[i] == used && outcomes.Length > 0)
             {

@@ -93,7 +93,7 @@ public sealed class HailMoveAnimationDispatchTests
                 var receipt=result.Events.OfType<SourceMtMoonVolatileEvent>().Single(e=>e.Volatile=="hail"&&e.Reason=="move");
                 Assert.AreEqual(receipt.Sequence,cue.ResultSequence);Assert.AreEqual(0,receipt.Before);Assert.AreEqual(5,receipt.After);
             }
-            Assert.AreNotEqual(258,(single?AnimationDispatchFixture.AtHitResult(Single(result.Events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtHitResult(Double(result.Events,i),SourceBattleScene.On)).Dispatch?.SourceMoveId??0);
+            Assert.AreNotEqual(258,(single?AnimationDispatchFixture.AtResult(Single(result.Events,i),true,SourceBattleScene.On):AnimationDispatchFixture.AtResult(Double(result.Events,i),SourceBattleScene.On)).Dispatch?.SourceMoveId??0);
         }
         Assert.AreEqual(expected?1:0,count);Assert.AreEqual(before,JsonSerializer.Serialize(result));
     }
