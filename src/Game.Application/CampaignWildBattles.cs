@@ -220,7 +220,7 @@ public sealed partial class CampaignSession
             b=AdvanceDisplayThrough(b,e.Sequence);
             if(HiddenEarlyPartyEvent(e)){b=b with{EventIndex=b.EventIndex+1};continue;}
             if(e is WildBattleStatusChangedEvent {Reason:"sleep-countdown"} or WildBattleLeechSeedChangedEvent {Reason:not "move"}){b=b with{EventIndex=b.EventIndex+1};continue;}
-            if(e is WildBattleOrderEvent or WildBattleTurnReadyEvent or WildBattleEndedEvent or WildBattleDefenseCurledEvent || e is WildBattleBindingChangedEvent binding && binding.Reason is not("bind" or "wrap" or "expired")){b=b with{EventIndex=b.EventIndex+1};continue;}
+            if(e is WildBattleOrderEvent or WildBattleTurnReadyEvent or WildBattleEndedEvent {MoveEscape:null} or WildBattleDefenseCurledEvent || e is WildBattleBindingChangedEvent binding && binding.Reason is not("bind" or "wrap" or "expired")){b=b with{EventIndex=b.EventIndex+1};continue;}
             void Update(WildBattleSide side,Func<PokemonInstance,PokemonInstance> update){b=side==WildBattleSide.Player?b with{DisplayPlayer=update(b.DisplayPlayer)}:b with{DisplayOpponent=update(b.DisplayOpponent)};}
             switch(e)
             {

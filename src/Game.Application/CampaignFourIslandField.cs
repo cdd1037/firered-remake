@@ -68,10 +68,8 @@ public sealed partial class CampaignSession
     private IFieldMap IcefallRawMap(CampaignState state) => new FourIslandMapAdapter(_content.Maps[state.World.Player.MapId],state.MapEdits,_content,false);
     private IReadOnlyDictionary<MapId,IFieldMap> FourIslandMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        foreach(var pair in maps.Where(p=>FourIslandMap(p.Key)))result[pair.Key]=new FourIslandMapAdapter(pair.Value,
-            pair.Key==state.World.Player.MapId?state.MapEdits:null,_content,true);
-        return result;
+        return new CampaignMapView<IFieldMap>(maps,(id,map)=>FourIslandMap(id)?new FourIslandMapAdapter(map,
+            id==state.World.Player.MapId?state.MapEdits:null,_content,true):map);
     }
     private sealed class FourIslandMapAdapter(IFieldMap source,ImmutableSortedDictionary<string,FieldMetatileEdit>? edits,ICampaignCatalog content,bool walking):IFieldMap
     {
@@ -89,10 +87,8 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> FourIslandWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        foreach(var pair in maps.Where(p=>FourIslandMap(p.Key)))result[pair.Key]=pair.Value with{Cells=pair.Value.Cells.Select(c=>
-            c.Collision==0&&c.SourceBehavior is 0x16 or 0x23 or 0x26 or 0x27?c with{SourceBehavior=0}:c).ToImmutableArray()};
-        return result;
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>FourIslandMap(id)?map with{Cells=map.Cells.Select(c=>
+            c.Collision==0&&c.SourceBehavior is 0x16 or 0x23 or 0x26 or 0x27?c with{SourceBehavior=0}:c).ToImmutableArray()}:map);
     }
     private Decision<CampaignState>? TryFourIslandFieldStep(CampaignState state,CampaignCommand command)
     {

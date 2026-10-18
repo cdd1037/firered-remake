@@ -52,12 +52,12 @@ public sealed partial class CampaignSession
     }
 
     private IReadOnlyDictionary<MapId, IFieldMap> SafariMovementMaps(IReadOnlyDictionary<MapId, IFieldMap> maps) =>
-        maps.ToDictionary(p => p.Key, p =>
-            SafariFieldMovementRules.ForFieldMovement(p.Value, EarlyLandEncounterRules.SafariRulesVersion));
+        new CampaignMapView<IFieldMap>(maps, (_, map) =>
+            SafariFieldMovementRules.ForFieldMovement(map, EarlyLandEncounterRules.SafariRulesVersion));
 
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> SafariConnectedMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps) =>
-        maps.ToDictionary(p => p.Key, p =>
-            SafariFieldMovementRules.ForConnectedMovement(p.Value, EarlyLandEncounterRules.SafariRulesVersion));
+        new CampaignMapView<ConnectedFieldMap>(maps, (_, map) =>
+            SafariFieldMovementRules.ForConnectedMovement(map, EarlyLandEncounterRules.SafariRulesVersion));
 
     private bool CanReceiveSafariPokemon(CampaignState state) => state.Party.Length < 6 ||
         state.Storage is { } storage && storage.Boxes.Any(box => box.Slots.Any(mon => mon is null));

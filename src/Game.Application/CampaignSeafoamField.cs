@@ -18,10 +18,7 @@ public sealed partial class CampaignSession
         var maps = MapLayoutRawMaps(state);
         var id = state.World.Player.MapId;
         if (!SeafoamFieldRules.IsCave(id)) return maps;
-        var result = maps.ToDictionary(pair => pair.Key, pair => pair.Value);
-        if (SeafoamFieldRules.IsCave(id))
-            result[id] = new SeafoamEditedMap(result[id], state.MapEdits, _content);
-        return result;
+        return ReplaceMap(maps,id,(IFieldMap)new SeafoamEditedMap(maps[id],state.MapEdits,_content));
     }
     private sealed class SeafoamEditedMap(IFieldMap source, ImmutableSortedDictionary<string,FieldMetatileEdit>? edits, ICampaignCatalog content) : IFieldMap
     {
@@ -38,13 +35,13 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> SeafoamWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
-        var result = maps.ToDictionary(pair => pair.Key, pair => pair.Value);
-        foreach (var pair in maps.Where(pair => SeafoamFieldRules.IsWaterFloor(pair.Key)))
-            result[pair.Key] = pair.Value with { Cells = pair.Value.Cells.Select(cell => cell.Collision == 0 &&
-                (SeafoamFieldRules.CurrentDirection(cell.SourceBehavior) is not null || cell.SourceBehavior is 0x11 or 0x12 or 0x17 or 0x1a or 0x1b) ? cell with { SourceBehavior = 0x10 } : cell).ToImmutableArray() };
-        var coast=new MapId("map.route-20");
-        if(result.TryGetValue(coast,out var coastMap))result[coast]=coastMap with {Cells=coastMap.Cells.Select(cell=>cell.Collision==0&&cell.SourceBehavior==0x17&&cell.Elevation==3?cell with {SourceBehavior=0}:cell).ToImmutableArray()};
-        return result;
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map) =>
+        {
+            if(SeafoamFieldRules.IsWaterFloor(id))
+                return map with { Cells = map.Cells.Select(cell => cell.Collision == 0 &&
+                    (SeafoamFieldRules.CurrentDirection(cell.SourceBehavior) is not null || cell.SourceBehavior is 0x11 or 0x12 or 0x17 or 0x1a or 0x1b) ? cell with { SourceBehavior = 0x10 } : cell).ToImmutableArray() };
+            return id.Value=="map.route-20" ? map with {Cells=map.Cells.Select(cell=>cell.Collision==0&&cell.SourceBehavior==0x17&&cell.Elevation==3?cell with {SourceBehavior=0}:cell).ToImmutableArray()} : map;
+        });
     }
     private bool SeafoamForcedTile(CampaignState state) => state.IsSurfing &&
         SeafoamFieldRules.IsWaterFloor(state.World.Player.MapId) && SeafoamFieldRules.CurrentDirection(SeafoamRawMaps(state)[state.World.Player.MapId].SourceBehaviorAt(state.World.Player.X,state.World.Player.Y)??-1) is not null;

@@ -74,28 +74,6 @@ def build_contract(lock, raw):
                     if w["dest_map"].startswith("MAP_CELADON_CITY_DEPARTMENT_STORE_")]
     need(len(city_entries) == 2 and all(w["dest_map"].endswith("_1F") for w in city_entries), "city entry differs")
 
-    definitions = {i["itemId"]: i for i in json.loads(raw["src/data/items.json"])["items"]}
-    item_ids = {symbol: int(value, 0) for symbol, value in re.findall(
-        r"^#define\s+(ITEM_\w+)\s+(0x[\da-fA-F]+|\d+)\b", text["include/constants/items.h"], re.M)}
-    stocks = []
-    for floor in ("2F", "4F", "5F"):
-        path = f"data/maps/{PREFIX}{floor}/scripts.inc"
-        for label in re.findall(r"^([\w]+)::\n\s*\.2byte ITEM_", text[path], re.M):
-            symbols = re.findall(r"\.2byte (ITEM_\w+)", block(path, label))
-            need(symbols[-1:] == ["ITEM_NONE"] and len(symbols) == len(set(symbols)), "stock sentinel/uniqueness differs")
-            scripts = [s for s in re.findall(r"^(\w+EventScript_\w+)::", text[path], re.M)
-                       if re.search(r"\bpokemart " + re.escape(label) + r"\b", block(path, s))]
-            need(len(scripts) == 1, "stock clerk differs")
-            stock_items = []
-            for symbol in symbols[:-1]:
-                item = definitions[symbol]
-                stock_items.append(dict(stableId="pret:" + symbol, sourceItemId=item_ids[symbol], metadata=item))
-            ordinary = label == PREFIX + "2F_Items"
-            stocks.append(dict(id=label, clerkScript=scripts[0], source=source(path, label),
-                               proposedAdmission="ordinary-buy-sell" if ordinary else "deferred-explicit-boundary",
-                               items=stock_items))
-    need([len(s["items"]) for s in stocks] == [9, 6, 6, 7, 6], "all five stock inventories must remain intact")
-
     elevator_path = f"data/maps/{PREFIX}Elevator/scripts.inc"
     elevator_floors = []
     for index, floor in enumerate(("5F", "4F", "3F", "2F", "1F")):
@@ -156,7 +134,7 @@ def build_contract(lock, raw):
     return dict(schemaVersion=1,
 
                  completeDepartmentStore=False, maps=maps, cityEntrances=city_entries,
-                stocks=stocks, staticWarps=static_warps, deferredServices=deferred, constants=constants,
+                staticWarps=static_warps, deferredServices=deferred, constants=constants,
                 elevator=dict(mapId="map.celadon-city-department-store-elevator", floors=elevator_floors,
                     entrances=entrances, dynamicExits=exits, menuTextSymbols=labels, exitChoice=5, cancelChoice=127,
                     sourceMenuDefaultTracksCurrentFloor=True, selectionUpdatesDestinationBeforeSameFloorCheck=True,

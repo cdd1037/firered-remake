@@ -27,7 +27,8 @@ internal sealed partial class FrameRecipeContext
         Frame = result.State; Events.AddRange(result.Events); Trace.AddRange(result.Trace);
         invocation = invocation with { CurrentMove = new("pret:MOVE_NONE") };
     }
-    internal override void ForceSwitchEscape() => TeleportEscape();
+    // BattleScript_SuccessForceOut shares Teleport's outcome, but has no fled message.
+    internal override void ForceSwitchEscape() => EndWildMoveEscape(null);
     internal override ImmutableArray<int> BatonPassReserves(BattlerSlot actor) => SourceBattleIdentityRules.LegalReserveIndices(Frame,actor.Side);
     internal override void PauseBatonPass(BattlerSlot actor, ImmutableArray<int> legal)
     {

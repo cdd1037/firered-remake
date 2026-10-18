@@ -9,14 +9,13 @@ public sealed partial class CampaignSession
 {
     private IReadOnlyDictionary<MapId, IFieldMap> SeviiRubyMovementMaps(IReadOnlyDictionary<MapId, IFieldMap> maps, CampaignState state)
     {
-        var result = maps.ToDictionary(p => p.Key, p => p.Value);
-        foreach (var pair in maps.Where(p => SeviiRubyMap(p.Key) || p.Key.Value == RubyCenterMap))
+        return new CampaignMapView<IFieldMap>(maps,(id,map) =>
         {
-            var edits = pair.Key == state.World.Player.MapId ? state.MapEdits : SeviiRubyExpectedEdits(
-                state with { World = state.World with { Player = state.World.Player with { MapId = pair.Key } } });
-            result[pair.Key] = new SeviiRubyMovementMap(pair.Value, edits, _content);
-        }
-        return result;
+            if(!SeviiRubyMap(id)&&id.Value!=RubyCenterMap)return map;
+            var edits = id == state.World.Player.MapId ? state.MapEdits : SeviiRubyExpectedEdits(
+                state with { World = state.World with { Player = state.World.Player with { MapId = id } } });
+            return new SeviiRubyMovementMap(map, edits, _content);
+        });
     }
 
     private sealed class SeviiRubyMovementMap(IFieldMap original, ImmutableSortedDictionary<string, FieldMetatileEdit>? edits,
@@ -43,17 +42,12 @@ public sealed partial class CampaignSession
 
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> SeviiRubyWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
-        var result = maps.ToDictionary(p => p.Key, p => p.Value);
-        foreach (var pair in maps.Where(p => p.Key.Value is "map.one-island-kindle-road" or "map.one-island-kindle-road-ember-spa" or "map.mt-ember-exterior"))
-        {
-            // These authenticated source behaviors are ordinary collision-controlled land.
-            // Preserve the source cells for Surf, encounters, terrain and presentation;
-            // only the walking/dismount adapter maps them to its ordinary ground token.
-            result[pair.Key] = pair.Value with { Cells = pair.Value.Cells.Select(c =>
-                c.Collision == 0 && (c.SourceBehavior is 0x0c or 0x17 or 0x28)
-                    ? c with { SourceBehavior = 0x00 } : c).ToImmutableArray() };
-        }
-        return result;
+        // Preserve source cells for Surf, encounters, terrain and presentation;
+        // only the walking/dismount view maps this land to its ordinary ground token.
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>
+            id.Value is "map.one-island-kindle-road" or "map.one-island-kindle-road-ember-spa" or "map.mt-ember-exterior"
+                ? map with { Cells = map.Cells.Select(c => c.Collision == 0 && (c.SourceBehavior is 0x0c or 0x17 or 0x28)
+                    ? c with { SourceBehavior = 0x00 } : c).ToImmutableArray() } : map);
     }
 
     private CampaignActor? AdjacentSeviiRubyBoulder(CampaignState state, Direction direction)

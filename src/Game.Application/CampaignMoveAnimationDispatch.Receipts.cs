@@ -44,7 +44,8 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleMoveFailedEvent x => new SourceMoveFailedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.Reason),
         WildBattleMoveMissedEvent x => new SourceMoveMissedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move),
         WildBattleForcedOutEvent x => new SourceForcedOutEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.TrainerBattle),
-        WildBattleEndedEvent x => new SourceEndedEvent(x.Sequence,x.Turn,x.Outcome),
+        WildBattleEndedEvent x => new SourceEndedEvent(x.Sequence,x.Turn,x.Outcome) {
+            MoveEscape=x.MoveEscape is {} escaped?new(new((int)escaped.Actor),escaped.Move):null },
         WildBattleMultiHitEvent x => new SourceMultiHitEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.PlannedHits,x.ActualHits),
         WildBattleCalledBeatUpMemberEvent x => new SourceCalledBeatUpMemberEvent(x.Sequence,x.Turn,(BattleSide)x.Side,x.PartyIndex,x.Species),
         WildBattleMoveCopiedEvent x => new SourceMoveCopiedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.CopiedMove,x.MoveSlot,x.Permanent,x.Replacement),

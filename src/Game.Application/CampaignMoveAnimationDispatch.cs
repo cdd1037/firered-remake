@@ -354,7 +354,8 @@ public static partial class CampaignMoveAnimationPresentation
                     forced.Target!=used.Target||forced.Move!=used.Move||battle.Slots==4&&!forced.TrainerBattle||
                     action.OfType<SourceForcedOutEvent>().Count()!=1)return new(null,"unmatched-source-force-out-result");
             }
-            else if(battle.Slots!=2||used.Actor!=used.Target||action[1] is not SourceEndedEvent {Outcome:WildBattleOutcome.Escaped}||
+            else if(battle.Slots!=2||used.Actor!=used.Target||action[1] is not SourceEndedEvent {Outcome:WildBattleOutcome.Escaped,MoveEscape:{} escaped}||
+                escaped.Actor!=used.Actor||escaped.Move!=used.Move||
                 action.OfType<SourceEndedEvent>().Count()!=1||action.OfType<SourceForcedOutEvent>().Any())
                 return new(null,"unmatched-source-teleport-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,action[1].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");

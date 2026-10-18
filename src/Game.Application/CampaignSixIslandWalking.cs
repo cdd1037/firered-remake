@@ -9,18 +9,14 @@ public sealed partial class CampaignSession
     private static bool SixIslandMountainMap(MapId id)=>id.Value is "map.six-island-water-path" or SixIslandRuinMap;
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> SixIslandWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        foreach(var pair in maps.Where(p=>SixIslandMountainMap(p.Key)))result[pair.Key]=pair.Value with{Cells=pair.Value.Cells.Select(c=>
-            c.Collision==0&&c.SourceBehavior==0x0c?c with{SourceBehavior=0}:c).ToImmutableArray()};
-        return result;
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>SixIslandMountainMap(id)?map with{Cells=map.Cells.Select(c=>
+            c.Collision==0&&c.SourceBehavior==0x0c?c with{SourceBehavior=0}:c).ToImmutableArray()}:map);
     }
     private IReadOnlyDictionary<MapId,IFieldMap> SixIslandMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        foreach(var pair in maps.Where(p=>SixIslandMountainMap(p.Key)))result[pair.Key]=new SixIslandMovementMap(pair.Value,
-            pair.Key.Value==SixIslandRuinMap?SixIslandDoorEdits(state.Script.Flags.GetValueOrDefault(RuinValleyCutRules.PermanentFlag)):
-                pair.Key==state.World.Player.MapId?state.MapEdits:null,_content);
-        return result;
+        return new CampaignMapView<IFieldMap>(maps,(id,map)=>SixIslandMountainMap(id)?new SixIslandMovementMap(map,
+            id.Value==SixIslandRuinMap?SixIslandDoorEdits(state.Script.Flags.GetValueOrDefault(RuinValleyCutRules.PermanentFlag)):
+                id==state.World.Player.MapId?state.MapEdits:null,_content):map);
     }
     private sealed class SixIslandMovementMap(IFieldMap source,ImmutableSortedDictionary<string,FieldMetatileEdit>? edits,ICampaignCatalog content):IFieldMap
     {

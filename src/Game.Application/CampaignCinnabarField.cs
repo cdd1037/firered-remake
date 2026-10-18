@@ -139,17 +139,14 @@ public sealed partial class CampaignSession
     // while completing that step; the post-coordinate-event hook starts the source fall script.
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> CinnabarWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        foreach(var id in new[]{new MapId("map.pokemon-mansion-3f"),new MapId("map.victory-road-3f")})
-            if(maps.TryGetValue(id,out var map))
-                result[id]=map with{Cells=map.Cells.Select(c=>c.SourceBehavior==0x66?c with{SourceBehavior=0x08}:c).ToImmutableArray()};
-        return result;
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>id.Value is "map.pokemon-mansion-3f" or "map.victory-road-3f"
+            ? map with{Cells=map.Cells.Select(c=>c.SourceBehavior==0x66?c with{SourceBehavior=0x08}:c).ToImmutableArray()} : map);
     }
     private IReadOnlyDictionary<MapId,IFieldMap> CinnabarMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
         if(!CinnabarFieldMap(state.World.Player.MapId)&&!(VictoryRoadFieldMap(state.World.Player.MapId)))return maps;
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);var id=state.World.Player.MapId;
-        result[id]=new CinnabarMovementMap(result[id],state.MapEdits,_content);return result;
+        var id=state.World.Player.MapId;
+        return ReplaceMap(maps,id,(IFieldMap)new CinnabarMovementMap(maps[id],state.MapEdits,_content));
     }
     private sealed class CinnabarMovementMap(IFieldMap original,ImmutableSortedDictionary<string,FieldMetatileEdit>? edits,ICampaignCatalog content):IFieldMap
     {

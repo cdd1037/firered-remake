@@ -63,6 +63,26 @@ class CurrentItemTests(unittest.TestCase):
         row, = [row for row in recipe['shops'] if row['id'] == shop['id']]
         self.assertEqual('data/maps/FuchsiaCity_Mart/scripts.inc', row['path'])
 
+    def test_static_department_and_league_shelves_use_the_same_source_compiler(self):
+        catalog = json.loads(json.dumps(compiler.compile_catalog(ROOT), default=item_json))
+        shops = {shop['id']: [item['value'].removeprefix('pret:ITEM_') for item in shop['items']]
+                 for shop in catalog['shops']}
+        expected = {
+            'CeladonCity_DepartmentStore_2F_Items': 'GREAT_BALL SUPER_POTION REVIVE ANTIDOTE PARALYZE_HEAL AWAKENING BURN_HEAL ICE_HEAL SUPER_REPEL',
+            'CeladonCity_DepartmentStore_2F_TMs': 'TM05 TM15 TM28 TM31 TM43 TM45',
+            'CeladonCity_DepartmentStore_4F_Items': 'POKE_DOLL RETRO_MAIL FIRE_STONE THUNDER_STONE WATER_STONE LEAF_STONE',
+            'CeladonCity_DepartmentStore_5F_XItems': 'X_ATTACK X_DEFEND X_SPEED X_SPECIAL X_ACCURACY GUARD_SPEC DIRE_HIT',
+            'CeladonCity_DepartmentStore_5F_Vitamins': 'HP_UP PROTEIN IRON CALCIUM ZINC CARBOS',
+            'IndigoPlateau_PokemonCenter_1F_Items': 'ULTRA_BALL GREAT_BALL FULL_RESTORE MAX_POTION REVIVE FULL_HEAL MAX_REPEL',
+        }
+        for identity, items in expected.items():
+            with self.subTest(shop=identity):
+                self.assertEqual(items.split(), shops[identity])
+        recipe = compiler.read_recipe(ROOT)
+        recipe['items'] = [item for item in recipe['items'] if item['item'] != 'pret:ITEM_TM15']
+        with self.assertRaisesRegex(ValueError, 'Invalid stock admission: CeladonCity_DepartmentStore_2F_TMs'):
+            compiler.compile_catalog(ROOT, recipe)
+
     def test_current_item_icons_match_source_pixels_after_atlas_packing(self):
         selected = {item['item'] for item in compiler.read_recipe(ROOT)['items'] if item.get('icon')}
         self.assertTrue(selected)

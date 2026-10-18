@@ -119,7 +119,6 @@ public interface ICampaignCatalog:IStoryCatalog
     string? SourceSpeciesName(int sourceSpeciesId) => PokemonContent?.SpeciesNames.GetValueOrDefault(sourceSpeciesId);
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
-    PokemonLeagueMartStock? PokemonLeagueMartStock=>null;
     VictoryRoadTrainerCatalog? VictoryRoadTrainerParties=>null;
     LeagueRivalTrainerCatalog? LeagueRivalTrainerParties=>null;
     ViridianGymTrainerCatalog? ViridianGymTrainerParties=>null;
@@ -147,9 +146,6 @@ public interface ICampaignCatalog:IStoryCatalog
     MoveReminderCatalog? MoveReminder=>null;
     PokemonBreedingData? BreedingMetadata=>null;
     IReadOnlyDictionary<int,string> DayCareCompatibilityTextSymbols=>ImmutableDictionary<int,string>.Empty;
-    DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
-    DepartmentStoreCounterStock? DepartmentStoreCounter(string stockId)=>null;
-    PokeDollShopStock? PokeDollShopStock=>null;
     ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors=>[];
     ImmutableArray<CampaignDepartmentElevatorEntrance> DepartmentStoreElevatorEntrances=>[];
     ImmutableArray<CampaignDepartmentDynamicExit> DepartmentStoreDynamicExits=>[];

@@ -9,10 +9,6 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretCopycatHouse CopycatHouse { get; }
-    public PokeDollShopStock? PokeDollShopStock =>
-        EarlyShop!.Items.Any(i => i.Id == ItemIds.PokeDollId) ? new() : null;
-
-
 
     private static void ValidateCopycatHouseComposition(PretCopycatHouse house,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {

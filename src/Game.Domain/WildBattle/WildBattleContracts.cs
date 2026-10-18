@@ -268,7 +268,11 @@ public sealed record WildBattleStatAtMinimumEvent(long Sequence, int Turn, WildB
 public sealed record WildBattleAbilityPreventedEvent(long Sequence, int Turn, WildBattleSide Actor,
     WildBattleSide Target, MoveId Move, string Ability) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleFaintedEvent(long Sequence, int Turn, WildBattleSide Side) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleEndedEvent(long Sequence, int Turn, WildBattleOutcome Outcome) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMoveEscapeReceipt(WildBattleSide Actor, MoveId Move);
+public sealed record WildBattleEndedEvent(long Sequence, int Turn, WildBattleOutcome Outcome) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleMoveEscapeReceipt? MoveEscape { get; init; }
+}
 public sealed record WildBattleTurnReadyEvent(long Sequence, int Turn, ushort RandomTurnNumber) : WildBattleEvent(Sequence, Turn);
 /// <summary>Threshold is the source u8 value, null for guaranteed escape. Roll is null if no escape draw occurs.</summary>
 public sealed record WildBattleRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter,

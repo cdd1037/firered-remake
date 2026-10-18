@@ -23,7 +23,11 @@ public sealed class ItemIconAtlasTests
             ["data/machine-learning/bill.json"] = ["TM45", "TM43", "TM28"],
             ["data/machine-learning/cerulean.json"] = ["TM03"],
             ["data/machine-learning/route11.json"] = ["HM05"],
-            ["data/items/rocktunnel/rocktunnel-machines.json"] = ["TM40"]
+            ["data/items/rocktunnel/rocktunnel-machines.json"] = ["TM40"],
+            ["data/items/seafoam.json"] = ["WATER_STONE"],
+            ["data/items/poke-doll/items.json"] = ["POKE_DOLL"],
+            ["data/items/ordinary-item-supplement/items.json"] = ["PP_MAX"],
+                ["data/services/department-fourth-floor/items.json"] = ["RETRO_MAIL"]
         };
         string root = TestAssets.Output();
         try
@@ -95,7 +99,7 @@ public sealed class ItemIconAtlasTests
     }
 
     [TestMethod]
-    public void MachineIconsAndGymAssetsLoadWithoutCanonicalDefinitionsOrHistoricalSelections()
+    public void ItemIconsAndGymAssetsLoadWithoutCanonicalDefinitionsOrHistoricalSelections()
     {
         string root = TestAssets.Output();
         try
@@ -106,7 +110,11 @@ public sealed class ItemIconAtlasTests
                 ["data/machine-learning/bill.json"] = ["TM45", "TM43", "TM28"],
                 ["data/machine-learning/cerulean.json"] = ["TM03"],
                 ["data/machine-learning/route11.json"] = ["HM05"],
-                ["data/items/rocktunnel/rocktunnel-machines.json"] = ["TM40"]
+                ["data/items/rocktunnel/rocktunnel-machines.json"] = ["TM40"],
+                ["data/items/seafoam.json"] = ["WATER_STONE"],
+                ["data/items/poke-doll/items.json"] = ["POKE_DOLL"],
+                ["data/items/ordinary-item-supplement/items.json"] = ["PP_MAX"],
+                ["data/services/department-fourth-floor/items.json"] = ["RETRO_MAIL"]
             };
             string[] gymFiles = ["ui/vermilion-gym-assets/manifest.json", "ui/vermilion-gym-assets/assets.json",
                 "ui/vermilion-gym-assets/engineer-front.png", "ui/vermilion-gym-assets/lt-surge-front.png"];

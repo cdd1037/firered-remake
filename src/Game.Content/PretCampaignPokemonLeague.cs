@@ -15,21 +15,6 @@ public sealed partial class PretCampaignCatalog
     public const string PokemonLeagueContentProfile="firered-pokemon-league-first-clear-v1";
     public PretPokemonLeagueRegion PokemonLeagueRegion { get; }
     public PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties { get; }
-    public PokemonLeagueMartStock? PokemonLeagueMartStock { get; }
-
-
-    private static PokemonLeagueMartStock CreatePokemonLeagueMartStock(PretPokemonLeagueRegion region,EarlyShopCatalog shop,PretStoryCompilation scripts)
-    {
-        const string stockId=Game.Domain.Items.PokemonLeagueMartStock.ExpectedStockId;
-        string[] expected=["ITEM_ULTRA_BALL","ITEM_GREAT_BALL","ITEM_FULL_RESTORE","ITEM_MAX_POTION","ITEM_REVIVE","ITEM_FULL_HEAL","ITEM_MAX_REPEL","ITEM_NONE"];
-        if(!scripts.AssemblyData.TryGetValue(stockId,out var data)||!data.All(d=>d.Directive==".2byte"&&d.Operands.Length==1)||!data.Select(d=>d.Operands[0]).SequenceEqual(expected))
-            throw new InvalidDataException("pokemon_league_mart_declaration");
-        var result=new PokemonLeagueMartStock(PretWorldMap.SourceCommit,expected.Take(7).Select(s=>new ItemId("pret:"+s)).ToImmutableArray(),
-            new(Game.Domain.Items.PokemonLeagueMartStock.ExpectedSourcePath,stockId,53,63));
-        result.Validate(shop);
-        return result;
-    }
-
     private static void ValidatePokemonLeagueComposition(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,PokemonLeagueTrainerCatalog trainers,GameOpponentPokemonCatalog opponents,GamePokemonCatalog owned,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder texts)
     {
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(trainers);

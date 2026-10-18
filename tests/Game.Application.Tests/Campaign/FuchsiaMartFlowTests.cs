@@ -219,4 +219,170 @@ public sealed class FuchsiaMartFlowTests : WildBattleFixture
         StrictRoundtrip(session);
     }
 
+    [TestMethod]
+    [DataRow("map.celadon-city-department-store-2f", "CeladonCity_DepartmentStore_2F_Items", 1, 10, Direction.North)]
+    [DataRow("map.celadon-city-department-store-2f", "CeladonCity_DepartmentStore_2F_TMs", 3, 6, Direction.West)]
+    [DataRow("map.celadon-city-department-store-4f", "CeladonCity_DepartmentStore_4F_Items", 3, 11, Direction.South)]
+    [DataRow("map.celadon-city-department-store-5f", "CeladonCity_DepartmentStore_5F_XItems", 1, 9, Direction.North)]
+    [DataRow("map.celadon-city-department-store-5f", "CeladonCity_DepartmentStore_5F_Vitamins", 3, 6, Direction.West)]
+    [DataRow("map.indigo-plateau-pokemon-center-1f", "IndigoPlateau_PokemonCenter_1F_Items", 2, 7, Direction.West)]
+    [DataRow("map.three-island-mart", "ThreeIsland_Mart_Items", 4, 3, Direction.West)]
+    [DataRow("map.trainer-tower-lobby", "TrainerTower_Lobby_Mart_Items", 14, 11, Direction.North)]
+    public void StaticCountersBuySellAndContinueThroughSharedBinding(string map, string stock, int x, int y, Direction facing)
+    {
+        var session = At(map, x, y, facing);
+        Open(session, stock);
+        Send(session, new("shop_menu", Text: "buy"));
+        var shelf = content.EarlyShop!.Shops.Single(shop => shop.Id == stock);
+        CollectionAssert.AreEqual(shelf.Items.ToArray(), session.VisibleShopItems.ToArray());
+        var item = session.ShopItem(session.VisibleShopItems[0]);
+        Transaction(session, item.Id, 2);
+        Assert.AreEqual("gText_HereYouGoThankYou", session.State.Shop!.MessageSymbol);
+        Assert.AreEqual(30000 - 2 * item.Price, session.State.Money);
+        Assert.AreEqual(item.Quantity + 2, session.ShopItem(item.Id).Quantity);
+        Send(session, new("shop_ack"));
+        Transaction(session, item.Id, 1, cancel: true);
+        Assert.AreEqual(30000 - 2 * item.Price, session.State.Money);
+        Send(session, new("shop_back")); Send(session, new("shop_ack"));
+        Send(session, new("shop_menu", Text: "sell"));
+        Transaction(session, item.Id, 1);
+        Assert.AreEqual(30000 - 2 * item.Price + item.Price / 2, session.State.Money);
+        Assert.AreEqual(item.Quantity + 1, session.ShopItem(item.Id).Quantity);
+        Close(session);
+        Continue(session);
+    }
+
+    [TestMethod]
+    public void MachineShelfInsertsTmCaseAndRejectsUnstockedOrOrdinaryPurchasePaths()
+    {
+        var session = At("map.celadon-city-department-store-2f", 3, 6, Direction.West);
+        const string stock = "CeladonCity_DepartmentStore_2F_TMs";
+        Open(session, stock); Send(session, new("shop_menu", Text: "buy"));
+        var tm = new ItemId("pret:ITEM_TM15");
+        var wrong = session.Execute("unstocked-machine", session.Revision, new("shop_select", Text: "pret:ITEM_TM39"));
+        Assert.AreEqual(CommandStatus.Rejected, wrong.Status);
+        Assert.AreEqual("shop_item_not_stocked", wrong.Error);
+        var before = session.State.Inventory!;
+        var plain = EarlyShopRules.Buy(content.EarlyShop!, before, session.State.Money, stock, tm, 1);
+        Assert.IsFalse(plain.Succeeded);
+        Assert.AreEqual("shop_machine_catalog_required", plain.Error);
+        Assert.AreSame(before, plain.Inventory);
+        // The progressed campaign must retain earned HMs for save validation. Exercise
+        // first-CASE insertion separately through the same atomic inventory transaction.
+        var firstMachine = before with { Machines = [],
+            KeyItems = (before.KeyItems ?? []).RemoveAll(stack => stack.Item == MachineRules.TmCaseId) };
+        var inserted = EarlyShopRules.Buy(content.EarlyShop!, content.Machines!, firstMachine, 30000, stock, tm, 2);
+        Assert.IsTrue(inserted.Succeeded, inserted.Error);
+        Assert.AreEqual(15000, inserted.Money);
+        Assert.AreEqual(2, OpeningInventoryRules.Quantity(inserted.Inventory.Machines ?? [], tm));
+        Assert.AreEqual(1, OpeningInventoryRules.Quantity(inserted.Inventory.KeyItems ?? [], MachineRules.TmCaseId));
+        Assert.AreEqual(0, OpeningInventoryRules.Quantity(inserted.Inventory.BagItems, tm));
+        Assert.IsNull(content.Inventory.Validate(inserted.Inventory));
+        int previouslyOwned = session.ShopItem(tm).Quantity;
+        Transaction(session, tm, 2);
+        Assert.AreEqual(15000, session.State.Money);
+        Assert.AreEqual(previouslyOwned + 2, OpeningInventoryRules.Quantity(session.State.Inventory!.Machines ?? [], tm));
+        Assert.AreEqual(1, OpeningInventoryRules.Quantity(session.State.Inventory.KeyItems ?? [], MachineRules.TmCaseId));
+        Assert.AreEqual(0, OpeningInventoryRules.Quantity(session.State.Inventory.BagItems, tm));
+        Close(session); Continue(session);
+    }
+
+    [TestMethod]
+    public void MachineStackOverflowAndMissingCaseSpaceRollBackMoneyAndAllPockets()
+    {
+        var items = content.EarlyShop!;
+        var machines = content.Machines!;
+        var tm = new ItemId("pret:ITEM_TM15");
+        var state = FieldFixture().Inventory!;
+        var fullStack = state with { Machines = [new(tm, 999)],
+            KeyItems = OpeningInventoryRules.SetQuantity(state.KeyItems ?? [], MachineRules.TmCaseId, 1) };
+        var overflow = EarlyShopRules.Buy(items, machines, fullStack, 30000, "CeladonCity_DepartmentStore_2F_TMs", tm, 1);
+        Assert.IsFalse(overflow.Succeeded);
+        Assert.AreEqual("inventory_stack_full", overflow.Error);
+        Assert.AreSame(fullStack, overflow.Inventory);
+        Assert.AreEqual(30000, overflow.Money);
+        var noCase = state with { Machines = [], KeyItems = (state.KeyItems ?? []).RemoveAll(stack => stack.Item == MachineRules.TmCaseId) };
+        var limitedMachines = machines with { KeyItemSlots = noCase.KeyItems!.Value.Length };
+        var noRoom = EarlyShopRules.Buy(items, limitedMachines, noCase, 30000, "CeladonCity_DepartmentStore_2F_TMs", tm, 1);
+        Assert.IsFalse(noRoom.Succeeded);
+        Assert.AreEqual("inventory_key_items_full", noRoom.Error);
+        Assert.AreSame(noCase, noRoom.Inventory);
+        Assert.AreEqual(30000, noRoom.Money);
+    }
+
+    [TestMethod]
+    [DataRow(1, "TwoIsland_Items_ShopInitial", "TwoIsland_EventScript_ShopInitial")]
+    [DataRow(2, "TwoIsland_Items_ShopExpanded1", "TwoIsland_EventScript_ShopExpanded1")]
+    public void TwoIslandStillSelectsItsConditionalShelf(int scene, string stock, string script)
+    {
+        var session = At("map.two-island", 28, 6, Direction.North);
+        var clerk = session.State.Actors.Single(pair => pair.Value.ScriptId == "TwoIsland_EventScript_Clerk");
+        var state = session.State with { LastTalked = clerk.Key, Script = session.State.Script with {
+            Locked = true, Wait = new(StoryWaitKind.NativeEffect, "two-island-test"),
+            Variables = session.State.Script.Variables.SetItem("VAR_MAP_SCENE_TWO_ISLAND", scene) } };
+        var instruction = content.FindProgram(script)!.Instructions.Single(instruction => instruction.Opcode == "pokemart");
+        var effect = new StoryEffect(1, instruction.Opcode, instruction.Args, instruction.Source);
+        var method = typeof(CampaignSession).GetMethod("OpenShop", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var opened = (CampaignState)method.Invoke(session, [state, effect])!;
+        Assert.AreEqual(stock, opened.Shop!.ShopId);
+        Assert.AreEqual(StoryWaitKind.Inventory, opened.Script.Wait!.Kind);
+        var wrong = effect with { Args = [scene == 1 ? "TwoIsland_Items_ShopExpanded1" : "TwoIsland_Items_ShopInitial"] };
+        var error = Assert.ThrowsExactly<TargetInvocationException>(() => method.Invoke(session, [state, wrong]));
+        Assert.IsInstanceOfType<InvalidDataException>(error.InnerException);
+    }
+
+    [TestMethod]
+    public void DirectCounterRejectsForgedInstructionAndActorIdentity()
+    {
+        var session = At("map.celadon-city-department-store-5f", 1, 9, Direction.North);
+        var counter = content.OrdinaryMarts.ByActor.Single(pair => pair.Value.Stock.Id == "CeladonCity_DepartmentStore_5F_XItems").Value;
+        var state = session.State with { LastTalked = counter.Actor.LocalId, Script = session.State.Script with {
+            Locked = true, Wait = new(StoryWaitKind.NativeEffect, "static-counter-test") } };
+        var instruction = counter.Instruction;
+        var effect = new StoryEffect(1, instruction.Opcode, instruction.Args, instruction.Source);
+        var method = typeof(CampaignSession).GetMethod("OpenShop", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var opened = (CampaignState)method.Invoke(session, [state, effect])!;
+        Assert.AreEqual(counter.Stock.Id, opened.Shop!.ShopId);
+        foreach (var forged in new[] {
+            effect with { Source = effect.Source with { Line = effect.Source.Line + 1 } },
+            effect with { Args = ["CeladonCity_DepartmentStore_5F_Vitamins"] },
+            effect with { Opcode = "pokemartdecoration" } })
+        {
+            var error = Assert.ThrowsExactly<TargetInvocationException>(() => method.Invoke(session, [state, forged]));
+            Assert.IsInstanceOfType<InvalidDataException>(error.InnerException);
+        }
+        var clerk = state.Actors[counter.Actor.LocalId];
+        foreach (var forged in new[] { clerk with { Invisible = true }, clerk with { Active = false },
+            clerk with { SourceLocalId = clerk.SourceLocalId + 1 }, clerk with { X = clerk.X + 1 },
+            clerk with { TemplateX = clerk.TemplateX + 1 }, clerk with { GraphicsId = "OBJ_EVENT_GFX_BOY" } })
+        {
+            var changed = state with { Actors = state.Actors.SetItem(counter.Actor.LocalId, forged) };
+            var error = Assert.ThrowsExactly<TargetInvocationException>(() => method.Invoke(session, [changed, effect]));
+            Assert.IsInstanceOfType<InvalidDataException>(error.InnerException);
+        }
+    }
+
+    [TestMethod]
+    public void BoughtRetroMailUsesCurrentBlankPreviewAndComposerAdmission()
+    {
+        var session = At("map.celadon-city-department-store-4f", 3, 11, Direction.South);
+        Open(session, "CeladonCity_DepartmentStore_4F_Items");
+        Send(session, new("shop_menu", Text: "buy"));
+        Transaction(session, ItemIds.RetroMailId, 1);
+        Assert.AreEqual(29950, session.State.Money);
+        Close(session);
+        Assert.IsTrue(session.CanGiveMail(ItemIds.RetroMailId));
+        Send(session, new("bag_open"));
+        var inventory = session.State.Inventory;
+        Send(session, new("mail_preview_open", Text: ItemIds.RetroMailId.Value));
+        Assert.AreEqual(CampaignMailComposePhase.Preview, session.State.MailComposer!.Phase);
+        Assert.AreEqual((ushort)132, session.State.MailComposer.ItemId);
+        Assert.IsTrue(session.State.MailComposer.Words.All(word => word == ushort.MaxValue));
+        Send(session, new("mail_compose_back", Text: session.State.MailComposer.WaitId));
+        Assert.IsNull(session.State.MailComposer);
+        Assert.AreSame(inventory, session.State.Inventory);
+        Send(session, new("menu_back"));
+        Continue(session);
+    }
+
 }

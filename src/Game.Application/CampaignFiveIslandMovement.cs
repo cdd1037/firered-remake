@@ -7,12 +7,11 @@ public sealed partial class CampaignSession
 {
     private IReadOnlyDictionary<MapId,IFieldMap> FiveIslandMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps, CampaignState state)
     {
-        var changed = maps.ToDictionary(p => p.Key, p => p.Value);
-        foreach (var pair in maps.Where(p => FiveIslandEditedMap(p.Key)))
+        return new CampaignMapView<IFieldMap>(maps,(id,map) =>
         {
-            var edits = FiveIslandExpectedEdits(state, pair.Key);
-            if (!edits.IsEmpty) changed[pair.Key] = new RocketEditedMap(pair.Value, edits, _content);
-        }
-        return changed;
+            if(!FiveIslandEditedMap(id))return map;
+            var edits=FiveIslandExpectedEdits(state,id);
+            return edits.IsEmpty ? map : new RocketEditedMap(map,edits,_content);
+        });
     }
 }

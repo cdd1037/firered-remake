@@ -120,21 +120,54 @@ class ItemSourceCallerTests(unittest.TestCase):
             self.assertFalse((raw / 'include/constants/items.h').exists())
             self.assertFalse(dependency.exists())
 
-    def test_seafoam_generate_preserves_runtime_document_and_full_rgba(self):
-        module = load('items/import-seafoam-items.py')
-        def source_blob(command, **kwargs):
-            self.assertEqual(['git', 'show'], command[:2])
-            self.assertTrue(command[2].startswith(module.COMMIT + ':'))
-            return (RAW / command[2].split(':', 1)[1]).read_bytes()
-        with patch('subprocess.check_output', side_effect=source_blob), patch.object(
-                item_catalog, 'definitions', side_effect=AssertionError('Ambient item catalog read')):
-            files, document = module.generate(RAW, ROOT)
-        self.assertEqual('pret:ITEM_WATER_STONE', document['additions'][0]['item'].identity)
-        self.assertNotIn('profile', document)
-        outputs = {path.removeprefix('content/generated/'): data for path, data in files.items()
-                   if path.startswith('content/generated/')}
-        self.assertEqual(2, len(outputs))
-        check_item_outputs(ROOT / 'content/generated', outputs)
+    def test_icon_only_callers_use_selected_pixels_without_business_or_predecessor_catalogs(self):
+        from PIL import Image
+        from item_icon_exports import decode_icon_page
+        from item_source import ItemSource
+        from pokemon_import_io import write_files
+        cases = (
+            ('seafoam-items', 'WATER_STONE', 'water_stone'),
+            ('poke-doll-items', 'POKE_DOLL', 'poke_doll'),
+            ('ordinary-item-supplement', 'PP_MAX', 'pp_max'),
+            ('department-fourth-floor', 'RETRO_MAIL', 'retro_mail'),
+        )
+        for name, item, image in cases:
+            with self.subTest(importer=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                raw, output = root / 'raw', root / 'output'
+                selected = ('src/data/item_icon_table.h', 'src/data/graphics/items.h',
+                            'graphics/items/icons/' + image + '.png',
+                            'graphics/items/icon_palettes/' + image + '.pal')
+                for relative in selected:
+                    destination = raw / relative
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes((RAW / relative).read_bytes())
+                module = load('items/import-' + name + '.py')
+                with patch.object(ItemSource, 'definition', side_effect=AssertionError('Business catalog read')):
+                    files, document = module.generate(raw)
+                self.assertEqual({'schemaVersion', 'icons'}, set(document))
+                self.assertEqual(1, document['schemaVersion'])
+                self.assertEqual(1, len(document['icons']))
+                icon = document['icons'][0]
+                self.assertEqual({'item', 'width', 'height', 'pngPath'}, set(icon))
+                self.assertEqual('pret:ITEM_' + item, icon['item']['value'])
+                self.assertEqual((24, 24), (icon['width'], icon['height']))
+                self.assertEqual({module.DOCUMENT, icon['pngPath']}, set(files))
+                retained = json.loads((ROOT / module.DOCUMENT).read_bytes())['icons'][0]
+                field = 'pngPath' if 'pngPath' in retained else 'texturePath'
+                actual = decode_icon_page((ROOT / retained[field]).read_bytes(), retained)
+                expected = Image.open(io.BytesIO(files[icon['pngPath']])).convert('RGBA')
+                self.assertEqual(actual.size, expected.size)
+                self.assertEqual(actual.tobytes(), expected.tobytes(), 'All RGBA channels, including transparent colors')
+                write_files(output, files)
+                check_item_outputs(output / 'content/generated', {
+                    path.removeprefix('content/generated/'): data for path, data in files.items()})
+                self.assertFalse((raw / 'src/data/items.json').exists())
+                self.assertFalse((output / 'content/generated/data/items.json').exists())
+                self.assertFalse(list(output.rglob('source-contract.json')))
+                with patch.object(sys, 'argv', [str(module.__file__), str(raw), str(output), '--check']), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    module.main()
 
     def test_vs_seeker_cli_preserves_runtime_output_and_success_report(self):
         script = ROOT / 'scripts/imports/trainers/import-vs-seeker-presentation.py'

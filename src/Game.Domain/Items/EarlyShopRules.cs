@@ -14,21 +14,7 @@ public static class EarlyShopRules
         if (shop is null) return new(false, 0, 0, "shop_unsupported");
         var definition = EarlyShopInventoryRules.Find(catalog, item);
         if (definition is null || !shop.Items.Contains(item)) return new(false, 0, 0, "shop_item_not_stocked");
-        return QuoteBuyValidated(catalog, inventory, money, definition);
-    }
-
-    public static EarlyShopQuote QuoteBuy(EarlyShopCatalog catalog, InventoryState inventory, int money,
-        AuthenticatedShopStock stock, ItemId item)
-    {
-        string? error = EarlyShopInventoryRules.Validate(catalog, inventory);
-        if (error is not null) return new(false, 0, 0, error);
-        if (money < 0 || money > catalog.MaximumMoney) return new(false, 0, 0, "shop_money_invalid");
-        ArgumentNullException.ThrowIfNull(stock);
-        if (stock is not (DepartmentStoreOrdinaryStock or DepartmentStoreCounterStock or PokemonLeagueMartStock or PokeDollShopStock))
-            throw new NotSupportedException("shop_stock_authentication");
-        stock.Validate(catalog);
-        var definition = EarlyShopInventoryRules.Find(catalog, item);
-        if (definition is null || !stock.Items.Contains(item)) return new(false, 0, 0, "shop_item_not_stocked");
+        if (definition.Pocket == "POCKET_TM_CASE") return new(false, 0, 0, "shop_machine_catalog_required");
         return QuoteBuyValidated(catalog, inventory, money, definition);
     }
 
@@ -49,19 +35,20 @@ public static class EarlyShopRules
     }
 
     /// <summary>Machine stock shares pricing and atomic money commit; machine rules own its pocket and CASE insertion.</summary>
-    public static EarlyShopQuote QuoteBuy(EarlyShopCatalog catalog, InventoryState inventory, int money,
-        AuthenticatedMachineShopStock stock, ItemId item)
+    public static EarlyShopQuote QuoteBuy(EarlyShopCatalog catalog, MachineCatalog machines,
+        InventoryState inventory, int money, string shopId, ItemId item)
     {
-        ArgumentNullException.ThrowIfNull(stock); stock.Validate();
-        string? error = ValidateMachineShop(catalog, stock.Machines, inventory, money);
+        string? error = ValidateMachineShop(catalog, machines, inventory, money);
         if (error is not null) return new(false, 0, 0, error);
-        var definition = MachineRules.Definition(stock.Machines, item);
+        var stock = catalog.Shops.FirstOrDefault(shop => shop.Id == shopId);
+        if (stock is null) return new(false, 0, 0, "shop_unsupported");
+        var definition = MachineRules.Definition(machines, item);
         if (definition is null || !stock.Items.Contains(item)) return new(false, 0, 0, "shop_item_not_stocked");
         int count = OpeningInventoryRules.Quantity(inventory.Machines ?? [], item);
-        int remaining = count == 0 && (inventory.Machines?.Length ?? 0) >= stock.Machines.MachineSlots
-            ? 0 : stock.Machines.MaximumStack - count;
+        int remaining = count == 0 && (inventory.Machines?.Length ?? 0) >= machines.MachineSlots
+            ? 0 : machines.MaximumStack - count;
         if (OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], MachineRules.TmCaseId) == 0 &&
-            (inventory.KeyItems?.Length ?? 0) >= stock.Machines.KeyItemSlots) remaining = 0;
+            (inventory.KeyItems?.Length ?? 0) >= machines.KeyItemSlots) remaining = 0;
         return QuoteBuyValidated(catalog, money, definition.Machine.Item.Price, remaining);
     }
 
@@ -108,20 +95,13 @@ public static class EarlyShopRules
         return BuyQuoted(catalog, inventory, money, item, quantity, QuoteBuy(catalog, inventory, money, shopId, item));
     }
 
-    public static EarlyShopTransactionResult Buy(EarlyShopCatalog catalog, InventoryState inventory, int money,
-        AuthenticatedShopStock stock, ItemId item, int quantity)
+    public static EarlyShopTransactionResult Buy(EarlyShopCatalog catalog, MachineCatalog machines,
+        InventoryState inventory, int money, string shopId, ItemId item, int quantity)
     {
         ArgumentNullException.ThrowIfNull(inventory);
-        return BuyQuoted(catalog, inventory, money, item, quantity, QuoteBuy(catalog, inventory, money, stock, item));
-    }
-
-    public static EarlyShopTransactionResult Buy(EarlyShopCatalog catalog, InventoryState inventory, int money,
-        AuthenticatedMachineShopStock stock, ItemId item, int quantity)
-    {
-        ArgumentNullException.ThrowIfNull(inventory);
-        var quote = QuoteBuy(catalog, inventory, money, stock, item);
+        var quote = QuoteBuy(catalog, machines, inventory, money, shopId, item);
         return BuyQuoted(catalog, inventory, money, quantity, quote,
-            () => MachineRules.AddMachine(stock.Machines, inventory, item, quantity));
+            () => MachineRules.AddMachine(machines, inventory, item, quantity));
     }
 
     private static EarlyShopTransactionResult BuyQuoted(EarlyShopCatalog catalog, InventoryState inventory, int money,

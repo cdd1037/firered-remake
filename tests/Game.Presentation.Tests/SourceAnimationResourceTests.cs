@@ -17,6 +17,24 @@ public sealed class SourceAnimationResourceTests
         public void Play(SourceAnimationSound sound){}public void SetPan(int pan,int frame){}public void StopAnimationEffects(){}
     }
     [TestMethod]
+    public void CanonicalProgramsReuseResolvedDependenciesButCustomProgramsRemainValidated()
+    {
+        using var resources=new SourceAnimationResources(Folder);
+        var move=resources.Resolve(160);int assets=resources.CachedAssetCount;
+        for(int i=0;i<20;i++)Assert.AreSame(move,resources.Resolve(160));
+        Assert.AreEqual(assets,resources.CachedAssetCount);
+        var general=resources.ResolveGeneral("General_WishHeal");
+        Assert.AreSame(general,resources.ResolveGeneral("General_WishHeal"));
+        var custom=move.Script with{SpriteDependencies=["missing-dependency"]};
+        Assert.ThrowsExactly<InvalidDataException>(()=>resources.Resolve(custom));
+        Assert.AreSame(move,resources.Resolve(160));
+        var unbound=move.Script with{ProgramReferences=["missing-program"]};
+        Assert.ThrowsExactly<InvalidDataException>(()=>resources.Resolve(unbound));
+        resources.Dispose();
+        Assert.ThrowsExactly<ObjectDisposedException>(()=>resources.Resolve(160));
+        Assert.ThrowsExactly<ObjectDisposedException>(()=>resources.ResolveGeneral("General_WishHeal"));
+    }
+    [TestMethod]
     public void SourceRegisteredWideTileSheetRetainsAllPixelsThroughSharedResolver()
     {
         using var resources=new SourceAnimationResources(Folder);

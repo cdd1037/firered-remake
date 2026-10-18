@@ -10,9 +10,8 @@ public sealed partial class CampaignSession
     private IReadOnlyDictionary<MapId,IFieldMap> RocketMovementMaps(CampaignState state)
     {
         if(state.MapEdits is not {Count:>0}||!RocketMap(state.World.Player.MapId))return SeafoamRawMaps(state);
-        var maps=SeafoamRawMaps(state).ToDictionary(x=>x.Key,x=>x.Value);
-        maps[state.World.Player.MapId]=new RocketEditedMap(maps[state.World.Player.MapId],state.MapEdits,_content);
-        return maps;
+        var maps=SeafoamRawMaps(state);var id=state.World.Player.MapId;
+        return ReplaceMap(maps,id,(IFieldMap)new RocketEditedMap(maps[id],state.MapEdits,_content));
     }
     private sealed class RocketEditedMap(IFieldMap original,ImmutableSortedDictionary<string,FieldMetatileEdit> edits,ICampaignCatalog content):IFieldMap
     {

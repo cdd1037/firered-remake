@@ -37,19 +37,32 @@ public sealed partial class CampaignSession
     private TrainerTowerBattleFormat TrainerTowerLayout(CampaignState state, MapId map)
     {
         int floor = TrainerTowerFloorNumber(map);
-        return floor is >= 1 and <= 8 ? _content.TrainerTowerCatalog!.Course(TowerProgress(state).SelectedCourse).Floors[floor - 1].Format : TrainerTowerBattleFormat.Single;
+        return floor is >= 1 and <= 8 ? _content.TrainerTowerCatalog!.Course(state.TrainerTower?.SelectedCourse ?? TrainerTowerChallengeKind.Single).Floors[floor - 1].Format : TrainerTowerBattleFormat.Single;
     }
-    private IReadOnlyDictionary<MapId,IFieldMap> TrainerTowerMovementMaps(CampaignState state)
+    private IReadOnlyDictionary<MapId,IFieldMap> TrainerTowerMovementMaps(CampaignState state) =>
+        _binding.TrainerTowerMaps[state.TrainerTower?.SelectedCourse ?? TrainerTowerChallengeKind.Single].Raw;
+    private IReadOnlyDictionary<MapId,ConnectedFieldMap> TrainerTowerConnectedMaps(CampaignState state) =>
+        _binding.TrainerTowerMaps[state.TrainerTower?.SelectedCourse ?? TrainerTowerChallengeKind.Single].Connected;
+
+    private static ImmutableDictionary<TrainerTowerChallengeKind, CampaignTrainerTowerMaps> BindTrainerTowerMaps(ICampaignCatalog content)
     {
-        var maps = _content.Maps.ToDictionary(p=>p.Key,p=>p.Value);
-        for (int i=1;i<=8;i++) { MapId id=new($"map.trainer-tower-{i}f"); maps[id]=_content.TrainerTowerMap(id,TrainerTowerLayout(state,id))!; }
-        return maps;
-    }
-    private IReadOnlyDictionary<MapId,ConnectedFieldMap> TrainerTowerConnectedMaps(CampaignState state)
-    {
-        var maps = _content.ConnectedFieldMaps!.ToDictionary(p=>p.Key,p=>p.Value);
-        for (int i=1;i<=8;i++) { MapId id=new($"map.trainer-tower-{i}f"); maps[id]=_content.TrainerTowerConnectedMap(id,TrainerTowerLayout(state,id))!; }
-        return maps;
+        var raw = content.Maps.ToImmutableDictionary();
+        var connected = content.ConnectedFieldMaps!.ToImmutableDictionary();
+        return Enum.GetValues<TrainerTowerChallengeKind>().ToImmutableDictionary(course => course, course =>
+        {
+            var rawCourse = raw; var connectedCourse = connected;
+            foreach (var floor in content.TrainerTowerCatalog!.Course(course).Floors)
+            {
+                MapId id = new($"map.trainer-tower-{floor.Index + 1}f");
+                if (!raw.ContainsKey(id) || !connected.ContainsKey(id))
+                    throw new InvalidDataException("trainer_tower_map_missing");
+                rawCourse = rawCourse.SetItem(id, content.TrainerTowerMap(id, floor.Format)
+                    ?? throw new InvalidDataException("trainer_tower_map_missing"));
+                connectedCourse = connectedCourse.SetItem(id, content.TrainerTowerConnectedMap(id, floor.Format)
+                    ?? throw new InvalidDataException("trainer_tower_connected_map_missing"));
+            }
+            return new CampaignTrainerTowerMaps(rawCourse, connectedCourse);
+        });
     }
     private Decision<CampaignState> DecideTrainerTowerTime(CampaignState state, CampaignCommand command)
     {

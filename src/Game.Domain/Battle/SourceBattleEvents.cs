@@ -163,7 +163,13 @@ public sealed record SourceDisableChangedEvent(long Sequence, int Turn, BattlerS
 public sealed record SourceDrainEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int DamageDealt, int HpBefore, int HpAfter, int Restored) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceEffectivenessEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, WildBattleEffectiveness Effectiveness) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceEncoreChangedEvent(long Sequence, int Turn, BattlerSlot Side, int? Slot, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceEndedEvent(long Sequence, int Turn, WildBattleOutcome Outcome) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceMoveEscapeReceipt(BattlerSlot Actor, MoveId Move);
+public sealed record SourceEndedEvent(long Sequence, int Turn, WildBattleOutcome Outcome) : SourceBattleEvent(Sequence, Turn)
+{
+    // The successful move command owns its fled text. Ordinary Run, items and
+    // forced expulsion retain their own receipts and never acquire this page.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceMoveEscapeReceipt? MoveEscape { get; init; }
+}
 public sealed record SourceFaintedEvent(long Sequence, int Turn, BattlerSlot Side) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceFlinchEvent(long Sequence, int Turn, BattlerSlot Side, bool Applied) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceFocusEnergyEvent(long Sequence, int Turn, BattlerSlot Side) : SourceBattleEvent(Sequence, Turn);
@@ -307,7 +313,8 @@ public static class SourceBattleEventAdapter
         SourceDrainEvent x => new WildBattleDrainEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.DamageDealt, x.HpBefore, x.HpAfter, x.Restored),
         SourceEffectivenessEvent x => new WildBattleEffectivenessEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Effectiveness),
         SourceEncoreChangedEvent x => new WildBattleEncoreChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Slot, x.Before, x.After, x.Reason),
-        SourceEndedEvent x => new WildBattleEndedEvent(x.Sequence, x.Turn, x.Outcome),
+        SourceEndedEvent x => new WildBattleEndedEvent(x.Sequence, x.Turn, x.Outcome) {
+            MoveEscape = x.MoveEscape is { } escaped ? new(Side(escaped.Actor), escaped.Move) : null },
         SourceFaintedEvent x => new WildBattleFaintedEvent(x.Sequence, x.Turn, Side(x.Side)),
         SourceFlinchEvent x => new WildBattleFlinchEvent(x.Sequence, x.Turn, Side(x.Side), x.Applied),
         SourceFocusEnergyEvent x => new WildBattleFocusEnergyEvent(x.Sequence, x.Turn, Side(x.Side)),
@@ -402,6 +409,9 @@ public static class SourceBattleEventHooks
     }
     public static string? ValidateRouting(SourceBattleFrame frame, SourceBattleEvent value)
     {
+        if (value is SourceEndedEvent { MoveEscape: { } escaped } ended &&
+            (ended.Outcome != WildBattleOutcome.Escaped || frame.Layout != SourceBattleLayout.Singles ||
+             string.IsNullOrWhiteSpace(escaped.Move.Value))) return "source_event_move_escape";
         if (value is SourceWeatherContinuedEvent weather && weather.Weather is not ("rain" or "sandstorm" or "sun" or "hail"))
             return "source_event_weather_kind";
         if (value is SourceMoveTargetResolvedEvent resolved && (!Enum.IsDefined(resolved.Reason) ||
@@ -488,7 +498,7 @@ public static class SourceBattleEventHooks
             SourceDrainEvent x => [x.Actor, x.Target],
             SourceEffectivenessEvent x => [x.Actor, x.Target],
             SourceEncoreChangedEvent x => [x.Side],
-            SourceEndedEvent x => [],
+            SourceEndedEvent x => [x.MoveEscape?.Actor],
             SourceFaintedEvent x => [x.Side],
             SourceFlinchEvent x => [x.Side],
             SourceFocusEnergyEvent x => [x.Side],

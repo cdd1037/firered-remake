@@ -13,12 +13,9 @@ public sealed partial class CampaignSession
     private IReadOnlyDictionary<MapId,IFieldMap> PokemonLeagueMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> source,CampaignState state,CampaignCommand command)
     {
         var p=state.World.Player;int room=PokemonLeagueRoomIndex(p.MapId);
-        Dictionary<MapId,IFieldMap>? maps=null;
+        var maps=source;
         if(room is >=0 and <=3&&state.MapEdits is {Count:>0})
-        {
-            maps=source.ToDictionary(x=>x.Key,x=>x.Value);
-            maps[p.MapId]=new RocketEditedMap(source[p.MapId],state.MapEdits,_content);
-        }
+            maps=ReplaceMap(maps,p.MapId,(IFieldMap)new RocketEditedMap(source[p.MapId],state.MapEdits,_content));
         // The first three original room warps place the avatar on a blocked bottom
         // border cell. Their on-frame script walks up five tiles before closing it.
         // Admit that authenticated destination only for this incoming warp; never
@@ -33,11 +30,10 @@ public sealed partial class CampaignSession
                 var destination=source[warp.DestinationMapId];var arrival=destination.FieldWarps.Single(w=>w.Index==0);
                 if(arrival.X!=6||arrival.Y!=12||arrival.Elevation!=0||destination.SourceBehaviorAt(6,12)!=0||destination.GetTile(6,12) is not {Blocked:true,Elevation:0})
                     throw new InvalidDataException("pokemon_league_source_entry_cell");
-                maps??=source.ToDictionary(x=>x.Key,x=>x.Value);
-                maps[destination.Id]=new PokemonLeagueArrivalMap(destination);
+                maps=ReplaceMap(maps,destination.Id,(IFieldMap)new PokemonLeagueArrivalMap(destination));
             }
         }
-        return maps??source;
+        return maps;
     }
     private sealed class PokemonLeagueArrivalMap(IFieldMap source):IFieldMap
     {

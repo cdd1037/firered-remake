@@ -45,7 +45,8 @@ public partial class CampaignView
         LoadOrdinarySupplementIcons();
         if (_catalog.EarlyShop?.Items.Any(i => i.Id == ItemIds.RetroMailId) == true)
         {
-            _earlyItemIcons.Add(ItemIds.RetroMailId, ItemTexture(PretDepartmentFourthFloor.LoadDocument(_root).Icons[0]));
+            var icon = ItemIconAssets.LoadProject(_root, "content/generated/data/services/department-fourth-floor/items.json", ItemIds.RetroMailId)[0];
+            _earlyItemIcons.Add(icon.Item, ItemTexture("data/services/department-fourth-floor", icon));
         }
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
@@ -56,15 +57,15 @@ public partial class CampaignView
     private void LoadOrdinarySupplementIcons()
     {
         if (_catalog.EarlyShop is null) return;
-        foreach (var icon in PretOrdinaryItemSupplement.LoadDocument(_root).Icons)
+        foreach (var icon in ItemIconAssets.LoadProject(_root, "content/generated/data/items/ordinary-item-supplement/items.json", ItemIds.PpMaxId))
         {
-            _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
+            _earlyItemIcons.Add(icon.Item, ItemTexture("data/items/ordinary-item-supplement", icon));
         }
     }
     private void LoadPokeDollIcon()
     {
-        if (_catalog.PokeDollShopStock is null) return;
-        _earlyItemIcons.Add(ItemIds.PokeDollId, ItemTexture(PretPokeDollItems.LoadDocument(_root).Icons[0]));
+        if (_catalog.EarlyShop?.Items.Any(item => item.Id == ItemIds.PokeDollId) != true) return;
+        _earlyItemIcons.Add(ItemIds.PokeDollId, ItemTexture("data/items/poke-doll", ItemIconAssets.LoadProject(_root, "content/generated/data/items/poke-doll/items.json", ItemIds.PokeDollId)[0]));
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
     private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop
@@ -133,7 +134,7 @@ public partial class CampaignView
             string[] choices = ["gText_ShopBuy", "gText_ShopSell", "gText_ShopQuit"];
             for (int i = 0; i < 3; i++) ItemLabel(new(160, 8 + i * 16), _session.ShopText(choices[i]));
             ItemLabel(new(150, 8 + _shopCursor * 16), "▶");
-            ItemMessageBox(shop.MessageSymbol is null && _session.ShopAvailabilityNotice is {} notice ? notice : _session.ShopText(shop.MessageSymbol ?? "Text_MayIHelpYou"));
+            ItemMessageBox(_session.ShopText(shop.MessageSymbol ?? "Text_MayIHelpYou"));
             return;
         }
         _battleSkin.DrawStandardFrame(this, new(80, 0, 160, 112));

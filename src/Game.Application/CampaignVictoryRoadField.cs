@@ -167,17 +167,11 @@ public sealed partial class CampaignSession
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> VictoryRoadWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        foreach(var pair in maps.Where(p=>VictoryRoadFieldMap(p.Key)))
-            result[pair.Key]=pair.Value with{Cells=pair.Value.Cells.Select(c=>c.SourceBehavior==VictoryRoadButtonBehavior?c with{SourceBehavior=0x08}:c).ToImmutableArray()};
-        // MB_SHALLOW_WATER is non-surfable source land. The authenticated Route23
-        // shoreline has collision0/elevation3; CanStopSurfing explicitly lands there.
-        // This walking adapter also serves dismount validation, leaving the original
-        // behavior/terrain available to Surf, encounters, and presentation.
-        var route23=new MapId("map.route-23");
-        if(maps.TryGetValue(route23,out var shore))
-            result[route23]=shore with{Cells=shore.Cells.Select(c=>c is {SourceBehavior:0x17,Collision:0,Elevation:3}?c with{SourceBehavior=0x00}:c).ToImmutableArray()};
-        return result;
+        // Route23's collision0/elevation3 shallow shoreline is source land, including
+        // dismount validation. Raw terrain stays available to Surf and encounters.
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>
+            VictoryRoadFieldMap(id) ? map with{Cells=map.Cells.Select(c=>c.SourceBehavior==VictoryRoadButtonBehavior?c with{SourceBehavior=0x08}:c).ToImmutableArray()} :
+            id.Value=="map.route-23" ? map with{Cells=map.Cells.Select(c=>c is {SourceBehavior:0x17,Collision:0,Elevation:3}?c with{SourceBehavior=0x00}:c).ToImmutableArray()} : map);
     }
     private TilePosition VictoryRoadPlayerFallDestination(TilePosition hole)
     {

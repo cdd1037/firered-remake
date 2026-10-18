@@ -75,7 +75,7 @@ public sealed partial class CampaignSession
     {
         var maps=MapLayoutConnectedMaps(state);
         if(state.MapEdits is not {Count:>0})return maps;
-        var result=maps.ToDictionary(x=>x.Key,x=>x.Value);
+        var replacements=new Dictionary<Game.Domain.Ids.MapId,ConnectedFieldMap>();
         foreach(var group in state.MapEdits.Values.Select(edit=>(Edit:edit,Cell:ConnectedFieldCoordinates.Resolve(maps,state.World.Player.MapId,edit.X,edit.Y)))
             .Where(pair=>pair.Cell is not null).GroupBy(pair=>pair.Cell!.Value.Map))
         {
@@ -85,9 +85,9 @@ public sealed partial class CampaignSession
                 var definition=_content.MetatileDefinition(current.Id,edit.SourceMetatileId)??throw new InvalidDataException("metatile_definition_missing");
                 cells[cell!.Value.Y*current.Width+cell.Value.X]=new(definition.Behavior,edit.Collision,edit.Elevation);
             }
-            result[current.Id]=current with{Cells=cells.ToImmutable()};
+            replacements[current.Id]=current with{Cells=cells.ToImmutable()};
         }
-        return result;
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>replacements.GetValueOrDefault(id,map));
     }
     private string? ValidateParcelState(CampaignState state)
     {

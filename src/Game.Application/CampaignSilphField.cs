@@ -63,8 +63,8 @@ public sealed partial class CampaignSession
 
     private IReadOnlyDictionary<MapId,IFieldMap> SilphMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        return maps.ToDictionary(x=>x.Key,x=>_content.SupportsTeleportPads(x.Key)?(IFieldMap)new SilphMovementMap(x.Value,
-            x.Key==state.World.Player.MapId?state.MapEdits:null,_content):x.Value);
+        return new CampaignMapView<IFieldMap>(maps,(id,map)=>_content.SupportsTeleportPads(id)?new SilphMovementMap(map,
+            id==state.World.Player.MapId?state.MapEdits:null,_content):map);
     }
 
     private sealed class SilphMovementMap(IFieldMap original,ImmutableSortedDictionary<string,FieldMetatileEdit>? edits,ICampaignCatalog content):IFieldMap

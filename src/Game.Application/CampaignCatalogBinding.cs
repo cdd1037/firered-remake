@@ -19,7 +19,11 @@ public static class CurrentGameProfile
 
 internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion,
     PokemonCatalog Pokemon, GamePokemonCatalog Ownership, OrdinaryLandEncounterCatalog OrdinaryLand,
-    FrozenSet<ItemId> HoldableItems, ImmutableDictionary<SpeciesId, SourceBreedingSpecies> BreedingSpecies);
+    FrozenSet<ItemId> HoldableItems, ImmutableDictionary<SpeciesId, SourceBreedingSpecies> BreedingSpecies,
+    ImmutableDictionary<TrainerTowerChallengeKind, CampaignTrainerTowerMaps> TrainerTowerMaps);
+
+internal sealed record CampaignTrainerTowerMaps(IReadOnlyDictionary<MapId, IFieldMap> Raw,
+    IReadOnlyDictionary<MapId, ConnectedFieldMap> Connected);
 
 public sealed partial class CampaignSession
 {
@@ -55,7 +59,8 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("current_held_item_inventory_scope_missing");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion,
             battle.Catalog, battle, ordinaryLand, holdableItems,
-            content.BreedingMetadata!.Species.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.Breeding));
+            content.BreedingMetadata!.Species.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.Breeding),
+            BindTrainerTowerMaps(content));
     }
 
     // Source validation is shared by New Game and Restore, and remains independent of rendering.
@@ -68,6 +73,10 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("current_pokemon_catalog_binding");
         if(content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
+        // Validate immutable Safari terrain once; command-local walking views only
+        // materialize maps that the current movement actually reads.
+        foreach (var map in content.ConnectedFieldMaps.Values.Where(map => SafariFieldMovementRules.IsSafariArea(map.Id)))
+            _ = SafariFieldMovementRules.ForConnectedMovement(map, EarlyLandEncounterRules.SafariRulesVersion);
         if (content.BreedingMetadata is not {} metadata || !ReferenceEquals(metadata, content.PokemonContent?.Catalog.BreedingData)) throw new InvalidDataException("current_breeding_metadata_missing");
         if(content.NpcTrades is null||!content.NpcTrades.Definitions.OrderBy(p=>p.Key).SequenceEqual(content.PokemonContent!.Catalog.NpcTrades.OrderBy(p=>p.Key)))throw new InvalidDataException("current_npc_trade_proof_missing");
         if (content.Route16FlyTrainers is {} route16) Route16FlyTrainerPartyFactory.ValidateCatalog(route16);
@@ -94,7 +103,6 @@ public sealed partial class CampaignSession
         if (content.Machines is not { } machines)
             throw new InvalidDataException("current_machine_catalog_missing");
         MachineRules.ValidateCatalog(machines);
-        new DepartmentStoreMachineStock(machines).Validate();
         EarlyShopInventoryRules.ValidateCatalog(content.EarlyShop!);
         if (content.EarlyShop!.Inventory is null) throw new InvalidDataException("current_inventory_scope_missing");
         if (content.QuestItems is not { } questItems)

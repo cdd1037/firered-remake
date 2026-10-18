@@ -341,7 +341,6 @@ public sealed class DaisyDesignerServicesTests : WildBattleFixture
             UnownPokedexPersonality = state.UnownPokedexPersonality ?? 0,
             // Explicit synthetic unlock receipt for this collection fixture, not recovered player history.
             TanobyCompletion = state.TanobyCompletion ?? new(
-                (string)typeof(CampaignSession).GetField("TanobyKeySourceSha256", BindingFlags.Static | BindingFlags.NonPublic)!.GetRawConstantValue()!,
                 content.SevenIslandField!.TanobyKey.Boulders.Select(b => b.LocalId).ToImmutableArray()),
             Script = state.Script with { Flags = state.Script.Flags.SetItem("FLAG_SYS_UNLOCKED_TANOBY_RUINS", true) } };
         var session = Start(Place(state, "map.celadon-city-condominiums-3f", 3, 9));

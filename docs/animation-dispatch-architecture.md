@@ -86,7 +86,7 @@ Beat Up is a contributor loop, not a planned multi-hit summary. Its normalized c
 
 Completed battler pose is detached from the finished script. The shared scene continues advancing residual sprites and sorting OAM with retained built offsets, visibility and affine state; it never freezes old sprites or materials. The view retains pose through silent PP and Natural Cure bookkeeping, releases the replaced slot at actual switch-entry presentation, and clears on a superseding animation, cancellation or battle exit. Party-member identity comes from the existing event-time projection. The same projection now supplies singles Substitute state, replacing reverse inference from the final committed frame.
 
-The pose handoff only accepts restored background/material state. Teleport's existing skipped terminal `Ended` page still omits its source fled message; that text boundary remains separate from dedicated animation coverage.
+The pose handoff only accepts restored background/material state. Move-owned escape evidence on the existing terminal receipt now retains Teleport's fled-message page through acknowledgement; ordinary Run remains silent at that terminal receipt. Text uses the event-time escaping actor. This closes the omitted page without inserting a second outcome or changing battle sequences.
 
 ## Normal palette snapshots and retained Rollout inputs
 

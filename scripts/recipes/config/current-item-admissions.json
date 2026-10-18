@@ -772,6 +772,36 @@
       "item": "pret:ITEM_REVIVAL_HERB",
       "useSupport": "noFieldUse",
       "icon": true
+    },
+    {
+      "item": "pret:ITEM_TM05",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM15",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM28",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM31",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM43",
+      "useSupport": "noFieldUse",
+      "description": "machine"
+    },
+    {
+      "item": "pret:ITEM_TM45",
+      "useSupport": "noFieldUse",
+      "description": "machine"
     }
   ],
   "shops": [
@@ -834,6 +864,30 @@
     {
       "id": "TrainerTower_Lobby_Mart_Items",
       "path": "data/maps/TrainerTower_Lobby/scripts.inc"
+    },
+    {
+      "id": "CeladonCity_DepartmentStore_2F_Items",
+      "path": "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc"
+    },
+    {
+      "id": "CeladonCity_DepartmentStore_2F_TMs",
+      "path": "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc"
+    },
+    {
+      "id": "CeladonCity_DepartmentStore_4F_Items",
+      "path": "data/maps/CeladonCity_DepartmentStore_4F/scripts.inc"
+    },
+    {
+      "id": "CeladonCity_DepartmentStore_5F_XItems",
+      "path": "data/maps/CeladonCity_DepartmentStore_5F/scripts.inc"
+    },
+    {
+      "id": "CeladonCity_DepartmentStore_5F_Vitamins",
+      "path": "data/maps/CeladonCity_DepartmentStore_5F/scripts.inc"
+    },
+    {
+      "id": "IndigoPlateau_PokemonCenter_1F_Items",
+      "path": "data/maps/IndigoPlateau_PokemonCenter_1F/scripts.inc"
     }
   ]
 }

@@ -13,7 +13,7 @@ public sealed partial class CampaignSession
         var maps = TrainerTowerConnectedMaps(state);
         if (state.MapLayout is not {} layout) return maps;
         var id = state.World.Player.MapId;
-        return new MapLayoutOverlay<ConnectedFieldMap>(maps, id,
+        return ReplaceMap(maps, id,
             _content.ConnectedMapLayout(id, layout) ?? throw new InvalidDataException("map_layout_missing"));
     }
     private IReadOnlyDictionary<MapId, IFieldMap> MapLayoutRawMaps(CampaignState state)
@@ -21,28 +21,36 @@ public sealed partial class CampaignSession
         var maps = TrainerTowerMovementMaps(state);
         if (state.MapLayout is not {} layout) return maps;
         var id = state.World.Player.MapId;
-        return new MapLayoutOverlay<IFieldMap>(maps, id,
+        return ReplaceMap(maps, id,
             _content.MapLayout(id, layout) ?? throw new InvalidDataException("map_layout_missing"));
     }
 
-    // A single replacement view avoids copying the entire map catalog on movement.
-    private sealed class MapLayoutOverlay<T>(IReadOnlyDictionary<MapId, T> maps, MapId id, T replacement)
+    private static IReadOnlyDictionary<MapId, T> ReplaceMap<T>(IReadOnlyDictionary<MapId, T> maps,
+        MapId id, T replacement) => new CampaignMapView<T>(maps, (key, value) => key == id ? replacement : value);
+
+    // A command-local view preserves adapter order without rebuilding every region.
+    // Rules normally request only the current map and a connected/warp destination.
+    // Full enumeration remains available, and each requested value is composed once.
+    private sealed class CampaignMapView<T>(IReadOnlyDictionary<MapId, T> maps, Func<MapId, T, T> project)
         : IReadOnlyDictionary<MapId, T>
     {
+        private readonly Dictionary<MapId, T> _resolved = [];
         public int Count => maps.Count;
         public IEnumerable<MapId> Keys => maps.Keys;
-        public IEnumerable<T> Values => maps.Select(pair => pair.Key == id ? replacement : pair.Value);
-        public T this[MapId key] => key == id ? replacement : maps[key];
+        public IEnumerable<T> Values => Keys.Select(key => this[key]);
+        public T this[MapId key] => TryGetValue(key, out var value) ? value : throw new KeyNotFoundException();
         public bool ContainsKey(MapId key) => maps.ContainsKey(key);
         public bool TryGetValue(MapId key, out T value)
         {
-            if (key == id) { value = replacement; return true; }
-            return maps.TryGetValue(key, out value!);
+            if (_resolved.TryGetValue(key, out value!)) return true;
+            if (!maps.TryGetValue(key, out var original)) { value = default!; return false; }
+            value = project(key, original);
+            _resolved.Add(key, value);
+            return true;
         }
         public IEnumerator<KeyValuePair<MapId, T>> GetEnumerator()
         {
-            foreach (var pair in maps)
-                yield return pair.Key == id ? new(id, replacement) : pair;
+            foreach (var key in Keys) yield return new(key, this[key]);
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

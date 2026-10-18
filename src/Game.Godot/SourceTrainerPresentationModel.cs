@@ -97,6 +97,10 @@ internal static class SourceTrainerPresentationModel
         SourceTrainerEventDisplay Atk(string symbol, WildBattleSide side) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(side)));
         switch (events[index])
         {
+            case WildBattleEndedEvent { MoveEscape: { } escaped } ended:
+                return ended.Outcome == WildBattleOutcome.Escaped && Enum.IsDefined(escaped.Actor) &&
+                    !string.IsNullOrWhiteSpace(escaped.Move.Value)
+                    ? Atk("sText_PkmnFledFromBattle", escaped.Actor) : Unsupported;
             case WildBattleAbilityActivatedEvent { Ability: "ABILITY_COLOR_CHANGE" } color:
                 return index + 1 < events.Count && events[index + 1] is WildBattleCalledOverlayChangedEvent nextColorOverlay &&
                     nextColorOverlay.Side == color.Side && nextColorOverlay.After?.Type1 is { } nextColorType && nextColorType == nextColorOverlay.After.Type2 &&

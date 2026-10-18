@@ -405,8 +405,6 @@ public sealed partial class PretCampaignCatalog
 
         ValidateGoodRodComposition(goodRodService, maps, compiled);
 
-        _ = PretPokeDollItems.LoadSourceContract(projectRoot);
-
         ValidateSeafoamComposition(seafoam, maps, compiled);
 
         ValidateMoveReminderComposition(moveReminderHouse, maps, compiled);
@@ -515,7 +513,6 @@ public sealed partial class PretCampaignCatalog
         PokemonLeagueRegion = pokemonLeague;
         PokemonLeagueTrainerParties = pokemonLeagueTrainers;
 
-        PokemonLeagueMartStock = CreatePokemonLeagueMartStock(pokemonLeague, earlyShop.Catalog, compiled);
         VictoryRoadRegion = victoryRoad;
         VictoryRoadTrainerParties = victoryRoadTrainers;
         VictoryRoadItems = victoryRoadItems;

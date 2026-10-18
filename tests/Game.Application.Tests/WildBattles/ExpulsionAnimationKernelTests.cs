@@ -50,6 +50,7 @@ public sealed class ExpulsionAnimationKernelTests
             var marker = result.Events.OfType<SourceForcedOutEvent>().Single(); var ended = result.Events.OfType<SourceEndedEvent>().Single();
             Assert.IsFalse(marker.TrainerBattle); Assert.AreEqual(actor, marker.Actor.Value); Assert.AreEqual(actor ^ 1, marker.Target.Value);
             Assert.AreEqual(marker.Sequence + 1, ended.Sequence); Assert.AreEqual(WildBattleOutcome.Escaped, ended.Outcome);
+            Assert.IsNull(ended.MoveEscape, "Wild forced expulsion has no fled text and does not borrow the move-escape page.");
             Assert.IsFalse(result.Events.OfType<SourceCalledPartySwitchedEvent>().Any()); Assert.AreEqual(WildBattleOutcome.Escaped, result.State.Outcome);
             Shared.Check(result.Events, id, true);
         }
@@ -172,6 +173,13 @@ public sealed class ExpulsionAnimationKernelTests
         {
             var frame = Shared.Frame(Shared.Bodies(100, actor), true); var result = Shared.Direct(frame, actor, actor);
             Assert.AreEqual(WildBattleOutcome.Escaped, result.State.Outcome); Assert.IsFalse(result.Events.OfType<SourceForcedOutEvent>().Any());
+            var ended = result.Events.OfType<SourceEndedEvent>().Single();
+            Assert.AreEqual(new SourceMoveEscapeReceipt(new(actor), definition.Id), ended.MoveEscape);
+            var exported = (WildBattleEndedEvent)SourceBattleEventAdapter.Export(ended);
+            Assert.AreEqual(new WildBattleMoveEscapeReceipt((WildBattleSide)actor, definition.Id), exported.MoveEscape);
+            Assert.AreEqual(ended.Sequence, exported.Sequence); Assert.AreEqual(ended.Turn, exported.Turn);
+            Assert.AreEqual(ended, JsonSerializer.Deserialize<SourceBattleEvent>(JsonSerializer.Serialize<SourceBattleEvent>(ended)));
+            Assert.AreEqual(exported, JsonSerializer.Deserialize<WildBattleEvent>(JsonSerializer.Serialize<WildBattleEvent>(exported)));
             Assert.IsFalse(result.Events.OfType<SourceCalledPartySwitchedEvent>().Any()); Shared.Check(result.Events, 100, true);
         }
         foreach (bool single in new[] { false, true })
@@ -223,7 +231,14 @@ public sealed class ExpulsionAnimationKernelTests
                 foreach (var bad in new[] { forced with { Actor = new(1) }, forced with { Target = new(0) }, forced with { Move = Kernel.Id("TACKLE") } })
                     Shared.Deny(events.SetItem(mi, bad), single);
             if (marker is SourceEndedEvent ended)
+            {
                 Shared.Deny(events.SetItem(mi, ended with { Outcome = WildBattleOutcome.Won }), single);
+                Shared.Deny(events.SetItem(mi, ended with { MoveEscape = null }), single);
+                Shared.Deny(events.SetItem(mi, ended with { MoveEscape = ended.MoveEscape! with { Actor = new(1) } }), single);
+                Shared.Deny(events.SetItem(mi, ended with { MoveEscape = ended.MoveEscape! with { Move = Kernel.Id("TACKLE") } }), single);
+                Assert.IsNotNull(SourceBattleEventHooks.ValidateRouting(frame, ended with { Outcome = WildBattleOutcome.Won }));
+                Assert.IsNotNull(SourceBattleEventHooks.ValidateRouting(frame, ended with { MoveEscape = ended.MoveEscape! with { Actor = new(2) } }));
+            }
             var moves = Kernel.Mechanics.Catalog.Moves;
             foreach (var metadata in new[] { null, moves.Remove(Shared.Move(id)), moves.SetItem(Shared.Move(id), moves[Shared.Move(id)] with { SourceMoveId = 1 }),
                 moves.SetItem(Shared.Move(id), moves[Shared.Move(id)] with { Power = 1 }),

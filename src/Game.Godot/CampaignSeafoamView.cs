@@ -12,7 +12,7 @@ public partial class CampaignView
     private void LoadSeafoamPresentation()
     {
         var art = PretSeafoamPresentation.Load(_root);
-        _earlyItemIcons.Add(Game.Domain.Items.ItemIds.WaterStoneId, ItemTexture(PretSeafoamItems.LoadDocument(_root).Icons[0]));
+        _earlyItemIcons.Add(Game.Domain.Items.ItemIds.WaterStoneId, ItemTexture("data/items", ItemIconAssets.LoadProject(_root, "content/generated/data/items/seafoam.json", Game.Domain.Items.ItemIds.WaterStoneId)[0]));
         Texture2D Pixels(JsonElement row) => PresentationTexture(art.Files, row);
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
         {

@@ -48,10 +48,11 @@ public partial class CampaignView
 
     private void LoadDepartmentMachineIcon()
     {
-        if (_catalog.Machines is not { } machines || MachineRules.Definition(machines, DepartmentStoreMachineStock.Tm15Id) is null) return;
-        if (!_earlyItemIcons.TryGetValue(PretDepartmentStoreMachines.ReusedTm15Icon, out var normalIcon))
+        ItemId tm15 = new("pret:ITEM_TM15"), normalMachine = new("pret:ITEM_TM05");
+        if (_catalog.Machines is not { } machines || MachineRules.Definition(machines, tm15) is null) return;
+        if (!_earlyItemIcons.TryGetValue(normalMachine, out var normalIcon))
             throw new InvalidDataException("department_machine_normal_icon_missing");
-        _earlyItemIcons.Add(DepartmentStoreMachineStock.Tm15Id, normalIcon);
+        _earlyItemIcons.Add(tm15, normalIcon);
     }
 
     private void SynchronizeMachines()

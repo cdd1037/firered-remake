@@ -6,12 +6,11 @@ namespace Game.Application;
 
 /// <summary>Seven fixed source switches; zero means unpressed, 1–7 identifies the boulder that pressed it.</summary>
 public sealed record CampaignTanobyKeyVisit(bool SolvedOnEntry, ImmutableArray<int> SwitchBoulderIds);
-public sealed record CampaignTanobyCompletion(string SourceSha256, ImmutableArray<int> SwitchBoulderIds);
+public sealed record CampaignTanobyCompletion(ImmutableArray<int> SwitchBoulderIds);
 
 public sealed partial class CampaignSession
 {
     private const string TanobyKeySource = "data/maps/SevenIsland_SevaultCanyon_TanobyKey/scripts.inc";
-    private const string TanobyKeySourceSha256 = "b049d0009685686732941369e62a9c04d345d5325035e463c28505804b600e1b";
     private const string TanobyKeyPrefix = "SevenIsland_SevaultCanyon_TanobyKey_EventScript_";
     private const string TanobyUnlockFlag = "FLAG_SYS_UNLOCKED_TANOBY_RUINS";
     private static bool SevenIslandChamber(Game.Domain.Ids.MapId map) => map.Value is
@@ -32,7 +31,7 @@ public sealed partial class CampaignSession
             field.TanobyKey.Boulders.Length != 7 || field.TanobyKey.StrengthBehaviorId != 0x20 || field.TanobyKey.SolvedFlag != TanobyUnlockFlag)
             return "save_tanoby_source_missing";
         if (unlocked != (state.TanobyCompletion is not null) || state.TanobyCompletion is {} completion &&
-            (completion.SourceSha256 != TanobyKeySourceSha256 || completion.SwitchBoulderIds.IsDefault ||
+            (completion.SwitchBoulderIds.IsDefault ||
              completion.SwitchBoulderIds.Length != 7 || completion.SwitchBoulderIds.Any(i => i is < 1 or > 7)))
             return "save_tanoby_unlock_receipt";
         string? expectedWeather = SevenIslandChamber(state.World.Player.MapId) && !unlocked ? "WEATHER_SHADE" : null;
@@ -107,7 +106,7 @@ public sealed partial class CampaignSession
                 visit.SwitchBoulderIds.Any(i => i is < 1 or > 7) ||
                 _content.SevenIslandField!.TanobyKey.Switches.Any(s => state.Script.Variables.GetValueOrDefault(s.TemporaryVariable) != s.PressedValue))
                 throw new InvalidDataException("tanoby_completion_context");
-            next = state with { TanobyCompletion = state.TanobyCompletion ?? new(TanobyKeySourceSha256, visit.SwitchBoulderIds),
+            next = state with { TanobyCompletion = state.TanobyCompletion ?? new(visit.SwitchBoulderIds),
                 Dialogue = null, SignMessage = null, MessagePointer = null };
             return true;
         }

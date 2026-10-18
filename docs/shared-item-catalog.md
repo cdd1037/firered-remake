@@ -15,7 +15,7 @@ runtime reads generated resources only.
 ## Current inventory and shops
 
 `content/generated/data/available-items.json` is one flat current selection:
-151 ordered item/use entries and 14 ordered Mart stocks. Its import recipe
+ordered item/use entries and static Mart stocks. Its import recipe
 contains item IDs, explicit supported-use choices and source stock labels.
 Descriptions, effect bytes, medicine amounts, status bits, prices and stock
 contents come from the source compilers. Existing machine-specific description
@@ -34,6 +34,13 @@ in their own semantic contracts. Opening Potion and source battle-item views
 resolve the same shared definition; their executable effect data remains in the
 relevant capability view. The item-effect source reader parses restricted integer
 expressions without compiling or running upstream C.
+
+Celadon’s five static counters and the Indigo Plateau shelf now use this same
+ordered stock authority and direct actor/instruction binding. Machine purchases
+retain MachineCatalog and atomic TM CASE insertion; Two Island keeps its actual
+story-dependent shelf selection. Runtime readers no longer parse League assembly
+stock or duplicate regional prices. The stale unavailable-Mail warning is removed;
+the shared Mail composer and blank preview already support bought Retro Mail.
 
 ## Rebuild and tests
 

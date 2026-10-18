@@ -16,7 +16,7 @@ public sealed class CurrentItemCatalogTests
         Assert.IsFalse(current.Shops.IsDefaultOrEmpty);
         Assert.AreEqual(current.Shops.Length, current.Shops.Select(shop => shop.Id).Distinct().Count());
         Assert.AreEqual("ViridianCity_Mart_Items", current.Shops[0].Id);
-        Assert.AreEqual("TrainerTower_Lobby_Mart_Items", current.Shops[^1].Id);
+        Assert.IsTrue(current.Shops.Any(shop => shop.Id == "TrainerTower_Lobby_Mart_Items"));
         foreach (var item in current.Items) Assert.AreSame(shared.Definition(item.Id), item.Item);
         var potion = current.Items.Single(item => item.Id.Value == "pret:ITEM_POTION");
         Assert.AreEqual(20, potion.HealHp);

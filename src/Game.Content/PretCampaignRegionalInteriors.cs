@@ -13,16 +13,6 @@ public sealed partial class PretCampaignCatalog
     public PretDepartmentStoreContract DepartmentStoreContract {get;}
     public PretNameRaterContract NameRaterContract {get;}
     public NameRaterSourceContent? NameRaterSource => NameRaterContract?.Source;
-    public DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock => DepartmentStoreContract is not {} c ? null :
-        new(PretDepartmentStoreContract.SourceCommit,            PretDepartmentStoreContract.OrdinaryMapId,c.OrdinaryStock.ClerkScript,            c.OrdinaryStock.Items.Select(i=>new DepartmentStoreOrdinaryItem(new ItemId(i.StableId),i.SourceItemId,i.Name,i.Price,i.Pocket)).ToImmutableArray(),            new(c.OrdinaryStock.Source.Path,c.OrdinaryStock.Source.Symbol,c.OrdinaryStock.Source.LineStart,c.OrdinaryStock.Source.LineEnd));
-    public DepartmentStoreCounterStock? DepartmentStoreCounter(string stockId)
-    {
-        if (!DepartmentStoreCounterStock.IsStockId(stockId)) return null;
-        var source = DepartmentStoreContract!.Stocks.Single(s => s.Id == stockId);
-        var stock = new DepartmentStoreCounterStock(PretDepartmentStoreContract.SourceCommit,            DepartmentStoreCounterStock.ExpectedMapId,source.ClerkScript,            source.Items.Select(i => new DepartmentStoreOrdinaryItem(new(i.StableId), i.SourceItemId, i.Name, i.Price, i.Pocket)).ToImmutableArray(),            new(source.Source.Path,source.Source.Symbol,source.Source.LineStart,source.Source.LineEnd));
-        stock.Validate(EarlyShop!);
-        return stock;
-    }
     public static ImmutableArray<MapId> RegionalInteriorMapIds {get;} = [
         new("map.celadon-city-department-store-1f"),new("map.celadon-city-department-store-2f"),
         new("map.celadon-city-department-store-3f"),new("map.celadon-city-department-store-4f"),
@@ -49,10 +39,7 @@ public sealed partial class PretCampaignCatalog
             script is Game.Domain.Events.DepartmentRooftopSource.Girl or Game.Domain.Events.DepartmentRooftopSource.Vending)return null;
         if(map.Value=="map.celadon-city-department-store-3f"&&script=="CeladonCity_DepartmentStore_3F_EventScript_CounterTutor"&&
             MoveTutors?.Definitions.ContainsKey(5)==true)return null;
-        if(map.Value==PokeDollShopStock.ExpectedMapId&&script==PokeDollShopStock.ExpectedClerkScript&&PokeDollShopStock is not null)return null;
-        if (map.Value == DepartmentStoreMachineStock.ExpectedMapId && script == DepartmentStoreMachineStock.ExpectedClerkScript &&
-            Machines is not null) return null;
-        if (DepartmentStoreCounterStock.StockForClerk(map.Value, script) is {} counter && DepartmentStoreCounter(counter) is not null) return null;
+        if (OrdinaryMarts.ByActor.Any(pair => pair.Key.Map == map && pair.Value.Actor.ScriptId == script)) return null;
         if(map.Value==Game.Domain.Events.GameCornerCoinSource.RestaurantMap &&
             script==Game.Domain.Events.GameCornerCoinSource.CoinCaseMan)return null;
         if(map.Value=="map.celadon-city-restaurant"&&script=="CeladonCity_Restaurant_EventScript_CoinCaseMan")

@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
             effect.Source.Path == TutorPath && effect.Source.Symbol == "EventScript_MimicTaught");
         bool itemEffect = effect.Opcode is "checkitem" or "removeitem" && !effect.Args.IsEmpty && effect.Args[0] == "ITEM_POKE_DOLL";
         if (!cutRecording && !gender && !itemEffect) return false;
-        if (_content.PokeDollShopStock is null || state.World.Player.MapId.Value != CopycatMap ||
+        if (!ShopCatalog.Items.Any(item => item.Id == ItemIds.PokeDollId) || state.World.Player.MapId.Value != CopycatMap ||
             state.LastTalked is not {} actor || !state.Actors.TryGetValue(actor, out var npc) ||
             npc.SourceLocalId != 4 || npc.ScriptId != CopycatEntry || !npc.Active || npc.Invisible)
             throw new InvalidDataException("copycat_item_context");

@@ -85,9 +85,9 @@ public sealed class ConversionAnimationTests
     [TestMethod]
     public void NormalSpritePaletteFadeUsesUnfadedBaselineAfterDirectWritesAndRetainsFreedBytes()
     {
-        var script=AnimationCompositionFixture.Script(160);var o=Runtime(script);Invoke(o,"LoadSpriteGraphics","ANIM_TAG_CONVERSION");int tag=script.SpriteTags["ANIM_TAG_CONVERSION"],slot=(int)Invoke(o,"FindSpritePalette",tag)!;var original=script.SpritePalettes[tag];
+        var script=AnimationCompositionFixture.Script(160);var o=Runtime(script);Invoke(o,"LoadSpriteGraphics","ANIM_TAG_CONVERSION");int tag=script.SpriteTags["ANIM_TAG_CONVERSION"],slot=(int)Invoke(o,"FindSpritePalette",tag)!;var original=(ushort[])script.SpritePalettes[tag].Clone();
         Invoke(o,"WriteFadedSpritePalette",slot,1,new ushort[]{31});Invoke(o,"BlendPalettes",1u<<(slot+16),12,(ushort)14335);
-        var first=o.Snapshot();CollectionAssert.AreEqual(original.Select(c=>SourcePaletteMath.Blend(c,12,14335)).ToArray(),first.SpritePaletteSlots[slot]);
+        var first=o.Snapshot();CollectionAssert.AreEqual(original,script.SpritePalettes[tag]);CollectionAssert.AreEqual(original.Select(c=>SourcePaletteMath.Blend(c,12,14335)).ToArray(),first.SpritePaletteSlots[slot]);
         Invoke(o,"FreeSpritePalette",tag);Invoke(o,"AllocateSpritePalette",12345);Invoke(o,"BlendPalettes",1u<<(slot+16),0,(ushort)0);
         CollectionAssert.AreEqual(original,o.Snapshot().SpritePaletteSlots[slot]);Assert.AreNotEqual(first.SpritePaletteSlots[slot][1],o.Snapshot().SpritePaletteSlots[slot][1]);o.Cancel();Assert.IsTrue(o.Snapshot().SpritePaletteSlots.All(p=>p.All(c=>c==0)));
     }

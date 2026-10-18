@@ -94,10 +94,9 @@ public sealed partial class CampaignSession
     }
     private static void ValidatePokemonLeagueCatalog(ICampaignCatalog content)
     {
-        if(content.PokemonLeagueTrainerParties is null||content.OpponentPokemon is null||content.PokemonLeagueMartStock is null)
+        if(content.PokemonLeagueTrainerParties is null||content.OpponentPokemon is null)
             throw new InvalidDataException("pokemon_league_catalog_scope");
         PokemonLeagueTrainerPartyFactory.ValidateCatalog(content.PokemonLeagueTrainerParties);
-        content.PokemonLeagueMartStock.Validate(content.EarlyShop!);
         {
             if(content.LeagueRematchTrainerParties is null||content.OpponentPokemon is null)
                 throw new InvalidDataException("pokemon_league_rematch_catalog_scope");

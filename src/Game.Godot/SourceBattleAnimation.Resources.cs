@@ -12,6 +12,9 @@ public sealed class SourceAnimationResources:IDisposable
 {
     private readonly Dictionary<int,SourceAnimationScript> _scripts=[];
     private readonly Dictionary<string,SourceAnimationScript> _generalScripts=[];
+    private readonly Dictionary<string,SourceAnimationScript> _programs=new(StringComparer.Ordinal);
+    private readonly Dictionary<int,SourceResolvedAnimation> _resolvedMoves=[];
+    private readonly Dictionary<string,SourceResolvedAnimation> _resolvedGeneral=new(StringComparer.Ordinal);
     private readonly Dictionary<string,SourceSpriteRecipe> _recipes=[];
     private readonly Dictionary<string,List<(string Folder,JsonDocument Manifest)>> _assetFiles=[];
     private readonly Dictionary<string,SourcePixelAsset> _pixels=[];
@@ -43,9 +46,9 @@ public sealed class SourceAnimationResources:IDisposable
             if(_scripts.Count==0)throw new InvalidDataException("Empty source animation resources.");
             // Every tail is bound by source label against this canonical catalog,
             // never by a second move-support inventory or runtime terrain map.
-            var programs=_scripts.Values.ToDictionary(s=>s.Label,StringComparer.Ordinal);
-            foreach(var (id,script) in _scripts.ToArray())_scripts[id]=SourceAnimationProgramDependencies.BindReferences(script,programs);
-            foreach(var (label,script) in _generalScripts.ToArray())_generalScripts[label]=SourceAnimationProgramDependencies.BindReferences(script,programs);
+            foreach(var script in _scripts.Values)_programs.Add(script.Label,script);
+            foreach(var (id,script) in _scripts.ToArray())_scripts[id]=SourceAnimationProgramDependencies.BindReferences(script,_programs);
+            foreach(var (label,script) in _generalScripts.ToArray())_generalScripts[label]=SourceAnimationProgramDependencies.BindReferences(script,_programs);
         }
         catch{Dispose();throw;}
     }
@@ -118,13 +121,25 @@ public sealed class SourceAnimationResources:IDisposable
         _pixels.Add(id,result!);return result!;
     }
     public SourceResolvedAnimation ResolveGeneral(string label)
-    {ObjectDisposedException.ThrowIf(_disposed,this);return Resolve(_generalScripts[label]);}
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        if(!_resolvedGeneral.TryGetValue(label,out var resolved))_resolvedGeneral.Add(label,resolved=ResolveBound(_generalScripts[label]));
+        return resolved;
+    }
     public SourceResolvedAnimation Resolve(int move)
-    {ObjectDisposedException.ThrowIf(_disposed,this);return Resolve(_scripts[move]);}
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        if(!_resolvedMoves.TryGetValue(move,out var resolved))_resolvedMoves.Add(move,resolved=ResolveBound(_scripts[move]));
+        return resolved;
+    }
     public SourceResolvedAnimation Resolve(SourceAnimationScript script)
     {
         ObjectDisposedException.ThrowIf(_disposed,this);
-        script=SourceAnimationProgramDependencies.BindReferences(script,_scripts.Values.ToDictionary(s=>s.Label,StringComparer.Ordinal));
+        // Custom programs still authenticate references and dependencies on every request.
+        return ResolveBound(SourceAnimationProgramDependencies.BindReferences(script,_programs));
+    }
+    private SourceResolvedAnimation ResolveBound(SourceAnimationScript script)
+    {
         var programs=SourceAnimationProgramDependencies.ProgramClosure(script);
         IReadOnlyDictionary<TKey,TValue> Merge<TKey,TValue>(Func<SourceAnimationScript,IReadOnlyDictionary<TKey,TValue>> values) where TKey:notnull
         {
@@ -204,6 +219,6 @@ public sealed class SourceAnimationResources:IDisposable
     }
     public void Dispose()
     {
-        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_generalScripts.Clear();_recipes.Clear();_spriteTags.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();_paletteGroupFiles.Clear();_paletteGroups.Clear();
+        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_generalScripts.Clear();_programs.Clear();_resolvedMoves.Clear();_resolvedGeneral.Clear();_recipes.Clear();_spriteTags.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();_paletteGroupFiles.Clear();_paletteGroups.Clear();
     }
 }

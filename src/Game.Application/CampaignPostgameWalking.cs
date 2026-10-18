@@ -14,21 +14,15 @@ public sealed partial class CampaignSession
         ("map.birth-island-exterior", 0x0c) or ("map.two-island-cape-brink", 0x0c);
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> PostgameWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
-        var result = maps.ToDictionary(p => p.Key, p => p.Value);
-        foreach (var pair in maps.Where(p => PostgameGroundMap(p.Key) || p.Key.Value == TanobyKeyMap))
-            result[pair.Key] = pair.Value with { Cells = pair.Value.Cells.Select(c =>
-                c.Collision != 0 ? c : PostgameGroundBehavior(pair.Key, c.SourceBehavior) ? c with { SourceBehavior = 0x00 } :
-                pair.Key.Value == TanobyKeyMap && c.SourceBehavior == 0x20 ? c with { SourceBehavior = 0x08 } : c).ToImmutableArray() };
-        // MB_MOUNTAIN_TOP and MB_SHALLOW_WATER are collision-controlled land. Empty
-        // Strength buttons are walkable cave ground. Original cells remain authoritative
-        // for Surf, encounter eligibility, terrain, boulder callbacks and presentation.
-        return result;
+        // Original cells remain authoritative for Surf, encounters, terrain and callbacks.
+        return new CampaignMapView<ConnectedFieldMap>(maps,(id,map)=>PostgameGroundMap(id)||id.Value==TanobyKeyMap
+            ? map with { Cells = map.Cells.Select(c => c.Collision != 0 ? c :
+                PostgameGroundBehavior(id,c.SourceBehavior) ? c with { SourceBehavior = 0x00 } :
+                id.Value == TanobyKeyMap && c.SourceBehavior == 0x20 ? c with { SourceBehavior = 0x08 } : c).ToImmutableArray() } : map);
     }
     private IReadOnlyDictionary<MapId, IFieldMap> PostgameMovementMaps(IReadOnlyDictionary<MapId, IFieldMap> maps)
     {
-        var result = maps.ToDictionary(p => p.Key, p => p.Value);
-        foreach (var pair in maps.Where(p => PostgameGroundMap(p.Key))) result[pair.Key] = new PostgameMovementMap(pair.Value);
-        return result;
+        return new CampaignMapView<IFieldMap>(maps,(id,map)=>PostgameGroundMap(id)?new PostgameMovementMap(map):map);
     }
     private sealed class PostgameMovementMap(IFieldMap source) : IFieldMap
     {
