@@ -1,0 +1,8 @@
+{
+  "src/battle_anim_psychic.c": "3db4956ce939f8e3cdbe205c376e6da61de837ec07ceb96c6c6c1ce44eb1d6f2",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "src/trig.c": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",
+  "include/global.h": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+}

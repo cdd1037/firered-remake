@@ -139,3 +139,14 @@ The six-root integration (Destiny Bond, Perish Song, Curse, Trick, Recycle and S
 The next six dedicated roots bring the catalog to321: Surf, Muddy Water, Dig, Acid Armor, Sketch and Dragon Dance. Shared scene-owned DMA memory and register sampling are described in `source-animation-backgrounds.md`. Consumers use the same task scheduler, indexed background/palette authority and compositor; no root-specific raster path is introduced.
 
 Copy admission distinguishes temporary Mimic and permanent Sketch through effect metadata and the typed replacement receipt. Sketch permits the source-allowed Mimic/Metronome replacements and requires base PP with the retained PP-Up maximum. Paired self-stat effects share ordered result matching; authenticated item-restoration suffixes cannot impersonate or erase the original stat result. Existing spread and charge receipt owners cover Surf/Muddy Water and Dig without new gameplay events.
+
+
+## Branch capacity and affine copies
+
+Program capacity follows the maximum reachable acyclic path, including each called helper, rather than summing mutually exclusive branches. Cycles, unsupported nested calls and overflow remain rejected. Fissure and Seismic Toss use this shared bound for scene-owned objects and background register tasks.
+
+Battler copies consume the shared explicit affine matrix and double-size raster authority. Extrasensory owns a bounded scanline task and temporary copy. Sheer Cold expands one logical object into four source OAM pieces, with separate logical-slot and rendered-OAM capacity checks. Cancellation and scanline stop/restore remain shared scene operations.
+
+The common sine sampler preserves all 320 imported entries exactly, and applies the documented 256-entry periodic display interpretation outside that table. Source signed-byte panning is shared by setpan and the existing panning adjustment.
+
+Assist authenticates its actual selection pool and committed caller transition; leaf admission stays independent. Level-damage animation input comes from the existing pre-clamp hit result. Sweet Scent uses the metadata-driven primary spread-stat matcher, including separate held-item restoration ownership. No gameplay RNG draws or final-frame success inference are introduced.

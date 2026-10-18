@@ -36,7 +36,9 @@ public sealed partial class SourceBattleAnimation
     }
     private void ValidateScanlineBattlerCapacity(SourceAnimationCommand c)
     {
-        var commands=OverlayInvocationCommands();string n=c.Args[0];int family=n is DigPlume or DigMound or "AnimTask_DigDownMovement" or "AnimTask_DigUpMovement"?0:n is SketchPencil or "AnimTask_SketchDrawMon"?1:n is DanceOrb or "AnimTask_DragonDanceWaver" or "AnimTask_BlendPalInAndOutByTag"?2:3;
+        var commands=OverlayInvocationCommands();
+        if(commands.Any(x=>x.Op=="createvisualtask"&&x.Args[0]==FissurePosition)){ValidateEarthBackgroundCapacity(c);return;}
+        string n=c.Args[0];int family=n is DigPlume or DigMound or "AnimTask_DigDownMovement" or "AnimTask_DigUpMovement"?0:n is SketchPencil or "AnimTask_SketchDrawMon"?1:n is DanceOrb or "AnimTask_DragonDanceWaver" or "AnimTask_BlendPalInAndOutByTag"?2:3;
         bool Sprite(string name)=>family==0?name is DigPlume or DigMound or "gBasicHitSplatSpriteTemplate":family==1?name==SketchPencil:family==2?name==DanceOrb:false;
         bool Task(string name)=>family==0?name is "AnimTask_DigDownMovement" or "AnimTask_DigUpMovement" or "AnimTask_ShakeMon":family==1?name is "AnimTask_SketchDrawMon" or "AnimTask_Splash":family==2?name is "AnimTask_DragonDanceWaver" or "AnimTask_BlendPalInAndOutByTag":name=="AnimTask_AcidArmor";
         if(commands.Any(x=>x.Op=="createsprite"&&!Sprite(x.Args[0])||x.Op=="createvisualtask"&&!Task(x.Args[0])))Fail(c,"Battler scanline companion owners exceed source closure.");

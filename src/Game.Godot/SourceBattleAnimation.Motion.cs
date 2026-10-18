@@ -8,16 +8,16 @@ public sealed partial class SourceBattleAnimation
         return actorX>targetX?-1:actorX<targetX?1:_cue.Actor.IsPlayer?1:-1;
     }
     // Source BattleAnimAdjustPanning. Ally targets and attacker-side sounds use the
-    // original asymmetric -64/+63 endpoints, including the +64 clamp after reversal.
+    // original asymmetric -64/+63 endpoints, signed-byte negation and final clamp.
     private int AdjustPanning(int pan)
     {
         if(_cue.Actor.IsPlayer)
         {
             if(_cue.Target.IsPlayer)
-            {if(pan==63)pan=-64;else if(pan!=-64)pan=-pan;}
+            {if(pan==63)pan=-64;else if(pan!=-64)pan=unchecked((sbyte)-pan);}
         }
         else if(!_cue.Target.IsPlayer){if(pan==-64)pan=63;}
-        else pan=-pan;
+        else pan=unchecked((sbyte)-pan);
         return Math.Clamp(pan,-64,63);
     }
     private void ValidateOperands(SourceAnimationCommand c)

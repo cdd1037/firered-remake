@@ -74,6 +74,7 @@ public static partial class CampaignMoveAnimationPresentation
     internal static (WildBattleStat Stat,int Delta)? ReductionAnimation(PokemonMoveDefinition move) => move.Effect switch
     {
         "EFFECT_ACCURACY_DOWN" => (WildBattleStat.Accuracy,-1),
+        "EFFECT_EVASION_DOWN" => (WildBattleStat.Evasion,-1),
         "EFFECT_DEFENSE_DOWN" => (WildBattleStat.Defense,-1),
         "EFFECT_DEFENSE_DOWN_2" => (WildBattleStat.Defense,-2),
         "EFFECT_SPEED_DOWN" => (WildBattleStat.Speed,-1),

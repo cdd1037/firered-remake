@@ -163,7 +163,9 @@ public sealed class SourceBattleFrameComposer
                 var sprite=item.Sprite!;blend=sprite.Blend;var center=new PixelPoint(sprite.Position.X+sprite.Offset.X,sprite.Position.Y+sprite.Offset.Y);
                 if(sprite.BattlerCopySlot>=0)
                 {
-                    int slot=sprite.BattlerCopySlot;var matrix=new SourceBattlerAffine(false,sprite.Scale,sprite.Scale);
+                    int slot=sprite.BattlerCopySlot;var matrix=sprite.Affine
+                        ?new SourceBattlerAffine(sprite.DoubleSize,sprite.MatrixA,sprite.MatrixD){MatrixB=sprite.MatrixB,MatrixC=sprite.MatrixC}
+                        :new SourceBattlerAffine(false,sprite.Scale,sprite.Scale);
                     AffineBattler(layer,SpriteMaterial(sprite),center.X,center.Y,matrix,sprite.BattlerCopyPalette??palettes.GetValueOrDefault(16+slot),sprite.BattlerCopyPalette is null&&frame.InvertedPalettes.Contains(16+slot),sprite.BattlerCopyPalette is null&&frame.GreyscaleSlots.Contains(slot));
                 }
                 else if(sprite.Subsprites.Length==0&&(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate"))AffineImpact(layer,SpriteMaterial(sprite),new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);

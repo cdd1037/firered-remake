@@ -73,7 +73,7 @@ public static partial class CampaignMoveAnimationPresentation
     private static CampaignMoveAnimationDecision WithCommittedHitInputs(Invocation battle,SourceMoveUsedEvent used,
         SourceAttackStringEvent attack,PokemonMoveDefinition definition,SourceBattleEvent hit,CampaignMoveAnimationDispatch dispatch)
     {
-        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK" or "EFFECT_SPIT_UP"&&
+        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK" or "EFFECT_SPIT_UP" or "EFFECT_LEVEL_DAMAGE"&&
             (definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0||used.Actor==used.Target||
              used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots))
             return new(null,"unmatched-source-animation-hit-input");
@@ -110,8 +110,11 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-prepared-power");
             dispatch=dispatch with{MovePower=checked((ushort)power.Value)};
         }
-        if(definition.Effect=="EFFECT_RAGE")
+        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_LEVEL_DAMAGE")
         {
+            // This is the adjusted source damage register passed to attackanimation,
+            // before datahpupdate clamps body or substitute HP. Never derive it
+            // from the displayed level or eventual HP loss.
             int damage=hit switch{SourceHpChangedEvent h=>h.Damage,SourceSubstituteDamagedEvent s=>s.Damage,_=>-1};
             if(damage<0)return new(null,"unmatched-source-animation-damage");
             dispatch=dispatch with{MoveDamage=damage};

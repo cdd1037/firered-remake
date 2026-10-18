@@ -39,22 +39,14 @@ public sealed partial class SourceBattleAnimation
             if(pc<0||pc>=commands.Length)throw new InvalidDataException("Source control flow falls outside its program.");
             if(state[pc]==1)throw new InvalidDataException("Source control flow must be acyclic.");
             if(state[pc]==2)return;state[pc]=1;
-            var c=commands[pc];var a=c.Args;
-            switch(c.Op)
-            {
-                case "end":case "return":break;
-                case "goto":Visit(labels[a[0]]);break;
-                case "choosetwoturnanim":Visit(labels[a[0]]);Visit(labels[a[1]]);break;
-                case "jumpifmoveturn":Visit(labels[a[1]]);Visit(pc+1);break;
-                case "jumpargeq":Visit(labels[a[2]]);Visit(pc+1);break;
-                default:Visit(pc+1);break;
-            }
+            foreach(int next in SourceAnimationProgramDependencies.Successors(commands[pc],pc,labels))Visit(next);
             state[pc]=2;
         }
         // Validate every instruction, including alternate blocks not selected by
         // this invocation; a backward jump to an earlier return is still acyclic.
         for(int pc=0;pc<commands.Length;pc++)Visit(pc);
     }
+    private int MaximumInvocationCost(Func<SourceAnimationCommand,int> cost)=>SourceAnimationProgramDependencies.MaximumCost(_script,cost);
     private bool ValidateArgumentCommand(SourceAnimationCommand c)
     {
         var a=c.Args;
@@ -99,6 +91,56 @@ public sealed partial class SourceBattleAnimation
 // Shared by resource dependency resolution and invocation-context validation.
 internal static class SourceAnimationProgramDependencies
 {
+    internal static IEnumerable<int> Successors(SourceAnimationCommand command,int pc,IReadOnlyDictionary<string,int> labels)
+    {
+        int Label(int index)
+        {
+            if(index>=command.Args.Length||!labels.TryGetValue(command.Args[index],out int target))
+                throw new InvalidDataException("Source branch label is missing.");
+            return target;
+        }
+        switch(command.Op)
+        {
+            case "end":case "return":yield break;
+            case "goto":yield return Label(0);yield break;
+            case "choosetwoturnanim":yield return Label(0);yield return Label(1);yield break;
+            case "jumpifmoveturn":yield return Label(1);break;
+            case "jumpargeq":yield return Label(2);break;
+        }
+        yield return pc+1;
+    }
+    // A conservative whole-path resource bound. Independent branches do not
+    // coexist, while each repeated helper call contributes its full cost.
+    internal static int MaximumCost(SourceAnimationScript script,Func<SourceAnimationCommand,int> cost)
+    {
+        var helpers=new Dictionary<string,int>(StringComparer.Ordinal);
+        int Program(SourceAnimationCommand[] commands,IReadOnlyDictionary<string,int> labels,bool helper)
+        {
+            if(commands.Length is <1 or >128)throw new InvalidDataException("Source capacity program length differs.");
+            var visiting=new bool[commands.Length];var memo=new int?[commands.Length];
+            int Visit(int pc)
+            {
+                if(pc<0||pc>=commands.Length)throw new InvalidDataException("Source capacity path falls outside its program.");
+                if(visiting[pc])throw new InvalidDataException("Source capacity path must be acyclic.");
+                if(memo[pc] is {} found)return found;
+                visiting[pc]=true;var command=commands[pc];int own=cost(command);
+                if(own<0)throw new InvalidDataException("Source capacity cost must be nonnegative.");
+                if(command.Op=="call")
+                {
+                    if(helper||command.Args.Length!=1||!script.Subroutines.TryGetValue(command.Args[0],out var body))
+                        throw new InvalidDataException("Source capacity helper scope differs.");
+                    string name=command.Args[0];
+                    if(!helpers.TryGetValue(name,out int weight))
+                        helpers[name]=weight=Program(body,script.SubroutineLabels.GetValueOrDefault(name)??new Dictionary<string,int>(),true);
+                    own=checked(own+weight);
+                }
+                int tail=0;foreach(int next in Successors(command,pc,labels))tail=Math.Max(tail,Visit(next));
+                visiting[pc]=false;return (memo[pc]=checked(own+tail)).Value;
+            }
+            return Visit(0);
+        }
+        return Program(script.Commands,script.Labels,false);
+    }
     public static Dictionary<string,SourceAnimationCommand[]> RequiredSubroutines(
         IEnumerable<SourceAnimationCommand> commands,IReadOnlyDictionary<string,SourceAnimationCommand[]> subroutines)
     {

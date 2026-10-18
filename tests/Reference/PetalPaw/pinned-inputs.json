@@ -1,0 +1,11 @@
+{
+  "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
+  "include/battle_anim.h": "15d0a815fec54ed669e1cf7130d323070d799ecfba0f3a935da4b9c28d6f09a7",
+  "src/trig.c": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",
+  "src/battle_anim.c": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "include/global.h": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429"
+}

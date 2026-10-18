@@ -1,0 +1,10 @@
+{
+  "src/battle_anim_ground.c": "2bbe4e7a2db3d38d77dfc56f935a4ee27dd9b24cae178dc60a0af9c9bbe17446",
+  "src/battle_anim_rock.c": "13d82c078ffcbe648c81f1fbeeead1a2e74be1d680d30dfdb8df992034f93021",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
+  "src/trig.c": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",
+  "include/global.h": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429",
+  "include/constants/battle_anim.h": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+}

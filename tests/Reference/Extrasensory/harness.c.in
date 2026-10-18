@@ -1,0 +1,58 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define Q_8_8(n) ((s16)((n)*256))
+#define TRUE 1
+#define FALSE 0
+#define ANIM_ATTACKER 0
+#define ANIM_TARGET 1
+#define ANIM_ATK_PARTNER 2
+#define BATTLE_PARTNER(id) ((id)^2)
+#define SPRITE_NONE 255
+#define MAX_SPRITES 64
+#define OAM_MATRIX_COUNT 32
+#define ST_OAM_OBJ_BLEND 1
+#define ST_OAM_AFFINE_DOUBLE 3
+#define ST_OAM_AFFINE_DOUBLE_MASK 2
+#define MON_PIC_HEIGHT 64
+#define SAFE_DIV(a,b) ((b)?(a)/(b):0)
+#define SCANLINE_EFFECT_DMACNT_16BIT 1
+struct Sprite;typedef void(*SpriteCallback)(struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite {struct{u8 objMode,affineMode,matrixNum,shape,size,priority;}oam;s16 x,y,x2,y2,data[8];s8 centerToCornerVecX,centerToCornerVecY;u8 subpriority;bool8 inUse,invisible,affineAnimPaused,usingSheet;SpriteCallback callback;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};
+struct ObjAffineSrcData{s16 xScale,yScale;u16 rotation;};struct OamMatrix{s16 a,b,c,d;};
+struct ScanlineEffectParams{volatile void*dmaDest;u32 dmaControl;u8 initState,unused9;};
+static struct{u8 state,srcBuffer;volatile void*dest;}gScanlineEffect;
+static struct Sprite gSprites[64];static struct Task gTasks[1];static struct OamMatrix gOamMatrices[32];static u32 gOamMatrixAllocBitmap;
+static u16 gScanlineEffectRegBuffers[2][960],gBattle_BG1_X,gBattle_BG2_X,regX1,regX2;
+#define REG_BG1HOFS regX1
+#define REG_BG2HOFS regX2
+static s16 gBattleAnimArgs[8];static u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerSpriteIds[4]={0,1,2,3};
+static int doubles,yoff,elevation,kind,policy,hidden,absent,cloneSlot=-1,sourceSlot=-1,frame;
+static bool8 IsBattlerSpritePresent(u8 id){return id<(doubles?4:2)&&id!=absent;}
+static bool8 IsBattlerSpriteVisible(u8 id){return IsBattlerSpritePresent(id)&&!hidden;}
+static u8 GetBattlerSpriteBGPriorityRank(u8 id){return id==0||id==3?2:1;}
+static int Base(u8 id,int xy){static const int p[2][4][2]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};return p[doubles][id][xy];}
+static u8 GetBattlerYCoordWithElevation(u8 id){return Base(id,1)-((id&1)?elevation:0);}
+static u16 GetBattlerYDeltaFromSpriteId(u8 id){assert(id<4);return yoff;}
+static void DestroyAnimVisualTask(u8 id){assert(id==0);gTasks[0].isActive=FALSE;}
+static void DestroySprite(struct Sprite*s){s->inUse=FALSE;}
+static void SpriteCallbackDummy(struct Sprite*s){}
+static void ScanlineEffect_SetParams(struct ScanlineEffectParams p){gScanlineEffect.dest=p.dmaDest;gScanlineEffect.state=p.initState;}
+static void SetOamMatrix(u8 id,s16 a,s16 b,s16 c,s16 d){gOamMatrices[id]=(struct OamMatrix){a,b,c,d};}
+/* Every selected clone uses angle zero. This exact BIOS special case is not a second sine oracle. */
+static void ObjAffineSet(const struct ObjAffineSrcData*s,struct OamMatrix*d,int count,int stride){assert(s->rotation==0&&count==1&&stride==2);*d=(struct OamMatrix){s->xScale,0,0,s->yScale};}
+@PROTOTYPES@
+@ARRAYS@
+static s16 SamplePeriodicSine(int index){if(index>=0&&index<320)return gSineTable[index];int wrapped=index%256;if(wrapped<0)wrapped+=256;return gSineTable[wrapped];}
+@FUNCTIONS@
+static void row(void){struct Task*t=&gTasks[0];printf("{\"frame\":%d,\"alive\":%d,\"state\":%u,\"writeBuffer\":%u,\"rank\":%d,\"matrixBitmap\":%u,\"data\":[",frame,t->isActive,gScanlineEffect.state,gScanlineEffect.srcBuffer,gScanlineEffect.dest==&regX1?1:gScanlineEffect.dest==&regX2?2:0,gOamMatrixAllocBitmap);for(int i=0;i<(kind==0?16:3);i++)printf("%s%d",i?",":"",t->data[i]);printf("],\"args\":[");for(int i=0;i<8;i++)printf("%s%d",i?",":"",gBattleAnimArgs[i]);printf("],\"copy\":[");if(cloneSlot>=0){struct Sprite*s=&gSprites[cloneSlot];struct OamMatrix*m=&gOamMatrices[s->oam.matrixNum];printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",s->inUse,cloneSlot,sourceSlot,s->x,s->y,s->x2,s->y2,s->subpriority,s->oam.priority,s->invisible,s->oam.objMode,s->oam.affineMode,m->a,m->b,m->c,m->d,s->centerToCornerVecX,s->centerToCornerVecY);}printf("],\"buffers\":[");for(int b=0;b<2;b++)for(int i=0;i<960;i++)printf("%s%u",b||i?",":"",gScanlineEffectRegBuffers[b][i]);puts("]}");}
+int main(int argc,char**argv){assert(argc==20);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);yoff=atoi(argv[5]);elevation=atoi(argv[6]);int seeded=atoi(argv[7]);gScanlineEffect.srcBuffer=atoi(argv[8]);hidden=atoi(argv[9]);absent=atoi(argv[10]);int failure=atoi(argv[11]);for(int i=0;i<8;i++)gBattleAnimArgs[i]=atoi(argv[12+i]);
+ gBattle_BG1_X=65501;gBattle_BG2_X=65391;for(int b=0;b<2;b++)for(int i=0;i<960;i++)gScanlineEffectRegBuffers[b][i]=seeded?(u16)(b*4093+i*17):0;
+ gOamMatrixAllocBitmap=failure==1?0xffffffff:15;for(int i=0;i<32;i++)SetOamMatrix(i,256,0,0,256);
+ for(int i=0;i<4;i++){struct Sprite*s=&gSprites[i];s->inUse=IsBattlerSpritePresent(i);s->invisible=hidden;s->x=Base(i,0);s->y=(Base(i,1)+yoff-((i&1)?elevation:0))&255;s->x2=7;s->y2=-5;s->subpriority=(int[]){30,40,20,50}[i];s->oam.priority=2;s->oam.size=3;s->oam.matrixNum=i;s->usingSheet=TRUE;}
+ if(failure==2)for(int i=0;i<64;i++)gSprites[i].inUse=TRUE;
+ gTasks[0].isActive=TRUE;if(kind==0){int y=GetBattlerYCoordWithElevation(gBattleAnimTarget),lo=y<32?0:y-32,hi=y+32,mode=gBattleAnimArgs[0],last=(mode==0?64:mode==1?192:0)+(hi-lo)*(mode==2?4:2);assert(@POLICY@||last<320);AnimTask_ExtrasensoryDistortion(0);}else{AnimTask_TransparentCloneGrowAndShrink(0);if(gTasks[0].isActive){cloneSlot=gTasks[0].data[15];sourceSlot=gTasks[0].data[13];assert(gSprites[cloneSlot].affineAnimPaused&&gSprites[cloneSlot].usingSheet);}}
+ for(frame=0;frame<100;frame++){row();if(!gTasks[0].isActive)return 0;if(gScanlineEffect.state==3)gScanlineEffect.state=0;else if(gScanlineEffect.state)gScanlineEffect.srcBuffer^=1;gTasks[0].func(0);}abort();}

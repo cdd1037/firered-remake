@@ -29,6 +29,8 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=(c.Op=="playsewithpan"?2:c.Op=="waitplaysewithpan"?3:4)||SoundPan(a[1]) is < -64 or >63||a.Skip(2).Any(v=>Number(v) is <0 or >255))Fail(c,"Source sound operand width differs.");
             return true;
         }
+        if(c.Op=="setpan")
+        {if(a.Length!=1||SoundPan(a[0]) is < -128 or >127)Fail(c,"Source setpan requires one signed-byte operand.");return true;}
         if(c.Op=="playse")
         {if(a.Length!=1||!_script.SoundEffects.ContainsKey(a[0]))Fail(c,"Source unpanned sound needs one generated song identity.");return true;}
         if(c.Op=="waitsound")

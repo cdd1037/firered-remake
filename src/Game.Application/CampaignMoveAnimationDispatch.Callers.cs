@@ -8,7 +8,7 @@ namespace Game.Application;
 public static partial class CampaignMoveAnimationPresentation
 {
     // Caller scripts own their prelude independently of the subsequently selected
-    // leaf's outcome. Metronome has no PP command at this source boundary.
+    // leaf's outcome. Metronome and Assist have no PP command at this boundary.
     private static CampaignMoveAnimationDecision CallerPrelude(Invocation battle,
         SourceAttackStringEvent? attack,SourceMoveUsedEvent? used,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
@@ -16,8 +16,9 @@ public static partial class CampaignMoveAnimationPresentation
         CampaignMoveAnimationDecision Deny(string reason)=>new(null,reason);
         var caller=Definition(used?.Move??attack!.CurrentMove,moves);
         if(caller is null||!supports(caller.SourceMoveId,caller.Id.Value))return Deny("script-outside-slice");
-        bool sleep=caller.Effect=="EFFECT_SLEEP_TALK";
-        if(!sleep&&caller.Effect!="EFFECT_METRONOME")return Deny("not-caller-prelude");
+        bool sleep=caller.Effect=="EFFECT_SLEEP_TALK",assist=caller.Effect=="EFFECT_ASSIST";
+        if(!sleep&&!assist&&caller.Effect!="EFFECT_METRONOME")return Deny("not-caller-prelude");
+        if(assist&&(caller.Power!=0||caller.Target!="MOVE_TARGET_DEPENDS"))return Deny("unmatched-source-assist-definition");
         if(sleep)
         {
             if(used is null||battle.EventIndex<1||battle.Events[battle.EventIndex-1] is not SourceAttackStringEvent previous)
@@ -63,12 +64,14 @@ public static partial class CampaignMoveAnimationPresentation
                 return Deny("unmatched-source-sleep-talk-selection");
             ppSequence=pp.Sequence;
         }
-        else if(invocation.PpSlot!=invocation.ChosenSlot||invocation.CalledMove is not null||
+        else if(invocation.PpSlot!=invocation.ChosenSlot||invocation.CalledMove!=(assist?selected:null)||
             (invocation.Flags&WildBattleInvocationFlags.NoPpDeduct)!=0)
-            return Deny("unmatched-source-metronome-selection");
+            return Deny(assist?"unmatched-source-assist-selection":"unmatched-source-metronome-selection");
+        if(assist&&(selection.CandidateSourceMoveIds.IsDefaultOrEmpty||selection.CandidateSourceMoveIds.Length>20||
+            !selection.CandidateSourceMoveIds.Contains(leaf.SourceMoveId)))return Deny("unmatched-source-assist-selection");
         long sequence=used?.Sequence??attack.Sequence;
-        return new(new(battle.Id,sequence,attack.Sequence,ppSequence,sleep?selection.Sequence:sequence,
-            caller.SourceMoveId,attack.Actor,sleep?invocation.Target:attack.Actor,false){Boundary=CampaignMoveAnimationBoundary.AfterCallerText},
+        return new(new(battle.Id,sequence,attack.Sequence,ppSequence,sleep||assist?selection.Sequence:sequence,
+            caller.SourceMoveId,attack.Actor,sleep||assist?invocation.Target:attack.Actor,false){Boundary=CampaignMoveAnimationBoundary.AfterCallerText},
             "committed-source-caller-prelude");
     }
 }
