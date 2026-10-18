@@ -15,6 +15,13 @@ ADDITIONAL_MON_TASKS={'AnimTask_RolePlaySilhouette'}
 MATERIAL_CHANGE_TASKS={'AnimTask_TransformMon','AnimTask_MonToSubstitute'}
 PALETTE_BACKUP_TASKS={'AnimTask_AllocBackupPalBuffer','AnimTask_FreeBackupPalBuffer','AnimTask_CopyPalUnfadedToBackup','AnimTask_CopyPalUnfadedFromBackup','AnimTask_CopyPalFadedToUnfaded'}
 TEMPLATES={
+ 'gElectricChargingParticlesSpriteTemplate':('battle_anim_electric.c','SpriteCallbackDummy'),
+ 'gGrowingChargeOrbSpriteTemplate':('battle_anim_electric.c','AnimGrowingChargeOrb'),
+ 'gElectricPuffSpriteTemplate':('battle_anim_electric.c','AnimElectricPuff'),
+ 'gGrowingShockWaveOrbSpriteTemplate':('battle_anim_electric.c','AnimGrowingShockWaveOrb'),
+ 'sShockWaveProgressingBoltSpriteTemplate':('battle_anim_electric.c','AnimShockWaveProgressingBolt'),
+ 'gWillOWispOrbSpriteTemplate':('battle_anim_fire.c','AnimWillOWispOrb'),
+ 'gWillOWispFireSpriteTemplate':('battle_anim_fire.c','AnimWillOWispFire'),
  'gPetalDanceBigFlowerSpriteTemplate':('battle_anim_effects_1.c','AnimPetalDanceBigFlower'),
  'gPetalDanceSmallFlowerSpriteTemplate':('battle_anim_effects_1.c','AnimPetalDanceSmallFlower'),
  'gIceBallChunkSpriteTemplate':('battle_anim_ice.c','InitIceBallAnim'),
@@ -188,6 +195,7 @@ def recipe(source,name,callback):
  shape=re.fullmatch(r'&gOamData_Affine(Off|Normal|Double)_Obj(Normal|Blend)_(8|16|32|64)x(8|16|32|64)',fields['oam'])
  if fields['callback']!=callback or not shape or fields['tileTag']!=fields['paletteTag']:raise ValueError('Elemental recipe differs '+name)
  asset=fields['tileTag'].removeprefix('ANIM_TAG_').lower().replace('_','-')
+ if name=='sShockWaveProgressingBoltSpriteTemplate':asset='spark-thin' # Source tiles0..7 are the existing first SPARK sheet.
  animations=[];loops=[];frame_loops=[]
  if fields['anims']=='gDummySpriteAnimTable':animations=[[dict(tile=0,duration=1,hFlip=False,vFlip=False)]];loops=[0]
  else:
@@ -250,6 +258,9 @@ SOUNDS={'SE_M_ABSORB','SE_M_ABSORB_2','SE_M_BUBBLE','SE_M_BUBBLE3','SE_M_BUBBLE_
 TASKS|={'AnimTask_DeepInhale','SoundTask_PlayCryHighPitch','SoundTask_PlayDoubleCry','SoundTask_PlayCryWithEcho','SoundTask_WaitForCry','AnimTask_ShakeBattleTerrain','AnimTask_ScaleMonAndRestore'}
 GFX={'ANIM_TAG_SPARK', 'ANIM_TAG_METAL_SOUND_WAVES', 'ANIM_TAG_BROWN_ORB', 'ANIM_TAG_LIGHTNING', 'ANIM_TAG_SPARK_2', 'ANIM_TAG_LARGE_FRESH_EGG', 'ANIM_TAG_ICE_CRYSTALS', 'ANIM_TAG_DUCK', 'ANIM_TAG_PURPLE_RING', 'ANIM_TAG_GLOWY_RED_ORB', 'ANIM_TAG_IMPACT', 'ANIM_TAG_SPARK_H', 'ANIM_TAG_BLACK_BALL_2', 'ANIM_TAG_SMALL_EMBER', 'ANIM_TAG_GLOWY_GREEN_ORB', 'ANIM_TAG_WATER_IMPACT', 'ANIM_TAG_BLUE_STAR', 'ANIM_TAG_WATER_ORB', 'ANIM_TAG_HANDS_AND_FEET', 'ANIM_TAG_GRAY_SMOKE', 'ANIM_TAG_SMALL_BUBBLES', 'ANIM_TAG_ORBS', 'ANIM_TAG_BLACK_BALL', 'ANIM_TAG_GOLD_RING', 'ANIM_TAG_EXPLOSION', 'ANIM_TAG_SHOCK_3'}
 GFX|={'ANIM_TAG_AMNESIA','ANIM_TAG_FLOWER'}
+GFX|={'ANIM_TAG_ELECTRIC_ORBS','ANIM_TAG_ELECTRICITY','ANIM_TAG_WISP_ORB','ANIM_TAG_WISP_FIRE'}
+TASKS|={'AnimTask_ElectricChargingParticles','AnimTask_ShockWaveProgressingBolt','AnimTask_ShockWaveLightning'}
+SOUNDS|={'SE_M_CHARGE'}
 SOUNDS|={'SE_M_PETAL_DANCE'}
 SOUNDS|={'SE_M_METRONOME','SE_M_HEADBUTT','SE_M_TAKE_DOWN'}
 GFX|={'ANIM_TAG_NOISE_LINE'}
@@ -601,6 +612,23 @@ def discover_scripts(reference):
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=sound_effects(reference,flat),spriteTags={name:tags[name] for name in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})}));subs.update(local)
  for row in scripts:
   flat=row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]]
+  electric_tasks={c['args'][0] for c in flat if c['op']=='createvisualtask'}&{'AnimTask_ElectricChargingParticles','AnimTask_ShockWaveProgressingBolt','AnimTask_ShockWaveLightning'}
+  if electric_tasks:
+   electric=read(reference,'src/battle_anim_electric.c').decode();children=[]
+   for task,callback,template in [('AnimTask_ElectricChargingParticles','AnimTask_ElectricChargingParticles_Step','gElectricChargingParticlesSpriteTemplate'),('AnimTask_ShockWaveProgressingBolt','CreateShockWaveBoltSprite','sShockWaveProgressingBoltSpriteTemplate'),('AnimTask_ShockWaveLightning','CreateShockWaveLightningSprite','gLightningSpriteTemplate')]:
+    if task not in electric_tasks:continue
+    body=re.search(r'(?:static )?(?:void|bool8) '+callback+r'\([^;]*?\)\s*\{(.*?)^\}',electric,re.S|re.M)
+    if body is None or re.findall(r'CreateSprite\(&([A-Za-z0-9_]+),',body[1])!=[template]:raise ValueError('Electric raw sprite dependency differs: '+task)
+    children.append(template)
+   row['spriteDependencies']=children
+   if 'AnimTask_ShockWaveProgressingBolt' in electric_tasks:
+    body=re.search(r'static bool8 CreateShockWaveBoltSprite\([^;]*?\)\s*\{(.*?)^\}',electric,re.S|re.M)
+    if re.findall(r'PlaySE12WithPanning\((SE_\w+),',body[1])!=['SE_M_THUNDERBOLT']:raise ValueError('Shock Wave sound dependency differs')
+    row['soundEffects'].update(sound_effects(reference,[dict(op='playse',args=['SE_M_THUNDERBOLT'])]))
+  if any(c['op']=='createsprite' and c['args'][0]=='gWillOWispOrbSpriteTemplate' for c in flat):
+   fire=read(reference,'src/battle_anim_fire.c').decode();body=re.search(r'static void AnimWillOWispOrb_Step\([^;]*?\)\s*\{(.*?)^\}',fire,re.S|re.M)
+   if body is None or re.findall(r'PlaySE12WithPanning\((SE_\w+), gAnimCustomPanning\);',body[1])!=['SE_M_FLAME_WHEEL']:raise ValueError('Wisp callback sound differs')
+   row['soundEffects'].update(sound_effects(reference,[dict(op='playse',args=['SE_M_FLAME_WHEEL'])]))
   material_change_contracts(reference,row,flat)
   rollout_dependencies(reference,row,flat)
   visibility_contracts(reference,flat)
@@ -709,8 +737,8 @@ def build(reference):
   colors=[int(c) for row in rows[3:] for c in row.split()]
   if len(colors)!=48:raise ValueError('Invalid palette length')
   return colors
- for asset,png,shape,pal in [('ice-chunk','ice_chunk',(32,160),None),('alert','alert',(32,112),None),('bent-spoon','bent_spoon',(16,192),None),('spiral','spiral',(64,64),None),('white-circle-of-light','circle_of_light',(64,64),'white_circle_of_light'),('tag-hand','tag_hand',(32,64),'finger'),('hollow-orb','hollow_orb',(16,16),None),('finger','finger',(32,32),None),('finger-2','finger_2',(32,96),'finger'),('yellow-ball','yellow_ball',(16,16),None),('devil','devil',(32,64),None),('angel','angel',(32,32),None),('magnifying-glass','magnifying_glass',(32,32),None),('pink-heart','magenta_heart',(16,16),'pink_heart'),('red-heart','magenta_heart',(16,16),'red_heart'),('guard-ring','guard_ring',(64,32),None),('fire','fire',(32,256),None),('duck','duck',(16,48),None),('tendrils','tendrils',(64,128),None),('slam-hit-2','slam_hit_2',(64,128),None),('green-spike','green_spike',(16,16),None),('roots','roots',(32,128),None),('leer','leer',(32,160),None),('circle-of-light','circle_of_light',(64,64),'electric_orbs'),('thought-bubble','thought_bubble',(32,128),None),('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
-  if pal in ('electric_orbs','water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire','finger'):
+ for asset,png,shape,pal in [('electric-orbs','electric_orbs',(8,32),None),('electricity','electricity',(32,128),'electric_orbs'),('wisp-orb','wisp_orb',(16,112),None),('wisp-fire','wisp_fire',(32,128),'wisp_orb'),('ice-chunk','ice_chunk',(32,160),None),('alert','alert',(32,112),None),('bent-spoon','bent_spoon',(16,192),None),('spiral','spiral',(64,64),None),('white-circle-of-light','circle_of_light',(64,64),'white_circle_of_light'),('tag-hand','tag_hand',(32,64),'finger'),('hollow-orb','hollow_orb',(16,16),None),('finger','finger',(32,32),None),('finger-2','finger_2',(32,96),'finger'),('yellow-ball','yellow_ball',(16,16),None),('devil','devil',(32,64),None),('angel','angel',(32,32),None),('magnifying-glass','magnifying_glass',(32,32),None),('pink-heart','magenta_heart',(16,16),'pink_heart'),('red-heart','magenta_heart',(16,16),'red_heart'),('guard-ring','guard_ring',(64,32),None),('fire','fire',(32,256),None),('duck','duck',(16,48),None),('tendrils','tendrils',(64,128),None),('slam-hit-2','slam_hit_2',(64,128),None),('green-spike','green_spike',(16,16),None),('roots','roots',(32,128),None),('leer','leer',(32,160),None),('circle-of-light','circle_of_light',(64,64),'electric_orbs'),('thought-bubble','thought_bubble',(32,128),None),('air-wave','air_wave',(32,16),None),('hail','hail',(16,16),None),('breaking-egg','breaking_egg',(32,96),None),('milk-bottle','milk_bottle',(32,32),None),('ice-spikes','ice_spikes',(8,64),'ice_crystals'),('blue-ring','gold_ring',(16,32),'blue_ring'),('blue-ring-2','gold_ring',(16,32),'blue_ring_2'),('explosion-6','explosion_6',(32,128),None),('leaf','leaf',(16,144),None),('razor-leaf','razor_leaf',(32,16),None),('yellow-star','yellow_star',(32,32),None),('magenta-heart','magenta_heart',(16,16),None),('fire-plume','fire_plume',(32,160),'fire'),('focus-energy','focus_energy',(16,128),None),('sharp-teeth','sharp_teeth',(64,64),None),('clamp','clamp',(64,64),'sharp_teeth'),('toxic-bubble','toxic_bubble',(16,128),'poison_bubble'),('poison-bubble','poison_bubble',(16,48),None),('needle','needle',(16,16),None),('bubble','bubble',(16,48),'rain_drops'),('gold-ring','gold_ring',(16,32),None),('purple-ring','gold_ring',(16,32),'purple_ring'),('metal-sound-waves','metal_sound_waves',(32,64),None),('blue-star','blue_star',(32,224),None),('orbs','orbs',(16,48),None),('small-ember','small_ember',(32,160),None),('water-orb','water_orb',(16,64),'water_impact'),('brown-orb','water_orb',(16,64),'brown_orb'),('glowy-red-orb','glowy_red_orb',(8,8),None),('glowy-green-orb','glowy_red_orb',(8,8),'glowy_green_orb'),('black-ball','black_ball',(8,8),None),('gray-smoke','gray_smoke',(32,160),None),('water-impact','water_impact',(32,32),None),('spark-thin','spark_0',(8,64),'spark'),('spark-wide','spark_1',(16,64),'spark'),('spark-2','spark_2',(16,48),None),('spark-h','spark_h',(32,32),'spark'),('black-ball-2','black_ball_2',(16,16),None),('shock-3','shock_3',(32,96),None),('small-bubbles','small_bubbles',(16,40),None),('large-fresh-egg','large_fresh_egg',(16,16),None),('explosion','explosion',(32,128),None),('lightning','lightning',(32,160),'lightning_2')]:
+  if pal in ('wisp_orb','electric_orbs','water_impact','lightning_2','poison_bubble','rain_drops','sharp_teeth','fire','finger'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+pal+'.png'))) as im:colors=im.getpalette()[:48]
   else:colors=palette(pal) if pal else None
   pixels[asset]=hit.rgb555(read(reference,'graphics/battle_anims/sprites/'+png+'.png'),shape,colors)
@@ -782,7 +810,12 @@ def build(reference):
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registrations):raise ValueError('Source leaf registration differs: '+stem)
   for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
    if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Source leaf material differs: '+stem)
- for stem,size in [('ice_chunk',(32,160)),('alert',(32,112)),('bent_spoon',(16,192)),('spiral',(64,64)),('white_circle_of_light',(64,64)),('small_ember',(32,160)),('tag_hand',(32,64)),('hollow_orb',(16,16)),('yellow_ball',(16,16)),('letter_z',(32,32)),('green_star',(16,64)),('moon',(64,64)),('green_sparkle',(16,64)),('rainbow_rings',(8,48)),('leaf',(16,144)),('razor_leaf',(32,16)),('flying_dirt',(32,32)),('rain_drops',(16,224)),('sunlight',(32,32)),('small_red_eye',(8,8)),('white_feather',(32,64)),('leer',(32,160)),('circle_of_light',(64,64)),('thought_bubble',(32,128)),('small_bubbles',(16,40)),('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
+ for stem,symbol,size,palette in [('electric_orbs','ElectricOrbs',0x0080,'ElectricOrbs'),('electricity','Electricity',0x0800,'ElectricOrbs'),('wisp_orb','WispOrb',0x0380,'WispOrb'),('wisp_fire','WispFire',0x0800,'WispOrb')]:
+  tag='ANIM_TAG_'+stem.upper()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+palette+r',\s*'+tag+r'\}',registrations):raise ValueError('Electric/Wisp source registration differs: '+stem)
+  for kind,name,path,suffix in [('Gfx',symbol,stem,'4bpp'),('Pal',palette,'electric_orbs' if palette=='ElectricOrbs' else 'wisp_orb','gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+name+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+path+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Electric/Wisp graphics differs: '+stem)
+ for stem,size in [('electric_orbs',(8,32)),('electricity',(32,128)),('wisp_orb',(16,112)),('wisp_fire',(32,128)),('ice_chunk',(32,160)),('alert',(32,112)),('bent_spoon',(16,192)),('spiral',(64,64)),('white_circle_of_light',(64,64)),('small_ember',(32,160)),('tag_hand',(32,64)),('hollow_orb',(16,16)),('yellow_ball',(16,16)),('letter_z',(32,32)),('green_star',(16,64)),('moon',(64,64)),('green_sparkle',(16,64)),('rainbow_rings',(8,48)),('leaf',(16,144)),('razor_leaf',(32,16)),('flying_dirt',(32,32)),('rain_drops',(16,224)),('sunlight',(32,32)),('small_red_eye',(8,8)),('white_feather',(32,64)),('leer',(32,160)),('circle_of_light',(64,64)),('thought_bubble',(32,128)),('small_bubbles',(16,40)),('orbs',(16,48)),('noise_line',(32,128)),('amnesia',(32,256)),('music_notes',(16,96)),('purple_hand_outline',(32,32)),('conversion',(8,32)),('sword',(32,64)),('sphere_to_cube',(32,160)),('web_thread',(8,8)),('string',(64,32)),('spider_web',(64,64)),('eye',(64,64)),('x_sign',(64,64))]:
   png_stem='circle_of_light' if stem=='white_circle_of_light' else stem
   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/'+png_stem+'.png'))) as im:
    if im.mode!='P' or im.size!=size:raise ValueError('Invalid source indexed image')
@@ -790,7 +823,9 @@ def build(reference):
   if stem=='white_circle_of_light':palette=palette_colors_white
   if stem=='tag_hand':
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/finger.png'))) as shared:palette=shared.getpalette()[:48]
-  if stem=='circle_of_light':
+  if stem=='wisp_fire':
+   with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/wisp_orb.png'))) as shared:palette=shared.getpalette()[:48]
+  if stem in ('circle_of_light','electricity'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/electric_orbs.png'))) as shared:palette=shared.getpalette()[:48]
   if stem in ('web_thread','spider_web'):
    with Image.open(io.BytesIO(read(reference,'graphics/battle_anims/sprites/string.png'))) as shared:palette=shared.getpalette()[:48]

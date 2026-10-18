@@ -31,13 +31,14 @@ public static partial class CampaignMoveAnimationPresentation
         var definition=Definition(attack.CurrentMove,moves);
         if(definition is null||!supports(definition.SourceMoveId,definition.Id.Value))return new(null,"script-outside-slice");
         bool rolling=definition.Effect=="EFFECT_ROLLOUT";
-        if((!rolling&&definition.Effect!="EFFECT_RAMPAGE")||definition.Power<=0||definition.Target!=(rolling?"MOVE_TARGET_SELECTED":"MOVE_TARGET_RANDOM")||
+        if((!rolling&&definition.Effect is not ("EFFECT_RAMPAGE" or "EFFECT_UPROAR"))||definition.Power<=0||definition.Target!=(rolling?"MOVE_TARGET_SELECTED":"MOVE_TARGET_RANDOM")||
             attack.ChosenMove!=attack.CurrentMove||attack.Actor.Value<0||attack.Actor.Value>=battle.Slots)
             return new(null,"unmatched-source-retained-invocation");
         int end=battle.EventIndex+1;
         while(end<battle.Events.Length&&battle.Events[end].Turn==attack.Turn&&!InvocationBoundary(battle.Events[end]))end++;
         var action=battle.Events[(battle.EventIndex+1)..end];
-        if(action.Any(e=>e is SourcePpCommandEvent or SourceCalledMoveTransitionEvent or SourceCallerSelectionEvent))
+        if(action.Any(e=>e is SourcePpCommandEvent or SourceCalledMoveTransitionEvent or SourceCallerSelectionEvent)||
+            definition.Effect=="EFFECT_UPROAR"&&action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Volatile=="called-uproar"&&e.Reason=="move"))
             return new(null,"unmatched-source-retained-invocation");
         for(int i=battle.EventIndex+1;i<end;i++)if(battle.Events[i].Sequence<=battle.Events[i-1].Sequence)
             return new(null,"unmatched-source-retained-sequence");

@@ -49,7 +49,7 @@ public sealed partial class SourceBattleAnimation
             if(a.Length is not (7 or 8)||Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127)Fail(c,"Terrain shake shape/priority differs.");
             if(a.Skip(3).Any(v=>Number(v) is < -32768 or >32767)||Number(a[5])<0||Number(a[6]) is <0 or >3)Fail(c,"Terrain shake source operands differ.");
             int mode=Number(a[6]);
-            if(mode<2?a.Length!=7:a.Length!=8||Number(a[7]) is <0 or >2)Fail(c,"Sprite-coordinate shake requires an explicit reviewed participant.");return true;
+            if(mode>=2&&(a.Length!=8||Number(a[7]) is <0 or >2))Fail(c,"Sprite-coordinate shake requires an explicit reviewed participant.");return true;
         }
         if(c.Op!="createsprite"||a.Length==0||ElementalCallback(a[0]) is not string callback)return false;
         int count=callback switch{"TranslateAnimSpriteToTargetMonLocation" or "AnimRockBlastRock" or "AnimRockFragment"=>9,"AnimEmberFlare"=>10,"AnimFireSpiralInward" or "AnimIcePunchSwirlingParticle"=>4,"AnimMegahornHorn" or "AnimBoneHitProjectile" or "AnimSporeParticle" or "AnimFireSpread" or "AnimWaterGunDroplet" or "AnimIceBeamParticle" or "AnimDragonFireToTarget" or "AnimFireCross"=>8,"AnimThrowProjectile" or "AnimBite" or "AnimOutrageFlame" or "AnimGrantingStars"=>9,"AnimZapCannonSpark"=>10,"AnimSparkElectricityFlashing" or "AnimMoveParticleBeyondTarget"=>11,"AnimLightning" or "AnimMagentaHeart"=>5,"AnimClawSlash"=>6,"AnimPowerAbsorptionOrb" or "AnimLeechLifeNeedle" or "AnimBubbleEffect" or "AnimIceEffectParticle" or "AnimDragonRageFirePlume" or "AnimFireRing" or "AnimRazorLeafParticle"=>6,"AnimAcidPoisonBubble"=>9,"AnimAcidPoisonDroplet"=>8,"AnimAirWaveCrescent" or "AnimWaterBubbleProjectile" or "AnimParticleInVortex" or "AnimTranslateLinearSingleSineWave"=>10,_=>7};
@@ -187,7 +187,7 @@ public sealed partial class SourceBattleAnimation
                     center=angerBattler.Center(owner._doubles,true);_position=new(center.X+owner._animationArgs[1],Math.Max(8,center.Y+a[2]));break;
                 case "AnimSpriteOnMonPos":
                     var placed=a[2]==0?actor:target;center=a[3]==0?placed.Center(owner._doubles,true):placed.Base(owner._doubles);
-                    _position=new(center.X+direction*a[0],center.Y+a[1]);break;
+                    _position=new(unchecked((short)(center.X+direction*a[0])),unchecked((short)(center.Y+a[1])));break;
                 case "AnimLightning":_position=new(center.X+(actor.Slot.IsPlayer?a[0]:-a[0]),center.Y+a[1]);break;
                 case "AnimSmallBubblePair":
                     center=a[3]==0?actor.Center(owner._doubles,true):center;

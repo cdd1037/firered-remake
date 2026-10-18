@@ -17,6 +17,18 @@ public sealed partial class SourceBattleAnimation
         if(slot is <4 or >15||first<0||first+colors.Count>16)throw new InvalidDataException("Source sprite palette write is outside its bank.");
         for(int i=0;i<colors.Count;i++)_spritePaletteBanks[slot][first+i]=colors[i];
     }
+    private void LoadSpritePaletteRange(int slot,int first,IReadOnlyList<ushort> colors)
+    {
+        if(slot is <4 or >15||first<0||first+colors.Count>16||colors.Any(c=>c>0x7fff))throw new InvalidDataException("Source palette load is outside its RGB555 bank.");
+        for(int i=0;i<colors.Count;i++)_spritePaletteUnfadedBanks[slot][first+i]=colors[i];
+        WriteFadedSpritePalette(slot,first,colors);
+    }
+    private void BlendSpritePaletteRange(int slot,int first,int count,int coefficient,ushort color)
+    {
+        if(slot is <4 or >15||first<0||count<0||first+count>16||coefficient is <0 or >16||color>0x7fff)throw new InvalidDataException("Source palette blend is outside its RGB555 bank.");
+        ushort[] colors=new ushort[count];for(int i=0;i<count;i++)colors[i]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][first+i],coefficient,color);
+        WriteFadedSpritePalette(slot,first,colors);
+    }
     private IReadOnlyDictionary<int,ushort[]> SpritePaletteTagSnapshot()
     {
         Dictionary<int,ushort[]> result=[];
@@ -32,7 +44,7 @@ public sealed partial class SourceBattleAnimation
         if(!_script.SpriteTags.TryGetValue(symbol,out int tag))return;
         int slot=FindSpritePalette(tag);if(slot!=255)return;
         slot=AllocateSpritePalette(tag);if(slot==255)return;ResetPaletteTransform(16+slot);
-        if(_script.SpritePalettes.TryGetValue(tag,out var palette)){Array.Copy(palette,_spritePaletteUnfadedBanks[slot],16);WriteFadedSpritePalette(slot,0,palette);}
+        if(_script.SpritePalettes.TryGetValue(tag,out var palette)){LoadSpritePaletteRange(slot,0,palette);}
     }
     private void RotateSpritePalette(int tag,int first,int count)
     {

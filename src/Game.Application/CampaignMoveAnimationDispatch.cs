@@ -160,7 +160,7 @@ public static partial class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if(battle.Events[battle.EventIndex] is SourceAttackStringEvent callerAttack)
-            return Definition(callerAttack.CurrentMove,moves)?.Effect is "EFFECT_RAMPAGE" or "EFFECT_ROLLOUT"
+            return Definition(callerAttack.CurrentMove,moves)?.Effect is "EFFECT_RAMPAGE" or "EFFECT_ROLLOUT" or "EFFECT_UPROAR"
                 ? RetainedAttack(battle,callerAttack,moves,supports)
                 : CallerPrelude(battle,callerAttack,null,moves,supports);
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
@@ -254,6 +254,10 @@ public static partial class CampaignMoveAnimationPresentation
             return SupportStatusAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_YAWN" or "EFFECT_SKILL_SWAP" or "EFFECT_GRUDGE" or "EFFECT_SPIKES")
             return UtilityAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect=="EFFECT_LOCK_ON")
+            return TargetMarkAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect is "EFFECT_SNORE" or "EFFECT_UPROAR"&&!SoundHitDefinition(definition))
+            return new(null,"unmatched-source-sound-hit-definition");
         if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
             return new(null, "unmatched-source-pp-command");
         if(definition.Effect is "EFFECT_REFRESH" or "EFFECT_HEAL_BELL")
@@ -471,14 +475,24 @@ public static partial class CampaignMoveAnimationPresentation
             if(used.Target!=used.Actor||results.Length!=1)return new(null,"unmatched-source-self-action-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(definition.Effect is "EFFECT_SLEEP" or "EFFECT_POISON" or "EFFECT_TOXIC" or "EFFECT_PARALYZE")
+        if(definition.Effect is "EFFECT_SLEEP" or "EFFECT_POISON" or "EFFECT_TOXIC" or "EFFECT_PARALYZE" or "EFFECT_WILL_O_WISP")
         {
             if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Actor==used.Target||used.Target.Value<0||used.Target.Value>=battle.Slots)
                 return new(null,"unmatched-source-primary-status-target");
-            bool Matches(uint status)=>definition.Effect switch{"EFFECT_POISON"=>status==WildBattleStatus.Poison,"EFFECT_TOXIC"=>status==WildBattleSourceFieldEffects.ToxicPoison,"EFFECT_PARALYZE"=>status==WildBattleStatus.Paralysis,_=>WildBattleStatus.IsSleeping(status)};
+            bool Matches(uint status)=>definition.Effect switch{"EFFECT_POISON"=>status==WildBattleStatus.Poison,"EFFECT_TOXIC"=>status==WildBattleSourceFieldEffects.ToxicPoison,"EFFECT_PARALYZE"=>status==WildBattleStatus.Paralysis,"EFFECT_WILL_O_WISP"=>status==WildBattleStatus.Burn,_=>WildBattleStatus.IsSleeping(status)};
             var changed=action.OfType<SourceStatusChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&Matches(e.After)&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
             if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_CHARGE")
+        {
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<2||action[0]!=pp[0]||
+                action[1] is not SourceMtMoonVolatileEvent {Volatile:"charge",Before:>=0 and <=2,After:2,Reason:"move"} charged||
+                charged.Side!=used.Actor||charged.Sequence!=pp[0].Sequence+1||
+                !CureMoveEndTail(action,2,used,battle.Slots))
+                return new(null,"unmatched-source-charge-command-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,charged.Sequence,move,used.Actor,used.Actor,false),"committed-source-animation");
         }
         if(definition.Effect=="EFFECT_FOCUS_ENERGY")
         {

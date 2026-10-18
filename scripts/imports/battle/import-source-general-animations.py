@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Import named source general animations and their exact material dependencies."""
-import argparse,importlib.util,json,re
+import argparse,importlib.util,io,json,re,struct
+from PIL import Image
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('general_elemental',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');shared=importlib.util.module_from_spec(spec);spec.loader.exec_module(shared)
@@ -40,6 +41,24 @@ def branched_program(source,label):
  if len(done)!=len(result):raise ValueError('Unreachable general instructions')
  return result,labels
 
+def thin_ring_indexed(read,expected_rgb):
+ # Keep the existing RGB owner and bytes; index zero retains transparency even
+ # when another source palette entry has the same RGB555 value.
+ png=read('graphics/battle_anims/sprites/thin_ring.png')
+ registration=read('src/data/battle_anim.h').decode();graphics=read('src/graphics.c').decode()
+ if not re.search(r'\{gBattleAnimSpriteGfx_ThinRing,\s*0x0800,\s*ANIM_TAG_THIN_RING\}',registration) or not re.search(r'\{gBattleAnimSpritePal_ThinRing,\s*ANIM_TAG_THIN_RING\}',registration):raise ValueError('Thin-ring source registration differs')
+ for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+kind+r'_ThinRing\[\] = INCBIN_U32\("graphics/battle_anims/sprites/thin_ring\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Thin-ring source material linkage differs')
+ with Image.open(io.BytesIO(png)) as image:
+  if image.mode!='P' or image.size!=(64,64):raise ValueError('Thin-ring indexed source shape differs')
+  indices=[b for y in range(0,64,8) for x in range(0,64,8) for b in image.crop((x,y,x+8,y+8)).tobytes()];palette=image.getpalette()[:48];raster=list(image.tobytes())
+ if max(indices)>15 or len(palette)!=48:raise ValueError('Thin-ring indexed source palette differs')
+ colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+ if struct.pack('<'+str(len(indices))+'H',*[colors[i]|(0x8000 if i else 0) for i in raster])!=expected_rgb[4:]:raise ValueError('Thin-ring indexed material differs from canonical RGB pixels')
+ blobs={};blobs['general-thin-ring.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));blobs['general-thin-ring.pal16']=struct.pack('<16H',*colors)
+ indexed=[dict(id='thin-ring',width=64,height=64,indicesPath='general-thin-ring.4bpp',palettePath='general-thin-ring.pal16',paletteTag='ANIM_TAG_THIN_RING')]
+ return indexed,blobs
+
 def build(reference):
  read=lambda p:shared.read(reference,p)
  source=read('data/battle_anim_scripts.s').decode()
@@ -77,7 +96,8 @@ def build(reference):
  palette=[int(v) for row in rows[3:] for v in row.split()]
  blobs={'general-sparkle-2.rgb555':shared.hit.rgb555(read('graphics/battle_anims/sprites/sparkle_1.png'),(32,256),palette),'general-thin-ring.rgb555':shared.hit.rgb555(read('graphics/battle_anims/sprites/thin_ring.png'),(64,64))}
  assets=[dict(id='sparkle-2',path='general-sparkle-2.rgb555'),dict(id='thin-ring',path='general-thin-ring.rgb555')]
- data=dict(schemaVersion=1,generalScripts=[dict(label=name,commands=rows,soundEffects=shared.sound_effects(reference,dependency_commands(rows))) for name,rows in roots.items()],subroutines=subs,spriteRecipes=recipes,assets=assets)
+ indexed,extra=thin_ring_indexed(read,blobs['general-thin-ring.rgb555']);blobs.update(extra)
+ data=dict(schemaVersion=1,indexedAssets=indexed,generalScripts=[dict(label=name,commands=rows,soundEffects=shared.sound_effects(reference,dependency_commands(rows))) for name,rows in roots.items()],subroutines=subs,spriteRecipes=recipes,assets=assets)
  for row in data['generalScripts']:
   if row['label']=='General_CastformChange':row['labels']=castform_labels
  return (json.dumps(data,indent=2)+'\n').encode(),blobs

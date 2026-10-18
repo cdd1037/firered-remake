@@ -31,7 +31,7 @@ public sealed partial class SourceBattleAnimation
     }
     private void RestoreMonBackgroundObjects(string participant)
     {
-        int slot=participant is "ANIM_ATTACKER" or "ANIM_ATK_PARTNER"?_cue.Actor.Value:_cue.Target.Value;
+        int slot=Number(participant) is 0 or 2?_cue.Actor.Value:_cue.Target.Value;
         if(_backgrounds.Contains(slot))SetSourceBattlerSpriteInvisible(slot,false);
         if(_doubles&&_backgrounds.Contains(slot^2))SetSourceBattlerSpriteInvisible(slot^2,false);
     }

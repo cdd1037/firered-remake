@@ -86,7 +86,7 @@ public sealed partial class SourceBattleAnimation
         int first=FindSpritePalette(tag);
         if(first==255||_spritePaletteTags.Count(t=>t==65535)-4<2)throw new InvalidDataException("Native music palette allocation lacks its loaded bank or two free banks.");
         int[] slots=[first,AllocateSpritePalette(tags[1]),AllocateSpritePalette(tags[2])];var banks=_script.SpritePaletteGroups[tag];
-        for(int i=0;i<3;i++){ResetPaletteTransform(16+slots[i]);Array.Copy(banks[i],_spritePaletteUnfadedBanks[slots[i]],16);WriteFadedSpritePalette(slots[i],0,banks[i]);}
+        for(int i=0;i<3;i++){ResetPaletteTransform(16+slots[i]);LoadSpritePaletteRange(slots[i],0,banks[i]);}
         return true;
     }
     private PixelPoint CureAveragePosition(int slot,bool pic)

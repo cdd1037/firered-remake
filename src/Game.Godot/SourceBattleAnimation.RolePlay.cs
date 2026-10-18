@@ -31,7 +31,7 @@ public sealed partial class SourceBattleAnimation
         if(palette==255)throw new InvalidOperationException("Additional-mon palette capacity exhausted.");
         ResetPaletteTransform(16+palette);
         ushort[] white=Enumerable.Repeat((ushort)0x7fff,16).ToArray();
-        Array.Copy(white,_spritePaletteUnfadedBanks[palette],16);WriteFadedSpritePalette(palette,0,white);
+        LoadSpritePaletteRange(palette,0,white);
         var task=new RolePlaySilhouetteTask(this,slot,palette,material);_tasks.Add(task);return true;
     }
     private sealed class RolePlaySilhouetteTask:VisualTask

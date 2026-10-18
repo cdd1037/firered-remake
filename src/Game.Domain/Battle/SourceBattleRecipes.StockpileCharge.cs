@@ -26,7 +26,9 @@ internal abstract partial class SourceRecipeContext
         {
             var body = Get(actor); int before = body.ChargeTurnsRemaining;
             Set(actor, body with { ChargeTurnsRemaining = 2 });
-            if (before != 2) Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "charge", before, 2, "move"));
+            // setcharge is a successful command even when the timer is already two.
+            // Preserve that invocation receipt instead of making presentation infer success from PP.
+            Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "charge", before, 2, "move"));
             return;
         }
         if (move.Effect == "EFFECT_STOCKPILE")

@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本302／354，其余52尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本309／354，其余45尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前166快照完整Presentation793／793通过，包含全部生成根逐帧合成；本次有界Application238／238通过。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709。这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
@@ -450,3 +450,13 @@ Validation: solution refresh passed with zero warnings/errors (31.74 seconds, fo
 新增Solar Beam76、Guillotine12、Petal Dance80、Ice Ball301、Yawn281、Skill Swap285、Grudge288、Spikes191。共享原始帧／仿射／线性玩家与场景对象所有权；新增三选背景操作按目标方选择前两项，第三项为未使用的Contest资源。Solar Beam分别证明普通蓄力／释放、晴天提前PP与继承蓄力回执；不从最终天气猜测调用。Utility结果验证使用原有逐事件回执，Spikes允许经验证的双打Pressure耗PP，Skill Swap保留双方覆盖字段。
 
 同一串行编译后Application160／160通过（8.36秒），受影响Presentation39／39通过（27.92秒），包含新根完整生命周期、原始C逐帧比较、共享场景／OAM及规范资源解析。Solar代表25场景与按需全量225场景使用同一比较器，全量1／1通过（4.66秒）。ResourceImport5／5通过（54.84秒），另有背景导入8／8。初次Presentation六处失败均为Utility测试的初始地形调色板、空背景ID及隐藏槽分配前提；修正夹具后全部原语义断言保留。生成期望仅保存在忽略目录，普通测试不运行C，缺失数据明确失败并给生成命令。未运行本批原生UI或真实声音验收。
+
+## 2026-10-18：309根共享批次
+
+新增Mind Reader170、Lock-On199、Snore173、Uproar253、Will-O-Wisp261、Charge268、Shock Wave351。共享sure-hit命令所有权、已有普通伤害／状态分派与保留攻击协议；Uproar首次被调用的leaf与后续真实保留攻击分开。源setcharge无条件成功，既有typed命令回执现在保留2→2成功；不再由仅PP或最终状态猜测。原有计时、伤害、战斗RNG不变。
+
+渲染复用共享任务仿射、帧解释器、raw sprite场景、未淡化／淡化palette bank。LoadPalette范围写入与BlendPalette范围操作共用小型helper；ThinRing增加真实indexed数据，原RGB保持逐字不变。monbg／clearmonbg按源byte语义接受数值，0／2选actor、其他选target；普通位置helper补齐源signed16回绕。容量检查限制本组已审阅闭合，覆盖重复task／orb、过量对象、其他所有者占槽及原生分配失败，不引入替代清理。
+
+最终编译0警告／错误；Application157／157（7.74秒）、受影响Presentation89／89（36.61秒）、ResourceImport2／2（2.24秒，含11个Python检查）通过，三个修改producer的--check通过。原C代表证据FocusSound194场景／10,430帧，ElectricWisp78场景／6,412帧，逐帧几何、矩阵、palette、音效及清理继续由同一比较器验证。Electric原生harness补上原CreateSpriteAt的首tile初始化；Focus原生harness补真实idle battler模式／slot初始化，保留旧文件作本地对照；没有据实现改写源期望。首次失败中的8源参数对16内部寄存器、normal对double affine前提已在夹具中纠正；十六进制信号解析与Snore未使用额外参数准入由真实脚本触发修正。所有生成期望仍仅在忽略目录；没有本批原生UI或真实扬声器验收。
+
+同一FocusSound比较器另对按需全量1,092场景／54,148帧／89,480 sprite行通过（1／1，3.00秒）。常规运行仍使用本地预生成代表数据，不暗中编译C。

@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 302,
-    "missingDedicatedMoveScripts": 52,
+    "dedicatedMoveScripts": 309,
+    "missingDedicatedMoveScripts": 45,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -22,7 +22,7 @@
   "boundaries": {
     "rules": "Ordinary singles and preset doubles share the current battle frame and execution lifecycle. All move identities have recipe admission and controlled public-turn test rows.",
     "specialModes": "Safari, roaming, scripted/tutorial encounters and Trainer Tower have separate application owners; ordinary-core coverage does not establish all of their outcomes. Dynamic Enigma payloads, player communication and external e-Reader inputs are not ordinary-core completion.",
-    "presentation": "302 source move scripts are dispatched in bounded tested contexts. Future Sight and Doom Desire cover successful setup only; their delayed-hit general animations remain open. Wish setup and the separately authenticated delayed-healing general animation are implemented in bounded contexts. Hail covers successful weather setup; its residual-weather general animation remains open. Visual randomness uses a transient identity-seeded animation-local stream, intentionally independent of the original shared gameplay/VBlank stream. Castform event-time static form art, palette and geometry are implemented; its source general form-change transition is implemented with bounded managed coverage. Wish admission covers ordinary turn scheduling; low-level recomposition of ResolveAction on a still-Protected caster lacks an exported native animation-prevention flag. Other moves retain ordinary text/HP/result presentation; no generic-animation parity or full form-transition fidelity is claimed. Growl/Howl/Hyper Voice use source cry modes and original party species; Hyper Beam valid-seven choice and reverse-cry endpoint clamp are explicit user-approved presentation differences. Host PCM tests do not establish real-speaker parity. Metronome and Sleep Talk cover their own caller preludes; called-leaf animation admission remains separate. Thrash includes authenticated retained attacks and Bide includes setup/release boundaries. Roar, Whirlwind and Teleport cover authenticated ordinary expulsion/escape animations. Teleport’s existing skipped terminal-result text page remains open; no full exit-text parity is claimed. Transform and Substitute use authenticated before/after body materials with receipt-boundary handoff. Transform behind an existing actor Substitute and front Spinda personality-spot materials remain outside this invocation slice. Focus Punch covers the successful dedicated hit; its separate pre-turn setup general animation remains open. Fake Out uses a bounded on-screen WIN0 rectangle and actual top-layer brightness; inverted/wrapping windows and layer-suppressing masks remain unsupported. Fly, Dive and Bounce cover authenticated setup/release. Failed release visibility ends conservatively after the genuine clear result batch is acknowledged because no separate native MOVEEND visual receipt is exposed. Dive controlled source-HM-compatible test entrants do not establish a campaign acquisition route.",
+    "presentation": "309 source move scripts are dispatched in bounded tested contexts. Future Sight and Doom Desire cover successful setup only; their delayed-hit general animations remain open. Wish setup and the separately authenticated delayed-healing general animation are implemented in bounded contexts. Hail covers successful weather setup; its residual-weather general animation remains open. Visual randomness uses a transient identity-seeded animation-local stream, intentionally independent of the original shared gameplay/VBlank stream. Castform event-time static form art, palette and geometry are implemented; its source general form-change transition is implemented with bounded managed coverage. Wish admission covers ordinary turn scheduling; low-level recomposition of ResolveAction on a still-Protected caster lacks an exported native animation-prevention flag. Other moves retain ordinary text/HP/result presentation; no generic-animation parity or full form-transition fidelity is claimed. Growl/Howl/Hyper Voice use source cry modes and original party species; Hyper Beam valid-seven choice and reverse-cry endpoint clamp are explicit user-approved presentation differences. Host PCM tests do not establish real-speaker parity. Metronome and Sleep Talk cover their own caller preludes; called-leaf animation admission remains separate. Thrash includes authenticated retained attacks and Bide includes setup/release boundaries. Roar, Whirlwind and Teleport cover authenticated ordinary expulsion/escape animations. Teleport’s existing skipped terminal-result text page remains open; no full exit-text parity is claimed. Transform and Substitute use authenticated before/after body materials with receipt-boundary handoff. Transform behind an existing actor Substitute and front Spinda personality-spot materials remain outside this invocation slice. Focus Punch covers the successful dedicated hit; its separate pre-turn setup general animation remains open. Fake Out uses a bounded on-screen WIN0 rectangle and actual top-layer brightness; inverted/wrapping windows and layer-suppressing masks remain unsupported. Fly, Dive and Bounce cover authenticated setup/release. Failed release visibility ends conservatively after the genuine clear result batch is acknowledged because no separate native MOVEEND visual receipt is exposed. Dive controlled source-HM-compatible test entrants do not establish a campaign acquisition route.",
     "verification": "Maintained tests contain controlled states. Neither their count nor this inventory proves natural full-game travel, original-frame parity or real-speaker audio.",
     "userDeferrals": "Chinese is deferred. The user resumed remaining single-player content, including animation and presentation, on 2026-10-16; completion still requires explicit evidence.",
     "approvedRules": "Keep the existing approved project differences, including end-of-turn doubles KO replacement; this inventory grants no new rule changes.",
@@ -1798,7 +1798,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_NIGHTMARE",
@@ -1828,7 +1828,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_CURSE",
@@ -2088,7 +2088,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_OUTRAGE",
@@ -2628,7 +2628,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_STOCKPILE",
@@ -2708,7 +2708,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_MEMENTO",
@@ -2778,7 +2778,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_TAUNT",
@@ -3608,7 +3608,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_WATER_PULSE",
