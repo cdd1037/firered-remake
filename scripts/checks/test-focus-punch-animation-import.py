@@ -40,7 +40,7 @@ class FocusPunchImportTests(unittest.TestCase):
   self.assertEqual([512,-32,0],[r['x'] for r in recipe['affineAnimations'][0]]);self.assertEqual([0,8,0],[r['duration'] for r in recipe['affineAnimations'][0]])
   generated=ROOT/'content/generated/battle/animations'
   for key,blob in {**physical.build_assets(RAW),**physical.build_indexed_assets(RAW)[1]}.items():
-   name='physical-'+key if key.endswith(('.4bpp','.pal16')) else 'physical-'+key+'.rgb555'
+   name='physical-'+key if key.endswith(('.4bpp','.pal16','.pal48')) else 'physical-'+key+'.rgb555'
    self.assertEqual(blob,(generated/name).read_bytes(),name)
  def test_callback_and_affine_source_contract_rejects_wrong_semantics(self):
   for old,new in [('sprite->data[1] + 40','sprite->data[1] + 41'),('sprite->data[0] > 40','sprite->data[0] > 39'),('Sin(sprite->data[1], 2)','Sin(sprite->data[1], 3)'),('AFFINEANIMCMD_FRAME(-0x20, -0x20, 0, 8)','AFFINEANIMCMD_FRAME(-0x10, -0x20, 0, 8)'),('.callback = AnimFocusPunchFist,','.callback = AnimFang,')]:

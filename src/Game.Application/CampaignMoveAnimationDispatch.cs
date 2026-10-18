@@ -254,6 +254,8 @@ public static partial class CampaignMoveAnimationPresentation
             return SupportStatusAnimation(battle,used,attack,definition,action,pp);
         if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
             return new(null, "unmatched-source-pp-command");
+        if(definition.Effect is "EFFECT_REFRESH" or "EFFECT_HEAL_BELL")
+            return CureAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect=="EFFECT_BIDE")return BideSetup(battle,used,attack,definition,action,pp[0]);
         if(definition.Effect=="EFFECT_BRICK_BREAK"&&action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Reason=="brick-break"))
             return BrokenScreenAnimation(battle,used,attack,definition,action,pp[0]);
@@ -308,6 +310,8 @@ public static partial class CampaignMoveAnimationPresentation
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
                 !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");
+        if(definition.Effect=="EFFECT_PSYCH_UP")
+            return PsychUpAnimation(battle,used,attack,definition,action,pp[0]);
         if(definition.Effect=="EFFECT_NIGHTMARE")
             return NightmareAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_ROAR" or "EFFECT_TELEPORT")

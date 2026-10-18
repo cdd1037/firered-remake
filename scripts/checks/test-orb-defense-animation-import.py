@@ -13,16 +13,19 @@ class OrbDefenseImportTests(unittest.TestCase):
  def setUpClass(cls):cls.raw=physical.read_sources(RAW)
  def test_source_material_registration_and_gray_blue_alias(self):
   rgb,indexed,pixels=physical.orb_defense_materials(self.raw)
-  self.assertEqual({'protect','shadow-ball','gray-orb','blue-orb'},rgb.keys());self.assertEqual(4,len(indexed))
-  self.assertEqual(pixels['gray-orb.4bpp'],pixels['blue-orb.4bpp']);self.assertNotEqual(pixels['gray-orb.pal16'],pixels['blue-orb.pal16']);self.assertNotEqual(rgb['gray-orb'],rgb['blue-orb'])
+  self.assertEqual({'protect','shadow-ball','gray-orb','blue-orb','red-orb-2'},rgb.keys());self.assertEqual(5,len(indexed))
+  for alias in ['blue-orb','red-orb-2']:
+   self.assertEqual(pixels['gray-orb.4bpp'],pixels[alias+'.4bpp']);self.assertEqual(96,len(pixels[alias+'.4bpp']));self.assertEqual(32,len(pixels[alias+'.pal16']));self.assertNotEqual(pixels['gray-orb.pal16'],pixels[alias+'.pal16']);self.assertNotEqual(rgb['gray-orb'],rgb[alias])
+  self.assertNotEqual(pixels['blue-orb.pal16'],pixels['red-orb-2.pal16'])
   self.assertEqual(96,len(pixels['gray-orb.4bpp']));self.assertEqual(2048,len(pixels['protect.4bpp']));self.assertEqual(512,len(pixels['shadow-ball.4bpp']))
-  self.assertEqual({'ANIM_TAG_PROTECT','ANIM_TAG_SHADOW_BALL','ANIM_TAG_GRAY_ORB','ANIM_TAG_BLUE_ORB'},{r['paletteTag'] for r in indexed})
+  self.assertEqual({'ANIM_TAG_PROTECT','ANIM_TAG_SHADOW_BALL','ANIM_TAG_GRAY_ORB','ANIM_TAG_BLUE_ORB','ANIM_TAG_RED_ORB_2'},{r['paletteTag'] for r in indexed})
  def test_wrong_source_registration_palette_or_image_shape_is_rejected(self):
-  for old,new in [('gBattleAnimSpriteGfx_GrayOrb, 0x0060, ANIM_TAG_BLUE_ORB','gBattleAnimSpriteGfx_GrayOrb, 0x0080, ANIM_TAG_BLUE_ORB'),('gBattleAnimSpritePal_BlueOrb, ANIM_TAG_BLUE_ORB','gBattleAnimSpritePal_GrayOrb, ANIM_TAG_BLUE_ORB')]:
+  for old,new in [('gBattleAnimSpriteGfx_GrayOrb, 0x0060, ANIM_TAG_BLUE_ORB','gBattleAnimSpriteGfx_GrayOrb, 0x0080, ANIM_TAG_BLUE_ORB'),('gBattleAnimSpritePal_BlueOrb, ANIM_TAG_BLUE_ORB','gBattleAnimSpritePal_GrayOrb, ANIM_TAG_BLUE_ORB'),('gBattleAnimSpriteGfx_GrayOrb, 0x0060, ANIM_TAG_RED_ORB_2','gBattleAnimSpriteGfx_GrayOrb, 0x0080, ANIM_TAG_RED_ORB_2'),('gBattleAnimSpritePal_RedOrb2, ANIM_TAG_RED_ORB_2','gBattleAnimSpritePal_GrayOrb, ANIM_TAG_RED_ORB_2')]:
    raw=dict(self.raw);text=raw['src/data/battle_anim.h'].decode();self.assertIn(old,text);raw['src/data/battle_anim.h']=text.replace(old,new).encode()
    with self.assertRaises(ValueError):physical.orb_defense_materials(raw)
-  raw=dict(self.raw);raw['graphics/battle_anims/sprites/blue_orb.pal']=b'not a palette'
-  with self.assertRaises(ValueError):physical.orb_defense_materials(raw)
+  for palette in ['blue_orb','red_orb_2']:
+   raw=dict(self.raw);raw['graphics/battle_anims/sprites/'+palette+'.pal']=b'not a palette'
+   with self.assertRaises(ValueError):physical.orb_defense_materials(raw)
   raw=dict(self.raw);raw['graphics/battle_anims/sprites/gray_orb.png']=raw['graphics/battle_anims/sprites/shadow_ball.png']
   with self.assertRaises(ValueError):physical.orb_defense_materials(raw)
  def test_original_recipes_and_task_programs_are_shared_player_inputs(self):
@@ -50,7 +53,7 @@ class OrbDefenseImportTests(unittest.TestCase):
   with patch.object(physical,'SPRITES',physical.SPRITES-templates),patch.object(physical,'TASKS',physical.TASKS-physical.ORB_DEFENSE_TASKS),patch.object(physical,'NEW',physical.NEW-templates-physical.ORB_DEFENSE_TASKS):prior=json.loads(physical.build(RAW)[0])
   old={r['moveId']:r for r in prior['scripts']};new={r['moveId']:r for r in pack['scripts']};self.assertEqual({179,182,247,254,256},new.keys()-old.keys())
   for key in old:self.assertEqual(old[key],new[key],str(key))
-  self.assertNotIn(255,new)
+  self.assertIn(255,old)  # Charged-root support is independent of these five callbacks.
   for key,value in prior['subroutines'].items():self.assertEqual(value,pack['subroutines'][key])
   for move,label in [(179,'REVERSAL'),(182,'PROTECT'),(247,'SHADOW_BALL'),(254,'STOCKPILE'),(256,'SWALLOW')]:self.assertEqual('Move_'+label,new[move]['label'])
   self.assertEqual({'SwallowContinue','SwallowGood','SwallowBest'},set(new[256]['labels']));self.assertIn('SwallowEffect',pack['subroutines']);self.assertIn('HealingEffect',pack['subroutines']);self.assertIn('StockpileAbsorb',pack['subroutines'])
@@ -60,5 +63,5 @@ class OrbDefenseImportTests(unittest.TestCase):
     text=lines[c['line']-1].split('@',1)[0].strip();op,*tail=text.split(None,1);args=[v.strip() for v in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else [];self.assertEqual((op,args),(c['op'],c['args']))
   folder=a.generated or ROOT/'content/generated/battle/animations';self.assertEqual(data,(folder/'physical.json').read_bytes())
   for key,blob in {**physical.build_assets(RAW),**physical.build_indexed_assets(RAW)[1]}.items():
-   name='physical-'+key if key.endswith(('.4bpp','.pal16')) else 'physical-'+key+'.rgb555';self.assertEqual(blob,(folder/name).read_bytes(),name)
+   name='physical-'+key if key.endswith(('.4bpp','.pal16','.pal48')) else 'physical-'+key+'.rgb555';self.assertEqual(blob,(folder/name).read_bytes(),name)
 if __name__=='__main__':unittest.main()

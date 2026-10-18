@@ -77,6 +77,7 @@ public sealed partial class SourceBattleAnimation
     }
     private int AnimationArgument(string value)
     {
+        if(value=="ARG_RET_ID")return 7;
         if(value=="TRUE")return 1;if(value=="FALSE")return 0;
         if(value=="MAX_BATTLERS_COUNT")return 4;
         if(value=="(MAX_BATTLERS_COUNT + 1)")return 5;

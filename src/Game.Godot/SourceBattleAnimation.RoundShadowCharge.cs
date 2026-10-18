@@ -5,9 +5,6 @@ public sealed partial class SourceBattleAnimation
     private bool ValidateRoundShadowChargeCommand(SourceAnimationCommand c)
     {
         var a=c.Args;string name=a.FirstOrDefault()??"";
-        if(c.Op=="loadspritegfx"&&a.Length==1&&name is "ANIM_TAG_ROUND_SHADOW" or "ANIM_TAG_SPLASH")return true;
-        if(c.Op=="playsewithpan"&&name is "SE_M_FLY" or "SE_M_DIVE" or "SE_M_EXPLOSION")
-        {if(a.Length!=2||SoundPan(a[1]) is <-64 or >63||!_script.SoundEffects.ContainsKey(name))Fail(c,"Round-shadow sound operands or dependency differ.");return true;}
         if(c.Op!="createsprite"||name is not ("gFlyBallUpSpriteTemplate" or "gFlyBallAttackSpriteTemplate" or "gBounceBallShrinkSpriteTemplate" or "gBounceBallLandSpriteTemplate" or "gDiveBallSpriteTemplate" or "gDiveWaterSplashSpriteTemplate"))return false;
         string callback=name switch{"gFlyBallUpSpriteTemplate"=>"AnimFlyBallUp","gFlyBallAttackSpriteTemplate"=>"AnimFlyBallAttack","gBounceBallShrinkSpriteTemplate"=>"AnimBounceBallShrink","gBounceBallLandSpriteTemplate"=>"AnimBounceBallLand","gDiveBallSpriteTemplate"=>"AnimDiveBall",_=>"AnimDiveWaterSplash"};
         int count=callback switch{"AnimFlyBallUp" or "AnimDiveBall"=>7,"AnimFlyBallAttack" or "AnimDiveWaterSplash"=>4,"AnimBounceBallShrink"=>5,_=>3};

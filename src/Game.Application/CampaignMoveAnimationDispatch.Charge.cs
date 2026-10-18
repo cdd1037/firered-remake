@@ -7,7 +7,7 @@ namespace Game.Application;
 public static partial class CampaignMoveAnimationPresentation
 {
     private static bool HasChargeAnimation(PokemonMoveDefinition definition)=>
-        definition.Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SKULL_BASH" or "EFFECT_SEMI_INVULNERABLE";
+        definition.Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SKULL_BASH" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_SKY_ATTACK";
 
     // The first attackanimation precedes the charging text and has no attack
     // string. Its PP command is the launch snapshot, not a fabricated MoveUsed.

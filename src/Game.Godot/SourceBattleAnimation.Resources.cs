@@ -24,6 +24,8 @@ public sealed class SourceAnimationResources:IDisposable
     private readonly string _folder;
     private SourceAnimationBackgroundCatalog? _backgroundCatalog;
     private readonly Dictionary<int,ushort[]> _terrainPixels=[];
+    private readonly Dictionary<int,(string Path,int Banks)> _paletteGroupFiles=[];
+    private readonly Dictionary<int,ushort[][]> _paletteGroups=[];
     private SourceAnimationBackgroundCatalog BackgroundCatalog=>_backgroundCatalog??=new(Path.Combine(_folder,"backgrounds"));
     public IReadOnlyDictionary<int,SourceAnimationScript> Scripts=>_scripts;
     public IReadOnlyDictionary<string,SourceAnimationScript> GeneralScripts=>_generalScripts;
@@ -63,6 +65,13 @@ public sealed class SourceAnimationResources:IDisposable
             string id=row.GetProperty("id").GetString()!;
             if(!_assetFiles.TryGetValue(id,out var files))_assetFiles.Add(id,files=[]);
             files.Add((folder,doc));
+        }
+        if(root.TryGetProperty("paletteGroups",out var groups))foreach(var row in groups.EnumerateArray())
+        {
+            int tag=row.GetProperty("tag").GetInt32(),banks=row.GetProperty("banks").GetInt32();
+            string file=row.GetProperty("path").GetString()!;
+            if(tag is <0 or >=65535||banks is <1 or >16||string.IsNullOrEmpty(file)||Path.GetFileName(file)!=file||!_paletteGroupFiles.TryAdd(tag,(Path.Combine(folder,file),banks)))
+                throw new InvalidDataException("Invalid or duplicate source palette group.");
         }
         if(root.TryGetProperty("material",out var material))
         {
@@ -136,7 +145,21 @@ public sealed class SourceAnimationResources:IDisposable
         var pixels=names.ToDictionary(id=>id,Asset);
         var spritePalettes=new Dictionary<int,ushort[]>();
         foreach(var asset in pixels.Values.Where(a=>a.PaletteTag>=0)){if(spritePalettes.TryGetValue(asset.PaletteTag,out var previous)&&!previous.SequenceEqual(asset.Palette))throw new InvalidDataException("Conflicting source palette bank.");spritePalettes[asset.PaletteTag]=asset.Palette;}
-        return new(script with{OverlayPalettes=overlays.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray()),SpritePalettes=spritePalettes,BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},pixels,metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds,Overlays=overlays};
+        var paletteGroups=new Dictionary<int,ushort[][]>();
+        foreach(var (tag,palette) in spritePalettes)if(_paletteGroupFiles.TryGetValue(tag,out var group))
+        {
+            if(!_paletteGroups.TryGetValue(tag,out var banks))
+            {
+                var bytes=File.ReadAllBytes(group.Path);
+                if(bytes.Length!=group.Banks*32)throw new InvalidDataException("Source palette group byte count differs.");
+                banks=Enumerable.Range(0,group.Banks).Select(bank=>Enumerable.Range(0,16).Select(i=>System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(bank*32+i*2))).ToArray()).ToArray();
+                if(banks.Any(bank=>bank.Any(color=>color>32767)))throw new InvalidDataException("Source palette group exceeds RGB555.");
+                _paletteGroups.Add(tag,banks);
+            }
+            if(!banks[0].SequenceEqual(palette))throw new InvalidDataException("Source palette group first bank differs from its indexed material.");
+            paletteGroups.Add(tag,banks.Select(bank=>(ushort[])bank.Clone()).ToArray());
+        }
+        return new(script with{OverlayPalettes=overlays.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray()),SpritePalettes=spritePalettes,SpritePaletteGroups=paletteGroups,BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},pixels,metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds,Overlays=overlays};
     }
     public SourceAnimationBackgroundSurface CreateBackgroundSurface(int terrainId)
     {ObjectDisposedException.ThrowIf(_disposed,this);return BackgroundCatalog.CreateSurface(terrainId);}
@@ -164,6 +187,6 @@ public sealed class SourceAnimationResources:IDisposable
     }
     public void Dispose()
     {
-        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_generalScripts.Clear();_recipes.Clear();_spriteTags.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();
+        if(_disposed)return;_disposed=true;foreach(var doc in _documents)doc.Dispose();_documents.Clear();_pixels.Clear();_assetFiles.Clear();_scripts.Clear();_generalScripts.Clear();_recipes.Clear();_spriteTags.Clear();_materials.Clear();_metallic=null;_statMask=null;_backgroundCatalog?.Dispose();_backgroundCatalog=null;_terrainPixels.Clear();_paletteGroupFiles.Clear();_paletteGroups.Clear();
     }
 }

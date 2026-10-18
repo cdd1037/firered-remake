@@ -73,10 +73,21 @@ public static partial class CampaignMoveAnimationPresentation
     private static CampaignMoveAnimationDecision WithCommittedHitInputs(Invocation battle,SourceMoveUsedEvent used,
         SourceAttackStringEvent attack,PokemonMoveDefinition definition,SourceBattleEvent hit,CampaignMoveAnimationDispatch dispatch)
     {
-        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK"&&
+        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK" or "EFFECT_SPIT_UP"&&
             (definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0||used.Actor==used.Target||
              used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots))
             return new(null,"unmatched-source-animation-hit-input");
+        if(definition.Effect=="EFFECT_SPIT_UP")
+        {
+            // stockpiletobasedamage freezes animTurn before consuming the count.
+            // Its multiplier changes damage, not the source move-power register.
+            var changes=battle.Events.Skip(battle.EventIndex+1).TakeWhile(e=>e.Turn==used.Turn&&!InvocationBoundary(e)&&!(e is SourcePpCommandEvent next&&next.Actor!=used.Actor)).OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Volatile=="stockpile").ToArray();
+            int? prepared=hit switch{SourceHpChangedEvent h=>h.PreparedBasePower,SourceSubstituteDamagedEvent s=>s.PreparedBasePower,_=>null};
+            if(prepared is not (null or 100)||definition.Power!=100||definition.Type!="TYPE_NORMAL"||changes.Length!=1||changes[0].Side!=used.Actor||
+                changes[0].Reason!="spit-up"||changes[0].Before is <1 or >3||changes[0].After!=0||changes[0].Sequence>=hit.Sequence||changes[0].Sequence!=dispatch.PpSequence+1)
+                return new(null,"unmatched-source-spit-up-counter");
+            dispatch=dispatch with{MoveTurn=checked((byte)changes[0].Before),MovePower=checked((ushort)definition.Power)};
+        }
         if(definition.Effect=="EFFECT_ROLLOUT")return WithRolloutInputs(battle,definition,hit,dispatch,false);
         if(definition.Effect=="EFFECT_BRICK_BREAK")dispatch=dispatch with{MoveTurn=0};
         if(definition.Effect=="EFFECT_FURY_CUTTER")

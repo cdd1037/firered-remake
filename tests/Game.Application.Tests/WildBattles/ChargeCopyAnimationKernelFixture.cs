@@ -19,6 +19,7 @@ internal static class ChargeCopyAnimationKernelFixture
 {
     internal static readonly int[] All = [13, 130, 101, 102, 104, 354];
     internal static (string Name, string Species, string Effect) Spec(int id) => id switch {
+        143 => ("SKY_ATTACK", "ALTARIA", "EFFECT_SKY_ATTACK"),
         19 => ("FLY", "PIDGEOT", "EFFECT_SEMI_INVULNERABLE"),
         291 => ("DIVE", "WAILMER", "EFFECT_SEMI_INVULNERABLE"),
         340 => ("BOUNCE", "SPOINK", "EFFECT_SEMI_INVULNERABLE"),
@@ -34,7 +35,7 @@ internal static class ChargeCopyAnimationKernelFixture
     internal static WildBattleCombatant[] Bodies(int id, int actor = 0)
     {
         var bodies = Enumerable.Range(0, 4).Select(_ => Kernel.Mon("WAILORD", "SPLASH", 100) with { SpeedStage = 0 }).ToArray();
-        var spec = Spec(id); var user = id == 291 ? DiveSourceCompatibleEntrant() : id == 19 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "HM02", spec.Name, "GUST") : id == 315 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "TM50", spec.Name, "SCRATCH") : Kernel.Mon(spec.Species, spec.Name);
+        var spec = Spec(id); var user = id == 143 ? Kernel.Mon(spec.Species,spec.Name,59) : id == 291 ? DiveSourceCompatibleEntrant() : id == 19 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "HM02", spec.Name, "GUST") : id == 315 ? ConditionalRecoveryAnimationKernelFixture.MachineMon(spec.Species, "TM50", spec.Name, "SCRATCH") : Kernel.Mon(spec.Species, spec.Name);
         bodies[actor] = user with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }

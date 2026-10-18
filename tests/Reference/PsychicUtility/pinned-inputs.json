@@ -1,0 +1,16 @@
+{
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
+  "src/battle_anim_psychic.c": "3db4956ce939f8e3cdbe205c376e6da61de837ec07ceb96c6c6c1ce44eb1d6f2",
+  "src/battle_anim_effects_2.c": "50561e4882a0f8813f305af6f4147ed1c394657278e32aae6c733bef31994a04",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/battle_anim_normal.c": "73478ff40f601740b58408caa3259f5abc29f90010f77017aecc69d71803a6c3",
+  "src/palette.c": "d406f56ba0a815d184753396e7e05120921c651a7bb2f5efff642816e64e7dc6",
+  "src/blend_palette.c": "219a02b2ed9ab3010e203e0131fa8133571dcc271e025d7f6f14bf7993a51090",
+  "include/palette.h": "3f5ee66bab01538193629ffef3ff3cd6ad7555f7e294f52ae3ccfa36f94ac418",
+  "include/gba/types.h": "d83a5cb845180b881f3de081ef9c2694b2da017a406fd3d6b0830329cc64ed93",
+  "include/constants/rgb.h": "e4b500db58dceafbd1eaa196fad0670f485ab2283a49ab5a295e94535d0833eb",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "src/battle_script_commands.c": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+  "include/gba/defines.h": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b"
+}

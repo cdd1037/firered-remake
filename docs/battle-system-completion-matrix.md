@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本286／354，其余68尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本294／354，其余60尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前166快照完整Presentation793／793通过，包含全部生成根逐帧合成；本次有界Application238／238通过。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709。这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
@@ -432,3 +432,15 @@ Dive kernel fixtures use a source-HM08-compatible controlled Wailmer entrant. Th
 Original-C oracles retain 440 OrbDefense configurations / 18,210 rows and 210 RoundShadowCharge configurations / 15,050 rows with O0/O2 equality. Generated evidence is local and ignored under the shared governance; generators and explicit comparison tests are tracked. Source END parks its command index before the marker while the managed player parks on END; tests compare the explicit encoding without changing source vectors. Focused import checks OrbDefense6, Charge6 and physical inventory1 pass, and changed producer parity passes.
 
 Validation: refreshed solution build passed with zero warnings/errors (85.16 seconds); affected Application182/182 (7.5481 seconds), Presentation116/116 (35.7075 seconds). Initial failures exposed fixture HM availability, actual late sleep-clear ownership, resolver shared-impact dependency and equivalent affine-END register encoding; all corrected assertions retain genuine source values. No new native UI or real-speaker claim. Logs: `/tmp/animation286-{refresh-build,application-final,presentation-final}.log`.
+
+## Charged roots, party cures and psychic utilities — 294 roots
+
+Adds Sky Attack143, Spit Up255, Heal Bell215, Refresh287, Aromatherapy312, Kinesis134, Psych Up244 and Luster Purge295. Admission continues to use canonical catalog roots and committed effect receipts. Sky Attack reuses charge ownership; Spit Up authenticates the consumed 1–3 stockpile count without multiplying the source move-power register. Party cures retain Soundproof/healthy-party source behavior, while Refresh requires its actual cure; common immunity, held-item and active-party synchronization suffixes are authenticated. Active toxic counters are compared through the existing persistent-status projection. Psych Up accepts the ordered committed stage copy, including an unchanged-stage copy, without rereading a final frame.
+
+Shared presentation additions are a source OBJ-window union mask for BG1, native frame-loop extraction, selected three-bank sprite-palette groups, source unload ownership, and bounded seven-bit simple palette selection. Window sprites retain their captured battler geometry/material and never paint normal OBJ color. The canonical Impact material now preserves native 4bpp indices and its palette; its existing RGB555 bytes and other hit/art assets are unchanged. Basic hits and Luster Purge resolve the same material. The new excluding-battler palette-cycle task respects the native 6-bit delay counter and 4-bit step limits.
+
+Maintained original-C generators exercise complete representative callback traces and boundaries; generated expected data remains local and ignored. A psychic palette-harness macro scope error discovered during integration was corrected in the extractor and independently regenerated before managed comparison; the superseded oracle is not parity evidence. No new native UI, natural acquisition or real-speaker claim is made.
+
+The affected sweep also caught an obsolete round-shadow family sound guard intercepting the older Explosion script. Its duplicate load/sound cases were removed so the existing shared metadata validator and Explosion command authority handle their respective commands; no additional sound-ID exception was introduced.
+
+Validation: solution refresh passed with zero warnings/errors (31.74 seconds, following the 53.20-second integrated build). Affected Application128/128 passed in6.6699 seconds. The107-row Presentation run passed106 and exposed the obsolete sound guard; the final affected25/25 refresh, including every generated root's every-frame compositor, passed in1.6093 minutes. Together these cover the107 affected rows after the correction. Maintained importer entrypoints4/4 passed in42.1023 seconds (charged7, cure8, psychic4 source checks, plus28 hit/explosion checks); changed producers passed exact regeneration. Generated catalog has294 unique positive roots, no duplicates, and Git contains no generated vector outputs. Logs: `/tmp/animation294-{final-refresh-build,application-final,presentation-final,presentation-refresh,import-gate}.log`.

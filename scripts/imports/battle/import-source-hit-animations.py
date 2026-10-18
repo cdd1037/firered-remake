@@ -34,6 +34,22 @@ def rgb555(data,size,palette=None):
    values.append((red>>3)|((green>>3)<<5)|((blue>>3)<<10)|(0x8000 if index else 0))
   return struct.pack('<HH',*size)+struct.pack('<'+'H'*len(values),*values)
 
+def indexed_impact(raw):
+ # Preserve native indices even when palette entries repeat. Palette animation
+ # uses the source tag/bank, never a reverse lookup from the rendered colors.
+ registrations=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+ if not re.search(r'\{gBattleAnimSpriteGfx_Impact,\s*0x0200,\s*ANIM_TAG_IMPACT\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_Impact,\s*ANIM_TAG_IMPACT\}',registrations):raise ValueError('Impact source registration differs')
+ for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+kind+r'_Impact\[\] = INCBIN_U32\("graphics/battle_anims/sprites/impact\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Impact source material differs')
+ with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/impact.png'])) as im:
+  if im.mode!='P' or im.size!=(32,32):raise ValueError('Impact source indexed shape differs')
+  im.load();palette=im.getpalette()[:48]
+  indices=[v for y in range(0,32,8) for x in range(0,32,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
+ if len(palette)!=48 or any(v>15 for v in indices):raise ValueError('Impact source 4bpp palette differs')
+ packed=bytes(indices[i]|(indices[i+1]<<4) for i in range(0,len(indices),2))
+ colors=[(palette[i]>>3)|((palette[i+1]>>3)<<5)|((palette[i+2]>>3)<<10) for i in range(0,48,3)]
+ return dict(id='impact',width=32,height=32,indicesPath='impact.4bpp',palettePath='impact.pal16',paletteTag='ANIM_TAG_IMPACT'),{'impact.4bpp':packed,'impact.pal16':struct.pack('<16H',*colors)}
+
 def castform_assets(raw, generic_geometry, rgb555):
     import re
     read=raw.__getitem__
@@ -117,6 +133,11 @@ def build(reference):
    'taskCallbacks':sorted({r['args'][0] for r in rows if r['op']=='createvisualtask'}),
    'graphicsTags':sorted({r['args'][0] for r in rows if r['op']=='loadspritegfx'}),
    'sounds':sorted({r['args'][0] for r in rows if r['op'] in ['playsewithpan','loopsewithpan']})}})
+ constants=raw['include/constants/battle_anim.h'].decode()
+ tag_base=int(re.search(r'^#define ANIM_SPRITES_START\s+(\d+)',constants,re.M)[1])
+ tags={name:tag_base+int(value) for name,value in re.findall(r'^#define (ANIM_TAG_\w+)\s+\(ANIM_SPRITES_START\s*\+\s*(\d+)\)',constants,re.M)}
+ for row in scripts:row['spriteTags']={tag:tags[tag] for tag in row['dependencies']['graphicsTags']}
+ indexed,indexed_blobs=indexed_impact(raw)
  # Original graphics table shares Impact's palette for Scratch and Cut; SLASH_2
  # shares Slash's sheet but its own source JASC palette. Do not use PNG palette guesses.
  with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/impact.png'])) as image:impact_pal=image.getpalette()
@@ -176,12 +197,12 @@ def build(reference):
  def asset(id,data):return {'id':id,'path':id+'.rgb555'}
  sines=[int(float(x)*256) for x in re.findall(r'Q_8_8\((-?[\d.]+)\)',raw['src/trig.c'].decode().split('};',1)[0])]
  if len(sines)!=320:raise ValueError('Original sine table differs')
- anim={'sineTable':sines,'schemaVersion':1,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
+ anim={'sineTable':sines,'schemaVersion':1,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes,'indexedAssets':[indexed]}
  forms,form_assets,form_blobs=castform_assets(raw,geometry,rgb555)
  additional_assets,additional_blobs=additional_mon_assets(raw)
  art={'schemaVersion':1,'formGeometry':forms,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back),*form_assets,*additional_assets]}
  def encode(x):return (json.dumps(x,separators=(',',':'))+'\n').encode()
- return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back,**form_blobs,**additional_blobs}}
+ return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()},**indexed_blobs},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back,**form_blobs,**additional_blobs}}
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('legacy_reference',type=Path,nargs='?');p.add_argument('legacy_output',type=Path,nargs='?');p.add_argument('--reference',type=Path);p.add_argument('--output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()

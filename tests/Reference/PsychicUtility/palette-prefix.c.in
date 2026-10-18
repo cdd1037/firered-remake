@@ -1,0 +1,21 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+@DEFINES@
+@TYPES@
+struct Task{void(*func)(u8);s16 data[16];}gTasks[1];
+u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlersCount;static s16 gBattleAnimArgs[8];static bool8 alive=TRUE;
+u16 gPlttBufferUnfaded[512],gPlttBufferFaded[512];struct PaletteFadeControl gPaletteFade;static bool8 sPlttBufferTransferPending;static u8 paletteHardware[1024];
+#define PLTT paletteHardware
+static void CpuCopy32(const void*src,void*dest,int size){memcpy(dest,src,size);}static u8 UpdateFastPaletteFade(void){abort();}static u8 UpdateHardwarePaletteFade(void){abort();}static void UpdateBlendRegisters(void){abort();}
+static void DestroyAnimVisualTask(u8 id){assert(id==0);alive=FALSE;}
+@PROTOTYPES@
+@FUNCTIONS@
+static void row(int frame){printf("%d,%u,%u,%d,%d,%u,%u",frame,alive,gPaletteFade.active,gTasks[0].tNumBlends,gTasks[0].tRestoreBlend,gPaletteFade.y,gPaletteFade_selectedPalettes);int banks[]={1,2,3,16,17,18,19};for(int b=0;b<7;b++)for(int i=0;i<16;i++)printf(",%u",gPlttBufferFaded[banks[b]*16+i]);puts("");}
+int main(int argc,char**argv){assert(argc==11);gBattlersCount=atoi(argv[1])?4:2;gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=atoi(argv[3]);for(int i=0;i<6;i++)gBattleAnimArgs[i]=atoi(argv[4+i]);for(int i=0;i<512;i++)gPlttBufferUnfaded[i]=gPlttBufferFaded[i]=((i+3)&31)|(((i*7+5)&31)<<5)|(((i*11+9)&31)<<10);
+ if(atoi(argv[10])){BeginNormalPaletteFade(1u<<16,0,0,16,31);sPlttBufferTransferPending=FALSE;}AnimTask_BlendColorCycleExclude(0);row(-1);for(int frame=0;frame<2000;frame++){sPlttBufferTransferPending=FALSE;UpdatePaletteFade();gTasks[0].func(0);row(frame);if(!alive)return 0;}abort();}

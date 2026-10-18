@@ -9,6 +9,8 @@ public static partial class CampaignMoveAnimationPresentation
     private sealed record UninterpretedAnimationReceipt(long Sequence,int Turn):SourceBattleEvent(Sequence,Turn);
     internal static SourceBattleEvent AnimationReceipt(WildBattleEvent receipt)=>receipt switch
     {
+        WildBattleActionBlockedEvent x => new SourceActionBlockedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Status),
+        WildBattleAbilityActivatedEvent x => new SourceAbilityActivatedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Ability),
         WildBattleAbilityPreventedEvent x => new SourceAbilityPreventedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.Ability),
         WildBattleAttackStringEvent x => new SourceAttackStringEvent(x.Sequence,x.Turn,new((int)x.Actor),x.ChosenMove,x.CurrentMove),
         WildBattleCallerSelectionEvent x => new SourceCallerSelectionEvent(x.Sequence,x.Turn,new((int)x.Actor),x.Caller,x.Result,x.CandidateSourceMoveIds,x.RngCursor),
@@ -17,6 +19,7 @@ public static partial class CampaignMoveAnimationPresentation
                 x.Invocation.ChosenMove,x.Invocation.CurrentMove,x.Invocation.CalledMove,new((int)x.Invocation.Target),
                 x.Invocation.CancellerPhase,x.Invocation.Flags) { PpOwner=new((int)x.Invocation.PpOwner) }),
         WildBattleSleepTalkEvent x => new SourceSleepTalkEvent(x.Sequence,x.Turn,new((int)x.Side),x.CalledSlot,x.CalledMove),
+        WildBattleCalledPartyChangedEvent x => new SourceCalledPartyChangedEvent(x.Sequence,x.Turn,(BattleSide)x.Side,x.PartyIndex,x.Reason,x.Before,x.After),
         WildBattleCalledOverlayChangedEvent x => new SourceCalledOverlayChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Before,x.After),
         WildBattleCalledDelayedEvent x => new SourceCalledDelayedEvent(x.Sequence,x.Turn,new((int)x.Target),x.Move,x.Before,x.After,x.Reason,x.SourcePartyIndex),
         WildBattleConfusionChangedEvent x => new SourceConfusionChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before,x.After,x.Reason),
@@ -25,6 +28,7 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleDisableChangedEvent x => new SourceDisableChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Before,x.After,x.Reason),
         WildBattleEffectivenessEvent x => new SourceEffectivenessEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.Effectiveness),
         WildBattleFocusEnergyEvent x => new SourceFocusEnergyEvent(x.Sequence,x.Turn,new((int)x.Side)),
+        WildBattleHeldItemConsumedEvent x => new SourceHeldItemConsumedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Item,x.HpBefore,x.HpAfter,x.HpRestored) { PpRecovery=x.PpRecovery,StatChanges=x.StatChanges,FocusEnergyRaised=x.FocusEnergyRaised,Flavor=x.Flavor },
         WildBattleHpChangedEvent x => new SourceHpChangedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.HpBefore,x.HpAfter,x.Damage,x.Critical,x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter },
         WildBattleInfatuationChangedEvent x => new SourceInfatuationChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before is {} before?new((int)before):null,x.After is {} after?new((int)after):null,x.Reason),
         WildBattleLeechSeedChangedEvent x => new SourceLeechSeedChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before is {} before?new((int)before):null,x.After is {} after?new((int)after):null,x.Reason),

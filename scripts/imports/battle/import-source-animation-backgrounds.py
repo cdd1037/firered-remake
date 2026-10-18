@@ -190,6 +190,13 @@ def build(reference):
             raise ValueError('Attract source overlay material path differs')
     overlay('attract', declarations['gBattleAnimBg_AttractGfx'].replace('.4bpp.lz', '.png'), declarations['gBattleAnimBg_AttractTilemap'].removesuffix('.lz'), None, True)
     overlay('morning-sun', 'graphics/battle_anims/masks/light_beam.png', 'graphics/battle_anims/masks/light_beam.bin', None, True)
+    for symbol, suffix in [('gCureBubblesGfx','4bpp.lz'),('gCureBubblesPal','gbapal.lz'),('gCureBubblesTilemap','bin.lz')]:
+        if declarations.get(symbol) != 'graphics/battle_anims/masks/cure_bubbles.'+suffix:
+            raise ValueError('Status-cleared BG1 source material differs')
+    utility=read(reference,'src/battle_anim_utility_funcs.c').decode()
+    if 'StartMonScrollingBgMask(taskId, 0, 0x1A0, gBattleAnimAttacker, gBattleAnimArgs[0], 10, 2, 30, gCureBubblesGfx, gCureBubblesTilemap, gCureBubblesPal);' not in effects3 or 'AnimLoadCompressedBgGfx(animBgData.bgId, gfx, animBgData.tilesOffset);' not in utility or 'LoadCompressedPalette(palette, BG_PLTT_ID(animBgData.paletteId), PLTT_SIZE_4BPP);' not in utility:
+        raise ValueError('Status-cleared indexed BG1 owner differs')
+    overlay('cure-bubbles', 'graphics/battle_anims/masks/cure_bubbles.png', 'graphics/battle_anims/masks/cure_bubbles.bin', None, True)
     base_palette = b''.join(palette(read(reference, 'graphics/battle_interface/textbox' + str(i) + '.pal')) for i in (1, 2))
     if len(base_palette) != 64:
         raise ValueError('Source textbox palette ownership differs')

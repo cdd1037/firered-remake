@@ -20,7 +20,7 @@ class RoundShadowChargeAnimationImportTests(unittest.TestCase):
     seen.add(label);helper=self.pack['subroutines'][label];commands.extend(helper);pending.extend(c['args'][0] for c in helper if c['op']=='call')
    for c in commands:
     text=lines[c['line']-1].split('@',1)[0].strip();op,*tail=text.split(None,1);args=[v.strip() for v in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else [];self.assertEqual((op,args),(c['op'],c['args']))
-  self.assertNotIn(143,self.rows);self.assertIn('RisingWaterHitEffect',self.pack['subroutines']);self.assertEqual([['ANIM_ATTACKER']],[c['args'] for c in self.rows[291]['commands'] if c['op']=='visible'])
+  self.assertIn('RisingWaterHitEffect',self.pack['subroutines']);self.assertEqual([['ANIM_ATTACKER']],[c['args'] for c in self.rows[291]['commands'] if c['op']=='visible'])
  def test_exact_affine_recipes_and_shared_dependency_ownership(self):
   recipes={r['template']:r for r in self.pack['spriteRecipes']}
   for name,file,callback in imp.ROUND_SHADOW_RECIPES:

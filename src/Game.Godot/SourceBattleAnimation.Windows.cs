@@ -20,6 +20,17 @@ public sealed record SourceWindow0Frame(bool Enabled,ushort Horizontal,ushort Ve
         return !Enabled||((inside?InsideMask:OutsideMask)&32)!=0;
     }
 }
+// Source OBJ-window sprites gate BG1 before priority selection. Other layer and
+// color-effect masks stay enabled in this bounded scrolling-mask closure.
+public sealed record SourceObjectWindowFrame(bool Enabled,int InsideMask,int OutsideMask)
+{
+    public void Validate()
+    {
+        if(InsideMask is <0 or >63||OutsideMask is <0 or >63||
+            (InsideMask&61)!=61||(OutsideMask&61)!=61)
+            throw new InvalidDataException("OBJ window requires unchanged non-BG1 layers and color effects.");
+    }
+}
 public enum SourceBrightnessMode { Lighten=2,Darken=3 }
 public sealed record SourceBrightnessFrame(SourceBrightnessMode Mode,int Coefficient)
 {
@@ -40,6 +51,12 @@ public sealed record SourceBrightnessFrame(SourceBrightnessMode Mode,int Coeffic
 public sealed partial class SourceBattleAnimation
 {
     private SourceWindow0Frame? _window0;
+    private SourceObjectWindowFrame? _objectWindow;
+    private void SetObjectWindow(bool enabled,int insideMask=63,int outsideMask=61)
+    {
+        var frame=new SourceObjectWindowFrame(enabled,insideMask,outsideMask);frame.Validate();
+        _objectWindow=enabled?frame:null;
+    }
     private SourceBrightnessFrame? _brightness;
     private void SetBrightness(int firstTargets,SourceBrightnessMode mode,int coefficient)
     {

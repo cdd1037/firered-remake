@@ -8,6 +8,10 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 import argparse
 import importlib.util
 import json
+import io
+import re
+import struct
+from PIL import Image
 from pathlib import Path
 import subprocess
 import sys
@@ -29,6 +33,23 @@ for name,asset in [('hit','graphics/battle_anims/sprites/impact.png'),('explosio
     spec=importlib.util.spec_from_file_location('import_'+name,script)
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     original=module.build(args.reference_root)
+    if name=='hit':
+        raw=module.read_sources(args.reference_root);files=original['source-hit-animations'];manifest=json.loads(files['manifest.json'])
+        indexed=manifest['indexedAssets'];check(len(indexed)==1 and indexed[0]['id']=='impact','one canonical indexed impact material')
+        row=indexed[0];check((row['width'],row['height'],row['paletteTag'])==(32,32,'ANIM_TAG_IMPACT'),'impact native canvas and palette identity')
+        with Image.open(io.BytesIO(raw[asset])) as im:indices=im.tobytes();palette=im.getpalette()[:48]
+        packed=files[row['indicesPath']];decoded=bytes((packed[(y//8*4+x//8)*32+(y%8)*4+(x%8)//2]>>((x&1)*4))&15 for y in range(32) for x in range(32))
+        colors=[(palette[i]>>3)|((palette[i+1]>>3)<<5)|((palette[i+2]>>3)<<10) for i in range(0,48,3)]
+        check(decoded==indices and len(packed)==512,'impact every native 4bpp index retained')
+        check(files[row['palettePath']]==struct.pack('<16H',*colors),'impact all sixteen source palette entries retained')
+        check(files['impact.rgb555']==struct.pack('<HH',32,32)+struct.pack('<1024H',*[colors[i]|(0x8000 if i else 0) for i in indices]),'impact existing RGB555 bytes preserved')
+        constants=raw['include/constants/battle_anim.h'].decode();tag_base=int(re.search(r'^#define ANIM_SPRITES_START\s+(\d+)',constants,re.M)[1]);tags={symbol:tag_base+int(offset) for symbol,offset in re.findall(r'^#define (ANIM_TAG_\w+)\s+\(ANIM_SPRITES_START\s*\+\s*(\d+)\)',constants,re.M)}
+        check(all(r['spriteTags']=={c['args'][0]:tags[c['args'][0]] for c in r['commands'] if c['op']=='loadspritegfx'} for r in manifest['scripts']),'basic hit roots bind only their actual source load tags')
+        for path,old,new in [('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Impact, 0x0200, ANIM_TAG_IMPACT}',b'{gBattleAnimSpriteGfx_Impact, 0x0400, ANIM_TAG_IMPACT}'),('src/data/battle_anim.h',b'{gBattleAnimSpritePal_Impact, ANIM_TAG_IMPACT}',b'{gBattleAnimSpritePal_Impact2, ANIM_TAG_IMPACT}'),('src/graphics.c',b'graphics/battle_anims/sprites/impact.gbapal.lz',b'graphics/battle_anims/sprites/impact_2.gbapal.lz')]:
+            altered=dict(raw);check(old in altered[path],'impact mutation anchor exists');altered[path]=altered[path].replace(old,new);rejected=False
+            try:module.indexed_impact(altered)
+            except ValueError:rejected=True
+            check(rejected,'impact changed source registration/material rejected')
     check(module.build(args.reference_root)==original,name+' deterministic generation')
     with tempfile.TemporaryDirectory(prefix='firered-animation-test-') as temporary:
         cache=Path(temporary)/'source';cache.mkdir()

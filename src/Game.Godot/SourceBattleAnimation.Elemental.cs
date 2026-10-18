@@ -151,7 +151,8 @@ public sealed partial class SourceBattleAnimation
         private SourceFastLinear? _fast;private HorizontalArc? _arc;
         private int _waveStep,_tileOffset,_blink,_blinkDelay;
         private int _remaining,_angle,_amplitudeChange,_fx,_fy,_vx,_vy,_phase,_amplitude,_state;
-        public ElementalSprite(int slot,int priority,SourceSpriteRecipe recipe,AnimationSlot createdAt,int[] a,SourceBattleAnimation owner):base(slot,priority)
+        public ElementalSprite(int slot,int priority,SourceSpriteRecipe recipe,AnimationSlot createdAt,int[] a,SourceBattleAnimation owner):this(slot,priority,recipe,createdAt,a,owner,null){}
+        public ElementalSprite(int slot,int priority,SourceSpriteRecipe recipe,AnimationSlot createdAt,int[] a,SourceBattleAnimation owner,PixelPoint? initialPosition):base(slot,priority)
         {
             _recipe=recipe;_frames=new(recipe);
             if(recipe.AffineAnimations.Length>0)_affine=new(recipe.AffineAnimations[0]);
@@ -293,6 +294,7 @@ public sealed partial class SourceBattleAnimation
                     center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);var targetCenter=target.Center(owner._doubles,true);
                     _linear=new(targetCenter.X-_position.X,targetCenter.Y-_position.Y,30);_phase=(owner._elementalSinTimer>127?owner._elementalSinTimer-127:owner._elementalSinTimer)*256;_amplitude=owner._elementalSinTimer>127?-a[3]:a[3];MoveWave(owner);break;
             }
+            if(initialPosition is {} explicitPosition)_position=explicitPosition;
         }
         public override SourceVisualSpriteFrame Frame
         {

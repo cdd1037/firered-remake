@@ -55,7 +55,9 @@ public sealed class SourceBattleFrameComposer
             throw new InvalidDataException("Source selected battler material differs.");
         if(frame.BattlerBackgroundMosaic.Length!=2||frame.BackgroundMosaicHorizontal is <0 or >15||frame.BackgroundMosaicVertical is <0 or >15)
             throw new InvalidDataException("Source BG mosaic registers differ.");
-        frame.Window0?.Validate();frame.Brightness?.Validate();
+        frame.Window0?.Validate();frame.ObjectWindow?.Validate();frame.Brightness?.Validate();
+        if(frame.ObjectWindow is {Enabled:true}&&(frame.Window0 is {Enabled:true}||frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
+            throw new InvalidDataException("Concurrent source object-window owners are outside the admitted closure.");
         if(frame.Brightness is not null&&_backgroundSurface is null)throw new InvalidDataException("Source brightness needs indexed BG3/backdrop provenance.");
         if(frame.Brightness is not null&&(frame.BlendEnabled||frame.MoveBackground is {Darkening:>0})||
             frame.Window0 is {Enabled:true}&&(frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
@@ -112,13 +114,28 @@ public sealed class SourceBattleFrameComposer
         }
         if(frame.BattlerBackgroundEnabled.Length!=2)throw new InvalidDataException("Battler BG enable register shape differs.");
         for(int plane=0;plane<2;plane++)if(!frame.BattlerBackgroundEnabled[plane])Array.Clear(_battlerBackgroundLayers[plane]);
+        // OBJ-window pixels form a union independent of ordinary OBJ priority.
+        // They never contribute color or occlude the frontmost visible object.
+        if(frame.ObjectWindow is {Enabled:true} objectWindow)
+        {
+            var stencil=new bool[Width*112];
+            foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.ObjectWindow&&s.Asset is not null))
+            {
+                if(sprite.Subsprites.Length!=0)throw new InvalidDataException("Object-window subsprite layouts are outside the admitted closure.");
+                Array.Clear(layer);var material=SpriteMaterial(sprite);
+                BlitSprite(layer,material,sprite,0,0,false);
+                for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0)stencil[i]=true;
+            }
+            var bg1=_battlerBackgroundLayers[0];
+            for(int i=0;i<bg1.Length;i++)if(((stencil[i]?objectWindow.InsideMask:objectWindow.OutsideMask)&2)==0)bg1[i]=0;
+        }
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
         if(frame.Sprites.Any(s=>s.OamPriority is <0 or >3))throw new InvalidDataException("Object priority exceeds source hardware field.");
         var ordered=battlers.Where(b=>SourceOamVisible(b))
             .Select(b=>(Priority:2,Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Fragment:0,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
-            .Concat(frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).SelectMany(ExpandSubsprites).Select(p=>(Priority:p.Frame.OamPriority,Rank:p.Frame.OamRank,Fragment:p.Index,Battler:(AnimationBattler?)null,Sprite:(SourceVisualSpriteFrame?)p.Frame)));
+            .Concat(frame.Sprites.Where(s=>s.Visible&&!s.ObjectWindow&&s.Asset is not null).SelectMany(ExpandSubsprites).Select(p=>(Priority:p.Frame.OamPriority,Rank:p.Frame.OamRank,Fragment:p.Index,Battler:(AnimationBattler?)null,Sprite:(SourceVisualSpriteFrame?)p.Frame)));
         foreach(var item in ordered.OrderByDescending(x=>x.Priority).ThenByDescending(x=>x.Rank).ThenByDescending(x=>x.Fragment))
         {
             Array.Clear(layer);bool blend;

@@ -63,6 +63,8 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=3||(Number(a[0])<0||Number(a[0])>=AnimationRegisterCount)||AnimationArgument(a[1]) is <short.MinValue or >ushort.MaxValue||!ValidProgramLabel(a[2]))Fail(c,"Argument branch needs a source argument, signed16 comparison and scoped label.");
             return true;
         }
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_GetTargetIsAttackerPartner")
+        {if(a.Length!=3||Number(a[1]) is <0 or >255||a[2]!="ARG_RET_ID")Fail(c,"Partner predicate preserves its authored ignored return-register argument.");return true;}
         if(c.Op!="createvisualtask"||a.FirstOrDefault() is not ("AnimTask_IsContest" or "AnimTask_IsTargetPlayerSide" or "AnimTask_GetAttackerSide" or "GetIsDoomDesireHitTurn"))return false;
         if(a.Length!=2||Number(a[1]) is <0 or >255)Fail(c,"Source argument predicate takes only task priority.");
         if(a[0]=="GetIsDoomDesireHitTurn"&&_validatingInvokedProgram&&_cue.MoveTurn is null)Fail(c,"Delayed-attack predicate requires the committed source move turn.");
@@ -80,6 +82,7 @@ public sealed partial class SourceBattleAnimation
         }
         short? result=c.Args[0] switch
         {
+            "AnimTask_GetTargetIsAttackerPartner"=>(short)((_cue.Actor.Value^2)==_cue.Target.Value?1:0),
             "AnimTask_IsContest"=>0,
             "AnimTask_IsTargetPlayerSide"=>(short)(_cue.Target.IsPlayer?1:0),
             "AnimTask_GetAttackerSide"=>(short)(_cue.Actor.IsPlayer?0:1),

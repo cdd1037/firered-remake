@@ -21,7 +21,7 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="createsprite"&&a.FirstOrDefault()=="gSimplePaletteBlendSpriteTemplate")
         {
             if(a.Length!=8)Fail(c,"Simple palette argument count differs.");var p=a.Skip(3).Select(PaletteNumber).ToArray();
-            if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127||p[0] is <0 or >31||p[1] is < -128 or >127||p[2] is <0 or >16||p[3] is <0 or >16)Fail(c,"Simple palette operands differ.");return true;
+            if(Number(a[1]) is <0 or >1||Number(a[2]) is <0 or >127||p[0] is <0 or >127||p[1] is < -128 or >127||p[2] is <0 or >16||p[3] is <0 or >16)Fail(c,"Simple palette operands differ.");return true;
         }
         if(c.Op=="createsprite"&&a.FirstOrDefault()=="gComplexPaletteBlendSpriteTemplate")
         {
