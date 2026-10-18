@@ -5,7 +5,7 @@ public sealed partial class SourceBattleAnimation
 {
     /// <summary>Battle-scene sprite lifetime, allocation and OAM order. A script owns
     /// its callbacks/materials; ending that script releases only its controller.</summary>
-    public sealed class SpriteScene
+    public sealed partial class SpriteScene
     {
         internal readonly SourceSpriteRegistry<VisualSprite> Sprites=new(s=>s.Slot);
         private SourceBattleAnimation? _current;
@@ -16,7 +16,7 @@ public sealed partial class SourceBattleAnimation
         public bool HasResidualSprites=>Sprites.Any(s=>!s.Owner!.Active&&!s.Counted);
         internal void Attach(SourceBattleAnimation owner)
         {
-            if(_current is {Active:true})throw new InvalidOperationException("A scene already has an active animation controller.");
+            if(_current is {Active:true}||Scanlines.State!=0)throw new InvalidOperationException("A scene already has an active animation controller or scanline transfer.");
             _current=owner;_idleBattlers=null;
         }
         internal bool Reserved(int slot)=>_idleBattlers is {} idle?idle.Any(b=>b.Slot.Value==slot&&InitialSourceVisibility(b).Present):
@@ -28,7 +28,7 @@ public sealed partial class SourceBattleAnimation
         {
             if(_current is {Active:true})throw new InvalidOperationException("The active controller owns the scene tick.");
             _idleBattlers=battlers;
-            Advance();return CaptureIdle(battlers,doubles,completedState);
+            Advance();_current?.AdvanceScanlineVBlank();return CaptureIdle(battlers,doubles,completedState);
         }
         public SourceAnimationFrame CaptureIdle(AnimationBattler[] battlers,bool doubles,SourceCompletedBattlerState? completedState=null)
         {
@@ -37,14 +37,14 @@ public sealed partial class SourceBattleAnimation
             var frame=new SourceAnimationFrame(-1,false,new PixelPoint[4],[],0,0,[],[]){Battlers=battlers,Doubles=doubles};
             frame=completedState?.Apply(frame)??frame;
             _current?.SortSourceSprites(frame.Battlers,doubles,frame);
-            return frame with{Sprites=_current?.SpriteOamSnapshot()??[],
+            return frame with{Scanline=ScanlineFrame?.Detach(),Sprites=_current?.SpriteOamSnapshot()??[],
                 BattlerOamRanks=battlers.Select(b=>Array.IndexOf(Order,b.Slot.Value)).ToArray()};
         }
         public void Cancel()
         {
             var owners=Sprites.Select(s=>s.Owner!).Append(_current).OfType<SourceBattleAnimation>().Distinct().ToArray();
             foreach(var owner in owners)owner.Cancel();
-            Sprites.Clear();_current=null;_idleBattlers=null;
+            Sprites.Clear();ResetScanlines();_current=null;_idleBattlers=null;
             Order=Enumerable.Range(0,64).ToArray();Array.Fill(Y,160);
         }
     }

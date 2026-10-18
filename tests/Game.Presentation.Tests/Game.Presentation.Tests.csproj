@@ -15,6 +15,7 @@
     <Compile Include="../../src/Game.Godot/SourceBattleAnimation*.cs" Exclude="../../src/Game.Godot/SourceBattleAnimationAudioAdapter.cs" Link="Animations/%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Godot/SourceBattleFormCatalog.cs" Link="Animations/SourceBattleFormCatalog.cs" />
     <Compile Include="../../src/Game.Godot/SourceBattleFrameComposer.cs" Link="Animations/SourceBattleFrameComposer.cs" />
+    <Compile Include="../../src/Game.Godot/SourceScanlineState.cs" Link="Animations/SourceScanlineState.cs" />
     <Compile Include="../../src/Game.Godot/CampaignButtonInput.cs" Link="CampaignButtonInput.cs" />
     <Compile Include="../../src/Game.Godot/SourceHelpPresentation.cs" Link="SourceHelpPresentation.cs" />
     <Compile Include="../../src/Game.Godot/CampaignOptionEditing.cs" Link="CampaignOptionEditing.cs" />

@@ -62,7 +62,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(!IsSourceBattlerVisible(slot))return;
         SetBackgroundPriority(_battlers[slot].BackgroundRank,2);
-        _backgrounds.Add(slot);_restoredObject[slot]=false;SetSourceBattlerSpriteInvisible(slot,true);
+        _backgrounds.Add(slot);InitializeBattlerBackgroundRegisters(slot,follow);_restoredObject[slot]=false;SetSourceBattlerSpriteInvisible(slot,true);
         if(follow)_staticBackgroundCopies.Remove(slot);
         // MoveBattlerSpriteToBG copies the unfaded source palette. Only its
         // optional updater follows later faded OBJ palette changes.
@@ -87,10 +87,11 @@ public sealed partial class SourceBattleAnimation
                 int rank=owner._battlers[selected].BackgroundRank;
                 foreach(int copied in owner._backgrounds.Where(i=>owner._battlers[i].BackgroundRank==rank).ToArray())
                 {owner._backgrounds.Remove(copied);owner._staticBackgroundCopies.Remove(copied);}
+                owner.ResetBattlerBackgroundRegisters(rank);
             }
             Finished=true;
         }
     }
     private void RestoreBattlerObject(int slot){_restoredObject[slot]=IsSourceBattlerVisible(slot);if(_restoredObject[slot])SetSourceBattlerSpriteInvisible(slot,false);}
-    private void ClearBattlerBackgrounds(){_backgrounds.Clear();_staticBackgroundCopies.Clear();}
+    private void ClearBattlerBackgrounds(){_backgrounds.Clear();_staticBackgroundCopies.Clear();ResetBattlerBackgroundRegisters(1);ResetBattlerBackgroundRegisters(2);}
 }

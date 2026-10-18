@@ -83,7 +83,8 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_SPECIAL_DEFENSE_DOWN_2" => (WildBattleStat.SpecialDefense,-2),
         _ => null
     };
-    internal static (WildBattleStat Stat,int Delta)? SelfStatAnimation(PokemonMoveDefinition move) => move.Effect switch
+    internal static (WildBattleStat Stat,int Delta)? SelfStatAnimation(PokemonMoveDefinition move) =>
+        move.Power!=0||move.Target!="MOVE_TARGET_USER"?null:move.Effect switch
     {
         "EFFECT_ATTACK_UP" => (WildBattleStat.Attack,1),
         "EFFECT_ATTACK_UP_2" => (WildBattleStat.Attack,2),
@@ -340,15 +341,18 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-teleport-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,action[1].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(definition.Effect=="EFFECT_MIMIC")
+        if(definition.Effect is "EFFECT_MIMIC" or "EFFECT_SKETCH")
         {
-            if(used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
-                action.Length<2||action[0]!=pp[0]||action[1] is not SourceMoveCopiedEvent copied||copied.Permanent||copied.Replacement is null||
+            bool permanent=definition.Effect=="EFFECT_SKETCH";
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceMoveCopiedEvent copied||copied.Permanent!=permanent||copied.Replacement is null||
                 copied.Actor!=used.Actor||copied.Target!=used.Target||copied.Actor==copied.Target||copied.Move!=used.Move||
-                copied.MoveSlot!=pp[0].PpSlot||action.OfType<SourceMoveCopiedEvent>().Count()!=1||
-                copied.CopiedMove.Value is "pret:MOVE_MIMIC" or "pret:MOVE_METRONOME" or "pret:MOVE_SKETCH" or "pret:MOVE_STRUGGLE"||
+                copied.MoveSlot!=pp[0].PpSlot||copied.Sequence!=pp[0].Sequence+1||action.OfType<SourceMoveCopiedEvent>().Count()!=1||
+                copied.CopiedMove.Value is "pret:MOVE_SKETCH" or "pret:MOVE_STRUGGLE"||
+                !permanent&&copied.CopiedMove.Value is "pret:MOVE_MIMIC" or "pret:MOVE_METRONOME"||
                 Definition(copied.CopiedMove,moves) is not {} replacement||copied.Replacement.Move!=replacement.Id||
-                copied.Replacement.PpUps is <0 or >3||copied.Replacement.CurrentPp!=Math.Min(5,replacement.Pp)||
+                copied.Replacement.PpUps is <0 or >3||copied.Replacement.CurrentPp!=(permanent?replacement.Pp:Math.Min(5,replacement.Pp))||
                 copied.Replacement.MaximumPp!=replacement.Pp+replacement.Pp*20*copied.Replacement.PpUps/100)
                 return new(null,"unmatched-source-copy-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,copied.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
@@ -539,7 +543,11 @@ public static partial class CampaignMoveAnimationPresentation
         }
         if(SelfStatAnimation(definition!) is not null)
         {
-            var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is SourceStatChangedEvent).ToArray();
+            // A real move-end item restoration has its own authenticated group.
+            // It cannot erase the earlier move result or masquerade as another one.
+            var itemReceipts=CampaignStatAnimationPresentation.ItemReceiptSequences(battle.Events);
+            var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1)
+                .Where(i=>battle.Events[i] is SourceStatChangedEvent&&!itemReceipts.Contains(battle.Events[i].Sequence)).ToArray();
             if(resultIndices.Length!=1||battle.StatResult(resultIndices[0]) is not {} result||result.SourceMoveId!=move)
                 return new(null,"unmatched-source-self-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");

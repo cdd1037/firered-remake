@@ -150,7 +150,7 @@ public sealed class SourceCompletedBattlerState
     }
     private static bool CleanMaterials(SourceAnimationFrame frame)=>
         frame.BattlerObjectPriorities.All(p=>p==2)&&
-        frame.BackgroundSlots.Length==0&&frame.StaticBackgroundCopies.Length==0&&frame.Overlay is null&&
+        frame.Scanline is null&&frame.BackgroundSlots.Length==0&&frame.StaticBackgroundCopies.Length==0&&frame.Overlay is null&&
         frame.StatMask is null&&frame.Metallic is null&&!frame.BlendEnabled&&frame.BlendedObjectSlots.Length==0&&
         frame.PaletteBlends.All(p=>p.Coefficient==0&&p.Unfaded is null)&&frame.InvertedPalettes.Length==0&&frame.GreyscaleSlots.Length==0&&
         frame.BackgroundPaletteEntries.Length==0&&frame.BattlerBackgroundMosaic.Length==2&&frame.BattlerBackgroundMosaic.All(v=>!v)&&

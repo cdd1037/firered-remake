@@ -65,6 +65,16 @@ def curse_overlay_inputs(read_source):
     if any((b&15)>1 or (b>>4)>1 for b in tiles) or struct.unpack('<16H',pal)[1]!=32767:raise ValueError('Curse indexed pixels use an unloaded palette entry')
     return png,tilemap
 
+def surf_overlay_inputs(read_source):
+    graphics=read_source('src/graphics.c').decode();water=read_source('src/battle_anim_water.c').decode()
+    declarations=dict(re.findall(r'(\w+)\[\] = INCBIN_U32\("([^"]+)"\)',graphics))
+    symbols={'gBattleAnimBgImage_Surf':'water.4bpp.lz','gBattleAnimBgPalette_Surf':'water.gbapal.lz','gBattleAnimBgPalette_MuddyWater':'water_muddy.gbapal.lz','gBattleAnimBgTilemap_SurfPlayer':'water_player.bin.lz','gBattleAnimBgTilemap_SurfOpponent':'water_opponent.bin.lz'}
+    for symbol,suffix in symbols.items():
+        if declarations.get(symbol)!='graphics/battle_anims/backgrounds/'+suffix:raise ValueError('Surf indexed material declaration differs')
+    for statement in ['SetAnimBgAttribute(1, BG_ANIM_SCREEN_SIZE, 1);','AnimLoadCompressedBgTilemap(animBg.bgId, gBattleAnimBgTilemap_SurfOpponent);','AnimLoadCompressedBgTilemap(animBg.bgId, gBattleAnimBgTilemap_SurfPlayer);','AnimLoadCompressedBgGfx(animBg.bgId, gBattleAnimBgImage_Surf, animBg.tilesOffset);','LoadCompressedPalette(gBattleAnimBgPalette_Surf, BG_PLTT_ID(animBg.paletteId), PLTT_SIZE_4BPP);','LoadCompressedPalette(gBattleAnimBgPalette_MuddyWater, BG_PLTT_ID(animBg.paletteId), PLTT_SIZE_4BPP);']:
+        if statement not in water:raise ValueError('Surf indexed BG1 owner differs')
+    return [('muddy-water' if muddy else 'surf')+'-'+side for muddy in (False,True) for side in ('player','opponent')]
+
 def build(reference):
     bg = read(reference, 'src/battle_bg.c').decode()
     anim = read(reference, 'src/battle_anim.c').decode()
@@ -174,7 +184,7 @@ def build(reference):
         if declarations.get(symbol) != 'graphics/battle_anims/masks/light_beam.' + suffix + '.lz':
             raise ValueError('Morning Sun BG1 source declaration differs')
     overlays = []
-    def overlay(identity, png, map_path, palette_path, full_gfx_buffer, palette_png=None):
+    def overlay(identity, png, map_path, palette_path, full_gfx_buffer, palette_png=None, screen_size=0):
         tiles, embedded_palette = indexed_tiles(read(reference, png))
         if full_gfx_buffer:
             if len(tiles) > 0x2000:
@@ -183,17 +193,17 @@ def build(reference):
         elif len(tiles) != 0x800:
             raise ValueError('Fog source direct tile write differs')
         tilemap = read(reference, map_path)
-        if len(tilemap) != 0x800:
+        if screen_size not in (0,1) or len(tilemap) != 0x800*(screen_size+1):
             raise ValueError('Animation overlay source tilemap differs')
         if palette_path and palette_png:
             raise ValueError('Ambiguous overlay palette source')
         pal = indexed_tiles(read(reference, palette_png))[1] if palette_png else palette(read(reference, palette_path)) if palette_path else embedded_palette
         if len(pal) != 32:
             raise ValueError('Animation overlay requires one RGB555 palette bank')
-        for entry in struct.unpack('<1024H', tilemap):
+        for entry in struct.unpack('<'+str(len(tilemap)//2)+'H', tilemap):
             if (entry & 1023) * 32 >= len(tiles) or entry >> 12 not in (0, 1, 8):
                 raise ValueError('Animation overlay map exceeds indexed material')
-        overlays.append(dict(id=identity, tiles=add(tiles), tilemap=add(tilemap), palette=add(pal), paletteBank=8))
+        overlays.append(dict(id=identity, tiles=add(tiles), tilemap=add(tilemap), palette=add(pal), paletteBank=8,**({'screenSize':screen_size} if screen_size else {})))
     for identity, map_symbol in [('scary-face-player', 'gBattleAnimBgTilemap_ScaryFacePlayer'), ('scary-face-opponent', 'gBattleAnimBgTilemap_ScaryFaceOpponent')]:
         overlay(identity, declarations['gBattleAnim_ScaryFaceGfx'].replace('.4bpp.lz', '.png'), declarations[map_symbol].removesuffix('.lz'), None, True)
     overlay('fog', 'graphics/weather/fog_horizontal.png', declarations['gBattleAnimFogTilemap'].removesuffix('.lz'), 'graphics/weather/default.pal', False)
@@ -212,6 +222,8 @@ def build(reference):
     overlay('cure-bubbles', 'graphics/battle_anims/masks/cure_bubbles.png', 'graphics/battle_anims/masks/cure_bubbles.bin', None, True)
     curse_png,curse_map=curse_overlay_inputs(lambda path:read(reference,path))
     overlay('curse',curse_png,curse_map,None,True)
+    for identity in surf_overlay_inputs(lambda path:read(reference,path)):
+        overlay(identity,'graphics/battle_anims/backgrounds/water.png','graphics/battle_anims/backgrounds/water_'+identity.rsplit('-',1)[1]+'.bin','graphics/battle_anims/backgrounds/water_muddy.pal' if identity.startswith('muddy') else None,True,screen_size=1)
     base_palette = b''.join(palette(read(reference, 'graphics/battle_interface/textbox' + str(i) + '.pal')) for i in (1, 2))
     if len(base_palette) != 64:
         raise ValueError('Source textbox palette ownership differs')

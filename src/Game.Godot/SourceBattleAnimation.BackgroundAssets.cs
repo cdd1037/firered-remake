@@ -34,9 +34,10 @@ public sealed class SourceOverlayAsset
     private readonly ushort[] _palette;
     public ReadOnlyMemory<ushort> Palette=>_palette;
     public int PaletteBank{get;}
-    public SourceOverlayAsset(ReadOnlySpan<byte> tiles,ReadOnlySpan<byte> tilemap,ReadOnlySpan<ushort> palette,int paletteBank=8)
+    public int ScreenSize{get;}
+    public SourceOverlayAsset(ReadOnlySpan<byte> tiles,ReadOnlySpan<byte> tilemap,ReadOnlySpan<ushort> palette,int paletteBank=8,int screenSize=0)
     {
-        if(tiles.Length is <32 or >8192||tiles.Length%32!=0||tilemap.Length!=2048||palette.Length!=16||paletteBank!=8)
+        if(tiles.Length is <32 or >8192||tiles.Length%32!=0||screenSize is <0 or >1||tilemap.Length!=(screenSize==0?2048:4096)||palette.Length!=16||paletteBank!=8)
             throw new InvalidDataException("Source BG1 overlay shape differs.");
         for(int i=0;i<tilemap.Length;i+=2)
         {
@@ -45,20 +46,22 @@ public sealed class SourceOverlayAsset
                 throw new InvalidDataException("Source BG1 overlay map exceeds its owned tiles or palette banks.");
         }
         foreach(ushort color in palette)if((color&0x8000)!=0)throw new InvalidDataException("Source overlay palette is not RGB555.");
-        _tiles=tiles.ToArray();_tilemap=tilemap.ToArray();_palette=palette.ToArray();PaletteBank=paletteBank;
+        _tiles=tiles.ToArray();_tilemap=tilemap.ToArray();_palette=palette.ToArray();PaletteBank=paletteBank;ScreenSize=screenSize;
     }
     public SourceBackgroundPixel Sample(int x,int y)
     {
-        x&=255;y&=255;
-        int entry=BinaryPrimitives.ReadUInt16LittleEndian(_tilemap.AsSpan(((y>>3)*32+(x>>3))*2));
+        x&=ScreenSize==0?255:511;y&=255;
+        int cell=(x>>8)*1024+(y>>3)*32+((x&255)>>3);
+        int entry=BinaryPrimitives.ReadUInt16LittleEndian(_tilemap.AsSpan(cell*2));
         int tx=x&7,ty=y&7;
         if((entry&0x400)!=0)tx=7-tx;if((entry&0x800)!=0)ty=7-ty;
         int packed=_tiles[(entry&1023)*32+ty*4+tx/2],index=(packed>>((tx&1)*4))&15;
         return new(entry>>12,index);
     }
     public void Render(Span<ushort> destination,int width,int height,int scrollX,int scrollY,
-        SourceAnimationBackgroundSurface? background,ReadOnlySpan<SourcePaletteBlend> blends,ReadOnlySpan<int> inverted,ReadOnlySpan<SourcePaletteEntry> fadedEntries=default)
+        SourceAnimationBackgroundSurface? background,ReadOnlySpan<SourcePaletteBlend> blends,ReadOnlySpan<int> inverted,ReadOnlySpan<SourcePaletteEntry> fadedEntries=default,SourceScanlineFrame? scanline=null)
     {
+        scanline?.Validate();
         if(width is <1 or >256||height is <1 or >256||destination.Length!=width*height)throw new ArgumentException("Source overlay render shape differs.");
         Span<ushort> colors=stackalloc ushort[9*16];
         foreach(int bank in new[]{0,1,8})
@@ -70,7 +73,10 @@ public sealed class SourceOverlayAsset
         {if(entry.Index is <0 or >255)throw new InvalidDataException("Source BG palette entry differs.");if(entry.Index<colors.Length)colors[entry.Index]=entry.Color;}
         for(int y=0;y<height;y++)for(int x=0;x<width;x++)
         {
-            var pixel=Sample(x+scrollX,y+scrollY);
+            int sx=scrollX,sy=scrollY;
+            if(scanline is {Destination:SourceScanlineDestination.Bg1Horizontal})
+            {sx=scanline.Words[y*(scanline.Word32?2:1)];if(scanline.Word32)sy=scanline.Words[y*2+1];}
+            var pixel=Sample(x+sx,y+sy);
             if(pixel.Index!=0&&pixel.Bank!=8&&background is null)throw new InvalidDataException("Source overlay references an unavailable base palette.");
             destination[y*width+x]=pixel.Index==0?(ushort)0:(ushort)(colors[pixel.Bank*16+pixel.Index]|0x8000);
         }
@@ -84,8 +90,9 @@ public sealed class SourceAnimationBackgroundCatalog : IDisposable
     private readonly record struct Entry(Block Tiles, Block Tilemap, Block Palette);
     private readonly Dictionary<int, Entry> _terrains = [], _moves = [];
     private readonly Dictionary<Entry, SourceBackgroundAsset> _assets = [];
-    private readonly Dictionary<string,Entry> _overlays=[];
-    private readonly Dictionary<Entry,SourceOverlayAsset> _overlayAssets=[];
+    private readonly record struct OverlayEntry(Entry Data,int ScreenSize);
+    private readonly Dictionary<string,OverlayEntry> _overlays=[];
+    private readonly Dictionary<OverlayEntry,SourceOverlayAsset> _overlayAssets=[];
     private readonly FileStream _atlas;
     private readonly Block _basePalette;
     private ushort[]? _baseColors;
@@ -127,9 +134,11 @@ public sealed class SourceAnimationBackgroundCatalog : IDisposable
             if(root.TryGetProperty("overlays",out var overlayRows))foreach(var row in overlayRows.EnumerateArray())
             {
                 string id=row.GetProperty("id").GetString()??throw new InvalidDataException("Null source overlay id.");
-                if(id.Length is <1 or >80||row.GetProperty("paletteBank").GetInt32()!=8||
-                    !_overlays.TryAdd(id,new(ParseBlock(row.GetProperty("tiles"),32,8192,32),
-                        ParseBlock(row.GetProperty("tilemap"),2048,2048,2),ParseBlock(row.GetProperty("palette"),32,32,2))))
+                int screenSize=row.TryGetProperty("screenSize",out var size)?size.GetInt32():0;
+                int mapLength=screenSize==0?2048:4096;
+                if(id.Length is <1 or >80||screenSize is <0 or >1||row.GetProperty("paletteBank").GetInt32()!=8||
+                    !_overlays.TryAdd(id,new(new(ParseBlock(row.GetProperty("tiles"),32,8192,32),
+                        ParseBlock(row.GetProperty("tilemap"),mapLength,mapLength,2),ParseBlock(row.GetProperty("palette"),32,32,2)),screenSize)))
                     throw new InvalidDataException("Invalid source overlay entry.");
             }
             if(_overlays.Count>64)throw new InvalidDataException("Unbounded source overlay catalog.");
@@ -165,7 +174,7 @@ public sealed class SourceAnimationBackgroundCatalog : IDisposable
         ObjectDisposedException.ThrowIf(_disposed,this);
         if(!_overlays.TryGetValue(id,out var entry))throw new InvalidDataException($"Missing source overlay {id}.");
         if(!_overlayAssets.TryGetValue(entry,out var asset))
-        {asset=new(Read(entry.Tiles),Read(entry.Tilemap),Colors(Read(entry.Palette)));_overlayAssets.Add(entry,asset);}
+        {asset=new(Read(entry.Data.Tiles),Read(entry.Data.Tilemap),Colors(Read(entry.Data.Palette)),screenSize:entry.ScreenSize);_overlayAssets.Add(entry,asset);}
         return asset;
     }
     public SourceBackgroundAsset Move(int id) => Asset(_moves, id);

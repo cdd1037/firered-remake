@@ -6,7 +6,14 @@ namespace Game.Application;
 
 public static partial class CampaignStatAnimationPresentation
 {
-    internal static bool HasGroupedEffect(string effect)=>effect is "EFFECT_COSMIC_POWER" or "EFFECT_BULK_UP" or "EFFECT_CALM_MIND" or "EFFECT_TICKLE" or "EFFECT_SWAGGER";
+    private static (WildBattleStat First,WildBattleStat Second)? PairedSelfStats(string effect)=>effect switch {
+        "EFFECT_COSMIC_POWER"=>(WildBattleStat.Defense,WildBattleStat.SpecialDefense),
+        "EFFECT_BULK_UP"=>(WildBattleStat.Attack,WildBattleStat.Defense),
+        "EFFECT_CALM_MIND"=>(WildBattleStat.SpecialAttack,WildBattleStat.SpecialDefense),
+        "EFFECT_DRAGON_DANCE"=>(WildBattleStat.Attack,WildBattleStat.Speed),_=>null };
+    internal static bool HasGroupedEffect(string effect)=>PairedSelfStats(effect) is not null||effect is "EFFECT_TICKLE" or "EFFECT_SWAGGER";
+    private static bool HasGroupedDefinition(PokemonMoveDefinition definition)=>HasGroupedEffect(definition.Effect)&&definition.Power==0&&
+        definition.Target==(PairedSelfStats(definition.Effect) is not null?"MOVE_TARGET_USER":"MOVE_TARGET_SELECTED");
     private sealed record StatGroup(string Battle,long Attack,long Pp,string Move,int Affected,long First,long? Animation,int? Argument,long[] Silent);
     private sealed record GroupRow(long Sequence,int Turn,string Kind,int Actor=-1,int Target=-1,string Move="",string Chosen="",
         int Owner=-1,int Slot=-1,int Before=0,int After=0,int Cost=0,WildBattleStat Stat=default,string Detail="",int Damage=0,bool Critical=false,bool Endured=false,bool HungOn=false,int Percent=100);
@@ -29,7 +36,7 @@ public static partial class CampaignStatAnimationPresentation
         int invocation=battle.EventIndex;
         while(invocation>=0&&battle.Events[invocation] is not (SourceMoveUsedEvent or SourceAttackStringEvent))invocation--;
         if(invocation<0||battle.Events[invocation] is not SourceMoveUsedEvent used||
-            CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedEffect(definition.Effect))return null;
+            CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedDefinition(definition))return null;
         var itemReceipts=ItemReceiptSequences(battle.Events);
         return ReadGroup(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,4,itemReceipts,definition.Effect);
     }
@@ -39,11 +46,11 @@ public static partial class CampaignStatAnimationPresentation
         int invocation=battle.EventIndex;
         while(invocation>=0&&battle.Events[invocation] is not (WildBattleMoveUsedEvent or WildBattleAttackStringEvent))invocation--;
         if(invocation<0||battle.Events[invocation] is not WildBattleMoveUsedEvent used||
-            CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedEffect(definition.Effect))return null;
+            CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedDefinition(definition))return null;
         var itemReceipts=ItemReceiptSequences(battle.Events);
         return ReadGroup(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,itemReceipts,definition.Effect);
     }
-    private static HashSet<long> ItemReceiptSequences(IReadOnlyList<SourceBattleEvent> events)
+    internal static HashSet<long> ItemReceiptSequences(IReadOnlyList<SourceBattleEvent> events)
     {
         var result=new HashSet<long>();
         for(int end=0;end<events.Count;end++)if(events[end] is SourceHeldItemConsumedEvent)
@@ -67,7 +74,7 @@ public static partial class CampaignStatAnimationPresentation
         string move=used.Move;
         if(!HasGroupedEffect(effect)||attack.Kind!="attack"||attack.Actor!=used.Actor||attack.Move!=used.Move||attack.Chosen!=used.Move||attack.Turn!=used.Turn||
             used.Actor<0||used.Actor>=slots||used.Target<0||used.Target>=slots||used.Slot is <0 or >3||
-            (effect is "EFFECT_COSMIC_POWER" or "EFFECT_BULK_UP" or "EFFECT_CALM_MIND"?used.Actor!=used.Target:used.Actor==used.Target))return null;
+            (PairedSelfStats(effect) is not null?used.Actor!=used.Target:used.Actor==used.Target))return null;
         int end=usedIndex+1;
         while(end<rows.Length&&rows[end].Turn==used.Turn&&!GroupBoundary(rows[end]))end++;
         if(index>=end||end-usedIndex<3)return null;
@@ -86,9 +93,8 @@ public static partial class CampaignStatAnimationPresentation
             if(first+1>=end)return null;var b=rows[first+1];
             switch(effect)
             {
-                case "EFFECT_COSMIC_POWER":case "EFFECT_BULK_UP":case "EFFECT_CALM_MIND":
-                    var firstStat=effect switch{"EFFECT_BULK_UP"=>WildBattleStat.Attack,"EFFECT_CALM_MIND"=>WildBattleStat.SpecialAttack,_=>WildBattleStat.Defense};
-                    var secondStat=effect=="EFFECT_BULK_UP"?WildBattleStat.Defense:WildBattleStat.SpecialDefense;
+                case "EFFECT_COSMIC_POWER":case "EFFECT_BULK_UP":case "EFFECT_CALM_MIND":case "EFFECT_DRAGON_DANCE":
+                    var (firstStat,secondStat)=PairedSelfStats(effect)!.Value;
                     bool upFirst=Changed(a,firstStat,1),upSecond=Changed(b,secondStat,1);
                     if(!(upFirst||Cap(a,firstStat,"maximum"))||!(upSecond||Cap(b,secondStat,"maximum"))||!(upFirst||upSecond))return null;
                     // Both source scripts choose the wave before visiting either

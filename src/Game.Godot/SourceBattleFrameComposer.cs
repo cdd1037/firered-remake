@@ -55,6 +55,8 @@ public sealed class SourceBattleFrameComposer
             throw new InvalidDataException("Source selected battler material differs.");
         if(frame.BattlerBackgroundMosaic.Length!=2||frame.BackgroundMosaicHorizontal is <0 or >15||frame.BackgroundMosaicVertical is <0 or >15)
             throw new InvalidDataException("Source BG mosaic registers differ.");
+        frame.Scanline?.Validate();
+        if(frame.BackgroundScrollOffsets.Length is not (0 or 2))throw new InvalidDataException("Source battler BG register shape differs.");
         frame.Window0?.Validate();frame.ObjectWindow?.Validate();frame.Brightness?.Validate();
         if(frame.ObjectWindow is {Enabled:true}&&(frame.Window0 is {Enabled:true}||frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
             throw new InvalidDataException("Concurrent source object-window owners are outside the admitted closure.");
@@ -100,7 +102,16 @@ public sealed class SourceBattleFrameComposer
             Array.Clear(layer);var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.Offsets[b.Slot.Value];
             var copy=frame.StaticBackgroundCopies.SingleOrDefault(c=>c.Slot==b.Slot.Value);
             if(copy is not null)offset=copy.Offset;
-            Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,copy is null?palettes.GetValueOrDefault(16+b.Slot.Value):copy.Palette,copy?.Greyscale??frame.GreyscaleSlots.Contains(b.Slot.Value),copy?.Inverted??frame.InvertedPalettes.Contains(16+b.Slot.Value));
+            var palette=copy is null?palettes.GetValueOrDefault(16+b.Slot.Value):copy.Palette;
+            bool grey=copy?.Greyscale??frame.GreyscaleSlots.Contains(b.Slot.Value),inverted=copy?.Inverted??frame.InvertedPalettes.Contains(16+b.Slot.Value);
+            if(frame.BackgroundScrollOffsets.Length==2||ScanlineAffectsBackground(frame.Scanline,b.BackgroundRank))
+            {
+                if(frame.BattlerBackgroundMosaic[b.BackgroundRank-1]&&ScanlineAffectsBackground(frame.Scanline,b.BackgroundRank))
+                    throw new InvalidDataException("Concurrent BG mosaic and scanline sampling is outside the admitted closure.");
+                var scroll=frame.BackgroundScrollOffsets.Length==2?frame.BackgroundScrollOffsets[b.BackgroundRank-1]:new PixelPoint(32-center.X-offset.X,32-center.Y-offset.Y);
+                BlitBattlerBackground(layer,_assets[b.Asset],scroll,b.BackgroundRank,frame.Scanline,palette,grey,inverted);
+            }
+            else Blit(layer,_assets[b.Asset],center.X+offset.X-32,center.Y+offset.Y-32,palette,grey,inverted);
             if(frame.BattlerBackgroundMosaic[b.BackgroundRank-1])
                 MosaicBackground(layer,frame.BackgroundMosaicHorizontal+1,frame.BackgroundMosaicVertical+1);
             var backgroundLayer=_battlerBackgroundLayers[b.BackgroundRank-1];
@@ -109,7 +120,7 @@ public sealed class SourceBattleFrameComposer
         if(frame.Overlay is {} overlay)
         {
             if(!_overlays.TryGetValue(overlay.MaterialId,out var material))throw new InvalidDataException("Source BG1 overlay material missing.");
-            material.Render(_battlerBackgroundLayers[0],Width,112,overlay.ScrollX,overlay.ScrollY,_backgroundSurface,frame.PaletteBlends,frame.InvertedPalettes,frame.BackgroundPaletteEntries);
+            material.Render(_battlerBackgroundLayers[0],Width,112,overlay.ScrollX,overlay.ScrollY,_backgroundSurface,frame.PaletteBlends,frame.InvertedPalettes,frame.BackgroundPaletteEntries,frame.Scanline);
             if(frame.BattlerBackgroundMosaic[0])MosaicBackground(_battlerBackgroundLayers[0],frame.BackgroundMosaicHorizontal+1,frame.BackgroundMosaicVertical+1);
         }
         if(frame.BattlerBackgroundEnabled.Length!=2)throw new InvalidDataException("Battler BG enable register shape differs.");
@@ -172,7 +183,7 @@ public sealed class SourceBattleFrameComposer
                 if((_battlerBackgroundLayers[1][i]&0x8000)!=0){pixels[i]=_battlerBackgroundLayers[1][i];priority=p2;}
                 if((_battlerBackgroundLayers[0][i]&0x8000)!=0&&p1<=priority){pixels[i]=_battlerBackgroundLayers[0][i];priority=p1;}
                 if((objects[i]&0x8000)!=0&&objectPriority[i]<=priority)
-                    pixels[i]=translucent[i]&&frame.BlendEnabled?Blend(objects[i],pixels[i],frame.AlphaA,frame.AlphaB):objects[i];
+                    pixels[i]=translucent[i]&&frame.BlendEnabled?Blend(objects[i],pixels[i],ScanlineAlpha(frame,i/Width,false),ScanlineAlpha(frame,i/Width,true)):objects[i];
             }
         }
         else for(int i=0;i<pixels.Length;i++)
@@ -194,7 +205,7 @@ public sealed class SourceBattleFrameComposer
             bool selected=(firstMask&frame.BlendFirstTargets)!=0||(firstMask==16&&translucent[i]);
             bool colorEnabled=frame.Window0?.ColorEffectsAt(i%Width,i/Width)??true;
             pixels[i]=colorEnabled&&frame.BlendEnabled&&selected&&(secondMask&frame.BlendSecondTargets)!=0
-                ?Blend(first,second,frame.AlphaA,frame.AlphaB)
+                ?Blend(first,second,ScanlineAlpha(frame,i/Width,false),ScanlineAlpha(frame,i/Width,true))
                 :colorEnabled&&frame.Brightness is {} brightness&&(firstMask&frame.BlendFirstTargets)!=0
                     ?brightness.Apply(first):first;
         }
@@ -256,6 +267,29 @@ public sealed class SourceBattleFrameComposer
         (8,8) or (16,16) or (32,32) or (64,64) or
         (16,8) or (32,8) or (32,16) or (64,32) or
         (8,16) or (8,32) or (16,32) or (32,64);
+    private static bool ScanlineAffectsBackground(SourceScanlineFrame? scanline,int rank)=>scanline is not null&&scanline.Destination==(rank==1?SourceScanlineDestination.Bg1Horizontal:SourceScanlineDestination.Bg2Horizontal);
+    private static int ScanlineAlpha(SourceAnimationFrame frame,int row,bool second)
+    {
+        if(frame.Scanline is not {Destination:SourceScanlineDestination.BlendAlpha} scanline)return second?frame.AlphaB:frame.AlphaA;
+        int value=scanline.Words[row];return second?(value>>8)&31:value&31;
+    }
+    private static void BlitBattlerBackground(ushort[] destination,SourcePixelAsset source,PixelPoint baseline,int rank,
+        SourceScanlineFrame? scanline,SourcePaletteBlend? palette,bool grey,bool inverted)
+    {
+        bool selected=ScanlineAffectsBackground(scanline,rank);
+        for(int y=0;y<112;y++)
+        {
+            int scrollX=selected?scanline!.Words[y*(scanline.Word32?2:1)]:baseline.X;
+            int scrollY=selected&&scanline!.Word32?scanline.Words[y*2+1]:baseline.Y;
+            int sy=(y+scrollY)&255;if(sy>=source.Height)continue;
+            for(int x=0;x<Width;x++)
+            {
+                int sx=(x+scrollX)&511;if(sx>=source.Width)continue;
+                ushort color=source.Pixels[sy*source.Width+sx];if((color&0x8000)==0)continue;
+                destination[y*Width+x]=SourcePaletteMath.Apply(color,palette,inverted,grey);
+            }
+        }
+    }
     private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null,bool greyscale=false,bool inverted=false)
     {
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)

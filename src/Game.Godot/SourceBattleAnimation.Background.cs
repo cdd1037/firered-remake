@@ -15,7 +15,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(!_script.OverlayDependencies.Contains(materialId)||!_script.OverlayPalettes.TryGetValue(materialId,out var palette)||palette.Length!=16)
             throw new InvalidDataException("Source BG1 overlay dependency is missing.");
-        _overlay=new(materialId,0,0);
+        _overlay=new(materialId,0,0);SetScanlineBackgroundOffset(1,default);
     }
     private void BeginOverlay(string materialId)
     {
@@ -27,8 +27,11 @@ public sealed partial class SourceBattleAnimation
     private void SetOverlayScroll(int x,int y)
     {
         if(_overlay is null)throw new InvalidOperationException("Source overlay is not loaded.");
-        _overlay=_overlay with{ScrollX=unchecked((ushort)x),ScrollY=unchecked((ushort)y)};
+        _overlay=_overlay with{ScrollX=unchecked((ushort)x),ScrollY=unchecked((ushort)y)};SetScanlineBackgroundOffset(1,new(x,y));
     }
+    // InitBattleAnimBg clears VRAM without resetting the separate scroll globals.
+    private void ClearBackgroundTilemaps()
+    {_overlay=null;_backgrounds.Clear();_staticBackgroundCopies.Clear();}
     private void EndOverlay(bool clearBg1AndBg2)
     {
         _overlay=null;
@@ -38,10 +41,10 @@ public sealed partial class SourceBattleAnimation
     {
         if((firstTargets&~63)!=0||(secondTargets&~63)!=0||a is <0 or >31||b is <0 or >31)
             throw new InvalidDataException("Source alpha blend registers differ.");
-        _brightness=null;_blendFirstTargets=firstTargets;_blendSecondTargets=secondTargets;_alphaA=a;_alphaB=b;_blendEnabled=true;
+        _brightness=null;_blendFirstTargets=firstTargets;_blendSecondTargets=secondTargets;_alphaA=a;_alphaB=b;_queuedAlphaRegister=true;_blendEnabled=true;
     }
     private void ClearAlphaBlend()
-    {_brightness=null;_blendEnabled=false;_blendFirstTargets=0;_blendSecondTargets=63;_alphaA=_alphaB=0;}
+    {_brightness=null;_blendEnabled=false;_blendFirstTargets=0;_blendSecondTargets=63;_alphaA=_alphaB=0;_queuedAlphaRegister=true;}
 
     private int? _moveBackground;
     private ushort BackgroundScrollX {get;set;}

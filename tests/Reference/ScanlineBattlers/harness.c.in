@@ -1,0 +1,77 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define Q_8_8(n) ((s16)((n) * 256))
+#define TRUE 1
+#define FALSE 0
+#define DISPLAY_HEIGHT 160
+#define ANIM_ATTACKER 0
+#define ANIM_TARGET 1
+#define B_SIDE_PLAYER 0
+#define B_SIDE_OPPONENT 1
+#define BATTLER_COORD_X 0
+#define BATTLER_COORD_Y 1
+#define BATTLER_COORD_X_2 2
+#define BATTLER_COORD_Y_PIC_OFFSET 3
+#define BATTLER_COORD_ATTR_HEIGHT 1
+#define BATTLER_COORD_ATTR_WIDTH 2
+#define SOUND_PAN_TARGET 63
+#define SE_M_SKETCH 154
+#define SCANLINE_EFFECT_DMACNT_16BIT 1
+#define SCANLINE_EFFECT_DMACNT_32BIT 2
+#define REG_OFFSET_BLDCNT 0x50
+#define REG_OFFSET_BLDALPHA 0x52
+#define BLDCNT_TGT2_ALL 0x3f00
+#define BLDCNT_EFFECT_BLEND 0x40
+#define BLDCNT_TGT1_BG1 2
+#define BLDCNT_TGT1_BG2 4
+#define BLDALPHA_BLEND(a,b) ((a)|((b)<<8))
+#define sTransl_Speed data[0]
+#define sTransl_InitX data[1]
+#define sTransl_DestX data[2]
+#define sTransl_InitY data[3]
+#define sTransl_DestY data[4]
+#define sTransl_ArcAmpl data[5]
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite {struct{u16 tileNum;}oam;s16 x,y,x2,y2,data[8];SpriteCallback callback,stored;bool8 inUse,invisible;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};
+struct ScanlineEffectParams {volatile void*dmaDest;u32 dmaControl;u8 initState,unused9;};
+static struct {u8 state,srcBuffer;u32 width;volatile void*dest;}gScanlineEffect;
+static u16 gScanlineEffectRegBuffers[2][960],gBattle_BG1_X,gBattle_BG1_Y,gBattle_BG2_X,gBattle_BG2_Y,regX1,regX2;
+#define REG_BG1HOFS regX1
+#define REG_BG2HOFS regX2
+#define REG_ADDR_BG1HOFS (&regX1)
+#define REG_ADDR_BG2HOFS (&regX2)
+static struct Sprite gSprites[64];static struct Task gTasks[1];static s16 gBattleAnimArgs[8];static u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerAttacker;
+static int kind,doubles,height,width,yoff,elevation,frame,alpha,blend,sounds,soundPan;static u16 unfaded[16],faded[16];
+static u8 GetBattlerSide(u8 id){return id&1;}
+static u8 GetBattlerSpriteBGPriorityRank(u8 id){return id==0||id==3?2:1;}
+static s16 GetBattlerSpriteCoord(u8 id,u8 coord){static const s16 p[2][4][2]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};int value=p[doubles][id][coord&1];if(coord==BATTLER_COORD_Y_PIC_OFFSET){value=(value+yoff-((id&1)?elevation:0))&255;value+=!(id&1)?8:0;if(value>104)value=104;}return value;}
+static u8 GetBattlerYCoordWithElevation(u8 id){return GetBattlerSpriteCoord(id,BATTLER_COORD_Y)-((id&1)?elevation:0);}
+static s16 GetBattlerSpriteCoordAttr(u8 id,u8 attr){assert(attr==BATTLER_COORD_ATTR_HEIGHT||attr==BATTLER_COORD_ATTR_WIDTH);return attr==BATTLER_COORD_ATTR_HEIGHT?height:width;}
+static u8 GetAnimBattlerSpriteId(u8 selector){return selector==0?gBattleAnimAttacker:gBattleAnimTarget;}
+static s8 BattleAnimAdjustPanning(s8 pan){return gBattleAnimAttacker&1?-pan:pan;}
+static void DestroyAnimVisualTask(u8 id){assert(id==0);gTasks[0].isActive=FALSE;}
+static void DestroyAnimSprite(struct Sprite*s){s->inUse=FALSE;}
+static void SetGpuReg(u16 reg,u16 value){if(reg==REG_OFFSET_BLDCNT)blend=value;else{assert(reg==REG_OFFSET_BLDALPHA);alpha=value;}}
+static void ScanlineEffect_SetParams(struct ScanlineEffectParams p){gScanlineEffect.dest=p.dmaDest;gScanlineEffect.width=p.dmaControl;gScanlineEffect.state=p.initState;}
+static void StoreSpriteCallbackInData6(struct Sprite*s,SpriteCallback callback){s->stored=callback;s->data[6]=1234;s->data[7]=5678;}
+static void SetCallbackToStoredInData6(struct Sprite*s){s->callback=s->stored;}
+static void PlaySE12WithPanning(u16 sound,s8 pan){assert(sound==SE_M_SKETCH);sounds++;soundPan=pan;}
+static u8 IndexOfSpritePaletteTag(u16 tag){return 4;}
+static void BlendPalette(u16 offset,u16 count,u8 coefficient,u16 color){assert(offset==321&&count==15);for(int i=1;i<16;i++){int value=0;for(int c=0;c<3;c++){int a=(unfaded[i]>>(5*c))&31,b=(color>>(5*c))&31;value|=(a+(((b-a)*coefficient)>>4))<<(5*c);}faded[i]=value;}}
+@PROTOTYPES@
+@ARRAYS@
+@FUNCTIONS@
+static void row(void){struct Sprite*s=&gSprites[kind<5?gBattleAnimAttacker:8];int live=kind<5||kind==9?gTasks[0].isActive:s->inUse;printf("{\"frame\":%d,\"alive\":%d,\"state\":%u,\"writeBuffer\":%u,\"paired\":%d,\"rank\":%d,\"alpha\":%u,\"blend\":%u,\"bg\":[%u,%u,%u,%u],\"args\":[",frame,live,gScanlineEffect.state,gScanlineEffect.srcBuffer,gScanlineEffect.width==2,gScanlineEffect.dest==&regX1?1:gScanlineEffect.dest==&regX2?2:0,alpha,blend,gBattle_BG1_X,gBattle_BG1_Y,gBattle_BG2_X,gBattle_BG2_Y);for(int i=0;i<8;i++)printf("%s%d",i?",":"",gBattleAnimArgs[i]);printf("],\"data\":[");for(int i=0;i<(kind<5||kind==9?16:8);i++)printf("%s%d",i?",":"",kind<5||kind==9?gTasks[0].data[i]:s->data[i]);printf("],\"sprite\":[%d,%d,%d,%d,%d,%d],\"sounds\":[%d,%d],\"palette\":[",s->x,s->y,s->x2,s->y2,s->oam.tileNum,s->invisible,sounds,soundPan);for(int i=0;i<16;i++)printf("%s%u",i?",":"",faded[i]);printf("],\"buffers\":[");for(int b=0;b<2;b++)for(int i=0;i<960;i++)printf("%s%u",b||i?",":"",gScanlineEffectRegBuffers[b][i]);puts("]}");}
+int main(int argc,char**argv){assert(argc==20);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=gBattlerAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);height=atoi(argv[5]);width=atoi(argv[6]);yoff=atoi(argv[7]);elevation=atoi(argv[8]);int seeded=atoi(argv[9]);gScanlineEffect.srcBuffer=atoi(argv[10]);for(int i=0;i<8;i++)gBattleAnimArgs[i]=atoi(argv[11+i]);int hidden=atoi(argv[19]);
+ for(int b=0;b<2;b++)for(int i=0;i<960;i++)gScanlineEffectRegBuffers[b][i]=seeded?(u16)(b*4093+i*17):0;
+ gBattle_BG1_X=65501;gBattle_BG1_Y=27;gBattle_BG2_X=65391;gBattle_BG2_Y=65515;alpha=15;
+ for(int i=0;i<16;i++)unfaded[i]=faded[i]=(i*173)&32767;
+ for(int i=0;i<4;i++){gSprites[i].x=GetBattlerSpriteCoord(i,0);gSprites[i].y=(GetBattlerSpriteCoord(i,1)+yoff-((i&1)?elevation:0))&255;gSprites[i].invisible=hidden;gSprites[i].inUse=TRUE;}
+ gTasks[0].isActive=TRUE;
+ switch(kind){case 0:AnimTask_DigDownMovement(0);break;case 1:AnimTask_DigUpMovement(0);break;case 2:AnimTask_SketchDrawMon(0);break;case 3:AnimTask_DragonDanceWaver(0);break;case 4:AnimTask_AcidArmor(0);break;case 9:AnimTask_BlendPalInAndOutByTag(0);break;default:gSprites[8].inUse=TRUE;switch(kind){case 5:AnimDirtPlumeParticle(&gSprites[8]);break;case 6:AnimDigDirtMound(&gSprites[8]);break;case 7:AnimPencil(&gSprites[8]);break;case 8:AnimDragonDanceOrb(&gSprites[8]);break;default:abort();}}
+ for(frame=0;frame<1200;frame++){row();if(!(kind<5||kind==9?gTasks[0].isActive:gSprites[8].inUse))return 0;/* VBlank stop/flip only; shared engine vectors own GPU queue and row-zero timing. */if(gScanlineEffect.state==3)gScanlineEffect.state=0;else if(gScanlineEffect.state)gScanlineEffect.srcBuffer^=1;if(kind<5||kind==9)gTasks[0].func(0);else gSprites[8].callback(&gSprites[8]);}abort();}

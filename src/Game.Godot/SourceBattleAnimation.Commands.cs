@@ -138,15 +138,18 @@ public sealed partial class SourceBattleAnimation
     }
     private sealed class BlendMonInAndOutTask:VisualTask
     {
-        private readonly uint _palette;private readonly ushort _color;private readonly int _peak,_delay;
+        private readonly uint _palette;private readonly int _spriteBank=-1;private readonly ushort _color;private readonly int _peak,_delay;
         private int _cycles,_counter,_coefficient;private bool _descending;
         public BlendMonInAndOutTask(AnimationSlot slot,ushort color,int peak,int delay,int cycles)
         {_palette=1u<<(16+slot.Value);_color=color;_peak=peak;_delay=delay;_cycles=cycles;}
+        public BlendMonInAndOutTask(int spriteBank,ushort color,int peak,int delay,int cycles)
+        {_spriteBank=spriteBank;_color=color;_peak=peak;_delay=delay;_cycles=cycles;}
         public override void Step(SourceBattleAnimation owner)
         {
             if(++_counter<_delay)return;_counter=0;_coefficient+=_descending?-1:1;
             // Palette entry zero is transparent and never sampled by the compositor.
-            owner.BlendPalettes(_palette,_coefficient,_color);
+            if(_spriteBank>=0)owner.BlendSpritePaletteRange(_spriteBank,1,15,_coefficient,_color);
+            else owner.BlendPalettes(_palette,_coefficient,_color);
             if(!_descending&&_coefficient==_peak)_descending=true;
             else if(_descending&&_coefficient==0){if(--_cycles==0)Finished=true;else _descending=false;}
         }

@@ -8,7 +8,7 @@
 
 - 354个招式身份已有规则准入；[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)为每招的四个真实出战位置生成受控公共回合用例，共1,416行。它验证实际执行而非仅注册，但不能证明全部组合、随机分支、获得途径或特殊模式。
 - 76个有效特性身份已准入，不含NONE和未使用的CACOPHONY；身份准入不是所有入场、复制、天气、免疫和残留交互穷尽验证。
-- 专属招式脚本309／354，其余45尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
+- 专属招式脚本321／354，其余33尚未接专属还原。这是实现范围，不是总体完成率，也不是“全部动画写好只差验收”。
 - 定义存在、规则执行、应用入口、专属动画、原生像素一致和真实声音输出分别成立；不能相互替代。当前166快照完整Presentation793／793通过，包含全部生成根逐帧合成；本次有界Application238／238通过。最新完整Application仍为投影基础1562／1562，完整Battle仍为131快照1709／1709。这些受控检查不等于原生逐帧或实际扬声器验收。
 
 2026-10-16原生有界抽查：使用已验证场地存档，从Route 1普通遇敌进入战斗；敌方Tackle后，我方Thief实际切换Dark背景，脚本结束后草地恢复且战斗菜单可继续，无错误日志。这只验证该调用路径，不代表全部背景逐帧一致。
@@ -460,3 +460,11 @@ Validation: solution refresh passed with zero warnings/errors (31.74 seconds, fo
 最终编译0警告／错误；Application157／157（7.74秒）、受影响Presentation89／89（36.61秒）、ResourceImport2／2（2.24秒，含11个Python检查）通过，三个修改producer的--check通过。原C代表证据FocusSound194场景／10,430帧，ElectricWisp78场景／6,412帧，逐帧几何、矩阵、palette、音效及清理继续由同一比较器验证。Electric原生harness补上原CreateSpriteAt的首tile初始化；Focus原生harness补真实idle battler模式／slot初始化，保留旧文件作本地对照；没有据实现改写源期望。首次失败中的8源参数对16内部寄存器、normal对double affine前提已在夹具中纠正；十六进制信号解析与Snore未使用额外参数准入由真实脚本触发修正。所有生成期望仍仅在忽略目录；没有本批原生UI或真实扬声器验收。
 
 同一FocusSound比较器另对按需全量1,092场景／54,148帧／89,480 sprite行通过（1／1，3.00秒）。常规运行仍使用本地预生成代表数据，不暗中编译C。
+
+## 2026-10-18：321根扫描线共享批次
+
+315的Destiny Bond／Perish Song／Curse／Trick／Recycle／Silver Wind验证见[分派架构](animation-dispatch-architecture.md)。本批新增Surf57、Muddy Water330、Dig91、Acid Armor151、Sketch166、Dragon Dance349；规范目录共321根，余33根。Sketch复用效果驱动的复制回执验证，保留永久复制的base PP与PP Ups；Dragon Dance复用成对自提升结果，Acid Armor的White Herb后缀由既有完整物品回执认证，不混作第二次招式结果。
+
+共享场景保留两个960字扫描线buffer及翻转索引，支持BG1／BG2水平或成对偏移、逐行alpha和显式512×256地图。原图块先采样再裁剪；首行dirty GPU写入、行1–159、终止传输、停止恢复和跨调用取消均有独立测试。帧阶段模型及160／161硬件周期不确定边界见[背景说明](source-animation-backgrounds.md)，不宣称周期级原版一致。Surf终止后的局部调色板值保留在旧快照，新调用独立加载；Dig玩家地面线在视口下缘，像素中性由几何推导，对手侧另有逐像素遮罩验证。
+
+完整解决方案构建0警告／错误（72.61秒）；Application240／240（7.60秒），首轮受影响Presentation151／152含全部321根每帧组合通过，修正唯一Dig裁剪前提后定向53／53（22.33秒）；额外测试加入两个对手遮罩用例。ResourceImport2／2（0.72秒，8个Python检查），两个修改producer精确再生通过。独立源证据：scanline状态58场景／444操作，Surf24场景／3272帧，四消费者83场景／6993帧；原C O0／O2一致，生成期望仍仅本地忽略。旧315根、335素材及49背景条目／基础palette保持一致。未开展本批原生UI或真实声音验收。

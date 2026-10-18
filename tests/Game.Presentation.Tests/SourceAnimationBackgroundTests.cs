@@ -134,6 +134,26 @@ public sealed class SourceAnimationBackgroundTests
         for(int i=1;i<8;i++)Assert.AreEqual((ushort)0x83e0,pixels[i]);
     }
     [TestMethod]
+    public void WideOverlayUsesScreenblockAddressingAndWrapsAtItsDeclaredWidth()
+    {
+        var tiles=new byte[96];Array.Fill(tiles,(byte)0x11,0,32);Array.Fill(tiles,(byte)0x22,32,32);Array.Fill(tiles,(byte)0x33,64,32);
+        var map=new byte[4096];
+        for(int cell=0;cell<2048;cell++)BinaryPrimitives.WriteUInt16LittleEndian(map.AsSpan(cell*2),(ushort)(0x8000+(cell<1024?0:1)));
+        BinaryPrimitives.WriteUInt16LittleEndian(map.AsSpan((1024+31*32+31)*2),0x8002);
+        var palette=new ushort[16];palette[1]=31;palette[2]=0x3e0;palette[3]=0x7c00;
+        var overlay=new SourceOverlayAsset(tiles,map,palette,screenSize:1);
+        Assert.AreEqual(new SourceBackgroundPixel(8,1),overlay.Sample(255,0));
+        Assert.AreEqual(new SourceBackgroundPixel(8,2),overlay.Sample(256,0));
+        Assert.AreEqual(new SourceBackgroundPixel(8,3),overlay.Sample(511,255));
+        Assert.AreEqual(new SourceBackgroundPixel(8,1),overlay.Sample(512,256));
+        Assert.AreEqual(new SourceBackgroundPixel(8,3),overlay.Sample(-1,-1));
+        var pixels=new ushort[4];overlay.Render(pixels,4,1,254,0,null,[],[]);
+        CollectionAssert.AreEqual(new ushort[]{0x801f,0x801f,0x83e0,0x83e0},pixels);
+        Assert.Throws<InvalidDataException>(()=>new SourceOverlayAsset(tiles,map,palette));
+        Assert.Throws<InvalidDataException>(()=>new SourceOverlayAsset(tiles,new byte[2048],palette,screenSize:1));
+        Assert.Throws<InvalidDataException>(()=>new SourceOverlayAsset(tiles,map,palette,screenSize:2));
+    }
+    [TestMethod]
     public void HardwareDarkeningRoundsBeforeSubtractingAndPreservesOpacity()
     {
         Assert.AreEqual((ushort)0x421, SourceAnimationBackgroundSurface.Darken(0x421, 8));
