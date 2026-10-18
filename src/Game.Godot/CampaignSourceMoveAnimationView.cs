@@ -228,6 +228,7 @@ public partial class CampaignView
     }
     private void AcknowledgeWildAttackText()
     {
+        if(TryStartAfterTextGeneral(false))return;
         var b=PresentedWildBattle!;
         EnsureSourceMoveAssets();
         var decision=CampaignMoveAnimationPresentation.AtAttackText(b,SourceTrainerPresentationActive(b),_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves,SourceMoveScriptAvailable);
@@ -238,6 +239,7 @@ public partial class CampaignView
     }
     private void AcknowledgeDoubleAttackText()
     {
+        if(TryStartAfterTextGeneral(true))return;
         var b=_session.State.DoubleBattle!;
         EnsureSourceMoveAssets();
         var decision=CampaignMoveAnimationPresentation.AtAttackText(b,_session.EffectiveOptions.BattleScene,_catalog.PokemonContent!.Catalog.Moves,SourceMoveScriptAvailable);
@@ -311,19 +313,24 @@ public partial class CampaignView
         }
         return species;
     }
+    private static bool ApplySourceAnimationVisibility(List<AnimationBattler> battlers,IReadOnlyList<bool> visibility)
+    {
+        if(visibility.Count!=battlers.Count)return false;
+        for(int i=0;i<battlers.Count;i++)
+        {
+            // Faint presentation owns presence; committed HP may already be zero.
+            // Charge replay owns the current source invisible flags.
+            bool present=battlers[i].Visible,hidden=!visibility[battlers[i].Slot.Value];
+            battlers[i]=battlers[i] with{Visible=present&&!hidden,SourceVisibility=new(present,hidden,hidden)};
+        }
+        return true;
+    }
     private bool StartSourceMoveAnimation(CampaignMoveAnimationDispatch dispatch,Dictionary<string,SourcePixelAsset> assets,List<AnimationBattler> battlers,bool doubles)
     {
         if(_sourceResultEntryCharge is null)return false;
         var sourceEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
         var visibility=CampaignMoveAnimationPresentation.SpriteVisibilityAtInvocation(sourceEvents,dispatch,_sourceResultEntryCharge);
-        if(visibility is null||visibility.Length!=battlers.Count)return false;
-        for(int i=0;i<battlers.Count;i++)
-        {
-            // Faint presentation owns presence; committed HP can already be zero
-            // before that source sprite has been removed. Charge replay owns flags.
-            bool present=battlers[i].Visible,hidden=!visibility[battlers[i].Slot.Value];
-            battlers[i]=battlers[i] with{Visible=present&&!hidden,SourceVisibility=new(present,hidden,hidden)};
-        }
+        if(visibility is null||!ApplySourceAnimationVisibility(battlers,visibility))return false;
         var resolved=_sourceAnimationResources!.Resolve(dispatch.SourceMoveId);
         var script=resolved.Script;foreach(var asset in resolved.Assets)assets[asset.Key]=asset.Value;
         SourceBattlerFormMaterial? additionalMon=null;

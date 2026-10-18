@@ -45,6 +45,7 @@ public sealed class SourceAnimationResources:IDisposable
             // never by a second move-support inventory or runtime terrain map.
             var programs=_scripts.Values.ToDictionary(s=>s.Label,StringComparer.Ordinal);
             foreach(var (id,script) in _scripts.ToArray())_scripts[id]=SourceAnimationProgramDependencies.BindReferences(script,programs);
+            foreach(var (label,script) in _generalScripts.ToArray())_generalScripts[label]=SourceAnimationProgramDependencies.BindReferences(script,programs);
         }
         catch{Dispose();throw;}
     }

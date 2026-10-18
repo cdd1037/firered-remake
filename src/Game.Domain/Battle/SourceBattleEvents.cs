@@ -113,6 +113,7 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceTowerVolatileEvent), "SourceTowerVolatileEvent")]
 [JsonDerivedType(typeof(SourceTransformedEvent), "SourceTransformedEvent")]
 [JsonDerivedType(typeof(SourceTurnReadyEvent), "SourceTurnReadyEvent")]
+[JsonDerivedType(typeof(SourceWeatherContinuedEvent), "SourceWeatherContinuedEvent")]
 [JsonDerivedType(typeof(SourceWeatherDamageEvent), "SourceWeatherDamageEvent")]
 [JsonDerivedType(typeof(SourceYawnEvent), "SourceYawnEvent")]
 public abstract record SourceBattleEvent(long Sequence, int Turn);
@@ -262,6 +263,9 @@ public sealed record SourceTowerHpEvent(long Sequence, int Turn, BattlerSlot Sid
 public sealed record SourceTowerVolatileEvent(long Sequence, int Turn, BattlerSlot Side, string Effect, bool Applied, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceTransformedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, SpeciesId OriginalSpecies, SpeciesId AppearanceSpecies, uint AppearancePersonality, uint AppearanceOriginalTrainerId, PokemonInstance BattleView) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceTurnReadyEvent(long Sequence, int Turn, ushort RandomTurnNumber) : SourceBattleEvent(Sequence, Turn);
+/// <summary>One continuing-weather presentation boundary, after any timer receipt
+/// and before residual damage. Controller is frozen at field-phase entry.</summary>
+public sealed record SourceWeatherContinuedEvent(long Sequence, int Turn, BattlerSlot Controller, string Weather) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceWeatherDamageEvent(long Sequence, int Turn, BattlerSlot Side, string Weather, int HpBefore, int HpAfter, int Damage) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceYawnEvent(long Sequence, int Turn, BattlerSlot Side, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
 
@@ -367,6 +371,7 @@ public static class SourceBattleEventAdapter
         SourceObedienceEvent x => new WildBattleObedienceEvent(x.Sequence, x.Turn, Side(x.Actor), x.AttemptedMove, x.Decision),
         SourceTransformedEvent x => new WildBattleTransformedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.OriginalSpecies, x.AppearanceSpecies, x.AppearancePersonality, x.AppearanceOriginalTrainerId, x.BattleView),
         SourceTurnReadyEvent x => new WildBattleTurnReadyEvent(x.Sequence, x.Turn, x.RandomTurnNumber),
+        SourceWeatherContinuedEvent x => new WildBattleWeatherContinuedEvent(x.Sequence, x.Turn, Side(x.Controller), x.Weather),
         SourceWeatherDamageEvent x => new WildBattleWeatherDamageEvent(x.Sequence, x.Turn, Side(x.Side), x.Weather, x.HpBefore, x.HpAfter, x.Damage),
         SourceYawnEvent x => new WildBattleYawnEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
         _ => throw new NotSupportedException("Canonical event has no lossless singles representation: " + value.GetType().Name)
@@ -397,6 +402,8 @@ public static class SourceBattleEventHooks
     }
     public static string? ValidateRouting(SourceBattleFrame frame, SourceBattleEvent value)
     {
+        if (value is SourceWeatherContinuedEvent weather && weather.Weather is not ("rain" or "sandstorm" or "sun" or "hail"))
+            return "source_event_weather_kind";
         if (value is SourceMoveTargetResolvedEvent resolved && (!Enum.IsDefined(resolved.Reason) ||
             resolved.PriorTarget == resolved.Target || resolved.Actor.Side == resolved.Target.Side))
             return "source_event_target_resolution";
@@ -547,6 +554,7 @@ public static class SourceBattleEventHooks
             SourceTowerVolatileEvent x => [x.Side],
             SourceTransformedEvent x => [x.Actor, x.Target],
             SourceTurnReadyEvent x => [],
+            SourceWeatherContinuedEvent x => [x.Controller],
             SourceWeatherDamageEvent x => [x.Side],
             SourceYawnEvent x => [x.Side],
             SourceOrderEvent x => x.Order.Select(s => (BattlerSlot?)s),

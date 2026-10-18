@@ -50,6 +50,7 @@ internal static partial class SourceAnimationProgramDependencies
         // prefixes. Such prefixes need their own companion/lifetime proof rather
         // than disappearing from the selected leaf's capacity calculation.
         var commands=source.Commands;
+        if(commands.Length==1&&commands[0].Op=="goto"&&commands[0].Args.Length==1&&source.Labels.Count==0&&source.Subroutines.Count==0&&source.ProgramReferences.Length==1&&source.ProgramReferences[0]==commands[0].Args[0]&&source.TailPrograms.ContainsKey(commands[0].Args[0]))return;
         if(commands.Length<2||source.Labels.Count!=0||source.Subroutines.Count!=0||commands[0].Op!="createvisualtask"||commands[0].Args.Length!=2||commands[0].Args[0]!="AnimTask_GetBattleTerrain"||!int.TryParse(commands[0].Args[1],out int priority)||priority is <0 or >255)
             throw new InvalidDataException("Tail selector must begin with one synchronous terrain predicate.");
         var targets=new HashSet<string>(StringComparer.Ordinal);
@@ -75,14 +76,17 @@ internal static partial class SourceAnimationProgramDependencies
     internal static SourceAnimationScript SelectedProgram(SourceAnimationScript root,CommittedMoveAnimation cue)
     {
         if(root.TailPrograms.Count==0)return root;
-        if(cue.SourceTerrain is not {} terrain||(int)terrain is <0 or >9)
-            throw new SourceAnimationException(new(root.MoveId,root.Label,root.Commands[0].Line,root.Commands[0].Op,"Terrain selector requires committed native terrain 0 through 9."));
         var current=root;
         while(current.TailPrograms.Count!=0)
         {
             string target=current.Commands[^1].Args[0];
-            foreach(var c in current.Commands.Skip(1))
-                if(c.Op=="jumpargeq"&&int.Parse(c.Args[1],System.Globalization.CultureInfo.InvariantCulture)==(int)terrain){target=c.Args[2];break;}
+            if(current.Commands.Length!=1)
+            {
+                if(cue.SourceTerrain is not {} terrain||(int)terrain is <0 or >9)
+                    throw new SourceAnimationException(new(root.MoveId,root.Label,current.Commands[0].Line,current.Commands[0].Op,"Terrain selector requires committed native terrain 0 through 9."));
+                foreach(var c in current.Commands.Skip(1))
+                    if(c.Op=="jumpargeq"&&int.Parse(c.Args[1],System.Globalization.CultureInfo.InvariantCulture)==(int)terrain){target=c.Args[2];break;}
+            }
             current=current.TailPrograms[target];
         }
         return current;

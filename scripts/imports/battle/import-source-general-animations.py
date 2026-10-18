@@ -71,14 +71,27 @@ def build(reference):
    if not line:continue
    if line.endswith(':'):raise ValueError('Unterminated general source label')
    op,*tail=line.split(None,1);args=[s.strip() for s in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else []
-   if op not in {'loadspritegfx','delay','playsewithpan','createvisualtask','waitforvisualfinish','call','createsprite','return','end'}:raise ValueError('Uncovered source general command '+op)
+   if op not in {'loadspritegfx','delay','playsewithpan','createvisualtask','waitforvisualfinish','call','createsprite','return','end','goto','monbg','clearmonbg','fadetobg','restorebg','waitbgfadein','waitbgfadeout','setarg','setalpha','blendoff','waitplaysewithpan'}:raise ValueError('Uncovered source general command '+op)
    result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+i+1))
    if op==terminal:return result
   raise ValueError('Missing general terminator')
  roots={name:commands(name,'end') for name in ['General_HeldItemEffect','General_WishHeal']}
  castform,castform_labels=branched_program(source,'General_CastformChange')
  roots['General_CastformChange']=castform
- subs={name:commands(name,'return') for name in ['GrantingStarsEffect','HealingEffect']}
+ # These are named controller programs, never additional move identities.
+ for name in ['General_Rain','General_FutureSightHit','General_DoomDesireHit','General_FocusPunchSetUp']:
+  roots[name]=commands(name,'end')
+ for name in ['General_Sun','General_Sandstorm','General_Hail']:
+  roots[name]=commands(name,'goto')
+  if len(roots[name])!=1 or len(roots[name][0]['args'])!=1 or not roots[name][0]['args'][0].startswith('Move_'):
+   raise ValueError('General tail must be one canonical move transfer')
+ subs={name:commands(name,'return') for name in ['GrantingStarsEffect','HealingEffect','EndureEffect','SetPsychicBackground','UnsetPsychicBackground']}
+ utility=read('src/battle_anim_utility_funcs.c').decode()
+ target=re.search(r'void AnimTask_SetAnimTargetToBattlerTarget\(u8 taskId\)\s*\{(.*?)^\}',utility,re.S|re.M)
+ if target is None or re.sub(r'\s+','',target[1])!='gBattleAnimTarget=gBattlerTarget;DestroyAnimVisualTask(taskId);':raise ValueError('Delayed target callback contract differs')
+ beam=read('src/battle_anim_effects_3.c').decode()
+ beam_body=re.search(r'void AnimTask_DoomDesireLightBeam\(u8 taskId\)\s*\{(.*?)^\}',beam,re.S|re.M)
+ if beam_body is None or any(token not in beam_body[1] for token in ['AnimLoadCompressedBgTilemap(animBg.bgId, gBattleAnim_MorningSunTilemap);','AnimLoadCompressedBgGfx(animBg.bgId, gBattleAnim_MorningSunGfx, animBg.tilesOffset);','LoadCompressedPalette(gBattleAnim_MorningSunPal, BG_PLTT_ID(animBg.paletteId), PLTT_SIZE_4BPP);']):raise ValueError('Doom beam shared material contract differs')
  def dependency_commands(rows):
   flat=list(rows)
   for row in rows:
@@ -100,6 +113,15 @@ def build(reference):
  data=dict(schemaVersion=1,indexedAssets=indexed,generalScripts=[dict(label=name,commands=rows,soundEffects=shared.sound_effects(reference,dependency_commands(rows))) for name,rows in roots.items()],subroutines=subs,spriteRecipes=recipes,assets=assets)
  for row in data['generalScripts']:
   if row['label']=='General_CastformChange':row['labels']=castform_labels
+  if row['label'] in {'General_Sun','General_Sandstorm','General_Hail'}:row['programReferences']=[row['commands'][0]['args'][0]]
+  if row['label']=='General_Rain':row['spriteDependencies']=['gRainDropSpriteTemplate']
+  if row['label']=='General_DoomDesireHit':row['overlayDependencies']=['morning-sun']
+  if row['label'] not in {'General_HeldItemEffect','General_WishHeal','General_CastformChange'}:
+   tags={name:10000+int(value) for name,value in re.findall(r'^#define (ANIM_TAG_\w+)\s+\(ANIM_SPRITES_START\s*\+\s*(\d+)\)',read('include/constants/battle_anim.h').decode(),re.M)}
+   row['spriteTags']={name:tags[name] for name in sorted({c['args'][0] for c in dependency_commands(row['commands']) if c['op']=='loadspritegfx'})}
+ names={c['args'][0] for row in roots.values() for c in dependency_commands(row) if c['op']=='fadetobg'}
+ definitions={name:int(value) for name,value in re.findall(r'^#define (BG_\w+)\s+(\d+)\b',read('include/constants/battle_anim.h').decode(),re.M)}
+ data['backgroundSymbols']={name:definitions[name] for name in sorted(names)}
  return (json.dumps(data,indent=2)+'\n').encode(),blobs
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--reference',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();data,blobs=build(a.reference)

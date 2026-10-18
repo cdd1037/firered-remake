@@ -162,6 +162,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleHeldItemKnockedOffEvent), "held-item-knocked-off")]
 [JsonDerivedType(typeof(WildBattleDamageAdjustedEvent), "source-damage-adjusted")]
 [JsonDerivedType(typeof(WildBattleHeldItemSurvivalEvent), "held-item-survival")]
+[JsonDerivedType(typeof(WildBattleWeatherContinuedEvent), "weather-continued")]
 [JsonDerivedType(typeof(WildBattleWeatherDamageEvent), "weather-damage")]
 [JsonDerivedType(typeof(WildBattleProtectAttemptEvent), "protect-attempt")]
 [JsonDerivedType(typeof(WildBattlePayDayEvent), "pay-day")]
@@ -403,6 +404,7 @@ public sealed record WildBattleRecoveredEvent(long Sequence, int Turn, WildBattl
 public sealed record WildBattlePayDayEvent(long Sequence, int Turn, WildBattleSide Actor, int Before, int After) : WildBattleEvent(Sequence, Turn);
 
 public sealed record WildBattleHeldItemKnockedOffEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target, MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleWeatherContinuedEvent(long Sequence, int Turn, WildBattleSide Controller, string Weather) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleWeatherDamageEvent(long Sequence, int Turn, WildBattleSide Side, string Weather, int HpBefore, int HpAfter, int Damage) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleProtectAttemptEvent(long Sequence, int Turn, WildBattleSide Side, MoveId Move, int Before, int After, int Threshold, int Roll, bool NotLastAction, bool Succeeded) : WildBattleEvent(Sequence, Turn);
 

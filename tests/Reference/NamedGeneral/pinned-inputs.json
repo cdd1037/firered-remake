@@ -1,0 +1,12 @@
+{
+  "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+  "src/battle_anim_utility_funcs.c": "8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "include/gba/io_reg.h": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0",
+  "include/gba/defines.h": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b",
+  "include/palette.h": "3f5ee66bab01538193629ffef3ff3cd6ad7555f7e294f52ae3ccfa36f94ac418",
+  "include/constants/battle.h": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+  "include/battle_anim.h": "15d0a815fec54ed669e1cf7130d323070d799ecfba0f3a935da4b9c28d6f09a7",
+  "graphics/battle_anims/masks/light_beam.png": "b03ca7ed64e2a4f599644228ec71b97da5d8a46fdecc937be160d19e6a1bd2de",
+  "graphics/battle_anims/masks/light_beam.bin": "1485c57ca0d47dcbdfec54a9318f6406e6d9e2ad2abb05776fac2e35ed49d963"
+}

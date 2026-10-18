@@ -69,6 +69,8 @@ public static class CampaignHeldItemAnimationPresentation
         index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
     internal static bool? SpriteVisibleAtResult(IReadOnlyList<SourceBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
         index>=0&&index<events.Count&&slot.Value<entry.Count?SpriteVisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry):null;
+    internal static bool? SpriteVisibleAtResult(IReadOnlyList<WildBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
+        index>=0&&index<events.Count&&slot.Value<entry.Count?SpriteVisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry):null;
     private static bool VisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)=>SpriteVisibleAt(rows,index,slot,entry)==true;
     private static bool? SpriteVisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)
     {

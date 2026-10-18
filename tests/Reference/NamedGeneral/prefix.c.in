@@ -1,0 +1,36 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;
+#define TRUE 1
+#define FALSE 0
+@MACROS@
+struct Task{s16 data[16];};struct BattleAnimBgData{u8 bgId,paletteId;u16 tilesOffset;void*bgTilemap;};
+static struct Task gTasks[1];static u8 gBattleAnimTarget,gBattlerTarget;static u16 gBattle_BG1_X,gBattle_BG1_Y,regs[2];
+static u8 gBattleAnim_MorningSunTilemap[1],gBattleAnim_MorningSunGfx[1],gBattleAnim_MorningSunPal[1];
+static int doubles,active=1,overlay,attrs[7],loads,clears,destructions;
+static int IsContest(void){return 0;}static int IsDoubleBattle(void){return doubles;}static u8 GetBattlerPosition(u8 b){return b;}static u8 GetBattlerSide(u8 b){return b&1;}
+static void SetGpuReg(int offset,u16 value){assert(offset==REG_OFFSET_BLDCNT||offset==REG_OFFSET_BLDALPHA);regs[offset==REG_OFFSET_BLDCNT?0:1]=value;}
+static void SetAnimBgAttribute(int bg,int attr,int value){assert(bg==1&&attr<7);attrs[attr]=value;}
+static void GetBattleAnimBg1Data(struct BattleAnimBgData*b){b->bgId=1;b->paletteId=8;b->tilesOffset=0;b->bgTilemap=NULL;}
+static void AnimLoadCompressedBgTilemap(int bg,const void*data){assert(bg==1&&data==gBattleAnim_MorningSunTilemap);overlay=1;loads++;}
+static void AnimLoadCompressedBgGfx(int bg,const void*data,int offset){assert(bg==1&&data==gBattleAnim_MorningSunGfx&&offset==0);loads++;}
+static void LoadCompressedPalette(const void*data,int offset,int length){assert(data==gBattleAnim_MorningSunPal&&offset==128&&length==32);loads++;}
+static void RelocateBattleBgPal(int palette,void*map,int x,int y){abort();}
+static void InitBattleAnimBg(int bg){assert(bg==1);overlay=0;clears++;}
+static void DestroyAnimVisualTask(u8 id){assert(id==0&&active);active=0;destructions++;}
+@FUNCTIONS@
+static void row(int frame,int cleanup){
+ printf("{\"frame\":%d,\"active\":%d,\"phase\":%d,\"index\":%d,\"timer\":%d,\"alpha\":[%u,%u],\"blend\":%u,\"x\":%u,\"y\":%u,\"overlay\":%d,\"priority\":%d,\"charBase\":%d,\"loads\":%d,\"clears\":%d,\"undefinedNext\":%s,\"cleanupOnly\":%s}\n",frame,active,gTasks[0].data[0],gTasks[0].data[2],gTasks[0].data[3],regs[1]&31,(regs[1]>>8)&31,regs[0],gBattle_BG1_X,gBattle_BG1_Y,overlay,attrs[BG_ANIM_PRIORITY],attrs[BG_ANIM_CHAR_BASE_BLOCK],loads,clears,gTasks[0].data[0]==1&&gTasks[0].data[2]==4?"true":"false",cleanup?"true":"false");
+}
+int main(int argc,char**argv){assert(argc==3);doubles=atoi(argv[1]);gBattlerTarget=atoi(argv[2]);
+ for(int initial=0;initial<4;initial++){active=1;destructions=0;gBattleAnimTarget=initial;AnimTask_SetAnimTargetToBattlerTarget(0);assert(gBattleAnimTarget==gBattlerTarget&&!active&&destructions==1);}
+ active=1;destructions=0;
+ for(int frame=0;frame<512;frame++){
+  if(gTasks[0].data[0]==1&&gTasks[0].data[2]==4){gTasks[0].data[0]=5;AnimTask_DoomDesireLightBeam(0);row(frame,1);assert(!active&&!overlay&&!gBattle_BG1_X&&!gBattle_BG1_Y&&!regs[0]&&!regs[1]);return 0;}
+  AnimTask_DoomDesireLightBeam(0);row(frame,0);
+ }
+ abort();
+}

@@ -7,8 +7,8 @@ public sealed partial class SourceBattleAnimation
     {
         var a=command.Args;if(command.Op!="createvisualtask"||a.FirstOrDefault()!="AnimTask_Hail")return false;
         if(a.Length!=2||Number(a[1])!=5||!_script.SpriteRecipes.ContainsKey(HailTemplate)||!_script.SpriteRecipes.ContainsKey(HailImpactTemplate))Fail(command,"Hail task operands or child recipes differ.");
-        var reachable=_script.Commands.Concat(_script.Subroutines.Values.SelectMany(x=>x)).ToArray();
-        if(reachable.Count(c=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault()=="AnimTask_Hail")!=1||reachable.Any(c=>c.Op is not ("loadspritegfx" or "createvisualtask" or "loopsewithpan" or "waitforvisualfinish" or "delay" or "end")||c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is not ("AnimTask_Hail" or "AnimTask_BlendBattleAnimPal")))Fail(command,"Hail sprite/matrix capacity requires its reviewed task-only closure.");
+        var reachable=OverlayInvocationCommands();
+        if(_validatingInvokedProgram&&(reachable.Count(c=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault()=="AnimTask_Hail")!=1||reachable.Any(c=>c.Op is not ("loadspritegfx" or "createvisualtask" or "loopsewithpan" or "waitforvisualfinish" or "delay" or "end")||c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is not ("AnimTask_Hail" or "AnimTask_BlendBattleAnimPal"))))Fail(command,"Hail sprite/matrix capacity requires its reviewed task-only closure.");
         if(!_script.SpriteDependencies.Contains(HailTemplate)||!_script.SpriteDependencies.Contains(HailImpactTemplate))Fail(command,"Hail raw child dependency metadata is missing.");
         var hail=_script.SpriteRecipes[HailTemplate];var impact=_script.SpriteRecipes[HailImpactTemplate];
         if(hail.Callback!="AnimHailBegin"||hail.Asset!="hail"||hail.Width!=16||hail.Height!=16||hail.Blend||hail.AffineDoubleSize||hail.AffineAnimations.Length!=3||

@@ -31,6 +31,7 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleDisableChangedEvent x => new SourceDisableChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Before,x.After,x.Reason),
         WildBattleEffectivenessEvent x => new SourceEffectivenessEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.Effectiveness),
         WildBattleEncoreChangedEvent x => new SourceEncoreChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Slot,x.Before,x.After,x.Reason),
+        WildBattleFocusPunchPreparedEvent x => new SourceFocusPunchPreparedEvent(x.Sequence,x.Turn,new((int)x.Actor),x.ChosenSlot,x.PartyIndex),
         WildBattleFocusEnergyEvent x => new SourceFocusEnergyEvent(x.Sequence,x.Turn,new((int)x.Side)),
         WildBattleHeldItemConsumedEvent x => new SourceHeldItemConsumedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Item,x.HpBefore,x.HpAfter,x.HpRestored) { PpRecovery=x.PpRecovery,StatChanges=x.StatChanges,FocusEnergyRaised=x.FocusEnergyRaised,Flavor=x.Flavor },
         WildBattleHpChangedEvent x => new SourceHpChangedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.HpBefore,x.HpAfter,x.Damage,x.Critical,x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter, PreparedAnimationPower = x.PreparedAnimationPower, PreparedAnimationWeather = x.PreparedAnimationWeather },
@@ -72,6 +73,7 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleTowerVolatileEvent x => new SourceTowerVolatileEvent(x.Sequence,x.Turn,new((int)x.Side),x.Effect,x.Applied,x.Reason),
         WildBattleTransformedEvent x => new SourceTransformedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.OriginalSpecies,x.AppearanceSpecies,x.AppearancePersonality,x.AppearanceOriginalTrainerId,x.BattleView),
         WildBattleYawnEvent x => new SourceYawnEvent(x.Sequence,x.Turn,new((int)x.Side),x.Before,x.After,x.Reason),
+        WildBattleWeatherContinuedEvent x => new SourceWeatherContinuedEvent(x.Sequence,x.Turn,new((int)x.Controller),x.Weather),
         WildBattleTurnReadyEvent x => new SourceTurnReadyEvent(x.Sequence,x.Turn,x.RandomTurnNumber),
         _ => new UninterpretedAnimationReceipt(receipt.Sequence,receipt.Turn)
     };

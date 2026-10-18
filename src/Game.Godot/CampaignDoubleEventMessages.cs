@@ -97,6 +97,7 @@ public partial class CampaignView
             case SourceRootsChangedEvent x:return x.Rooted?Atk("sText_PkmnPlantedRoots",x.Side):DoubleSilent;
             case SourceIngrainHealEvent x:return Atk("sText_PkmnAbsorbedNutrients",x.Side);
             case SourceYawnEvent x:return x.Reason=="move"&&invocation is {}?DoubleText("sText_PkmnWasMadeDrowsy",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(invocation.Actor)),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side))):DoubleSilent;
+            case SourceWeatherContinuedEvent x:return CampaignWeatherContinuationPresentation.At(b.Events,b.EventIndex) is null?DoubleSilent:DoubleText(CampaignWeatherContinuationPresentation.ContinuationSymbol(x.Weather));
             case SourceWeatherDamageEvent x:return Atk(x.Weather=="hail"?"sText_PkmnPeltedByHail":"sText_PkmnBuffetedBySandstorm",x.Side);
             case SourceSubstituteDamagedEvent x:
                 return new(x.HpAfter==0?[new("sText_SubstituteDamaged",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target))),new("sText_PkmnSubstituteFaded",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)))]:[new("sText_SubstituteDamaged",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)))]);

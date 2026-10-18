@@ -47,7 +47,7 @@ public sealed partial class SourceBattleAnimation
             Fail(command,"Overlay sprite source shape or dummy program differs.");
         return true;
     }
-    private static bool IsOverlayCommand(SourceAnimationCommand c)=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is "AnimTask_ScaryFace" or "AnimTask_HazeScrollingFog" or "AnimTask_MistBallFog" or "AnimTask_LoadSandstormBackground" or "AnimTask_MorningSunLightBeam" or "AnimTask_HeartsBackground";
+    private static bool IsOverlayCommand(SourceAnimationCommand c)=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is "AnimTask_ScaryFace" or "AnimTask_HazeScrollingFog" or "AnimTask_MistBallFog" or "AnimTask_LoadSandstormBackground" or "AnimTask_MorningSunLightBeam" or "AnimTask_DoomDesireLightBeam" or "AnimTask_HeartsBackground";
     private SourceAnimationCommand[] OverlayInvocationCommands()
     {
         // Catalogs share uninvoked helpers. Only calls in this root contribute

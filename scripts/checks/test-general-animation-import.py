@@ -7,8 +7,8 @@ class GeneralImportTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):cls.data,cls.blobs=module.build(ROOT/'content/raw/pokefirered/037335f4');cls.pack=json.loads(cls.data)
  def test_named_root_has_no_move_id(self):
-  self.assertEqual([r['label'] for r in self.pack['generalScripts']],['General_HeldItemEffect','General_WishHeal','General_CastformChange'])
-  for root in self.pack['generalScripts']:self.assertNotIn('moveId',root);self.assertEqual(root['commands'][-1]['op'],'end')
+  self.assertEqual([r['label'] for r in self.pack['generalScripts']],['General_HeldItemEffect','General_WishHeal','General_CastformChange','General_Rain','General_FutureSightHit','General_DoomDesireHit','General_FocusPunchSetUp','General_Sun','General_Sandstorm','General_Hail'])
+  for root in self.pack['generalScripts']:self.assertNotIn('moveId',root);self.assertEqual(root['commands'][-1]['op'],'goto' if root.get('programReferences') else 'end')
  def test_exact_star_script_operands(self):
   rows=self.pack['subroutines']['GrantingStarsEffect'];self.assertEqual([r['args'][3:] for r in rows if r['op']=='createsprite'],[['-15','0','0','0','32','60'],['12','-5','0','0','32','60']])
  def test_native_sheet_shapes(self):
@@ -27,7 +27,7 @@ class GeneralImportTests(unittest.TestCase):
   self.assertEqual([c['args'][3:] for c in healing if c['op']=='createsprite'],[['0','-5','0','0'],['-15','10','0','0'],['-15','-15','0','0'],['10','-5','0','0']])
   self.assertEqual([c['args'] for c in healing if c['op']=='delay'],[['7']]*4)
  def test_general_wish_has_no_move_root_or_new_material_copy(self):
-  self.assertEqual(set(self.blobs),{'general-sparkle-2.rgb555','general-thin-ring.rgb555'})
+  self.assertEqual(set(self.blobs),{'general-sparkle-2.rgb555','general-thin-ring.rgb555','general-thin-ring.4bpp','general-thin-ring.pal16'})
   self.assertNotIn('moveId',self.pack['generalScripts'][1])
  def test_castform_branch_preserves_true_operand_labels_and_both_source_paths(self):
   root=self.pack['generalScripts'][2];rows=root['commands']

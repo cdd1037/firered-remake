@@ -7,7 +7,7 @@ public partial class CampaignView
 {
     private readonly SourceBattleAnimationGate _sourceResultAnimationGate=new();
     private sealed record SourceResultContinuation(string BattleId,long Sequence,long ReceiptSequence,BattlerSlot Affected,string? GeneralLabel,int? StatArgument,CampaignResultAnimationKind Kind)
-    {public CampaignCastformAnimationDispatch? FormChange {get;init;}};
+    {public CampaignCastformAnimationDispatch? FormChange {get;init;} public CampaignGeneralAnimationDispatch? General {get;init;}};
     private SourceResultContinuation? _sourceResultContinuation;
     private bool _sourceResultCompleted;
     private bool SourceAnimationBlocking=>_sourceMoveAnimationGate.IsBlocking||_sourceResultAnimationGate.IsBlocking;
@@ -18,7 +18,7 @@ public partial class CampaignView
         {if(!SourceResultContextMatches())CancelSourceResultAnimation("context-changed");else return;}
         if(_sourceMoveContinuation is not null)return;
         bool doubles=DoubleBattleVisible;
-        SourceResultContinuation? dispatch=CastformResultContinuation(doubles)??HeldItemResultContinuation(doubles)??WishHealingResultContinuation(doubles);
+        SourceResultContinuation? dispatch=CastformResultContinuation(doubles)??HeldItemResultContinuation(doubles)??WishHealingResultContinuation(doubles)??GeneralResultContinuation(doubles,CampaignGeneralAnimationBoundary.BeforeText);
         if(dispatch is null)
         {
             CampaignStatAnimationDispatch? statDispatch=null;
@@ -33,25 +33,34 @@ public partial class CampaignView
                 if(!substitute)dispatch=new(result.BattleId,result.Sequence,result.Sequence,result.Affected,null,result.AnimationArgument,CampaignResultAnimationKind.StatChange);
             }
         }
-        if(dispatch is null||!CampaignResultAnimationPolicy.Allows(dispatch.Kind,_session.EffectiveOptions.BattleScene))return;
+        if(dispatch is not null)StartSourceResultAnimation(dispatch,doubles);
+    }
+    private bool StartSourceResultAnimation(SourceResultContinuation dispatch,bool doubles)
+    {
+        if(!CampaignResultAnimationPolicy.Allows(dispatch.Kind,_session.EffectiveOptions.BattleScene))return false;
         EnsureSourceMoveAssets();
         var resolved=dispatch.GeneralLabel is {} label?_sourceAnimationResources!.ResolveGeneral(label):_sourceAnimationResources!.Resolve(0);
-        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.ReceiptSequence,0,new(dispatch.Affected.Value),new(dispatch.Affected.Value))
+        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.ReceiptSequence,0,new((dispatch.General?.Actor??dispatch.Affected).Value),new((dispatch.General?.Target??dispatch.Affected).Value))
         {StatAnimationArgument=dispatch.StatArgument,GeneralAnimationLabel=dispatch.GeneralLabel};
+        cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
         var (assets,battlers)=CreateSourceAnimationScene(doubles);
+        if(dispatch.General is {} general&&!ApplySourceAnimationVisibility(battlers,general.SpriteVisibility))return false;
+        var backgroundSurface=SourceTerrainSurface(assets["background"]);
+        var backgroundPalette=Enumerable.Range(0,16).Select(i=>backgroundSurface.PaletteColor(2,i)).ToArray();
         foreach(var (id,asset) in resolved.Assets)assets[id]=asset;
         var replacements=dispatch.FormChange is {} form?PrepareCastformMaterials(form,assets,battlers,doubles):null;
         SourceBattleAnimationAudioAdapter? sound=null;
         if(!_sourceResultAnimationGate.TryStart(cue,()=>
         {
             sound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceResultAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan})):null;
-            return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio(),battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets);
-        }))return;
+            return new(resolved.Script,cue,battlers,doubles,(ISourceAnimationAudio?)sound??new SilentMoveAudio(),backgroundPalette,battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets);
+        }))return false;
         ClearCompletedSourceState(preserveChargeVisibility:true);
-        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask,backgroundSurface:SourceTerrainSurface(assets["background"]));_sourceResultContinuation=dispatch;_sourceResultCompleted=false;
+        _sourceMoveSound=sound;_sourceMoveComposer=new(assets,battlers.ToArray(),resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds,overlays:resolved.Overlays);_sourceResultContinuation=dispatch;_sourceResultCompleted=false;
         _sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceResultAnimationGate.Current!.Tick());
         Write("sourceResultAnimationStarted",new{dispatch.BattleId,dispatch.Sequence,dispatch.ReceiptSequence,dispatch.Affected,dispatch.GeneralLabel,dispatch.StatArgument,dispatch.Kind,doubles,revision=_sourceMoveRevision,scene=_session.EffectiveOptions.BattleScene.ToString()});
+        return true;
     }
     private bool SourceResultContextMatches()
     {
@@ -72,7 +81,8 @@ public partial class CampaignView
             _sourceResultCompleted=pending.Kind==CampaignResultAnimationKind.FormChange;
             if(!_sourceResultCompleted){_sourceResultContinuation=null;_sourceMoveSession=null;_sourceMoveComposer=null;}
             _sourceMoveSound=null;_wildElapsed=_doubleElapsed=0;
-            Write("sourceResultAnimationFinished",new{pending.BattleId,pending.Sequence,sourceFrame=_sourceResultAnimationGate.Current!.Snapshot().Frame,acknowledged=false});
+            Write("sourceResultAnimationFinished",new{pending.BattleId,pending.Sequence,sourceFrame=_sourceResultAnimationGate.Current!.Snapshot().Frame,acknowledged=pending.General?.Boundary==CampaignGeneralAnimationBoundary.AfterText});
+            if(pending.General?.Boundary==CampaignGeneralAnimationBoundary.AfterText)AcknowledgePresentedSingleBattle();
         }
         QueueRedraw();return true;
     }

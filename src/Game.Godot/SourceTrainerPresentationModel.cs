@@ -220,6 +220,9 @@ internal static class SourceTrainerPresentationModel
                 return Silent;
             case WildBattleConfusionChangedEvent { Reason: "teeter-dance" } confusion:
                 return Text("sText_PkmnWasConfused", ("B_EFF_NAME_WITH_PREFIX", name(confusion.Side)));
+            case WildBattleWeatherContinuedEvent weather:
+                return CampaignWeatherContinuationPresentation.At(events,index) is null?Silent:
+                    Text(CampaignWeatherContinuationPresentation.ContinuationSymbol(weather.Weather));
             case WildBattleWeatherDamageEvent { Weather: "hail" } hail:
                 return Atk("sText_PkmnPeltedByHail", hail.Side);
             case WildBattleHpChangedEvent { Move.Value: "pret:MOVE_SPIKES" } spikes:

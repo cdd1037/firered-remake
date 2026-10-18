@@ -109,11 +109,24 @@ internal abstract partial class SourceEndTurnContext
 
     internal void FieldEffects(PokemonCatalog catalog, ImmutableArray<BattlerSlot> order)
     {
+        // Approved presentation policy: freeze the first source-present position
+        // at field-phase entry. Native weather inherits an incidental script
+        // attacker (including an old Safeguard setter); gameplay never reads this cue.
+        BattlerSlot? weatherController = null;
+        for (int i = 0; i < BattlerCount; i++)
+            if (!IsAbsent(new(i))) { weatherController = new(i); break; }
+        void ContinueWeather(string weather)
+        {
+            if (Ongoing && weatherController is { } controller && HasWeather(weather))
+                Add(n => new SourceWeatherContinuedEvent(n, Turn, controller, weather));
+        }
         foreach (var effect in new[] { "reflect", "light-screen", "mist", "safeguard" })
             foreach (var side in new[] { BattleSide.Player, BattleSide.Opponent }) TickTimer(side, effect);
         foreach (var slot in order) Wish(catalog, slot);
         if (RainTimerEnabled) TickTimer(BattleSide.Player, "rain");
+        ContinueWeather("rain");
         TickTimer(BattleSide.Player, "sandstorm");
+        ContinueWeather("sandstorm");
         // WEATHER_HAS_EFFECT is evaluated for each weatherdamage command, not from presence
         // or action eligibility. A source-absent living Cloud Nine still suppresses weather.
         if (!WeatherSuppressed) foreach (var slot in order)
@@ -124,7 +137,9 @@ internal abstract partial class SourceEndTurnContext
         }
         if (!Ongoing) return;
         TickTimer(BattleSide.Player, "sun");
+        ContinueWeather("sun");
         TickTimer(BattleSide.Player, "hail");
+        ContinueWeather("hail");
         foreach (var slot in order)
         {
             if (!Ongoing) break;
