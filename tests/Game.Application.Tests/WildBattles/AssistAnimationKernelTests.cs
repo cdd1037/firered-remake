@@ -44,7 +44,12 @@ public sealed class AssistAnimationKernelTests
         {
             var decision = F.Project(events, i, single, result); Assert.AreEqual(decision, F.Project(events, i, single, result));
             Assert.IsNull(F.Project(events, i, single, result, SourceBattleScene.Off).Dispatch);
-            if (events[i] != attack || result) { Assert.IsNull(decision.Dispatch); continue; }
+            if (events[i] != attack || result)
+            {
+                if (result) Assert.IsNull(decision.Dispatch);
+                else CalledLeafAnimationKernelFixture.AssertSelectedTextCue(events, i, selection, transition, decision.Dispatch);
+                continue;
+            }
             Assert.IsNull(found); found = decision.Dispatch; Assert.IsNotNull(found, decision.Reason);
             Assert.AreEqual(274, found.SourceMoveId); Assert.AreEqual(attack.Sequence, found.Sequence); Assert.AreEqual(attack.Sequence, found.AttackSequence);
             Assert.AreEqual(selection.Sequence, found.ResultSequence); Assert.AreEqual(attack.Sequence, found.SnapshotSequence); Assert.IsNull(found.PpSequence);
@@ -52,7 +57,11 @@ public sealed class AssistAnimationKernelTests
             Assert.AreEqual(CampaignMoveAnimationBoundary.AfterCallerText, found.Boundary); Assert.IsTrue(found.AcknowledgesCurrentReceipt);
             Assert.IsNull(found.MoveDamage); Assert.IsNull(found.MovePower); Assert.IsNull(found.MoveTurn);
         }
-        Assert.IsNotNull(found); Assert.AreEqual(before, JsonSerializer.Serialize(events));
+        Assert.IsNotNull(found);
+        if (CalledLeafAnimationKernelFixture.HasSimpleLeafResult(events, selection.Result!.Value))
+            CalledLeafAnimationKernelFixture.Check(events, events, single, Move, Kernel.Mechanics.Catalog.Moves[selection.Result.Value].SourceMoveId);
+        else CallerPreludeAnimationKernelFixture.DenyLeaf(events, single, Kernel.Mechanics.Catalog.Moves[selection.Result!.Value].SourceMoveId);
+        Assert.AreEqual(before, JsonSerializer.Serialize(events));
         if (single) Assert.IsNull(AnimationDispatchFixture.AtAttackText(F.Single(events, events.IndexOf(attack)), false, SourceBattleScene.On).Dispatch);
         return found;
     }
@@ -67,7 +76,7 @@ public sealed class AssistAnimationKernelTests
             var transition = result.Events.OfType<SourceCalledMoveTransitionEvent>().Single();
             Assert.AreEqual(Kernel.Id(leaf), transition.Invocation.CurrentMove);
             Assert.AreEqual(leaf == "SPLASH", transition.Invocation.Target == new BattlerSlot(actor));
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, leaf == "SPLASH" ? 150 : 33);
+            CalledLeafAnimationKernelFixture.Check(result, single, Move, leaf == "SPLASH" ? 150 : 33);
             var pp = result.Events.OfType<SourcePpCommandEvent>().Single(); Assert.AreEqual(Move, pp.ChosenMove);
             Assert.AreEqual(Kernel.Id(leaf), pp.CurrentMove); Assert.AreEqual(new BattlerSlot(actor), pp.PpOwner);
             Assert.AreEqual(pp.Before - pp.CommandCost, pp.After);

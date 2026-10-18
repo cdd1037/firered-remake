@@ -258,7 +258,7 @@ public sealed class ConditionalHitAnimationKernelTests
     }
 
     [TestMethod, DataRow(161), DataRow(263), DataRow(265), DataRow(348), DataRow(62)]
-    public void ActualMetronomeLeavesStayOutsideDirectInvocationAdmission(int id)
+    public void ActualMetronomeHitsOwnTheirRootWhileRealAccuracyMissesStaySilent(int id)
     {
         uint? seed = null; for (uint candidate = 0; candidate < 65536; candidate++)
             if (WildBattleSourceCallers.Metronome(new(candidate)).SourceMoveId == id) { seed = candidate; break; }
@@ -269,7 +269,14 @@ public sealed class ConditionalHitAnimationKernelTests
             var result = Kernel.Direct(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Move(id)));
             Assert.IsTrue(result.Events.OfType<SourceAttackStringEvent>().Any(e => e.CurrentMove == Move(id) && e.ChosenMove == Kernel.Id("METRONOME")));
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            if (id is 161 or 263)
+            {
+                // Preserve the original selected seed's genuine accuracy failure.
+                Assert.AreEqual(0, Kernel.Hits(result.Events).Length);
+                Assert.IsTrue(result.Events.OfType<SourceMoveMissedEvent>().Any(e => e.Move == Move(id)));
+                CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            }
+            else CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, Kernel.Hits(result.Events).Single());
         }
     }
 }

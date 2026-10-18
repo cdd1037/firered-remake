@@ -110,8 +110,7 @@ public static partial class WildBattleRules
     {
         if (slot < 0 || slot >= mon.Pokemon.Moves.Length) return false;
         var id = mon.Pokemon.Moves[slot].Move; var move = catalog.Moves[id];
-        if (id.Value is "pret:MOVE_NONE" or "pret:MOVE_SLEEP_TALK" or "pret:MOVE_ASSIST" or "pret:MOVE_MIRROR_MOVE" or "pret:MOVE_METRONOME" or "pret:MOVE_FOCUS_PUNCH" or "pret:MOVE_UPROAR") return false;
-        if (move.Effect is "EFFECT_SKULL_BASH" or "EFFECT_RAZOR_WIND" or "EFFECT_SKY_ATTACK" or "EFFECT_SOLAR_BEAM" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_BIDE") return false;
+        if (!WildBattleSourceCallers.IsSleepTalkChoice(move)) return false;
         if (mon.DisabledMove == id && mon.DisableTurnsRemaining > 0) return false;
         if (foe?.Imprison == true && foe.Pokemon.Moves.Any(m => m.Move == id)) return false;
         if (mon.EncoreTurnsRemaining > 0 && mon.EncoreMoveSlot is {} encore && mon.Pokemon.Moves[encore].Move != id) return false;

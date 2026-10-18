@@ -31,30 +31,32 @@ public static partial class CampaignStatAnimationPresentation
     {
         if(moves is null||substitute||battle.Stage!=CampaignDoubleBattleStage.Combat||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||battle.Events[battle.EventIndex] is not (SourceStatChangedEvent or SourceStatAtMaximumEvent))return null;
         if(CampaignHeldItemAnimationPresentation.HasMalformedConsumedPrelude(battle.Events,battle.EventIndex))return null;
-        return ReadSecondary(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,4,moves,ItemReceiptSequences(battle.Events));
+        return ReadSecondary(battle.Id,battle.Events.ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,4,moves,ItemReceiptSequences(battle.Events));
     }
     private static CampaignStatAnimationDispatch? Secondary(CampaignWildBattle battle,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,bool substitute)
     {
         if(moves is null||substitute||battle.Phase!=CampaignBattlePhase.Events||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||battle.Events[battle.EventIndex] is not (WildBattleStatChangedEvent or WildBattleStatAtMaximumEvent))return null;
         if(CampaignHeldItemAnimationPresentation.HasMalformedConsumedPrelude(battle.Events,battle.EventIndex))return null;
-        return ReadSecondary(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,moves,ItemReceiptSequences(battle.Events));
+        return ReadSecondary(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,moves,ItemReceiptSequences(battle.Events));
     }
-    private static CampaignStatAnimationDispatch? ReadSecondary(string battle,GroupRow[] rows,int index,int slots,
+    private static CampaignStatAnimationDispatch? ReadSecondary(string battle,SourceBattleEvent[] events,GroupRow[] rows,int index,int slots,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition> moves,HashSet<long> items)
     {
         var stat=rows[index];if(stat.Kind is not("stat" or "maximum")||items.Contains(stat.Sequence))return null;
         int start=index-1;while(start>=0&&!GroupBoundary(rows[start]))start--;
         if(start<1||rows[start].Kind!="used")return null;
         var used=rows[start];var attack=rows[start-1];
+        var identity=CampaignAnimationInvocation.TryRead(events,start,slots,moves);
+        if(identity is null||identity.AttackIndex!=start-1)return null;
         if(!moves.TryGetValue(new(used.Move),out var definition)||!SourceMoveDefinitionRules.IsValid(definition)||definition.Id.Value!=used.Move||
             definition.Power<=0||definition.SecondaryEffectChance is <1 or >100||definition.Target is not("MOVE_TARGET_SELECTED" or "MOVE_TARGET_BOTH"))return null;
         bool allStats=definition.Effect=="EFFECT_ALL_STATS_UP_HIT";
         (WildBattleStat Stat,int Delta,bool User)? secondary=allStats?(WildBattleStat.Attack,1,true):SecondaryStat(definition.Effect);
         if(secondary is not {} spec||definition.Target=="MOVE_TARGET_BOTH"&&spec.User)return null;
-        if(attack.Kind!="attack"||attack.Actor!=used.Actor||attack.Move!=used.Move||attack.Chosen!=used.Move||attack.Turn!=used.Turn||
+        if(attack.Kind!="attack"||attack.Actor!=used.Actor||attack.Move!=used.Move||attack.Chosen!=identity.ChosenMove.Value||attack.Turn!=used.Turn||
             used.Actor<0||used.Actor>=slots||used.Target<0||used.Target>=slots||used.Actor==used.Target||used.Slot is <0 or >3)return null;
-        // The direct result is a source-ordered prefix. Later Rage, contact and
+        // The authenticated result is a source-ordered prefix. Later Rage, contact and
         // item commands cannot revoke it or lend another stat to this prefix.
         for(int i=start;i<=index;i++)if(rows[i].Turn!=used.Turn||rows[i].Sequence<=rows[i-1].Sequence)return null;
         bool spread=definition.Target=="MOVE_TARGET_BOTH";
@@ -65,10 +67,10 @@ public static partial class CampaignStatAnimationPresentation
         for(int pass=0;pass<passes.Length;pass++)
         {
             var p=rows[passes[pass]];
-            if(p.Actor!=used.Actor||p.Owner!=used.Actor||p.Move!=used.Move||p.Chosen!=used.Move||p.Slot!=used.Slot||p.Cost<1||p.Cost>(spread?3:2)||p.Before is <0 or >255||p.After is <0 or >255||
+            if(p.Actor!=used.Actor||p.Owner!=identity.PpOwner.Value||p.Move!=identity.CurrentMove.Value||p.Chosen!=identity.ChosenMove.Value||p.Slot!=identity.PpSlot||p.Slot!=used.Slot||p.Cost<1||p.Cost>(spread?3:2)||p.Before is <0 or >255||p.After is <0 or >255||
                 p.Target!=(pass==0?used.Target:used.Target^2))return null;
             if(pass==0)
-            {if(p.Before!=used.Before||p.After!=used.After||p.Before<1||p.After!=Math.Max(0,p.Before-p.Cost))return null;}
+            {if(p.Before!=used.Before||p.After!=used.After||(identity.NoPpDeduct?p.After!=p.Before:p.Before<1||p.After!=Math.Max(0,p.Before-p.Cost)))return null;}
             // MOVEEND_NEXT_TARGET repeats ppreduce with NO_ATTACKSTRING. Cost
             // remains positive; the committed unchanged PP is the spend proof.
             else if(p.Before!=first.After||p.After!=p.Before)return null;

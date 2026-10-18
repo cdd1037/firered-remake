@@ -166,11 +166,16 @@ public sealed class RolloutAnimationKernelTests
         }
     }
     [TestMethod]
-    public void CalledInitialLeafRemainsOutsideDirectOwnershipAndPowerExportDoesNotChangeRng()
+    public void CalledInitialRolloutOwnsItsPreparedCounterWithoutChangingPowerExportRng()
     {
         foreach(bool single in new[]{false,true})
         {
-            var frame=CallerPreludeAnimationKernelFixture.Frame(118,single) with{Rng=new(CallerPreludeAnimationKernelFixture.MetronomeSeed(205))};var called=Envelope.Resolve(frame);Assert.IsTrue(called.Events.OfType<SourceCalledMoveTransitionEvent>().Any(e=>e.Invocation.CurrentMove==Move));Deny(called.Events,single);
+            var frame=CallerPreludeAnimationKernelFixture.Frame(118,single) with{Rng=new(CallerPreludeAnimationKernelFixture.MetronomeSeed(205))};var called=Envelope.Resolve(frame);Assert.IsTrue(called.Events.OfType<SourceCalledMoveTransitionEvent>().Any(e=>e.Invocation.CurrentMove==Move));var hit = called.Events.OfType<SourceHpChangedEvent>().Single();
+            Assert.AreEqual(30, hit.PreparedBasePower);
+            var marker = called.Events.OfType<SourceMtMoonVolatileEvent>().Single(e => e.Volatile == "called-rollout");
+            Assert.AreEqual(0, marker.Before); Assert.AreEqual(4, marker.After); Assert.AreEqual("move", marker.Reason);
+            var cue = CalledLeafAnimationKernelFixture.Check(called.Events, called, single, Kernel.Id("METRONOME"), 205, hit);
+            Assert.AreEqual((byte?)1, cue.RolloutCounter); Assert.AreEqual((ushort?)30, cue.MovePower);
         }
         var ordinary=Envelope.Resolve(Kernel.Frame(Bodies()));var curled=Envelope.Resolve(Kernel.Frame(Bodies(curled:true)));
         Assert.AreEqual(JsonSerializer.Serialize(ordinary.Trace),JsonSerializer.Serialize(curled.Trace));var first=ordinary.Events.OfType<SourceHpChangedEvent>().Single();var twice=curled.Events.OfType<SourceHpChangedEvent>().Single();Assert.AreEqual(30,first.PreparedBasePower);Assert.AreEqual(60,twice.PreparedBasePower);

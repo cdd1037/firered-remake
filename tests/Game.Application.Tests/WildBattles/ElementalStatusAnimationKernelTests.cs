@@ -177,7 +177,7 @@ public sealed class ElementalStatusAnimationKernelTests
     }
 
     [TestMethod, DataRow(109), DataRow(142), DataRow(186), DataRow(193)]
-    public void ActualMetronomeStatusLeavesCannotBorrowDirectRootAdmission(int id)
+    public void ActualMetronomeStatusLeavesOwnTheirCommittedAttackTextBoundary(int id)
     {
         uint? selected = null; for (uint seed = 0; seed < 65536; seed++)
             if (WildBattleSourceCallers.Metronome(new(seed)).SourceMoveId == id) { selected = seed; break; }
@@ -187,7 +187,7 @@ public sealed class ElementalStatusAnimationKernelTests
             var bodies = Bodies(id); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 29) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(selected.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Move(id)));
-            Assert.IsNotNull(Marker(result.Events, id)); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.IsNotNull(Marker(result.Events, id)); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, Marker(result.Events, id));
         }
     }
 }

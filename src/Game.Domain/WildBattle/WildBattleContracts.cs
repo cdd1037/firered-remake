@@ -146,6 +146,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleGrudgePpEvent), "grudge-pp")]
 [JsonDerivedType(typeof(WildBattleCallerSelectionEvent), "caller-selection")]
 [JsonDerivedType(typeof(WildBattleCalledMoveTransitionEvent), "called-move-transition")]
+[JsonDerivedType(typeof(WildBattleMoveTargetResolvedEvent), "move-target-resolved")]
 [JsonDerivedType(typeof(WildBattleAttackStringEvent), "attack-string")]
 [JsonDerivedType(typeof(WildBattlePpCommandEvent), "pp-command")]
 [JsonDerivedType(typeof(WildBattleTransformedEvent), "transformed")]

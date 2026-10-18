@@ -18,6 +18,8 @@ public static partial class CampaignMoveAnimationPresentation
             new(new((int)x.Invocation.Actor),x.Invocation.ChosenSlot,x.Invocation.PpSlot,x.Invocation.OriginalChosenMove,
                 x.Invocation.ChosenMove,x.Invocation.CurrentMove,x.Invocation.CalledMove,new((int)x.Invocation.Target),
                 x.Invocation.CancellerPhase,x.Invocation.Flags) { PpOwner=new((int)x.Invocation.PpOwner) }),
+        WildBattleMoveTargetResolvedEvent x => new SourceMoveTargetResolvedEvent(x.Sequence,x.Turn,new((int)x.Actor),x.CurrentMove,
+            new((int)x.PriorTarget),new((int)x.Target),x.Reason),
         WildBattleSleepTalkEvent x => new SourceSleepTalkEvent(x.Sequence,x.Turn,new((int)x.Side),x.CalledSlot,x.CalledMove),
         WildBattleCalledSpikesChangedEvent x => new SourceCalledSpikesChangedEvent(x.Sequence,x.Turn,(BattleSide)x.Side,x.Before,x.After),
         WildBattleCalledPartyChangedEvent x => new SourceCalledPartyChangedEvent(x.Sequence,x.Turn,(BattleSide)x.Side,x.PartyIndex,x.Reason,x.Before,x.After) {SourceSlot=x.SourceSlot is {} source?new((int)source):null,TransientMoveSlots=x.TransientMoveSlots},

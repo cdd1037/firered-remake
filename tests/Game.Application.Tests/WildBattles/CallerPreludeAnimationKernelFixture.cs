@@ -81,7 +81,11 @@ internal static class CallerPreludeAnimationKernelFixture
             Assert.IsNull(Kernel.Project(events, i, single, SourceBattleScene.Off).Dispatch);
             Assert.IsNull(Result(events, i, single).Dispatch);
             if (single) Assert.IsNull(AnimationDispatchFixture.AtAttackText(Envelope.Single(events, i), false, SourceBattleScene.On).Dispatch);
-            if (events[i].Sequence != cursor) { Assert.IsNull(decision.Dispatch); continue; }
+            if (events[i].Sequence != cursor)
+            {
+                CalledLeafAnimationKernelFixture.AssertSelectedTextCue(events, i, selection, transition, decision.Dispatch);
+                continue;
+            }
             Assert.IsNull(found); var cue = decision.Dispatch; Assert.IsNotNull(cue, decision.Reason); found = cue;
             Assert.AreEqual(id, cue.SourceMoveId); Assert.AreEqual(attack.Actor, cue.Actor);
             Assert.AreEqual(id == 118 ? attack.Actor : transition.Invocation.Target, cue.Target);
@@ -92,7 +96,10 @@ internal static class CallerPreludeAnimationKernelFixture
             Assert.IsFalse(cue.HitsSubstitute); Assert.IsNull(cue.MoveTurn); Assert.IsNull(cue.MovePower);
             Assert.IsNull(cue.MoveDamage); Assert.IsNull(cue.FuryCutterCounter);
         }
-        Assert.IsNotNull(found); Assert.AreEqual(before, JsonSerializer.Serialize(committed), "Projection preserves committed state, RNG and trace.");
+        Assert.IsNotNull(found);
+        if (selection.Result == Kernel.Id("TACKLE") && CalledLeafAnimationKernelFixture.HasSimpleLeafResult(events, selection.Result.Value))
+            CalledLeafAnimationKernelFixture.Check(events, committed, single, caller, 33);
+        Assert.AreEqual(before, JsonSerializer.Serialize(committed), "Projection preserves committed state, RNG and trace.");
         return found;
     }
 }

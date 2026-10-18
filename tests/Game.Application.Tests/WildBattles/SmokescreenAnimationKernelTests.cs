@@ -99,7 +99,7 @@ public sealed class SmokescreenAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualMetronomeSmokescreenKeepsItsResultOutsideCurrentDirectRootAdmission()
+    public void ActualMetronomeSmokescreenOwnsItsCommittedAccuracyResult()
     {
         uint seed = Caller.MetronomeSeed(108);
         foreach (bool single in new[] { false, true })
@@ -108,7 +108,7 @@ public sealed class SmokescreenAnimationKernelTests
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(seed) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Kernel.Id("SMOKESCREEN")));
             Assert.AreEqual(WildBattleStat.Accuracy, result.Events.OfType<SourceStatChangedEvent>().Single().Stat);
-            Caller.DenyLeaf(result.Events, single, 108);
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 108, result.Events.OfType<SourceStatChangedEvent>().Single());
         }
     }
 }

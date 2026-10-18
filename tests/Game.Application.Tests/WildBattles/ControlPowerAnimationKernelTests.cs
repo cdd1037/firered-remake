@@ -233,7 +233,7 @@ public sealed class ControlPowerAnimationKernelTests
     }
 
     [TestMethod, DataRow(269), DataRow(213), DataRow(259)]
-    public void ActualMetronomeControlLeavesRemainOutsideDirectAnimationAdmission(int id)
+    public void ActualMetronomeControlLeavesOwnTheirCommittedAttackTextBoundary(int id)
     {
         uint? seed = null; for (uint candidate = 0; candidate < 65536; candidate++)
             if (WildBattleSourceCallers.Metronome(new(candidate)).SourceMoveId == id) { seed = candidate; break; }
@@ -243,7 +243,7 @@ public sealed class ControlPowerAnimationKernelTests
             var bodies = Bodies(id); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 29) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Move(id)));
-            Assert.IsNotNull(Marker(result.Events, id)); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.IsNotNull(Marker(result.Events, id)); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, Marker(result.Events, id));
         }
     }
     // Cmd_remaininghptopower reads the six pairs in sFlailHpScaleToPowerTable

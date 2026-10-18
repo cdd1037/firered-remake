@@ -16,7 +16,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(definition.Power!=0||definition.Target!=(recycle?"MOVE_TARGET_USER":"MOVE_TARGET_SELECTED")||
             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
             (recycle?used.Target!=used.Actor:used.Target==used.Actor||used.Actor.Side!=BattleSide.Player)||
-            !ValidSingleInvocationPp(commands,used,recycle?1:2)||action.Length<2||action[0]!=commands[0]||
+            !ValidSingleInvocationPp(commands,used,recycle?1:2,invocation:battle.Context)||action.Length<2||action[0]!=commands[0]||
             commands[0].Sequence!=used.Sequence+1||attack.Sequence+1!=used.Sequence||
             action.Any(e=>e.Turn!=used.Turn)||action.Zip(action.Skip(1)).Any(pair=>pair.Second.Sequence!=pair.First.Sequence+1))
             return Reject("unmatched-source-item-invocation");
@@ -83,7 +83,7 @@ public static partial class CampaignMoveAnimationPresentation
             {
                 if(recycle||i<=marker||i>=firstItem||itemPhase||++changed!=1||owners[0].After=="ITEM_NONE"||
                     !ItemCommandWrite(applied,owners[0],owners[0].After)||
-                    !CureMoveEndTail(action.Take(i).ToArray(),marker+1,used,battle.Slots)||
+                    !CureMoveEndTail(action.Take(i).ToArray(),marker+1,used,battle.Slots,invocation:battle.Context)||
                     action.Skip(i+1).Any(e=>e is SourceAbilityActivatedEvent)||
                     applied.Before.PersistentHeldItemOverride!=owners[0].After||applied.After.PersistentHeldItemOverride is not null||
                     !Bind(owners[0],applied))return Reject("unmatched-source-item-application");
@@ -102,23 +102,20 @@ public static partial class CampaignMoveAnimationPresentation
                 !before.Pokemon.Moves.SequenceEqual(after.Pokemon.Moves)&&source!=invocation.Actor)return false;
             if(source==invocation.Actor)
             {
-                bool transient=(mask&(1<<invocation.Slot))!=0;
                 var preceding=action.OfType<SourceCalledPartyChangedEvent>().LastOrDefault(e=>
                     e.Sequence<sync.Sequence&&e.SourceSlot==source&&e.Side==sync.Side&&e.PartyIndex==sync.PartyIndex&&
                     e.Reason is "trick-party-write" or "recycle-party-write" or "changed-item-applied");
-                if(preceding is not null)
+                if(preceding is not null&&!ItemSameMember(before,preceding.After))return false;
+                if(before.Pokemon.Moves.Length!=after.Pokemon.Moves.Length)return false;
+                for(int slot=0;slot<before.Pokemon.Moves.Length;slot++)
                 {
-                    if(!ItemSameMember(before,preceding.After))return false;
-                    if(!transient&&(invocation.Slot>=before.Pokemon.Moves.Length||invocation.Slot>=after.Pokemon.Moves.Length||
-                        before.Pokemon.Moves[invocation.Slot].Move!=invocation.Move||after.Pokemon.Moves[invocation.Slot].Move!=invocation.Move||
-                        before.Pokemon.Moves[invocation.Slot].CurrentPp!=invocation.PpAfter||
-                        after.Pokemon.Moves[invocation.Slot].CurrentPp!=invocation.PpAfter))return false;
+                    var a=before.Pokemon.Moves[slot];var b=after.Pokemon.Moves[slot];
+                    if(a is null||b is null)return false;
+                    if((mask&(1<<slot))!=0){if(a!=b)return false;continue;}
+                    if(a with{CurrentPp=b.CurrentPp}!=b||
+                        !InvocationPpDelta(action,invocation,battle.Context,slot,a.Move,a.CurrentPp,b.CurrentPp,
+                            preceding?.Sequence??long.MinValue,allowUnchanged:true))return false;
                 }
-                else if(!transient&&(invocation.Slot>=before.Pokemon.Moves.Length||invocation.Slot>=after.Pokemon.Moves.Length||
-                    before.Pokemon.Moves[invocation.Slot].Move!=invocation.Move||after.Pokemon.Moves[invocation.Slot].Move!=invocation.Move||
-                    before.Pokemon.Moves[invocation.Slot].CurrentPp!=invocation.PpBefore||
-                    after.Pokemon.Moves[invocation.Slot].CurrentPp!=invocation.PpAfter))return false;
-                if(transient&&!before.Pokemon.Moves.SequenceEqual(after.Pokemon.Moves))return false;
             }
             var commandOwner=owners.SingleOrDefault(o=>o.Slot==source);
             if(commandOwner is not null&&!Bind(commandOwner,sync))return false;
@@ -128,7 +125,7 @@ public static partial class CampaignMoveAnimationPresentation
             bool ownsConsumption=rows.Take(i).OfType<SourceHeldItemConsumedEvent>().Any(e=>e.Side==source&&e.Item==before.HeldItem);
             // Ordinary status/PP synchronization and actual same-slot consumption
             // keep their existing parser, including unrelated active battlers.
-            if((!heldChanged||ownsConsumption)&&CureActiveSync(rows,i,sync,invocation))return true;
+            if((!heldChanged||ownsConsumption)&&CureActiveSync(rows,i,sync,invocation,battle.Context))return true;
             if(!heldChanged)return false;
             foreach(var owner in owners)
             {
@@ -140,7 +137,7 @@ public static partial class CampaignMoveAnimationPresentation
                 // Existing cure/PP authority validates every other field. Only
                 // this command's authenticated held-item delta is removed.
                 var normalized=sync with{Before=before with{HeldItem=after.HeldItem,PersistentHeldItemOverride=after.PersistentHeldItemOverride}};
-                return ItemSameMember(normalized.Before,after)||CureActiveSync(rows,i,normalized,invocation);
+                return ItemSameMember(normalized.Before,after)||CureActiveSync(rows,i,normalized,invocation,battle.Context);
             }
             return false;
         }

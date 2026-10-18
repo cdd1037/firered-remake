@@ -14,7 +14,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(definition.Power!=0||definition.Target!=(curse?"MOVE_TARGET_SELECTED":"MOVE_TARGET_USER")||
             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
             !curse&&used.Target!=used.Actor||commands.Length<1||commands.Length>(song?2:1)||
-            !ValidSingleInvocationPp([commands[0]],used,curse&&used.Target!=used.Actor?2:1)||
+            !ValidSingleInvocationPp([commands[0]],used,curse&&used.Target!=used.Actor?2:1,invocation:battle.Context)||
             attack.Sequence+1!=used.Sequence||action.Length<2||action[0]!=commands[0]||commands[0].Sequence!=used.Sequence+1||
             action.Any(e=>e.Turn!=used.Turn)||action.Zip(action.Skip(1)).Any(p=>p.Second.Sequence!=p.First.Sequence+1))
             return Reject("unmatched-source-ghost-song-invocation");
@@ -28,7 +28,7 @@ public static partial class CampaignMoveAnimationPresentation
             // CANCELLER_FLAGS clears an earlier use, even on an unsuccessful
             // action attempt. Only this fresh setdestinybond write owns the root.
             if(action[1] is not SourceTowerVolatileEvent {Effect:"destiny-bond",Applied:true,Reason:"move"} bond||
-                bond.Side!=used.Actor||!CureMoveEndTail(action,2,used,battle.Slots))return Reject("unmatched-source-destiny-bond-result");
+                bond.Side!=used.Actor||!CureMoveEndTail(action,2,used,battle.Slots,invocation:battle.Context))return Reject("unmatched-source-destiny-bond-result");
             result=bond;
         }
         else if(song)
@@ -47,10 +47,10 @@ public static partial class CampaignMoveAnimationPresentation
                 // PressurePPLoseOnUsingPerishSong scans the first matching move
                 // position, rather than necessarily using the selected position.
                 if(tail>=action.Length||action[tail]!=extra||extra.Actor!=used.Actor||extra.Target!=used.Actor||extra.PpOwner!=used.Actor||
-                    extra.ChosenMove!=used.Move||extra.CurrentMove!=used.Move||extra.PpSlot<0||extra.PpSlot>used.Slot||
+                    extra.ChosenMove!=(battle.Context?.ChosenMove??used.Move)||extra.CurrentMove!=used.Move||extra.PpSlot<0||extra.PpSlot>(battle.Context?.IsCalled==true?3:used.Slot)||
                     extra.Before is <0 or >255||extra.CommandCost<1||extra.CommandCost>=battle.Slots||
                     extra.After!=Math.Max(0,extra.Before-extra.CommandCost)||extra.RngCursor!=first.RngCursor||
-                    extra.PpSlot==used.Slot&&extra.Before!=first.After)return Reject("unmatched-source-perish-song-pressure");
+                    extra.PpSlot==(battle.Context?.PpSlot??used.Slot)&&extra.Before!=first.After)return Reject("unmatched-source-perish-song-pressure");
                 tail++;
             }
             last=-1;
@@ -59,7 +59,7 @@ public static partial class CampaignMoveAnimationPresentation
                 if(blocked.Side.Value<=last||blocked.Side.Value>=battle.Slots||affected.Contains(blocked.Side))return Reject("unmatched-source-perish-song-soundproof");
                 last=blocked.Side.Value;tail++;
             }
-            if(!CureMoveEndTail(action,tail,used,battle.Slots,(rows,index,sync,owner)=>GhostSongPartySync(rows,index,sync,owner,commands,null)))
+            if(!CureMoveEndTail(action,tail,used,battle.Slots,(rows,index,sync,owner)=>GhostSongPartySync(rows,index,sync,owner,commands,null,battle.Context)))
                 return Reject("unmatched-source-perish-song-tail");
         }
         else if(curse&&used.Target==used.Actor)
@@ -78,7 +78,7 @@ public static partial class CampaignMoveAnimationPresentation
                 else if(i>0&&action[i+1] is SourceStatAtMaximumEvent maximum&&maximum.Actor==used.Actor&&maximum.Target==used.Actor&&maximum.Stat==stats[i]){ }
                 else return Reject("unmatched-source-curse-stat-order");
             }
-            if(!changed||!CureMoveEndTail(action,4,used,battle.Slots))return Reject("unmatched-source-curse-stat-tail");
+            if(!changed||!CureMoveEndTail(action,4,used,battle.Slots,invocation:battle.Context))return Reject("unmatched-source-curse-stat-tail");
             result=action[1];turn=1;
         }
         else if(curse)
@@ -112,7 +112,7 @@ public static partial class CampaignMoveAnimationPresentation
             int costSyncs=0;
             bool Sync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,SourceMoveUsedEvent owner)
             {
-                if(!GhostSongPartySync(rows,index,sync,owner,commands,cost))return false;
+                if(!GhostSongPartySync(rows,index,sync,owner,commands,cost,battle.Context))return false;
                 if(sync.Before.Pokemon.CurrentHp!=sync.After.Pokemon.CurrentHp)costSyncs++;
                 return true;
             }
@@ -128,7 +128,7 @@ public static partial class CampaignMoveAnimationPresentation
     // PP/HP writes. All unrelated identity, status and item fields retain Cure's
     // existing validation; its default matcher is never loosened.
     private static bool GhostSongPartySync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,
-        SourceMoveUsedEvent used,SourcePpCommandEvent[] commands,SourceTowerHpEvent? cost)
+        SourceMoveUsedEvent used,SourcePpCommandEvent[] commands,SourceTowerHpEvent? cost,CampaignAnimationInvocation? invocation)
     {
         var before=sync.Before;var after=sync.After;
         if(sync.SourceSlot is not {} source||source.Value is <0 or >3||source.Side!=sync.Side||
@@ -154,16 +154,13 @@ public static partial class CampaignMoveAnimationPresentation
         {
             var a=before.Pokemon.Moves[slot];var b=after.Pokemon.Moves[slot];
             if((transient&(1<<slot))!=0){if(a!=b)return false;continue;}
-            var owners=source==used.Actor?commands.Where(p=>p.PpSlot==slot).ToArray():[];
-            if(owners.Length==0){if(a!=b)return false;continue;}
-            // Even a forged refund which makes a==b must satisfy the complete
-            // ordinary command chain; only authenticated transient slots skip it.
-            if(owners.Any(p=>p.CurrentMove!=a.Move)||owners[0].Before!=a.CurrentPp||owners[^1].After!=b.CurrentPp||
-                a with{CurrentPp=b.CurrentPp}!=b||owners.Zip(owners.Skip(1)).Any(p=>p.First.After!=p.Second.Before))return false;
+            if(source!=used.Actor){if(a!=b)return false;continue;}
+            if(a with{CurrentPp=b.CurrentPp}!=b||
+                !InvocationPpDelta(rows,used,invocation,slot,a.Move,a.CurrentPp,b.CurrentPp,allowUnchanged:true))return false;
             explained|=a!=b;
         }
         var normalized=sync with{Before=before with{Pokemon=before.Pokemon with{CurrentHp=after.Pokemon.CurrentHp,Moves=after.Pokemon.Moves}}};
-        if(CureActiveSync(rows,index,normalized,used))return true;
+        if(CureActiveSync(rows,index,normalized,used,invocation))return true;
         // Transform may preserve party move slots unchanged. A pure committed
         // HP cost is still a real synchronization, not an invented PP change.
         return explained&&normalized.Before with{Pokemon=normalized.After.Pokemon}==normalized.After&&

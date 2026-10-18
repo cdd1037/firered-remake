@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Randomness;
+using Game.Domain.Pokemon;
 
 namespace Game.Domain.WildBattle;
 
@@ -19,6 +20,14 @@ public static class WildBattleSourceCallers
         [118, 165, 166, 102, 68, 243, 182, 197, 203, 194, 214, 168, 266, 289, 270, 343, 271, 264];
     public static bool IsDirectMetronomeChoice(int sourceMoveId) =>
         sourceMoveId is >= 1 and <= 354 && !Forbidden.Contains(sourceMoveId);
+
+    // Pure definition exclusions shared by source slot selection and readers of
+    // its public candidate receipt. Disabled, Imprison and Encore stay slot-local.
+    public static bool IsSleepTalkChoice(PokemonMoveDefinition move) =>
+        move.Id.Value is not ("pret:MOVE_NONE" or "pret:MOVE_SLEEP_TALK" or "pret:MOVE_ASSIST" or
+            "pret:MOVE_MIRROR_MOVE" or "pret:MOVE_METRONOME" or "pret:MOVE_FOCUS_PUNCH" or "pret:MOVE_UPROAR") &&
+        move.Effect is not ("EFFECT_SKULL_BASH" or "EFFECT_RAZOR_WIND" or "EFFECT_SKY_ATTACK" or
+            "EFFECT_SOLAR_BEAM" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_BIDE");
 
     public static WildBattleSourceCallSelection Metronome(RngState rng)
     {

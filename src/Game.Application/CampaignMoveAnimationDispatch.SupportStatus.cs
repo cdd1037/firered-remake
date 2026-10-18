@@ -31,7 +31,7 @@ public static partial class CampaignMoveAnimationPresentation
             return Reject("unmatched-source-support-invocation");
         if(definition.Effect=="EFFECT_TEETER_DANCE")
         {
-            if(definition.Target!="MOVE_TARGET_FOES_AND_ALLY"||!ValidSingleInvocationPp(pp,used,battle.Slots))
+            if(definition.Target!="MOVE_TARGET_FOES_AND_ALLY"||!ValidSingleInvocationPp(pp,used,battle.Slots,invocation:battle.Context))
                 return Reject("unmatched-source-teeter-pp");
             // The literal numeric target loop may print failed-target messages before
             // reaching attackanimation. Its first successful target owns the only root.
@@ -56,23 +56,23 @@ public static partial class CampaignMoveAnimationPresentation
             return Reject("unmatched-source-support-result");
         if(definition.Effect=="EFFECT_HELPING_HAND")
         {
-            if(battle.Slots!=4||!ValidSingleInvocationPp(pp,used,1)||action[1]!=markers[0])
+            if(battle.Slots!=4||!ValidSingleInvocationPp(pp,used,1,invocation:battle.Context)||action[1]!=markers[0])
                 return Reject("unmatched-source-helping-hand-result");
         }
         else
         {
             // Imprison has its ordinary self PP command, then a separate Pressure
             // scan against both foes using the first learned Imprison slot.
-            if(pp.Length is <1 or >2||!ValidSingleInvocationPp([pp[0]],used,1))
+            if(pp.Length is <1 or >2||!ValidSingleInvocationPp([pp[0]],used,1,invocation:battle.Context))
                 return Reject("unmatched-source-imprison-pp");
             if(pp.Length==2)
             {
                 var extra=pp[1];
                 if(action.Length<3||action[1]!=extra||extra.Actor!=used.Actor||extra.PpOwner!=used.Actor||extra.Target!=used.Actor||
-                    extra.CurrentMove!=used.Move||extra.ChosenMove!=used.Move||extra.RngCursor!=pp[0].RngCursor||extra.PpSlot<0||extra.PpSlot>used.Slot||
+                    extra.CurrentMove!=used.Move||extra.ChosenMove!=(battle.Context?.ChosenMove??used.Move)||extra.RngCursor!=pp[0].RngCursor||extra.PpSlot<0||extra.PpSlot>(battle.Context?.IsCalled==true?3:used.Slot)||
                     extra.CommandCost<1||extra.CommandCost>battle.Slots/2||extra.Before is <0 or >255||
                     extra.After!=Math.Max(0,extra.Before-extra.CommandCost)||
-                    extra.PpSlot==used.Slot&&extra.Before!=pp[0].After)
+                    extra.PpSlot==(battle.Context?.PpSlot??used.Slot)&&extra.Before!=pp[0].After)
                     return Reject("unmatched-source-imprison-pressure");
             }
             if(action[pp.Length]!=markers[0])return Reject("unmatched-source-imprison-result");

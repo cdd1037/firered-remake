@@ -238,14 +238,14 @@ public sealed class FocusSoundAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualSleepTalkSnoreKeepsCallerPpAndLeafCurrentMoveSeparate()
+    public void ActualSleepTalkSnoreOwnsItsLeafRootWithoutSpendingLeafPp()
     {
         foreach(bool single in new[]{false,true})
         {
             var bodies=Caller.Bodies(214,sleepingLeaf:"SNORE");
             for(int i=1;i<4;i++)bodies[i]=bodies[i] with{SpeedStage=0};
             var frame=Kernel.Frame(bodies,single);frame=Ability(frame,1,"ABILITY_PRESSURE");
-            var result=Charge.Ordered(frame,0,1);Caller.Check(result.Events,result,214,single);Deny(result.Events,single,173);
+            var result=Charge.Ordered(frame,0,1);Caller.Check(result.Events,result,214,single);CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("SLEEP_TALK"), 173, Envelope.Hits(result.Events).Single());
             var selected=result.Events.OfType<SourceCalledMoveTransitionEvent>().Single().Invocation;
             Assert.AreEqual(Move(173),selected.CurrentMove);Assert.AreEqual(Kernel.Id("SLEEP_TALK"),selected.ChosenMove);
             Assert.IsTrue((selected.Flags&WildBattleInvocationFlags.NoPpDeduct)!=0);
@@ -277,11 +277,11 @@ public sealed class FocusSoundAnimationKernelTests
     }
 
     [TestMethod]
-    public void MetronomeCalledUproarIsDeniedButItsActualNextTurnRetainedInvocationIsOwned()
+    public void MetronomeCalledUproarAndItsActualNextTurnEachOwnTheirBoundary()
     {
         foreach(bool single in new[]{false,true})
         {
-            var called=CalledUproar(single);Caller.Check(called.Events,called,118,single);Deny(called.Events,single,253);
+            var called=CalledUproar(single);Caller.Check(called.Events,called,118,single);CalledLeafAnimationKernelFixture.Check(called.Events, called, single, Kernel.Id("METRONOME"), 253, Envelope.Hits(called.Events).Single());
             var transition=called.Events.OfType<SourceCalledMoveTransitionEvent>().Single().Invocation;
             Assert.AreEqual(Kernel.Id("METRONOME"),transition.ChosenMove);Assert.AreEqual(Move(253),transition.CurrentMove);
             var leaf=called.Events.OfType<SourcePpCommandEvent>().Single();Assert.AreEqual(Kernel.Id("METRONOME"),leaf.ChosenMove);Assert.AreEqual(Move(253),leaf.CurrentMove);

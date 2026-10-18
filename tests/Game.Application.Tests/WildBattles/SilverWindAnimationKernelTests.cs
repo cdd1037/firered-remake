@@ -341,7 +341,7 @@ public sealed class SilverWindAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualMetronomeSilverWindWithRealBoostRemainsOutsideDirectRootAndWaveAdmission()
+    public void ActualMetronomeSilverWindWithRealBoostOwnsOneRootAndOneStatWave()
     {
         foreach (bool single in new[] { false, true })
         {
@@ -358,12 +358,19 @@ public sealed class SilverWindAnimationKernelTests
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == SilverWind));
             Assert.IsTrue(result.Events.OfType<SourceAttackStringEvent>().Any(e => e.CurrentMove == SilverWind && e.ChosenMove == Kernel.Id("METRONOME")));
             Assert.AreEqual(1, Envelope.Hits(result.Events).Length); Assert.AreEqual(5, result.Events.OfType<SourceStatChangedEvent>().Count());
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 318, Envelope.Hits(result.Events).Single());
+            var first = Group(result.Events)[0]; var pp = result.Events.OfType<SourcePpCommandEvent>().Single();
+            var attack = result.Events.OfType<SourceAttackStringEvent>().Single(e => e.CurrentMove == SilverWind); int waves = 0;
             for (int i = 0; i < result.Events.Length; i++)
             {
-                Assert.AreNotEqual(318, Text(result.Events, i, single).Dispatch?.SourceMoveId);
-                Assert.AreNotEqual(318, Result(result.Events, i, single).Dispatch?.SourceMoveId);
-                Assert.IsNull(Wave(result.Events, i, single));
+                var wave = Wave(result.Events, i, single);
+                if (result.Events[i] != first) { Assert.IsNull(wave); continue; }
+                Assert.IsNotNull(wave); waves++; Assert.AreEqual(318, wave.SourceMoveId);
+                Assert.AreEqual(55, wave.AnimationArgument); Assert.AreEqual(pp.Actor, wave.Affected);
+                Assert.AreEqual(first.Sequence, wave.Sequence); Assert.AreEqual(attack.Sequence, wave.AttackSequence);
+                Assert.AreEqual(pp.Sequence, wave.PpSequence);
             }
+            Assert.AreEqual(1, waves);
         }
     }
 }

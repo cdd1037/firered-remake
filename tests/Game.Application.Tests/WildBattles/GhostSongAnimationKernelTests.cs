@@ -371,7 +371,7 @@ public sealed class GhostSongAnimationKernelTests
     }
 
     [TestMethod,DataRow(174),DataRow(195)]
-    public void ActualMetronomeLeavesKeepChosenCallerAndCurrentMoveSeparate(int id)
+    public void ActualMetronomeGhostSongLeavesAnimateWithoutChangingCallerOwnership(int id)
     {
         Assert.IsFalse(WildBattleSourceCallers.IsDirectMetronomeChoice(194));
         foreach(bool single in new[]{false,true})
@@ -384,7 +384,12 @@ public sealed class GhostSongAnimationKernelTests
                 Assert.IsTrue(target.Succeeded,target.Fault);if(WildBattleSourceCallers.Metronome(target.Rng).SourceMoveId!=id)continue;
                 found=Advance(start);break;
             }
-            Assert.IsNotNull(found);Caller.Check(found.Events,found,118,single);Deny(found.Events,single,id);
+            Assert.IsNotNull(found);Caller.Check(found.Events,found,118,single);var pp = found.Events.OfType<SourcePpCommandEvent>().First();
+            SourceBattleEvent outcome = id == 195
+                ? found.Events.OfType<SourceMtMoonVolatileEvent>().Last(e => e.Volatile == "perish-song" && e.Reason == "move")
+                : found.Events[found.Events.IndexOf(pp) + 1];
+            var cue = CalledLeafAnimationKernelFixture.Check(found.Events, found, single, Kernel.Id("METRONOME"), id, outcome);
+            Assert.AreEqual(id == 174 ? (byte?)1 : null, cue.MoveTurn);
             var invoked=found.Events.OfType<SourceCalledMoveTransitionEvent>().Single().Invocation;
             Assert.AreEqual(Move(id),invoked.CurrentMove);Assert.AreEqual(Kernel.Id("METRONOME"),invoked.ChosenMove);
         }

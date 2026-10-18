@@ -62,7 +62,7 @@ Fury Cutter attaches its post-increment counter to the hit receipt as optional `
 
 ## Caller preludes, retained invocations and mutable sprite state
 
-Metronome and Sleep Talk own their dedicated prelude independently of the selected leaf. The canonical caller-selection and invocation-transition receipts authenticate that prelude. Metronome has no PP command at this boundary; Sleep Talk retains its actual caller PP command. This does not admit called-leaf animations through ordinary direct-move matching.
+Metronome and Sleep Talk own their dedicated prelude independently of the selected leaf. The canonical caller-selection and invocation-transition receipts authenticate that prelude. Metronome has no PP command at this boundary; Sleep Talk retains its actual caller PP command. Caller preludes remain distinct from their selected leaf. `CampaignAnimationInvocation` authenticates the untouched selection/transition chain, including original chosen move, current move, target, learned PP slot and source suppression flags, before a leaf result validator can dispatch its existing catalog script.
 
 Retained Thrash uses its real unpaired attack-string and opponent hit, without inventing PP. Bide setup uses its owned PP and setup volatile; release uses the released volatile and fixed-damage result, with no fabricated attack-string or PP. Nullable sequence fields preserve these distinctions, and visibility replay starts from the actual authenticated boundary. The battle kernel remains the sole owner of move selection, target choice, damage and RNG.
 
@@ -150,3 +150,17 @@ Battler copies consume the shared explicit affine matrix and double-size raster 
 The common sine sampler preserves all 320 imported entries exactly, and applies the documented 256-entry periodic display interpretation outside that table. Source signed-byte panning is shared by setpan and the existing panning adjustment.
 
 Assist authenticates its actual selection pool and committed caller transition; leaf admission stays independent. Level-damage animation input comes from the existing pre-clamp hit result. Sweet Scent uses the metadata-driven primary spread-stat matcher, including separate held-item restoration ownership. No gameplay RNG draws or final-frame success inference are introduced.
+
+## Authenticated called-leaf ownership
+
+The same descriptor feeds ordinary, per-hit, primary/grouped/secondary stat and material-change consumers. It preserves real receipt indexes and presentation boundaries; no caller event is rewritten as a direct move. Nature Power and Mirror Move have no invented standalone successful program. Their visible work belongs to the committed selected leaf, when that leaf has a matching resolved script and an authenticated successful outcome.
+
+Sleep Talk pays its caller slot before selecting another learned slot. Its actual earlier PP receipt is retained in a detached ledger; the leaf's suppressed nominal PP command cannot erase that payment. Party synchronization validates learned move identity and the complete PP chain. For Trick's earlier party writes, already-applied payments must match their authenticated final PP before later synchronization; a consistently forged refund in both snapshots still fails.
+
+Headerless charge setup uses its real PP/charge boundary with explicitly absent attack/MoveUsed indexes. Sunny Solar Beam retains its real early PP payment and later unchanged release command. Ordinary direct and called entry share one chain reader, while existing effect validators retain charge/result eligibility. No generated attack page, final-frame reconstruction, battle RNG draw or gameplay selection is introduced by presentation matching.
+
+Counter and Mirror Coat can resolve the recorded damage source or Follow Me after a caller transition selected an earlier target. The existing retaliation producer now emits a small typed target-resolution receipt only when that target actually changes. It is silent bookkeeping in both presentations and survives canonical/legacy export. The descriptor authenticates its actual pre-attack adjacency, effect, actor and old/new targets before connecting the original caller chain to the resolved leaf. No damage, accuracy, PP, selection or RNG calculation is replaced. Tests compare the complete non-bookkeeping results against the same action with its target preselected and reject missing, duplicated or forged resolution receipts.
+
+Validation for this caller/Volt integration: complete solution build passed with zero warnings/errors; the final affected Application suite passed2,387/2,387 in40s, including the duplicate-proof hardening. Target-resolution narration passed2/2. The renderer selection passed17/18 initially solely because an explicitly generated ElectricWisp fixture was absent after recovery; its documented generator restored that local input and the affected ElectricWisp/Volt refresh passed9/9. Volt's four importer checks passed; generated expected data stays ignored. These are managed/source checks, not a new native UI or real-audio acceptance claim.
+
+The additional all-move recipe/residual filter passed1,430/1,430 in4s after explicitly regenerating its absent recovered residual oracle (576 weather and112 status rows). Its initial run reported1,429 passes and one missing-data failure; no assertion was removed or skipped.

@@ -38,7 +38,13 @@ internal abstract partial class SourceRecipeContext
             return;
         }
         var target = RetaliationFollowMe(attacker.Side) is { } follow && Get(follow).Pokemon.CurrentHp > 0 ? follow : attacker;
+        var priorTarget = Invocation.Target;
         RetaliationTarget(target);
+        // Preserve the committed caller transition. The source retaliation command
+        // resolves its damage source (or Follow Me) only after that earlier boundary.
+        if (priorTarget != target)
+            Add(n => new SourceMoveTargetResolvedEvent(n, Turn, actor, move.Id, priorTarget, target,
+                SourceMoveTargetResolutionReason.Retaliation));
         bool hit = FixedDamageAccuracy(actor, target, move, purpose);
         SpendEarlyPartyPp(actor, target, slot, move);
         if (!hit) { SourceGenericMiss(actor, target, move); return; }

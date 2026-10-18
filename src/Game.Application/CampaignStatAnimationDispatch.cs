@@ -19,7 +19,7 @@ public static partial class CampaignStatAnimationPresentation
         // the resulting stage was clamped at zero.
         return (delta switch{1=>15,2=>39,-1=>22,-2=>46,_=>throw new ArgumentOutOfRangeException(nameof(delta))})+statIndex;
     }
-    private static CampaignStatAnimationDispatch? Match(string battleId,Row[] rows,int index,bool substitute,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,bool doubles,Func<int,int> consumedGroupStart)
+    private static CampaignStatAnimationDispatch? Match(string battleId,SourceBattleEvent[] events,Row[] rows,int index,bool substitute,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,bool doubles,Func<int,int> consumedGroupStart)
     {
         if(substitute||index<3||index>=rows.Length)return null;
         // A prior target can consume an item before the next target pass. Reuse
@@ -41,7 +41,7 @@ public static partial class CampaignStatAnimationPresentation
         }
         var stat=rows[index];var pp=rows[index-1];
         if(stat.Kind!="stat"||stat.Actor<0||stat.Actor>=(doubles?4:2)||stat.Target<0||stat.Target>=(doubles?4:2)||stat.Before is <0 or >12||stat.After is <0 or >12||stat.After==stat.Before||
-            pp.Kind!="pp"||pp.Actor!=stat.Actor||pp.Target!=stat.Target||pp.Owner!=stat.Actor||pp.Move!=pp.Chosen||pp.Turn!=stat.Turn||pp.Sequence>=stat.Sequence)return null;
+            pp.Kind!="pp"||pp.Actor!=stat.Actor||pp.Target!=stat.Target||pp.Owner!=stat.Actor||pp.Turn!=stat.Turn||pp.Sequence>=stat.Sequence)return null;
         var definition=CampaignMoveAnimationPresentation.Definition(new(pp.Move),moves);
         if(definition is null)return null;
         int sourceMove=definition.SourceMoveId;
@@ -60,13 +60,18 @@ public static partial class CampaignStatAnimationPresentation
             used--;
         }
         if(used<1)return null;var move=rows[used];var attack=rows[used-1];
+        // Read the untouched typed receipts at the original index. Optional
+        // self-state rows above affect result matching, never caller authority.
+        var identity=CampaignAnimationInvocation.TryRead(events,invocation,doubles?4:2,moves);
+        if(identity is null||events[identity.UsedIndex].Sequence!=move.Sequence||
+            events[identity.AttackIndex].Sequence!=attack.Sequence)return null;
         if(move.Actor!=stat.Actor||move.Move!=pp.Move||move.Turn!=stat.Turn||attack.Kind!="attack"||attack.Actor!=stat.Actor||
-            attack.Move!=pp.Move||attack.Chosen!=pp.Move||attack.Turn!=stat.Turn||attack.Sequence>=move.Sequence||move.Sequence>=pp.Sequence)return null;
+            attack.Move!=identity.CurrentMove.Value||attack.Chosen!=identity.ChosenMove.Value||attack.Turn!=stat.Turn||attack.Sequence>=move.Sequence||move.Sequence>=pp.Sequence)return null;
         for(int i=used;i<index;i++)if(rows[i].Sequence>=rows[i+1].Sequence)return null;
         var passes=rows.Skip(used+1).Take(index-used-1).Where(r=>r.Kind=="pp").ToArray();
         if(((!doubles||definition.Target!="MOVE_TARGET_BOTH")&&passes.Length!=1)||passes.Length is <1 or >2||passes.Select(r=>r.Target).Distinct().Count()!=passes.Length||passes[0].Target!=move.Target||
-            passes.Any(r=>r.Actor!=stat.Actor||r.Owner!=stat.Actor||r.Move!=pp.Move||r.Chosen!=pp.Move||r.Turn!=stat.Turn||r.Sequence<=move.Sequence||r.Slot!=move.Slot||r.Slot is <0 or >3||r.Before is <0 or >255||r.After is <0 or >255||r.Cost<1||r.Cost>(definition.Target=="MOVE_TARGET_BOTH"?3:2))||
-            passes[0].Before!=move.Before||passes[0].After!=move.After||passes[0].Before<1||passes[0].After!=Math.Max(0,passes[0].Before-passes[0].Cost)||passes.Skip(1).Any(r=>r.Before!=passes[0].After||r.After!=r.Before)||
+            passes.Any(r=>r.Actor!=stat.Actor||r.Owner!=identity.PpOwner.Value||r.Move!=identity.CurrentMove.Value||r.Chosen!=identity.ChosenMove.Value||r.Turn!=stat.Turn||r.Sequence<=move.Sequence||r.Slot!=identity.PpSlot||r.Slot!=move.Slot||r.Slot is <0 or >3||r.Before is <0 or >255||r.After is <0 or >255||r.Cost<1||r.Cost>(definition.Target=="MOVE_TARGET_BOTH"?3:2))||
+            passes[0].Before!=move.Before||passes[0].After!=move.After||(identity.NoPpDeduct?passes[0].After!=passes[0].Before:passes[0].Before<1||passes[0].After!=Math.Max(0,passes[0].Before-passes[0].Cost))||passes.Skip(1).Any(r=>r.Before!=passes[0].After||r.After!=r.Before)||
             passes.Skip(1).Any(r=>r.Target!=(move.Target^2)))return null;
         if(rows.Skip(used+1).Take(index-used-1).Any(r=>r.Kind is "stat" or "cap" or "failed"&&
             (r.Actor!=stat.Actor||!passes.Any(p=>p.Target==r.Target)||r.Kind=="failed"&&r.Move!=pp.Move)))return null;
@@ -81,7 +86,7 @@ public static partial class CampaignStatAnimationPresentation
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
         if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.EventIndex,2,moves,affectedBehindSubstitute) is {} charge)return charge;
         if(Grouped(battle,true,moves) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
-        return Match(battle.Id,battle.Events.Select(e=>e switch
+        return Match(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.Events.Select(e=>e switch
         {
             WildBattleDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_DEFENSE_CURL"),
             WildBattleMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_MINIMIZE"),
@@ -99,7 +104,7 @@ public static partial class CampaignStatAnimationPresentation
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
         if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.ToArray(),battle.EventIndex,4,moves,affectedBehindSubstitute) is {} charge)return charge;
         if(Grouped(battle,moves) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
-        return Match(battle.Id,battle.Events.Select(e=>e switch
+        return Match(battle.Id,battle.Events.ToArray(),battle.Events.Select(e=>e switch
         {
             SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),
             SourceMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_MINIMIZE"),

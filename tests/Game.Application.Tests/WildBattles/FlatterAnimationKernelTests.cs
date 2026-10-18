@@ -136,14 +136,14 @@ public sealed class FlatterAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualCalledFlatterDoesNotReplayTheDirectRootAndRequiresCurrentMetadata()
+    public void ActualCalledFlatterOwnsItsRootAndStillRequiresCurrentMetadata()
     {
         foreach (bool single in new[] { false, true })
         {
             var frame = F.Body(Initial(single), 0, _ => Kernel.Mon("CLEFAIRY", "METRONOME") with { SpeedStage = 12, AccuracyStage = 12 });
             var result = Envelope.Resolve(frame with { Rng = new(CallerPreludeAnimationKernelFixture.MetronomeSeed(260)) });
             Assert.AreEqual(Move, result.Events.OfType<SourceCallerSelectionEvent>().Single().Result); Assert.AreEqual(1, result.Events.OfType<SourceStatChangedEvent>().Count());
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, 260);
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 260, result.Events.OfType<SourceStatChangedEvent>().Single());
             var rows = F.Ordered(Initial(single), 0, 1).Events; int at = rows.IndexOf(rows.OfType<SourceMoveUsedEvent>().Single());
             var definitions = Kernel.Mechanics.Catalog.Moves;
             foreach (var metadata in new[] { null, definitions.Remove(Move), definitions.SetItem(Move, definitions[Move] with { SourceMoveId = 1 }),

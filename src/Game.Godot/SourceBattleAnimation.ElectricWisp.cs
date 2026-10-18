@@ -35,6 +35,7 @@ public sealed partial class SourceBattleAnimation
     }
     private void ValidateElectricWispCapacity(SourceAnimationCommand c)
     {
+        if(HasVoltTackleClosure()){ValidateVoltTackleCapacity(c);return;}
         var commands=OverlayInvocationCommands();
         string[] rawTasks=["AnimTask_ElectricChargingParticles","AnimTask_ShockWaveProgressingBolt","AnimTask_ShockWaveLightning"];
         if(commands.Any(x=>x.Op is "goto" or "jumpargeq" or "jumpifmoveturn" or "choosetwoturnanim" or "monbg_static" or "clearmonbg_static" or "fadetobg" or "restorebg" or "changebg"))Fail(c,"Electric/Wisp allocation needs its bounded linear closure.");

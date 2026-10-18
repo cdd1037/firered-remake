@@ -318,7 +318,7 @@ public sealed class ItemTransferAnimationKernelTests
     }
 
     [TestMethod, DataRow(278)]
-    public void ActualMetronomeItemCommandsKeepTheirSuccessButCannotBorrowDirectRootAdmission(int id)
+    public void ActualMetronomeItemCommandsKeepTheirSuccessAndAuthenticateTheCalledLeaf(int id)
     {
         uint seed = CallerPreludeAnimationKernelFixture.MetronomeSeed(id);
         foreach (bool single in new[] { false, true })
@@ -326,12 +326,13 @@ public sealed class ItemTransferAnimationKernelTests
             var frame = Body.Body(Initial(id, single), 0, b => Kernel.Mon("TOGETIC", "METRONOME", 29) with { HeldItem = b.HeldItem, AccuracyStage = 12 });
             var result = Envelope.Resolve(frame with { Rng = new(seed) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(id)));
-            Assert.IsNotNull(Owner(result.Events, id)); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.IsNotNull(Owner(result.Events, id));
+            CalledLeafAnimationKernelFixture.Check(result, single, Kernel.Id("METRONOME"), id);
         }
     }
 
     [TestMethod]
-    public void TrickIsExcludedFromMetronomeButActualMirrorMoveSuccessStillCannotBorrowDirectRootAdmission()
+    public void TrickIsExcludedFromMetronomeButActualMirrorMoveSuccessAuthenticatesTheCalledLeaf()
     {
         Assert.IsFalse(WildBattleSourceCallers.IsDirectMetronomeChoice(271),
             "Pinned sMovesForbiddenToCopy excludes Trick before METRONOME_FORBIDDEN_END.");
@@ -348,7 +349,7 @@ public sealed class ItemTransferAnimationKernelTests
         Assert.IsTrue(called.Events.OfType<SourceCallerSelectionEvent>().Any(e =>
             e.Caller == Kernel.Id("MIRROR_MOVE") && e.Result == Move(271)));
         Assert.IsNotNull(Owner(called.Events, 271));
-        CallerPreludeAnimationKernelFixture.DenyLeaf(called.Events, false, 271);
+        CalledLeafAnimationKernelFixture.Check(called, false, Kernel.Id("MIRROR_MOVE"), 271);
     }
 
     [TestMethod, DataRow(271), DataRow(278)]

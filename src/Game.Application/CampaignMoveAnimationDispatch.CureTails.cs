@@ -10,7 +10,7 @@ public static partial class CampaignMoveAnimationPresentation
     // complete held-item groups, then active-party synchronization. Unknown rows
     // cannot become a harmless tail merely because a valid PP command precedes them.
     private static bool CureMoveEndTail(SourceBattleEvent[] rows,int start,SourceMoveUsedEvent used,int slots,
-        Func<SourceBattleEvent[],int,SourceCalledPartyChangedEvent,SourceMoveUsedEvent,bool>? activeSync=null)
+        Func<SourceBattleEvent[],int,SourceCalledPartyChangedEvent,SourceMoveUsedEvent,bool>? activeSync=null,CampaignAnimationInvocation? invocation=null)
     {
         int i=start,lastImmunity=-1,lastItem=-1;
         while(i<rows.Length&&rows[i] is SourceAbilityActivatedEvent ability)
@@ -47,7 +47,7 @@ public static partial class CampaignMoveAnimationPresentation
         {
             if(rows[i] is not SourceCalledPartyChangedEvent {Reason:"active-sync"} sync||
                 !Enum.IsDefined(sync.Side)||sync.PartyIndex is <0 or >=6||!synchronized.Add((sync.Side,sync.PartyIndex))||
-                synchronized.Count(p=>p.Item1==sync.Side)>slots/2||!(activeSync??CureActiveSync)(rows,i,sync,used))return false;
+                synchronized.Count(p=>p.Item1==sync.Side)>slots/2||!(activeSync is null?CureActiveSync(rows,i,sync,used,invocation):activeSync(rows,i,sync,used)))return false;
         }
         return true;
     }
@@ -70,7 +70,33 @@ public static partial class CampaignMoveAnimationPresentation
         _=>false
     };
 
-    private static bool CureActiveSync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,SourceMoveUsedEvent used)
+    // Caller PP is part of this same action, even when the leaf suppresses its
+    // own deduction or uses another learned slot. Keep each original command.
+    private static IEnumerable<CampaignAnimationCallerPp> InvocationPpLedger(SourceBattleEvent[] rows,
+        SourceMoveUsedEvent used,CampaignAnimationInvocation? invocation)
+    {
+        if(invocation is not null)
+            foreach(var payment in invocation.CallerPpLedger)yield return payment;
+        foreach(var command in rows.OfType<SourcePpCommandEvent>().Where(p=>p.Actor==used.Actor&&p.CurrentMove==used.Move))
+            yield return new(command,invocation is not null&&command.PpSlot==invocation.PpSlot
+                ?invocation.LearnedPpMove:used.Move,invocation?.NoPpDeduct==true);
+    }
+
+    private static bool InvocationPpDelta(SourceBattleEvent[] rows,SourceMoveUsedEvent used,
+        CampaignAnimationInvocation? invocation,int slot,Game.Domain.Ids.MoveId learned,int before,int after,long afterSequence=long.MinValue,bool allowUnchanged=false)
+    {
+        var all=InvocationPpLedger(rows,used,invocation).Where(p=>p.Command.PpOwner==used.Actor&&p.Command.PpSlot==slot).ToArray();
+        if(all.Any(p=>p.LearnedMove!=learned))return false;
+        var applied=all.Where(p=>p.Command.Sequence<=afterSequence).ToArray();
+        if(applied.Length>0&&applied[^1].Command.After!=before)return false;
+        var payments=all.Where(p=>p.Command.Sequence>afterSequence).ToArray();
+        if(payments.Length==0)return allowUnchanged&&before==after;
+        return
+            payments[0].Command.Before==before&&payments[^1].Command.After==after&&
+            payments.Zip(payments.Skip(1)).All(p=>p.First.Command.After==p.Second.Command.Before);
+    }
+
+    private static bool CureActiveSync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,SourceMoveUsedEvent used,CampaignAnimationInvocation? invocation=null)
     {
         var before=sync.Before;var after=sync.After;
         if(before?.Pokemon is null||after?.Pokemon is null||before.Pokemon.Moves.IsDefault||after.Pokemon.Moves.IsDefault||
@@ -81,8 +107,9 @@ public static partial class CampaignMoveAnimationPresentation
         for(int slot=0;slot<before.Pokemon.Moves.Length;slot++)
         {
             var a=before.Pokemon.Moves[slot];var b=after.Pokemon.Moves[slot];if(a==b)continue;
-            if(a is null||b is null||sync.Side!=used.Actor.Side||slot!=used.Slot||a.Move!=used.Move||
-                a.CurrentPp!=used.PpBefore||b.CurrentPp!=used.PpAfter||a with{CurrentPp=b.CurrentPp}!=b)return false;
+            if(a is null||b is null||sync.Side!=used.Actor.Side||sync.SourceSlot is {} source&&source!=used.Actor||
+                !InvocationPpDelta(rows,used,invocation,slot,a.Move,a.CurrentPp,b.CurrentPp)||
+                a with{CurrentPp=b.CurrentPp}!=b)return false;
             changed=true;
         }
         if(before.Status!=after.Status)

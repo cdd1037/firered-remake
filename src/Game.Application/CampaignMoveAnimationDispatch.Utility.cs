@@ -14,7 +14,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(definition.Power!=0||definition.Target!=(field?"MOVE_TARGET_OPPONENTS_FIELD":self?"MOVE_TARGET_USER":"MOVE_TARGET_SELECTED")||
             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
             (self?used.Target!=used.Actor:used.Target==used.Actor)||field&&used.Target.Side==used.Actor.Side||
-            !ValidSingleInvocationPp(commands,used,field?1+battle.Slots/2:self?1:2)||
+            !ValidSingleInvocationPp(commands,used,field?1+battle.Slots/2:self?1:2,invocation:battle.Context)||
             action.Length<2||action[0]!=commands[0]||commands[0].Sequence!=used.Sequence+1||
             action.Any(e=>e.Turn!=used.Turn)||action.Zip(action.Skip(1)).Any(pair=>pair.Second.Sequence!=pair.First.Sequence+1))
             return Reject("unmatched-source-utility-invocation");
@@ -72,7 +72,7 @@ public static partial class CampaignMoveAnimationPresentation
         }
         // These successful non-damaging commands share the already-reviewed
         // immunity/cure-item/active-party tail, not arbitrary later outcomes.
-        if(!CureMoveEndTail(action,tail,used,battle.Slots))return Reject("unmatched-source-utility-tail");
+        if(!CureMoveEndTail(action,tail,used,battle.Slots,invocation:battle.Context))return Reject("unmatched-source-utility-tail");
         return new(new(battle.Id,used.Sequence,attack.Sequence,pp.Sequence,result.Sequence,
             definition.SourceMoveId,used.Actor,used.Target,false),"committed-source-animation");
     }

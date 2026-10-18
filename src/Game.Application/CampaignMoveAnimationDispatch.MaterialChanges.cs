@@ -20,7 +20,7 @@ public static partial class CampaignMoveAnimationPresentation
             used.Actor.Value>=battle.Slots||used.Target.Value>=battle.Slots||used.Slot is <0 or >3||
             (substitute?used.Target!=used.Actor:used.Target==used.Actor)||at<1||
             rows[at-1] is not SourceAttackStringEvent attack||attack.Actor!=used.Actor||attack.Turn!=used.Turn||
-            attack.ChosenMove!=used.Move||attack.CurrentMove!=used.Move||attack.Sequence+1!=used.Sequence)
+            attack.ChosenMove!=(battle.Context?.ChosenMove??used.Move)||attack.CurrentMove!=used.Move||attack.Sequence+1!=used.Sequence)
             return No("unmatched-source-material-invocation");
         int end=at+1;
         while(end<rows.Length&&rows[end].Turn==used.Turn&&
@@ -35,7 +35,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(!substitute)
         {
             var pp=action.OfType<SourcePpCommandEvent>().ToArray();
-            if(!ValidSingleInvocationPp(pp,used,2)||action.Length<2||action[0]!=pp[0]||
+            if(!ValidSingleInvocationPp(pp,used,2,invocation:battle.Context)||action.Length<2||action[0]!=pp[0]||
                 action[1] is not SourceTransformedEvent changed||changed.Actor!=used.Actor||changed.Target!=used.Target||
                 changed.Turn!=used.Turn||changed.Sequence!=pp[0].Sequence+1||
                 action.OfType<SourceTransformedEvent>().Count()!=1||changed.BattleView is null||
@@ -47,10 +47,7 @@ public static partial class CampaignMoveAnimationPresentation
         // Substitute's source script is PP -> attack string -> animation -> HP.
         // Its later volatile receipt is the material handoff, not a second hit.
         if(rows[at-2] is not SourcePpCommandEvent prefix||prefix.Turn!=used.Turn||
-            prefix.Actor!=used.Actor||prefix.PpOwner!=used.Actor||prefix.Target!=used.Actor||
-            prefix.PpSlot!=used.Slot||prefix.ChosenMove!=used.Move||prefix.CurrentMove!=used.Move||
-            prefix.CommandCost!=1||prefix.Before is <1 or >255||prefix.After!=Math.Max(0,prefix.Before-1)||
-            prefix.Before!=used.PpBefore||prefix.After!=used.PpAfter||prefix.Sequence+1!=attack.Sequence||
+            !ValidSingleInvocationPp([prefix],used,1,invocation:battle.Context)||prefix.Sequence+1!=attack.Sequence||
             action.OfType<SourcePpCommandEvent>().Any()||action.Length<2||
             action[0] is not SourceHpChangedEvent {Critical:false,RandomPercent:100} cost||
             cost.Actor!=used.Actor||cost.Target!=used.Actor||cost.Move!=used.Move||cost.Turn!=used.Turn||
@@ -86,7 +83,10 @@ public static partial class CampaignMoveAnimationPresentation
         if(at<0||last<=at||nextEventIndex!=at&&nextEventIndex!=at+1||
             events[at] is not SourceMoveUsedEvent used||Definition(used.Move,moves) is not {} definition||
             definition.Effect is not("EFFECT_TRANSFORM" or "EFFECT_SUBSTITUTE"))return null;
-        var owned=MaterialChangeAnimation(new(dispatch.BattleId,events.ToArray(),at,count,()=>null,_=>null),used,definition).Dispatch;
+        var source=events.ToArray();
+        var context=CampaignAnimationInvocation.TryRead(source,at,count,moves);
+        if(context is null)return null;
+        var owned=MaterialChangeAnimation(new(dispatch.BattleId,source,at,count,()=>null,_=>null){Context=context},used,definition).Dispatch;
         if(owned!=dispatch)return null;
         var before=displayed.Bodies[actor];
         if(before.Pokemon.CurrentHp<=0||before.CalledVolatile?.SubstituteHp>0)return null;

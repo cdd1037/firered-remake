@@ -240,7 +240,7 @@ public partial class CampaignView
             case SourceRewardLearningEvent learned when learned.Outcome==SourceRewardLearningOutcome.Declined:
                 Source("sText_DidNotLearnMove",("B_BUFF1",_session.State.Party[learned.Recipient.Index].Nickname),("B_BUFF2",MoveName(learned.Candidate.Move)));break;
             // Typed bookkeeping events have no printed page; HP/faint/rewards still have their own boundaries.
-            case SourcePpCommandEvent or SourceOrderEvent or SourceTurnReadyEvent or SourceCalledMoveTransitionEvent or SourceCallerSelectionEvent or
+            case SourcePpCommandEvent or SourceOrderEvent or SourceTurnReadyEvent or SourceCalledMoveTransitionEvent or SourceMoveTargetResolvedEvent or SourceCallerSelectionEvent or
                 SourceHpChangedEvent or SourceEndedEvent or SourceReplacementRequiredEvent or SourceCalledPartySwitchRequiredEvent or
                 SourceOpponentRewardCompletedEvent or SourceRewardLearningEvent or SourceDefenseCurledEvent or SourceRolloutChangedEvent or
                 SourceStatusChangedEvent or SourceConfusionChangedEvent or SourceFlinchEvent or SourceDisableChangedEvent or SourceEncoreChangedEvent or

@@ -182,7 +182,7 @@ public sealed class RecoveryAnimationKernelTests
     }
 
     [TestMethod, DataRow(156), DataRow(234), DataRow(236)]
-    public void ActualCalledRecoveryLeavesRemainOutsideDirectAnimationAdmission(int id)
+    public void ActualCalledRecoveryLeavesOwnTheirAuthoredTextOrRecoveryBoundary(int id)
     {
         uint? seed = null; for (uint candidate = 0; candidate < 65536; candidate++)
             if (WildBattleSourceCallers.Metronome(new(candidate)).SourceMoveId == id) { seed = candidate; break; }
@@ -193,7 +193,8 @@ public sealed class RecoveryAnimationKernelTests
             bodies[0] = caller with { Pokemon = caller.Pokemon with { CurrentHp = 1 } };
             var result = Kernel.Direct(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Move(id)));
-            Assert.IsTrue(result.Events.OfType<SourceRecoveredEvent>().Any(e => e.Move == Move(id))); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.IsTrue(result.Events.OfType<SourceRecoveredEvent>().Any(e => e.Move == Move(id))); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, result.Events.OfType<SourceRecoveredEvent>().Single(),
+                id == 156 ? CampaignMoveAnimationBoundary.BeforeRecoveryResult : CampaignMoveAnimationBoundary.AfterAttackText);
         }
     }
 }

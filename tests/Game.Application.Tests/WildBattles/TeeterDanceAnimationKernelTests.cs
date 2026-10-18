@@ -151,7 +151,7 @@ public sealed class TeeterDanceAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualMetronomeTeeterDanceLeafCannotBorrowDirectStatusRoot()
+    public void ActualMetronomeTeeterDanceOwnsOnlyItsFirstStatusBoundary()
     {
         uint? seed = null; for (uint s = 0; s < 65536; s++) if (WildBattleSourceCallers.Metronome(new(s)).SourceMoveId == 298) { seed = s; break; }
         Assert.IsNotNull(seed);
@@ -160,7 +160,9 @@ public sealed class TeeterDanceAnimationKernelTests
             var bodies = Bodies(298); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 50) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(298)));
-            Assert.IsTrue(Confusions(result.Events).Length > 0); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, 298);
+            Assert.IsTrue(Confusions(result.Events).Length > 0); var outcome = Confusions(result.Events)[0];
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 298, outcome,
+                Game.Application.CampaignMoveAnimationBoundary.BeforeStatusResult, outcome.Side);
         }
     }
 }

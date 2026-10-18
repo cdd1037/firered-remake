@@ -26,6 +26,7 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceCalledBeatUpMemberEvent), "SourceCalledBeatUpMemberEvent")]
 [JsonDerivedType(typeof(SourceCalledDelayedEvent), "SourceCalledDelayedEvent")]
 [JsonDerivedType(typeof(SourceCalledMoveTransitionEvent), "SourceCalledMoveTransitionEvent")]
+[JsonDerivedType(typeof(SourceMoveTargetResolvedEvent), "SourceMoveTargetResolvedEvent")]
 [JsonDerivedType(typeof(SourceCalledOverlayChangedEvent), "SourceCalledOverlayChangedEvent")]
 [JsonDerivedType(typeof(SourceCalledPartyChangedEvent), "SourceCalledPartyChangedEvent")]
 [JsonDerivedType(typeof(SourceCalledPartySwitchRequiredEvent), "SourceCalledPartySwitchRequiredEvent")]
@@ -131,6 +132,10 @@ public sealed record SourceBindingDamageEvent(long Sequence, int Turn, BattlerSl
 public sealed record SourceCalledBeatUpMemberEvent(long Sequence, int Turn, BattleSide Side, int PartyIndex, SpeciesId Species) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledDelayedEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, int Before, int After, string Reason, int? SourcePartyIndex = null) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledMoveTransitionEvent(long Sequence, int Turn, SourceMoveInvocation Invocation) : SourceBattleEvent(Sequence, Turn);
+public enum SourceMoveTargetResolutionReason { Retaliation }
+/// <summary>A committed script target change after the invocation's earlier target selection.</summary>
+public sealed record SourceMoveTargetResolvedEvent(long Sequence, int Turn, BattlerSlot Actor, MoveId CurrentMove,
+    BattlerSlot PriorTarget, BattlerSlot Target, SourceMoveTargetResolutionReason Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledOverlayChangedEvent(long Sequence, int Turn, BattlerSlot Side, MoveId Move, WildBattleCalledOverlay? Before, WildBattleCalledOverlay? After) : SourceBattleEvent(Sequence, Turn)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattlerSlot? Source { get; init; }
@@ -279,6 +284,8 @@ public static class SourceBattleEventAdapter
         SourceCalledBeatUpMemberEvent x => new WildBattleCalledBeatUpMemberEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.PartyIndex, x.Species),
         SourceCalledDelayedEvent x => new WildBattleCalledDelayedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Before, x.After, x.Reason, x.SourcePartyIndex),
         SourceCalledMoveTransitionEvent x => new WildBattleCalledMoveTransitionEvent(x.Sequence, x.Turn, ExportInvocation(x.Invocation)),
+        SourceMoveTargetResolvedEvent x => new WildBattleMoveTargetResolvedEvent(x.Sequence, x.Turn, Side(x.Actor), x.CurrentMove,
+            Side(x.PriorTarget), Side(x.Target), x.Reason),
         SourceCalledOverlayChangedEvent x => new WildBattleCalledOverlayChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.Before, x.After),
         SourceCalledPartyChangedEvent x => new WildBattleCalledPartyChangedEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.PartyIndex, x.Reason, x.Before, x.After) { SourceSlot = x.SourceSlot is {} source ? Side(source) : null, TransientMoveSlots = x.TransientMoveSlots },
         SourceCalledPartySwitchRequiredEvent x => new WildBattleCalledPartySwitchRequiredEvent(x.Sequence, x.Turn, ExportPending(x.Pending)),
@@ -388,6 +395,9 @@ public static class SourceBattleEventHooks
     }
     public static string? ValidateRouting(SourceBattleFrame frame, SourceBattleEvent value)
     {
+        if (value is SourceMoveTargetResolvedEvent resolved && (!Enum.IsDefined(resolved.Reason) ||
+            resolved.PriorTarget == resolved.Target || resolved.Actor.Side == resolved.Target.Side))
+            return "source_event_target_resolution";
         if (value is SourceOrderEvent order && (order.Order.IsDefault || order.Order.Length != frame.BattlerCount ||
             order.Order.Distinct().Count() != frame.BattlerCount)) return "source_event_order_shape";
         if (value is SourceCalledSpikesChangedEvent spikes && !Enum.IsDefined(spikes.Side) ||
@@ -452,6 +462,7 @@ public static class SourceBattleEventHooks
             SourceCalledBeatUpMemberEvent x => [],
             SourceCalledDelayedEvent x => [x.Target],
             SourceCalledMoveTransitionEvent x => [x.Invocation.Actor, x.Invocation.Target, x.Invocation.PpOwner],
+            SourceMoveTargetResolvedEvent x => [x.Actor, x.PriorTarget, x.Target],
             SourceCalledOverlayChangedEvent x => [x.Side, x.Source],
             SourceCalledPartyChangedEvent x => [x.SourceSlot],
             SourceCalledPartySwitchRequiredEvent x => [x.Pending.Slot, x.Pending.Invocation?.Actor, x.Pending.Invocation?.Target, x.Pending.Invocation?.PpOwner],

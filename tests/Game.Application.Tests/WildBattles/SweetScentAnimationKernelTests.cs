@@ -119,7 +119,7 @@ public sealed class SweetScentAnimationKernelTests
     }
 
     [TestMethod]
-    public void RealMetronomeLeafIsNotReplayedAsADirectSweetScentRoot()
+    public void RealMetronomeSweetScentOwnsOnlyItsFirstSuccessfulTargetRoot()
     {
         foreach (bool single in new[] { false, true })
         {
@@ -127,7 +127,8 @@ public sealed class SweetScentAnimationKernelTests
             frame = frame with { Rng = new(CallerPreludeAnimationKernelFixture.MetronomeSeed(230)) };
             var result = Envelope.Resolve(frame); Assert.AreEqual(Move, result.Events.OfType<SourceCallerSelectionEvent>().Single().Result);
             Assert.AreEqual(single ? 1 : 2, result.Events.OfType<SourceStatChangedEvent>().Count());
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, 230);
+            var outcome = result.Events.OfType<SourceStatChangedEvent>().First();
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 230, outcome, target: outcome.Target);
         }
     }
 

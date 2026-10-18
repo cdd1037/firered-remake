@@ -14,7 +14,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(definition.Power is <1 or >65535||definition.Target!="MOVE_TARGET_BOTH"||
             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
             used.Actor.Side==used.Target.Side||action.Length<2||commands.Length==0||action[0]!=commands[0]||
-            !(battle.Slots==4?ValidSpreadPp(commands,used,attack):ValidSingleInvocationPp(commands,used,2)))
+            !(battle.Slots==4?ValidSpreadPp(commands,used,attack,invocation:battle.Context):ValidSingleInvocationPp(commands,used,2,invocation:battle.Context)))
             return Reject("unmatched-source-hp-scaled-invocation");
         var hits=action.Where(e=>e is SourceHpChangedEvent hp&&hp.Actor==used.Actor&&hp.Move==used.Move||
             e is SourceSubstituteDamagedEvent sub&&sub.Actor==used.Actor&&sub.Move==used.Move).ToArray();
@@ -75,7 +75,7 @@ public static partial class CampaignMoveAnimationPresentation
             }
             else if(hpChanged)return false;
             var normalized=sync with{Before=before with{Pokemon=before.Pokemon with{CurrentHp=after.Pokemon.CurrentHp}}};
-            if(CureActiveSync(rows,index,normalized,owner))return true;
+            if(CureActiveSync(rows,index,normalized,owner,battle.Context))return true;
             return hpChanged&&ItemSameMember(normalized.Before,normalized.After);
         }
         // Every changed HP member necessarily differs from its action-entry

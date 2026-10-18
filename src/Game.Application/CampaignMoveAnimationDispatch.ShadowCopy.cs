@@ -10,7 +10,7 @@ public static partial class CampaignMoveAnimationPresentation
     {
         if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||
             used.Target.Value<0||used.Target.Value>=battle.Slots||used.Actor==used.Target||
-            !ValidSingleInvocationPp(pp,used,battle.Slots)||action.Length<2||action[0]!=pp[0]||
+            !ValidSingleInvocationPp(pp,used,battle.Slots,invocation:battle.Context)||action.Length<2||action[0]!=pp[0]||
             action[1] is not SourceTowerVolatileEvent {Effect:"nightmare",Applied:true,Reason:"move"} result||
             result.Side!=used.Target||result.Sequence!=pp[0].Sequence+1||
             action.OfType<SourceTowerVolatileEvent>().Count(e=>e.Effect=="nightmare"&&e.Applied)!=1)

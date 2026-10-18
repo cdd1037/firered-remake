@@ -28,7 +28,7 @@ public static partial class CampaignMoveAnimationPresentation
             return RecoveryResult(battle.Id,rows,battle.EventIndex,4,moves,supports);
         if(battle.EventIndex>=0&&battle.EventIndex<rows.Length&&rows[battle.EventIndex] is SourceConfusionChangedEvent)
             return StatusResult(battle.Id,rows,battle.EventIndex,4,moves,supports);
-        return MultiHitResult(battle.Id,rows.Select(MultiHitRead).ToArray(),battle.EventIndex,4,moves,supports);
+        return MultiHitResult(battle.Id,rows,battle.EventIndex,4,moves,supports);
     }
     public static CampaignMoveAnimationDecision AtResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
@@ -42,7 +42,7 @@ public static partial class CampaignMoveAnimationPresentation
             return RecoveryResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
         if(battle.EventIndex>=0&&battle.EventIndex<battle.Events.Length&&battle.Events[battle.EventIndex] is WildBattleConfusionChangedEvent)
             return StatusResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
-        return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,2,moves,supports);
+        return MultiHitResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
     }
     private static CampaignMoveAnimationDecision RecoveryResult(string id,SourceBattleEvent[] rows,int index,int slots,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
@@ -58,8 +58,9 @@ public static partial class CampaignMoveAnimationPresentation
         return decision.Dispatch is {} cue&&cue.ResultSequence==recovery.Sequence ? decision :
             new(null,"unmatched-source-recovery-result");
     }
-    private static CampaignMoveAnimationDecision MultiHitResult(string battle,MultiHitRow[] rows,int index,int slots,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
+    private static CampaignMoveAnimationDecision MultiHitResult(string battle,SourceBattleEvent[] source,int index,int slots,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
     {
+        var rows=source.Select(MultiHitRead).ToArray();
         CampaignMoveAnimationDecision Reject(string reason)=>new(null,reason);
         if(index<0||index>=rows.Length||!IsMultiHitReceipt(rows[index]))return Reject("not-hit-result");
         var current=rows[index];
@@ -70,11 +71,13 @@ public static partial class CampaignMoveAnimationPresentation
         int start=index-1;
         while(start>=0&&rows[start].Turn==current.Turn&&!MultiHitBoundary(rows[start]))start--;
         if(start<1||rows[start].Kind!="used")return Reject("unmatched-source-multihit-invocation");
+        var context=CampaignAnimationInvocation.TryRead(source,start,slots,moves);
+        if(context is null)return Reject("unmatched-source-invocation-provenance");
         var used=rows[start];var attack=rows[start-1];
         if(attack.Kind!="attack"||attack.Turn!=current.Turn||used.Turn!=current.Turn||
             used.Actor<0||used.Actor>=slots||used.Target<0||used.Target>=slots||used.Actor==used.Target||
             used.Actor!=current.Actor||used.Target!=current.Target||used.Move!=current.Move||
-            attack.Actor!=used.Actor||attack.Move!=used.Move||attack.ChosenMove!=used.Move||used.Slot is <0 or >3)
+            attack.Actor!=used.Actor||attack.Move!=used.Move||attack.ChosenMove!=context.ChosenMove.Value||used.Slot is <0 or >3)
             return Reject("unmatched-source-multihit-invocation");
         int end=start+1;
         while(end<rows.Length&&rows[end].Turn==used.Turn&&!MultiHitBoundary(rows[end]))end++;
@@ -83,9 +86,9 @@ public static partial class CampaignMoveAnimationPresentation
         var action=rows[(start+1)..end];var commands=action.Where(r=>r.Kind=="pp").ToArray();
         if(commands.Length!=1)return Reject("unmatched-source-pp-command");
         var pp=commands[0];
-        if(pp.Actor!=used.Actor||pp.PpOwner!=used.Actor||pp.Target!=used.Target||pp.Move!=used.Move||
-            pp.ChosenMove!=used.Move||pp.Slot!=used.Slot||pp.Before!=used.Before||pp.After!=used.After||
-            pp.Before<1||pp.Cost<1||pp.After!=Math.Max(0,pp.Before-pp.Cost))return Reject("unmatched-source-pp-command");
+        if(source[start] is not SourceMoveUsedEvent usedReceipt||
+            !ValidSingleInvocationPp(source[(start+1)..end].OfType<SourcePpCommandEvent>().ToArray(),usedReceipt,2,invocation:context))
+            return Reject("unmatched-source-pp-command");
         if(action.Any(r=>r.Kind=="blocked"&&r.Actor==used.Actor&&r.Move==used.Move))return Reject("source-no-animation-result");
         var summaries=action.Where(r=>r.Kind=="summary").ToArray();
         if(summaries.Length!=1)return Reject("unmatched-source-multihit-summary");

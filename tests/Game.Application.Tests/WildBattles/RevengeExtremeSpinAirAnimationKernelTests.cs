@@ -288,14 +288,17 @@ public sealed class RevengeExtremeSpinAirAnimationKernelTests
     }
 
     [TestMethod, DataRow(279), DataRow(245), DataRow(229), DataRow(314)]
-    public void ActualMetronomeLeavesRemainOutsideDirectAnimationAdmission(int id)
+    public void ActualMetronomeHitLeavesOwnOnlyTheirFirstCommittedPass(int id)
     {
         foreach (bool single in new[] { false, true })
         {
             var bodies = Bodies(id); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 29) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(CallerPreludeAnimationKernelFixture.MetronomeSeed(id)) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(id)));
-            Assert.IsTrue(Envelope.Hits(result.Events).Length > 0); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.IsTrue(Envelope.Hits(result.Events).Length > 0); var outcome = Envelope.Hits(result.Events).First();
+            var cue = CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, outcome,
+                target: new BattlerSlot(Target(outcome)));
+            Assert.AreEqual(id == 229 ? (ushort?)20 : null, cue.MovePower);
         }
     }
 

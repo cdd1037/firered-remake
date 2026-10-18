@@ -183,7 +183,7 @@ public sealed class StockpileAnimationKernelTests
     }
 
     [TestMethod, DataRow(254), DataRow(256)]
-    public void ActualMetronomeLeavesCommitTheirEffectsWithoutAcquiringDirectRoots(int id)
+    public void ActualMetronomeStockpileAndSwallowOwnTheirAttackTextRoots(int id)
     {
         Assert.IsTrue(WildBattleSourceCallers.IsDirectMetronomeChoice(id));
         uint seed = CallerPreludeAnimationKernelFixture.MetronomeSeed(id);
@@ -196,7 +196,9 @@ public sealed class StockpileAnimationKernelTests
             var marker = Marker(result.Events); Assert.AreEqual(actor, marker.Side.Value); Assert.AreEqual(2, marker.Before);
             Assert.AreEqual(id == 254 ? 3 : 0, marker.After);
             if (id == 256) Assert.IsTrue(result.Events.OfType<SourceRecoveredEvent>().Any(e => e.Move == Move(id) && e.Recovered > 0));
-            string before = JsonSerializer.Serialize(result); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            string before = JsonSerializer.Serialize(result); var cue = CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id,
+                id == 256 ? result.Events.OfType<SourceRecoveredEvent>().Single() : marker);
+            Assert.AreEqual(id == 256 ? (byte?)2 : null, cue.MoveTurn);
             Assert.AreEqual(before, JsonSerializer.Serialize(result));
         }
     }

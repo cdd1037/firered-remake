@@ -31,6 +31,8 @@ TEMPLATES={
  'gSweetScentPetalSpriteTemplate':('battle_anim_effects_3.c','AnimSweetScentPetal'),
  'gElectricChargingParticlesSpriteTemplate':('battle_anim_electric.c','SpriteCallbackDummy'),
  'gGrowingChargeOrbSpriteTemplate':('battle_anim_electric.c','AnimGrowingChargeOrb'),
+ 'gVoltTackleOrbSlideSpriteTemplate':('battle_anim_electric.c','AnimVoltTackleOrbSlide'),
+ 'gVoltTackleBoltSpriteTemplate':('battle_anim_electric.c','AnimVoltTackleBolt'),
  'gElectricPuffSpriteTemplate':('battle_anim_electric.c','AnimElectricPuff'),
  'gGrowingShockWaveOrbSpriteTemplate':('battle_anim_electric.c','AnimGrowingShockWaveOrb'),
  'sShockWaveProgressingBoltSpriteTemplate':('battle_anim_electric.c','AnimShockWaveProgressingBolt'),
@@ -222,7 +224,7 @@ def recipe(source,name,callback):
  shape=source_oam_shape(source,fields['oam'])
  if fields['callback']!=callback or not shape or fields['tileTag']!=fields['paletteTag']:raise ValueError('Elemental recipe differs '+name)
  asset={'TAG_SMOKESCREEN':'smokescreen-impact'}.get(fields['tileTag'],fields['tileTag'].removeprefix('ANIM_TAG_').lower().replace('_','-'))
- if name=='sShockWaveProgressingBoltSpriteTemplate':asset='spark-thin' # Source tiles0..7 are the existing first SPARK sheet.
+ if name in {'sShockWaveProgressingBoltSpriteTemplate','gVoltTackleBoltSpriteTemplate'}:asset='spark-thin' # Source tiles0..7 are the existing first SPARK sheet.
  animations=[];loops=[];frame_loops=[]
  if fields['anims']=='gDummySpriteAnimTable':animations=[[dict(tile=0,duration=1,hFlip=False,vFlip=False)]];loops=[0]
  else:
@@ -290,7 +292,7 @@ GFX|={'ANIM_TAG_PAW_PRINT','ANIM_TAG_PINK_PETAL'}
 SOUNDS|={'SE_M_SCRATCH','SE_M_SWEET_SCENT'}
 GFX|={'ANIM_TAG_AMNESIA','ANIM_TAG_FLOWER'}
 GFX|={'ANIM_TAG_ELECTRIC_ORBS','ANIM_TAG_ELECTRICITY','ANIM_TAG_WISP_ORB','ANIM_TAG_WISP_FIRE'}
-TASKS|={'AnimTask_ElectricChargingParticles','AnimTask_ShockWaveProgressingBolt','AnimTask_ShockWaveLightning'}
+TASKS|={'AnimTask_ElectricChargingParticles','AnimTask_ShockWaveProgressingBolt','AnimTask_ShockWaveLightning','AnimTask_VoltTackleBolt','AnimTask_VoltTackleAttackerReappear'}
 SOUNDS|={'SE_M_CHARGE'}
 SOUNDS|={'SE_M_PETAL_DANCE'}
 SOUNDS|={'SE_M_METRONOME','SE_M_HEADBUTT','SE_M_TAKE_DOWN'}
@@ -712,15 +714,18 @@ def discover_scripts(reference):
   # Keep generic Psychic background roots under their existing producer. This
   # producer owns complete programs that require its Teleport or new material callbacks.
   if any(c['op']=='fadetobg' and c['args']==['BG_PSYCHIC'] for c in flat) and not any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_Teleport' or c['op']=='createsprite' and c['args'][0] in {'gBentSpoonSpriteTemplate','gLusterPurgeCircleSpriteTemplate'} for c in flat):continue
+  # These callbacks consume exactly the authored argument widths.
+  volt_widths={'gVoltTackleOrbSlideSpriteTemplate':3,'AnimTask_VoltTackleBolt':3,'AnimTask_VoltTackleAttackerReappear':2}
+  if any(c['op'] in {'createsprite','createvisualtask'} and c['args'][0] in volt_widths and len(c['args'])!=volt_widths[c['args'][0]] for c in flat):continue
   # Spark's zero modulus requires original ARM helper semantics before admission.
   if any(c['op']=='createsprite' and c['args'][0]=='gSparkElectricityFlashingSpriteTemplate' and int(c['args'][-1],0)&32767==0 for c in flat):continue
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=sound_effects(reference,flat),spriteTags={name:tags[name] for name in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})}));subs.update(local)
  for row in scripts:
   flat=row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]]
-  electric_tasks={c['args'][0] for c in flat if c['op']=='createvisualtask'}&{'AnimTask_ElectricChargingParticles','AnimTask_ShockWaveProgressingBolt','AnimTask_ShockWaveLightning'}
+  electric_tasks={c['args'][0] for c in flat if c['op']=='createvisualtask'}&{'AnimTask_ElectricChargingParticles','AnimTask_ShockWaveProgressingBolt','AnimTask_ShockWaveLightning','AnimTask_VoltTackleBolt'}
   if electric_tasks:
    electric=read(reference,'src/battle_anim_electric.c').decode();children=[]
-   for task,callback,template in [('AnimTask_ElectricChargingParticles','AnimTask_ElectricChargingParticles_Step','gElectricChargingParticlesSpriteTemplate'),('AnimTask_ShockWaveProgressingBolt','CreateShockWaveBoltSprite','sShockWaveProgressingBoltSpriteTemplate'),('AnimTask_ShockWaveLightning','CreateShockWaveLightningSprite','gLightningSpriteTemplate')]:
+   for task,callback,template in [('AnimTask_ElectricChargingParticles','AnimTask_ElectricChargingParticles_Step','gElectricChargingParticlesSpriteTemplate'),('AnimTask_ShockWaveProgressingBolt','CreateShockWaveBoltSprite','sShockWaveProgressingBoltSpriteTemplate'),('AnimTask_ShockWaveLightning','CreateShockWaveLightningSprite','gLightningSpriteTemplate'),('AnimTask_VoltTackleBolt','CreateVoltTackleBolt','gVoltTackleBoltSpriteTemplate')]:
     if task not in electric_tasks:continue
     body=re.search(r'(?:static )?(?:void|bool8) '+callback+r'\([^;]*?\)\s*\{(.*?)^\}',electric,re.S|re.M)
     if body is None or re.findall(r'CreateSprite\(&([A-Za-z0-9_]+),',body[1])!=[template]:raise ValueError('Electric raw sprite dependency differs: '+task)

@@ -325,7 +325,7 @@ public sealed class ElementalUtilityAnimationKernelTests
     }
 
     [TestMethod, DataRow(268), DataRow(351), DataRow(261)]
-    public void ActualMetronomeLeavesCannotBorrowDirectElementalRootAdmission(int id)
+    public void ActualMetronomeElementalLeavesOwnTheirCommittedAttackTextBoundary(int id)
     {
         uint seed = CallerPreludeAnimationKernelFixture.MetronomeSeed(id);
         foreach (bool single in new[] { false, true })
@@ -333,7 +333,7 @@ public sealed class ElementalUtilityAnimationKernelTests
             var bodies = Bodies(id); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 29) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(seed) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(id)));
-            Assert.IsNotNull(Owner(result.Events, id)); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.IsNotNull(Owner(result.Events, id)); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, Owner(result.Events, id));
         }
     }
 

@@ -137,7 +137,7 @@ public sealed class EncoreAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualCalledEncoreCannotReplayTheDirectRootAndRequiresCurrentMetadata()
+    public void ActualCalledEncoreOwnsItsRootAndStillRequiresCurrentMetadata()
     {
         foreach (bool single in new[] { false, true })
         {
@@ -145,7 +145,7 @@ public sealed class EncoreAnimationKernelTests
             frame = F.Body(frame, 0, _ => Kernel.Mon("CLEFAIRY", "METRONOME") with { SpeedStage = 12, AccuracyStage = 12 });
             var called = Envelope.Resolve(frame with { Rng = new(CallerPreludeAnimationKernelFixture.MetronomeSeed(227)) });
             Assert.AreEqual(Move, called.Events.OfType<SourceCallerSelectionEvent>().Single().Result); Assert.AreEqual(1, called.Events.OfType<SourceEncoreChangedEvent>().Count());
-            CallerPreludeAnimationKernelFixture.DenyLeaf(called.Events, single, 227);
+            CalledLeafAnimationKernelFixture.Check(called.Events, called, single, Kernel.Id("METRONOME"), 227, called.Events.OfType<SourceEncoreChangedEvent>().Single());
             var rows = F.Ordered(Initial(single, historyTarget: 1), 0, 1).Events; int at = rows.IndexOf(rows.OfType<SourceMoveUsedEvent>().Single());
             var definitions = Kernel.Mechanics.Catalog.Moves;
             foreach (var metadata in new[] { null, definitions.Remove(Move), definitions.SetItem(Move, definitions[Move] with { SourceMoveId = 1 }),

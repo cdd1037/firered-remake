@@ -16,11 +16,11 @@ public static partial class CampaignMoveAnimationPresentation
         // refresh of an existing mark still exports the source command's 0→2.
         if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||
             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
-            used.Actor==used.Target||!ValidSingleInvocationPp(commands,used,2)||
+            used.Actor==used.Target||!ValidSingleInvocationPp(commands,used,2,invocation:battle.Context)||
             action.Length<2||action[0]!=commands[0]||attack.Sequence+1!=used.Sequence||commands[0].Sequence!=used.Sequence+1||
             action.Any(e=>e.Turn!=used.Turn)||action.Zip(action.Skip(1)).Any(pair=>pair.Second.Sequence!=pair.First.Sequence+1)||
             action[1] is not SourceMtMoonVolatileEvent {Volatile:"sure-hit",Before:0,After:2,Reason:"move"} marked||
-            marked.Side!=used.Target||!CureMoveEndTail(action,2,used,battle.Slots))
+            marked.Side!=used.Target||!CureMoveEndTail(action,2,used,battle.Slots,invocation:battle.Context))
             return new(null,"unmatched-source-target-mark");
         return new(new(battle.Id,used.Sequence,attack.Sequence,commands[0].Sequence,marked.Sequence,
             definition.SourceMoveId,used.Actor,used.Target,false),"committed-source-animation");

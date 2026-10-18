@@ -144,7 +144,7 @@ public sealed class BeatUpAnimationKernelTests
         }
     }
     [TestMethod]
-    public void ActualMetronomeCalledBeatUpCannotMasqueradeAsDirectContributorAnimation()
+    public void ActualMetronomeCalledBeatUpOwnsEachAuthenticatedContributorHit()
     {
         foreach(bool single in new[]{false,true})
         {
@@ -152,7 +152,18 @@ public sealed class BeatUpAnimationKernelTests
             frame=frame with{Rng=new(CallerPreludeAnimationKernelFixture.MetronomeSeed(251))};
             var result=Envelope.Resolve(frame);Assert.IsTrue(result.Events.OfType<SourceCalledMoveTransitionEvent>().Any(t=>t.Invocation.CurrentMove==Shared.Move));
             Assert.IsTrue(result.Events.OfType<SourceCalledBeatUpMemberEvent>().Any());
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events,single,251);
+            var hits = Envelope.Hits(result.Events);
+            var contributors = result.Events.OfType<SourceCalledBeatUpMemberEvent>().ToArray();
+            Assert.AreEqual(contributors.Length, hits.Length); Assert.IsTrue(hits.Length > 0);
+            Assert.IsFalse(result.Events.OfType<SourceMultiHitEvent>().Any());
+            var cues = CalledLeafAnimationKernelFixture.CheckMany(result.Events, result, single, Kernel.Id("METRONOME"), 251,
+                hits.Select(hit => (hit, CampaignMoveAnimationBoundary.BeforeHitResult, (BattlerSlot?)null)).ToArray());
+            for (int ordinal = 0; ordinal < hits.Length; ordinal++)
+            {
+                Assert.AreEqual((byte)ordinal, cues[ordinal].MoveTurn);
+                Assert.IsTrue(contributors[ordinal].Sequence < hits[ordinal].Sequence);
+                if (ordinal + 1 < hits.Length) Assert.IsTrue(hits[ordinal].Sequence < contributors[ordinal + 1].Sequence);
+            }
         }
     }
     [TestMethod]

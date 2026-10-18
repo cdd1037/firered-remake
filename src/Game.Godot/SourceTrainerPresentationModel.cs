@@ -141,7 +141,7 @@ internal static class SourceTrainerPresentationModel
                 return RecycledItem(name(recycled.Actor), recycled.Item, itemName);
             case WildBattleHeldItemsSwappedEvent swapped:
                 return SwappedItems(name(swapped.Actor), name(swapped.Target), swapped.ActorItemBefore, swapped.TargetItemBefore, itemName);
-            case WildBattlePpCommandEvent or WildBattleDamageAdjustedEvent or WildBattleCalledMoveTransitionEvent or WildBattleCalledPartySwitchRequiredEvent or WildBattleCalledPartySwitchedEvent:
+            case WildBattlePpCommandEvent or WildBattleDamageAdjustedEvent or WildBattleCalledMoveTransitionEvent or WildBattleMoveTargetResolvedEvent or WildBattleCalledPartySwitchRequiredEvent or WildBattleCalledPartySwitchedEvent:
                 return Silent;
             case WildBattleCallerSelectionEvent selection:
                 return selection.Caller.Value == "pret:MOVE_NATURE_POWER" && selection.Result is { } selected

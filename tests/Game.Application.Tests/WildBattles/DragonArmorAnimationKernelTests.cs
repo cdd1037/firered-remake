@@ -116,7 +116,7 @@ public sealed class DragonArmorAnimationKernelTests
     }
 
     [TestMethod, DataRow(349), DataRow(151)]
-    public void RealMetronomeLeavesDoNotBorrowTheDirectStatRoot(int id)
+    public void RealMetronomeStatLeavesOwnTheirFirstResultBoundary(int id)
     {
         foreach (bool single in new[] { false, true })
         {
@@ -124,7 +124,7 @@ public sealed class DragonArmorAnimationKernelTests
                 Rng = new(CallerPreludeAnimationKernelFixture.MetronomeSeed(id)) };
             var result = Envelope.Resolve(frame, 0, 1);
             Assert.IsTrue(result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Move == Move(id)));
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, result.Events.First(e => e is SourceStatChangedEvent or SourceStatAtMaximumEvent));
         }
     }
 

@@ -136,7 +136,7 @@ public sealed class ExtrasensoryAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualMetronomeLeafIsNotReplayedAsADirectExtrasensoryRoot()
+    public void ActualMetronomeExtrasensoryOwnsOnlyItsCommittedHitRoot()
     {
         foreach (bool single in new[] { false, true })
         {
@@ -157,7 +157,7 @@ public sealed class ExtrasensoryAnimationKernelTests
             }
             Assert.IsNotNull(result, "Require a real ordered Metronome Extrasensory leaf within the bounded seeds.");
             Assert.AreEqual(Move, result.Events.OfType<SourceCallerSelectionEvent>().Single().Result);
-            Assert.AreEqual(1, Envelope.Hits(result.Events).Length); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, 326);
+            Assert.AreEqual(1, Envelope.Hits(result.Events).Length); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 326, Envelope.Hits(result.Events).Single());
         }
     }
 

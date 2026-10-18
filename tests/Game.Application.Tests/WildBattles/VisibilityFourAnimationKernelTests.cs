@@ -254,7 +254,7 @@ public sealed class VisibilityFourAnimationKernelTests
     }
 
     [TestMethod, DataRow(185), DataRow(293), DataRow(316), DataRow(347)]
-    public void ActualMetronomeLeavesRemainOutsideDirectVisibilityRootAdmission(int id)
+    public void ActualMetronomeVisibilityLeavesOwnTheirRootAndCalmMindWave(int id)
     {
         uint seed = CallerPreludeAnimationKernelFixture.MetronomeSeed(id);
         foreach (bool single in new[] { false, true })
@@ -262,8 +262,17 @@ public sealed class VisibilityFourAnimationKernelTests
             var bodies = Bodies(id); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 29) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Frame(bodies, single) with { Rng = new(seed) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(id)));
-            Assert.IsNotNull(Marker(result.Events, id)); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
-            for (int i = 0; i < result.Events.Length; i++) Assert.IsFalse(Shared.Wave(result.Events, i, single)?.SourceMoveId == id);
+            Assert.IsNotNull(Marker(result.Events, id)); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, Marker(result.Events, id));
+            var owner = Marker(result.Events, id); var pp = result.Events.OfType<SourcePpCommandEvent>().Single(); int waves = 0;
+            for (int i = 0; i < result.Events.Length; i++)
+            {
+                var wave = Shared.Wave(result.Events, i, single);
+                if (id != 347 || result.Events[i] != owner) { Assert.IsNull(wave); continue; }
+                Assert.IsNotNull(wave); waves++; Assert.AreEqual(347, wave.SourceMoveId);
+                Assert.AreEqual(55, wave.AnimationArgument); Assert.AreEqual(pp.Actor, wave.Affected);
+                Assert.AreEqual(owner.Sequence, wave.Sequence); Assert.AreEqual(pp.Sequence, wave.PpSequence);
+            }
+            Assert.AreEqual(id == 347 ? 1 : 0, waves);
         }
     }
 }

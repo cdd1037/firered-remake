@@ -44,6 +44,8 @@ public sealed record WildBattleSourceMoveHistory
 public sealed record WildBattleTargetResolution(WildBattleSide Target, RngState Rng, ImmutableArray<RandomTrace> Trace);
 public sealed record WildBattlePpReduction(int Before, int After, int CommandCost, WildBattleInvocationFlags FlagsAfter);
 public sealed record WildBattleCalledMoveTransitionEvent(long Sequence, int Turn, WildBattleMoveInvocation Invocation) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMoveTargetResolvedEvent(long Sequence, int Turn, WildBattleSide Actor, MoveId CurrentMove,
+    WildBattleSide PriorTarget, WildBattleSide Target, SourceMoveTargetResolutionReason Reason) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleAttackStringEvent(long Sequence, int Turn, WildBattleSide Actor, MoveId ChosenMove, MoveId CurrentMove) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattlePpCommandEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target,
     int PpSlot, MoveId ChosenMove, MoveId CurrentMove, int Before, int After, int CommandCost, ulong RngCursor) : WildBattleEvent(Sequence, Turn)

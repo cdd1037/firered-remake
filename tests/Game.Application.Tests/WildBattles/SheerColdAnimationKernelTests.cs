@@ -130,7 +130,7 @@ public sealed class SheerColdAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualSuccessfulMetronomeLeafKeepsCallerOwnershipAndNeverBorrowsTheDirectRoot()
+    public void ActualSuccessfulMetronomeSheerColdOwnsItsHitWithCallerPp()
     {
         Assert.IsTrue(WildBattleSourceCallers.IsDirectMetronomeChoice(329));
         foreach(bool single in new[]{false,true})
@@ -138,8 +138,8 @@ public sealed class SheerColdAnimationKernelTests
             var bodies=Enumerable.Range(0,4).Select(_=>Kernel.Mon("WAILORD","SPLASH",1) with{SpeedStage=0}).ToArray();bodies[0]=Kernel.Mon("TOGETIC","METRONOME",100) with{SpeedStage=12};
             var frame=Kernel.Frame(bodies,single) with{Rng=new(Caller.MetronomeSeed(329))};var result=OwnedAtActionSeed(frame);
             var invocation=result.Events.OfType<SourceCalledMoveTransitionEvent>().Single().Invocation;Assert.AreEqual(Move,invocation.CurrentMove);Assert.AreEqual(Kernel.Id("METRONOME"),invocation.ChosenMove);
-            Assert.IsTrue(result.Events.OfType<SourceHpChangedEvent>().Any(e=>e.Move==Move&&e.HpAfter==0));Caller.Check(result.Events,result,118,single);Caller.DenyLeaf(result.Events,single,329);
-            for(int i=0;i<result.Events.Length;i++)foreach(bool atResult in new[]{false,true})Assert.AreNotEqual(329,Charge.Project(result.Events,i,single,atResult).Dispatch?.SourceMoveId);
+            Assert.IsTrue(result.Events.OfType<SourceHpChangedEvent>().Any(e=>e.Move==Move&&e.HpAfter==0));Caller.Check(result.Events,result,118,single);CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 329, Envelope.Hits(result.Events).Single());
+            Assert.AreEqual(1, result.Events.OfType<SourcePpCommandEvent>().Count());
         }
     }
 

@@ -18,10 +18,12 @@ public static partial class CampaignMoveAnimationPresentation
         if(definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0)return Deny();
         int start=index-1;
         while(start>=0&&rows[start].Turn==rows[index].Turn&&!InvocationBoundary(rows[start]))start--;
+        var context=CampaignAnimationInvocation.TryRead(rows,start,slots,moves);
+        if(context is null)return Deny();
         if(start<1||rows[start] is not SourceMoveUsedEvent used||rows[start-1] is not SourceAttackStringEvent attack||
             used.Actor!=current.Actor||used.Target!=current.Target||used.Move!=current.Move||
             used.Actor.Value>=slots||used.Target.Value>=slots||used.Actor==used.Target||
-            attack.Actor!=used.Actor||attack.CurrentMove!=used.Move||attack.ChosenMove!=used.Move||
+            attack.Actor!=used.Actor||attack.CurrentMove!=used.Move||attack.ChosenMove!=context.ChosenMove||
             attack.Turn!=used.Turn||used.Turn!=rows[index].Turn||attack.Sequence>=used.Sequence)return Deny();
         int end=start+1;
         while(end<rows.Length&&rows[end].Turn==used.Turn&&!InvocationBoundary(rows[end])&&
@@ -29,7 +31,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(index>=end)return Deny();
         for(int i=start+1;i<end;i++)if(rows[i].Sequence<=rows[i-1].Sequence)return Deny();
         var action=rows[(start+1)..end];var pp=action.OfType<SourcePpCommandEvent>().ToArray();
-        if(action.Length<3||!ValidSingleInvocationPp(pp,used,2)||action[0]!=pp[0]||
+        if(action.Length<3||!ValidSingleInvocationPp(pp,used,2,invocation:context)||action[0]!=pp[0]||
             action[1] is not SourceCalledBeatUpMemberEvent||FailedHit(action,used.Actor,used.Target,used.Move)||
             action.Any(e=>e is SourceCalledMoveTransitionEvent or SourceCallerSelectionEvent or SourceMultiHitEvent))return Deny();
         bool pending=false,knockedOut=false;int lastParty=-1,ordinal=0,selected=-1;

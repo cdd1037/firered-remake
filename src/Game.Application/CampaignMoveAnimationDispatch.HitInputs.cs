@@ -6,19 +6,19 @@ namespace Game.Application;
 
 public static partial class CampaignMoveAnimationPresentation
 {
-    private static bool ValidSingleInvocationPp(SourcePpCommandEvent[] commands,SourceMoveUsedEvent used,int maximumCost,bool retained=false)
+    private static bool ValidSingleInvocationPp(SourcePpCommandEvent[] commands,SourceMoveUsedEvent used,int maximumCost,bool retained=false,CampaignAnimationInvocation? invocation=null)
     {
         if(commands.Length!=1)return false;
         var pp=commands[0];
-        if(pp.Actor!=used.Actor||pp.PpOwner!=used.Actor||pp.Target!=used.Target||
-            pp.CurrentMove!=used.Move||pp.ChosenMove!=used.Move||pp.PpSlot!=used.Slot||
+        if(pp.Actor!=used.Actor||pp.PpOwner!=(invocation?.PpOwner??used.Actor)||pp.Target!=used.Target||
+            pp.CurrentMove!=used.Move||pp.ChosenMove!=(invocation?.ChosenMove??used.Move)||pp.PpSlot!=(invocation?.PpSlot??used.Slot)||
             pp.Before!=used.PpBefore||pp.After!=used.PpAfter||pp.CommandCost<1||pp.CommandCost>maximumCost)return false;
         // Forced Struggle still executes ppreduce and reports its nominal Pressure
         // cost, but NO_PPDEDUCT preserves the synthetic slot's zero PP.
         if(used.Move==WildBattleRules.StruggleMove)
             return used.Slot==-1&&pp.Before==0&&pp.After==0;
-        if(retained)return used.Slot is >=0 and <=3&&pp.Before is >=0 and <=255&&pp.After==pp.Before;
-        return used.Slot is >=0 and <=3&&pp.Before is >=1 and <=255&&
+        if(retained||invocation?.NoPpDeduct==true)return (invocation?.PpSlot??used.Slot) is >=0 and <=3&&pp.Before is >=0 and <=255&&pp.After==pp.Before;
+        return (invocation?.PpSlot??used.Slot) is >=0 and <=3&&pp.Before is >=1 and <=255&&
             pp.After is >=0 and <=255&&pp.After==Math.Max(0,pp.Before-pp.CommandCost);
     }
 
@@ -33,7 +33,7 @@ public static partial class CampaignMoveAnimationPresentation
     {
         CampaignMoveAnimationDecision Reject(string reason)=>new(null,reason);
         if(definition.Target!="MOVE_TARGET_FOES_AND_ALLY"||definition.Power<=0||used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||used.Actor==used.Target||
-            !ValidSingleInvocationPp(commands,used,battle.Slots)||action.Length<2||action[0]!=commands[0])
+            !ValidSingleInvocationPp(commands,used,battle.Slots,invocation:battle.Context)||action.Length<2||action[0]!=commands[0])
             return Reject("unmatched-source-ground-spread-pp");
         var pp=commands[0];
         ushort? power=null;

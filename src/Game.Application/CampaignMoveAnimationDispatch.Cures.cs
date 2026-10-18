@@ -11,7 +11,7 @@ public static partial class CampaignMoveAnimationPresentation
     {
         CampaignMoveAnimationDecision Reject(string reason)=>new(null,reason);
         if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Actor.Value<0||used.Actor.Value>=battle.Slots||
-            used.Target!=used.Actor||!ValidSingleInvocationPp(commands,used,1)||action.Length==0||action[0]!=commands[0]||
+            used.Target!=used.Actor||!ValidSingleInvocationPp(commands,used,1,invocation:battle.Context)||action.Length==0||action[0]!=commands[0]||
             commands[0].Sequence!=used.Sequence+1||
             action.Zip(action.Skip(1)).Any(pair=>pair.Second.Sequence!=pair.First.Sequence+1)||
             action.Any(e=>e is SourceMoveFailedEvent or SourceMoveMissedEvent or SourceActionBlockedEvent or
@@ -33,7 +33,7 @@ public static partial class CampaignMoveAnimationPresentation
             if(action.Length<2||action[1] is not SourceStatusChangedEvent {After:0,Reason:"refresh"} result||
                 result.Side!=used.Actor||!Refreshable(result.Before)||
                 action.OfType<SourceStatusChangedEvent>().Count(e=>e.Reason=="refresh")!=1||
-                action.OfType<SourceAbilityPreventedEvent>().Any()||!CureMoveEndTail(action,2,used,battle.Slots))
+                action.OfType<SourceAbilityPreventedEvent>().Any()||!CureMoveEndTail(action,2,used,battle.Slots,invocation:battle.Context))
                 return Reject("unmatched-source-refresh-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp.Sequence,result.Sequence,
                 definition.SourceMoveId,used.Actor,used.Actor,false),"committed-source-animation");
@@ -74,7 +74,7 @@ public static partial class CampaignMoveAnimationPresentation
                         return Reject("unmatched-source-party-soundproof");
                     break;
                 default:
-                    if(!CureMoveEndTail(action,i,used,battle.Slots))return Reject("unmatched-source-cure-move-end");
+                    if(!CureMoveEndTail(action,i,used,battle.Slots,invocation:battle.Context))return Reject("unmatched-source-cure-move-end");
                     i=action.Length;break;
             }
         }

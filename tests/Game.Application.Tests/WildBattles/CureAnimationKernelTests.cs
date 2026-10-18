@@ -186,7 +186,7 @@ public sealed class CureAnimationKernelTests
     }
 
     [TestMethod, DataRow(287), DataRow(215), DataRow(312)]
-    public void ActualMetronomeLeavesRemainOutsideDirectRootAdmission(int id)
+    public void ActualMetronomeCuresOwnTheirSourceOrderedRoot(int id)
     {
         uint seed=CallerPreludeAnimationKernelFixture.MetronomeSeed(id);
         foreach(bool single in new[]{false,true})
@@ -195,7 +195,7 @@ public sealed class CureAnimationKernelTests
             var result=Kernel.Direct(Frame(bodies,single) with{Rng=new(seed)});
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e=>e.Result==Move(id)));
             Assert.IsTrue(result.Events.OfType<SourceStatusChangedEvent>().Any(e=>e.Reason==Reason(id)));
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events,single,id);
+            CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, Owner(result, id));
         }
     }
 

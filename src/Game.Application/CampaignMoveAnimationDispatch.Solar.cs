@@ -15,7 +15,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(definition.Power<=0||definition.Target!="MOVE_TARGET_SELECTED"||
             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||used.Actor==used.Target||
             action.Length==0||action[0] is not SourcePpCommandEvent releasePp||
-            !ValidSingleInvocationPp([releasePp],used,2,retained:true)||releasePp.Turn!=used.Turn||releasePp.Sequence!=used.Sequence+1||
+            !ValidSingleInvocationPp([releasePp],used,2,retained:true,invocation:battle.Context)||releasePp.Turn!=used.Turn||releasePp.Sequence!=used.Sequence+1||
             FailedHit(action,used.Actor,used.Target,used.Move)||
             action.Any(e=>e is SourceActionBlockedEvent or SourceCalledMoveTransitionEvent or SourceCallerSelectionEvent))return false;
         int released=prefix,prior=released-1;
@@ -36,10 +36,11 @@ public static partial class CampaignMoveAnimationPresentation
         // No early PP is the ordinary retained second turn. Let the existing
         // charge scanner reject extra charge/PP/caller rows in that prefix.
         if(prior<0||battle.Events[prior] is not SourcePpCommandEvent early)return true;
-        if(early.Actor!=used.Actor||early.PpOwner!=used.Actor||early.Target!=used.Target||early.PpSlot!=used.Slot||
-            early.ChosenMove!=used.Move||early.CurrentMove!=used.Move||early.Turn!=used.Turn||
+        if(early.Actor!=used.Actor||early.PpOwner!=used.Actor||early.Target!=used.Target||early.PpSlot!=(battle.Context?.PpSlot??used.Slot)||
+            early.ChosenMove!=(battle.Context?.ChosenMove??used.Move)||early.CurrentMove!=used.Move||early.Turn!=used.Turn||
             early.Before is <0 or >255||early.CommandCost!=releasePp.CommandCost||
-            early.After!=Math.Max(0,early.Before-early.CommandCost)||early.After!=releasePp.Before||
+            (battle.Context?.CallerPpLedger.SingleOrDefault(p=>p.Command.Sequence==early.Sequence)?.NoPpDeduct==true
+                ?early.After!=early.Before:early.After!=Math.Max(0,early.Before-early.CommandCost))||early.After!=releasePp.Before||
             early.RngCursor>releasePp.RngCursor)return false;
         int start=prior;
         if(prior>0&&battle.Events[prior-1] is SourceMtMoonVolatileEvent {Volatile:"called-charge"} prepared)
@@ -54,6 +55,7 @@ public static partial class CampaignMoveAnimationPresentation
             if(battle.Events[i].Turn!=used.Turn||i>start&&battle.Events[i].Sequence!=battle.Events[i-1].Sequence+1)return false;
         if(battle.Events[released].Sequence+1!=battle.Events[released+1].Sequence||
             battle.Events[released+1].Sequence+1!=used.Sequence)return false;
+        if(battle.Context?.IsCalled==true&&(battle.Context.EarlyLeafPpIndex!=prior||battle.Context.PrefixStartIndex!=start))return false;
         prefix=start;return true;
     }
 }

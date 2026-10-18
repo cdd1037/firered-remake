@@ -147,7 +147,7 @@ public sealed class HelpingHandImprisonAnimationKernelTests
     }
 
     [TestMethod]
-    public void ActualMetronomeImprisonLeafCannotBorrowDirectAdmission()
+    public void ActualMetronomeImprisonOwnsItsCommittedSetupRoot()
     {
         uint? seed = null; for (uint s = 0; s < 65536; s++) if (WildBattleSourceCallers.Metronome(new(s)).SourceMoveId == 286) { seed = s; break; }
         Assert.IsNotNull(seed);
@@ -156,7 +156,7 @@ public sealed class HelpingHandImprisonAnimationKernelTests
             var bodies = Bodies(286); bodies[0] = NaturalMoves(Kernel.Mon("TOGETIC", "METRONOME", 50), "METRONOME", "GROWL");
             var result = Envelope.Resolve(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(286)));
-            Assert.IsNotNull(Setup(result.Events, 286)); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, 286);
+            Assert.IsNotNull(Setup(result.Events, 286)); CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), 286, Setup(result.Events, 286)!);
         }
     }
 }

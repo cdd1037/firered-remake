@@ -109,7 +109,10 @@ public static partial class CampaignMoveAnimationPresentation
         "EFFECT_RESTORE_HP" or "EFFECT_SOFTBOILED" or "EFFECT_MORNING_SUN" or "EFFECT_SYNTHESIS" or "EFFECT_MOONLIGHT";
 
     private sealed record Invocation(string Id, SourceBattleEvent[] Events, int EventIndex, int Slots,
-        Func<long?> GroupedResult, Func<int,CampaignStatAnimationDispatch?> StatResult);
+        Func<long?> GroupedResult, Func<int,CampaignStatAnimationDispatch?> StatResult)
+    {
+        public CampaignAnimationInvocation? Context { get; init; }
+    }
 
     internal static PokemonMoveDefinition? Definition(MoveId move, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves) =>
         moves is not null && moves.TryGetValue(move,out var definition) && definition.Id == move &&
@@ -123,15 +126,15 @@ public static partial class CampaignMoveAnimationPresentation
         _ => null
     };
 
-    private static bool ValidSpreadPp(SourcePpCommandEvent[] pp,SourceMoveUsedEvent used,SourceAttackStringEvent attack,bool retained=false) =>
+    private static bool ValidSpreadPp(SourcePpCommandEvent[] pp,SourceMoveUsedEvent used,SourceAttackStringEvent attack,bool retained=false,CampaignAnimationInvocation? invocation=null) =>
         used.Actor.Value is >=0 and <4&&used.Target.Value is >=0 and <4&&pp.Length is >=1 and <=2&&
         pp[0].Target==used.Target&&pp.Select(p=>p.Target).Distinct().Count()==pp.Length&&
-        pp.All(p=>p.Actor==used.Actor&&p.PpOwner==used.Actor&&p.CommandCost is >=1 and <=3&&
+        pp.All(p=>p.Actor==used.Actor&&p.PpOwner==(invocation?.PpOwner??used.Actor)&&p.CommandCost is >=1 and <=3&&
             p.Before is >=0 and <=255&&p.After is >=0 and <=255&&p.CurrentMove==used.Move&&
-            p.ChosenMove==attack.ChosenMove&&p.PpSlot==used.Slot&&p.Sequence>used.Sequence&&
+            p.ChosenMove==attack.ChosenMove&&p.PpSlot==(invocation?.PpSlot??used.Slot)&&p.Sequence>used.Sequence&&
             p.Target.Side!=used.Actor.Side&&(p.Target==used.Target||p.Target==used.Target.Partner))&&
         pp[0].Before==used.PpBefore&&pp[0].After==used.PpAfter&&
-        (retained?pp[0].After==pp[0].Before:pp[0].Before>0&&pp[0].After==Math.Max(0,pp[0].Before-pp[0].CommandCost))&&
+        (retained||invocation?.NoPpDeduct==true?pp[0].After==pp[0].Before:pp[0].Before>0&&pp[0].After==Math.Max(0,pp[0].Before-pp[0].CommandCost))&&
         pp.Skip(1).All(p=>p.Before==pp[0].After&&p.After==p.Before);
 
     public static CampaignMoveAnimationDecision AtAttackText(CampaignWildBattle battle, bool sourceRules,
@@ -171,6 +174,9 @@ public static partial class CampaignMoveAnimationPresentation
         var definition = Definition(used.Move, moves);
         int move = definition?.SourceMoveId ?? 0;
         if (move == 0 || !supports(move,used.Move.Value)) return new(null, "script-outside-slice");
+        battle=battle with{Context=CampaignAnimationInvocation.TryRead(battle.Events,battle.EventIndex,battle.Slots,moves)};
+        if(used.Move!=WildBattleRules.StruggleMove&&battle.Context is null)
+            return new(null,"unmatched-source-invocation-provenance");
         if(definition!.Effect is "EFFECT_TRANSFORM" or "EFFECT_SUBSTITUTE")
             return MaterialChangeAnimation(battle,used,definition);
         if(definition!.Effect=="EFFECT_SLEEP_TALK")
@@ -181,7 +187,7 @@ public static partial class CampaignMoveAnimationPresentation
             return new(null,"source-before-status-animation");
         if(MultiHitBounds(definition!) is not null||definition!.Effect=="EFFECT_BEAT_UP")return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
-            attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
+            attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != (battle.Context?.ChosenMove??used.Move) ||
             attack.Turn != used.Turn || attack.Sequence >= used.Sequence ||
             (used.Move==WildBattleRules.StruggleMove?used.Slot!=-1:used.Slot is <0 or >3))
             return new(null, "unmatched-source-attack-string");
@@ -205,7 +211,7 @@ public static partial class CampaignMoveAnimationPresentation
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
             // One visible attack page owns both PP-command visits and one visual invocation.
-            if(!ValidSpreadPp(pp,used,attack,chargeRelease))
+            if(!ValidSpreadPp(pp,used,attack,chargeRelease,battle.Context))
                 return new(null,"unmatched-source-spread-pp");
             var spreadHits=action.Where(e=>e is SourceHpChangedEvent h&&h.Actor==used.Actor&&h.Move==used.Move||e is SourceSubstituteDamagedEvent d&&d.Actor==used.Actor&&d.Move==used.Move)
                 .Select(e=>e switch{SourceHpChangedEvent h=>(h.Target,h.Sequence,Substitute:false),SourceSubstituteDamagedEvent d=>(d.Target,d.Sequence,Substitute:true),_=>throw new InvalidOperationException()}).ToArray();
@@ -229,7 +235,7 @@ public static partial class CampaignMoveAnimationPresentation
             // Primary reductions revisit the same source script once per opposing target.
             // The dedicated root belongs to the first eligible result; each stat wave
             // remains owned by its individual PP pass.
-            if(!ValidSpreadPp(pp,used,attack))return new(null,"unmatched-source-both-stat-pp");
+            if(!ValidSpreadPp(pp,used,attack,invocation:battle.Context))return new(null,"unmatched-source-both-stat-pp");
             var itemRows=new HashSet<int>();
             for(int item=battle.EventIndex+1;item<end;item++)
             {
@@ -265,7 +271,7 @@ public static partial class CampaignMoveAnimationPresentation
             return TargetMarkAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_SNORE" or "EFFECT_UPROAR"&&!SoundHitDefinition(definition))
             return new(null,"unmatched-source-sound-hit-definition");
-        if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
+        if (!ValidSingleInvocationPp(pp,used,2,chargeRelease,battle.Context))
             return new(null, "unmatched-source-pp-command");
         if(definition.Effect=="EFFECT_PAIN_SPLIT")return PainSplitAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_TRICK" or "EFFECT_RECYCLE")
@@ -293,7 +299,7 @@ public static partial class CampaignMoveAnimationPresentation
             // BattleScript_EffectExplosion animates once immediately after setatkhptozero,
             // before every target pass, even when every pass later misses/is immune.
             var committed=action.OfType<SourceSelfDestructEvent>().ToArray();
-            if(pp[0].ChosenMove!=used.Move||pp[0].PpSlot!=used.Slot||pp[0].Sequence<=used.Sequence||
+            if(pp[0].ChosenMove!=(battle.Context?.ChosenMove??used.Move)||pp[0].PpSlot!=(battle.Context?.PpSlot??used.Slot)||pp[0].Sequence<=used.Sequence||
                 pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||committed.Length!=1||
                 committed[0].Actor!=used.Actor||committed[0].Move!=used.Move||committed[0].HpBefore<=0||committed[0].Sequence<=pp[0].Sequence)
                 return new(null,"unmatched-source-self-destruct");
@@ -487,7 +493,7 @@ public static partial class CampaignMoveAnimationPresentation
                 action[1] is not SourceMtMoonVolatileEvent changed||changed.Side!=used.Actor||
                 changed.Volatile!=sport||changed.Before!=0||changed.After!=1||changed.Reason!="move"||
                 changed.Sequence!=pp[0].Sequence+1||action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile==sport)!=1||
-                !CureMoveEndTail(action,2,used,battle.Slots))
+                !CureMoveEndTail(action,2,used,battle.Slots,invocation:battle.Context))
                 return new(null,"unmatched-source-self-action-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
@@ -515,7 +521,7 @@ public static partial class CampaignMoveAnimationPresentation
                 used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<2||action[0]!=pp[0]||
                 action[1] is not SourceMtMoonVolatileEvent {Volatile:"charge",Before:>=0 and <=2,After:2,Reason:"move"} charged||
                 charged.Side!=used.Actor||charged.Sequence!=pp[0].Sequence+1||
-                !CureMoveEndTail(action,2,used,battle.Slots))
+                !CureMoveEndTail(action,2,used,battle.Slots,invocation:battle.Context))
                 return new(null,"unmatched-source-charge-command-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,charged.Sequence,move,used.Actor,used.Actor,false),"committed-source-animation");
         }

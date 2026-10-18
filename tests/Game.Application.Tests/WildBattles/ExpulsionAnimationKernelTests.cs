@@ -236,7 +236,7 @@ public sealed class ExpulsionAnimationKernelTests
     }
 
     [TestMethod, DataRow(18), DataRow(46), DataRow(100)]
-    public void ActualMetronomeLeavesRemainOutsideOrdinaryDirectAdmission(int id)
+    public void ActualMetronomeExpulsionSuccessOwnsItsRootButTrainerTeleportStaysSilent(int id)
     {
         foreach (bool single in new[] { false, true })
         {
@@ -246,7 +246,12 @@ public sealed class ExpulsionAnimationKernelTests
             Assert.IsTrue(events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Shared.Move(id)));
             if (id != 100 || single) Assert.IsNotNull(Shared.Marker(events, id));
             else Assert.IsTrue(events.OfType<SourceMoveFailedEvent>().Any(e => e.Move == Shared.Move(id) && e.Reason == "trainer-battle"));
-            CallerPreludeAnimationKernelFixture.DenyLeaf(events, single, id);
+            if (id == 100 && !single)
+            {
+                Assert.IsFalse(events.OfType<SourceEndedEvent>().Any(e => e.Outcome == WildBattleOutcome.Escaped));
+                CallerPreludeAnimationKernelFixture.DenyLeaf(events, single, id);
+            }
+            else CalledLeafAnimationKernelFixture.Check(events, events, single, Kernel.Id("METRONOME"), id, Shared.Marker(events, id));
         }
     }
 }

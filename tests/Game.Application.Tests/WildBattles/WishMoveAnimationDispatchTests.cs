@@ -320,7 +320,7 @@ public sealed class WishMoveAnimationDispatchTests
     }
 
     [TestMethod]
-    public void ActualMetronomeWishIsOutsideTheOrdinaryDirectInvocation()
+    public void ActualMetronomeWishOwnsOnlyItsScheduledSetupBoundary()
     {
         var bodies = Bodies(); bodies[0] = NaturalMon("TOGETIC", 29, "METRONOME");
         var frame = Frame(bodies, single: true); uint? selectedSeed = null;
@@ -332,8 +332,9 @@ public sealed class WishMoveAnimationDispatchTests
         Assert.IsTrue(result.Events.OfType<SourceCalledDelayedEvent>().Any(e => e.Move == Wish && e.Reason == "scheduled"));
         Assert.IsTrue(result.Events.OfType<SourceAttackStringEvent>().Any(e => e.CurrentMove == Wish && e.ChosenMove == Id("METRONOME")));
         Assert.IsFalse(result.State.Slots[0].Body!.Protected);
-        CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, true, 273);
-        CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, false, 273);
+        var scheduled = result.Events.OfType<SourceCalledDelayedEvent>().Single(e => e.Move == Wish && e.Reason == "scheduled");
+        CalledLeafAnimationKernelFixture.Check(result.Events, result, true, Id("METRONOME"), 273, scheduled);
+        CalledLeafAnimationKernelFixture.Check(result.Events, result, false, Id("METRONOME"), 273, scheduled);
     }
 
     [TestMethod]

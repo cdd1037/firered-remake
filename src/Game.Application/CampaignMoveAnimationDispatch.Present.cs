@@ -15,7 +15,7 @@ public static partial class CampaignMoveAnimationPresentation
         int end=battle.EventIndex+1+action.Length;
         if(definition.Effect!="EFFECT_PRESENT"||definition.Power!=1||definition.Type!="TYPE_NORMAL"||definition.Target!="MOVE_TARGET_SELECTED"||
             used.Actor==used.Target||used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
-            !ValidSingleInvocationPp(pp,used,2)||action.Length<2||action[0]!=pp[0]||pp[0].Sequence!=used.Sequence+1||
+            !ValidSingleInvocationPp(pp,used,2,invocation:battle.Context)||action.Length<2||action[0]!=pp[0]||pp[0].Sequence!=used.Sequence+1||
             attack.Sequence+1!=used.Sequence||action.Any(e=>e.Turn!=used.Turn)||
             action.Zip(action.Skip(1)).Any(pair=>pair.Second.Sequence!=pair.First.Sequence+1)||
             end<battle.Events.Length&&battle.Events[end].Turn!=used.Turn&&!InvocationBoundary(battle.Events[end]))
@@ -48,7 +48,7 @@ public static partial class CampaignMoveAnimationPresentation
             if((before.HeldItem!=after.HeldItem||before.PersistentHeldItemOverride!=after.PersistentHeldItemOverride)&&
                 !rows.Take(index).OfType<SourceHeldItemConsumedEvent>().Any(e=>e.Side==source&&e.Item==before.HeldItem))return false;
             var normalized=sync with{Before=before with{Pokemon=before.Pokemon with{CurrentHp=after.Pokemon.CurrentHp}}};
-            return CureActiveSync(rows,index,normalized,owner)||hpChanged&&ItemSameMember(normalized.Before,normalized.After);
+            return CureActiveSync(rows,index,normalized,owner,battle.Context)||hpChanged&&ItemSameMember(normalized.Before,normalized.After);
         }
         // The mandatory changed target snapshot proves the quarter-MaxHp cap.
         // Common immunity/cure groups and other party writes keep their existing

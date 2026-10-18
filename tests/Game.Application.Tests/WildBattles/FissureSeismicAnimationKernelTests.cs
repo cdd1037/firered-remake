@@ -203,14 +203,25 @@ public sealed class FissureSeismicAnimationKernelTests
     }
 
     [TestMethod, DataRow(69), DataRow(90)]
-    public void ActualMetronomeLeavesRemainOutsideTheDirectRootContract(int id)
+    public void ActualMetronomeSeismicOwnsItsHitButLevelBlockedFissureStaysSilent(int id)
     {
         foreach (bool single in new[] { false, true })
         {
             var frame = Kernel.Frame(CallerPreludeAnimationKernelFixture.Bodies(118), single) with {
                 Rng = new(CallerPreludeAnimationKernelFixture.MetronomeSeed(id)) };
             var result = Envelope.Resolve(frame, 0, 1); Assert.IsTrue(result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Move == Move(id)));
-            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            if (id == 90)
+            {
+                Assert.IsTrue(result.Events.OfType<SourceMoveFailedEvent>().Any(e => e.Move == Move(id) && e.Reason == "ohko-level"));
+                Assert.AreEqual(0, Envelope.Hits(result.Events).Length);
+                CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            }
+            else
+            {
+                var hit = Envelope.Hits(result.Events).Single();
+                var cue = CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, hit);
+                Assert.AreEqual(Damage(hit), cue.MoveDamage);
+            }
         }
     }
 

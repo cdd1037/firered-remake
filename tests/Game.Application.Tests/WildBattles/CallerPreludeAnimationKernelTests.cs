@@ -22,7 +22,7 @@ public sealed class CallerPreludeAnimationKernelTests
         {
             var result = Envelope.Resolve(Shared.Frame(id, single, actor), actor, selected);
             Shared.Check(result, id, single);
-            Shared.DenyLeaf(result.Events, single, 33);
+            CalledLeafAnimationKernelFixture.Check(result, single, Shared.Move(id), 33);
             Assert.AreEqual(1, result.Events.OfType<SourceCallerSelectionEvent>().Count());
         }
     }

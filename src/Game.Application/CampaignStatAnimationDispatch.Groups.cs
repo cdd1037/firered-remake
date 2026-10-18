@@ -40,7 +40,7 @@ public static partial class CampaignStatAnimationPresentation
         if(invocation<0||battle.Events[invocation] is not SourceMoveUsedEvent used||
             CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedDefinition(definition))return null;
         var itemReceipts=ItemReceiptSequences(battle.Events);
-        return ReadGroup(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,4,itemReceipts,definition.Effect);
+        return ReadGroup(battle.Id,battle.Events.ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,4,itemReceipts,definition.Effect,moves);
     }
     private static StatGroup? Grouped(CampaignWildBattle battle,bool sourceRules,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)
     {
@@ -50,7 +50,7 @@ public static partial class CampaignStatAnimationPresentation
         if(invocation<0||battle.Events[invocation] is not WildBattleMoveUsedEvent used||
             CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedDefinition(definition))return null;
         var itemReceipts=ItemReceiptSequences(battle.Events);
-        return ReadGroup(battle.Id,battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,itemReceipts,definition.Effect);
+        return ReadGroup(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,itemReceipts,definition.Effect,moves);
     }
     internal static HashSet<long> ItemReceiptSequences(IReadOnlyList<SourceBattleEvent> events)
     {
@@ -67,14 +67,17 @@ public static partial class CampaignStatAnimationPresentation
         return result;
     }
     private static bool GroupBoundary(GroupRow row)=>row.Kind is "attack" or "used" or "boundary";
-    private static StatGroup? ReadGroup(string battle,GroupRow[] rows,int index,int slots,HashSet<long> items,string effect)
+    private static StatGroup? ReadGroup(string battle,SourceBattleEvent[] events,GroupRow[] rows,int index,int slots,HashSet<long> items,string effect,
+        IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)
     {
         int usedIndex=index;
         while(usedIndex>=0&&!GroupBoundary(rows[usedIndex]))usedIndex--;
         if(usedIndex<1||rows[usedIndex].Kind!="used")return null;
         var used=rows[usedIndex];var attack=rows[usedIndex-1];
+        var identity=CampaignAnimationInvocation.TryRead(events,usedIndex,slots,moves);
+        if(identity is null||identity.AttackIndex!=usedIndex-1)return null;
         string move=used.Move;
-        if(!HasGroupedEffect(effect)||attack.Kind!="attack"||attack.Actor!=used.Actor||attack.Move!=used.Move||attack.Chosen!=used.Move||attack.Turn!=used.Turn||
+        if(!HasGroupedEffect(effect)||attack.Kind!="attack"||attack.Actor!=used.Actor||attack.Move!=used.Move||attack.Chosen!=identity.ChosenMove.Value||attack.Turn!=used.Turn||
             used.Actor<0||used.Actor>=slots||used.Target<0||used.Target>=slots||used.Slot is <0 or >3||
             (PairedSelfStats(effect) is not null?used.Actor!=used.Target:used.Actor==used.Target))return null;
         int end=usedIndex+1;
@@ -82,8 +85,9 @@ public static partial class CampaignStatAnimationPresentation
         if(index>=end||end-usedIndex<3)return null;
         for(int i=usedIndex;i<end;i++)if(rows[i].Sequence<=rows[i-1].Sequence)return null;
         var pp=rows[usedIndex+1];
-        if(pp.Kind!="pp"||pp.Actor!=used.Actor||pp.Owner!=used.Actor||pp.Target!=used.Target||pp.Move!=used.Move||pp.Chosen!=used.Move||
-            pp.Slot!=used.Slot||pp.Before!=used.Before||pp.After!=used.After||pp.Before<1||pp.Cost<1||pp.After!=Math.Max(0,pp.Before-pp.Cost))return null;
+        if(pp.Kind!="pp"||pp.Actor!=used.Actor||pp.Owner!=identity.PpOwner.Value||pp.Target!=identity.Target.Value||pp.Move!=identity.CurrentMove.Value||pp.Chosen!=identity.ChosenMove.Value||
+            pp.Slot!=identity.PpSlot||pp.Slot!=used.Slot||pp.Before!=used.Before||pp.After!=used.After||pp.Before is <0 or >255||pp.After is <0 or >255||pp.Cost is <1 or >2||
+            (identity.NoPpDeduct?pp.After!=pp.Before:pp.Before<1||pp.After!=Math.Max(0,pp.Before-pp.Cost)))return null;
         int first=usedIndex+2;var a=rows[first];long? animation=null;int? argument=null;int count=2;
         bool Owner(GroupRow r)=>r.Actor==used.Actor&&r.Target==used.Target;
         bool Changed(GroupRow r,WildBattleStat stat,int delta)=>Owner(r)&&r.Kind=="stat"&&r.Stat==stat&&r.Before is >=0 and <=12&&r.After!=r.Before&&r.After==Math.Clamp(r.Before+delta,0,12);
@@ -120,7 +124,7 @@ public static partial class CampaignStatAnimationPresentation
                     break;
             }
         }
-        // An item cannot borrow the direct move's own result as its prelude.
+        // An item cannot borrow the authenticated move's own result as its prelude.
         for(int i=first;i<first+count;i++)if(items.Contains(rows[i].Sequence))return null;
         for(int i=first+count;i<end;i++)
             if(rows[i].Kind is "pp" or "stat" or "minimum" or "maximum" or "confusion" or "ability" or "failed" or "missed" or "status" or "focus" or "infatuation" && !items.Contains(rows[i].Sequence))return null;

@@ -306,7 +306,7 @@ public sealed class TwisterBrickFuryAnimationKernelTests
     }
 
     [TestMethod, DataRow(280), DataRow(210)]
-    public void ActualMetronomeHitLeavesRemainOutsideDirectRootAdmission(int id)
+    public void ActualMetronomeBrickBreakAndFuryCutterOwnTheirSourceInputs(int id)
     {
         uint? seed = null; for (uint candidate = 0; candidate < 65536; candidate++)
             if (WildBattleSourceCallers.Metronome(new(candidate)).SourceMoveId == id) { seed = candidate; break; }
@@ -316,7 +316,12 @@ public sealed class TwisterBrickFuryAnimationKernelTests
             var bodies = Bodies(id); bodies[0] = Kernel.Mon("TOGETIC", "METRONOME", 29) with { AccuracyStage = 12 };
             var result = Envelope.Resolve(Screens(Kernel.Frame(bodies, single), 1, 3) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Result == Move(id)));
-            Assert.AreEqual(1, Envelope.Hits(result.Events).Length); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
+            Assert.AreEqual(1, Envelope.Hits(result.Events).Length); SourceBattleEvent outcome = id == 280
+                ? Removed(result.Events)[0]
+                : Envelope.Hits(result.Events).Single();
+            var cue = CalledLeafAnimationKernelFixture.Check(result.Events, result, single, Kernel.Id("METRONOME"), id, outcome);
+            if (id == 280) Assert.AreEqual((byte?)1, cue.MoveTurn);
+            else Assert.AreEqual((byte?)1, cue.FuryCutterCounter);
         }
     }
 
