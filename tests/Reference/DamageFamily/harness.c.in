@@ -1,0 +1,73 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define DISPLAY_WIDTH 240
+#define DISPLAY_HEIGHT 160
+#define SAFE_DIV(a,b) (assert((b)!=0),(a)/(b))
+#define sAnchorX data[6]
+#define sAnchorY data[7]
+@TYPES@
+@DEFINES@
+_Static_assert(sizeof(union AffineAnimCmd)==8,"ARM command stride");
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite *);typedef void (*AnimFunc)(struct Sprite *);typedef void (*AnimCmdFunc)(struct Sprite *);typedef void (*AffineAnimCmdFunc)(u8,struct Sprite *);typedef void (*TaskFunc)(u8);
+struct SpriteTemplate {u16 tileTag,paletteTag;const struct OamData *oam;const union AnimCmd *const *anims;const void *images;const union AffineAnimCmd *const *affineAnims;SpriteCallback callback;};
+struct Sprite {const struct SpriteTemplate *template;bool8 invisible;struct OamData oam;const union AnimCmd *const *anims;const union AffineAnimCmd *const *affineAnims;const void *images;s16 x,y,x2,y2,data[8];s8 centerToCornerVecX,centerToCornerVecY;SpriteCallback callback,stored;bool8 inUse,animBeginning,affineAnimBeginning,usingSheet,animEnded,affineAnimEnded,animPaused,affineAnimPaused,anchored,hFlip,vFlip;u8 animCmdIndex,animNum,animLoopCounter;u8 animDelayCounter:6;u8 subpriority;u16 sheetTileStart;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};
+struct OamMatrix {s16 a,b,c,d;};struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+static struct Sprite gSprites[64];static struct Task gTasks[1];static struct AffineAnimState sAffineAnimStates[32];static struct OamMatrix gOamMatrices[32];
+static s16 gBattleAnimArgs[8];static u8 gAnimVisualTaskCount;static bool8 gAffineAnimsDisabled;
+static u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerPositions[4]={0,1,2,3};static u32 gBattleTypeFlags;static s8 gAnimCustomPanning;
+static int kind,doubles,frame,instance[64],nextInstance,sounds[128][2],soundCount,yoff,elevation,shift,hiddenMask;static u8 gBattlerSpriteIds[4]={0,1,2,3};
+static void ObjAffineSet(const struct ObjAffineSrcData *src,struct OamMatrix *dest,int count,int stride){assert(count==1&&stride==2);assert(src->rotation==0);*dest=(struct OamMatrix){src->xScale,0,0,src->yScale};}
+static void UpdateSpriteMatrixAnchorPos(struct Sprite*s,s32 x,s32 y){abort();}
+static void RequestSpriteFrameImageCopy(u16 image,u16 tile,const void*images){abort();}
+static void FreeOamMatrix(u8 matrix){}
+static void FreeSpriteOamMatrix(struct Sprite*s){}
+static void DestroySprite(struct Sprite*s){s->inUse=FALSE;}
+static void StoreSpriteCallbackInData6(struct Sprite*s,SpriteCallback callback){s->stored=callback;s->data[6]=1234;s->data[7]=5678;}
+static void SetCallbackToStoredInData6(struct Sprite*s){s->callback=s->stored;}
+static bool8 IsContest(void){return FALSE;}static bool8 IsDoubleBattle(void){return doubles;}
+static u8 GetBattlerSpriteSubpriority(u8 id){static const u8 p[]={30,40,20,50};return p[id];}
+static u8 GetBattlerSpriteBGPriority(u8 id){static const u8 p[]={2,1,1,2};return p[id];}
+static int Base(u8 id,int xy){static const int p[2][4][2]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};return p[doubles][id][xy];}
+static u8 GetBattlerSpriteCoord(u8 id,u8 coord){if(!(coord&1))return Base(id,0);if(coord==1)return Base(id,1);int y=(Base(id,1)+yoff-((id&1)?elevation:0))&255;if(!(id&1))y+=8;return y>104?104:y;}
+static u8 GetBattlerSpriteCoord2(u8 id,u8 coord){return GetBattlerSpriteCoord(id,coord);}
+static bool8 IsBattlerSpriteVisible(u8 id){return id<(doubles?4:2)&&!(hiddenMask&(1<<id));}
+static bool8 IsBattlerSpritePresent(u8 id){return id<(doubles?4:2);}
+static u8 GetAnimBattlerSpriteId(u8 which){return which==0?gBattleAnimAttacker:which==1?gBattleAnimTarget:which==2?(gBattleAnimAttacker^2):(gBattleAnimTarget^2);}
+static u8 GetBattlerSpriteBGPriorityRank(u8 id){return id==0||id==3?2:1;}
+static u8 GetBattlerYCoordWithElevation(u8 id){return Base(id,1)-((id&1)?elevation:0);}
+static u16 GetBattlerYDeltaFromSpriteId(u8 id){return yoff;}
+static const union AffineAnimCmd*sAnimTaskAffineAnim;static const void*storedPointer;
+static void StorePointerInVars(s16*lo,s16*hi,const void*p){storedPointer=p;*lo=1;*hi=0;}
+static const u8*LoadPointerFromVars(s16 lo,s16 hi){assert(lo==1&&hi==0);return storedPointer;}
+#define SCANLINE_EFFECT_DMACNT_16BIT 1
+struct ScanlineEffectParams{volatile void*dmaDest;u32 dmaControl;u8 initState,unused9;};
+static struct{u8 state,srcBuffer;volatile void*dest;}gScanlineEffect;
+static u16 gScanlineEffectRegBuffers[2][960],gBattle_BG1_X,gBattle_BG2_X,regX1,regX2;
+#define REG_BG1HOFS regX1
+#define REG_BG2HOFS regX2
+static void ScanlineEffect_SetParams(struct ScanlineEffectParams p){gScanlineEffect.dest=p.dmaDest;gScanlineEffect.state=p.initState;}
+struct HealthBoxData{bool8 statusAnimActive;u8 matrixNum;};struct BattleSpritesData{struct HealthBoxData healthBoxesData[4];};static struct BattleSpritesData battleSprites;static struct BattleSpritesData *gBattleSpritesDataPtr=&battleSprites;
+static void PlaySE12WithPanning(u16 sound,s8 pan){assert(soundCount<128);sounds[soundCount][0]=sound;sounds[soundCount++][1]=pan;}
+static void DestroyAnimVisualTask(u8 id){assert(id==0);gTasks[id].isActive=FALSE;gAnimVisualTaskCount--;}
+@PROTOTYPES@
+static u8 CreateSpriteAt(u8,const struct SpriteTemplate*,s16,s16,u8);
+@ARRAYS@
+@FUNCTIONS@
+static u8 CreateSpriteAt(u8 slot,const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){struct Sprite*s=&gSprites[slot];memset(s,0,sizeof(*s));s->template=t;s->inUse=TRUE;s->animBeginning=s->affineAnimBeginning=TRUE;s->usingSheet=TRUE;s->subpriority=priority;s->oam=*t->oam;s->anims=t->anims;s->affineAnims=t->affineAnims;s->callback=t->callback;s->x=x;s->y=y;SetSpriteSheetFrameTileNum(s);if(s->oam.affineMode){s->oam.matrixNum=slot%32;AffineAnimStateReset(slot%32);}instance[slot]=++nextInstance;return slot;}
+static int templateId(const struct SpriteTemplate*t){const struct SpriteTemplate*ts[]={&gRevengeSmallScratchSpriteTemplate,&gRevengeBigScratchSpriteTemplate,&gPersistHitSplatSpriteTemplate,&gMonEdgeHitSplatSpriteTemplate,&gRapidSpinSpriteTemplate,&gAirCutterSliceSpriteTemplate,&gSpeedDustSpriteTemplate,&gAirWaveProjectileSpriteTemplate};for(int i=0;i<8;i++)if(ts[i]==t)return i;return -1;}
+static void printSprite(int slot){struct Sprite*s=&gSprites[slot];struct AffineAnimState*a=&sAffineAnimStates[s->oam.matrixNum];printf("{\"slot\":%d,\"instance\":%d,\"template\":%d,\"position\":[%d,%d],\"offset\":[%d,%d],\"tile\":%u,\"visible\":%d,\"priority\":%u,\"subpriority\":%u,\"animEnded\":%u,\"animDelay\":%u,\"xScale\":%d,\"yScale\":%d,\"affineEnded\":%u,\"hFlip\":%d,\"vFlip\":%d,\"data\":[",slot,instance[slot],templateId(s->template),s->x,s->y,s->x2,s->y2,s->oam.tileNum,!s->invisible,s->oam.priority,s->subpriority,s->animEnded,s->animDelayCounter,a->xScale,a->yScale,s->affineAnimEnded,s->oam.affineMode?s->hFlip:!!(s->oam.matrixNum&8),s->oam.affineMode?s->vFlip:!!(s->oam.matrixNum&16));for(int i=0;i<8;i++)printf("%s%d",i?",":"",s->data[i]);printf("]}");}
+static void row(int slot){printf("{\"frame\":%d,\"alive\":%d,\"args\":[",frame,kind<6?gSprites[slot].inUse:gTasks[0].isActive);for(int i=0;i<8;i++)printf("%s%d",i?",":"",gBattleAnimArgs[i]);printf("],\"task\":[");for(int i=0;i<16;i++)printf("%s%d",i?",":"",gTasks[0].data[i]);printf("],\"battlers\":[");for(int i=0;i<(doubles?4:2);i++){struct Sprite*s=&gSprites[i];struct OamMatrix*m=&gOamMatrices[i];printf("%s[%d,%d,%d,%d,%d,%d,%d,%d,%d]",i?",":"",s->x,s->y,s->x2,s->y2,s->invisible,m->a,m->b,m->c,m->d);}printf("],\"sprites\":[");int sep=0;if(kind<6){printSprite(slot);}else for(int i=0;i<64;i++)if(gSprites[i].inUse&&gSprites[i].template){if(sep++)printf(",");printSprite(i);}printf("],\"sounds\":[");for(int i=0;i<soundCount;i++)printf("%s[%d,%d]",i?",":"",sounds[i][0],sounds[i][1]);printf("]");soundCount=0;if(kind==6){printf(",\"state\":%u,\"writeBuffer\":%u,\"rank\":%d,\"buffers\":[",gScanlineEffect.state,gScanlineEffect.srcBuffer,gScanlineEffect.dest==&regX1?1:2);for(int b=0;b<2;b++)for(int i=0;i<960;i++)printf("%s%u",b||i?",":"",gScanlineEffectRegBuffers[b][i]);printf("]");}puts("}");}
+int main(int argc,char**argv){assert(argc==19);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);yoff=atoi(argv[5]);elevation=atoi(argv[6]);shift=atoi(argv[7]);hiddenMask=atoi(argv[8]);int seeded=atoi(argv[9]);gScanlineEffect.srcBuffer=atoi(argv[10]);gBattleTypeFlags=doubles?BATTLE_TYPE_DOUBLE:0;for(int i=0;i<8;i++)gBattleAnimArgs[i]=atoi(argv[11+i]);int reserved=doubles?4:2;
+ gBattle_BG1_X=65501;gBattle_BG2_X=65391;for(int b=0;b<2;b++)for(int i=0;i<960;i++)gScanlineEffectRegBuffers[b][i]=seeded?(u16)(b*4093+i*17):0;
+ for(int i=0;i<reserved;i++){struct Sprite*s=&gSprites[i];s->inUse=TRUE;s->callback=SpriteCallbackDummy;s->anims=gDummySpriteAnimTable;s->affineAnims=gDummySpriteAffineAnimTable;s->animBeginning=TRUE;s->x=Base(i,0)+(shift?7:0);s->y=((Base(i,1)+yoff-((i&1)?elevation:0))&255)+(shift?-9:0);s->x2=shift?((i&1)?-5:5):0;s->y2=shift?-3:0;s->invisible=!!(hiddenMask&(1<<i));s->data[0]=i;s->oam.matrixNum=i;s->oam.size=3;gOamMatrices[i]=(struct OamMatrix){256,0,0,256};battleSprites.healthBoxesData[i].matrixNum=i;}
+ gAnimVisualTaskCount=1;int slot=reserved;
+ if(kind<6){const struct SpriteTemplate*ts[]={&gRevengeSmallScratchSpriteTemplate,&gRevengeBigScratchSpriteTemplate,&gPersistHitSplatSpriteTemplate,&gMonEdgeHitSplatSpriteTemplate,&gRapidSpinSpriteTemplate,&gAirCutterSliceSpriteTemplate};slot=CreateSpriteAndAnimate(ts[kind],GetBattlerSpriteCoord(gBattleAnimTarget,2),GetBattlerSpriteCoord(gBattleAnimTarget,3),2);assert(slot<64);}else{TaskFunc tasks[]={AnimTask_RapinSpinMonElevation,AnimTask_AttackerStretchAndDisappear,AnimTask_ExtremeSpeedImpact,AnimTask_ExtremeSpeedMonReappear,AnimTask_SpeedDust,AnimTask_AirCutterProjectile};gTasks[0].isActive=TRUE;tasks[kind-6](0);}row(slot);
+ for(frame=1;frame<3000;frame++){if(gScanlineEffect.state==3)gScanlineEffect.state=0;else if(gScanlineEffect.state)gScanlineEffect.srcBuffer^=1;AnimateSprites();if(kind>=6&&gTasks[0].isActive)gTasks[0].func(0);row(slot);if(kind<6?!gSprites[slot].inUse:!gTasks[0].isActive)return 0;}abort();}

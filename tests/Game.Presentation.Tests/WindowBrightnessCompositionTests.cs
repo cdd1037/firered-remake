@@ -85,4 +85,26 @@ public sealed class WindowBrightnessCompositionTests
         Assert.Throws<InvalidDataException>(()=>composer.ComposeField(alpha with{Brightness=new(SourceBrightnessMode.Darken,16)}));
         Assert.Throws<InvalidDataException>(()=>composer.ComposeField(Frame() with{MoveBackground=new(null,0,0,1)}));
     }
+    [TestMethod]
+    public void RectanglesTakePriorityOverAffineObjectColorMasksWithoutPaintingThem()
+    {
+        var composer=new SourceBattleFrameComposer(Assets(),[],backgroundSurface:Surface());
+        ushort[] mask=Enumerable.Range(0,64).Select(i=>(ushort)(i%8<5?0x8000:0)).ToArray();
+        var sprite=new SourceVisualSpriteFrame(4,"mask",new(10,12),default,0,true,false,false,256,"mask",0)
+            {Width=8,Height=8,Affine=true,DoubleSize=true,MatrixA=128,MatrixD=128,ObjectWindow=true,Material=new(8,8,mask)};
+        var f=Frame() with{BlendFirstTargets=56,Sprites=[sprite],ObjectWindow=new(true,31,63),Window0=new(true,(7<<8)|9,(8<<8)|16,63,63),Window1=new(true,(8<<8)|12,(9<<8)|15,31,63)};
+        byte[] result=composer.ComposeField(f);
+        for(int y=4;y<21;y++)for(int x=2;x<20;x++)
+        {
+            int sx=((x-10)*128>>8)+4,sy=((y-12)*128>>8)+4;
+            bool insideMask=x>=2&&x<18&&y>=4&&y<20&&sx>=0&&sx<8&&sy>=0&&sy<8&&mask[sy*8+sx]!=0;
+            bool win0=x>=7&&x<9&&y>=8&&y<16,win1=x>=8&&x<12&&y>=9&&y<15;
+            bool effects=win0||(!win1&&!insideMask);
+            Assert.AreEqual(effects?(ushort)0x8000:Blue,Pixel(result,x,y),$"{x},{y}");
+        }
+        CollectionAssert.AreEqual(composer.ComposeField(Frame()),composer.ComposeField(Frame() with{Window1=new(false,0,0,31,63)}));
+        var hud=new SourceWindow0Frame(true,240,(120<<8)|160,31,63);hud.Validate();
+        Assert.IsTrue(hud.ColorEffectsAt(0,119));Assert.IsFalse(hud.ColorEffectsAt(239,120));
+    }
+
 }

@@ -145,26 +145,38 @@ public sealed partial class SourceBattleAnimation
             if(unchecked((ushort)owner._animationArgs[7])==65535)Finished=true;
         }
     }
-    private void BeginHardwareFade(int from,int to,bool reset)
+    private void BeginHardwareFade(int from,int to,bool reset,int delay=0,int? blendControl=null)
     {
         // BeginHardwarePaletteFade replaces the global fade, unlike BeginNormal.
-        _fade=null;_hardwareFade=new(from,to,reset);
+        // Source delay and delayCounter are six-bit fields after the u8 call.
+        _fade=null;_hardwareFade=new(from,to,reset,delay&63,blendControl);
     }
     private void TransferHardwareFade()
     {
         if(_hardwareFade is not {} fade)return;
-        _hardwareDarkening=fade.Y;
+        if(fade.BlendControl is {} control)
+        {
+            _hardwareDarkening=0;
+            if(fade.Finishing&&fade.Reset){_brightness=null;_blendEnabled=false;_blendFirstTargets=_blendSecondTargets=0;}
+            else SetBrightness(control&63,(SourceBrightnessMode)((control>>6)&3),fade.Y);
+        }
+        else _hardwareDarkening=fade.Y;
         // TransferPlttBuffer/UpdateBlendRegisters runs in VBlank after RunTasks.
         if(fade.Finishing)_hardwareFade=null;
     }
-    private sealed class HardwarePaletteFade(int from,int target,bool reset)
+    private sealed class HardwarePaletteFade(int from,int target,bool reset,int delay,int? blendControl)
     {
         private readonly bool _increasing=from<target;
+        private int _delayCounter=delay;
+        private readonly int _delay=delay;
+        public int? BlendControl=>blendControl;
+        public bool Reset=>reset;
         public int Y{get;private set;}=from;
         public bool Finishing{get;private set;}
         public void Update()
         {
             if(Finishing)return;
+            if(_delayCounter<_delay){_delayCounter++;return;}_delayCounter=0;
             int next=Y+(_increasing?1:-1);
             if(_increasing?next>target:next<target){Finishing=true;if(reset)Y=0;}
             else Y=next;

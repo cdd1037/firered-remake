@@ -57,12 +57,12 @@ public sealed class SourceBattleFrameComposer
             throw new InvalidDataException("Source BG mosaic registers differ.");
         frame.Scanline?.Validate();
         if(frame.BackgroundScrollOffsets.Length is not (0 or 2))throw new InvalidDataException("Source battler BG register shape differs.");
-        frame.Window0?.Validate();frame.ObjectWindow?.Validate();frame.Brightness?.Validate();
-        if(frame.ObjectWindow is {Enabled:true}&&(frame.Window0 is {Enabled:true}||frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
+        frame.Window0?.Validate();frame.Window1?.Validate();frame.ObjectWindow?.Validate();frame.Brightness?.Validate();
+        if(frame.ObjectWindow is {Enabled:true}&&(frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
             throw new InvalidDataException("Concurrent source object-window owners are outside the admitted closure.");
         if(frame.Brightness is not null&&_backgroundSurface is null)throw new InvalidDataException("Source brightness needs indexed BG3/backdrop provenance.");
         if(frame.Brightness is not null&&(frame.BlendEnabled||frame.MoveBackground is {Darkening:>0})||
-            frame.Window0 is {Enabled:true}&&(frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
+            (frame.Window0 is {Enabled:true}||frame.Window1 is {Enabled:true})&&(frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
             throw new InvalidDataException("Concurrent source window/color-effect owners are outside the admitted closure.");
         var pixels=new ushort[Width*112];Array.Fill(_baseLayerMasks,(byte)8);
         var palettes=frame.PaletteBlends.ToDictionary(p=>p.Palette);
@@ -127,9 +127,10 @@ public sealed class SourceBattleFrameComposer
         for(int plane=0;plane<2;plane++)if(!frame.BattlerBackgroundEnabled[plane])Array.Clear(_battlerBackgroundLayers[plane]);
         // OBJ-window pixels form a union independent of ordinary OBJ priority.
         // They never contribute color or occlude the frontmost visible object.
-        if(frame.ObjectWindow is {Enabled:true} objectWindow)
+        bool[]? stencil=null;
+        if(frame.ObjectWindow is {Enabled:true})
         {
-            var stencil=new bool[Width*112];
+            stencil=new bool[Width*112];
             foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.ObjectWindow&&s.Asset is not null))
             {
                 if(sprite.Subsprites.Length!=0)throw new InvalidDataException("Object-window subsprite layouts are outside the admitted closure.");
@@ -137,9 +138,20 @@ public sealed class SourceBattleFrameComposer
                 BlitSprite(layer,material,sprite,0,0,false);
                 for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0)stencil[i]=true;
             }
-            var bg1=_battlerBackgroundLayers[0];
-            for(int i=0;i<bg1.Length;i++)if(((stencil[i]?objectWindow.InsideMask:objectWindow.OutsideMask)&2)==0)bg1[i]=0;
+
         }
+        int WindowMask(int i)
+        {
+            int x=i%Width,y=i/Width;
+            if(frame.Window0 is {Enabled:true} win0&&win0.Contains(x,y))return win0.InsideMask;
+            if(frame.Window1 is {Enabled:true} win1&&win1.Contains(x,y))return win1.InsideMask;
+            if(frame.ObjectWindow is {Enabled:true} obj)return stencil![i]?obj.InsideMask:obj.OutsideMask;
+            if(frame.Window0 is {Enabled:true} outside0)return outside0.OutsideMask;
+            if(frame.Window1 is {Enabled:true} outside1)return outside1.OutsideMask;
+            return 63;
+        }
+        if(stencil is not null)
+            for(int i=0;i<stencil.Length;i++)if((WindowMask(i)&2)==0)_battlerBackgroundLayers[0][i]=0;
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
@@ -174,7 +186,7 @@ public sealed class SourceBattleFrameComposer
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Priority;}
         }
         if((frame.BlendFirstTargets&~63)!=0||(frame.BlendSecondTargets&~63)!=0)throw new InvalidDataException("Source alpha targets exceed hardware masks.");
-        if(frame.Window0 is null&&frame.Brightness is null&&frame.Overlay is null&&frame.BlendFirstTargets==0&&frame.BlendSecondTargets==63)
+        if(frame.Window0 is null&&frame.Window1 is null&&frame.ObjectWindow is null&&frame.Brightness is null&&frame.Overlay is null&&frame.BlendFirstTargets==0&&frame.BlendSecondTargets==63)
         {
             // The common source setalpha mode only blends semi-transparent OBJ.
             // Keep its bounded fast path while sharing the same retained BG planes.
@@ -205,7 +217,7 @@ public sealed class SourceBattleFrameComposer
             Insert(_battlerBackgroundLayers[1][i],frame.BattlerBackgroundPriorities[1],2,4);
             Insert(objects[i],objectPriority[i],0,16);
             bool selected=(firstMask&frame.BlendFirstTargets)!=0||(firstMask==16&&translucent[i]);
-            bool colorEnabled=frame.Window0?.ColorEffectsAt(i%Width,i/Width)??true;
+            bool colorEnabled=(WindowMask(i)&32)!=0;
             pixels[i]=colorEnabled&&frame.BlendEnabled&&selected&&(secondMask&frame.BlendSecondTargets)!=0
                 ?Blend(first,second,ScanlineAlpha(frame,i/Width,false),ScanlineAlpha(frame,i/Width,true))
                 :colorEnabled&&frame.Brightness is {} brightness&&(firstMask&frame.BlendFirstTargets)!=0

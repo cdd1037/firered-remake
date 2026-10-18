@@ -1,6 +1,6 @@
 namespace Game.Presentation.BattleAnimations;
 
-// This closure models an on-screen, non-wrapping WIN0 rectangle. Inverted or
+// Shared WIN0/WIN1 geometry is an on-screen, non-wrapping rectangle. Inverted or
 // out-of-display edges and layer-disabling masks need a separately proven PPU
 // closure; they are rejected rather than clamped or guessed. Bounds are exclusive.
 public sealed record SourceWindow0Frame(bool Enabled,ushort Horizontal,ushort Vertical,int InsideMask,int OutsideMask)
@@ -13,22 +13,22 @@ public sealed record SourceWindow0Frame(bool Enabled,ushort Horizontal,ushort Ve
             (InsideMask&31)!=31||(OutsideMask&31)!=31)
             throw new InvalidDataException("WIN0 requires bounded non-wrapping edges and unchanged layer visibility.");
     }
+    public bool Contains(int x,int y)=>Enabled&&x>=(Horizontal>>8)&&x<(Horizontal&255)&&y>=(Vertical>>8)&&y<(Vertical&255);
     public bool ColorEffectsAt(int x,int y)
     {
         if(x is <0 or >=240||y is <0 or >=160)throw new ArgumentOutOfRangeException(nameof(x));
-        bool inside=Enabled&&x>=(Horizontal>>8)&&x<(Horizontal&255)&&y>=(Vertical>>8)&&y<(Vertical&255);
+        bool inside=Contains(x,y);
         return !Enabled||((inside?InsideMask:OutsideMask)&32)!=0;
     }
 }
-// Source OBJ-window sprites gate BG1 before priority selection. Other layer and
-// color-effect masks stay enabled in this bounded scrolling-mask closure.
+// OBJ-window masks may gate BG1 and color effects; all other layers stay enabled.
 public sealed record SourceObjectWindowFrame(bool Enabled,int InsideMask,int OutsideMask)
 {
     public void Validate()
     {
         if(InsideMask is <0 or >63||OutsideMask is <0 or >63||
-            (InsideMask&61)!=61||(OutsideMask&61)!=61)
-            throw new InvalidDataException("OBJ window requires unchanged non-BG1 layers and color effects.");
+            (InsideMask&29)!=29||(OutsideMask&29)!=29)
+            throw new InvalidDataException("OBJ window requires unchanged non-BG1 layers.");
     }
 }
 public enum SourceBrightnessMode { Lighten=2,Darken=3 }
@@ -50,7 +50,9 @@ public sealed record SourceBrightnessFrame(SourceBrightnessMode Mode,int Coeffic
 
 public sealed partial class SourceBattleAnimation
 {
-    private SourceWindow0Frame? _window0;
+    private SourceWindow0Frame? _window0,_window1;
+    private void SetWindow1(bool enabled,ushort horizontal,ushort vertical,int insideMask,int outsideMask)
+    {var frame=new SourceWindow0Frame(enabled,horizontal,vertical,insideMask,outsideMask);frame.Validate();_window1=enabled?frame:null;}
     private SourceObjectWindowFrame? _objectWindow;
     private void SetObjectWindow(bool enabled,int insideMask=63,int outsideMask=61)
     {
@@ -66,6 +68,24 @@ public sealed partial class SourceBattleAnimation
         // masks, while BLDALPHA is a separate register and keeps its old values.
         _blendEnabled=false;_blendFirstTargets=firstTargets;_blendSecondTargets=0;_brightness=brightness;
     }
+    private bool ValidateHardwareFadeCommand(SourceAnimationCommand c)
+    {
+        if(c.Op!="createvisualtask"||c.Args.FirstOrDefault()!="AnimTask_HardwarePaletteFade")return false;
+        var a=c.Args;
+        if(a.Length!=7||Number(a[1]) is <0 or >255||Number(a[2]) is <0 or >255||
+            ((Number(a[2])>>6)&3) is not (2 or 3)||Number(a[3]) is <0 or >255||
+            Number(a[4]) is <0 or >16||Number(a[5]) is <0 or >16||Number(a[6]) is <0 or >1)
+            Fail(c,"Hardware fade requires brightness BLDCNT, byte delay, bounded 0..16 endpoints and reset flag.");
+        return true;
+    }
+    private bool TryCreateHardwareFadeTask(SourceAnimationCommand c)
+    {
+        if(c.Args[0]!="AnimTask_HardwarePaletteFade")return false;
+        BeginHardwareFade(_animationArgs[2],_animationArgs[3],_animationArgs[4]!=0,_animationArgs[1],_animationArgs[0]);
+        _tasks.Add(new HardwareFadeWaitTask());return true;
+    }
+    private sealed class HardwareFadeWaitTask:VisualTask
+    {public override void Step(SourceBattleAnimation owner){if(!owner.PaletteFadeActive)Finished=true;}}
     private bool ValidateWindowTaskOperand(SourceAnimationCommand command)
     {
         if(command.Op!="createvisualtask"||command.Args.FirstOrDefault()!="AnimTask_FakeOut")return false;

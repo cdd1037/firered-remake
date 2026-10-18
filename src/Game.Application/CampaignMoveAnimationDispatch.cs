@@ -254,7 +254,7 @@ public static partial class CampaignMoveAnimationPresentation
             return GroundSpreadAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_HELPING_HAND" or "EFFECT_IMPRISON" or "EFFECT_TEETER_DANCE")
             return SupportStatusAnimation(battle,used,attack,definition,action,pp);
-        if(definition.Effect is "EFFECT_YAWN" or "EFFECT_SKILL_SWAP" or "EFFECT_GRUDGE" or "EFFECT_SPIKES")
+        if(definition.Effect is "EFFECT_YAWN" or "EFFECT_SKILL_SWAP" or "EFFECT_GRUDGE" or "EFFECT_SPIKES" or "EFFECT_ENCORE")
             return UtilityAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_DESTINY_BOND" or "EFFECT_PERISH_SONG" or "EFFECT_CURSE")
             return GhostSongAnimation(battle,used,attack,definition,action,pp);

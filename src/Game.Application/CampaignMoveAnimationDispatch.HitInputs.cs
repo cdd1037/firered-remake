@@ -73,7 +73,7 @@ public static partial class CampaignMoveAnimationPresentation
     private static CampaignMoveAnimationDecision WithCommittedHitInputs(Invocation battle,SourceMoveUsedEvent used,
         SourceAttackStringEvent attack,PokemonMoveDefinition definition,SourceBattleEvent hit,CampaignMoveAnimationDispatch dispatch)
     {
-        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK" or "EFFECT_SPIT_UP" or "EFFECT_LEVEL_DAMAGE"&&
+        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK" or "EFFECT_SPIT_UP" or "EFFECT_LEVEL_DAMAGE" or "EFFECT_RAPID_SPIN"&&
             (definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0||used.Actor==used.Target||
              used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots))
             return new(null,"unmatched-source-animation-hit-input");
@@ -118,6 +118,15 @@ public static partial class CampaignMoveAnimationPresentation
             int damage=hit switch{SourceHpChangedEvent h=>h.Damage,SourceSubstituteDamagedEvent s=>s.Damage,_=>-1};
             if(damage<0)return new(null,"unmatched-source-animation-damage");
             dispatch=dispatch with{MoveDamage=damage};
+        }
+        if(definition.Effect=="EFFECT_RAPID_SPIN")
+        {
+            // Rapid Spin has no dynamic power command. CalculateBaseDamage
+            // loads the authenticated fixed move power before attackanimation;
+            // its later bind/seed/spikes cleanup does not own this input or root.
+            int? prepared=hit switch{SourceHpChangedEvent h=>h.PreparedBasePower,SourceSubstituteDamagedEvent s=>s.PreparedBasePower,_=>null};
+            if(prepared is {} power&&power!=definition.Power)return new(null,"unmatched-source-prepared-power");
+            dispatch=dispatch with{MovePower=checked((ushort)definition.Power)};
         }
         if(definition.Effect=="EFFECT_PURSUIT")
         {

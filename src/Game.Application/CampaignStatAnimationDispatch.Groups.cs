@@ -11,7 +11,9 @@ public static partial class CampaignStatAnimationPresentation
         "EFFECT_BULK_UP"=>(WildBattleStat.Attack,WildBattleStat.Defense),
         "EFFECT_CALM_MIND"=>(WildBattleStat.SpecialAttack,WildBattleStat.SpecialDefense),
         "EFFECT_DRAGON_DANCE"=>(WildBattleStat.Attack,WildBattleStat.Speed),_=>null };
-    internal static bool HasGroupedEffect(string effect)=>PairedSelfStats(effect) is not null||effect is "EFFECT_TICKLE" or "EFFECT_SWAGGER";
+    private static (WildBattleStat Stat,int Delta)? ConfusionBoost(string effect)=>effect switch {
+        "EFFECT_SWAGGER"=>(WildBattleStat.Attack,2),"EFFECT_FLATTER"=>(WildBattleStat.SpecialAttack,1),_=>null };
+    internal static bool HasGroupedEffect(string effect)=>PairedSelfStats(effect) is not null||ConfusionBoost(effect) is not null||effect=="EFFECT_TICKLE";
     private static bool HasGroupedDefinition(PokemonMoveDefinition definition)=>HasGroupedEffect(definition.Effect)&&definition.Power==0&&
         definition.Target==(PairedSelfStats(definition.Effect) is not null?"MOVE_TARGET_USER":"MOVE_TARGET_SELECTED");
     private sealed record StatGroup(string Battle,long Attack,long Pp,string Move,int Affected,long First,long? Animation,int? Argument,long[] Silent);
@@ -108,12 +110,13 @@ public static partial class CampaignStatAnimationPresentation
                     if(downA){animation=a.Sequence;argument=downD?57:22;}
                     else if(downD){animation=b.Sequence;argument=23;}
                     break;
-                case "EFFECT_SWAGGER":
-                    bool raised=Changed(a,WildBattleStat.Attack,2),capped=Cap(a,WildBattleStat.Attack,"maximum");
+                case "EFFECT_SWAGGER":case "EFFECT_FLATTER":
+                    var (boostStat,boostDelta)=ConfusionBoost(effect)!.Value;
+                    bool raised=Changed(a,boostStat,boostDelta),capped=Cap(a,boostStat,"maximum");
                     bool confused=b.Kind=="confusion"&&b.Target==used.Target&&b.Before==0&&b.After is >=2 and <=5&&b.Detail=="move";
                     bool blocked=Protection(b,"ability","ABILITY_OWN_TEMPO")||Protection(b,"failed","safeguard","already-confused");
                     if(!(raised||capped)||!(confused||blocked)||capped&&b.Kind=="failed"&&b.Detail=="already-confused")return null;
-                    if(raised){animation=a.Sequence;argument=39;}
+                    if(raised){animation=a.Sequence;argument=AnimationArgument(boostStat,boostDelta);}
                     break;
             }
         }

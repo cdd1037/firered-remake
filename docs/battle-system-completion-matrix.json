@@ -11,8 +11,8 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 327,
-    "missingDedicatedMoveScripts": 27,
+    "dedicatedMoveScripts": 333,
+    "missingDedicatedMoveScripts": 21,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
@@ -2368,7 +2368,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_PURSUIT",
@@ -2388,7 +2388,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_SWEET_SCENT",
@@ -2548,7 +2548,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_ANCIENT_POWER",
@@ -2698,7 +2698,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_WILL_O_WISP",
@@ -2888,7 +2888,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_BRICK_BREAK",
@@ -3238,7 +3238,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-with-bounded-tests"
     },
     {
       "id": "pret:MOVE_OVERHEAT",

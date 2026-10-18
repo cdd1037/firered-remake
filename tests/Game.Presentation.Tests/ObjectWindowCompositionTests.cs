@@ -56,8 +56,8 @@ public sealed class ObjectWindowCompositionTests
         var composer=Composer();var material=new SourcePixelAsset(8,8,Enumerable.Repeat((ushort)0x801f,64).ToArray());var frame=Frame(Window(4,20,20,material));
         Pixel(composer.ComposeField(frame with{ObjectWindow=null}),100,50,0,123,123);
         Pixel(composer.ComposeField(frame with{ObjectWindow=new(false,63,61)}),20,20,0,123,123);
-        Assert.Throws<InvalidDataException>(()=>composer.ComposeField(frame with{ObjectWindow=new(true,31,61)}));
-        Assert.Throws<InvalidDataException>(()=>composer.ComposeField(frame with{Window0=new(true,0,0,63,63)}));
+        Assert.Throws<InvalidDataException>(()=>composer.ComposeField(frame with{ObjectWindow=new(true,27,61)}));
+        CollectionAssert.AreEqual(composer.ComposeField(frame),composer.ComposeField(frame with{Window0=new(true,0,0,63,63)}));
         Assert.Throws<InvalidDataException>(()=>composer.ComposeField(frame with{Sprites=[frame.Sprites[0] with{Subsprites=[new(0,0,8,8,0,0)]}]}));
     }
 }

@@ -28,6 +28,7 @@ public static partial class CampaignMoveAnimationPresentation
         WildBattleDamageAdjustedEvent x => new SourceDamageAdjustedEvent(x.Sequence,x.Turn,new((int)x.Target),x.Move,x.Item,x.DamageBefore,x.DamageAfter,x.Endured,x.HungOn),
         WildBattleDisableChangedEvent x => new SourceDisableChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Move,x.Before,x.After,x.Reason),
         WildBattleEffectivenessEvent x => new SourceEffectivenessEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.Effectiveness),
+        WildBattleEncoreChangedEvent x => new SourceEncoreChangedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Slot,x.Before,x.After,x.Reason),
         WildBattleFocusEnergyEvent x => new SourceFocusEnergyEvent(x.Sequence,x.Turn,new((int)x.Side)),
         WildBattleHeldItemConsumedEvent x => new SourceHeldItemConsumedEvent(x.Sequence,x.Turn,new((int)x.Side),x.Item,x.HpBefore,x.HpAfter,x.HpRestored) { PpRecovery=x.PpRecovery,StatChanges=x.StatChanges,FocusEnergyRaised=x.FocusEnergyRaised,Flavor=x.Flavor },
         WildBattleHpChangedEvent x => new SourceHpChangedEvent(x.Sequence,x.Turn,new((int)x.Actor),new((int)x.Target),x.Move,x.HpBefore,x.HpAfter,x.Damage,x.Critical,x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter },

@@ -26,6 +26,12 @@ public static partial class CampaignMoveAnimationPresentation
         var pp=commands[0];SourceBattleEvent result;int tail;
         switch(definition.Effect)
         {
+            case "EFFECT_ENCORE":
+                // trysetencore succeeds before attackanimation. Countdown and
+                // exhaustion/overwrite expiry are not a new command success.
+                if(action[1] is not SourceEncoreChangedEvent {Before:0,After:>=3 and <=6,Slot:>=0 and <=3,Reason:"move"} encore||
+                    encore.Side!=used.Target)return Reject("unmatched-source-encore-result");
+                result=encore;tail=2;break;
             case "EFFECT_YAWN":
                 // setyawn succeeds before attackanimation; countdown and later
                 // sleep are different source phases and never own this root.
