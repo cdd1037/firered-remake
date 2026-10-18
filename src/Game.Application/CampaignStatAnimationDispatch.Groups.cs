@@ -13,7 +13,7 @@ public static partial class CampaignStatAnimationPresentation
         "EFFECT_DRAGON_DANCE"=>(WildBattleStat.Attack,WildBattleStat.Speed),_=>null };
     private static (WildBattleStat Stat,int Delta)? ConfusionBoost(string effect)=>effect switch {
         "EFFECT_SWAGGER"=>(WildBattleStat.Attack,2),"EFFECT_FLATTER"=>(WildBattleStat.SpecialAttack,1),_=>null };
-    internal static bool HasGroupedEffect(string effect)=>PairedSelfStats(effect) is not null||ConfusionBoost(effect) is not null||effect=="EFFECT_TICKLE";
+    internal static bool HasGroupedEffect(string effect)=>PairedSelfStats(effect) is not null||ConfusionBoost(effect) is not null||effect is "EFFECT_TICKLE" or "EFFECT_MEMENTO";
     private static bool HasGroupedDefinition(PokemonMoveDefinition definition)=>HasGroupedEffect(definition.Effect)&&definition.Power==0&&
         definition.Target==(PairedSelfStats(definition.Effect) is not null?"MOVE_TARGET_USER":"MOVE_TARGET_SELECTED");
     private sealed record StatGroup(string Battle,long Attack,long Pp,string Move,int Affected,long First,long? Animation,int? Argument,long[] Silent);
@@ -88,12 +88,14 @@ public static partial class CampaignStatAnimationPresentation
         if(pp.Kind!="pp"||pp.Actor!=used.Actor||pp.Owner!=identity.PpOwner.Value||pp.Target!=identity.Target.Value||pp.Move!=identity.CurrentMove.Value||pp.Chosen!=identity.ChosenMove.Value||
             pp.Slot!=identity.PpSlot||pp.Slot!=used.Slot||pp.Before!=used.Before||pp.After!=used.After||pp.Before is <0 or >255||pp.After is <0 or >255||pp.Cost is <1 or >2||
             (identity.NoPpDeduct?pp.After!=pp.Before:pp.Before<1||pp.After!=Math.Max(0,pp.Before-pp.Cost)))return null;
-        int first=usedIndex+2;var a=rows[first];long? animation=null;int? argument=null;int count=2;
+        bool memento=effect=="EFFECT_MEMENTO";
+        if(memento&&!CampaignMoveAnimationPresentation.AuthenticatedMementoGroup(battle,events,usedIndex,slots,moves))return null;
+        int first=usedIndex+(memento?3:2);if(first>=end)return null;var a=rows[first];long? animation=null;int? argument=null;int count=2;
         bool Owner(GroupRow r)=>r.Actor==used.Actor&&r.Target==used.Target;
         bool Changed(GroupRow r,WildBattleStat stat,int delta)=>Owner(r)&&r.Kind=="stat"&&r.Stat==stat&&r.Before is >=0 and <=12&&r.After!=r.Before&&r.After==Math.Clamp(r.Before+delta,0,12);
         bool Cap(GroupRow r,WildBattleStat stat,string kind)=>Owner(r)&&r.Kind==kind&&r.Stat==stat;
         bool Protection(GroupRow r,string kind,params string[] reasons)=>Owner(r)&&r.Kind==kind&&r.Move==used.Move&&reasons.Contains(r.Detail);
-        if(effect=="EFFECT_TICKLE"&&(Protection(a,"failed","mist")||Protection(a,"ability","ABILITY_CLEAR_BODY","ABILITY_WHITE_SMOKE")))count=1;
+        if(effect is "EFFECT_TICKLE" or "EFFECT_MEMENTO"&&(Protection(a,"failed","mist")||Protection(a,"ability","ABILITY_CLEAR_BODY","ABILITY_WHITE_SMOKE")))count=1;
         else
         {
             if(first+1>=end)return null;var b=rows[first+1];
@@ -106,13 +108,14 @@ public static partial class CampaignStatAnimationPresentation
                     // Both source scripts choose the wave before visiting either
                     // stat command, including an individually capped first stat.
                     animation=a.Sequence;argument=upFirst&&upSecond?55:AnimationArgument(upFirst?firstStat:secondStat,1);break;
-                case "EFFECT_TICKLE":
-                    bool downA=Changed(a,WildBattleStat.Attack,-1),downD=Changed(b,WildBattleStat.Defense,-1);
+                case "EFFECT_TICKLE":case "EFFECT_MEMENTO":
+                    var secondDown=memento?WildBattleStat.SpecialAttack:WildBattleStat.Defense;int delta=memento?-2:-1;
+                    bool downA=Changed(a,WildBattleStat.Attack,delta),downD=Changed(b,secondDown,delta);
                     bool hyper=Protection(a,"ability","ABILITY_HYPER_CUTTER");
-                    if(!(downA||Cap(a,WildBattleStat.Attack,"minimum")||hyper)||!(downD||Cap(b,WildBattleStat.Defense,"minimum"))||
+                    if(!(downA||Cap(a,WildBattleStat.Attack,"minimum")||hyper)||!(downD||Cap(b,secondDown,"minimum"))||
                         !downA&&!downD&&!hyper)return null;
-                    if(downA){animation=a.Sequence;argument=downD?57:22;}
-                    else if(downD){animation=b.Sequence;argument=23;}
+                    if(downA){animation=a.Sequence;argument=downD?(memento?58:57):AnimationArgument(WildBattleStat.Attack,delta);}
+                    else if(downD){animation=b.Sequence;argument=AnimationArgument(secondDown,delta);}
                     break;
                 case "EFFECT_SWAGGER":case "EFFECT_FLATTER":
                     var (boostStat,boostDelta)=ConfusionBoost(effect)!.Value;
@@ -126,7 +129,7 @@ public static partial class CampaignStatAnimationPresentation
         }
         // An item cannot borrow the authenticated move's own result as its prelude.
         for(int i=first;i<first+count;i++)if(items.Contains(rows[i].Sequence))return null;
-        for(int i=first+count;i<end;i++)
+        for(int i=first+count;!memento&&i<end;i++)
             if(rows[i].Kind is "pp" or "stat" or "minimum" or "maximum" or "confusion" or "ability" or "failed" or "missed" or "status" or "focus" or "infatuation" && !items.Contains(rows[i].Sequence))return null;
         var silent=rows.Skip(first).Take(count).Where(r=>r.Kind is "minimum" or "maximum").Select(r=>r.Sequence).ToArray();
         return new(battle,attack.Sequence,pp.Sequence,move,used.Target,a.Sequence,animation,argument,silent);

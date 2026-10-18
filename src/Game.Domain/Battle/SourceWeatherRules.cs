@@ -29,6 +29,18 @@ public static class SourceWeatherRules
     public static bool IsSuppressed(SourceBattleFrame frame, bool includeFainted = false) =>
         IsSuppressed(frame.Slots.Take(frame.BattlerCount).Where(s => s.Body is not null).Select(s => s.Body!), includeFainted);
 
+    // BtlController_EmitMoveAnimation uses WEATHER_HAS_EFFECT2, including
+    // fainted bodies. Preserve the controller flags, not Weather Ball's type
+    // result (whose live-only suppression and weather precedence differ).
+    internal static ushort AnimationFlags(SourceBattleFrame frame)
+    {
+        if(IsSuppressed(frame,includeFainted:true))return 0;
+        var field=frame.Field;
+        int flags=(HasRain(field)?1:0)|(HasSandstorm(field)?8:0)|(HasSun(field)?32:0)|(field.HailTurnsRemaining>0?128:0);
+        flags|=field.PermanentWeather?.Kind switch{SourcePermanentWeatherKind.Rain=>4,SourcePermanentWeatherKind.Sandstorm=>16,SourcePermanentWeatherKind.Sun=>64,_=>0};
+        return (ushort)flags;
+    }
+
     public static SourcePermanentWeatherKind? EntryWeather(string ability) => ability switch {
         "ABILITY_DRIZZLE" => SourcePermanentWeatherKind.Rain,
         "ABILITY_SAND_STREAM" => SourcePermanentWeatherKind.Sandstorm,

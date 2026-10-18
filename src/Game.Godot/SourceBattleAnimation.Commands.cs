@@ -13,6 +13,10 @@ public sealed partial class SourceBattleAnimation
         _battlerObjectPriorities[slot]=priority;
     }
 
+    private void RestoreVisibleBattlerPriorities()
+    {
+        foreach(int slot in _battlers.Keys)if(IsSourceBattlerVisible(slot))SetBattlerObjectPriority(slot,2);
+    }
     private int BattlerBackgroundPriority(int slot)=>_battlerBackgroundPriorities[_battlers[slot].BackgroundRank-1];
     private void SetBackgroundPriority(int bgId,int priority)
     {

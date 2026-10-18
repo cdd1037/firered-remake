@@ -55,7 +55,7 @@ public sealed class SourceAnimationResourceTests
             var surface=resources.CreateBackgroundSurface(0);
             // Controlled invocation inputs exercise resource composition; receipt-derived
             // values and both branch thresholds are checked by dedicated family tests.
-            var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){Friendship=128,ActorHpQuarterTier=2,MovePower=100,FuryCutterCounter=3,RolloutCounter=3,SourceTerrain=SourceAnimationTerrain.Grass,MoveDamage=24,IsHealingMove=false,MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn"||c.Op=="createvisualtask"&&c.Args[0]=="GetIsDoomDesireHitTurn")?(byte)0:null};
+            var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){Friendship=128,AnimationWeather=0,ActorHpQuarterTier=2,MovePower=100,FuryCutterCounter=3,RolloutCounter=3,SourceTerrain=SourceAnimationTerrain.Grass,MoveDamage=24,IsHealingMove=false,MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn"||c.Op=="createvisualtask"&&c.Args[0]=="GetIsDoomDesireHitTurn")?(byte)0:null};
             cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
             var replacements=battlers.ToDictionary(b=>b.Slot.Value,b=>b with{Asset=b.Asset+"-replacement"});
             foreach(var replacement in replacements.Values)assets.Add(replacement.Asset,new(64,64,Enumerable.Repeat((ushort)0x83e0,4096).ToArray()));

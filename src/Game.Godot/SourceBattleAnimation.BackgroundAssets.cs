@@ -74,6 +74,7 @@ public sealed class SourceOverlayAsset
         for(int y=0;y<height;y++)for(int x=0;x<width;x++)
         {
             int sx=scrollX,sy=scrollY;
+            if(scanline is {Destination:SourceScanlineDestination.Bg1Vertical})sy=scanline.Words[y];
             if(scanline is {Destination:SourceScanlineDestination.Bg1Horizontal})
             {sx=scanline.Words[y*(scanline.Word32?2:1)];if(scanline.Word32)sy=scanline.Words[y*2+1];}
             var pixel=Sample(x+sx,y+sy);

@@ -1,8 +1,8 @@
 namespace Game.Presentation.BattleAnimations;
 
 // Shared WIN0/WIN1 geometry is an on-screen, non-wrapping rectangle. Inverted or
-// out-of-display edges and layer-disabling masks need a separately proven PPU
-// closure; they are rejected rather than clamped or guessed. Bounds are exclusive.
+// out-of-display edges are rejected. BG1/BG2 may be independently suppressed;
+// BG0/BG3/OBJ stay enabled in this bounded field closure. Bounds are exclusive.
 public sealed record SourceWindow0Frame(bool Enabled,ushort Horizontal,ushort Vertical,int InsideMask,int OutsideMask)
 {
     public void Validate()
@@ -10,8 +10,8 @@ public sealed record SourceWindow0Frame(bool Enabled,ushort Horizontal,ushort Ve
         if((Horizontal>>8)>(Horizontal&255)||(Horizontal&255)>240||
             (Vertical>>8)>(Vertical&255)||(Vertical&255)>160||
             InsideMask is <0 or >63||OutsideMask is <0 or >63||
-            (InsideMask&31)!=31||(OutsideMask&31)!=31)
-            throw new InvalidDataException("WIN0 requires bounded non-wrapping edges and unchanged layer visibility.");
+            (InsideMask&25)!=25||(OutsideMask&25)!=25)
+            throw new InvalidDataException("WIN0 requires bounded non-wrapping edges and unchanged BG0/BG3/OBJ visibility.");
     }
     public bool Contains(int x,int y)=>Enabled&&x>=(Horizontal>>8)&&x<(Horizontal&255)&&y>=(Vertical>>8)&&y<(Vertical&255);
     public bool ColorEffectsAt(int x,int y)

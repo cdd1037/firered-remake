@@ -26,6 +26,8 @@ public sealed partial class SourceBattleAnimation
     private int ScanlineWriteBuffer=>ScanlineState.SourceBuffer;
     private void StartScanline(int rank,bool pairedOffsets=false)=>ScanlineState.SetParams(rank switch
         {1=>SourceScanlineDestination.Bg1Horizontal,2=>SourceScanlineDestination.Bg2Horizontal,_=>throw new ArgumentOutOfRangeException(nameof(rank))},pairedOffsets);
+    private void StartVerticalScanline(int rank)=>ScanlineState.SetParams(rank switch
+        {1=>SourceScanlineDestination.Bg1Vertical,2=>SourceScanlineDestination.Bg2Vertical,_=>throw new ArgumentOutOfRangeException(nameof(rank))},false);
     private void StartAlphaScanline()=>ScanlineState.SetParams(SourceScanlineDestination.BlendAlpha,false);
     private void StopScanlineDeferred()=>ScanlineState.RequestStop();
     private PixelPoint ScanlineBackgroundOffset(int rank)=>new(BattlerBackgroundRegister(rank,false),BattlerBackgroundRegister(rank,true));
@@ -60,9 +62,9 @@ public sealed partial class SourceBattleAnimation
             frame=state.CaptureVBlank(_queuedAlphaRegister?(ushort)(_alphaA|(_alphaB<<8)):null);
         else
         {
-            int first=state.Destination==SourceScanlineDestination.Bg1Horizontal?0:2;
+            int first=state.Destination switch{SourceScanlineDestination.Bg1Horizontal=>0,SourceScanlineDestination.Bg1Vertical=>1,SourceScanlineDestination.Bg2Horizontal=>2,SourceScanlineDestination.Bg2Vertical=>3,_=>throw new InvalidDataException("Unknown BG scanline destination.")};
             frame=state.CaptureVBlank(_queuedBackgroundRegisters[first]?_spriteScene.BackgroundRegisters[first]:null,
-                _queuedBackgroundRegisters[first+1]?_spriteScene.BackgroundRegisters[first+1]:null);
+                state.Word32&&_queuedBackgroundRegisters[first+1]?_spriteScene.BackgroundRegisters[first+1]:null);
         }
         _spriteScene.ScanlineFrame=frame;
         if(_queuedAlphaRegister)_scanlineTerminalAlpha=_alphaA|(_alphaB<<8);

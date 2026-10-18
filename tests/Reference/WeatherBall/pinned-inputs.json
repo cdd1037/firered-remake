@@ -1,0 +1,14 @@
+{
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+  "src/battle_anim_status_effects.c": "e574e88a1a235973010647d1ec11bead112b4be2d0044b45de8be2a80b6328b3",
+  "src/battle_anim_fire.c": "369439a2956832942756db1afc5b9ca8955762b7af121ff4b4aeda156e07ede6",
+  "src/battle_anim_water.c": "c93e8e5583b942fd6a42e010aa4cbe3eacaecb6dc0a76b02bd00d97a377d3816",
+  "src/battle_anim_rock.c": "bdc03fca6247a71a2a8d1094378544bcb6f3459be892bb48e92780da54f71767",
+  "src/battle_anim_ice.c": "f63de5b813c8a9c83230c392bbba49d0d7fa0f97c40f91e9dfa7c175173901e7",
+  "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
+  "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
+  "include/battle_anim.h": "15d0a815fec54ed669e1cf7130d323070d799ecfba0f3a935da4b9c28d6f09a7",
+  "include/constants/battle.h": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+  "include/constants/battle_anim.h": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e"
+}

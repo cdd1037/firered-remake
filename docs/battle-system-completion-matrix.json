@@ -12,21 +12,21 @@
   "inventory": {
     "moves": 354,
     "officialAbilities": 76,
-    "dedicatedMoveScripts": 350,
-    "missingDedicatedMoveScripts": 4,
+    "dedicatedMoveScripts": 352,
+    "missingDedicatedMoveScripts": 2,
     "excludedAbilitySymbols": [
       "ABILITY_NONE",
       "ABILITY_CACOPHONY"
     ],
     "warning": "Species, map and campaign counters are deliberately not copied into this battle inventory.",
     "forwardedMoveIdentities": 2,
-    "coveredMoveIdentities": 352,
-    "pendingMoveIdentities": 2
+    "coveredMoveIdentities": 354,
+    "pendingMoveIdentities": 0
   },
   "boundaries": {
     "rules": "Ordinary singles and preset doubles share the current battle frame and execution lifecycle. All move identities have recipe admission and controlled public-turn test rows.",
     "specialModes": "Safari, roaming, scripted/tutorial encounters and Trainer Tower have separate application owners; ordinary-core coverage does not establish all of their outcomes. Dynamic Enigma payloads, player communication and external e-Reader inputs are not ordinary-core completion.",
-    "presentation": "350 source move scripts plus two source-intended forwarding identities (Nature Power and Mirror Move) are dispatched in bounded tested contexts. Future Sight and Doom Desire cover successful setup only; their delayed-hit general animations remain open. Wish setup and the separately authenticated delayed-healing general animation are implemented in bounded contexts. Hail covers successful weather setup; its residual-weather general animation remains open. Visual randomness uses a transient identity-seeded animation-local stream, intentionally independent of the original shared gameplay/VBlank stream. Castform event-time static form art, palette and geometry are implemented; its source general form-change transition is implemented with bounded managed coverage. Wish admission covers ordinary turn scheduling; low-level recomposition of ResolveAction on a still-Protected caster lacks an exported native animation-prevention flag. Other moves retain ordinary text/HP/result presentation; no generic-animation parity or full form-transition fidelity is claimed. Growl/Howl/Hyper Voice use source cry modes and original party species; Hyper Beam valid-seven choice and reverse-cry endpoint clamp are explicit user-approved presentation differences. Host PCM tests do not establish real-speaker parity. Metronome, Sleep Talk and Assist cover their own authenticated caller preludes; their selected leaves now share authenticated invocation, PP and outcome matching. Nature Power covers all nine terrain leaves. Mirror Move includes actual retaliation target resolution and headerless charge setup; unavailable leaf scripts and general-animation gaps remain explicit. Thrash includes authenticated retained attacks and Bide includes setup/release boundaries. Roar, Whirlwind and Teleport cover authenticated ordinary expulsion/escape animations. Teleport’s existing skipped terminal-result text page remains open; no full exit-text parity is claimed. Transform and Substitute use authenticated before/after body materials with receipt-boundary handoff. Transform behind an existing actor Substitute and front Spinda personality-spot materials remain outside this invocation slice. Focus Punch covers the successful dedicated hit; its separate pre-turn setup general animation remains open. Fake Out uses a bounded on-screen WIN0 rectangle and actual top-layer brightness; inverted/wrapping windows and layer-suppressing masks remain unsupported. Fly, Dive, Bounce and Dig cover authenticated setup/release. Failed release visibility ends conservatively after the genuine clear result batch is acknowledged because no separate native MOVEEND visual receipt is exposed. Dive controlled source-HM-compatible test entrants do not establish a campaign acquisition route. Sludge/Sludge Bomb use the sole legal projectile animation; Spark zero flash interval means no blinking; Mach Punch/Shadow Punch use actual actor position and detached actor normal colors. These three source-boundary interpretations were explicitly user-approved, preserve gameplay/RNG, and have separate policy tests.",
+    "presentation": "352 source move scripts plus two source-intended forwarding identities (Nature Power and Mirror Move) are dispatched in bounded tested contexts. Future Sight and Doom Desire cover successful setup only; their delayed-hit general animations remain open. Wish setup and the separately authenticated delayed-healing general animation are implemented in bounded contexts. Hail covers successful weather setup; its residual-weather general animation remains open. Visual randomness uses a transient identity-seeded animation-local stream, intentionally independent of the original shared gameplay/VBlank stream. Castform event-time static form art, palette and geometry are implemented; its source general form-change transition is implemented with bounded managed coverage. Wish admission covers ordinary turn scheduling; low-level recomposition of ResolveAction on a still-Protected caster lacks an exported native animation-prevention flag. Other moves retain ordinary text/HP/result presentation; no generic-animation parity or full form-transition fidelity is claimed. Growl/Howl/Hyper Voice use source cry modes and original party species; Hyper Beam valid-seven choice and reverse-cry endpoint clamp are explicit user-approved presentation differences. Host PCM tests do not establish real-speaker parity. Metronome, Sleep Talk and Assist cover their own authenticated caller preludes; their selected leaves now share authenticated invocation, PP and outcome matching. Nature Power covers all nine terrain leaves. Mirror Move includes actual retaliation target resolution and headerless charge setup; outcome-specific and general-animation gaps remain explicit. Thrash includes authenticated retained attacks and Bide includes setup/release boundaries. Roar, Whirlwind and Teleport cover authenticated ordinary expulsion/escape animations. Teleport’s existing skipped terminal-result text page remains open; no full exit-text parity is claimed. Transform and Substitute use authenticated before/after body materials with receipt-boundary handoff. Transform behind an existing actor Substitute and front Spinda personality-spot materials remain outside this invocation slice. Focus Punch covers the successful dedicated hit; its separate pre-turn setup general animation remains open. Fake Out uses a bounded on-screen WIN0 rectangle and actual top-layer brightness; inverted/wrapping windows remain unsupported; bounded rectangular masks independently select BG1/BG2 while preserving BG0/BG3/OBJ. Fly, Dive, Bounce and Dig cover authenticated setup/release. Failed release visibility ends conservatively after the genuine clear result batch is acknowledged because no separate native MOVEEND visual receipt is exposed. Dive controlled source-HM-compatible test entrants do not establish a campaign acquisition route. Sludge/Sludge Bomb use the sole legal projectile animation; Spark zero flash interval means no blinking; Mach Punch/Shadow Punch use actual actor position and detached actor normal colors. These three source-boundary interpretations were explicitly user-approved, preserve gameplay/RNG, and have separate policy tests. Memento authenticates self-cost, target outcomes and faint/sync ownership, including present semi-invulnerable targets; its shared vertical scanline and window path preserves hidden target state. Weather Ball consumes the controller weather flags frozen before body/substitute damage, including fainted Cloud Nine/Air Lock suppression, and selects all five source branches without reselecting gameplay type.",
     "verification": "Maintained tests contain controlled states. Neither their count nor this inventory proves natural full-game travel, original-frame parity or real-speaker audio.",
     "userDeferrals": "Chinese is deferred. The user resumed remaining single-player content, including animation and presentation, on 2026-10-16; completion still requires explicit evidence.",
     "approvedRules": "Keep the existing approved project differences, including end-of-turn doubles KO replacement; this inventory grants no new rule changes.",
@@ -48,7 +48,11 @@
     "src/Game.Godot/SourceBattleAnimation.FeatherDance.cs",
     "src/Game.Godot/SourceBattleAnimation.Overheat.cs",
     "src/Game.Godot/SourceBattleAnimation.FocusPunch.cs",
-    "src/Game.Godot/SourceBattleAnimation.Windows.cs"
+    "src/Game.Godot/SourceBattleAnimation.Windows.cs",
+    "src/Game.Application/CampaignMoveAnimationDispatch.Memento.cs",
+    "src/Game.Application/CampaignMoveAnimationDispatch.SelfCost.cs",
+    "src/Game.Godot/SourceBattleAnimation.Memento.cs",
+    "src/Game.Godot/SourceBattleAnimation.WeatherBall.cs"
   ],
   "maintainedTestPaths": [
     "tests/README.md",
@@ -115,7 +119,12 @@
     "tests/Game.Application.Tests/WildBattles/BatonPassAnimationKernelTests.cs",
     "tests/Game.Application.Tests/WildBattles/SpiteAnimationKernelTests.cs",
     "tests/Game.Application.Tests/WildBattles/EndeavorAnimationKernelTests.cs",
-    "tests/Game.Application.Tests/WildBattles/SecretPowerAnimationKernelTests.cs"
+    "tests/Game.Application.Tests/WildBattles/SecretPowerAnimationKernelTests.cs",
+    "tests/Game.Application.Tests/WildBattles/MementoAnimationKernelTests.cs",
+    "tests/Game.Application.Tests/WildBattles/WeatherBallAnimationKernelTests.cs",
+    "tests/Game.Presentation.Tests/MementoAnimationTests.cs",
+    "tests/Game.Presentation.Tests/WeatherBallAnimationTests.cs",
+    "tests/Game.Presentation.Tests/VerticalWindowCompositionTests.cs"
   ],
   "moves": [
     {
@@ -2736,7 +2745,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_FACADE",
@@ -3226,7 +3235,7 @@
       "metronomePath": "direct",
       "recipeAdmission": "implemented-with-bounded-tests",
       "interactionCoverage": "not-exhaustive",
-      "dedicatedScript": "not-implemented"
+      "dedicatedScript": "implemented-bounded"
     },
     {
       "id": "pret:MOVE_AROMATHERAPY",

@@ -336,7 +336,7 @@ public partial class CampaignView
         if(script.Commands.Any(c=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is "AnimTask_TransformMon" or "AnimTask_MonToSubstitute")&&
             !PrepareMoveBattlerMaterial(dispatch,doubles,assets,battlers,out replacements))return false;
         var backgroundSurface=SourceTerrainSurface(assets["background"]);var backgroundPalette=Enumerable.Range(0,16).Select(i=>backgroundSurface.PaletteColor(2,i)).ToArray();
-        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn,MovePower=dispatch.MovePower,FuryCutterCounter=dispatch.FuryCutterCounter,RolloutCounter=dispatch.RolloutCounter,MoveDamage=dispatch.MoveDamage,IsHealingMove=dispatch.IsHealingMove};
+        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn,MovePower=dispatch.MovePower,FuryCutterCounter=dispatch.FuryCutterCounter,RolloutCounter=dispatch.RolloutCounter,MoveDamage=dispatch.MoveDamage,AnimationWeather=dispatch.AnimationWeather,IsHealingMove=dispatch.IsHealingMove};
         // Domain terrain is captured at battle entry and is independent of the
         // rendered backdrop. Camouflage consumes only the native terrain range.
         var terrain=(doubles?_session.State.DoubleBattle!.Frame:PresentedWildBattle!.Frame).Field.Terrain;

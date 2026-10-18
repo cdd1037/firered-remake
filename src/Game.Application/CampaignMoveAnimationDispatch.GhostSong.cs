@@ -86,37 +86,9 @@ public static partial class CampaignMoveAnimationPresentation
             if(action.Length<3||action[1] is not SourceTowerVolatileEvent {Effect:"curse",Applied:true,Reason:"move"} marked||marked.Side!=used.Target||
                 action[2] is not SourceTowerHpEvent {Effect:"curse-cost"} cost||cost.Side!=used.Actor||cost.HpBefore<1||cost.Damage<1||
                 cost.HpAfter!=Math.Max(0,cost.HpBefore-cost.Damage))return Reject("unmatched-source-ghost-curse-result");
-            tail=3;
-            if(cost.HpAfter==0)
-            {
-                if(tail<action.Length&&action[tail] is SourceStatusChangedEvent {Reason:"faint",After:0} clear)
-                {if(clear.Side!=used.Actor||!CureStatus(clear.Before))return Reject("unmatched-source-curse-faint-status");tail++;}
-                if(tail>=action.Length||action[tail] is not SourceFaintedEvent faint||faint.Side!=used.Actor)return Reject("unmatched-source-curse-faint");
-                tail++;
-            }
-            int end=action.Length;
-            if(end>tail&&action[end-1] is SourceEndedEvent ended)
-            {
-                if(cost.HpAfter!=0||ended.Outcome!=(used.Actor.Side==BattleSide.Player?WildBattleOutcome.Lost:WildBattleOutcome.Won))
-                    return Reject("unmatched-source-curse-outcome");
-                end--;
-            }
-            else if(end>tail&&action[end-1] is SourceCalledPartySwitchRequiredEvent required)
-            {
-                var pending=required.Pending;
-                if(cost.HpAfter!=0||pending.Slot!=used.Actor||pending.Kind!=WildBattleCalledSwitchKind.FaintedReplacement||pending.Invocation is not null||
-                    pending.LegalPartyIndices.IsDefaultOrEmpty||pending.LegalPartyIndices.Any(i=>i is <0 or >=6)||
-                    pending.LegalPartyIndices.Distinct().Count()!=pending.LegalPartyIndices.Length)return Reject("unmatched-source-curse-replacement");
-                end--;
-            }
-            int costSyncs=0;
-            bool Sync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,SourceMoveUsedEvent owner)
-            {
-                if(!GhostSongPartySync(rows,index,sync,owner,commands,cost,battle.Context))return false;
-                if(sync.Before.Pokemon.CurrentHp!=sync.After.Pokemon.CurrentHp)costSyncs++;
-                return true;
-            }
-            if(!CureMoveEndTail(action[..end],tail,used,battle.Slots,Sync)||costSyncs!=1)return Reject("unmatched-source-curse-cost-tail");
+            if(!SelfCostTail(action,3,used,battle.Slots,commands,
+                new(cost.Side,cost.HpBefore,cost.HpAfter,cost.Damage),maximum=>cost.Damage==Math.Max(1,maximum/2),battle.Context))
+                return Reject("unmatched-source-curse-cost-tail");
             result=marked;turn=0;
         }
         else return Reject("not-source-ghost-song-animation");
@@ -124,47 +96,8 @@ public static partial class CampaignMoveAnimationPresentation
             definition.SourceMoveId,used.Actor,used.Target,false){MoveTurn=turn},"committed-source-animation");
     }
 
-    // Only these already-authenticated command receipts may explain extra party
-    // PP/HP writes. All unrelated identity, status and item fields retain Cure's
-    // existing validation; its default matcher is never loosened.
     private static bool GhostSongPartySync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,
-        SourceMoveUsedEvent used,SourcePpCommandEvent[] commands,SourceTowerHpEvent? cost,CampaignAnimationInvocation? invocation)
-    {
-        var before=sync.Before;var after=sync.After;
-        if(sync.SourceSlot is not {} source||source.Value is <0 or >3||source.Side!=sync.Side||
-            sync.TransientMoveSlots is not {} transient||transient>15)return false;
-        if(before?.Pokemon is null||after?.Pokemon is null||before.Pokemon.Moves.IsDefault||after.Pokemon.Moves.IsDefault||
-            before.Pokemon.Moves.Length!=after.Pokemon.Moves.Length||before.Pokemon.Moves.Any(m=>m is null)||after.Pokemon.Moves.Any(m=>m is null))return false;
-        bool explained=false;
-        if(before.Pokemon.CurrentHp!=after.Pokemon.CurrentHp)
-        {
-            if(cost is null||source!=used.Actor||before.Pokemon.CurrentHp!=cost.HpBefore||after.Pokemon.CurrentHp!=cost.HpAfter||
-                cost.HpBefore>before.Pokemon.Stats.MaxHp||cost.Damage!=Math.Max(1,before.Pokemon.Stats.MaxHp/2))return false;
-            explained=true;
-        }
-        if(source==used.Actor)
-        {
-            if(commands.Any(p=>(transient&(1<<p.PpSlot))==0&&p.PpSlot>=before.Pokemon.Moves.Length))return false;
-            // With an entirely persistent moveset the party snapshot proves the
-            // source's first matching move position, including nonzero selection.
-            if(transient==0&&commands.Length==2&&
-                commands[1].PpSlot!=Array.FindIndex(before.Pokemon.Moves.ToArray(),m=>m.Move==used.Move))return false;
-        }
-        for(int slot=0;slot<before.Pokemon.Moves.Length;slot++)
-        {
-            var a=before.Pokemon.Moves[slot];var b=after.Pokemon.Moves[slot];
-            if((transient&(1<<slot))!=0){if(a!=b)return false;continue;}
-            if(source!=used.Actor){if(a!=b)return false;continue;}
-            if(a with{CurrentPp=b.CurrentPp}!=b||
-                !InvocationPpDelta(rows,used,invocation,slot,a.Move,a.CurrentPp,b.CurrentPp,allowUnchanged:true))return false;
-            explained|=a!=b;
-        }
-        var normalized=sync with{Before=before with{Pokemon=before.Pokemon with{CurrentHp=after.Pokemon.CurrentHp,Moves=after.Pokemon.Moves}}};
-        if(CureActiveSync(rows,index,normalized,used,invocation))return true;
-        // Transform may preserve party move slots unchanged. A pure committed
-        // HP cost is still a real synchronization, not an invented PP change.
-        return explained&&normalized.Before with{Pokemon=normalized.After.Pokemon}==normalized.After&&
-            normalized.Before.Pokemon with{Moves=[]}==normalized.After.Pokemon with{Moves=[]}&&
-            normalized.Before.Pokemon.Moves.SequenceEqual(normalized.After.Pokemon.Moves);
-    }
+        SourceMoveUsedEvent used,SourcePpCommandEvent[] commands,SourceTowerHpEvent? cost,CampaignAnimationInvocation? invocation)=>
+        CommittedCostPartySync(rows,index,sync,used,commands,cost is null?null:new(cost.Side,cost.HpBefore,cost.HpAfter,cost.Damage),
+            cost is null?null:maximum=>cost.Damage==Math.Max(1,maximum/2),invocation);
 }

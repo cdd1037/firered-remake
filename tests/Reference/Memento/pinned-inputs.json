@@ -1,0 +1,5 @@
+{
+  "src/battle_anim_dark.c": "2030a1999963c452238f51d6bb624bbd8f0214e3368ddbbfedf08ee7608c31f5",
+  "src/scanline_effect.c": "c008e49265f57ddc7370a416c4217f410c85de7cf6816f6b7deb1e78904eb755",
+  "include/gba/io_reg.h": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0"
+}

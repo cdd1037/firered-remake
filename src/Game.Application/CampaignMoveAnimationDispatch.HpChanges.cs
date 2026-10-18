@@ -95,7 +95,7 @@ public static partial class CampaignMoveAnimationPresentation
             h.HpAfter>=h.HpBefore&&h.Recovered==h.HpAfter-h.HpBefore=>(h.HpBefore,h.HpAfter),
         SourceHpChangedEvent h when h.Turn==used.Turn&&h.Actor==used.Actor&&h.Target==recipient&&h.Move==used.Move&&
             h.HpBefore>0&&h.HpAfter>0&&h.HpAfter<h.HpBefore&&h.Damage==h.HpBefore-h.HpAfter&&!h.Critical&&h.RandomPercent==100&&
-            h.PreparedBasePower is null&&h.PreparedFuryCutterCounter is null&&h.PreparedAnimationPower is null=>(h.HpBefore,h.HpAfter),
+            h.PreparedBasePower is null&&h.PreparedFuryCutterCounter is null&&h.PreparedAnimationPower is null&&h.PreparedAnimationWeather is null=>(h.HpBefore,h.HpAfter),
         _=>null
     };
 

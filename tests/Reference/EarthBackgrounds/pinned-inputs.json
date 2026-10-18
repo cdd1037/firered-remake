@@ -1,6 +1,6 @@
 {
   "src/battle_anim_ground.c": "2bbe4e7a2db3d38d77dfc56f935a4ee27dd9b24cae178dc60a0af9c9bbe17446",
-  "src/battle_anim_rock.c": "13d82c078ffcbe648c81f1fbeeead1a2e74be1d680d30dfdb8df992034f93021",
+  "src/battle_anim_rock.c": "bdc03fca6247a71a2a8d1094378544bcb6f3459be892bb48e92780da54f71767",
   "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
   "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
   "src/trig.c": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810",

@@ -20,7 +20,7 @@
   "src/battle_anim_fire.c": "369439a2956832942756db1afc5b9ca8955762b7af121ff4b4aeda156e07ede6",
   "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
   "src/battle_anim_normal.c": "73478ff40f601740b58408caa3259f5abc29f90010f77017aecc69d71803a6c3",
-  "src/battle_anim_rock.c": "13d82c078ffcbe648c81f1fbeeead1a2e74be1d680d30dfdb8df992034f93021",
+  "src/battle_anim_rock.c": "bdc03fca6247a71a2a8d1094378544bcb6f3459be892bb48e92780da54f71767",
   "src/battle_anim_utility_funcs.c": "8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297",
   "src/battle_anim_water.c": "c93e8e5583b942fd6a42e010aa4cbe3eacaecb6dc0a76b02bd00d97a377d3816",
   "src/battle_interface.c": "8d614d35cfd8b040f78d1c3fec69b38fc88c4efe24222a5ead2647cf4e5c8496",

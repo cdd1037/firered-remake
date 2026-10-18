@@ -423,13 +423,14 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
 
     internal override int SourceGenericApplyDamage(BattlerSlot actor, BattlerSlot target, MoveId move, int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null, int? preparedAnimationPower = null)
     {
+        ushort? preparedAnimationWeather=catalog.Moves.TryGetValue(move,out var animationMove)&&animationMove.Effect=="EFFECT_WEATHER_BALL"?SourceWeatherRules.AnimationFlags(Frame):null;
         if (ConsumeSubstituteDamage(actor, target, move, damage, critical, percent, out int substituteLost,
-            noEffect: fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target)), preparedBasePower: preparedBasePower, preparedFuryCutterCounter: preparedFuryCutterCounter, preparedAnimationPower: preparedAnimationPower))
+            noEffect: fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target)), preparedBasePower: preparedBasePower, preparedFuryCutterCounter: preparedFuryCutterCounter, preparedAnimationPower: preparedAnimationPower, preparedAnimationWeather: preparedAnimationWeather))
         { RecordContactDamage(target, move, damage, substituteLost, substitute: true); return substituteLost; }
         var body = Get(target); int before = body.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
         Set(target, body with { Pokemon = body.Pokemon with { CurrentHp = after } });
         RecordContactDamage(target, move, damage, before - after);
-        Add(n => new SourceHpChangedEvent(n, Turn, actor, target, move, before, after, damage, critical, percent) { PreparedBasePower = preparedBasePower, PreparedFuryCutterCounter = preparedFuryCutterCounter, PreparedAnimationPower = preparedAnimationPower });
+        Add(n => new SourceHpChangedEvent(n, Turn, actor, target, move, before, after, damage, critical, percent) { PreparedBasePower = preparedBasePower, PreparedFuryCutterCounter = preparedFuryCutterCounter, PreparedAnimationPower = preparedAnimationPower, PreparedAnimationWeather = preparedAnimationWeather });
         if (critical && damage > 0) Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         return before - after;
     }

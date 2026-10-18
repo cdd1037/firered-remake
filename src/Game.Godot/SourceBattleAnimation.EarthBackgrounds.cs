@@ -30,7 +30,7 @@ public sealed partial class SourceBattleAnimation
     {
         var a=c.Args;string name=a[0];
             var closure=OverlayInvocationCommands();bool fissure=closure.Any(x=>x.Op=="createvisualtask"&&x.Args[0]==FissurePosition);
-            if(closure.Any(x=>x.Op=="createsprite"&&x.Args[0] is not (ScatterRock or DigPlume or "gBasicHitSplatSpriteTemplate" or "gComplexPaletteBlendSpriteTemplate")||x.Op=="createvisualtask"&&!EarthBackgroundTaskName(x.Args[0])&&x.Args[0] is not ("AnimTask_HorizontalShake" or "AnimTask_ShakeMon")))Fail(c,"Earth background companion ownership exceeds source closure.");
+            if(closure.Any(x=>x.Op=="createsprite"&&x.Args[0] is not (ScatterRock or DigPlume or "gBasicHitSplatSpriteTemplate" or "gComplexPaletteBlendSpriteTemplate" or "gVerticalDipSpriteTemplate" or "gIceCrystalHitLargeSpriteTemplate" or "gIceCrystalHitSmallSpriteTemplate")&&!WeatherBallSpriteName(x.Args[0])||x.Op=="createvisualtask"&&!EarthBackgroundTaskName(x.Args[0])&&x.Args[0] is not ("AnimTask_HorizontalShake" or "AnimTask_ShakeMon" or "AnimTask_ShakeMon2" or WeatherPredicate)))Fail(c,"Earth background companion ownership exceeds source closure.");
             if(closure.Where(x=>x.Op=="createvisualtask"&&EarthBackgroundTaskName(x.Args[0])).GroupBy(x=>x.Args[0]).Any(g=>g.Count()>1)||fissure&&closure.Any(x=>x.Op=="createvisualtask"&&x.Args[0] is SeismicLevel or SeismicRise or SeismicFall))Fail(c,"Duplicate or competing earth background owners.");
             if(name is FissurePosition or SeismicFall)
             {
@@ -38,7 +38,7 @@ public sealed partial class SourceBattleAnimation
                 if(!closure.Any(x=>x.Op=="setarg"&&Number(x.Args[0])==7&&unchecked((short)AnimationArgument(x.Args[1]))==stop))Fail(c,"Earth background holder requires its source register-7 terminator.");
             }
             int retained=_spriteScene.Sprites.Sum(s=>Math.Max(1,s.Frame.Subsprites.Length));
-            int births=MaximumInvocationCost(x=>x.Op=="createsprite"?1:0),matrices=MaximumInvocationCost(x=>x.Op=="createsprite"&&x.Args[0] is ScatterRock or "gBasicHitSplatSpriteTemplate"?1:0);
+            int births=MaximumInvocationCost(x=>x.Op=="createsprite"?1:0),matrices=MaximumInvocationCost(x=>x.Op=="createsprite"&&(x.Args[0]=="gBasicHitSplatSpriteTemplate"||_script.SpriteRecipes.TryGetValue(x.Args[0],out var recipe)&&recipe.AffineAnimations.Length!=0)?1:0);
             int tasks=1+MaximumInvocationCost(x=>x.Op is "createvisualtask" or "createsoundtask" or "loopsewithpan" or "waitplaysewithpan" or "panse" or "fadetobg" or "restorebg" or "clearmonbg"?1:x.Op=="monbg"?(_doubles?2:1):0);
             if(22+births+retained>64||4+matrices+_spriteScene.Sprites.Count(s=>s.Frame.Affine||s.Frame.Scale!=256)>32||tasks+_tasks.Count(t=>!t.Finished)+_soundTasks.Count>16)Fail(c,"Earth background complete path exceeds native object, matrix or task capacity.");
     }

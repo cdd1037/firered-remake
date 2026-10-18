@@ -14,6 +14,7 @@ EXPULSION_TASKS={'AnimTask_SlideOffScreen','AnimTask_Teleport'}
 ADDITIONAL_MON_TASKS={'AnimTask_RolePlaySilhouette'}
 MATERIAL_CHANGE_TASKS={'AnimTask_TransformMon','AnimTask_MonToSubstitute'}
 PALETTE_BACKUP_TASKS={'AnimTask_AllocBackupPalBuffer','AnimTask_FreeBackupPalBuffer','AnimTask_CopyPalUnfadedToBackup','AnimTask_CopyPalUnfadedFromBackup','AnimTask_CopyPalFadedToUnfaded'}
+MEMENTO_TASKS={'AnimTask_InitMementoShadow','AnimTask_MoveAttackerMementoShadow','AnimTask_MementoHandleBg','AnimTask_MoveTargetMementoShadow'}
 SQUASH_TASKS={'AnimTask_EruptionLaunchRocks','AnimTask_WaterSpoutLaunch','AnimTask_WaterSpoutRain'}
 TEMPLATES={
  'gBatonPassPokeballSpriteTemplate':('battle_anim_effects_3.c','AnimBatonPassPokeball'),
@@ -423,7 +424,7 @@ SOUNDS|={'SE_M_MIST','SE_SHINY','SE_M_SURF'}
 TASKS|={'SoundTask_AdjustPanningVar','AnimTask_BlendColorCycleByTag'}
 GFX|={'ANIM_TAG_YELLOW_BALL','ANIM_TAG_DEVIL','ANIM_TAG_PINK_HEART','ANIM_TAG_ANGEL','ANIM_TAG_RED_HEART','ANIM_TAG_MAGNIFYING_GLASS'}
 SOUNDS|={'SE_M_ATTRACT','SE_M_HEAL_BELL','SE_M_SKETCH','SE_M_DETECT'}
-TASKS |= SQUASH_TASKS | {'AnimTask_WaterSport'}
+TASKS |= MEMENTO_TASKS | SQUASH_TASKS | {'AnimTask_WaterSport'}
 GFX |= {'ANIM_TAG_WARM_ROCK','ANIM_TAG_GLOWY_BLUE_ORB'}
 SOUNDS |= {'SE_M_EXPLOSION','SE_M_DIVE','SE_M_SURF','SE_M_ROCK_THROW'}
 def squash_dependencies(reference,commands):
@@ -713,7 +714,7 @@ def discover_scripts(reference):
    if any(c['op']=='call' for sub in local.values() for c in sub):continue
   except ValueError:continue
   flat=root+[c for sub in local.values() for c in sub]
-  if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_Rollout','AnimTask_ImprisonOrbs','AnimTask_TormentAttacker','AnimTask_ElectricBolt','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_Hail','AnimTask_CreateRaindrops'}|OVERLAY_TASKS|VISIBILITY_TASKS|BATTLER_COPY_TASKS|EXPULSION_TASKS|ADDITIONAL_MON_TASKS|MATERIAL_CHANGE_TASKS|SQUASH_TASKS|{'AnimTask_WaterSport'} for c in flat):continue
+  if not any(c['op']=='createsprite' and c['args'][0] in TEMPLATES or c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_Rollout','AnimTask_ImprisonOrbs','AnimTask_TormentAttacker','AnimTask_ElectricBolt','AnimTask_SetGrayscaleOrOriginalPal','AnimTask_Hail','AnimTask_CreateRaindrops'}|OVERLAY_TASKS|VISIBILITY_TASKS|BATTLER_COPY_TASKS|EXPULSION_TASKS|ADDITIONAL_MON_TASKS|MATERIAL_CHANGE_TASKS|SQUASH_TASKS|MEMENTO_TASKS|{'AnimTask_WaterSport'} for c in flat):continue
   if any(c['op']=='createsoundtask' and not supported_sound_task(c['args'],songs) or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','panse_adjustnone','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_TormentAttacker' for c in flat) and 'gThoughtBubbleSpriteTemplate' not in sprites:continue
   if any(c['op']=='fadetobg' and c['args'] not in (['BG_AURORA'],['BG_GHOST'],['BG_PSYCHIC']) for c in flat):continue
@@ -723,6 +724,7 @@ def discover_scripts(reference):
   # Approved safe punch initialization changes colors/position only; its ABI is unchanged.
   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_AttackerPunchWithTrace' and (len(c['args'])!=4 or not 0<=int(c['args'][3],0)<=16) for c in flat):continue
   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_SpiteTargetShadow' and (len(c['args'])!=2 or not 0<=int(c['args'][1],0)<=255) for c in flat):continue
+  if any(c['op']=='createvisualtask' and c['args'][0] in MEMENTO_TASKS and (len(c['args'])!=2 or int(c['args'][1],0)!=(2 if c['args'][0] in {'AnimTask_InitMementoShadow','AnimTask_MementoHandleBg'} else 5)) for c in flat):continue
   # These callbacks consume exactly the authored argument widths.
   volt_widths={'gBatonPassPokeballSpriteTemplate':3,'gVoltTackleOrbSlideSpriteTemplate':3,'AnimTask_VoltTackleBolt':3,'AnimTask_VoltTackleAttackerReappear':2}
   if any(c['op'] in {'createsprite','createvisualtask'} and c['args'][0] in volt_widths and len(c['args'])!=volt_widths[c['args'][0]] for c in flat):continue

@@ -150,8 +150,12 @@ public sealed class SourceBattleFrameComposer
             if(frame.Window1 is {Enabled:true} outside1)return outside1.OutsideMask;
             return 63;
         }
-        if(stencil is not null)
-            for(int i=0;i<stencil.Length;i++)if((WindowMask(i)&2)==0)_battlerBackgroundLayers[0][i]=0;
+        if(frame.Window0 is {Enabled:true}||frame.Window1 is {Enabled:true}||stencil is not null)
+            for(int i=0;i<pixels.Length;i++)
+            {
+                int windowMask=WindowMask(i);
+                for(int plane=0;plane<2;plane++)if((windowMask&(2<<plane))==0)_battlerBackgroundLayers[plane][i]=0;
+            }
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
@@ -281,7 +285,7 @@ public sealed class SourceBattleFrameComposer
         (8,8) or (16,16) or (32,32) or (64,64) or
         (16,8) or (32,8) or (32,16) or (64,32) or
         (8,16) or (8,32) or (16,32) or (32,64);
-    private static bool ScanlineAffectsBackground(SourceScanlineFrame? scanline,int rank)=>scanline is not null&&scanline.Destination==(rank==1?SourceScanlineDestination.Bg1Horizontal:SourceScanlineDestination.Bg2Horizontal);
+    private static bool ScanlineAffectsBackground(SourceScanlineFrame? scanline,int rank)=>scanline is not null&&(rank==1?scanline.Destination is SourceScanlineDestination.Bg1Horizontal or SourceScanlineDestination.Bg1Vertical:scanline.Destination is SourceScanlineDestination.Bg2Horizontal or SourceScanlineDestination.Bg2Vertical);
     private static int ScanlineAlpha(SourceAnimationFrame frame,int row,bool second)
     {
         if(frame.Scanline is not {Destination:SourceScanlineDestination.BlendAlpha} scanline)return second?frame.AlphaB:frame.AlphaA;
@@ -293,8 +297,9 @@ public sealed class SourceBattleFrameComposer
         bool selected=ScanlineAffectsBackground(scanline,rank);
         for(int y=0;y<112;y++)
         {
-            int scrollX=selected?scanline!.Words[y*(scanline.Word32?2:1)]:baseline.X;
-            int scrollY=selected&&scanline!.Word32?scanline.Words[y*2+1]:baseline.Y;
+            bool vertical=selected&&scanline!.Destination is SourceScanlineDestination.Bg1Vertical or SourceScanlineDestination.Bg2Vertical;
+            int scrollX=selected&&!vertical?scanline!.Words[y*(scanline.Word32?2:1)]:baseline.X;
+            int scrollY=vertical?scanline!.Words[y]:selected&&scanline!.Word32?scanline.Words[y*2+1]:baseline.Y;
             int sy=(y+scrollY)&255;if(sy>=source.Height)continue;
             for(int x=0;x<Width;x++)
             {

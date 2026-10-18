@@ -19,6 +19,7 @@ public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequenc
     public byte? FuryCutterCounter {get;init;}
     public byte? RolloutCounter {get;init;}
     public int? MoveDamage {get;init;}
+    public ushort? AnimationWeather {get;init;}
     // The source damage-register predicate, including a zero-damage result.
     public bool? IsHealingMove {get;init;}
     public CampaignMoveAnimationBoundary Boundary {get;init;} = CampaignMoveAnimationBoundary.AfterAttackText;
@@ -267,6 +268,8 @@ public static partial class CampaignMoveAnimationPresentation
             return UtilityAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_DESTINY_BOND" or "EFFECT_PERISH_SONG" or "EFFECT_CURSE")
             return GhostSongAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect=="EFFECT_MEMENTO")
+            return MementoAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect=="EFFECT_SPITE")
             return SpiteAnimation(battle,used,attack,definition,action,pp,moves);
         if(definition.Effect=="EFFECT_BATON_PASS")

@@ -88,7 +88,7 @@ public sealed class ScanlineStateSourceTests
     public void InvalidDestinationsWidthsSampleCountsAndMemoryBoundsFailClosed()
     {
         var state=new SourceScanlineState();
-        foreach(var destination in new[]{(SourceScanlineDestination)(-1),(SourceScanlineDestination)3})
+        foreach(var destination in new[]{(SourceScanlineDestination)(-1),(SourceScanlineDestination)5})
         {
             Assert.Throws<ArgumentOutOfRangeException>(()=>state.SetParams(destination,false));
             Assert.Throws<ArgumentException>(()=>new SourceScanlineFrame(destination,false,new ushort[161]).Validate());

@@ -61,13 +61,13 @@ Guillotine adds source backgrounds 12/13; Solar Beam adds 24/25 using the existi
 
 The shared battle scene retains the source scanline engine's two 960-word buffers and selected source-buffer index. Starting a transfer changes its destination/width without clearing memory; a deferred stop takes effect at the next VBlank without flipping or clearing. Scene reset clears the banks. Each displayed frame owns detached samples for160 visible rows plus the terminal HBlank transfer. Repeated snapshots do not advance DMA or expose the retained buffers.
 
-BG1/BG2 horizontal and paired horizontal/vertical writes sample the original battler tile plane before screen clipping. The existing overlay sampler also supports explicitly declared512×256 screenblock maps. Alpha-register samples participate in the same first/second-layer selection as ordinary blending. No family has a separate water or distortion compositor.
+BG1/BG2 horizontal, vertical-only and paired horizontal/vertical writes sample the original battler tile plane before screen clipping. The existing overlay sampler also supports explicitly declared512×256 screenblock maps. Alpha-register samples participate in the same first/second-layer selection as ordinary blending. No family has a separate water or distortion compositor.
 
 Timing is an explicit frame-phase model, not a CPU-cycle simulation: main-loop GPU writes queue, VBlank base-register writes are immediate, then existing dirty entries flush their latest shadow after the first-row seed. The source `SetGpuReg` actually chooses queued/immediate behavior from each write's VCOUNT (and forced blank); source control flow alone does not prove whether a particular Battle VBlank write lands on line160 or161. The independent native oracle exercises both conditional paths, partial paired-register overrides and retained dirty entries. Rows1–159 and the terminal transfer follow the selected DMA bank; this model makes no cycle-level original-hardware equivalence claim for the line-zero boundary.
 
 ## Rectangular and object-window color masks
 
-WIN0 and WIN1 share bounded, non-wrapping rectangle geometry. Pixel selection follows WIN0, then WIN1, then the union of opaque affine OBJ-window pixels, then the outside mask. The selected color-effect bit gates the existing alpha/brightness path after layer selection; OBJ masks retain their existing BG1 visibility capability. Rectangular layer removal is still outside the admitted closure. Encore and Flatter use this shared path, including the source WIN1 HUD rectangle at rows 120–159; battle-field composition covers rows 0–111, with the remaining rectangle edges verified as register geometry rather than a new HUD renderer.
+WIN0 and WIN1 share bounded, non-wrapping rectangle geometry. Pixel selection follows WIN0, then WIN1, then the union of opaque affine OBJ-window pixels, then the outside mask. The selected color-effect bit gates the existing alpha/brightness path after layer selection; OBJ masks retain their existing BG1 visibility capability. Bounded rectangular windows independently suppress BG1/BG2 before the existing layer/alpha selection; BG0/BG3/OBJ remain enabled. Encore and Flatter use this shared path, including the source WIN1 HUD rectangle at rows 120–159; battle-field composition covers rows 0–111, with the remaining rectangle edges verified as register geometry rather than a new HUD renderer.
 
 The source hardware-palette task uses the existing global fade owner. Its six-bit delay/counter, immediate first update, finishing transfer and deferred waiting-task retirement are preserved. VBlank transfers BLDCNT/BLDY while leaving the independent BLDALPHA register unchanged. Cleanup keeps source register values (including an empty enabled WIN0) where those values have no pixel effect; cancellation resets owned state. Extracted original palette-engine phase rows and independent window pixel checks cover these boundaries.
 
@@ -80,3 +80,39 @@ Task traversal follows the live priority/order successor after each callback. A 
 Eruption's two rock waves and Water Spout's launch/rain particles retain their source parent counters, affine phases and cleanup. Water Spout's visual HP quarter comes from the event-time original party body's maximum HP, replayed only through the selected committed PP boundary. Transform display dimensions do not substitute for that maximum. Pain Split authenticates the ordered actor/target HP results and active-party synchronization, including capped healing and zero change, before issuing one cue.
 
 Prepared base power and animation power are distinct receipt values. The damage calculation exposes its existing power after field-sport and starter-ability modifiers; the animation consumes that committed value instead of recalculating from the final battle frame. The base value remains frozen across spread passes, while actual power may change after a genuine first-target faint clears its sport state. This adds receipt evidence without changing damage arithmetic, gameplay RNG or result ordering.
+
+## Memento static shadows and self-cost receipts
+
+Memento's four source tasks retain original battler OBJs and make static copies of
+the attacker and visible partner, then of the target pair. The chosen BG bank is
+filled uniformly black; the alternate plane receives the source +240 horizontal
+offset. WIN0 restricts the chosen BG plane while 16-bit BG1VOFS/BG2VOFS samples
+stretch it vertically. Attacker alpha reaches12/8, its top moves upward, then the
+64-pixel window collapses. Target setup keeps all five source states, descends,
+widens and fades to0/16 before deferred stop/window reset and static-copy cleanup.
+No new art or move-specific compositor is added. Cmd_end performs the source
+visible-battler OBJ-priority reset; hidden slots and geometry retain their own state.
+
+Memento has no target accuracy/semi-invulnerability gate. A present target in an
+actual Fly, Bounce, Dig or Dive charge therefore still owns the root and stat wave.
+The target remains hidden: monbg_static skips its tile copy, while the target
+callback still fills its selected palette, reads the retained BG Y and runs DMA.
+Only a visible target partner is copied. Static cleanup skips the hidden target,
+and Cmd_end leaves its callback-assigned priority3 intact. The actor must be
+visible: an active own charge lock forces its retained release instead of choosing
+Memento; this admission does not invent a hidden-actor entry path.
+
+The independent reference generator extracts original task and scanline functions,
+checks O0/O2 parity and retains every callback frame for fifteen bounded cases.
+Five additional helper cases cover negative rows, signed division and the zero-
+height rewrite of both banks' first112 words. Generated expectations remain ignored.
+The explicit frame-phase transport and line-zero hardware-timing caveat above
+still apply; this does not claim native pixel or audible-output acceptance.
+
+Application authenticates the full ordered PP → self-HP-zero → stat/prevention →
+faint → active-party tail. Protect spends the user but skips attackanimation;
+Substitute fails only after it, and an already-minimum pair skips before the cost.
+A shared committed self-cost tail supplies party/faint validation for both Curse
+and Memento, with each script retaining its own cost rule. Memento's actual stat
+results enter the existing paired-result contract: one grey minus-two wave, or
+one Attack/Special Attack wave after the appropriate partial cap/prevention.

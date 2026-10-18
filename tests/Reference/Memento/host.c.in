@@ -1,0 +1,65 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int16_t s16;typedef uint16_t u16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+typedef volatile u16 vu16;typedef volatile u32 vu32;
+#define TRUE 1
+#define FALSE 0
+#define DISPLAY_WIDTH 240
+#define DISPLAY_HEIGHT 160
+#define B_SIDE_PLAYER 0
+#define MAX_BATTLERS_COUNT 4
+#define SPRITE_NONE 255
+#define BATTLER_COORD_X 0
+#define BATTLER_COORD_Y 1
+#define BATTLER_COORD_ATTR_TOP 4
+#define RGB_BLACK 0
+#define BG_PLTT_ID(n) ((n)*16)
+#define PLTT_SIZE_4BPP 32
+#define BATTLE_PARTNER(n) ((n)^2)
+#define SCANLINE_EFFECT_DMACNT_16BIT 1
+#define SCANLINE_EFFECT_DMACNT_32BIT 2
+@MACROS@
+typedef void(*TaskFunc)(u8);
+struct Task{TaskFunc func;int alive;s16 data[16];};
+struct BattleAnimBgData{u8 paletteId;};
+struct Sprite{struct{u8 priority;}oam;bool8 invisible;};
+struct ScanlineEffectParams{void*dmaDest;u32 dmaControl;u8 initState,unused9;};
+struct ScanlineEffect{void*dmaSrcBuffers[2];void*dmaDest;u32 dmaControl;void(*setFirstScanlineReg)(void);u8 srcBuffer,state,unused16,unused17,waveTaskId;};
+static struct Task gTasks[1];static struct Sprite gSprites[4];static struct ScanlineEffect gScanlineEffect;
+static u16 gScanlineEffectRegBuffers[2][960],previous[2][960],regs[128],palette[256];static bool8 sShouldStopWaveTask;
+static u16 gBattle_BG1_X,gBattle_BG1_Y,gBattle_BG2_X,gBattle_BG2_Y,gBattle_WIN0H,gBattle_WIN0V;
+static u16 vertical1,vertical2;
+#define REG_BG1VOFS vertical1
+#define REG_BG2VOFS vertical2
+static u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerSpriteIds[4]={0,1,2,3};
+static int doubles,mode,selected,picHeight,yOffset,elevation,hiddenPartner,frame,xs[4],ys[4],bgCopies[4],fillBank=-1,rasterCount;static const u16*dmaSource;static u16 raster[161];
+static bool8 IsContest(void){return FALSE;}
+static u8 GetBattlerSide(u8 slot){return slot&1;}
+static u8 GetBattlerSpriteBGPriorityRank(u8 slot){return slot==0||slot==3?2:1;}
+static bool8 IsBattlerSpriteVisible(u8 slot){return slot<(doubles?4:2)&&!(hiddenPartner&&slot==(selected^2));}
+static u8 GetAnimBattlerSpriteId(u8 participant){u8 slot=participant==0?gBattleAnimAttacker:participant==1?gBattleAnimTarget:participant==2?(gBattleAnimAttacker^2):(gBattleAnimTarget^2);return (participant<2?slot<(doubles?4:2):IsBattlerSpriteVisible(slot))?slot:SPRITE_NONE;}
+static u8 GetBattlerSpriteCoord(u8 slot,u8 attr){return attr==BATTLER_COORD_X?xs[slot]:(u8)(ys[slot]-((slot&1)?elevation:0));}
+static s16 GetBattlerSpriteCoordAttr(u8 slot,u8 attr){assert(attr==BATTLER_COORD_ATTR_TOP);int y=(u8)(ys[slot]+yOffset-((slot&1)?elevation:0));y+=(slot&1)?0:8;if(y>104)y=104;return y-picHeight/2;}
+static void GetBattleAnimBg1Data(struct BattleAnimBgData*b){b->paletteId=8;}
+static void FillPalette(u16 value,u16 offset,u16 length){assert(length==32);fillBank=offset/16;for(int i=0;i<16;i++)palette[offset+i]=value;}
+static void SetGpuReg(u8 offset,u16 value){regs[offset/2]=value;}
+static void CpuFill16(u16 value,void*to,u32 n){assert(value==0);memset(to,0,n);}
+static void DmaStop(int channel){assert(channel==0);dmaSource=NULL;}
+static void DmaSet(int channel,const void*source,void*destination,u32 control){assert(channel==0&&control==1);dmaSource=source;}
+static void DestroyAnimVisualTask(u8 id){assert(id==0);gTasks[id].alive=0;}
+static void MoveBattlerSpriteToBG(u8 slot,bool8 toBG2){assert(toBG2==(GetBattlerSpriteBGPriorityRank(slot)==2));bgCopies[slot]=1;gSprites[slot].invisible=TRUE;int x=32-xs[slot],y=32-(u8)(ys[slot]+yOffset-((slot&1)?elevation:0));if(toBG2){gBattle_BG2_X=x;gBattle_BG2_Y=y;}else{gBattle_BG1_X=x;gBattle_BG1_Y=y;}}
+static void ResetBattleAnimBg(bool8 toBG2){for(int slot=0;slot<4;slot++)if((GetBattlerSpriteBGPriorityRank(slot)==2)==toBG2)bgCopies[slot]=0;if(toBG2)gBattle_BG2_X=gBattle_BG2_Y=0;else gBattle_BG1_X=gBattle_BG1_Y=0;}
+@PROTOTYPES@
+@FUNCTIONS@
+static void ints(const s16*v,int n){putchar('[');for(int i=0;i<n;i++)printf("%s%d",i?",":"",v[i]);putchar(']');}
+static void row(void){printf("{\"frame\":%d,\"alive\":%d,\"task\":",frame,gTasks[0].alive);ints(gTasks[0].data,16);printf(",\"state\":%u,\"bank\":%u,\"fillBank\":%d,\"setup\":%d,\"alpha\":[%u,%u],\"blend\":%u,\"window\":[%u,%u,%u,%u],\"bg\":[%u,%u,%u,%u],\"priority\":[%u,%u,%u,%u],\"writes\":[",gScanlineEffect.state,gScanlineEffect.srcBuffer,fillBank,gTasks[0].func==AnimTask_MoveTargetMementoShadow,regs[REG_OFFSET_BLDALPHA/2]&31,(regs[REG_OFFSET_BLDALPHA/2]>>8)&31,regs[REG_OFFSET_BLDCNT/2],gBattle_WIN0H,gBattle_WIN0V,regs[REG_OFFSET_WININ/2]&63,regs[REG_OFFSET_WINOUT/2]&63,gBattle_BG1_X,gBattle_BG1_Y,gBattle_BG2_X,gBattle_BG2_Y,gSprites[0].oam.priority,gSprites[1].oam.priority,gSprites[2].oam.priority,gSprites[3].oam.priority);
+int count=0;for(int b=0;b<2;b++)for(int i=0;i<960;i++)if(gScanlineEffectRegBuffers[b][i]!=previous[b][i]){printf("%s[%d,%u]",count++?",":"",b*960+i,gScanlineEffectRegBuffers[b][i]);previous[b][i]=gScanlineEffectRegBuffers[b][i];}printf("],\"raster\":");if(rasterCount){putchar('[');for(int i=0;i<161;i++)printf("%s%u",i?",":"",raster[i]);putchar(']');}else printf("null");puts("}");}
+int main(int argc,char**argv){assert(argc==8);mode=atoi(argv[1]);ScanlineEffect_Clear();for(int b=0;b<2;b++)for(int i=0;i<960;i++)previous[b][i]=gScanlineEffectRegBuffers[b][i]=0x4000+b*2048+i;
+if(mode==2){s16*d=gTasks[0].data;d[4]=atoi(argv[2]);d[5]=atoi(argv[3]);d[6]=atoi(argv[4]);d[7]=atoi(argv[5]);d[10]=atoi(argv[6]);d[13]=(d[7]-d[6])*256;gScanlineEffect.srcBuffer=atoi(argv[7]);DoMementoShadowEffect(&gTasks[0]);row();return 0;}
+doubles=atoi(argv[2]);selected=atoi(argv[3]);picHeight=atoi(argv[4]);yOffset=atoi(argv[5]);elevation=atoi(argv[6]);hiddenPartner=atoi(argv[7]);int sx[2][4]={{72,176,48,112},{32,200,90,152}},sy[2][4]={{80,40,40,80},{80,40,88,32}};
+for(int i=0;i<4;i++){xs[i]=sx[doubles][i];ys[i]=sy[doubles][i];gSprites[i].oam.priority=2;}gBattleAnimAttacker=mode?selected^1:selected;gBattleAnimTarget=mode?selected:selected^1;regs[REG_OFFSET_BLDALPHA/2]=16<<8;regs[REG_OFFSET_WININ/2]=regs[REG_OFFSET_WINOUT/2]=63;
+if(!mode){AnimTask_InitMementoShadow(0);gTasks[0].alive=1;AnimTask_MoveAttackerMementoShadow(0);}else{MoveBattlerSpriteToBG(selected,GetBattlerSpriteBGPriorityRank(selected)==2);gSprites[selected].invisible=FALSE;if(IsBattlerSpriteVisible(selected^2)){MoveBattlerSpriteToBG(selected^2,GetBattlerSpriteBGPriorityRank(selected^2)==2);gSprites[selected^2].invisible=FALSE;}gTasks[0].alive=1;gTasks[0].func=AnimTask_MoveTargetMementoShadow;AnimTask_MoveTargetMementoShadow(0);}row();
+for(frame=1;frame<240&&gTasks[0].alive;frame++){gTasks[0].func(0);int active=gScanlineEffect.state!=0&&gScanlineEffect.state!=3;ScanlineEffect_InitHBlankDmaTransfer();rasterCount=active?161:0;if(active){raster[0]=*(u16*)gScanlineEffect.dmaDest;memcpy(raster+1,dmaSource,320);}row();}assert(!gTasks[0].alive);return 0;}

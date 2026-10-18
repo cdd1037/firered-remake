@@ -240,6 +240,7 @@ public sealed record WildBattleHpChangedEvent(long Sequence, int Turn, WildBattl
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
     /// <summary>Source attack-animation power retained from CalculateBaseDamage after Sport and ability modifiers; zero is valid.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedAnimationPower { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ushort? PreparedAnimationWeather { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
 }
 public sealed record WildBattlePotionRecoveredEvent(long Sequence, int Turn, WildBattleSide Side,

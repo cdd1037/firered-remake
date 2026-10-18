@@ -88,6 +88,12 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-spit-up-counter");
             dispatch=dispatch with{MoveTurn=checked((byte)changes[0].Before),MovePower=checked((ushort)definition.Power)};
         }
+        if(definition.Effect=="EFFECT_WEATHER_BALL")
+        {
+            ushort? weather=hit switch{SourceHpChangedEvent h=>h.PreparedAnimationWeather,SourceSubstituteDamagedEvent s=>s.PreparedAnimationWeather,_=>null};
+            if(weather is null or >255)return new(null,"unmatched-source-animation-weather");
+            dispatch=dispatch with{AnimationWeather=weather};
+        }
         if(definition.Effect=="EFFECT_ROLLOUT")return WithRolloutInputs(battle,definition,hit,dispatch,false);
         if(definition.Effect=="EFFECT_BRICK_BREAK")dispatch=dispatch with{MoveTurn=0};
         if(definition.Effect=="EFFECT_FURY_CUTTER")

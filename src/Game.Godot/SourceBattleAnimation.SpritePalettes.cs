@@ -62,6 +62,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(!IsSourceBattlerVisible(slot))return;
         SetBackgroundPriority(_battlers[slot].BackgroundRank,2);
+        ClearBackgroundPaletteLoads(7+_battlers[slot].BackgroundRank);ResetPaletteTransform(7+_battlers[slot].BackgroundRank);
         _backgrounds.Add(slot);InitializeBattlerBackgroundRegisters(slot,follow);_restoredObject[slot]=false;SetSourceBattlerSpriteInvisible(slot,true);
         if(follow)_staticBackgroundCopies.Remove(slot);
         // MoveBattlerSpriteToBG copies the unfaded source palette. Only its
@@ -73,6 +74,22 @@ public sealed partial class SourceBattleAnimation
         if(!IsSourceBattlerVisible(slot))return;
         MoveBattlerToBackground(slot,false);
         SetSourceBattlerSpriteInvisible(slot,false);
+    }
+    // A uniform FillPalette replaces every color in the static BG bank. The
+    // immutable palette transform projects that exact fill without needing OBJ
+    // palette-index provenance; it does not alter the retained original OBJ.
+    private void FillStaticBattlerBackgroundPalette(int rank,ushort color)
+    {
+        if(rank is <1 or >2||color>0x7fff)throw new InvalidDataException("Static BG palette fill exceeds source fields.");
+        LoadBackgroundPaletteRange(7+rank,0,Enumerable.Repeat(color,16).ToArray());
+        foreach(int slot in _staticBackgroundCopies.Keys.Where(i=>_battlers[i].BackgroundRank==rank).ToArray())
+            _staticBackgroundCopies[slot]=_staticBackgroundCopies[slot] with{Palette=new(7+rank,16,color),Inverted=false,Greyscale=false};
+    }
+    private void ClearStaticBattlerBackgroundRank(int rank)
+    {
+        foreach(int slot in _backgrounds.Where(i=>_battlers[i].BackgroundRank==rank).ToArray())
+        {_backgrounds.Remove(slot);_staticBackgroundCopies.Remove(slot);}
+        ResetBattlerBackgroundRegisters(rank);
     }
     private sealed class ClearStaticBattlerBackgroundTask(int slot,int partner):VisualTask
     {
