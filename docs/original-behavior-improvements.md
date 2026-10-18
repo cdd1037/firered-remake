@@ -66,3 +66,9 @@ Mimic 的原始仿射程序从零尺度开始。固定源码 `sprite.c:1306` 的
 - Mach Punch／Shadow Punch：`AnimTask_AttackerPunchWithTrace` 不再从攻击者实际偏移减去旧精灵编号；残影使用攻击者当前位置。复制攻击者明确的正常颜色基线及既有变换，再施加源任务的色调，不依赖刚分配调色板槽中的残留颜色。后续五次向外、四次返回的尝试、八回调残影寿命、精灵分配失败、任务等待与清理保留源行为。材料／仿射快照属于每个残影；后续颜色变化或槽复用不能改写已生成残影。
 
 源文件仍固定于 `037335f4c725d7c9aecdac87066f2002b4bd7e14`。`tests/Reference/SludgeSpark` 与 `tests/Reference/PunchTrace` 的显式生成器独立执行提取C，记录原初始化与批准初始化的差别；所有生成轨迹留在本地忽略目录。没有新增每招式渲染器、源内存模拟或随机玩法分支。
+
+## 蛮干震动输入的明确安全解释（2026-10-18）
+
+固定源码 `BattleScript_EffectEndeavor` 经 `setdamagetohealthdifference`、`adjustsetdamage` 进入 `HitFromAtkAnimation`，没有执行 `damagecalc`；动画却两次以 FALSE 请求 `AnimTask_ShakeTargetBasedOnMovePowerOrDmg` 的威力分支。该全局威力寄存器保留先前计算值，AI 的伤害试算也可写入它。这是源码输入归属问题，不据此宣称原版零售机出现确定可见故障。
+
+用户明确批准使用本次蛮干已提交的伤害决定震幅。导入器先核对上述源码结构及两条任务的全部参数，再将两条任务选择器转换为既有的伤害模式。Application 使用真实 HP／替身命中收据的 pre-clamp Damage，不用最终 HP 损失，也不伪造 MovePower；通用震动任务继续使用源整数除以12、signed16收窄及1–16夹限，间隔、次数和轴向原样保留。没有修改伤害、PP或战斗随机数。原始共享任务向量继续验证源公式，批准后的输入选择、上下限、持续时间、替身截断及实际调用叶另有明确回归。

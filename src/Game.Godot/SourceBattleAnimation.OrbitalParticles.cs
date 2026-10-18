@@ -36,7 +36,7 @@ public sealed partial class SourceBattleAnimation
     private void ValidateOrbitalParticleClosure(SourceAnimationCommand c)
     {
         if(!_validatingInvokedProgram)return;
-        var commands=_script.Commands;
+        var commands=_invocationProgram.Commands;
         if(commands.Any(x=>x.Op is "call" or "goto" or "jumpargeq" or "jumpifmoveturn" or "choosetwoturnanim"))Fail(c,"Orbital particles require a bounded linear source closure.");
         int orbs=commands.Count(x=>x.Op=="createsprite"&&x.Args[0] is "gHiddenPowerOrbSpriteTemplate" or "gHiddenPowerOrbScatterSpriteTemplate");
         if(orbs>14||commands.Count(x=>x.Op=="createvisualtask"&&x.Args[0]=="AnimTask_CycleMagicalLeafPal")>1)Fail(c,"Orbital particle closure exceeds reviewed source capacity.");

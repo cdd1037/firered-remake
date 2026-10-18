@@ -16,8 +16,9 @@ public sealed record SourceScanlineFrame(SourceScanlineDestination Destination,b
 
 /// <summary>
 /// The source scanline engine's retained two-bank register memory. Its selected
-/// callbacks use state 1 and no generic wave task. Invocation ownership and GPU
-/// write ordering belong to the scene; snapshots do not advance this state.
+/// callbacks and generic wave tasks share this one authority. Invocation ownership,
+/// task scheduling and GPU write ordering belong to the scene; snapshots do not
+/// advance this state.
 /// </summary>
 public sealed class SourceScanlineState
 {

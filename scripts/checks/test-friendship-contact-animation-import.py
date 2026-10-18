@@ -45,7 +45,7 @@ class FriendshipContactAnimationImportTests(unittest.TestCase):
    raw=dict(self.raw);self.assertIn(old,raw['data/battle_anim_scripts.s']);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
    with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
    self.assertNotIn(move,{s['moveId'] for s in json.loads(data)['scripts']})
-  self.assertNotIn(283,self.rows);self.assertEqual(['invocation:retained-move-power'],next(s['missing'] for s in self.blocked if s['moveId']==283))
+  self.assertIn(283,self.rows) # Approved committed-damage shake policy has its own importer regression.
  def test_material_registration_and_callback_shape_fail_closed(self):
   for path,old,new in [('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Lick, 0x0500, ANIM_TAG_LICK}',b'{gBattleAnimSpriteGfx_Lick, 0x0400, ANIM_TAG_LICK}'),('src/battle_anim_ghost.c',b'.callback = AnimLick,',b'.callback = AnimLick_Step,')]:
    raw=dict(self.raw);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)

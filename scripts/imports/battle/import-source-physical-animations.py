@@ -14,7 +14,7 @@ hit=module('physical_hit_import',ROOT/'scripts/imports/battle/import-source-hit-
 elemental=module('physical_elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py')
 def read_sources(reference):
  # Only actual conversion inputs. The source revision comes from the shared importer.
- paths=('graphics/battle_anims/sprites/meteor.png','graphics/battle_anims/sprites/flat_rock.png','graphics/battle_anims/sprites/pain_split.png','graphics/battle_anims/sprites/purple_scratch.png','graphics/battle_anims/sprites/purple_swipe.png','graphics/battle_anims/sprites/rapid_spin.png','graphics/battle_anims/sprites/ice_cube.pal','graphics/battle_anims/sprites/ice_cube_0.png','graphics/battle_anims/sprites/ice_cube_1.png','graphics/battle_anims/sprites/ice_cube_2.png','graphics/battle_anims/sprites/ice_cube_3.png','src/battle_anim_water.c','src/battle_anim_dragon.c','graphics/battle_anims/sprites/pencil.png','graphics/battle_anims/sprites/dirt_mound.png','graphics/battle_anims/sprites/white_shadow.png','graphics/battle_anims/sprites/nail.png','graphics/battle_anims/sprites/ghostly_spirit.png','graphics/battle_anims/sprites/item_bag.png','graphics/battle_anims/sprites/speed_dust.png','graphics/battle_anims/sprites/recycle.png','graphics/battle_anims/sprites/sparkle_6.png','graphics/battle_anims/sprites/lock_on.png','graphics/battle_anims/sprites/teal_alert.png','graphics/battle_anims/sprites/opening_eye.png','graphics/battle_anims/sprites/round_white_halo.png','graphics/battle_anims/sprites/snore_z.png','graphics/battle_anims/sprites/jagged_music_note.png','graphics/battle_anims/sprites/pink_cloud.png','graphics/battle_anims/sprites/bluegreen_orb.png','graphics/battle_anims/sprites/spikes.png','graphics/battle_anims/sprites/purple_flame.png','graphics/battle_anims/sprites/bird.png','graphics/battle_anims/sprites/red_orb_2.pal','src/battle_anim_utility_funcs.c','graphics_file_rules.mk','graphics/battle_anims/sprites/bell.png','graphics/battle_anims/sprites/music_notes_2.png','graphics/battle_anims/sprites/music_notes_2.pal','graphics/battle_anims/sprites/flower_0.png','graphics/battle_anims/sprites/flower_1.png','graphics/battle_anims/sprites/flower.pal','src/battle_anim_mon_movement.c','src/battle_anim_status_effects.c','src/battle_anim_psychic.c','graphics/battle_anims/sprites/sparkle_4.png','graphics/battle_anims/sprites/sparkle_3.png','graphics/battle_anims/sprites/x_sign.png','graphics/battle_anims/sprites/hollow_orb.png','asm/macros/battle_anim_script.inc','src/battle_anim_ghost.c','src/battle_anim_mons.c','graphics/battle_anims/sprites/lick.png','graphics/battle_anims/sprites/movement_waves.png','data/battle_scripts_1.s','data/battle_anim_scripts.s','src/data/battle_moves.h','include/constants/moves.h','include/constants/battle_anim.h','src/data/battle_anim.h','src/battle_anim_fight.c','src/battle_anim_bug.c','src/battle_anim_normal.c','src/battle_anim_poison.c','src/battle_anim_dark.c','src/battle_anim_rock.c','src/battle_anim_fire.c',
+ paths=('include/constants/battle.h','src/battle_anim.c','graphics/battle_anims/sprites/meteor.png','graphics/battle_anims/sprites/flat_rock.png','graphics/battle_anims/sprites/pain_split.png','graphics/battle_anims/sprites/purple_scratch.png','graphics/battle_anims/sprites/purple_swipe.png','graphics/battle_anims/sprites/rapid_spin.png','graphics/battle_anims/sprites/ice_cube.pal','graphics/battle_anims/sprites/ice_cube_0.png','graphics/battle_anims/sprites/ice_cube_1.png','graphics/battle_anims/sprites/ice_cube_2.png','graphics/battle_anims/sprites/ice_cube_3.png','src/battle_anim_water.c','src/battle_anim_dragon.c','graphics/battle_anims/sprites/pencil.png','graphics/battle_anims/sprites/dirt_mound.png','graphics/battle_anims/sprites/white_shadow.png','graphics/battle_anims/sprites/nail.png','graphics/battle_anims/sprites/ghostly_spirit.png','graphics/battle_anims/sprites/item_bag.png','graphics/battle_anims/sprites/speed_dust.png','graphics/battle_anims/sprites/recycle.png','graphics/battle_anims/sprites/sparkle_6.png','graphics/battle_anims/sprites/lock_on.png','graphics/battle_anims/sprites/teal_alert.png','graphics/battle_anims/sprites/opening_eye.png','graphics/battle_anims/sprites/round_white_halo.png','graphics/battle_anims/sprites/snore_z.png','graphics/battle_anims/sprites/jagged_music_note.png','graphics/battle_anims/sprites/pink_cloud.png','graphics/battle_anims/sprites/bluegreen_orb.png','graphics/battle_anims/sprites/spikes.png','graphics/battle_anims/sprites/purple_flame.png','graphics/battle_anims/sprites/bird.png','graphics/battle_anims/sprites/red_orb_2.pal','src/battle_anim_utility_funcs.c','graphics_file_rules.mk','graphics/battle_anims/sprites/bell.png','graphics/battle_anims/sprites/music_notes_2.png','graphics/battle_anims/sprites/music_notes_2.pal','graphics/battle_anims/sprites/flower_0.png','graphics/battle_anims/sprites/flower_1.png','graphics/battle_anims/sprites/flower.pal','src/battle_anim_mon_movement.c','src/battle_anim_status_effects.c','src/battle_anim_psychic.c','graphics/battle_anims/sprites/sparkle_4.png','graphics/battle_anims/sprites/sparkle_3.png','graphics/battle_anims/sprites/x_sign.png','graphics/battle_anims/sprites/hollow_orb.png','asm/macros/battle_anim_script.inc','src/battle_anim_ghost.c','src/battle_anim_mons.c','graphics/battle_anims/sprites/lick.png','graphics/battle_anims/sprites/movement_waves.png','data/battle_scripts_1.s','data/battle_anim_scripts.s','src/data/battle_moves.h','include/constants/moves.h','include/constants/battle_anim.h','src/data/battle_anim.h','src/battle_anim_fight.c','src/battle_anim_bug.c','src/battle_anim_normal.c','src/battle_anim_poison.c','src/battle_anim_dark.c','src/battle_anim_rock.c','src/battle_anim_fire.c',
         'src/graphics.c','src/battle_anim_flying.c','src/battle_anim_effects_1.c','src/battle_anim_effects_2.c','src/battle_anim_ground.c','src/battle_anim_effects_3.c',
         'graphics/battle_anims/sprites/round_shadow.png','graphics/battle_anims/sprites/tri_attack_triangle.png','graphics/battle_anims/sprites/sweat_drop.png','graphics/battle_anims/sprites/tag_hand.png','graphics/battle_anims/sprites/finger.png','graphics/battle_anims/sprites/smellingsalt_effect.png','graphics/battle_anims/sprites/red_orb.png','graphics/battle_anims/sprites/sweat_bead.png','graphics/battle_anims/sprites/splash.png','graphics/battle_anims/sprites/coin.png','graphics/battle_anims/sprites/cross_impact.png','graphics/battle_anims/sprites/red_ball.png','graphics/battle_anims/sprites/whirlwind_lines.png','graphics/battle_anims/sprites/gold_stars.png','graphics/battle_anims/sprites/swipe.png','graphics/battle_anims/sprites/fang_attack.png','graphics/battle_anims/sprites/seed.png','graphics/battle_anims/sprites/icicle_spear.png','graphics/battle_anims/sprites/claw_slash.png','graphics/battle_anims/sprites/torn_metal.png','graphics/battle_anims/sprites/blue_light_wall.pal','graphics/battle_anims/sprites/bone.png','graphics/battle_anims/sprites/eye_sparkle.png','graphics/battle_anims/sprites/anger.png','graphics/battle_anims/sprites/breath.png','graphics/battle_anims/sprites/eclipsing_orb.png',
         'graphics/battle_anims/sprites/mud_sand_0.png','graphics/battle_anims/sprites/mud_sand_1.png','graphics/battle_anims/sprites/mud_sand.pal',
@@ -27,7 +27,7 @@ TASKS={'AnimTask_FrozenIceCube','AnimTask_CreateSurfWave','AnimTask_MeditateStre
 SPRITES|={'gFocusPunchFistSpriteTemplate'}
 # Ice Ball keeps its bounded source graph here; recipes/material remain elemental.
 SPRITES|={'gIceBallChunkSpriteTemplate','gIceBallImpactShardSpriteTemplate'}
-TASKS|={'AnimTask_GetRolloutCounter'}
+TASKS|={'AnimTask_GetRolloutCounter','AnimTask_GetBattleTerrain'}
 TASKS|={'GetIsDoomDesireHitTurn','AnimTask_FakeOut'}
 TASKS|={'AnimTask_HorizontalShake','AnimTask_ShakeTargetBasedOnMovePowerOrDmg','AnimTask_IsPowerOver99'}
 NEW= {'gFistFootRandomPosSpriteTemplate','gWishStarSpriteTemplate','gMeteorMashStarSpriteTemplate','gArmThrustHandSpriteTemplate','gFurySwipesSpriteTemplate','gFangSpriteTemplate','gSuperFangSpriteTemplate','gBulletSeedSpriteTemplate','gSandAttackDirtSpriteTemplate','gMudSlapMudSpriteTemplate','gMegaPunchKickSpriteTemplate','gSpinningHandOrFootSpriteTemplate','gPinMissileSpriteTemplate','gIcicleSpearSpriteTemplate','gLinearStingerSpriteTemplate','gHandleInvertHitSplatSpriteTemplate','gClawSlashSpriteTemplate','gSpinningBoneSpriteTemplate','jumpifmoveturn','choosetwoturnanim','gEyeSparkleSpriteTemplate','gAngerMarkSpriteTemplate','AnimTask_DefenseCurlDeformMon','AnimTask_GrowAndShrink','AnimTask_SlackOffSquish','AnimTask_Splash','gMudsportMudSpriteTemplate','goto','gKarateChopSpriteTemplate','AnimTask_TranslateMonElliptical','gPoisonPowderParticleSpriteTemplate','gStunSporeParticleSpriteTemplate','gSleepPowderParticleSpriteTemplate','gBowMonSpriteTemplate','gFlashingHitSplatSpriteTemplate','gSlamHitSpriteTemplate','gVineWhipSpriteTemplate','gViceGripSpriteTemplate','gVerticalDipSpriteTemplate','gStompFootSpriteTemplate','gJumpKickSpriteTemplate','gSlidingKickSpriteTemplate','AnimTask_WindUpLunge','AnimTask_ShakeAndSinkMon','AnimTask_ShakeMonInPlace','AnimTask_RotateMonSpriteToSide'}
@@ -35,7 +35,7 @@ SPRITES|={'gCoinThrowSpriteTemplate','gFallingCoinSpriteTemplate','gCrossChopHan
 TASKS|={'AnimTask_DrillPeckHitSplats','AnimTask_BarrageBall'}
 NEW|={'gCoinThrowSpriteTemplate','gFallingCoinSpriteTemplate','gCrossChopHandSpriteTemplate','gCrossImpactSpriteTemplate','AnimTask_DrillPeckHitSplats','AnimTask_BarrageBall'}
 NEW|={'gIceBallChunkSpriteTemplate','gIceBallImpactShardSpriteTemplate','AnimTask_GetRolloutCounter'}
-NEW|={'GetIsDoomDesireHitTurn','gFocusPunchFistSpriteTemplate','AnimTask_FakeOut'}
+NEW|={'AnimTask_GetBattleTerrain','GetIsDoomDesireHitTurn','gFocusPunchFistSpriteTemplate','AnimTask_FakeOut'}
 NEW|={'AnimTask_HorizontalShake','AnimTask_ShakeTargetBasedOnMovePowerOrDmg','AnimTask_IsPowerOver99'}
 SPRITES|={'gHiddenPowerOrbSpriteTemplate','gHiddenPowerOrbScatterSpriteTemplate','gSprayWaterDropletSpriteTemplate','gRazorLeafParticleSpriteTemplate','gRazorLeafCutterSpriteTemplate'}
 TASKS|={'AnimTask_CycleMagicalLeafPal','AnimTask_MoveSkyUppercutBg','AnimTask_StretchTargetUp'}
@@ -361,15 +361,16 @@ def validate_friendship_predicates(raw):
   output=r'gBattleAnimArgs\[ARG_RET_ID\]=(\d);' if name=='AnimTask_GetReturnPowerLevel' else r'powerLevel=(\d);'
   if re.findall(output,compact)!=expected or compact.count('DestroyAnimVisualTask(taskId);')!=1 or (name=='AnimTask_GetFrustrationPowerLevel' and 'gBattleAnimArgs[ARG_RET_ID]=powerLevel;' not in compact):raise ValueError('Source friendship predicate result differs')
 
-def requires_uncommitted_power(effect,commands,raw):
- # Endeavor computes fixed HP-difference damage then enters HitFromAtkAnimation.
- # Its source animation reads retained gBattleMovePower, not that hit's damage.
- # Keep this effect unadmitted until a real retained-power receipt exists.
- reads=any(c['op']=='createvisualtask' and len(c['args'])==7 and c['args'][0]=='AnimTask_ShakeTargetBasedOnMovePowerOrDmg' and c['args'][2] in {'0','FALSE'} for c in commands)
- if not reads or effect!='EFFECT_ENDEAVOR':return False
+def normalize_committed_damage_shake(effect,commands,raw):
+ # Approved visual policy: Endeavor never prepares gBattleMovePower. Use the
+ # committed, pre-HP-clamp damage with the existing damage-mode shake formula.
+ if effect!='EFFECT_ENDEAVOR':return
  body=raw['data/battle_scripts_1.s'].decode().split('BattleScript_EffectEndeavor::',1)[1].split('\nBattleScript_',1)[0]
  if 'setdamagetohealthdifference' not in body or 'adjustsetdamage' not in body or 'goto BattleScript_HitFromAtkAnimation' not in body or re.search(r'^\s*damagecalc\b',body,re.M):raise ValueError('Endeavor source power-provenance boundary differs')
- return True
+ shakes=[c for c in commands if c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ShakeTargetBasedOnMovePowerOrDmg']
+ expected=['AnimTask_ShakeTargetBasedOnMovePowerOrDmg','5','FALSE','1','8','1','0']
+ if len(shakes)!=2 or any(c['args']!=expected for c in shakes):raise ValueError('Endeavor source shake policy operands differ')
+ for command in shakes:command['args']=[*command['args'][:2],'TRUE',*command['args'][3:]]
 
 def sprite_recipe(source,template,asset,expected_callback):
  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',source,re.S)
@@ -583,6 +584,32 @@ def physical_sound_effects(reference,commands,source,focus_source=None):
   dependencies.append(dict(op='playse',args=['SE_M_BLIZZARD2']))
  return elemental.sound_effects(reference,dependencies)
 
+def terrain_tail_program(commands,raw):
+ # Preserve source program boundaries. The source initializer writes argument 0
+ # and destroys synchronously; goto changes only the script pointer.
+ def body(path,name):
+  match=re.search(r'(?:static )?void '+name+r'\([^)]*\)\s*\{(.*?)\n\}',raw[path].decode(),re.S)
+  if match is None:raise ValueError('Missing source selector ABI '+name)
+  return re.sub(r'\s+','',match[1])
+ if body('src/battle_anim_utility_funcs.c','AnimTask_GetBattleTerrain')!='gBattleAnimArgs[0]=gBattleTerrain;DestroyAnimVisualTask(taskId);':raise ValueError('Source terrain selector ABI differs')
+ if body('src/battle_anim.c','Cmd_goto')!='sBattleAnimScriptPtr++;sBattleAnimScriptPtr=T2_READ_PTR(sBattleAnimScriptPtr);':raise ValueError('Source tail pointer transfer differs')
+ expected='u8argId;s16valueToCheck;sBattleAnimScriptPtr++;argId=sBattleAnimScriptPtr[0];valueToCheck=T1_READ_16(sBattleAnimScriptPtr+1);if(valueToCheck==gBattleAnimArgs[argId])sBattleAnimScriptPtr=T2_READ_PTR(sBattleAnimScriptPtr+3);elsesBattleAnimScriptPtr+=7;'
+ if body('src/battle_anim.c','Cmd_jumpargeq')!=expected:raise ValueError('Source conditional tail pointer transfer differs')
+ expected='TaskFunctaskFunc;u8taskPriority;u8taskId;u8numArgs;s32i;sBattleAnimScriptPtr++;taskFunc=(TaskFunc)T2_READ_32(sBattleAnimScriptPtr);sBattleAnimScriptPtr+=4;taskPriority=sBattleAnimScriptPtr[0];sBattleAnimScriptPtr++;numArgs=sBattleAnimScriptPtr[0];sBattleAnimScriptPtr++;for(i=0;i<numArgs;i++){gBattleAnimArgs[i]=T1_READ_16(sBattleAnimScriptPtr);sBattleAnimScriptPtr+=2;}taskId=CreateTask(taskFunc,taskPriority);taskFunc(taskId);gAnimVisualTaskCount++;'
+ if body('src/battle_anim.c','Cmd_createvisualtask')!=expected:raise ValueError('Source synchronous task initializer differs')
+ terrain={k:int(v) for k,v in re.findall(r'^#define (BATTLE_TERRAIN_\w+)\s+(\d+)\s*$',raw['include/constants/battle.h'].decode(),re.M)}
+ native=['GRASS','LONG_GRASS','SAND','UNDERWATER','WATER','POND','MOUNTAIN','CAVE','BUILDING','PLAIN']
+ if [terrain.get('BATTLE_TERRAIN_'+name) for name in native]!=list(range(10)):raise ValueError('Source native terrain constants differ')
+ if len(commands)!=11 or commands[0]['op']!='createvisualtask' or commands[0]['args']!=['AnimTask_GetBattleTerrain','5'] or commands[-1]['op']!='goto' or len(commands[-1]['args'])!=1:raise ValueError('Source terrain tail selector shape differs')
+ targets=[]
+ for i,command in enumerate(commands[1:-1]):
+  args=command['args']
+  if command['op']!='jumpargeq' or len(args)!=3 or args[:2]!=['0','BATTLE_TERRAIN_'+native[i]]:raise ValueError('Source terrain comparison ABI differs')
+  command['args']=['0',str(terrain[args[1]]),args[2]];targets.append(args[2])
+ targets.append(commands[-1]['args'][0]);source=raw['data/battle_anim_scripts.s'].decode()
+ if len(set(targets))!=len(targets) or any(not name.startswith('Move_') or not re.search(r'^'+re.escape(name)+r':\n',source,re.M) for name in targets):raise ValueError('Source tail reference is missing or duplicated')
+ return targets
+
 def build(reference):
  # Complete programs already owned by the background graph producer keep that
  # authority when a shared branch opcode becomes available here. Derive this
@@ -727,9 +754,11 @@ def build(reference):
  def branch_targets(commands):
   return [target for c in commands for target in (c['args'] if c['op']=='choosetwoturnanim' else c['args'][:1] if c['op']=='goto' else c['args'][1:2] if c['op']=='jumpifmoveturn' else c['args'][2:3] if c['op']=='jumpargeq' else [])]
  for match in re.finditer(r'^(Move_(\w+)):\n',source,re.M):
-  commands=[];gaps=set();symbols=set();labels={}
+  commands=[];gaps=set();symbols=set();labels={};program_references=[]
   try:
-   commands,labels=source_block(match[1]);parsed={match[1]};pending=branch_targets(commands)
+   commands,labels=source_block(match[1]);parsed={match[1]}
+   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_GetBattleTerrain' for c in commands):program_references=terrain_tail_program(commands,raw)
+   pending=[target for target in branch_targets(commands) if target not in program_references]
    while pending:
     label=pending.pop(0)
     if label in parsed or label in labels:continue
@@ -743,7 +772,8 @@ def build(reference):
     if pc in done:return
     if not 0<=pc<len(commands):raise ValueError('Source branch falls through')
     active.add(pc);command=commands[pc];op=command['op']
-    for target in branch_targets([command]):visit(0 if target==match[1] else labels[target])
+    for target in branch_targets([command]):
+     if target not in program_references:visit(0 if target==match[1] else labels[target])
     if op not in {'goto','choosetwoturnanim','end','return'}:visit(pc+1)
     active.remove(pc);done.add(pc)
    visit(0)
@@ -765,7 +795,7 @@ def build(reference):
     if args[0] not in allowed:gaps.add('callback:'+args[0])
     # Source callbacks may read retained argument registers. Admit this family
     # only when the script explicitly supplies every value consumed by its ABI.
-    widths={**PRESENT_WIDTHS,**PAIN_SPLIT_WIDTHS,**DAMAGE_FAMILY_WIDTHS,**dict.fromkeys(EXTRASENSORY_TASKS,3),'AnimTask_FrozenIceCube':2,'AnimTask_CreateSurfWave':3,**EARTH_BACKGROUND_WIDTHS,**SCANLINE_BATTLER_WIDTHS,**GHOST_SONG_WIDTHS,**ITEM_WIND_WIDTHS,**FOCUS_SOUND_WIDTHS,'AnimTask_GetRolloutCounter':3,'AnimTask_CreateSmallSolarBeamOrbs':2,'AnimTask_StatusClearedEffect':3,'AnimTask_LoadMusicNotesPals':2,'AnimTask_FreeMusicNotesPals':2,'AnimTask_SpitUpDeformMon':2,'AnimTask_GetTargetIsAttackerPartner':3,'AnimTask_AttackerFadeToInvisible':3,'AnimTask_AttackerFadeFromInvisible':3,'AnimTask_BlendBattleAnimPalExclude':7,**dict.fromkeys(ORB_DEFENSE_TASKS,2),**CHARGE_PAIR_WIDTHS,**dict.fromkeys(LOCKED_PAIR_TASKS,2),**dict.fromkeys(CUT_WALL_TASKS,2),'AnimTask_ShakeMonInPlace':7,'AnimTask_FlailMovement':3,'AnimTask_GrowAndGrayscale':2,**dict.fromkeys(FRIENDSHIP_CONTACT_TASKS,2),'AnimTask_TraceMonBlended':6,'AnimTask_SquishAndSweatDroplets':4,'AnimTask_FacadeColorBlend':4,'AnimTask_SmellingSaltsSquish':4,'AnimTask_LeafBlade':2,'AnimTask_HorizontalShake':5,'AnimTask_ShakeTargetBasedOnMovePowerOrDmg':7,'AnimTask_IsPowerOver99':2,'GetIsDoomDesireHitTurn':2,'AnimTask_FakeOut':2,'AnimTask_CycleMagicalLeafPal':2,'AnimTask_MoveSkyUppercutBg':3,'AnimTask_StretchTargetUp':2}
+    widths={**PRESENT_WIDTHS,**PAIN_SPLIT_WIDTHS,**DAMAGE_FAMILY_WIDTHS,**dict.fromkeys(EXTRASENSORY_TASKS,3),'AnimTask_FrozenIceCube':2,'AnimTask_GetBattleTerrain':2,'AnimTask_CreateSurfWave':3,**EARTH_BACKGROUND_WIDTHS,**SCANLINE_BATTLER_WIDTHS,**GHOST_SONG_WIDTHS,**ITEM_WIND_WIDTHS,**FOCUS_SOUND_WIDTHS,'AnimTask_GetRolloutCounter':3,'AnimTask_CreateSmallSolarBeamOrbs':2,'AnimTask_StatusClearedEffect':3,'AnimTask_LoadMusicNotesPals':2,'AnimTask_FreeMusicNotesPals':2,'AnimTask_SpitUpDeformMon':2,'AnimTask_GetTargetIsAttackerPartner':3,'AnimTask_AttackerFadeToInvisible':3,'AnimTask_AttackerFadeFromInvisible':3,'AnimTask_BlendBattleAnimPalExclude':7,**dict.fromkeys(ORB_DEFENSE_TASKS,2),**CHARGE_PAIR_WIDTHS,**dict.fromkeys(LOCKED_PAIR_TASKS,2),**dict.fromkeys(CUT_WALL_TASKS,2),'AnimTask_ShakeMonInPlace':7,'AnimTask_FlailMovement':3,'AnimTask_GrowAndGrayscale':2,**dict.fromkeys(FRIENDSHIP_CONTACT_TASKS,2),'AnimTask_TraceMonBlended':6,'AnimTask_SquishAndSweatDroplets':4,'AnimTask_FacadeColorBlend':4,'AnimTask_SmellingSaltsSquish':4,'AnimTask_LeafBlade':2,'AnimTask_HorizontalShake':5,'AnimTask_ShakeTargetBasedOnMovePowerOrDmg':7,'AnimTask_IsPowerOver99':2,'GetIsDoomDesireHitTurn':2,'AnimTask_FakeOut':2,'AnimTask_CycleMagicalLeafPal':2,'AnimTask_MoveSkyUppercutBg':3,'AnimTask_StretchTargetUp':2}
     if op=='createvisualtask' and args[0] in widths and len(args)!=widths[args[0]]:gaps.add('callback-arguments:'+args[0])
     sprite_widths={**SUPERPOWER_WIDTHS,**PRESENT_WIDTHS,**PAIN_SPLIT_WIDTHS,**DAMAGE_FAMILY_WIDTHS,**EARTH_BACKGROUND_WIDTHS,**SCANLINE_BATTLER_WIDTHS,**GHOST_SONG_WIDTHS,**ITEM_WIND_WIDTHS,**FOCUS_SOUND_WIDTHS,'gIceBallChunkSpriteTemplate':9,'gIceBallImpactShardSpriteTemplate':5,'gSolarBeamBigOrbSpriteTemplate':7,'gGuillotineSpriteTemplate':4,**CURE_WIDTHS,'gSkyAttackBirdSpriteTemplate':3,**ORB_DEFENSE_WIDTHS,**ROUND_SHADOW_WIDTHS,**CHARGE_PAIR_WIDTHS,'gFocusPunchFistSpriteTemplate':3,'gTwisterLeafSpriteTemplate':8,'gTwisterRockSpriteTemplate':8,'gBrickBreakWallSpriteTemplate':8,'gBrickBreakWallShardSpriteTemplate':7,'gRandomPosHitSplatSpriteTemplate':5,'gAncientPowerRockSpriteTemplate':8,'gRockTombRockSpriteTemplate':8,'gRedXSpriteTemplate':5,'gSpinningSparkleSpriteTemplate':5,'gLickSpriteTemplate':5,'gMovementWavesSpriteTemplate':6,'gWeakFrustrationAngerMarkSpriteTemplate':5,'gTriAttackTriangleSpriteTemplate':5,'gSmellingSaltsHandSpriteTemplate':6,'gSmellingSaltExclamationSpriteTemplate':6}
     if op=='createsprite' and args[0] in sprite_widths and len(args)!=sprite_widths[args[0]]:gaps.add('callback-arguments:'+args[0])
@@ -775,11 +805,11 @@ def build(reference):
   # Beat Up uses contributor/hit pairs; charge moves use a turn lock. Their
   # application matchers authenticate these contexts separately from multihit.
   effect=effects.get('MOVE_'+match[2])
-  if requires_uncommitted_power(effect,commands,raw):gaps.add('invocation:retained-move-power')
+  normalize_committed_damage_shake(effect,commands,raw)
   if 'GetIsDoomDesireHitTurn' in symbols and effect!='EFFECT_FUTURE_SIGHT':gaps.add('invocation:move-turn')
   if 'choosetwoturnanim' in symbols and effect not in {'EFFECT_MULTI_HIT','EFFECT_BEAT_UP','EFFECT_PURSUIT','EFFECT_BRICK_BREAK','EFFECT_BIDE','EFFECT_RAZOR_WIND','EFFECT_SKULL_BASH','EFFECT_SEMI_INVULNERABLE','EFFECT_SKY_ATTACK','EFFECT_SOLAR_BEAM','EFFECT_CURSE'}:gaps.add('invocation:move-turn')
   if 'jumpifmoveturn' in symbols and effect not in {'EFFECT_TRIPLE_KICK','EFFECT_SWALLOW','EFFECT_SPIT_UP'}:gaps.add('invocation:move-turn')
-  if not any(c['op']=='end' for c in commands):gaps.add('control-flow:unterminated')
+  if not program_references and not any(c['op']=='end' for c in commands):gaps.add('control-flow:unterminated')
   if len(commands)>128:gaps.add('command-bound')
   local_subs={};local_labels={}
   for command in commands:
@@ -808,7 +838,7 @@ def build(reference):
   loaded=sorted({c['args'][0] for c in dependencies if c['op'] in {'loadspritegfx','unloadspritegfx'}})
   if not set(loaded)<=tags.keys():raise ValueError('Undefined source sprite tag dependency')
   children=sorted(set((['gSpeedDustSpriteTemplate'] if 'AnimTask_SpeedDust' in symbols else [])+(['gAirWaveProjectileSpriteTemplate'] if 'AnimTask_AirCutterProjectile' in symbols else [])+(['sFrozenIceCubeSpriteTemplate'] if 'AnimTask_FrozenIceCube' in symbols else [])+(['gDestinyBondWhiteShadowSpriteTemplate'] if 'AnimTask_DestinyBondWhiteShadow' in symbols else [])+(['gSolarBeamSmallOrbSpriteTemplate'] if 'AnimTask_CreateSmallSolarBeamOrbs' in symbols else [])+(['gBasicHitSplatSpriteTemplate'] if 'gFistFootRandomPosSpriteTemplate' in symbols else [])+(['gFlashingHitSplatSpriteTemplate'] if 'AnimTask_DrillPeckHitSplats' in symbols else [])+(['gBarrageBallSpriteTemplate'] if 'AnimTask_BarrageBall' in symbols else [])+(['gFacadeSweatDropSpriteTemplate'] if 'AnimTask_SquishAndSweatDroplets' in symbols else [])+(['gLeafBladeSpriteTemplate'] if 'AnimTask_LeafBlade' in symbols else [])+(['sSkillSwapOrbSpriteTemplate'] if 'AnimTask_SkillSwap' in symbols else [])+(['gGrudgeFlameSpriteTemplate'] if 'AnimTask_GrudgeFlames' in symbols else [])))
-  scripts.append(dict(moveId=move,label=match[1],commands=commands,labels=labels,**({'spriteDependencies':children} if children else {}),**({'materialDependencies':sorted(({'whirlwind-lines'} if 'AnimTask_DrillPeckHitSplats' in symbols else set())|({'speed-dust'} if 'ANIM_TAG_SPEED_DUST' in loaded else set()))} if 'AnimTask_DrillPeckHitSplats' in symbols or 'ANIM_TAG_SPEED_DUST' in loaded else {}),**({'overlayDependencies':(['cure-bubbles'] if 'AnimTask_StatusClearedEffect' in symbols else [])+(['curse'] if 'AnimTask_DrawFallingWhiteLinesOnAttacker' in symbols else [])+(['surf-player','surf-opponent'] if 'AnimTask_CreateSurfWave' in symbols and any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_CreateSurfWave' and c['args'][2] in ('0','FALSE') for c in dependencies) else ['muddy-water-player','muddy-water-opponent'] if 'AnimTask_CreateSurfWave' in symbols else [])} if symbols & {'AnimTask_StatusClearedEffect','AnimTask_DrawFallingWhiteLinesOnAttacker','AnimTask_CreateSurfWave'} else {}),soundEffects=physical_sound_effects(reference,dependencies,raw['src/battle_anim_effects_2.c'].decode(),raw['src/battle_anim_effects_1.c'].decode()),spriteTags={name:tags[name] for name in loaded}));subroutines.update(local_subs);subroutine_labels.update(local_labels);background_symbols.update({c['args'][0]:backgrounds[c['args'][0]] for c in dependencies if c['op'] in {'changebg','fadetobg'}});background_symbols.update({name:backgrounds[name] for c in dependencies if c['op']=='fadetobgfromset' for name in c['args']})
+  scripts.append(dict(moveId=move,label=match[1],commands=commands,labels=labels,**({'programReferences':program_references} if program_references else {}),**({'spriteDependencies':children} if children else {}),**({'materialDependencies':sorted(({'whirlwind-lines'} if 'AnimTask_DrillPeckHitSplats' in symbols else set())|({'speed-dust'} if 'ANIM_TAG_SPEED_DUST' in loaded else set()))} if 'AnimTask_DrillPeckHitSplats' in symbols or 'ANIM_TAG_SPEED_DUST' in loaded else {}),**({'overlayDependencies':(['cure-bubbles'] if 'AnimTask_StatusClearedEffect' in symbols else [])+(['curse'] if 'AnimTask_DrawFallingWhiteLinesOnAttacker' in symbols else [])+(['surf-player','surf-opponent'] if 'AnimTask_CreateSurfWave' in symbols and any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_CreateSurfWave' and c['args'][2] in ('0','FALSE') for c in dependencies) else ['muddy-water-player','muddy-water-opponent'] if 'AnimTask_CreateSurfWave' in symbols else [])} if symbols & {'AnimTask_StatusClearedEffect','AnimTask_DrawFallingWhiteLinesOnAttacker','AnimTask_CreateSurfWave'} else {}),soundEffects=physical_sound_effects(reference,dependencies,raw['src/battle_anim_effects_2.c'].decode(),raw['src/battle_anim_effects_1.c'].decode()),spriteTags={name:tags[name] for name in loaded}));subroutines.update(local_subs);subroutine_labels.update(local_labels);background_symbols.update({c['args'][0]:backgrounds[c['args'][0]] for c in dependencies if c['op'] in {'changebg','fadetobg'}});background_symbols.update({name:backgrounds[name] for c in dependencies if c['op']=='fadetobgfromset' for name in c['args']})
  if not scripts:raise ValueError('No supported physical roots')
  # SmallEmber, like leaf and razor-leaf, is owned by the elemental indexed pack.
  # Physical callbacks retain the shared recipe asset ID without a second RGB declaration.

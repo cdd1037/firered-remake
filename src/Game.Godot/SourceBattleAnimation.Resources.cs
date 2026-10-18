@@ -41,6 +41,10 @@ public sealed class SourceAnimationResources:IDisposable
             foreach(var (id,script) in _scripts.ToArray())_scripts[id]=script with{SpriteRecipes=_recipes,SineTable=sine};
             foreach(var (label,script) in _generalScripts.ToArray())_generalScripts[label]=script with{SpriteRecipes=_recipes,SineTable=sine};
             if(_scripts.Count==0)throw new InvalidDataException("Empty source animation resources.");
+            // Every tail is bound by source label against this canonical catalog,
+            // never by a second move-support inventory or runtime terrain map.
+            var programs=_scripts.Values.ToDictionary(s=>s.Label,StringComparer.Ordinal);
+            foreach(var (id,script) in _scripts.ToArray())_scripts[id]=SourceAnimationProgramDependencies.BindReferences(script,programs);
         }
         catch{Dispose();throw;}
     }
@@ -93,7 +97,7 @@ public sealed class SourceAnimationResources:IDisposable
             foreach(var (symbol,tag) in spriteTags){if(_spriteTags.TryGetValue(symbol,out int previous)&&previous!=tag)throw new InvalidDataException("Conflicting source sprite palette tag.");_spriteTags[symbol]=tag;}
             int id=row.TryGetProperty("moveId",out var move)?move.GetInt32():0;var commands=Commands(row.GetProperty("commands"));
             var required=SourceAnimationProgramDependencies.RequiredSubroutines(commands,subs);
-            var script=new SourceAnimationScript(id,row.GetProperty("label").GetString()!,commands){SpriteDependencies=ReadSpriteDependencies(row),MaterialDependencies=ReadDependencies(row,"materialDependencies"),OverlayDependencies=ReadDependencies(row,"overlayDependencies"),SpriteTags=spriteTags,SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,SubroutineLabels=subLabels.Where(p=>required.ContainsKey(p.Key)).ToDictionary(p=>p.Key,p=>p.Value),Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()};
+            var script=new SourceAnimationScript(id,row.GetProperty("label").GetString()!,commands){ProgramReferences=ReadDependencies(row,"programReferences"),SpriteDependencies=ReadSpriteDependencies(row),MaterialDependencies=ReadDependencies(row,"materialDependencies"),OverlayDependencies=ReadDependencies(row,"overlayDependencies"),SpriteTags=spriteTags,SoundEffects=row.TryGetProperty("soundEffects",out var sounds)?sounds.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>(),TaskAffinePrograms=taskAffinePrograms,BackgroundSymbols=backgroundSymbols,Subroutines=required,SubroutineLabels=subLabels.Where(p=>required.ContainsKey(p.Key)).ToDictionary(p=>p.Key,p=>p.Value),Labels=row.TryGetProperty("labels",out var labels)?labels.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetInt32()):new Dictionary<string,int>()};
             if(general)_generalScripts.Add(script.Label,script);else _scripts.Add(id,script);
         }
     }
@@ -119,8 +123,20 @@ public sealed class SourceAnimationResources:IDisposable
     public SourceResolvedAnimation Resolve(SourceAnimationScript script)
     {
         ObjectDisposedException.ThrowIf(_disposed,this);
-        script=script with{SpriteRecipes=_recipes};
-        var commands=script.Commands.Concat(script.Subroutines.Values.SelectMany(x=>x)).ToArray();
+        script=SourceAnimationProgramDependencies.BindReferences(script,_scripts.Values.ToDictionary(s=>s.Label,StringComparer.Ordinal));
+        var programs=SourceAnimationProgramDependencies.ProgramClosure(script);
+        IReadOnlyDictionary<TKey,TValue> Merge<TKey,TValue>(Func<SourceAnimationScript,IReadOnlyDictionary<TKey,TValue>> values) where TKey:notnull
+        {
+            var merged=new Dictionary<TKey,TValue>();
+            foreach(var source in programs)foreach(var (key,value) in values(source))
+            {
+                if(merged.TryGetValue(key,out var previous)&&JsonSerializer.Serialize(previous)!=JsonSerializer.Serialize(value))throw new InvalidDataException("Conflicting source tail-program resource dependency.");
+                merged[key]=value;
+            }
+            return merged;
+        }
+        script=script with{SpriteRecipes=_recipes,SpriteDependencies=programs.SelectMany(p=>p.SpriteDependencies).Distinct().ToArray(),MaterialDependencies=programs.SelectMany(p=>p.MaterialDependencies).Distinct().ToArray(),OverlayDependencies=programs.SelectMany(p=>p.OverlayDependencies).Distinct().ToArray(),SpriteTags=Merge(p=>p.SpriteTags),SoundEffects=Merge(p=>p.SoundEffects),TaskAffinePrograms=Merge(p=>p.TaskAffinePrograms),BackgroundSymbols=Merge(p=>p.BackgroundSymbols)};
+        var commands=programs.SelectMany(p=>p.Commands.Concat(p.Subroutines.Values.SelectMany(x=>x))).ToArray();
         var names=new HashSet<string>(script.MaterialDependencies){"impact"}; // The compositor's shared hit primitive.
         foreach(string template in script.SpriteDependencies)
         {

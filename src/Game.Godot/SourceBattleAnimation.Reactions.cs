@@ -52,14 +52,24 @@ public sealed partial class SourceBattleAnimation
         var root=_script.Commands;
         if(!root.Contains(c)||root.Any(x=>x.Op is "call" or "goto" or "jumpargeq" or "jumpifmoveturn" or "choosetwoturnanim")||root.Count(x=>x.Op=="createvisualtask"&&x.Args[0]==name)!=1)Fail(c,"Reaction emitter requires one bounded linear invocation.");
         bool leaf=name=="AnimTask_LeafBlade";
-        if(root.Count(x=>x.Op=="createvisualtask"&&x.Args[0]!=name)>(leaf?4:1))Fail(c,"Reaction companion task bound differs.");
-        if(root.Any(x=>x.Op=="createsprite"&&(!leaf||x.Args[0]!="gCrossImpactSpriteTemplate"))||root.Count(x=>x.Op=="createsprite")>1||root.Any(x=>x.Op=="createvisualtask"&&x.Args[0]!=name&&x.Args[0]!=(leaf?"AnimTask_ShakeMon2":"AnimTask_FacadeColorBlend")))Fail(c,"Reaction emitter companions exceed reviewed source capacity.");
+        var companions=root.Where(x=>x.Op=="createvisualtask"&&x.Args[0]!=name).ToArray();
+        var sprites=root.Where(x=>x.Op=="createsprite").ToArray();
+        bool damageShake=!leaf&&companions.Length==3&&companions.Count(x=>x.Args[0]=="AnimTask_BlendMonInAndOut")==1&&
+            companions.Count(x=>x.Args[0]=="AnimTask_ShakeTargetBasedOnMovePowerOrDmg"&&x.Args.Length==7&&AnimationArgument(x.Args[2])==1)==2;
+        if(damageShake)
+        {
+            if(sprites.Length!=2||sprites.Any(x=>x.Args[0]!="gBasicHitSplatSpriteTemplate"))Fail(c,"Squish damage-shake companion bound differs.");
+        }
+        else if(companions.Length>(leaf?4:1)||sprites.Length>(leaf?1:0)||
+            sprites.Any(x=>x.Args[0]!="gCrossImpactSpriteTemplate")||
+            companions.Any(x=>x.Args[0]!=(leaf?"AnimTask_ShakeMon2":"AnimTask_FacadeColorBlend")))
+            Fail(c,"Reaction emitter companions exceed reviewed source capacity.");
         // Trails and sweat are affine-off. Facade needs one retained battler matrix.
         // The ordinary-entry proof allows existing affine-off tails in free cells.
         if(!leaf&&_spriteScene.Sprites.Any(s=>s.Frame.Affine||s.Frame.Scale!=256))Fail(c,"Squish cannot prove retained affine capacity.");
         // Seven eleven-tick arc passes with six-tick pauses peak at eleven trails.
         // Reserve the leader and the single allowed cross-impact companion as well.
-        int needed=leaf?13:4;
+        int needed=leaf?13:damageShake?6:4;
         if(Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>IsSourceBattlerPresent(b.Slot.Value)&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<needed)Fail(c,"Reaction emitter source sprite capacity proof failed.");
     }
     private void ValidateReactionRecipe(SourceAnimationCommand c,string name)

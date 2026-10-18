@@ -41,13 +41,16 @@ class ReactionAnimationImportTests(unittest.TestCase):
    raw=dict(self.raw);self.assertIn(old,raw['data/battle_anim_scripts.s']);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(old,new)
    with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
    self.assertNotIn(move,{s['moveId'] for s in json.loads(data)['scripts']})
- def test_endeavor_retained_power_is_a_source_effect_gap_not_a_fake_receipt(self):
-  self.assertNotIn(283,self.rows);self.assertEqual(['invocation:retained-move-power'],next(s['missing'] for s in self.blocked if s['moveId']==283))
-  task=dict(op='createvisualtask',args=['AnimTask_ShakeTargetBasedOnMovePowerOrDmg','5','FALSE','0','6','1','0'])
-  self.assertTrue(imp.requires_uncommitted_power('EFFECT_ENDEAVOR',[task],self.raw));self.assertFalse(imp.requires_uncommitted_power('EFFECT_HIT',[task],self.raw));task['args'][2]='TRUE';self.assertFalse(imp.requires_uncommitted_power('EFFECT_ENDEAVOR',[task],self.raw))
+ def test_endeavor_uses_approved_committed_damage_without_changing_source_inputs(self):
+  shakes=[c for c in self.rows[283]['commands'] if c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ShakeTargetBasedOnMovePowerOrDmg']
+  self.assertEqual(2,len(shakes));self.assertTrue(all(c['args'][2:]==['TRUE','1','8','1','0'] for c in shakes))
+  self.assertEqual(['gFacadeSweatDropSpriteTemplate'],self.rows[283]['spriteDependencies'])
   raw=dict(self.raw);raw['data/battle_scripts_1.s']=raw['data/battle_scripts_1.s'].replace(b'BattleScript_EffectEndeavor::',b'BattleScript_EffectEndeavor::\n\tdamagecalc')
   with patch.object(imp,'read_sources',return_value=raw):
    with self.assertRaisesRegex(ValueError,'power-provenance'):imp.build(REFERENCE)
+  raw=dict(self.raw);raw['data/battle_anim_scripts.s']=raw['data/battle_anim_scripts.s'].replace(b'AnimTask_ShakeTargetBasedOnMovePowerOrDmg, 5, FALSE, 1, 8, 1, 0',b'AnimTask_ShakeTargetBasedOnMovePowerOrDmg, 5, TRUE, 1, 8, 1, 0')
+  with patch.object(imp,'read_sources',return_value=raw):
+   with self.assertRaisesRegex(ValueError,'policy operands'):imp.build(REFERENCE)
  def test_source_palette_registration_and_color_cycle_fail_closed(self):
   for path,old,new in [('src/data/battle_anim.h',b'{gBattleAnimSpritePal_Finger, ANIM_TAG_TAG_HAND}',b'{gBattleAnimSpritePal_SweatDrop, ANIM_TAG_TAG_HAND}'),('src/graphics.c',b'"graphics/battle_anims/sprites/finger.gbapal.lz"',b'"graphics/battle_anims/sprites/tag_hand.gbapal.lz"'),('src/battle_anim_effects_3.c',b'RGB(28, 25,  1)',b'RGB(28, 25,  2)')]:
    raw=dict(self.raw);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)

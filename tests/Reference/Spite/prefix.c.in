@@ -1,0 +1,66 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;typedef volatile u16 vu16;typedef volatile u32 vu32;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define SPRITE_NONE 255
+#define ANIM_TARGET 1
+#define ST_OAM_OBJ_BLEND 1
+#define ST_OAM_OBJ_NORMAL 0
+#define OBJ_PLTT_ID2(n) (256+(n)*16)
+#define PLTT_SIZE_4BPP 32
+#define RGB(r,g,b) ((r)|((g)<<5)|((b)<<10))
+#define Q_8_8(n) ((s16)((n)*256))
+static union{u32 align;u16 half[128];}regs;
+#define REG_BASE ((uintptr_t)&regs.half[0])
+@TYPES@
+@MACROS@
+@SINE@
+#define SCANLINE_EFFECT_DMACNT_16BIT 1
+#define SCANLINE_EFFECT_DMACNT_32BIT 2
+enum{SCANLINE_EFFECT_REG_BG0HOFS=0,SCANLINE_EFFECT_REG_BG0VOFS=2,SCANLINE_EFFECT_REG_BG1HOFS=4,SCANLINE_EFFECT_REG_BG1VOFS=6,SCANLINE_EFFECT_REG_BG2HOFS=8,SCANLINE_EFFECT_REG_BG2VOFS=10,SCANLINE_EFFECT_REG_BG3HOFS=12,SCANLINE_EFFECT_REG_BG3VOFS=14};
+struct PlttData{u16 r:5,g:5,b:5,unused:1;};
+struct Sprite;typedef void(*SpriteCallback)(struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite{struct OamData oam;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse,invisible,usingSheet;u8 subpriority;};
+struct Task{TaskFunc func;bool8 isActive;u8 priority;s16 data[16];};
+struct ScanlineEffectParams{void*dmaDest;u32 dmaControl;u8 initState,unused9;};
+struct ScanlineEffect{void*dmaSrcBuffers[2];void*dmaDest;u32 dmaControl;void(*setFirstScanlineReg)(void);u8 srcBuffer,state,unused16,unused17,waveTaskId;};
+static struct Sprite gSprites[64];static struct Task gTasks[16];static u16 gPlttBufferFaded[512],gPlttBufferUnfaded[512];static u8 gBattleAnimTarget,battlerSpriteIds[4];
+static struct{struct{bool8 invisible;}battlerData[4];}battlerData,*gBattleSpritesDataPtr=&battlerData;
+static struct ScanlineEffect gScanlineEffect;static u16 gScanlineEffectRegBuffers[2][960];static bool8 sShouldStopWaveTask;
+static u16 gBattle_BG0_X,gBattle_BG0_Y,gBattle_BG1_X,gBattle_BG1_Y,gBattle_BG2_X,gBattle_BG2_Y,gBattle_BG3_X,gBattle_BG3_Y;
+static int frame,paletteLive,paletteFailure,freeCount,oamCopy;static u16 raster[161];static int rasterCount;static const u16*dmaSource;
+static u8 GetAnimBattlerSpriteId(u8 participant){assert(participant==ANIM_TARGET);return battlerSpriteIds[gBattleAnimTarget];}
+static u8 GetBattlerSpriteBGPriorityRank(u8 slot){return slot==0||slot==3?2:1;}
+static u8 AllocSpritePalette(u16 tag){assert(tag==ANIM_TAG_BENT_SPOON&&!paletteLive);if(paletteFailure==255)return 255;paletteLive=1;return paletteFailure==15?15:4;}
+static void FreeSpritePaletteByTag(u16 tag){assert(tag==ANIM_TAG_BENT_SPOON&&paletteLive);paletteLive=0;}
+static void CpuCopy32(const void*from,void*to,u32 n){memcpy(to,from,n);}
+static void CpuFill16(u16 value,void*to,u32 n){assert(value==0);memset(to,0,n);}
+static void DestroyAnimVisualTask(u8 id){assert(id==0&&gTasks[id].isActive);gTasks[id].isActive=0;}
+static void DestroyTask(u8 id){assert(id==1&&gTasks[id].isActive);gTasks[id].isActive=0;}
+static u8 CreateTask(TaskFunc func,u8 priority){assert(priority==0&&!gTasks[1].isActive);gTasks[1]=(struct Task){0};gTasks[1].func=func;gTasks[1].priority=priority;gTasks[1].isActive=1;return 1;}
+static void DestroySprite(struct Sprite*s){assert(s->inUse&&s->usingSheet);s->inUse=0;}
+static void DmaStop(int id){assert(id==0);dmaSource=NULL;}
+static void DmaSet(int id,const void*source,void*destination,u32 control){assert(id==0&&control==SCANLINE_EFFECT_DMACNT_16BIT);dmaSource=source;}
+static void SetGpuReg(u8 offset,u16 value){regs.half[offset/2]=value;}
+static void ClearGpuRegBits(u8 offset,u16 value){regs.half[offset/2]&=~value;}
+static void SetGpuRegBits(u8 offset,u16 value){regs.half[offset/2]|=value;}
+static void Dummy(struct Sprite*s){}
+@PROTOTYPES@
+@FUNCTIONS@
+static void array16(const u16*values,int count){putchar('[');for(int i=0;i<count;i++)printf("%s%u",i?",":"",values[i]);putchar(']');}
+static void row(void){
+ int rank=GetBattlerSpriteBGPriorityRank(gBattleAnimTarget),source=battlerSpriteIds[gBattleAnimTarget];
+ printf("{\"frame\":%d,\"alive\":%d,\"waveAlive\":%d,\"state\":%u,\"sourceBuffer\":%u,\"waveOffset\":%d,\"paletteLive\":%d,\"bgEnabled\":%d,\"alpha\":[%d,%d],\"blend\":%u,\"originalInvisible\":%d,\"oamCopy\":%d,\"phase\":%d,\"elapsed\":%d,\"targetPalette\":",frame,gTasks[0].isActive,gTasks[1].isActive,gScanlineEffect.state,gScanlineEffect.srcBuffer,gTasks[1].data[3],paletteLive,(regs.half[0]&(1<<(8+rank)))!=0,regs.half[REG_OFFSET_BLDALPHA/2]&31,(regs.half[REG_OFFSET_BLDALPHA/2]>>8)&31,regs.half[REG_OFFSET_BLDCNT/2],gSprites[source].invisible,oamCopy,gTasks[0].data[15],gTasks[0].data[1]);
+ array16(gPlttBufferFaded+256+gBattleAnimTarget*16,16);printf(",\"copyPalette\":");array16(gPlttBufferFaded+320,16);printf(",\"buffers\":[");array16(gScanlineEffectRegBuffers[0],576);putchar(',');array16(gScanlineEffectRegBuffers[1],576);printf("],\"raster\":");if(rasterCount)array16(raster,rasterCount);else printf("null");printf(",\"copy\":");
+ if(freeCount&&gSprites[8].inUse){struct Sprite*s=&gSprites[8];printf("{\"position\":[%d,%d,%d,%d],\"visible\":%d,\"priority\":%d,\"palette\":%d,\"blend\":%d,\"affine\":%d,\"matrix\":%d}",s->x,s->y,s->x2,s->y2,!s->invisible,s->oam.priority,s->oam.paletteNum,s->oam.objMode,s->oam.affineMode,s->oam.matrixNum);}else printf("null");puts("}");
+}
+int main(int argc,char**argv){assert(argc==9);int doubles=atoi(argv[1]),logical=atoi(argv[3]),affine=atoi(argv[5]),y=atoi(argv[6]),sprite=atoi(argv[7]);gBattleAnimTarget=atoi(argv[2]);freeCount=atoi(argv[4]);paletteFailure=atoi(argv[8]);int xs[2][4]={{72,176,48,112},{32,200,90,152}},sub[4]={30,40,20,50},ids[4]={20,6,47,39};
+for(int i=0;i<64;i++){gSprites[i].inUse=TRUE;gSprites[i].callback=Dummy;}for(int i=0;i<4;i++){int id=battlerSpriteIds[i]=ids[i];gSprites[id].x=xs[doubles][i];gSprites[id].y=y;gSprites[id].x2=3;gSprites[id].y2=-2;gSprites[id].oam.priority=2;gSprites[id].oam.paletteNum=i;gSprites[id].subpriority=sub[i];for(int k=0;k<16;k++)gPlttBufferUnfaded[256+i*16+k]=gPlttBufferFaded[256+i*16+k]=(i*503+k*1703)&32767;}
+int source=battlerSpriteIds[gBattleAnimTarget];gSprites[source].invisible=sprite;gSprites[source].oam.affineMode=affine?3:0;gSprites[source].oam.matrixNum=7;battlerData.battlerData[gBattleAnimTarget].invisible=logical;if(freeCount)gSprites[8].inUse=FALSE;regs.half[0]=DISPCNT_BG1_ON|DISPCNT_BG2_ON;gBattle_BG1_X=gBattle_BG2_X=(u16)(32-gSprites[source].x-3);ScanlineEffect_Clear();gTasks[0].isActive=1;gTasks[0].priority=2;AnimTask_SpiteTargetShadow(0);row();
+for(frame=1;frame<=135&&(gTasks[0].isActive||gTasks[1].isActive||frame==135);frame++){oamCopy=freeCount&&gSprites[8].inUse;if(gTasks[1].isActive)gTasks[1].func(1);if(gTasks[0].isActive)gTasks[0].func(0);int active=gScanlineEffect.state!=0&&gScanlineEffect.state!=3;ScanlineEffect_InitHBlankDmaTransfer();rasterCount=active?161:0;if(active){raster[0]=*(u16*)gScanlineEffect.dmaDest;memcpy(raster+1,dmaSource,320);}row();}
+assert(!gTasks[0].isActive&&!gTasks[1].isActive);return 0;}

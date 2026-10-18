@@ -1,0 +1,48 @@
+#include <assert.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+typedef uint8_t u8;typedef uint16_t u16;typedef uint32_t u32;typedef int16_t s16;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define ANIM_ATTACKER 0
+#define ANIM_TARGET 1
+#define ANIM_ATK_PARTNER 2
+#define ANIM_DEF_PARTNER 3
+#define BATTLE_PARTNER(b) ((b)^2)
+#define BIT_FLANK 2
+#define SPRITE_NONE 255
+#define B_SIDE_PLAYER 0
+#define BATTLER_COORD_X_2 2
+#define BATTLER_COORD_Y_PIC_OFFSET 3
+#define ST_OAM_OBJ_NORMAL 0
+#define ST_OAM_AFFINE_NORMAL 1
+#define ST_OAM_AFFINE_DOUBLE 3
+#define MON_PIC_HEIGHT 64
+#define DISPLAY_HEIGHT 160
+#define IS_DOUBLE_BATTLE() doubles
+struct Sprite {s16 x,y,x2,y2,data[8];bool8 inUse,invisible,affineAnimPaused;struct {u8 affineMode,matrixNum,objMode,shape,size;} oam;};
+struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+struct OamMatrix {s16 a,b,c,d;};
+static struct Sprite gSprites[64];static struct OamMatrix gOamMatrices[64];
+static struct {struct {bool8 invisible;} battlerData[4];struct {u8 matrixNum;} healthBoxesData[4];} bs,*gBattleSpritesDataPtr=&bs;
+static u8 gBattlerSpriteIds[4]={4,9,13,22},gBattleAnimAttacker,gBattleAnimTarget;static int doubles,yOffset,elevation,visualCount=1,writeCount,writes[4][2];
+static const struct {u8 x,y;} sBattlerCoords[2][4]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};
+@PROTOTYPES@
+static bool8 IsBattlerSpritePresent(u8 b){return b<(doubles?4:2);}
+static u8 GetBattlerPosition(u8 b){return b;}static u8 GetBattlerSide(u8 b){return b&1;}
+static u8 GetBattlerYDelta(u8 b,u16 species){return yOffset;}static u8 GetBattlerElevation(u8 b,u16 species){return elevation;}
+static u8 GetBattlerSpriteCoord(u8 b,u8 type){return type==2?sBattlerCoords[doubles][b].x:GetBattlerSpriteFinal_Y(b,1,TRUE);}
+static void CalcCenterToCornerVec(struct Sprite*s,u8 shape,u8 size,u8 affine){}
+static void ObjAffineSet(struct ObjAffineSrcData*src,struct OamMatrix*m,int count,int stride){assert(count==1&&stride==2&&src->rotation==0&&writeCount<4);*m=(struct OamMatrix){src->xScale,0,0,src->yScale};writes[writeCount][0]=src->xScale;writes[writeCount++][1]=src->yScale;}
+static void DestroyAnimSprite(struct Sprite*s){assert(s->inUse);s->inUse=FALSE;visualCount--;}
+@FUNCTIONS@
+int main(int argc,char**argv){assert(argc==6);doubles=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=gBattleAnimAttacker;yOffset=atoi(argv[3]);elevation=atoi(argv[4]);int flags=atoi(argv[5]);
+ for(int b=0;b<4;b++){int id=gBattlerSpriteIds[b];gSprites[id].inUse=TRUE;gSprites[id].data[0]=b;gSprites[id].x=sBattlerCoords[doubles][b].x+17;gSprites[id].y=sBattlerCoords[doubles][b].y+11;gSprites[id].x2=7;gSprites[id].y2=9;gSprites[id].oam.matrixNum=id;gOamMatrices[id]=(struct OamMatrix){256,0,0,256};bs.healthBoxesData[b].matrixNum=id;bs.battlerData[b].invisible=!!(flags&1);gSprites[id].invisible=!!(flags&2);}
+ struct Sprite*ball=&gSprites[2];memset(ball,0,sizeof(*ball));ball->inUse=TRUE;
+ for(int frame=0;frame<100;frame++){writeCount=0;AnimBatonPassPokeball(ball);struct Sprite*actor=&gSprites[gBattlerSpriteIds[gBattleAnimAttacker]];struct OamMatrix*m=&gOamMatrices[actor->oam.matrixNum];
+ printf("{\"frame\":%d,\"alive\":%d,\"visualCount\":%d,\"position\":[%d,%d,%d,%d],\"data\":[",frame,ball->inUse,visualCount,ball->x,ball->y,ball->x2,ball->y2);
+ for(int i=0;i<8;i++)printf("%s%d",i?",":"",ball->data[i]);printf("],\"actorPosition\":[%d,%d,%d,%d],\"matrix\":[%d,%d,%d,%d],\"actorAffine\":%d,\"actorInvisible\":%d,\"writes\":[",actor->x,actor->y,actor->x2,actor->y2,m->a,m->b,m->c,m->d,actor->oam.affineMode,actor->invisible);
+ for(int i=0;i<writeCount;i++)printf("%s[%d,%d]",i?",":"",writes[i][0],writes[i][1]);puts("]}");if(!ball->inUse)return 0;}
+ abort();}

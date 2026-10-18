@@ -135,7 +135,7 @@ class ElementalImportTests(unittest.TestCase):
    flat=row['commands']+[c for call in row['commands'] if call['op']=='call' for c in pack['subroutines'][call['args'][0]]]
    names={c['args'][0] for c in flat if c['op']=='loadspritegfx'}
    if any(c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_MusicNotesRainbowBlend','AnimTask_MusicNotesClearRainbowBlend'} for c in flat):names|={'ANIM_TAG_MUSIC_NOTES','ANIM_TAG_BENT_SPOON','ANIM_TAG_SPHERE_TO_CUBE','ANIM_TAG_LARGE_FRESH_EGG'}
-   if any(c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_DoubleTeam','AnimTask_AttackerPunchWithTrace'} for c in flat):names.add('ANIM_TAG_BENT_SPOON')
+   if any(c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_DoubleTeam','AnimTask_AttackerPunchWithTrace','AnimTask_SpiteTargetShadow'} for c in flat):names.add('ANIM_TAG_BENT_SPOON')
    if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_SmokescreenImpact' for c in flat):
     names.add('TAG_SMOKESCREEN');tags['TAG_SMOKESCREEN']=int(re.search(r'^#define TAG_SMOKESCREEN (\d+)$',imp.read(REFERENCE,'src/battle_anim_smokescreen.c').decode(),re.M)[1])
    self.assertEqual({name:tags[name] for name in names},row['spriteTags'])

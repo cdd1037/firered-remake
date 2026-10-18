@@ -6,27 +6,44 @@ public sealed partial class SourceBattleAnimation
     private IReadOnlyDictionary<string,int> _programLabels=NoLabels;
     private int _validationProgramLength;
     private bool _validatingInvokedProgram=true;
-    private IReadOnlyDictionary<string,int> LabelsFor(string name)=>_script.SubroutineLabels.TryGetValue(name,out var labels)?labels:NoLabels;
-    private bool ValidProgramLabel(string name)=>_programLabels.TryGetValue(name,out int pc)&&pc>=0&&pc<_validationProgramLength;
+    private SourceAnimationScript _programSource=null!,_invocationProgram=null!;
+    private bool _validatingSubroutine;
+    private IReadOnlyDictionary<string,int> LabelsFor(string name)=>_programSource.SubroutineLabels.TryGetValue(name,out var labels)?labels:NoLabels;
+    private bool ValidProgramLabel(string name)=>_programLabels.TryGetValue(name,out int pc)&&pc>=0&&pc<_validationProgramLength||!_validatingSubroutine&&_programSource.TailPrograms.ContainsKey(name);
+    private void TransferProgram(string label)
+    {
+        if(_programLabels.TryGetValue(label,out int pc)){_pc=pc;return;}
+        if(_subroutine is not null||!_programSource.TailPrograms.TryGetValue(label,out var tail))
+            throw new InvalidDataException("Missing or helper-scoped source tail program.");
+        // Source goto changes only the script pointer. It does not reseed visual
+        // RNG, clear argument registers, wait a tick, or create another ACK owner.
+        _programSource=tail;_programLabels=tail.Labels;_pc=0;
+    }
     private void ValidatePrograms()
     {
-        if(_script.SubroutineLabels.Keys.Any(name=>!_script.Subroutines.ContainsKey(name)))throw new InvalidDataException("Labels refer to an absent source subroutine.");
-        ValidateProgram(_script.Commands,_script.Labels,false);
-        // Catalogs share helper dictionaries across roots. Structural validation still
-        // covers every helper, while transient invocation inputs belong only to helpers
-        // referenced by this root. Nested calls are rejected by ValidateProgram.
-        var invoked=SourceAnimationProgramDependencies.RequiredSubroutines(_script.Commands,_script.Subroutines);
-        foreach(var (name,commands) in _script.Subroutines)
+        var programs=SourceAnimationProgramDependencies.ProgramClosure(_script);
+        _invocationProgram=SourceAnimationProgramDependencies.SelectedProgram(_script,_cue);
+        foreach(var source in programs)
         {
-            _validatingInvokedProgram=invoked.ContainsKey(name);
-            ValidateProgram(commands,LabelsFor(name),true);
+            _programSource=source;
+            if(source.SubroutineLabels.Keys.Any(name=>!source.Subroutines.ContainsKey(name)))throw new InvalidDataException("Labels refer to an absent source subroutine.");
+            _validatingInvokedProgram=ReferenceEquals(source,_invocationProgram)||source.TailPrograms.Count!=0;
+            ValidateProgram(source.Commands,source.Labels,false);
+            // ABI/resource validation covers every referenced branch and helper;
+            // invocation inputs and companion capacity belong to the selected leaf.
+            var invoked=SourceAnimationProgramDependencies.RequiredSubroutines(source.Commands,source.Subroutines);
+            foreach(var (name,commands) in source.Subroutines)
+            {
+                _validatingInvokedProgram=ReferenceEquals(source,_invocationProgram)&&invoked.ContainsKey(name);
+                ValidateProgram(commands,LabelsFor(name),true);
+            }
         }
-        _validatingInvokedProgram=true;_programLabels=_script.Labels;ValidatePaletteBackupProgram();
+        _programSource=_script;_validatingInvokedProgram=true;_validatingSubroutine=false;_programLabels=_script.Labels;ValidatePaletteBackupProgram();
     }
     private void ValidateProgram(SourceAnimationCommand[] commands,IReadOnlyDictionary<string,int> labels,bool subroutine)
     {
         if(commands.Length is <1 or >128)throw new InvalidDataException("Source program or label is outside its bounded command range.");
-        _programLabels=labels;_validationProgramLength=commands.Length;
+        _programLabels=labels;_validationProgramLength=commands.Length;_validatingSubroutine=subroutine;
         foreach(var command in commands)
         {
             if(subroutine&&command.Op is "call" or "end"||!subroutine&&command.Op=="return")throw new InvalidDataException("Source call/return scope differs.");
@@ -39,20 +56,26 @@ public sealed partial class SourceBattleAnimation
             if(pc<0||pc>=commands.Length)throw new InvalidDataException("Source control flow falls outside its program.");
             if(state[pc]==1)throw new InvalidDataException("Source control flow must be acyclic.");
             if(state[pc]==2)return;state[pc]=1;
-            foreach(int next in SourceAnimationProgramDependencies.Successors(commands[pc],pc,labels))Visit(next);
+            foreach(int next in SourceAnimationProgramDependencies.Successors(commands[pc],pc,labels,subroutine?null:_programSource.TailPrograms))Visit(next);
             state[pc]=2;
         }
         // Validate every instruction, including alternate blocks not selected by
         // this invocation; a backward jump to an earlier return is still acyclic.
         for(int pc=0;pc<commands.Length;pc++)Visit(pc);
     }
-    private int MaximumInvocationCost(Func<SourceAnimationCommand,int> cost)=>SourceAnimationProgramDependencies.MaximumCost(_script,cost);
+    private int MaximumInvocationCost(Func<SourceAnimationCommand,int> cost)=>SourceAnimationProgramDependencies.MaximumCost(_invocationProgram,cost);
     private bool ValidateArgumentCommand(SourceAnimationCommand c)
     {
         var a=c.Args;
         if(c.Op=="jumpargeq")
         {
             if(a.Length!=3||(Number(a[0])<0||Number(a[0])>=AnimationRegisterCount)||AnimationArgument(a[1]) is <short.MinValue or >ushort.MaxValue||!ValidProgramLabel(a[2]))Fail(c,"Argument branch needs a source argument, signed16 comparison and scoped label.");
+            return true;
+        }
+        if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_GetBattleTerrain")
+        {
+            if(a.Length!=2||Number(a[1]) is <0 or >255)Fail(c,"Terrain predicate takes only source task priority.");
+            if(_validatingInvokedProgram&&(_cue.SourceTerrain is not {} terrain||(int)terrain is <0 or >9))Fail(c,"Terrain predicate requires committed native terrain 0 through 9.");
             return true;
         }
         if(c.Op=="createvisualtask"&&a.FirstOrDefault()=="AnimTask_GetTargetIsAttackerPartner")
@@ -64,6 +87,10 @@ public sealed partial class SourceBattleAnimation
     }
     private bool TryRunArgumentPredicate(SourceAnimationCommand c)
     {
+        if(c.Args[0]=="AnimTask_GetBattleTerrain")
+        {
+            _animationArgs[0]=(short)_cue.SourceTerrain!.Value;return true;
+        }
         if(c.Args[0]=="GetIsDoomDesireHitTurn")
         {
             // The source has two independent ifs, not an else assignment. Turns
@@ -89,9 +116,9 @@ public sealed partial class SourceBattleAnimation
 }
 
 // Shared by resource dependency resolution and invocation-context validation.
-internal static class SourceAnimationProgramDependencies
+internal static partial class SourceAnimationProgramDependencies
 {
-    internal static IEnumerable<int> Successors(SourceAnimationCommand command,int pc,IReadOnlyDictionary<string,int> labels)
+    internal static IEnumerable<int> Successors(SourceAnimationCommand command,int pc,IReadOnlyDictionary<string,int> labels,IReadOnlyDictionary<string,SourceAnimationScript>? tails=null)
     {
         int Label(int index)
         {
@@ -102,10 +129,10 @@ internal static class SourceAnimationProgramDependencies
         switch(command.Op)
         {
             case "end":case "return":yield break;
-            case "goto":yield return Label(0);yield break;
+            case "goto":if(tails?.ContainsKey(command.Args[0])!=true)yield return Label(0);yield break;
             case "choosetwoturnanim":yield return Label(0);yield return Label(1);yield break;
             case "jumpifmoveturn":yield return Label(1);break;
-            case "jumpargeq":yield return Label(2);break;
+            case "jumpargeq":if(tails?.ContainsKey(command.Args[2])!=true)yield return Label(2);break;
         }
         yield return pc+1;
     }
@@ -113,8 +140,14 @@ internal static class SourceAnimationProgramDependencies
     // coexist, while each repeated helper call contributes its full cost.
     internal static int MaximumCost(SourceAnimationScript script,Func<SourceAnimationCommand,int> cost)
     {
-        var helpers=new Dictionary<string,int>(StringComparer.Ordinal);
-        int Program(SourceAnimationCommand[] commands,IReadOnlyDictionary<string,int> labels,bool helper)
+        ProgramClosure(script); // Reject dangling references/cycles even in unused branches.
+        var roots=new Dictionary<string,int>(StringComparer.Ordinal);
+        int Root(SourceAnimationScript owner)
+        {
+            if(roots.TryGetValue(owner.Label,out int found))return found;
+            return roots[owner.Label]=Program(owner,owner.Commands,owner.Labels,false);
+        }
+        int Program(SourceAnimationScript owner,SourceAnimationCommand[] commands,IReadOnlyDictionary<string,int> labels,bool helper)
         {
             if(commands.Length is <1 or >128)throw new InvalidDataException("Source capacity program length differs.");
             var visiting=new bool[commands.Length];var memo=new int?[commands.Length];
@@ -127,19 +160,18 @@ internal static class SourceAnimationProgramDependencies
                 if(own<0)throw new InvalidDataException("Source capacity cost must be nonnegative.");
                 if(command.Op=="call")
                 {
-                    if(helper||command.Args.Length!=1||!script.Subroutines.TryGetValue(command.Args[0],out var body))
+                    if(helper||command.Args.Length!=1||!owner.Subroutines.TryGetValue(command.Args[0],out var body))
                         throw new InvalidDataException("Source capacity helper scope differs.");
-                    string name=command.Args[0];
-                    if(!helpers.TryGetValue(name,out int weight))
-                        helpers[name]=weight=Program(body,script.SubroutineLabels.GetValueOrDefault(name)??new Dictionary<string,int>(),true);
-                    own=checked(own+weight);
+                    own=checked(own+Program(owner,body,owner.SubroutineLabels.GetValueOrDefault(command.Args[0])??new Dictionary<string,int>(),true));
                 }
-                int tail=0;foreach(int next in Successors(command,pc,labels))tail=Math.Max(tail,Visit(next));
+                string? target=command.Op=="goto"?command.Args.ElementAtOrDefault(0):command.Op=="jumpargeq"?command.Args.ElementAtOrDefault(2):null;
+                int tail=target is not null&&!helper&&owner.TailPrograms.TryGetValue(target,out var nextProgram)?Root(nextProgram):0;
+                foreach(int next in Successors(command,pc,labels,helper?null:owner.TailPrograms))tail=Math.Max(tail,Visit(next));
                 visiting[pc]=false;return (memo[pc]=checked(own+tail)).Value;
             }
             return Visit(0);
         }
-        return Program(script.Commands,script.Labels,false);
+        return Root(script);
     }
     public static Dictionary<string,SourceAnimationCommand[]> RequiredSubroutines(
         IEnumerable<SourceAnimationCommand> commands,IReadOnlyDictionary<string,SourceAnimationCommand[]> subroutines)

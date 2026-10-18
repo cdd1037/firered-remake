@@ -53,7 +53,7 @@ public sealed partial class SourceBattleAnimation
         // Catalogs share uninvoked helpers. Only calls in this root contribute
         // ownership; repeated calls are counted separately. Nested calls already
         // fail the common bounded-program validator.
-        return _script.Commands.SelectMany(c=>c.Op=="call"&&c.Args.Length==1&&_script.Subroutines.TryGetValue(c.Args[0],out var body)?new[]{c}.Concat(body):new[]{c}).ToArray();
+        return _invocationProgram.Commands.SelectMany(c=>c.Op=="call"&&c.Args.Length==1&&_invocationProgram.Subroutines.TryGetValue(c.Args[0],out var body)?new[]{c}.Concat(body):new[]{c}).ToArray();
     }
     private void RequireOverlaySpritePalette(SourceAnimationCommand command,string tag)
     {

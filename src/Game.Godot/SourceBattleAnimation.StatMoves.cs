@@ -42,7 +42,7 @@ public sealed partial class SourceBattleAnimation
     private PaletteFade? _fade;
     private SourceAnimationCommand[]? _subroutine;
     private int _returnPc;
-    private SourceAnimationCommand[] Program=>_subroutine??_script.Commands;
+    private SourceAnimationCommand[] Program=>_subroutine??_programSource.Commands;
     private bool ValidateStatMoveOperand(SourceAnimationCommand c)
     {
         string[]? expected=c.Op switch

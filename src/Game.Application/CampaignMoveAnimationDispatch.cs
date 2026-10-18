@@ -267,6 +267,10 @@ public static partial class CampaignMoveAnimationPresentation
             return UtilityAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_DESTINY_BOND" or "EFFECT_PERISH_SONG" or "EFFECT_CURSE")
             return GhostSongAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect=="EFFECT_SPITE")
+            return SpiteAnimation(battle,used,attack,definition,action,pp,moves);
+        if(definition.Effect=="EFFECT_BATON_PASS")
+            return BatonPassAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect=="EFFECT_LOCK_ON")
             return TargetMarkAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_SNORE" or "EFFECT_UPROAR"&&!SoundHitDefinition(definition))

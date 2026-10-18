@@ -110,7 +110,7 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-prepared-power");
             dispatch=dispatch with{MovePower=checked((ushort)power.Value)};
         }
-        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_LEVEL_DAMAGE")
+        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_LEVEL_DAMAGE" or "EFFECT_ENDEAVOR")
         {
             // This is the adjusted source damage register passed to attackanimation,
             // before datahpupdate clamps body or substitute HP. Never derive it

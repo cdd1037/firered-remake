@@ -1,0 +1,7 @@
+{
+  "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/battle_anim.c": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5",
+  "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+  "graphics/battle_anims/sprites/pokeball.png": "142da6fe05e9a4ad68948e9eff6cd2bb75040aece6447b3777e524ffa37a3f96"
+}

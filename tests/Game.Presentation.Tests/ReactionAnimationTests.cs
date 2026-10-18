@@ -9,17 +9,17 @@ public sealed class ReactionAnimationTests
     {public List<SourceAnimationSound> Cues{get;}=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound cue)=>Cues.Add(cue);public void StopAnimationEffects(){}public void SetPan(int pan,int frame){}}
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,new[]{5,11,7,13}[i],new[]{2,3,4,5}[i],new[]{64,40,24,56}[i],new[]{64,48,32,56}[i])).ToArray();
-    private static CommittedMoveAnimation Cue(int move,int actor=0,int target=1)=>new("reaction-root",1,move,new(actor),new(target)){VisualSeed=0x12345678};
+    private static CommittedMoveAnimation Cue(int move,int actor=0,int target=1)=>new("reaction-root",1,move,new(actor),new(target)){VisualSeed=0x12345678,MoveDamage=move==283?240:null};
     private static SourceAnimationCommand C(string op,params string[] args)=>new(op,args,1);
     private static void Clean(SourceBattleAnimation runtime)
     {
         Assert.IsFalse(runtime.Active);Assert.AreEqual(0,runtime.ActiveVisualCount);var f=runtime.Snapshot();Assert.AreEqual(0,f.Sprites.Length);Assert.AreEqual(0,f.BackgroundSlots.Length);Assert.IsTrue(f.Offsets.All(p=>p==default));Assert.IsFalse(f.BlendEnabled);Assert.IsTrue(f.BattlerAffine.All(a=>!a.DoubleSize&&a.XScale==256&&a.YScale==256));Assert.AreEqual(0,f.PaletteBlends.Length);Assert.AreEqual(0,f.InvertedPalettes.Length);
     }
-    [TestMethod][DataRow(161)][DataRow(263)][DataRow(265)][DataRow(348)]
+    [TestMethod][DataRow(161)][DataRow(263)][DataRow(265)][DataRow(348)][DataRow(283)]
     public void WholeSourceRootsResolveRenderReplayAcrossSidesAndDoubles(int move)
     {
         using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(move);
-        string[] expected=move switch{161=>["impact","tri-attack-triangle","fire","lightning","ice-crystals"],263=>["impact","sweat-drop"],265=>["impact","tag-hand","smellingsalt-effect"],_=>["impact","leaf","cross-impact"]};
+        string[] expected=move switch{161=>["impact","tri-attack-triangle","fire","lightning","ice-crystals"],263 or 283=>["impact","sweat-drop"],265=>["impact","tag-hand","smellingsalt-effect"],_=>["impact","leaf","cross-impact"]};
         CollectionAssert.AreEquivalent(expected,resolved.Assets.Keys.ToArray());
         foreach(bool doubles in new[]{false,true})for(int actor=0;actor<(doubles?4:2);actor++)foreach(int target in doubles?new[]{actor^1,actor^2}:new[]{actor^1})
         {
@@ -37,12 +37,12 @@ public sealed class ReactionAnimationTests
                 {var before=JsonSerializer.Serialize(runtime.Snapshot());var rendered=composer.ComposeField(f);pixels|=!rendered.SequenceEqual(composer.ComposeField(f with{Sprites=[]}));Assert.AreEqual(before,JsonSerializer.Serialize(runtime.Snapshot()));}
             }
             Clean(runtime);Clean(replay);Assert.AreEqual(0,scene.Count);Assert.IsTrue(visible);Assert.IsTrue(pixels);Assert.IsTrue(audio.Cues.Count>0);
-            string[] required=move switch{161=>["gTriAttackTriangleSpriteTemplate","gLargeFlameScatterSpriteTemplate","gLightningSpriteTemplate","gIceCrystalHitLargeSpriteTemplate"],263=>["gFacadeSweatDropSpriteTemplate"],265=>["gSmellingSaltsHandSpriteTemplate","gSmellingSaltExclamationSpriteTemplate"],_=>["gLeafBladeSpriteTemplate","gCrossImpactSpriteTemplate"]};
+            string[] required=move switch{161=>["gTriAttackTriangleSpriteTemplate","gLargeFlameScatterSpriteTemplate","gLightningSpriteTemplate","gIceCrystalHitLargeSpriteTemplate"],263 or 283=>["gFacadeSweatDropSpriteTemplate"],265=>["gSmellingSaltsHandSpriteTemplate","gSmellingSaltExclamationSpriteTemplate"],_=>["gLeafBladeSpriteTemplate","gCrossImpactSpriteTemplate"]};
             foreach(string template in required)Assert.IsTrue(templates.Contains(template),template);
             if(move==263){Assert.IsTrue(palette);Assert.AreEqual(4,peak);}if(move==348)Assert.AreEqual(12,peak);
         }
     }
-    [TestMethod][DataRow(161)][DataRow(263)][DataRow(265)][DataRow(348)]
+    [TestMethod][DataRow(161)][DataRow(263)][DataRow(265)][DataRow(348)][DataRow(283)]
     public void CancellationAtEveryTickReleasesOwnedChildrenAffineAndPalette(int move)
     {
         using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(move);var battlers=Battlers(true);var length=new SourceBattleAnimation(resolved.Script,Cue(move),battlers,true,new Audio(),spriteMaterials:resolved.Assets);int ticks=0;while(length.Active&&ticks++<600)length.Tick();Assert.IsFalse(length.Active);
@@ -51,6 +51,24 @@ public sealed class ReactionAnimationTests
             var scene=new SourceBattleAnimation.SpriteScene();var runtime=new SourceBattleAnimation(resolved.Script,Cue(move),battlers,true,new Audio(),spriteScene:scene,spriteMaterials:resolved.Assets);
             for(int t=0;t<stop&&runtime.Active;t++)runtime.Tick();runtime.Cancel();runtime.Cancel();Clean(runtime);Assert.AreEqual(0,scene.Count);Assert.IsTrue(runtime.Snapshot().SpritePaletteSlots.All(p=>p.All(c=>c==0)));
         }
+    }
+    [TestMethod]
+    public void ApprovedDamageModeRetainsSourceClampDurationAndRejectsMissingContext()
+    {
+        using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(283);
+        Assert.AreEqual(2,resolved.Script.Commands.Count(c=>c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_ShakeTargetBasedOnMovePowerOrDmg"&&c.Args[2]=="TRUE"));
+        Assert.ThrowsExactly<SourceAnimationException>(()=>new SourceBattleAnimation(resolved.Script,Cue(283) with{MoveDamage=null},Battlers(false),false,new Audio()));
+        int? duration=null;
+        foreach(int damage in new[]{1,12,36,191,192,10000})
+        {
+            var runtime=new SourceBattleAnimation(resolved.Script,Cue(283) with{MoveDamage=damage},Battlers(false),false,new Audio(),spriteMaterials:resolved.Assets);
+            int ticks=0,max=0,min=0;while(runtime.Active&&ticks++<600){var f=runtime.Tick();max=Math.Max(max,f.Offsets[1].X);min=Math.Min(min,f.Offsets[1].X);}
+            int amplitude=Math.Clamp(damage/12,1,16);Assert.AreEqual((amplitude+1)/2,max);Assert.AreEqual(-amplitude/2,min);
+            if(duration is {} expected)Assert.AreEqual(expected,ticks);else duration=ticks;Clean(runtime);
+        }
+        var commands=resolved.Script.Commands.ToArray();int index=Array.FindIndex(commands,c=>c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_ShakeTargetBasedOnMovePowerOrDmg");
+        var args=commands[index].Args.ToArray();args[2]="FALSE";commands[index]=commands[index] with{Args=args};
+        Assert.ThrowsExactly<SourceAnimationException>(()=>new SourceBattleAnimation(resolved.Script with{Commands=commands},Cue(283) with{MovePower=100},Battlers(false),false,new Audio()));
     }
     [TestMethod]
     public void RawChildDependenciesAndSourceRecipesFailClosed()
@@ -87,7 +105,7 @@ public sealed class ReactionAnimationTests
         Assert.ThrowsExactly<SourceAnimationException>(()=>new SourceBattleAnimation(source with{Commands=[emitter,..source.Commands]},Cue(move),Battlers(false),false,new Audio()));
         Assert.ThrowsExactly<SourceAnimationException>(()=>new SourceBattleAnimation(source with{Commands=[emitter,C("goto","Loop"),C("end")],Labels=new Dictionary<string,int>{{"Loop",0}}},Cue(move),Battlers(false),false,new Audio()));
     }
-    [TestMethod][DataRow(263)][DataRow(348)]
+    [TestMethod][DataRow(263)][DataRow(348)][DataRow(283)]
     public void RetainedNonAffineOwnerSurvivesEmitterCancellation(int move)
     {
         var bolt=AnimationCompositionFixture.Script(84);var battlers=Battlers(true);var scene=new SourceBattleAnimation.SpriteScene();var script=bolt with{Commands=[C("loadspritegfx","ANIM_TAG_SPARK"),C("createvisualtask","AnimTask_ElectricBolt","5","0","-44","0"),C("waitforvisualfinish"),C("end")],Subroutines=new Dictionary<string,SourceAnimationCommand[]>()};
