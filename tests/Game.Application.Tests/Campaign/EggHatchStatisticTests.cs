@@ -144,10 +144,12 @@ public sealed class EggHatchStatisticTests
         var state = Egg(true);
         state = state with { GameStats = state.GameStats!.Remove(Stat) };
         Assert.AreEqual("save_hatched_egg_count_missing_migration_required", Invoke("ValidateHatchedEggCount", state));
-        var loaded = SaveCodec.Decode<CampaignState>(File.ReadAllBytes(TestAssets.Checkpoint), session.RulesVersion,
-            CurrentCampaignFixture.Catalog.ContentVersion);
+        byte[] source = File.ReadAllBytes(TestAssets.Checkpoint);
+        var (loaded, rules) = CurrentCampaignFixture.DecodeRawCheckpoint(source);
         var legacy = loaded.State with { GameStats = loaded.State.GameStats?.Remove(Stat) };
-        Assert.AreEqual("save_hatched_egg_count_missing_migration_required", session.ValidatePlayerSave(legacy));
+        Assert.AreEqual("save_hatched_egg_count_missing_migration_required", rules == "firered-current-campaign-v3"
+            ? session.ValidateLegacyTrainerTowerCheckpoint(legacy) : session.ValidatePlayerSave(legacy));
         Assert.ThrowsExactly<InvalidDataException>(() => CampaignSession.RestoreCurrent(CurrentCampaignFixture.Catalog, legacy, loaded.Generation));
+        CollectionAssert.AreEqual(source, File.ReadAllBytes(TestAssets.Checkpoint));
     }
 }

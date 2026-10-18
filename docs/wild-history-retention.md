@@ -43,12 +43,25 @@ parent input snapshots do not require those parents to remain owned forever.
 
 ## Persistence boundary
 
-The current campaign rules version is `firered-current-campaign-v3`; content remains
+The current campaign rules version is `firered-current-campaign-v4`; content remains
 `firered-current-content-v4`. Normal Continue does not migrate an old rules version.
-The explicit `convert-current-checkpoint SOURCE NEW_DESTINATION` command handles
-only the preceding campaign-v2/content-v4 input. It preserves the source file,
-NextPokemonId, RNG, generation, current entities, game facts and snapshots while
-removing retired proof data, then validates the resulting current state.
+The explicit `convert-current-checkpoint SOURCE NEW_DESTINATION` command accepts
+exactly v2-to-v4 or v3-to-v4 with content-v4. The v2 route first removes retired
+Pokemon proofs and compacts current-source/wild settlements, then validates and
+compacts legacy Tower history. The v3 route only performs the Tower step; it does
+not silently prune unrelated wild history or optional payload fields. Every old
+Tower receipt must pass validation before any are discarded; only its final receipt
+is retained for callback identity and the next battle ID. The four authoritative
+Tower challenge records, prizes and timer remain unchanged.
+
+Both routes preserve the source file, NextPokemonId, RNG, generation, current
+entities, game facts and snapshots, and validate the complete current output.
+Already-current and undeclared input versions are rejected. Missing lifetime hatch
+counts are never inferred: a known count requires the separate explicit operator
+correction, supporting exactly same-version v2, v3 or v4 while preserving the
+original rules/history and v2 retired payload fields, before version conversion.
+The unchanged v3 representative checkpoint's unknown total remains a blocker;
+controlled tests use a clearly synthetic in-memory total only.
 
 SaveCodec checksums, staged-write byte comparison, valid-primary backup handling
 and current transaction checks remain. The roamer's local state comparison uses

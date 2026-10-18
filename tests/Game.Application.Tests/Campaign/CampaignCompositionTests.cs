@@ -36,12 +36,23 @@ public sealed class CampaignCompositionTests
     }
 
     [TestMethod]
-    public void RawCheckpointWithoutLifetimeCountIsPreservedAndRequiresExplicitMigration()
+    public void RawCheckpointIsNeverAutomaticallyUpgradedAndSourceBytesStayIntact()
     {
         var session = CampaignSession.CreateCurrent(catalog, new(0x11223344));
         byte[] source = File.ReadAllBytes(TestAssets.Checkpoint);
-        var loaded = SaveCodec.Decode<CampaignState>(source, session.RulesVersion, catalog.ContentVersion);
-        if (loaded.State.GameStats?.ContainsKey("GAME_STAT_HATCHED_EGGS") == true)
+        var (loaded, rules) = CurrentCampaignFixture.DecodeRawCheckpoint(source);
+        if (rules != session.RulesVersion)
+        {
+            var result = PlayerSaveOperations.Load(() => SaveCodec.Decode<CampaignState>(source,
+                session.RulesVersion, catalog.ContentVersion, validate: session.ValidatePlayerSave));
+            Assert.AreEqual(SaveOperationStatus.IncompatibleVersion, result.Result.Status);
+            Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
+            Assert.IsNull(result.Saved);
+            if (loaded.State.GameStats?.ContainsKey("GAME_STAT_HATCHED_EGGS") != true)
+                Assert.AreEqual("save_hatched_egg_count_missing_migration_required",
+                    session.ValidateLegacyTrainerTowerCheckpoint(loaded.State));
+        }
+        else if (loaded.State.GameStats?.ContainsKey("GAME_STAT_HATCHED_EGGS") == true)
         {
             var restored = CampaignSession.RestoreCurrent(catalog, loaded.State, loaded.Generation);
             Assert.AreEqual(CanonicalJson.Hash(loaded.State), CanonicalJson.Hash(restored.State));

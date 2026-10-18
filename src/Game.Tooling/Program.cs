@@ -17,10 +17,10 @@ if (args.Length > 0 && args[0] is "set-known-hatch-count" or "convert-current-ch
         {
             if (args.Length != 4 || !int.TryParse(args[3], System.Globalization.NumberStyles.None,
                 System.Globalization.CultureInfo.InvariantCulture, out int count) || count is < 0 or > 0xffffff)
-                throw new ArgumentException("Usage: set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT (0..16777215). No automatic estimate is available.");
+                throw new ArgumentException("Usage: set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT (0..16777215). Accepts campaign-v2, campaign-v3 or campaign-v4 and preserves its rules. No automatic estimate is available.");
             return KnownHatchCountConversion.Run(Directory.GetCurrentDirectory(), args[1], args[2], count);
         }
-        if (args.Length != 3) throw new ArgumentException("Usage: convert-current-checkpoint SOURCE NEW_DESTINATION");
+        if (args.Length != 3) throw new ArgumentException("Usage: convert-current-checkpoint SOURCE NEW_DESTINATION (campaign-v2 or campaign-v3 to campaign-v4; content-v4 only)");
         return CurrentCheckpointConversion.Run(Directory.GetCurrentDirectory(), args[1], args[2]);
     }
     catch (Exception error) when (error is ArgumentException or IOException or InvalidDataException or UnauthorizedAccessException)

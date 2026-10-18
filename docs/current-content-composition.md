@@ -39,11 +39,25 @@ explicit residual layout debt, not required historical compatibility layers.
 
 ## Checkpoints and verification limits
 
-The current content version is `firered-current-content-v4`; campaign rules remain
-`firered-current-campaign-v3`. Use the explicit offline
-`convert-current-checkpoint SOURCE NEW_DESTINATION` tooling command for older
-checkpoints. Normal Continue does not silently migrate schemas. Save integrity
-and all actual player state remain part of the save contract.
+The current content version is `firered-current-content-v4`; campaign rules are
+`firered-current-campaign-v4`. The explicit offline
+`convert-current-checkpoint SOURCE NEW_DESTINATION` command accepts exactly
+campaign-v3/content-v4 (validated Tower-history compaction) or campaign-v2/content-v4
+(retired-Pokemon compaction followed by validated Tower-history compaction).
+Already-v4 inputs and other version routes are refused. Every discarded Tower
+receipt is validated, source bytes are preserved, and generation, RNG and unrelated
+player state remain unchanged. Normal Continue does not migrate old rules.
+
+The generation-57604 v3 representative checkpoint still lacks an independently
+known lifetime hatch count. Version conversion does not infer or supply it. An
+operator with a known total must use the separate explicit `set-known-hatch-count`
+command first. It explicitly supports same-version v2, v3 and v4 corrections,
+preserving the source rules, full Tower history and v2 retired fields; v2 is checked
+using a throwaway copy through the retired-source validation before publication.
+The controlled fixture's synthetic test-only total is not a repaired player save.
+See [current game composition](current-game-composition.md) for the exact routes.
+Historical measurements below remain evidence of their original cleanup slice,
+not a claim that the unchanged old checkpoint is a current Continue baseline.
 
 Game completeness is separate from this cleanup; see [scope audit](full-scope-audit.md).
 Not all optional content or dedicated move animations are implemented. Native
@@ -95,7 +109,7 @@ were not rerun for those non-battle/audio changes. Ordinary settled wild-history
 retention and its remaining special-ledger limitations are documented in
 [wild history retention](wild-history-retention.md).
 
-## Current ownership rules (campaign v3)
+## Ownership retention introduced in campaign v3
 
 Released Pokemon and ribbon-recipient proof lists are no longer persisted.
 Acquisition/evolution sources are retained for current ownership and active work;

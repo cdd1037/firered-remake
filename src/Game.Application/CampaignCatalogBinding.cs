@@ -14,7 +14,7 @@ namespace Game.Application;
 public static class CurrentGameProfile
 {
     public const string Id = "current";
-    public const string RulesVersion = "firered-current-campaign-v3";
+    public const string RulesVersion = "firered-current-campaign-v4";
 }
 
 internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion,

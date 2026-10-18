@@ -77,22 +77,7 @@ public sealed partial class CampaignSession
         try { if (state.TrainerTower is {} tower) TrainerTowerProgressRules.ValidateStableSave(tower,_content.TrainerTowerCatalog!); }
         catch (Exception ex) when (ex is ArgumentException or InvalidDataException or InvalidOperationException) { return "save_trainer_tower_progress"; }
         if (IsTrainerTowerMap(state.World.Player.MapId) && (!RainbowQuestComplete(state) || state.TrainerTower is null)) return "save_trainer_tower_access";
-        var history=state.TrainerTowerHistory??[];
-        for (int i=0;i<history.Length;i++)
-        {
-            var h=history[i];
-            if(h is null || h.Id!="trainer-tower-battle:"+(i+1) || !Enum.IsDefined(h.Course) || h.FloorIndex is <0 or >7 ||
-                h.Level is <1 or >100 || h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) || h.OpponentsSeen.IsDefault)
-                return "save_trainer_tower_history";
-            try
-            {
-                var d=_content.TrainerTowerCatalog!.DescribeBattle(h.Course,h.FloorIndex,h.TrainerIndex,h.Level);
-                if(h.OpponentsSeen.IsEmpty || h.OpponentsSeen.Distinct().Count()!=h.OpponentsSeen.Length || h.OpponentsSeen.Any(n=>n<0||n>=d.Members.Length) ||
-                    h.Outcome==WildBattleOutcome.Won && h.OpponentsSeen.Length!=d.Members.Length) return "save_trainer_tower_seen";
-            }
-            catch(ArgumentException){return "save_trainer_tower_history_descriptor";}
-        }
-        return null;
+        return ValidateTrainerTowerHistory(state.TrainerTowerHistory);
     }
 
     private bool TryApplyTrainerTowerEffect(CampaignState state,StoryEffect effect,out CampaignState next)
@@ -224,6 +209,9 @@ public sealed partial class CampaignSession
     {
         if(effect.Source.Path!=TrainerTowerShared||state.Script.Wait?.Kind!=StoryWaitKind.Battle||state.ForestTrainerBattle is not null||state.DoubleBattle is not null||state.WildBattle is not null)
             throw new InvalidDataException("trainer_tower_battle_context");
+        // No independent allocator is needed: every Tower exit requires settlement.
+        // Reject exhaustion before floor progress, party creation or entry RNG work.
+        string id=NextTrainerTowerBattleId(state.TrainerTowerHistory);
         var tower=TowerProgress(state);int floor=TrainerTowerFloorNumber(state.World.Player.MapId);var format=TrainerTowerLayout(state,state.World.Player.MapId);
         int trainer=state.Script.Variables.GetValueOrDefault("VAR_TEMP_1");
         if(tower.FloorChain is null)tower=TrainerTowerProgressRules.BeginFloor(tower,_content.TrainerTowerCatalog!,floor);
@@ -235,7 +223,6 @@ public sealed partial class CampaignSession
             state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),currentOwned:_binding.Ownership);
         if(!entry.Succeeded)throw new InvalidDataException(entry.Fault);
         var frame=entry.State! with{Obedience=CampaignObedienceContext(state)};
-        string id="trainer-tower-battle:"+((state.TrainerTowerHistory?.Length??0)+1);
         string actor=format switch{TrainerTowerBattleFormat.Double=>"LOCALID_TOWER_TRAINER_DOUBLES1",TrainerTowerBattleFormat.Knockout=>trainer switch{0=>"LOCALID_TOWER_TRAINER_KNOCKOUT",1=>"LOCALID_TOWER_TRAINER_DOUBLES1",_=>"LOCALID_TOWER_TRAINER_SINGLES"},_=>"LOCALID_TOWER_TRAINER_SINGLES"};
         var next=ResetFieldPoisonCounterForBattle(state) with{TrainerTower=tower,Dialogue=null,Motions=[],PresentationTicks=0,World=state.World with{Rng=frame.Rng},Music="MUS_VS_TRAINER"};
         if(format==TrainerTowerBattleFormat.Double)
@@ -257,7 +244,11 @@ public sealed partial class CampaignSession
 
     private CampaignState SettleTrainerTowerBattle(CampaignState state,SourceBattleFrame frame,string id,ImmutableArray<int> sent)
     {
-        if((state.TrainerTowerHistory??[]).Any(h=>h.Id==id))throw new InvalidDataException("trainer_tower_settlement_duplicate");
+        if(ValidateTrainerTowerHistory(state.TrainerTowerHistory) is {} historyError)throw new InvalidDataException(historyError);
+        if(state.TrainerTowerHistory is {Length:1} history && history[0].Id==id)throw new InvalidDataException("trainer_tower_settlement_duplicate");
+        if(id!=NextTrainerTowerBattleId(state.TrainerTowerHistory))throw new InvalidDataException("trainer_tower_settlement_identity");
+        var h=ActiveTrainerTowerReceipt(state,frame,id,finished:false);
+        if(sent.IsDefault || !sent.SequenceEqual(h.OpponentsSeen))throw new InvalidDataException("trainer_tower_settlement_seen");
         var settled=SourceTrainerTowerEncounter.Settle(CanonicalTrainerPokemon,frame,state.Money,currentOwned:_binding.Ownership);
         var roster=frame.TrainerTowerEncounter!.Roster;
         var course=Enum.Parse<TrainerTowerChallengeKind>(roster.Course);
@@ -267,8 +258,7 @@ public sealed partial class CampaignSession
             state=state with{Party=pickup.Party,World=state.World with{Rng=pickup.Rng}};frame=frame with{Rng=pickup.Rng};
             if(frame.Layout==SourceBattleLayout.Singles)frame=SyncSourceTrainerPickup(frame,pickup.Party);
         }
-        var h=new CampaignTrainerTowerHistory(id,course,roster.FloorIndex,roster.TrainerIndex,frame.Party(BattleSide.Opponent).Members[0].Pokemon.Level,frame.Outcome,sent);
-        state=state with{TrainerTowerHistory=(state.TrainerTowerHistory??[]).Add(h)};
+        state=state with{TrainerTowerHistory=[h]};
         var template=_content.TrainerTowerCatalog!.Template(_content.TrainerTowerCatalog.Course(course).Floors[roster.FloorIndex].TemplateSymbol);
         var lines=(frame.Layout==SourceBattleLayout.PresetDoubles?template.Trainers.Take(2):template.Trainers.Skip(roster.TrainerIndex).Take(1))
             .Select(t=>string.Join(" ",(frame.Outcome==WildBattleOutcome.Won?t.SpeechLose:t.SpeechWin).Select(w=>w.Text))).ToImmutableArray();
@@ -278,7 +268,12 @@ public sealed partial class CampaignSession
     }
     private CampaignState ReturnFromTrainerTowerBattle(CampaignState state,SourceBattleFrame frame,string id)
     {
-        if(!(state.TrainerTowerHistory??[]).Any(h=>h.Id==id))throw new InvalidDataException("trainer_tower_history_missing");
+        var expected=ActiveTrainerTowerReceipt(state,frame,id,finished:true);
+        if(ValidateTrainerTowerHistory(state.TrainerTowerHistory) is {} historyError)throw new InvalidDataException(historyError);
+        if(state.TrainerTowerHistory is not {Length:1} history ||
+            (history[0] with{OpponentsSeen=expected.OpponentsSeen})!=expected ||
+            !history[0].OpponentsSeen.SequenceEqual(expected.OpponentsSeen))
+            throw new InvalidDataException("trainer_tower_history_missing");
         var tower=TowerProgress(state);
         tower=frame.Outcome==WildBattleOutcome.Won?TrainerTowerProgressRules.WinBattle(tower):TrainerTowerProgressRules.LoseBattle(tower);
         int outcome=frame.Outcome switch{WildBattleOutcome.Won=>1,WildBattleOutcome.Lost=>2,_=>3};
