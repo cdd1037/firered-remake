@@ -1,1 +1,27 @@
-{"metatiles":["METATILE_PalletTown_Door"]}
+{
+  "metatiles": [
+    "METATILE_General_Door",
+    "METATILE_General_SlidingSingleDoor",
+    "METATILE_General_SlidingDoubleDoor",
+    "METATILE_PalletTown_Door",
+    "METATILE_PalletTown_OaksLabDoor",
+    "METATILE_ViridianCity_Door",
+    "METATILE_PewterCity_Door",
+    "METATILE_SaffronCity_Door",
+    "METATILE_SaffronCity_SilphCoDoor",
+    "METATILE_CeruleanCity_Door",
+    "METATILE_LavenderTown_Door",
+    "METATILE_VermilionCity_Door",
+    "METATILE_CeladonCity_DeptStoreDoor",
+    "METATILE_FuchsiaCity_Door",
+    "METATILE_FuchsiaCity_SafariZoneDoor",
+    "METATILE_CinnabarIsland_LabDoor",
+    "METATILE_SeviiIslands123_Door",
+    "METATILE_SeviiIslands123_GameCornerDoor",
+    "METATILE_SeviiIslands123_PokeCenterDoor",
+    "METATILE_SeviiIslands45_Door",
+    "METATILE_SeviiIslands45_DayCareDoor",
+    "METATILE_SeviiIslands45_RocketWarehouseDoor_Unlocked",
+    "METATILE_SeviiIslands67_Door"
+  ]
+}

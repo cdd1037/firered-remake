@@ -20,12 +20,47 @@ public sealed class GeneratedFieldDoorArtTests
             for (int layer = 0; layer < 3; layer++)
                 Assert.AreEqual(new ImageRegion(layer * 16, door.AtlasY + frame * 16, 16, 16), door.FrameRegion(frame, layer));
         Assert.IsNull(art.Find("LAYOUT_PALLET_TOWN_PLAYERS_HOUSE_1F", 0x2a3));
-        Assert.IsNull(art.Find("LAYOUT_PALLET_TOWN", 0x2ac));
+        Assert.IsNotNull(art.Find("LAYOUT_PALLET_TOWN", 0x2ac));
+        Assert.IsNull(art.Find("LAYOUT_VERMILION_CITY", 0x2e1)); // Reused harbor warp, not the unused Fan Club art.
         Assert.IsNull(art.Find("unknown", 0x2a3));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => door.FrameRegion(-1, 0));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => door.FrameRegion(3, 0));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => door.FrameRegion(0, -1));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => door.FrameRegion(0, 3));
+    }
+
+    [TestMethod]
+    [DataRow("LAYOUT_PALLET_TOWN", 0x03d, "SE_DOOR")]
+    [DataRow("LAYOUT_PALLET_TOWN", 0x062, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_PALLET_TOWN", 0x15b, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_PALLET_TOWN", 0x2a3, "SE_DOOR")]
+    [DataRow("LAYOUT_PALLET_TOWN", 0x2ac, "SE_DOOR")]
+    [DataRow("LAYOUT_VIRIDIAN_CITY", 0x299, "SE_DOOR")]
+    [DataRow("LAYOUT_PEWTER_CITY", 0x2ce, "SE_DOOR")]
+    [DataRow("LAYOUT_SAFFRON_CITY", 0x284, "SE_DOOR")]
+    [DataRow("LAYOUT_SAFFRON_CITY", 0x2bc, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_CERULEAN_CITY", 0x298, "SE_DOOR")]
+    [DataRow("LAYOUT_LAVENDER_TOWN", 0x2a2, "SE_DOOR")]
+    [DataRow("LAYOUT_VERMILION_CITY", 0x29e, "SE_DOOR")]
+    [DataRow("LAYOUT_CELADON_CITY", 0x294, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_FUCHSIA_CITY", 0x2bf, "SE_DOOR")]
+    [DataRow("LAYOUT_FUCHSIA_CITY", 0x2d2, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_CINNABAR_ISLAND", 0x2ad, "SE_DOOR")]
+    [DataRow("LAYOUT_ONE_ISLAND", 0x297, "SE_DOOR")]
+    [DataRow("LAYOUT_TWO_ISLAND", 0x29b, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_ONE_ISLAND", 0x2eb, "SE_DOOR")]
+    [DataRow("LAYOUT_FOUR_ISLAND", 0x29a, "SE_DOOR")]
+    [DataRow("LAYOUT_FOUR_ISLAND", 0x2b9, "SE_DOOR")]
+    [DataRow("LAYOUT_FIVE_ISLAND_MEADOW", 0x2af, "SE_DOOR")]
+    [DataRow("LAYOUT_SEVEN_ISLAND", 0x30c, "SE_DOOR")]
+    public void EveryAdmittedSmallDoorStyleHasSourceSoundAndCompleteReplacementFrames(string layout, int metatile, string sound)
+    {
+        var door = GeneratedFieldDoorArt.Load(Generated).Find(layout, metatile);
+        Assert.IsNotNull(door, $"Missing {layout} door {metatile:x3}");
+        Assert.AreEqual(sound, door.SoundEffect);
+        for (int frame = 0; frame < 3; frame++)
+            for (int layer = 0; layer < 3; layer++)
+                Assert.AreEqual(new ImageRegion(layer * 16, door.AtlasY + frame * 16, 16, 16), door.FrameRegion(frame, layer));
     }
 
     [TestMethod]
