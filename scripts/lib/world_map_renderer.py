@@ -8,6 +8,43 @@ from PIL import Image
 from map_runtime import encode, movement
 
 
+def tileset_graphics(src, layout):
+    """Resolve current layout graphics and palette banks from source declarations."""
+    headers = src.text('src/data/tilesets/headers.h')
+    graphics_text = src.text('src/data/tilesets/graphics.h') + src.text('src/graphics.c')
+    graphics_bases = []
+    cleared_banks = []
+    for kind in ('primary_tileset', 'secondary_tileset'):
+        body = re.search(r'const struct Tileset ' + layout[kind] + r' =\s*\{(.*?)\n\};', headers, re.S)[1]
+        cleared_banks.append(bool(re.search(r'\.isCompressed = TRUE', body) and re.search(r'\.callback = NULL', body)))
+        symbol = re.search(r'\.tiles = (\w+)', body)[1]
+        declared = re.search(r'\b' + symbol + r'\[\] = INCBIN_U32\("(.*?)"\)', graphics_text)[1]
+        if not declared.startswith('data/tilesets/') or not declared.endswith('/tiles.4bpp.lz') or '..' in declared.split('/'):
+            raise ValueError('Invalid source tileset graphics binding')
+        graphics_base = declared.removesuffix('/tiles.4bpp.lz')
+        palette_symbol = re.search(r'\.palettes = (\w+)', body)[1]
+        palette_body = re.search(r'\b' + palette_symbol + r'\[\]\[16\] =\s*\{(.*?)\n\};', graphics_text, re.S)[1]
+        if re.findall(r'INCBIN_U16\("(.*?)"\)', palette_body) != [graphics_base + f'/palettes/{i:02d}.gbapal' for i in range(16)]:
+            raise ValueError('Tileset palette binding differs')
+        graphics_bases.append(graphics_base)
+    return graphics_bases, cleared_banks
+
+
+def map_palettes(src, graphics_bases):
+    """The 13 loaded field palette banks, quantized exactly through RGB555."""
+    palettes = []
+    for i in range(13):
+        lines = src.text(graphics_bases[0 if i < 7 else 1] + f'/palettes/{i:02d}.pal').splitlines()
+        if lines[:3] != ['JASC-PAL', '0100', '16'] or len(lines) != 19:
+            raise ValueError('Invalid JASC palette')
+        colors = [tuple(((int(v) >> 3) << 3) | ((int(v) >> 3) >> 2) for v in s.split()) for s in lines[3:]]
+        if any(len(c) != 3 or any(v < 0 or v > 255 for v in c) for c in colors):
+            raise ValueError('Invalid palette RGB')
+        palettes.append(colors)
+    palettes[0][0] = (0, 0, 0)
+    return palettes
+
+
 def render_map(src, name, stable_id, output, *, tilesets, render_border=True, layout_symbol=None, technical_spawn=None, metatile_exports=None):
     output = Path(output)
     out = output.parent
@@ -29,23 +66,7 @@ def render_map(src, name, stable_id, output, *, tilesets, render_border=True, la
     if len(blocks) != width * height or len(border) != bw * bh:
         raise ValueError('Map binary dimensions differ')
     bases = ['data/tilesets/' + tilesets[layout[k]] for k in ('primary_tileset', 'secondary_tileset')]
-    headers = src.text('src/data/tilesets/headers.h')
-    graphics_text = src.text('src/data/tilesets/graphics.h') + src.text('src/graphics.c')
-    graphics_bases = []
-    cleared_banks = []
-    for kind, base in zip(('primary_tileset', 'secondary_tileset'), bases):
-        body = re.search(r'const struct Tileset ' + layout[kind] + r' =\s*\{(.*?)\n\};', headers, re.S)[1]
-        cleared_banks.append(bool(re.search(r'\.isCompressed = TRUE', body) and re.search(r'\.callback = NULL', body)))
-        symbol = re.search(r'\.tiles = (\w+)', body)[1]
-        declared = re.search(r'\b' + symbol + r'\[\] = INCBIN_U32\("(.*?)"\)', graphics_text)[1]
-        if not declared.startswith('data/tilesets/') or not declared.endswith('/tiles.4bpp.lz') or '..' in declared.split('/'):
-            raise ValueError('Invalid source tileset graphics binding')
-        graphics_base = declared.removesuffix('/tiles.4bpp.lz')
-        palette_symbol = re.search(r'\.palettes = (\w+)', body)[1]
-        palette_body = re.search(r'\b' + palette_symbol + r'\[\]\[16\] =\s*\{(.*?)\n\};', graphics_text, re.S)[1]
-        if re.findall(r'INCBIN_U16\("(.*?)"\)', palette_body) != [graphics_base + f'/palettes/{i:02d}.gbapal' for i in range(16)]:
-            raise ValueError('Tileset palette binding differs')
-        graphics_bases.append(graphics_base)
+    graphics_bases, cleared_banks = tileset_graphics(src, layout)
     attrs = [src.units(p + '/metatile_attributes.bin', 'I') for p in bases]
     metatiles = [src.units(p + '/metatiles.bin', 'H') for p in bases]
     if len(attrs[0]) != 640 or any(len(m) != len(a) * 8 for m, a in zip(metatiles, attrs)):
@@ -80,16 +101,7 @@ def render_map(src, name, stable_id, output, *, tilesets, render_border=True, la
         emitted.append(int(rule[1]) if rule else img.width * img.height // 64)
         if emitted[-1] > min(img.width * img.height // 64, 640 if len(emitted) == 1 else 384):
             raise ValueError('Tileset emission exceeds source image')
-    palettes = []
-    for i in range(13):
-        lines = src.text(graphics_bases[0 if i < 7 else 1] + f'/palettes/{i:02d}.pal').splitlines()
-        if lines[:3] != ['JASC-PAL', '0100', '16'] or len(lines) != 19:
-            raise ValueError('Invalid JASC palette')
-        colors = [tuple(((int(v) >> 3) << 3) | ((int(v) >> 3) >> 2) for v in s.split()) for s in lines[3:]]
-        if any(len(c) != 3 or any(v < 0 or v > 255 for v in c) for c in colors):
-            raise ValueError('Invalid palette RGB')
-        palettes.append(colors)
-    palettes[0][0] = (0, 0, 0)
+    palettes = map_palettes(src, graphics_bases)
     tile_cache = {}
 
     def tile(entry):

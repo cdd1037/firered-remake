@@ -36,7 +36,7 @@ public partial class CampaignView
     }
     private void ResetQuestLogPlayback()
     {
-        _questLogPlayback=null;ClearQuestLogPaletteTextures();ResetQuestLogArt();ResetPlayTimeHost();
+        _questLogPlayback=null;ClearQuestLogUiPalette();ClearQuestLogPaletteTextures();ResetQuestLogArt();ResetPlayTimeHost();
     }
     private void FinishQuestLogPlayback()
     {
@@ -58,7 +58,19 @@ public partial class CampaignView
     private bool TickQuestLogPlayback(double delta)
     {
         if(_questLogPlayback is not {} playback)return false;
-        playback.Tick(delta);if(playback.Finished)FinishQuestLogPlayback();QueueRedraw();return true;
+        if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
+        // Visit source callback boundaries even after a slow host frame. Audio
+        // belongs to the traversed scene, not only the final redraw's projection.
+        double remaining=delta;
+        while(remaining>0&&!playback.Finished)
+        {
+            double step=Math.Min(remaining,1d/60);
+            int previousScene=playback.SceneIndex;double previousFrame=playback.Frame;
+            playback.Tick(step);
+            PlayQuestLogDoorSounds(playback,previousScene,previousFrame);
+            remaining-=step;
+        }
+        if(playback.Finished)FinishQuestLogPlayback();QueueRedraw();return true;
     }
     private bool TryQuestLogInput(InputEvent input)
     {
@@ -86,23 +98,31 @@ public partial class CampaignView
         var snapshot=new FieldSnapshot(playback,playback.SceneIndex,playback.ArtRevision,playback.SavedGameVisible,
             new(playback.Map,actors,playback.Layout,playback.Tiles),poses,playback.Frame,_session.State.PlayerGender);
         var warp=QuestLogFieldWarpSample(playback);
+        if(playback.ActiveTransitionTiming is {} timing)
+        {
+            bool arrival=playback.TransitionElapsedFrames>=timing.SwitchFrame;
+            var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;
+            if(anchor is not null)
+                snapshot=WithFieldDoorPose(snapshot,warp,FindFieldDoor(snapshot.Projection,anchor.X,anchor.Y),anchor.X,anchor.Y,arrival);
+        }
         DrawFieldSnapshot(snapshot,playback.GrayscaleCoefficient,warp.BackgroundBlend,warp.ObjectBlend);
         int barHeight=playback.BarHeight;
         if(barHeight>0)
         {
-            DrawRect(new(0,0,240,barHeight),QuestLogColor(15));
-            DrawRect(new(0,160-barHeight,240,barHeight),QuestLogColor(15));
+            DrawRect(new(0,0,240,barHeight),QuestLogUiColor(15,warp.BackgroundBlend));
+            DrawRect(new(0,160-barHeight,240,barHeight),QuestLogUiColor(15,warp.BackgroundBlend));
         }
         string header=_catalog.QuestLogSource.Texts["PreviouslyOnYourQuest"];
         if(!playback.SavedGameVisible)header+=(playback.SceneCount-playback.SceneIndex).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if(playback.HeaderVisible)SourceText(_questLogFont!,new(2,2),header);
+        if(playback.HeaderVisible)SourceText(QuestLogUiFont(warp.BackgroundBlend),new(2,2),header);
         if(playback.Caption is {} caption)
         {
             for(int y=0;y<6;y++)for(int x=0;x<30;x++)
-                DrawTextureRectRegion(_questLogWindow!,new(x*8,112+y*8,8,8),new(0,(y==0?0:y==5?2:1)*8,8,8));
+                DrawTextureRectRegion(QuestLogUiWindow(warp.BackgroundBlend),new(x*8,112+y*8,8,8),new(0,(y==0?0:y==5?2:1)*8,8,8));
             var lines=caption.Split('\n');int top=lines.Length==1?17:lines.Length==2?10:3;
-            for(int i=0;i<lines.Length;i++)SourceText(_questLogFont!,new(2,112+top+i*16),lines[i]);
+            for(int i=0;i<lines.Length;i++)SourceText(QuestLogUiFont(warp.BackgroundBlend),new(2,112+top+i*16),lines[i]);
         }
+        DrawFieldDoorWipe(warp);
         return true;
     }
     private void DrawFieldSnapshot(FieldSnapshot snapshot,int grayscale,int backgroundBlend,int objectBlend)

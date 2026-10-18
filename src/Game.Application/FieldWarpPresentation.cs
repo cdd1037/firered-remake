@@ -35,14 +35,17 @@ public static class FieldWarpPresentation
 
     public sealed class NormalPalette
     {
-        private int _y,_target,_finishingCounter;
+        private int _y,_target,_finishingCounter,_delayCounter;
+        private readonly int _delay;
         private bool _object,_finishing;
         public bool Active {get;private set;}=true;
         public int BackgroundBlend {get;private set;}
         public int ObjectBlend {get;private set;}
 
-        public NormalPalette(bool fromBlack)
+        public NormalPalette(bool fromBlack,int delay=0)
         {
+            if(delay is <0 or >127)throw new ArgumentOutOfRangeException(nameof(delay));
+            _delay=_delayCounter=delay;
             _y=fromBlack?16:0;_target=fromBlack?0:16;
             BackgroundBlend=ObjectBlend=_y;
             Advance(); // BeginNormalPaletteFade immediately updates the BG half.
@@ -56,6 +59,13 @@ public static class FieldWarpPresentation
                 if(_finishingCounter==4){Active=false;_finishing=false;_finishingCounter=0;}
                 else _finishingCounter++;
                 return;
+            }
+            // Delay applies before each BG half, never between BG and OBJ.
+            // BeginNormalPaletteFade primes the counter to admit its first BG.
+            if(!_object)
+            {
+                if(_delayCounter<_delay){_delayCounter++;return;}
+                _delayCounter=0;
             }
             if(_object)ObjectBlend=_y;else BackgroundBlend=_y;
             _object=!_object;

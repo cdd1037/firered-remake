@@ -9,8 +9,9 @@ public partial class CampaignView
     // One detached field projection serves recap and live map transitions. Poses
     // belong to the visible snapshot, never to the already-committed destination.
     private sealed record FieldSnapshot(object Owner,int Scene,int Revision,bool SavedGameVisible,
-        CampaignQuestLogMapProjection Projection,IReadOnlyDictionary<string,Pose> Poses,double Frame,int PlayerGender);
-    private (object Owner,int Scene,int Revision,bool Saved)? _fieldSnapshotArtState;
+        CampaignQuestLogMapProjection Projection,IReadOnlyDictionary<string,Pose> Poses,double Frame,int PlayerGender)
+    { public FieldDoorPaint? Door {get;init;} }
+    private (object Owner,int Scene,int Revision,bool Saved,FieldDoorPaint? Door)? _fieldSnapshotArtState;
     private int _fieldSnapshotArtSerial;
     private string? _fieldSnapshotArtKey;
     private void ResetQuestLogArt()
@@ -20,7 +21,7 @@ public partial class CampaignView
     private string FieldSnapshotNeighborArtKey(MapId map)=>_fieldSnapshotArtKey+":"+map.Value+":neighbor";
     private MapArt GetFieldSnapshotMapArt(FieldSnapshot snapshot,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
     {
-        var state=(snapshot.Owner,snapshot.Scene,snapshot.Revision,snapshot.SavedGameVisible);
+        var state=(snapshot.Owner,snapshot.Scene,snapshot.Revision,snapshot.SavedGameVisible,snapshot.Door);
         var projection=snapshot.Projection;
         if(_fieldSnapshotArtState!=state)
         {
@@ -49,9 +50,13 @@ public partial class CampaignView
             var bottom=owner.MapTexture(source.BottomTexturePath);var middle=owner.MapTexture(source.MiddleTexturePath);var top=owner.MapTexture(source.TopTexturePath);
             var original=new MapArt(source,bottom,middle,top,new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,
                 binding.UsesLocalBorder?new(source.BorderWidth,source.BorderHeight,owner.MapTexture(source.BorderBottomTexturePath),owner.MapTexture(source.BorderMiddleTexturePath),owner.MapTexture(source.BorderTopTexturePath)):null);
-            if(projection.Tiles.IsDefaultOrEmpty)return original;
-            var edits=projection.Tiles.Where(edit=>source.GetTile(edit.X,edit.Y) is not null).ToArray();
-            Texture2D Patch(Texture2D texture,int layer)=>PatchMapLayer(owner,source,texture,layer,edits);
+            if(projection.Tiles.IsDefaultOrEmpty&&snapshot.Door is null)return original;
+            var edits=(projection.Tiles.IsDefault?[]:projection.Tiles).Where(edit=>source.GetTile(edit.X,edit.Y) is not null).ToArray();
+            Texture2D Patch(Texture2D texture,int layer)
+            {
+                var patched=edits.Length==0?texture:PatchMapLayer(owner,source,texture,layer,edits);
+                return snapshot.Door is {} door?PaintFieldDoorLayer(owner,patched,layer,door):patched;
+            }
             return original with{Bottom=Patch(bottom,0),Middle=Patch(middle,1),Top=Patch(top,2)};
         });
     }

@@ -27,6 +27,9 @@ def compile_presentation(raw, generated, selected):
     source = WorldSource(raw)
     layouts = {row.get('layout') or source.json('data/maps/' + row['sourceName'] + '/map.json')['layout'] for row in selected}
     (generated / 'maps/tilesets.json').write_bytes(encode(fields.compile_tables(PROJECT_ROOT, raw=raw, used=layouts)))
+    from field_door_art import compile_outputs as compile_doors
+    for name, data in compile_doors(source, layouts).items():
+        (generated / name).write_bytes(data)
     sprites = converter('_world_overworld', 'scripts/imports/presentation/import-shared-overworld.py')
     for name, data in sprites.build(raw, selection=selected).items():
         path = generated / 'sprites/overworld' / name

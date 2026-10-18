@@ -13,6 +13,9 @@ public sealed class SourceGameFont : IDisposable
     public const int LevelPrefixCodepoint = 0xE000;
     private readonly HashSet<int> _characters;
     private readonly HashSet<int> _warned = [];
+    // Variants share the immutable imported input, never a previously recolored atlas.
+    private sealed record SourceData(string Face, byte[] Catalog, byte[] Atlas, byte[]? LevelCatalog, byte[]? LevelAtlas);
+    private readonly SourceData _source;
     private bool _disposed;
 
     public FontFile Font { get; }
@@ -25,11 +28,12 @@ public sealed class SourceGameFont : IDisposable
     public string LevelPrefix => Supports(LevelPrefixCodepoint) ? "\uE000"
         : throw new InvalidOperationException("LV_2 is supported only by the source small font.");
 
-    private SourceGameFont(FontFile font, int size, HashSet<int> characters)
+    private SourceGameFont(FontFile font, int size, HashSet<int> characters, SourceData source)
     {
         Font = font;
         Size = size;
         _characters = characters;
+        _source = source;
     }
 
     /// <summary>Load neutral source colors or independently recolor the original foreground/shadow masks.</summary>
@@ -40,15 +44,31 @@ public sealed class SourceGameFont : IDisposable
             throw new ArgumentException("Source font face must be normal or small.", nameof(face));
         if (colorProfile is not (ColorProfile.SourceFloor or ColorProfile.MgbaBitReplicated))
             throw new ArgumentOutOfRangeException(nameof(colorProfile));
-        var catalogBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "source-font.json"));
-        using var document = JsonDocument.Parse(catalogBytes);
+        byte[] Read(string name) => System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, name));
+        var source = new SourceData(face, Read("source-font.json"), Read(face + ".png"),
+            face == "small" ? Read("level-prefix.json") : null,
+            face == "small" ? Read("level-prefix-small.png") : null);
+        return Create(source, foreground, shadow, colorProfile);
+    }
+
+    /// <summary>Create an independently owned recolor from retained source masks, without disk reads.
+    /// Caller-added FontFile glyphs are not part of the imported source and are not copied.</summary>
+    public SourceGameFont CreateColorVariant(Color foreground, Color shadow)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return Create(_source, foreground, shadow, ColorProfile.SourceFloor);
+    }
+
+    private static SourceGameFont Create(SourceData input, Color? foreground, Color? shadow, ColorProfile colorProfile)
+    {
+        string face = input.Face;
+        using var document = JsonDocument.Parse(input.Catalog);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetInt32() != 1)
             throw new InvalidDataException("Source font identity differs.");
         var source = root.GetProperty("fonts").EnumerateArray().Single(f => f.GetProperty("id").GetString() == face);
-        var png = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, face + ".png"));
         using var decoded = new Image();
-        if (decoded.LoadPngFromBuffer(png) != Error.Ok
+        if (decoded.LoadPngFromBuffer(input.Atlas) != Error.Ok
             || decoded.GetFormat() != Image.Format.Rgba8
             || decoded.GetWidth() != source.GetProperty("textureWidth").GetInt32()
             || decoded.GetHeight() != source.GetProperty("textureHeight").GetInt32())
@@ -97,15 +117,13 @@ public sealed class SourceGameFont : IDisposable
             }
             if (face == "small")
             {
-                var levelBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "level-prefix.json"));
-                using var levelDocument = JsonDocument.Parse(levelBytes);
+                using var levelDocument = JsonDocument.Parse(input.LevelCatalog!);
                 var level = levelDocument.RootElement;
                 if (level.GetProperty("sourceGlyphId").GetInt32() != 0x105
                     || level.GetProperty("codepoint").GetInt32() != LevelPrefixCodepoint)
                     throw new InvalidDataException("Source LV_2 identity differs.");
-                var levelPng = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "level-prefix-small.png"));
                 using var levelDecoded = new Image();
-                if (levelDecoded.LoadPngFromBuffer(levelPng) != Error.Ok || levelDecoded.GetFormat() != Image.Format.Rgba8
+                if (levelDecoded.LoadPngFromBuffer(input.LevelAtlas!) != Error.Ok || levelDecoded.GetFormat() != Image.Format.Rgba8
                     || levelDecoded.GetWidth() != 8 || levelDecoded.GetHeight() != 13)
                     throw new InvalidDataException("Source LV_2 PNG decode failed.");
                 var levelPixels = levelDecoded.GetData();
@@ -119,7 +137,7 @@ public sealed class SourceGameFont : IDisposable
                 font.SetGlyphTextureIdx(0, cacheSize, LevelPrefixCodepoint, 1);
                 characters.Add(LevelPrefixCodepoint);
             }
-            return new SourceGameFont(font, size, characters);
+            return new SourceGameFont(font, size, characters, input);
         }
         catch
         {

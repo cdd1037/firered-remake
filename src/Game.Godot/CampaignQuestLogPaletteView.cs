@@ -7,12 +7,12 @@ public partial class CampaignView
 {
     private readonly Dictionary<(Texture2D Source,int Blend),Texture2D> _questPaletteTextures=[];
     private CampaignResourceCache.Owner? _questPaletteOwner;
-    private (object Owner,int Scene,int Revision,bool Saved,int Gray,int Background,int Object,string Neighbors)? _questPaletteState;
+    private (object Owner,int Scene,int Revision,bool Saved,int Gray,int Background,int Object,string Neighbors,FieldDoorPaint? Door)? _questPaletteState;
 
     private void PrepareFieldSnapshotPalette(FieldSnapshot snapshot,int grayscale,int backgroundBlend,int objectBlend,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
     {
         var state=(snapshot.Owner,snapshot.Scene,snapshot.Revision,snapshot.SavedGameVisible,grayscale,backgroundBlend,objectBlend,
-            string.Join('|',neighbors.Select(neighbor=>neighbor.Map.Value).Order(StringComparer.Ordinal)));
+            string.Join('|',neighbors.Select(neighbor=>neighbor.Map.Value).Order(StringComparer.Ordinal)),snapshot.Door);
         if(_questPaletteState==state)return;
         // Only this visible revision and both current bank coefficients are held.
         // Clear before acquiring map resources so an evicted original is never a key.

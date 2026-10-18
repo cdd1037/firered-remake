@@ -65,7 +65,7 @@ public static partial class CampaignQuestLogRecorder
             if(catalog is not null&&scene.Layout is {} sceneLayout&&catalog.MapLayout(new(scene.Map),sceneLayout) is null)return "save_quest_log_layout_invalid";
             if(scene.Actors.Any(a=>!ValidActor(a))||scene.Actors.Select(a=>a.Id).Distinct(StringComparer.Ordinal).Count()!=scene.Actors.Length||scene.Actors.Count(a=>a.Id==PlayerId)!=1)return "save_quest_log_actor_invalid";
             if(VisualMemoryBudget(scene)>VisualMemoryLimit)return "save_quest_log_visual_budget_invalid";
-            var projection=scene;int segmentStart=0,priorMovementEnd=0;
+            var projection=scene;var player=scene.Actors.Single(a=>a.Id==PlayerId);int segmentStart=0,priorMovementEnd=0;
             for(int actionIndex=0;actionIndex<scene.Actions.Length;actionIndex++)
             {
                 var action=scene.Actions[actionIndex];
@@ -74,13 +74,14 @@ public static partial class CampaignQuestLogRecorder
                 if(action.TransitionTiming is not null&&action.Transition is null)return "save_quest_log_transition_timing_invalid";
                 if(action.Transition is {} transition)
                 {
-                    if(ValidateTransitionTiming(action) is {} timingError)return timingError;
+                    if(ValidateTransitionTiming(action,player) is {} timingError)return timingError;
                     if(action.Event!=CampaignQuestLogEvent.None||action.ActorIndex!=-1||action.X!=0||action.Y!=0||action.Visible||action.TransitionTiming is null&&action.Frames!=1||action.Repeat||action.Tile is not null||action.Layout is not null||action.Graphics is not null||action.Spawn is not null||action.TextKey is not null||action.SourceAction is not null||action.LocationId is not null||!action.Arguments.IsDefault)return "save_quest_log_transition_invalid";
                     if(action.StartFrame<priorMovementEnd)return "save_quest_log_transition_time_invalid";
                     segmentStart=action.StartFrame+(action.TransitionTiming?.EndFrame??0);priorMovementEnd=action.StartFrame+action.Frames;
                     projection=ProjectionScene(transition);
                     if(ValidateProjection(projection,source,catalog) is {} transitionError)return transitionError;
                     if(source?.DisabledMaps.Contains(projection.Map)==true)return "save_quest_log_transition_disabled";
+                    player=projection.Actors.Single(a=>a.Id==PlayerId);
                     continue;
                 }
                 if(!IsCaption(action))priorMovementEnd=Math.Max(priorMovementEnd,action.StartFrame+action.Frames);
@@ -103,11 +104,14 @@ public static partial class CampaignQuestLogRecorder
                 if(action.Graphics is {} graphics&&!Identifier(graphics))return "save_quest_log_graphics_invalid";
                 if(action.TextKey is {} key&&(!Identifier(key)||source is not null&&!source.Texts.ContainsKey(key)))return "save_quest_log_text_invalid";
                 if(!action.Arguments.IsDefault&&(action.Arguments.Length>6||action.Arguments.Any(a=>a is null||a.Length>64||a.Any(char.IsControl))))return "save_quest_log_arguments_invalid";
+                if(action.Event==CampaignQuestLogEvent.None&&action.Tile is null&&action.Layout is null&&
+                    (action.Spawn??projection.Actors[action.ActorIndex]).Id==PlayerId)
+                    player=player with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible};
             }
         }
         return null;
     }
-    public static int Budget(ImmutableArray<CampaignQuestLogAction> actions,QuestLogSource? source=null)=>InitialActionBytes+QuestLogSource.SceneEndBytes+actions.Sum(a=>a is null?257:(source?.EventSizes.GetValueOrDefault((int)a.Event,257)??(IsCaption(a)?16:8))-(a.Repeat?4:0)+(a.Graphics is null?0:8)+(a.Spawn is null?0:8)+(a.TransitionTiming is null?0:8));
+    public static int Budget(ImmutableArray<CampaignQuestLogAction> actions,QuestLogSource? source=null)=>InitialActionBytes+QuestLogSource.SceneEndBytes+actions.Sum(a=>a is null?257:(source?.EventSizes.GetValueOrDefault((int)a.Event,257)??(IsCaption(a)?16:8))-(a.Repeat?4:0)+(a.Graphics is null?0:8)+(a.Spawn is null?0:8)+TransitionTimingBytes(a.TransitionTiming));
     private static bool Identifier(string? text)=>text is {Length:>0 and <=128}&&!text.Any(char.IsControl);
     private static bool ValidActor(CampaignQuestLogActor? actor)=>actor is not null&&Identifier(actor.Id)&&Identifier(actor.Graphics)&&actor.X is >=-32 and <=1024&&actor.Y is >=-32 and <=1024&&Enum.IsDefined(actor.Facing);
     private static ImmutableArray<CampaignQuestLogActor> Actors(CampaignState state,QuestLogSource? source)
