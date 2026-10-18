@@ -1,0 +1,7 @@
+{
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/blend_palette.c": "219a02b2ed9ab3010e203e0131fa8133571dcc271e025d7f6f14bf7993a51090",
+  "include/gba/types.h": "d83a5cb845180b881f3de081ef9c2694b2da017a406fd3d6b0830329cc64ed93",
+  "include/constants/battle.h": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+  "include/constants/battle_anim.h": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e"
+}

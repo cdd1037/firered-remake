@@ -129,11 +129,13 @@ public sealed class ElementalMoveAnimationTests
         }
     }
     [TestMethod]
-    public void RotatingSparksRejectUnreviewedZeroFlashDivisor()
+    public void RotatingSparksUseApprovedNoFlashPolicyForZeroDivisor()
     {
         var source=Script(85);var sprite=source.Commands.First(c=>c.Op=="createsprite"&&c.Args[0]=="gSparkElectricityFlashingSpriteTemplate");
         var args=sprite.Args.ToArray();args[10]="0";
-        Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(source with{Commands=[sprite with{Args=args},new("end",[],1)]},new("zero",1,85,new(0),new(1)),Battlers(false),false,new Audio()));
+        var runtime=new SourceBattleAnimation(source with{Commands=[new("loadspritegfx",["ANIM_TAG_SPARK_2"],1),sprite with{Args=args},new("waitforvisualfinish",[],2),new("end",[],3)]},new("zero",1,85,new(0),new(1)),Battlers(false),false,new Audio());
+        int ticks=0,seen=0;while(runtime.Active&&ticks++<200)foreach(var s in runtime.Tick().Sprites){Assert.IsTrue(s.Visible);seen++;}
+        Assert.IsFalse(runtime.Active);Assert.IsTrue(seen>0);Assert.AreEqual(0,runtime.ActiveVisualCount);
     }
 
     [TestMethod]

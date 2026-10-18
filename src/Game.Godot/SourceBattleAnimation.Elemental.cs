@@ -31,7 +31,7 @@ public sealed partial class SourceBattleAnimation
     private bool ValidateElementalOperand(SourceAnimationCommand c)
     {
         if(SourceExplosionAnimationCatalog.Supports(_script.MoveId))return false;
-        if(ValidateElectricOperand(c))return true;
+        if(ValidateSludgeOperand(c)||ValidateFixedSparkOperand(c)||ValidateElectricOperand(c))return true;
         var a=c.Args;
         if(c.Op=="loadspritegfx"&&a.Length==1&&a[0] is "ANIM_TAG_SMALL_EMBER" or "ANIM_TAG_WATER_ORB" or "ANIM_TAG_BROWN_ORB" or "ANIM_TAG_GLOWY_RED_ORB" or "ANIM_TAG_GLOWY_GREEN_ORB" or "ANIM_TAG_GRAY_SMOKE" or "ANIM_TAG_BLACK_BALL" or "ANIM_TAG_WATER_IMPACT" or "ANIM_TAG_DUCK" or "ANIM_TAG_BLACK_BALL_2" or "ANIM_TAG_SHOCK_3" or "ANIM_TAG_LIGHTNING" or "ANIM_TAG_SMALL_BUBBLES" or "ANIM_TAG_LARGE_FRESH_EGG" or "ANIM_TAG_EXPLOSION" or "ANIM_TAG_ICE_CRYSTALS" or "ANIM_TAG_GOLD_RING" or "ANIM_TAG_PURPLE_RING" or "ANIM_TAG_METAL_SOUND_WAVES" or "ANIM_TAG_BLUE_STAR" or "ANIM_TAG_ORBS" or "ANIM_TAG_TOXIC_BUBBLE" or "ANIM_TAG_POISON_BUBBLE" or "ANIM_TAG_NEEDLE" or "ANIM_TAG_BUBBLE" or "ANIM_TAG_MUD_SAND" or "ANIM_TAG_SHARP_TEETH" or "ANIM_TAG_CLAMP" or "ANIM_TAG_FOCUS_ENERGY" or "ANIM_TAG_FIRE_PLUME" or "ANIM_TAG_MAGENTA_HEART" or "ANIM_TAG_ITEM_BAG" or "ANIM_TAG_EXPLOSION_6" or "ANIM_TAG_LEAF" or "ANIM_TAG_RAZOR_LEAF" or "ANIM_TAG_YELLOW_STAR" or "ANIM_TAG_BLUE_RING" or "ANIM_TAG_SPARKLE_2" or "ANIM_TAG_THIN_RING" or "ANIM_TAG_SPORE" or "ANIM_TAG_ROCKS")return true;
         if(c.Op is "playsewithpan" or "loopsewithpan" or "waitplaysewithpan"&&a.FirstOrDefault() is "SE_M_EMBER" or "SE_M_FLAME_WHEEL" or "SE_M_FIRE_PUNCH" or "SE_M_SELF_DESTRUCT" or "SE_M_CRABHAMMER" or "SE_M_BUBBLE" or "SE_M_HYPER_BEAM" or "SE_M_TRI_ATTACK2" or "SE_M_ABSORB" or "SE_M_ABSORB_2" or "SE_M_BUBBLE3" or "SE_M_GIGA_DRAIN" or "SE_M_SCREECH" or "SE_M_SUPERSONIC" or "SE_M_MEGA_KICK" or "SE_M_TOXIC" or "SE_M_BUBBLE2" or "SE_M_SACRED_FIRE2" or "SE_M_SAND_TOMB" or "SE_M_WHIRLPOOL" or "SE_M_BITE" or "SE_M_VICEGRIP" or "SE_M_DRAGON_RAGE" or "SE_M_STRING_SHOT" or "SE_M_ICY_WIND" or "SE_M_GUST2" or "SE_M_FLAME_WHEEL2" or "SE_M_CHARM" or "SE_M_DIZZY_PUNCH" or "SE_M_HARDEN" or "SE_M_SWIFT" or "SE_M_POISON_POWDER" or "SE_M_RAZOR_WIND" or "SE_M_RAZOR_WIND2" or "SE_M_PSYBEAM" or "SE_M_PSYBEAM2" or "SE_M_TELEPORT" or "SE_M_MORNING_SUN")
@@ -98,7 +98,6 @@ public sealed partial class SourceBattleAnimation
         if(callback is "AnimZapCannonSpark" or "AnimSparkElectricityFlashing")
         {
             if(Number(a[6]) is <1 or >32767||Number(a[7]) is <0 or >255||Number(a[8]) is <0 or >255||Number(a[9]) is <0 or >2)Fail(c,"Circling spark operands differ.");
-            if(callback=="AnimSparkElectricityFlashing"&&(Number(a[10])&32767)==0)Fail(c,"Zero spark flash divisor has no admitted retail semantics.");
         }
         if(callback=="AnimThunderboltOrb"&&(Number(a[3]) is <1 or >32767||Number(a[6]) is <0 or >255))Fail(c,"Electric orb lifetime differs.");
         if(callback=="AnimSpriteOnMonPos"&&(Number(a[5]) is <0 or >1||Number(a[6]) is <0 or >1))Fail(c,"Positioned sprite coordinate mode differs.");
@@ -108,7 +107,7 @@ public sealed partial class SourceBattleAnimation
     private bool TryCreateElementalSprite(SourceAnimationCommand c,int slot,int priority)
     {
         if(SourceExplosionAnimationCatalog.Supports(_script.MoveId))return false;
-        if(TryCreateElectricSprite(c,slot,priority))return true;
+        if(TryCreateSludgeSprite(c,slot,priority)||TryCreateFixedSparkSprite(c,slot,priority)||TryCreateElectricSprite(c,slot,priority))return true;
         if(c.Args[0]=="gShakeMonOrTerrainSpriteTemplate"){_sprites.Add(new TerrainShakeController(slot,priority,c.Args.Skip(3).Select(Number).ToArray(),this));return true;}
         if(ElementalCallback(c.Args[0]) is null)return false;
         var recipe=_script.SpriteRecipes[c.Args[0]];
@@ -201,7 +200,8 @@ public sealed partial class SourceBattleAnimation
                     _linear=new(sparkEnd.X-_position.X,sparkEnd.Y-_position.Y,a[3]);_amplitude=a[2];_waveStep=a[5];_angle=a[4];_tileOffset=a[6]*4;MoveSpark(owner,true);break;
                 case "AnimSparkElectricityFlashing":
                     var sparkMon=(a[7]&32768)!=0?target:actor;center=sparkMon.Center(owner._doubles,true);
-                    _position=new(center.X+(sparkMon.Slot.IsPlayer?-a[0]:a[0]),center.Y+a[1]);_remaining=a[3];_amplitude=a[2];_waveStep=a[5];_angle=a[4];_tileOffset=a[6]*4;_blinkDelay=a[7]&32767;MoveSpark(owner,false);break;
+                    if(sparkMon.Slot.IsPlayer)owner._animationArgs[0]=unchecked((short)-a[0]);
+                    _position=new(unchecked((short)(center.X+owner._animationArgs[0])),unchecked((short)(center.Y+a[1])));_remaining=a[3];_amplitude=a[2];_waveStep=a[5];_angle=a[4];_tileOffset=a[6]*4;_blinkDelay=a[7]&32767;MoveSpark(owner,false);break;
                 case "AnimTranslateLinearSingleSineWave":
                     center=actor.Center(owner._doubles,true);_position=new(center.X+direction*a[0],center.Y+a[1]);var sineEnd=a[6]==0?target.Center(owner._doubles,true):owner.AverageElementalTarget(true);
                     _linear=new(sineEnd.X+(actor.Slot.IsPlayer?a[2]:-a[2])-_position.X,sineEnd.Y+a[3]-_position.Y,a[4]);_waveStep=32768/a[4];_amplitude=a[5];_remaining=actor.Slot.IsPlayer==target.Slot.IsPlayer?1:0;break;
@@ -308,9 +308,12 @@ public sealed partial class SourceBattleAnimation
         {
             PixelPoint linear=default;
             if(translating&&_linear!.Step(out linear)){Finished=true;return;}
-            _offset=new(linear.X+((owner._script.SineTable[_angle]*_amplitude)>>8),linear.Y+((owner._script.SineTable[_angle+64]*_amplitude)>>8));
+            _offset=new(unchecked((short)(linear.X+((owner._script.SineTable[_angle]*_amplitude)>>8))),unchecked((short)(linear.Y+((owner._script.SineTable[_angle+64]*_amplitude)>>8))));
             _angle=(_angle+_waveStep)&255;
-            if(_angle%(translating?3:_blinkDelay)==0)_hidden=!_hidden;
+            // Approved safe policy: zero means no flashing; source movement and
+            // postdecrement lifetime continue. Nonzero divisors use the source test.
+            int divisor=translating?3:_blinkDelay;
+            if(divisor!=0&&_angle%divisor==0)_hidden=!_hidden;
             if(!translating&&_remaining--<=0)Finished=true;
         }
         private void MoveSpiral(SourceBattleAnimation owner)

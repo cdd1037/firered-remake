@@ -88,6 +88,9 @@ def build(reference):
    cues=re.findall(r'PlaySE12WithPanning\((SE_\w+), BattleAnimAdjustPanning\(-64\)\);',body[1]) if body else []
    if cues!=['SE_M_TELEPORT'] or 'ChangeSpriteAffineAnim(sprite, 1);' not in body[1]:raise ValueError('Psycho Boost callback sound or retained affine handoff differs')
    row['soundEffects'].update(elemental.sound_effects(reference,[dict(op='playsewithpan',args=['SE_M_TELEPORT','SOUND_PAN_ATTACKER'])]))
+  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_AttackerPunchWithTrace' for c in flat):
+   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_AttackerPunchWithTrace' and (len(c['args'])!=4 or not 0<=int(c['args'][3],0)<=16) for c in flat):continue
+   row['spriteTags']['ANIM_TAG_BENT_SPOON']=tags['ANIM_TAG_BENT_SPOON']
   if root_labels:row['labels']=root_labels
   children=elemental.imprison_dependencies(reference,flat)
   if children:row['spriteDependencies']=children

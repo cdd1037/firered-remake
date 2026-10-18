@@ -31,7 +31,7 @@ class BackgroundScriptImportTests(unittest.TestCase):
   with patch.object(imp.elemental,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
 
  def test_dependency_discovery_and_source_symbols(self):
-  pack=json.loads(imp.build(REFERENCE));self.assertEqual({59, 60, 87, 93, 94, 95, 96, 133, 138, 149, 158, 168, 177, 185, 196, 242, 248, 264, 286, 322, 354},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_PSYCHIC':3,'BG_THUNDER':11,'BG_COSMIC':16,'BG_SKY':18,'BG_ICE':15,'BG_HIGHSPEED_PLAYER':10,'BG_HIGHSPEED_OPPONENT':9},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
+  pack=json.loads(imp.build(REFERENCE));self.assertEqual({59, 60, 87, 93, 94, 95, 96, 133, 138, 149, 158, 168, 177, 183, 185, 196, 242, 248, 264, 286, 322, 326, 354},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_PSYCHIC':3,'BG_THUNDER':11,'BG_COSMIC':16,'BG_SKY':18,'BG_ICE':15,'BG_HIGHSPEED_PLAYER':10,'BG_HIGHSPEED_OPPONENT':9},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
   for script in pack['scripts']:
    commands=script['commands']+[c for name in dict.fromkeys(c['args'][0] for c in script['commands'] if c['op']=='call') for c in pack['subroutines'][name]];ops=[c['op'] for c in commands];self.assertGreaterEqual(ops.count('waitbgfadein'),2);self.assertEqual(1,ops.count('restorebg'))
  def test_uncovered_background_and_sprite_fail_closed(self):
@@ -68,7 +68,9 @@ class BackgroundScriptImportTests(unittest.TestCase):
   pack=json.loads(imp.build(REFERENCE));aero=next(r for r in pack['scripts'] if r['moveId']==177);self.assertIn('ANIM_TAG_AIR_WAVE_2',aero['spriteTags'])
   for row in pack['scripts']:
    flat=row['commands']+[c for label in dict.fromkeys(c['args'][0] for c in row['commands'] if c['op']=='call') for c in pack['subroutines'][label]]
-   self.assertEqual({c['args'][0] for c in flat if c['op']=='loadspritegfx'},row['spriteTags'].keys());self.assertTrue(all(10000<=v<=65535 for v in row['spriteTags'].values()))
+   tags={c['args'][0] for c in flat if c['op']=='loadspritegfx'}
+   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_AttackerPunchWithTrace' for c in flat):tags.add('ANIM_TAG_BENT_SPOON')
+   self.assertEqual(tags,row['spriteTags'].keys());self.assertTrue(all(10000<=v<=65535 for v in row['spriteTags'].values()))
  def test_exact_branch_and_operand_dependencies(self):
   rows={r['moveId']:r for r in json.loads(imp.build(REFERENCE))['scripts']};r=rows[59];self.assertEqual({'BlizzardAgainstPlayer':23,'BlizzardContinue':5},r['labels']);self.assertIn(['7','1','BlizzardAgainstPlayer'],[c['args'] for c in r['commands'] if c['op']=='jumpargeq']);self.assertEqual({'ANIM_TAG_ICE_CRYSTALS':10141,'ANIM_TAG_ICE_SPIKES':10142},rows[196]['spriteTags'])
  def test_missing_branch_target_is_not_admitted(self):

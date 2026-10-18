@@ -9,13 +9,16 @@ spec=importlib.util.spec_from_file_location('source_animation_affine',ROOT/'scri
 task_affine_program=affine.task_affine_program
 spec=importlib.util.spec_from_file_location('source_animation_frames',ROOT/'scripts/lib/source_animation_frames.py');frames_module=importlib.util.module_from_spec(spec);spec.loader.exec_module(frames_module)
 frame_program=frames_module.frame_program
-BATTLER_COPY_TASKS={'AnimTask_NightmareClone','AnimTask_NightShadeClone','AnimTask_DoubleTeam','AnimTask_ShrinkTargetCopy'}
+BATTLER_COPY_TASKS={'AnimTask_AttackerPunchWithTrace','AnimTask_NightmareClone','AnimTask_NightShadeClone','AnimTask_DoubleTeam','AnimTask_ShrinkTargetCopy'}
 EXPULSION_TASKS={'AnimTask_SlideOffScreen','AnimTask_Teleport'}
 ADDITIONAL_MON_TASKS={'AnimTask_RolePlaySilhouette'}
 MATERIAL_CHANGE_TASKS={'AnimTask_TransformMon','AnimTask_MonToSubstitute'}
 PALETTE_BACKUP_TASKS={'AnimTask_AllocBackupPalBuffer','AnimTask_FreeBackupPalBuffer','AnimTask_CopyPalUnfadedToBackup','AnimTask_CopyPalUnfadedFromBackup','AnimTask_CopyPalFadedToUnfaded'}
 SQUASH_TASKS={'AnimTask_EruptionLaunchRocks','AnimTask_WaterSpoutLaunch','AnimTask_WaterSpoutRain'}
 TEMPLATES={
+ 'gSparkElectricitySpriteTemplate':('battle_anim_electric.c','AnimSparkElectricity'),
+ 'gSludgeProjectileSpriteTemplate':('battle_anim_poison.c','AnimSludgeProjectile'),
+ 'gSludgeBombHitParticleSpriteTemplate':('battle_anim_poison.c','AnimSludgeBombHitParticle'),
  'gBlackSmokeSpriteTemplate':('battle_anim_effects_3.c','AnimBlackSmoke'),
  'gBlackBallSpriteTemplate':('battle_anim_effects_3.c','AnimThrowProjectile'),
  'sSmokescreenImpactSpriteTemplate':('battle_anim_smokescreen.c','SpriteCB_SmokescreenImpact'),
@@ -287,7 +290,8 @@ SOUNDS={'SE_M_ABSORB','SE_M_ABSORB_2','SE_M_BUBBLE','SE_M_BUBBLE3','SE_M_BUBBLE_
 TASKS|={'AnimTask_DeepInhale','SoundTask_PlayCryHighPitch','SoundTask_PlayDoubleCry','SoundTask_PlayCryWithEcho','SoundTask_WaitForCry','AnimTask_ShakeBattleTerrain','AnimTask_ScaleMonAndRestore'}
 GFX={'ANIM_TAG_BLACK_SMOKE','ANIM_TAG_SPARK', 'ANIM_TAG_METAL_SOUND_WAVES', 'ANIM_TAG_BROWN_ORB', 'ANIM_TAG_LIGHTNING', 'ANIM_TAG_SPARK_2', 'ANIM_TAG_LARGE_FRESH_EGG', 'ANIM_TAG_ICE_CRYSTALS', 'ANIM_TAG_DUCK', 'ANIM_TAG_PURPLE_RING', 'ANIM_TAG_GLOWY_RED_ORB', 'ANIM_TAG_IMPACT', 'ANIM_TAG_SPARK_H', 'ANIM_TAG_BLACK_BALL_2', 'ANIM_TAG_SMALL_EMBER', 'ANIM_TAG_GLOWY_GREEN_ORB', 'ANIM_TAG_WATER_IMPACT', 'ANIM_TAG_BLUE_STAR', 'ANIM_TAG_WATER_ORB', 'ANIM_TAG_HANDS_AND_FEET', 'ANIM_TAG_GRAY_SMOKE', 'ANIM_TAG_SMALL_BUBBLES', 'ANIM_TAG_ORBS', 'ANIM_TAG_BLACK_BALL', 'ANIM_TAG_GOLD_RING', 'ANIM_TAG_EXPLOSION', 'ANIM_TAG_SHOCK_3'}
 GFX|={'ANIM_TAG_SPOTLIGHT','ANIM_TAG_CONFETTI'}
-SOUNDS|={'SE_M_ENCORE2','SE_M_FLATTER'}
+SOUNDS|={'SE_M_DIG'}
+SOUNDS|={'SE_M_ENCORE2','SE_M_FLATTER','SE_M_JUMP_KICK'}
 GFX|={'ANIM_TAG_PAW_PRINT','ANIM_TAG_PINK_PETAL'}
 SOUNDS|={'SE_M_SCRATCH','SE_M_SWEET_SCENT'}
 GFX|={'ANIM_TAG_AMNESIA','ANIM_TAG_FLOWER'}
@@ -714,11 +718,13 @@ def discover_scripts(reference):
   # Keep generic Psychic background roots under their existing producer. This
   # producer owns complete programs that require its Teleport or new material callbacks.
   if any(c['op']=='fadetobg' and c['args']==['BG_PSYCHIC'] for c in flat) and not any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_Teleport' or c['op']=='createsprite' and c['args'][0] in {'gBentSpoonSpriteTemplate','gLusterPurgeCircleSpriteTemplate'} for c in flat):continue
+  # Approved safe punch initialization changes colors/position only; its ABI is unchanged.
+  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_AttackerPunchWithTrace' and (len(c['args'])!=4 or not 0<=int(c['args'][3],0)<=16) for c in flat):continue
   # These callbacks consume exactly the authored argument widths.
   volt_widths={'gVoltTackleOrbSlideSpriteTemplate':3,'AnimTask_VoltTackleBolt':3,'AnimTask_VoltTackleAttackerReappear':2}
   if any(c['op'] in {'createsprite','createvisualtask'} and c['args'][0] in volt_widths and len(c['args'])!=volt_widths[c['args'][0]] for c in flat):continue
-  # Spark's zero modulus requires original ARM helper semantics before admission.
-  if any(c['op']=='createsprite' and c['args'][0]=='gSparkElectricityFlashingSpriteTemplate' and int(c['args'][-1],0)&32767==0 for c in flat):continue
+  # Approved safe policy: a zero Spark flash divisor disables blinking only.
+  # Keep the authored argument and all source orbit/lifetime commands unchanged.
   scripts.append(dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=sound_effects(reference,flat),spriteTags={name:tags[name] for name in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})}));subs.update(local)
  for row in scripts:
   flat=row['commands']+[c for command in row['commands'] if command['op']=='call' for c in subs[command['args'][0]]]
@@ -754,7 +760,7 @@ def discover_scripts(reference):
   expulsion_contracts(reference,flat)
   feather_contracts(reference,flat)
   palette_backup_contracts(reference,flat)
-  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_DoubleTeam' for c in flat):
+  if any(c['op']=='createvisualtask' and c['args'][0] in {'AnimTask_DoubleTeam','AnimTask_AttackerPunchWithTrace'} for c in flat):
    row['spriteTags']['ANIM_TAG_BENT_SPOON']=tags['ANIM_TAG_BENT_SPOON']
   overlay_tasks={c['args'][0] for c in flat if c['op']=='createvisualtask'} & OVERLAY_TASKS
   if any(c['op']=='createsprite' and c['args'][0]=='gFastFlyingMusicNotesSpriteTemplate' for c in flat):

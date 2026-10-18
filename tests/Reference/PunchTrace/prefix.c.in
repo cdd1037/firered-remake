@@ -1,0 +1,41 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define SPRITE_NONE 255
+#define B_SIDE_PLAYER 0
+#define ANIM_ATTACKER 0
+#define ST_OAM_OBJ_BLEND 1
+#define OBJ_PLTT_ID2(n) (256+(n)*16)
+#define PLTT_SIZE_4BPP 32
+@TYPES@
+@MACROS@
+struct PlttData{u16 r:5,g:5,b:5,unused:1;};
+struct Sprite;typedef void(*SpriteCallback)(struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite{struct OamData oam;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse,invisible,usingSheet;u8 subpriority;};
+struct Task{TaskFunc func;bool8 isActive;s16 data[16];};
+static struct Sprite gSprites[64];static struct Task gTasks[16];static u16 gPlttBufferFaded[512],gPlttBufferUnfaded[512],nativePalette[16];static s16 gBattleAnimArgs[8];static u8 gBattleAnimAttacker,battlerSpriteIds[4];static int frame,paletteLive,destroyed,freeCount,nativeInitialX,sourceId;
+static u8 GetAnimBattlerSpriteId(u8 participant){assert(participant==0);return battlerSpriteIds[gBattleAnimAttacker];}
+static u8 GetBattlerSide(u8 actor){return actor&1;}
+static u8 GetBattlerPosition(u8 actor){return actor;}
+static u8 AllocSpritePalette(u16 tag){assert(tag==ANIM_TAG_BENT_SPOON&&!paletteLive);paletteLive=1;return 4;}
+static void FreeSpritePaletteByTag(u16 tag){assert(tag==ANIM_TAG_BENT_SPOON&&paletteLive);paletteLive=0;}
+static void CpuCopy32(const void*from,void*to,u32 n){memcpy(to,from,n);}
+static void DestroyAnimVisualTask(u8 id){assert(id==0&&gTasks[0].isActive);gTasks[0].isActive=0;}
+static void DestroySprite(struct Sprite*s){assert(s->inUse&&s->usingSheet);s->inUse=0;destroyed++;}
+static void Dummy(struct Sprite*s){}
+@PROTOTYPES@
+@FUNCTIONS@
+static void row(void){printf("{\"frame\":%d,\"alive\":%d,\"offset\":[%d,%d],\"nativeInitialX\":%d,\"sourceId\":%d,\"paletteLive\":%d,\"destroyed\":%d,\"task\":[",frame,gTasks[0].isActive,gSprites[sourceId].x2,gSprites[sourceId].y2,nativeInitialX,sourceId,paletteLive,destroyed);for(int i=0;i<7;i++)printf("%s%d",i?",":"",gTasks[0].data[i]);printf("],\"palette\":[");for(int i=0;i<16;i++)printf("%s%d",i?",":"",gPlttBufferFaded[320+i]);printf("],\"nativePalette\":[");for(int i=0;i<16;i++)printf("%s%d",i?",":"",nativePalette[i]);printf("],\"copies\":[");int n=0;for(int id=8;id<8+freeCount;id++){struct Sprite*s=&gSprites[id];if(!s->inUse)continue;printf("%s{\"rank\":%d,\"position\":[%d,%d,%d,%d],\"life\":%d,\"priority\":%d,\"subpriority\":%d,\"visible\":%d,\"mode\":%d,\"palette\":%d}",n++?",":"",id-8,s->x,s->y,s->x2,s->y2,s->data[0],s->oam.priority,s->subpriority,!s->invisible,s->oam.objMode,s->oam.paletteNum);}puts("]}");}
+int main(int argc,char**argv){assert(argc==7);int doubles=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);freeCount=atoi(argv[3]);int initialX=atoi(argv[4]),hidden=atoi(argv[5]),style=atoi(argv[6]);int xs[2][4]={{72,176,48,112},{32,200,90,152}},ys[2][4]={{88,48,48,88},{88,48,96,40}},sub[4]={30,40,20,50},ids[4]={20,6,47,39};
+for(int i=0;i<64;i++){gSprites[i].inUse=TRUE;gSprites[i].callback=Dummy;}for(int i=0;i<4;i++){int id=battlerSpriteIds[i]=ids[i];gSprites[id].x=xs[doubles][i]+7;gSprites[id].y=ys[doubles][i]-3;gSprites[id].x2=initialX;gSprites[id].y2=-2;gSprites[id].oam.priority=2;gSprites[id].oam.paletteNum=i;gSprites[id].subpriority=sub[i];for(int k=0;k<16;k++)gPlttBufferUnfaded[256+i*16+k]=(i*503+k*1703)&32767;}
+sourceId=battlerSpriteIds[gBattleAnimAttacker];gSprites[sourceId].invisible=hidden;for(int i=8;i<8+freeCount;i++)gSprites[i].inUse=FALSE;for(int i=0;i<16;i++)gPlttBufferUnfaded[320+i]=(i*971+2301)&32767;
+gBattleAnimArgs[0]=style?0:(8|(9<<5)|(28<<10));gBattleAnimArgs[1]=style?13:10;gTasks[0].isActive=TRUE;AnimTask_AttackerPunchWithTrace(0);nativeInitialX=gSprites[sourceId].x2;memcpy(nativePalette,gPlttBufferFaded+320,32);
+/* Explicit user-approved policy boundary, not an edit to extracted source. */
+gSprites[sourceId].x2=initialX;memcpy(gPlttBufferUnfaded+320,gPlttBufferUnfaded+256+gBattleAnimAttacker*16,32);memcpy(gPlttBufferFaded+320,gPlttBufferUnfaded+320,32);BlendPalette(320,16,gBattleAnimArgs[1],gBattleAnimArgs[0]);row();
+for(frame=1;gTasks[0].isActive&&frame<64;frame++){for(int id=0;id<64;id++)if(gSprites[id].inUse&&gSprites[id].callback==AnimBattlerTrace)gSprites[id].callback(&gSprites[id]);if(gTasks[0].isActive)gTasks[0].func(0);row();}assert(!gTasks[0].isActive);return 0;}
