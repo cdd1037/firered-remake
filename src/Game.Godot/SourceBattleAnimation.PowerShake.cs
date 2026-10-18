@@ -35,7 +35,7 @@ public sealed partial class SourceBattleAnimation
             {
                 int selector=_animationArgs[0];int[] slots;
                 if(selector==5)slots=[];
-                else if(selector==4)slots=[.._battlers.Values.Where(b=>b.Visible).OrderBy(b=>b.Slot.Value).Select(b=>b.Slot.Value)];
+                else if(selector==4)slots=[.._battlers.Values.Where(b=>IsSourceBattlerVisible(b.Slot.Value)).OrderBy(b=>b.Slot.Value).Select(b=>b.Slot.Value)];
                 else if(ResolveShakeParticipant(selector,false) is {} slot)slots=[slot.Value];
                 else return true;
                 int intensity=_animationArgs[1]!=0?_animationArgs[1]:_cue.MovePower!.Value/10;

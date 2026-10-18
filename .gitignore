@@ -26,3 +26,28 @@ src/Game.Godot/*.cs.uid
 evidence/
 **/.play/
 exports/
+
+# Reproducible source-oracle outputs are local test data; keep generators in Git.
+/tests/Game.Presentation.Tests/Fixtures/
+
+# Other generated test oracles and verification reports (not authored inputs).
+/tests/Game.Audio.Tests/Fixtures/roar-cry-presets.json
+/tests/Game.Battle.Tests/Breeding/Fixtures/iv-vectors.json
+/tests/Game.Battle.Tests/FieldEffects/Fixtures/four-field-vectors.json
+/tests/Game.Battle.Tests/Items/Fixtures/source-berry-vectors.json
+/tests/Game.Battle.Tests/Lifecycle/fixtures/source-singles-normal.json
+/tests/Game.Battle.Tests/Lifecycle/fixtures/source-singles-struggle.json
+/tests/Game.Battle.Tests/Moves/source-vectors.json
+/tests/Game.Battle.Tests/Residuals/Fixtures/source-residual-vectors.json
+/tests/Game.Battle.Tests/Switching/Fixtures/source-switch-vectors.json
+/tests/Game.Battle.Tests/Turns/Fixtures/source-absent-weather-vector.csv
+/tests/Game.Battle.Tests/Turns/Fixtures/source-order-vectors.csv
+/tests/Game.Domain.Tests/GrowthCapture/Fixtures/capture-v1.json
+/tests/Game.Domain.Tests/GrowthCapture/Fixtures/growth-v1.json
+/tests/Reference/Bg1Overlay/glare/verification.json
+/tests/Reference/Bg1Overlay/verification.json
+/tests/Reference/Recovery/verification.json
+/tests/Reference/Weather/verification.json
+/tests/Reference/field-jump-source-vectors.json
+/tests/Reference/quest-exit-source-vectors.json
+/tests/Reference/quest-palette-source-vectors.json

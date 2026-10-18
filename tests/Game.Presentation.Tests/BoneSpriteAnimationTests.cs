@@ -11,7 +11,7 @@ public sealed class BoneSpriteAnimationTests
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
     private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/bone-sprite-original-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("bone-sprite-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_bone_sprite_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/bone-sprite-original-vectors.json");
     private static SourceAnimationScript Projectile(SourceAnimationScript source,int[] args)=>source with{Commands=[
         new("loadspritegfx",["ANIM_TAG_BONE"],1),new("createsprite",new[]{Template,"ANIM_ATTACKER","2"}.Concat(args.Select(v=>v.ToString())).ToArray(),2),
         new("waitforvisualfinish",[],3),new("end",[],4)]};

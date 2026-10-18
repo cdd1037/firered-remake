@@ -21,7 +21,7 @@ public sealed class CampaignQuestLogExitTests
     {
         var playback=Playback();playback.NextScene();
         Assert.IsNotNull(playback.Caption);Assert.AreEqual(16,playback.GrayscaleCoefficient);
-        var rows=JsonSerializer.Deserialize<int[][]>(File.ReadAllText(Path.Combine(TestAssets.Root,"tests","Reference","quest-exit-source-vectors.json")))!;
+        var rows=JsonSerializer.Deserialize<int[][]>(File.ReadAllText(TestAssets.GeneratedFile("tests/Reference/quest-exit-source-vectors.json", "python tests/Reference/generate_quest_exit_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Reference/quest-exit-source-vectors.json")))!;
         foreach(var row in rows)
         {
             playback.Tick(1d/60);

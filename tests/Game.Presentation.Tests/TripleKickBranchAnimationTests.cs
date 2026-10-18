@@ -25,7 +25,7 @@ public sealed class TripleKickBranchAnimationTests
     [TestMethod]
     public void ConditionalJumpMatchesOriginalCForEveryByteTurnAndRetainsFalseFallthrough()
     {
-        using var fixture=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/multihit-branch-original-vectors.json")));
+        using var fixture=SourceVectorFixture.Read("multihit-branch-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_multihit_branch_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/multihit-branch-original-vectors.json");
         var source=fixture.RootElement.GetProperty("jump");var checks=source.GetProperty("checks").EnumerateArray().Select(x=>x.GetInt32()).ToArray();
         var branches=source.GetProperty("branches").EnumerateArray().ToArray();Assert.AreEqual(4,checks.Length);Assert.AreEqual(checks.Length,branches.Length);
         for(int check=0;check<checks.Length;check++)

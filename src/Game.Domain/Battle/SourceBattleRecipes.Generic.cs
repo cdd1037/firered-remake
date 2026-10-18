@@ -150,8 +150,8 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal int SourceGenericApplyDamage(BattlerSlot side, BattlerSlot targetSide, PokemonMoveDefinition move,
-            int damage, bool critical, int percent)
-            => SourceGenericApplyDamage(side, targetSide, move.Id, damage, critical, percent);
+            int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null)
+            => SourceGenericApplyDamage(side, targetSide, move.Id, damage, critical, percent, preparedBasePower, preparedFuryCutterCounter);
 
         internal void SourceGenericContact(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move, string purpose, int damage)

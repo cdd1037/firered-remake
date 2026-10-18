@@ -13,7 +13,7 @@ public sealed class SelfStatVariantAnimationTests
     {public readonly List<SourceAnimationSound>Cues=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound c)=>Cues.Add(c);public void StopAnimationEffects(){}}
     private static SourceAnimationCommand C(string op,params string[] args)=>new(op,args,1);
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/self-stat-variant-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("self-stat-variant-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_self_stat_variant_vectors.py --repo . --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/self-stat-variant-vectors.json");
     private static int[] Numbers(JsonElement row)=>row.EnumerateArray().Select(x=>x.GetInt32()).ToArray();
     private static object? Field(object value,string name)=>value.GetType().GetField(name,Instance)!.GetValue(value);
     private static T Field<T>(object value,string name)=>(T)Field(value,name)!;

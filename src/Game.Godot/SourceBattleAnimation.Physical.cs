@@ -153,8 +153,8 @@ public sealed partial class SourceBattleAnimation
         {
             if(_timer!=0){_timer--;return;}
             var p=owner._offsets[slot.Value];int sign=(_count&1)==0?-1:1;
-            p=new(p.X+sign*x*2,p.Y+sign*y*2);_timer=delay;
-            if(++_count>=shakes){int restore=(_count&1)==0?-1:1;p=new(p.X+restore*x,p.Y+restore*y);Finished=true;}
+            p=new(unchecked((short)(p.X+sign*unchecked((short)(x*2)))),unchecked((short)(p.Y+sign*unchecked((short)(y*2)))));_timer=delay;
+            if(++_count>=shakes){int restore=(_count&1)==0?-1:1;p=new(unchecked((short)(p.X+restore*(unchecked((short)(x*2))/2))),unchecked((short)(p.Y+restore*(unchecked((short)(y*2))/2))));Finished=true;}
             owner._offsets[slot.Value]=p;
         }
     }

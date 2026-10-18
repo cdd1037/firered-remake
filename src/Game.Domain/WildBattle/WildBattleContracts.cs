@@ -231,7 +231,12 @@ public sealed record WildBattleMoveMissedEvent(long Sequence, int Turn, WildBatt
     WildBattleSide Target, MoveId Move) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleHpChangedEvent(long Sequence, int Turn, WildBattleSide Actor,
     WildBattleSide Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical,
-    int RandomPercent) : WildBattleEvent(Sequence, Turn);
+    int RandomPercent) : WildBattleEvent(Sequence, Turn)
+{
+    /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
+}
 public sealed record WildBattlePotionRecoveredEvent(long Sequence, int Turn, WildBattleSide Side,
     int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
 /// <summary>Exact owned target and medicine-only delta, before the enemy response and residuals.</summary>

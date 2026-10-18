@@ -233,7 +233,7 @@ public sealed class EggFactoryTests
     [TestMethod]
     public void CompiledIvVectors()
     {
-        using var oracle = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/Breeding"), "iv-vectors.json")));
+        using var oracle = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Breeding/Fixtures/iv-vectors.json", "python tests/Game.Battle.Tests/Breeding/probe_source_iv.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Breeding/Fixtures/iv-vectors.json")));
         int vectors = 0, stale = 0;
         foreach (var row in oracle.RootElement.GetProperty("rows").EnumerateArray())
         {

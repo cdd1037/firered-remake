@@ -60,7 +60,7 @@ internal abstract partial class SourceRecipeContext
         int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
         int rawDamage = SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent, power);
         int damage = FixedDamageAdjust(target, move, rawDamage, purpose);
-        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
+        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent, power);
         if (critical && lost == 0 && rawDamage > 0 && !FixedDamageZeroCriticalPrinted(target))
             Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         DynamicPowerReportType(catalog, actor, target, move);

@@ -23,7 +23,7 @@ public sealed class WeatherAnimationTests
     public void CompleteWeatherRootsReplayComposeBothSidesAndDrainTheirSourceResources(int move)
     {
         using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(move);
-        using var schedules=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/weather-schedule-source-vectors.json")));
+        using var schedules=SourceVectorFixture.Read("weather-schedule-source-vectors.json", "python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures");
         foreach(bool doubles in new[]{false,true})for(int actor=0;actor<(doubles?4:2);actor++)
         {
             int target=move==257?actor^1:actor;var battlers=Battlers(doubles);var assets=resolved.Assets.ToDictionary(x=>x.Key,x=>x.Value);

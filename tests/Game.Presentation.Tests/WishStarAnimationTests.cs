@@ -29,7 +29,7 @@ public sealed class WishStarAnimationTests
     [TestMethod]
     public void ExtractedSourceMotionBlinkingTileAndRngVectorsMatchAllActorPositionsAndSeeds()
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/wish-star-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("wish-star-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_wish_star_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/wish-star-source-vectors.json");
         var seeds=doc.RootElement.GetProperty("seeds").EnumerateArray().Select(v=>v.GetUInt32()).ToArray();
         var source=Script() with{Commands=[new("loadspritegfx",["ANIM_TAG_GOLD_STARS"],1),new("createsprite",[Parent,"ANIM_ATTACKER","40"],2),new("waitforvisualfinish",[],3),new("end",[],4)],Labels=new Dictionary<string,int>()};
         int cases=0;

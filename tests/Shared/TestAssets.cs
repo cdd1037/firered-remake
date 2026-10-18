@@ -9,6 +9,14 @@ internal static class TestAssets
     public static string Checkpoint => Environment.GetEnvironmentVariable("FIRERED_TEST_CHECKPOINT") ?? Path.GetFullPath(Path.Combine(Root, "checkpoints/current-ownership-v3-20261015/continued-checkpoint.json"));
     public static string Source => Path.Combine(Root, "content/raw/pokefirered/037335f4");
 
+    public static string GeneratedFile(string path, string generationCommand)
+    {
+        var fullPath = Path.IsPathRooted(path) ? path : Path.Combine(Root, path);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"Missing local generated test data: {fullPath}. From the repository root run:\n{generationCommand}", fullPath);
+        return fullPath;
+    }
+
     public static string Fixtures(string feature) => Path.Combine(Root, "tests", feature, "Fixtures");
     public static string Output()
     {

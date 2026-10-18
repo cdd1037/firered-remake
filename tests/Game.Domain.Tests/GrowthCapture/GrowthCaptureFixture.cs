@@ -10,7 +10,7 @@ namespace FireRed.Tests.Domain;
 [TestClass]
 public abstract class GrowthCaptureFixture
 {
-    private protected JsonDocument Fixture(string name) => JsonDocument.Parse(File.ReadAllText(Path.Combine(TestAssets.Fixtures("Game.Domain.Tests/GrowthCapture"), name)));
+    private protected JsonDocument Fixture(string name) => JsonDocument.Parse(File.ReadAllText(TestAssets.GeneratedFile(Path.Combine("tests/Game.Domain.Tests/GrowthCapture/Fixtures", name), "python tests/Game.Domain.Tests/GrowthCapture/reference_vectors.py content/raw/pokefirered/037335f4 tests/Game.Domain.Tests/GrowthCapture/Fixtures")));
     private protected CaptureInput Input(int hp = 100, int rate = 45, CaptureBall ball = CaptureBall.Poke, CaptureStatus status = CaptureStatus.None) => new(100, hp, rate, ball, status);
     private protected void NoDraw(CaptureResult result, RngState before, CaptureOutcome outcome, string code)
     {

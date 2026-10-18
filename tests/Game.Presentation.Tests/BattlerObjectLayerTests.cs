@@ -13,6 +13,29 @@ public sealed class BattlerObjectLayerTests
     }
     private static void Pixel(byte[] rgba,int x,int y,int r,int g,int b)
     {int at=(y*240+x)*4;Assert.AreEqual((byte)r,rgba[at]);Assert.AreEqual((byte)g,rgba[at+1]);Assert.AreEqual((byte)b,rgba[at+2]);}
+    [TestMethod,DataRow(12,18),DataRow(31,31),DataRow(17,4)]
+    public void AlphaRegisterRetainsFiveBitOperandsWhileHardwarePixelsSaturateAtSixteen(int a,int b)
+    {
+        // Cmd_setalpha copies both script bytes into BLDALPHA. Its five-bit
+        // coefficients retain 18 in Overheat; pixel blending saturates at 16.
+        var script=new SourceAnimationScript(315,"alpha-register",[new("setalpha",[a.ToString(),b.ToString()],1),new("delay",["2"],2),new("end",[],3)]);
+        var bodies=Enumerable.Range(0,2).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64));
+        var runtime=new SourceBattleAnimation(script,new("alpha",1,315,new(0),new(1)),bodies,false,new Audio());
+        var sampled=runtime.Tick();Assert.AreEqual(a,sampled.AlphaA);Assert.AreEqual(b,sampled.AlphaB);
+        var(composer,frame)=Scene();
+        CollectionAssert.AreEqual(composer.ComposeField(frame with{AlphaA=Math.Min(a,16),AlphaB=Math.Min(b,16)}),composer.ComposeField(frame with{AlphaA=sampled.AlphaA,AlphaB=sampled.AlphaB}));
+        runtime.Cancel();Assert.IsFalse(runtime.Snapshot().BlendEnabled);
+    }
+    [TestMethod]
+    public void AlphaOperandsOutsideHardwareCoefficientFieldsFailBeforePlayback()
+    {
+        foreach(int value in new[]{-1,32,255})foreach(int index in new[]{0,1})
+        {
+            string[] args=["12","18"];args[index]=value.ToString();
+            var script=new SourceAnimationScript(315,"alpha-register",[new("setalpha",args,1),new("end",[],2)]);
+            Assert.ThrowsExactly<SourceAnimationException>(()=>new SourceBattleAnimation(script,new("alpha",1,315,new(0),new(1)),Enumerable.Range(0,2).Select(i=>new AnimationBattler(new(i),"b"+i,8,0,64,64)),false,new Audio()));
+        }
+    }
     [TestMethod]
     public void MonBackgroundRemainsUnscaledWhenDistinctBlendObjectMovesAcrossTerrain()
     {

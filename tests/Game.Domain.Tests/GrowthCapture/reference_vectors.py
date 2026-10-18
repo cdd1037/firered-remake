@@ -98,12 +98,17 @@ def main():
     if len(sys.argv) != 3:
         raise SystemExit("Usage: reference_vectors.py VERIFIED_REFERENCE_DIRECTORY NEW_OUTPUT_DIRECTORY")
     source, output = map(pathlib.Path, sys.argv[1:])
+    source_paths = {
+        "src_data_pokemon_experience_tables.h": "src/data/pokemon/experience_tables.h",
+        "src_battle_script_commands.c": "src/battle_script_commands.c",
+    }
     for name, expected in SOURCES.items():
-        if hashlib.sha256((source / name).read_bytes()).hexdigest() != expected:
+        input_path = source / source_paths[name]
+        if not input_path.is_file():
+            input_path = source / name  # Preserve the older verified flat-text input layout.
+        if hashlib.sha256(input_path.read_bytes()).hexdigest() != expected:
             raise SystemExit("Pinned source mismatch: " + name)
     output.mkdir(parents=True, exist_ok=True)
-    if any((output / name).exists() for name in ["growth-v1.json", "capture-v1.json"]):
-        raise SystemExit("Refusing to overwrite existing golden fixtures. Review a new candidate directory instead.")
     curves = [{"id": curve, "experienceByLevel": [growth(curve, n) for n in range(1, 101)]} for curve in range(6)]
     # Additional manually derived anchors, checked before producing any fixture.
     assert [row["experienceByLevel"][-1] for row in curves] == [1000000, 600000, 1640000, 1059860, 800000, 1250000]
@@ -146,7 +151,11 @@ def main():
         ("growth-v1.json", {"sourceCommit": COMMIT, "sourceSha256": SOURCES["src_data_pokemon_experience_tables.h"], "curves": curves}),
         ("capture-v1.json", {"sourceCommit": COMMIT, "sourceSha256": SOURCES["src_battle_script_commands.c"], "vectors": vectors}),
     ]:
-        (output / name).write_text(json.dumps(value, indent=2) + "\n")
+        candidate = json.dumps(value, indent=2) + "\n"
+        target = output / name
+        if target.exists() and target.read_text() != candidate:
+            raise SystemExit("Existing reference differs; review a new candidate directory: " + str(target))
+        target.write_text(candidate)
     print(f"Created 600 growth entries and {len(vectors)} capture vectors; no C# implementation was invoked.")
 
 

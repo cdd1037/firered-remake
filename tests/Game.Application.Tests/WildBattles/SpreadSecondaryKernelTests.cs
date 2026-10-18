@@ -153,7 +153,7 @@ public sealed class SpreadSecondaryKernelTests
             }
             else Assert.IsNull(dispatch, $"{name}: unrelated receipt {result.Events[i].GetType().Name} cannot borrow a hit.");
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, Moves));
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle));
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             if (singles)
             {
                 var single = Single(result.Events, i);

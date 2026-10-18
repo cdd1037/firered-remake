@@ -18,7 +18,7 @@ public sealed class VoiceAnimationTests
     [TestMethod]
     public void NoiseLinesMatchExtractedSourcePositionSignedAccumulationAndArgumentMutation()
     {
-        var script=AnimationCompositionFixture.Script(336);using var document=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/voice-vectors.json")));
+        var script=AnimationCompositionFixture.Script(336);using var document=SourceVectorFixture.Read("voice-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_voice_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/voice-vectors.json");
         foreach(var group in document.RootElement.GetProperty("noise").EnumerateArray().Select(e=>e.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).GroupBy(r=>(r[0],r[1],r[2])))
         {
             var(mode,actor,kind)=group.Key;var b=Battlers(mode!=0);var o=new SourceBattleAnimation(script with{Commands=[new("end",[],1)]},new("noise",1,336,new(actor),new(actor)),b,mode!=0,new Audio());
@@ -36,7 +36,7 @@ public sealed class VoiceAnimationTests
     [TestMethod]
     public void TerrainShakeMatchesSourceInitializerRegistersAndRestoration()
     {
-        int[][] args=[[1,0,6,1],[0,2,3,0],[-3,-2,4,2],[32767,-32768,1,0]];var script=AnimationCompositionFixture.Script(304) with{Commands=[new("end",[],1)]};using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/voice-vectors.json")));
+        int[][] args=[[1,0,6,1],[0,2,3,0],[-3,-2,4,2],[32767,-32768,1,0]];var script=AnimationCompositionFixture.Script(304) with{Commands=[new("end",[],1)]};using var json=SourceVectorFixture.Read("voice-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_voice_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/voice-vectors.json");
         foreach(var group in json.RootElement.GetProperty("terrain").EnumerateArray().Select(e=>e.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).GroupBy(r=>r[0]))
         {
             var o=new SourceBattleAnimation(script,new("terrain",1,304,new(0),new(1)),Battlers(false),false,new Audio());var type=typeof(SourceBattleAnimation).GetNestedType("VoiceTerrainShake",BindingFlags.NonPublic)!;
@@ -47,7 +47,7 @@ public sealed class VoiceAnimationTests
     [TestMethod]
     public void HyperVoiceMatchesSourceImmediateTranslationPartnerVisibilityAndBytePriority()
     {
-        var script=AnimationCompositionFixture.Script(304);using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/hyper-voice-vectors.json")));
+        var script=AnimationCompositionFixture.Script(304);using var json=SourceVectorFixture.Read("hyper-voice-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_hyper_voice_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/hyper-voice-vectors.json");
         foreach(var group in json.RootElement.EnumerateArray().Select(e=>e.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).GroupBy(r=>(r[0],r[1],r[2],r[3],r[4])))
         {
             var(mode,actor,target,mask,pic)=group.Key;var b=Battlers(mode!=0).Select(x=>x with{Visible=(mask&(1<<x.Slot.Value))!=0}).ToArray();
@@ -63,7 +63,7 @@ public sealed class VoiceAnimationTests
     [TestMethod]
     public void DeepInhaleMatchesOriginalTaskAffineJitterAndEverySourceFootOffset()
     {
-        var script=AnimationCompositionFixture.Script(336);using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/inhale-vectors.json")));
+        var script=AnimationCompositionFixture.Script(336);using var json=SourceVectorFixture.Read("inhale-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_inhale_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/inhale-vectors.json");
         foreach(var group in json.RootElement.EnumerateArray().Select(e=>e.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).GroupBy(r=>r[0]))
         {
             var b=Battlers(false);b[0]=b[0] with{YOffset=group.Key};var o=new SourceBattleAnimation(script with{Commands=[new("end",[],1)]},new("inhale",1,336,new(0),new(0)),b,false,new Audio());
@@ -104,7 +104,7 @@ public sealed class VoiceAnimationTests
     [TestMethod]
     public void SharedCryPhaseAndWaitTasksMatchSourceMinimumVisitsAndGlobalLiveness()
     {
-        var script=AnimationCompositionFixture.Script(336) with{Commands=[new("end",[],1)]};using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/cry-task-vectors.json")));
+        var script=AnimationCompositionFixture.Script(336) with{Commands=[new("end",[],1)]};using var json=SourceVectorFixture.Read("cry-task-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_cry_task_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/cry-task-vectors.json");
         foreach(var group in json.RootElement.EnumerateArray().Select(e=>e.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).GroupBy(r=>(r[0],r[1])))
         {
             var(kind,release)=group.Key;var audio=new Audio();var o=new SourceBattleAnimation(script,new("cry-task",1,336,new(0),new(0)),Battlers(false),false,audio);var type=typeof(SourceBattleAnimation).GetNestedType("VoiceCryTask",BindingFlags.NonPublic)!;

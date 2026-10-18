@@ -1,5 +1,28 @@
 # Bounded weather animation source oracles
 
+## Local preparation and evidence profiles
+
+Generated JSON is ignored local comparison data; it is not stored in Git. Source extractors, semantic case definitions, pinned inputs and comparators remain versioned. `check_vectors.py` is the explicit family preparation entrypoint. It stages all native compilation outside the repository, validates the result, then copies only JSON to the requested destination. It can prepare absent inputs without comparing to a previous generated file. `--fixtures DIR` optionally checks reproducibility against an existing corpus of the same profile.
+
+```sh
+# Prepare every input for this family, including small companion fixtures.
+python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures
+# Full original-C corpus stays outside the repository.
+python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --full --prepare /tmp/firered-full
+# Independently validate an already prepared corpus, without regenerating it.
+python tests/Reference/Weather/validate.py --fixtures /tmp/firered-full
+```
+
+`--output /tmp/fresh-stage` optionally retains a named fresh external staging directory; otherwise a unique system-temporary directory is used. Add `--supplement PATH` for missing pinned image/map inputs in the overlay/weather families. Ordinary managed tests only read prepared data, and fail with a concrete preparation command if it is absent. Set `FIRERED_SOURCE_VECTOR_DIR=/tmp/firered-full` to run the same managed comparisons against the full corpus; prepare all families read by the chosen test filter in that directory.
+
+- Motion representative: 14 crescents / 566 rows, six heat cases / 780 rows, ten palette cases / 91 rows. All seven crescent recipes, direction/flip branches, partner presence, palette kinds and banks 0/3/15 remain. Sun/rain include both visibility masks.
+- Motion full: 56 crescents / 2,264 rows, 32 heat cases / 4,160 rows and 32 palette cases / 248 rows.
+- Both profiles retain all 154 ABI entries in their original order because material fragmentRenders refer to abiCaseIndex. BG, engine, material, pan and schedule remain complete.
+- WeatherSourceOracleTests runs the same per-frame motion/palette comparator for both profiles. SubspriteCompositionTests retains its native ABI/material index mapping.
+
+Default reduced fixtures have root `profile: representative`; `--full` writes `profile: full`. The family-specific selectors retain complete traces, never every-Nth frames. The native full cases and all original numerical fields remain available on demand. Counts in historical detailed descriptions below refer to the full corpus unless labeled representative.
+
+
 Pinned input: pret/pokefirered commit `037335f4c725d7c9aecdac87066f2002b4bd7e14`. These authored generators extract selected C functions/tables and compile only the extracted closure plus explicit platform stubs. They do not invoke upstream build scripts, product importers, runtime code, managed builds, or canonical generation. `pinned-inputs.json` fixes every consumed source and image/map hash. JSON is compact and deterministic; it contains no absolute paths, host compiler versions, wall-clock times, or native function addresses.
 
 ## Fixture integration names
@@ -15,16 +38,10 @@ Pinned input: pret/pokefirered commit `037335f4c725d7c9aecdac87066f2002b4bd7e14`
 
 ## Regeneration
 
-Run in an external copy of this directory. Inputs may be the pinned raw reference plus a separate pinned supplement directory containing missing PNG/map inputs.
+Use the family preparation command above. Its staging remains external. Inputs may be the pinned raw reference plus a separate pinned supplement directory containing missing PNG/map inputs.
 
-```
-python -B generate_bg.py REFERENCE
-python -B generate_engine.py REFERENCE
-python -B generate_motion.py REFERENCE
-python -B generate_material.py REFERENCE SUPPLEMENT
-python -B generate_pan.py REFERENCE
-python -B generate_schedule.py REFERENCE
-python -B validate.py
+```sh
+python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures
 ```
 
 Each C generator independently compiles `cc -std=c11 -O0 -fwrapv` and `-O2 -fwrapv`, runs both, and rejects any observation mismatch. Palette bitfield access additionally uses `-fno-strict-aliasing`, matching the explicitly modeled halfword color representation. Ordinary managed tests only read reviewed fixtures; they must never generate or overwrite expected results.

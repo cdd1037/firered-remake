@@ -6,34 +6,44 @@ using Game.Domain.WildBattle;
 
 namespace Game.Application;
 
-public enum CampaignMoveAnimationBoundary { AfterAttackText, BeforeHitResult, BeforeRecoveryResult }
+public enum CampaignMoveAnimationBoundary { AfterAttackText, AfterCallerText, AfterRetainedAttackText, BeforeHitResult, BeforeRecoveryResult, BeforeStatusResult, BeforeChargeResult }
 
 /// <summary>Read-only projection of a committed source invocation at its authored presentation boundary.
 /// It adds no Domain event, command, RNG draw, saved field or authoritative acknowledgement.</summary>
-public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequence, long AttackSequence,
-    long PpSequence, long ResultSequence, int SourceMoveId, BattlerSlot Actor, BattlerSlot Target,
+public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequence, long? AttackSequence,
+    long? PpSequence, long ResultSequence, int SourceMoveId, BattlerSlot Actor, BattlerSlot Target,
     bool HitsSubstitute)
 {
     public byte? MoveTurn {get;init;}
     public ushort? MovePower {get;init;}
+    public byte? FuryCutterCounter {get;init;}
+    public byte? RolloutCounter {get;init;}
     public int? MoveDamage {get;init;}
     public CampaignMoveAnimationBoundary Boundary {get;init;} = CampaignMoveAnimationBoundary.AfterAttackText;
-    public bool AcknowledgesCurrentReceipt => Boundary == CampaignMoveAnimationBoundary.AfterAttackText;
+    public bool AcknowledgesCurrentReceipt => Boundary is CampaignMoveAnimationBoundary.AfterAttackText or CampaignMoveAnimationBoundary.AfterCallerText or CampaignMoveAnimationBoundary.AfterRetainedAttackText;
+    public long SnapshotSequence => PpSequence ?? AttackSequence ?? Sequence;
 }
 public sealed record CampaignMoveAnimationDecision(CampaignMoveAnimationDispatch? Dispatch, string Reason);
 
 public static partial class CampaignMoveAnimationPresentation
 {
-    // Launch snapshots are taken at the authenticated PP command, before later
-    // outcome/charge receipts. Reuse the same charge replay as general effects.
+    // Launch snapshots use the authenticated PP command or the explicit
+    // no-PP caller/retained/result boundary, before later outcome/charge receipts. Reuse the same charge replay as general effects.
     public static bool[]? SpriteVisibilityAtInvocation(IReadOnlyList<SourceBattleEvent> events,
         CampaignMoveAnimationDispatch dispatch,IReadOnlyList<MoveId?> entryChargeMoves)
     {
         int index=-1;
-        for(int i=0;i<events.Count;i++)if(events[i].Sequence==dispatch.PpSequence)
+        for(int i=0;i<events.Count;i++)if(events[i].Sequence==dispatch.SnapshotSequence)
         {if(index>=0)return null;index=i;}
-        if(index<0||events[index] is not SourcePpCommandEvent pp||pp.Actor!=dispatch.Actor||
-            entryChargeMoves.Count is not (2 or 4))return null;
+        if(index<0||entryChargeMoves.Count is not (2 or 4))return null;
+        bool anchor=dispatch.PpSequence is not null
+            ? events[index] is SourcePpCommandEvent pp&&pp.Actor==dispatch.Actor
+            : dispatch.Boundary is CampaignMoveAnimationBoundary.AfterCallerText or CampaignMoveAnimationBoundary.AfterRetainedAttackText
+                ? dispatch.Sequence==dispatch.AttackSequence&&events[index] is SourceAttackStringEvent attack&&attack.Actor==dispatch.Actor
+                : dispatch.Boundary==CampaignMoveAnimationBoundary.BeforeHitResult&&dispatch.AttackSequence is null&&dispatch.Sequence==dispatch.ResultSequence&&
+                    (events[index] is SourceHpChangedEvent hp&&hp.Actor==dispatch.Actor&&hp.Target==dispatch.Target||
+                     events[index] is SourceSubstituteDamagedEvent sub&&sub.Actor==dispatch.Actor&&sub.Target==dispatch.Target);
+        if(!anchor)return null;
         var visibility=new bool[entryChargeMoves.Count];
         for(int slot=0;slot<visibility.Length;slot++)
         {
@@ -73,7 +83,7 @@ public static partial class CampaignMoveAnimationPresentation
     };
     private static string? FieldSettingAnimation(PokemonMoveDefinition move)=>move.Effect switch
     {
-        "EFFECT_MIST"=>"mist", "EFFECT_LIGHT_SCREEN"=>"light-screen", "EFFECT_REFLECT"=>"reflect",
+        "EFFECT_MIST"=>"mist", "EFFECT_SAFEGUARD"=>"safeguard", "EFFECT_LIGHT_SCREEN"=>"light-screen", "EFFECT_REFLECT"=>"reflect",
         "EFFECT_RAIN_DANCE"=>"rain", "EFFECT_SANDSTORM"=>"sandstorm", "EFFECT_SUNNY_DAY"=>"sun", "EFFECT_HAIL"=>"hail", _=>null
     };
     private static bool IsRecoveryAnimation(PokemonMoveDefinition move) => move.Effect is
@@ -94,15 +104,15 @@ public static partial class CampaignMoveAnimationPresentation
         _ => null
     };
 
-    private static bool ValidSpreadPp(SourcePpCommandEvent[] pp,SourceMoveUsedEvent used,SourceAttackStringEvent attack) =>
+    private static bool ValidSpreadPp(SourcePpCommandEvent[] pp,SourceMoveUsedEvent used,SourceAttackStringEvent attack,bool retained=false) =>
         used.Actor.Value is >=0 and <4&&used.Target.Value is >=0 and <4&&pp.Length is >=1 and <=2&&
         pp[0].Target==used.Target&&pp.Select(p=>p.Target).Distinct().Count()==pp.Length&&
         pp.All(p=>p.Actor==used.Actor&&p.PpOwner==used.Actor&&p.CommandCost is >=1 and <=3&&
             p.Before is >=0 and <=255&&p.After is >=0 and <=255&&p.CurrentMove==used.Move&&
             p.ChosenMove==attack.ChosenMove&&p.PpSlot==used.Slot&&p.Sequence>used.Sequence&&
             p.Target.Side!=used.Actor.Side&&(p.Target==used.Target||p.Target==used.Target.Partner))&&
-        pp[0].Before==used.PpBefore&&pp[0].After==used.PpAfter&&pp[0].Before>0&&
-        pp[0].After==Math.Max(0,pp[0].Before-pp[0].CommandCost)&&
+        pp[0].Before==used.PpBefore&&pp[0].After==used.PpAfter&&
+        (retained?pp[0].After==pp[0].Before:pp[0].Before>0&&pp[0].After==Math.Max(0,pp[0].Before-pp[0].CommandCost))&&
         pp.Skip(1).All(p=>p.Before==pp[0].After&&p.After==p.Before);
 
     public static CampaignMoveAnimationDecision AtAttackText(CampaignWildBattle battle, bool sourceRules,
@@ -113,7 +123,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(battle.Phase!=CampaignBattlePhase.Events || battle.EventIndex<0 || battle.EventIndex>=battle.Events.Length)
             return new(null,"not-attack-text");
         return AtAttackText(new(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,
-            ()=>CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,true),
+            ()=>CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,true,moves:moves),
             index=>CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=index},true,moves:moves)),moves,supports);
     }
 
@@ -124,7 +134,7 @@ public static partial class CampaignMoveAnimationPresentation
         if(battle.Stage!=CampaignDoubleBattleStage.Combat || battle.EventIndex<0 || battle.EventIndex>=battle.Events.Length)
             return new(null,"not-attack-text");
         return AtAttackText(new(battle.Id,battle.Events.ToArray(),battle.EventIndex,4,
-            ()=>CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle),
+            ()=>CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,moves:moves),
             index=>CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=index},moves:moves)),moves,supports);
     }
 
@@ -134,29 +144,48 @@ public static partial class CampaignMoveAnimationPresentation
     {
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
+        if(battle.Events[battle.EventIndex] is SourceAttackStringEvent callerAttack)
+            return Definition(callerAttack.CurrentMove,moves)?.Effect is "EFFECT_RAMPAGE" or "EFFECT_ROLLOUT"
+                ? RetainedAttack(battle,callerAttack,moves,supports)
+                : CallerPrelude(battle,callerAttack,null,moves,supports);
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
         var definition = Definition(used.Move, moves);
         int move = definition?.SourceMoveId ?? 0;
         if (move == 0 || !supports(move,used.Move.Value)) return new(null, "script-outside-slice");
+        if(definition!.Effect is "EFFECT_TRANSFORM" or "EFFECT_SUBSTITUTE")
+            return MaterialChangeAnimation(battle,used,definition);
+        if(definition!.Effect=="EFFECT_SLEEP_TALK")
+            return CallerPrelude(battle,null,used,moves,supports);
         if(definition!.Effect=="EFFECT_REST"&&boundary!=CampaignMoveAnimationBoundary.BeforeRecoveryResult)
             return new(null,"source-before-recovery-animation");
-        if(MultiHitBounds(definition!) is not null)return new(null,"source-per-hit-animation");
+        if(definition!.Effect=="EFFECT_TEETER_DANCE"&&boundary!=CampaignMoveAnimationBoundary.BeforeStatusResult)
+            return new(null,"source-before-status-animation");
+        if(MultiHitBounds(definition!) is not null||definition!.Effect=="EFFECT_BEAT_UP")return new(null,"source-per-hit-animation");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.ChosenMove != used.Move ||
-            attack.Turn != used.Turn || attack.Sequence >= used.Sequence || used.Slot is <0 or >3)
+            attack.Turn != used.Turn || attack.Sequence >= used.Sequence ||
+            (used.Move==WildBattleRules.StruggleMove?used.Slot!=-1:used.Slot is <0 or >3))
             return new(null, "unmatched-source-attack-string");
         int end = battle.EventIndex + 1;
         while (end < battle.Events.Length && battle.Events[end].Turn == used.Turn &&
-            battle.Events[end] is not (SourceAttackStringEvent or SourceMoveUsedEvent or SourceOrderEvent or SourceTurnReadyEvent)) end++;
+            battle.Events[end] is not (SourceAttackStringEvent or SourceMoveUsedEvent or SourceOrderEvent or SourceTurnReadyEvent) &&
+            !(battle.Events[end] is SourcePpCommandEvent nextPp && nextPp.Actor != used.Actor)) end++;
         for(int i=battle.EventIndex+1;i<end;i++)
             if(battle.Events[i].Sequence<=battle.Events[i-1].Sequence)return new(null,"unmatched-source-invocation-sequence");
         var action = battle.Events.Skip(battle.EventIndex + 1).Take(end - battle.EventIndex - 1).ToArray();
         var pp = action.OfType<SourcePpCommandEvent>().ToArray();
+        if(used.Move==WildBattleRules.StruggleMove&&
+            (definition.Effect!="EFFECT_RECOIL"||definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0||
+             used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+             used.Actor.Side==used.Target.Side||action.Length<2||pp.Length!=1||action[0]!=pp[0]))
+            return new(null,"unmatched-source-forced-invocation");
+        bool chargeRelease=HasChargeAnimation(definition!);
+        if(chargeRelease&&(!AuthenticatedChargeRelease(battle,used)||action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Side==used.Actor&&e.Volatile=="called-charge")))return new(null,"unmatched-source-charge-release");
         if(battle.Slots == 4 && definition!.Target == "MOVE_TARGET_BOTH" && definition.Power > 0)
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
             // One visible attack page owns both PP-command visits and one visual invocation.
-            if(!ValidSpreadPp(pp,used,attack))
+            if(!ValidSpreadPp(pp,used,attack,chargeRelease))
                 return new(null,"unmatched-source-spread-pp");
             var spreadHits=action.Where(e=>e is SourceHpChangedEvent h&&h.Actor==used.Actor&&h.Move==used.Move||e is SourceSubstituteDamagedEvent d&&d.Actor==used.Actor&&d.Move==used.Move)
                 .Select(e=>e switch{SourceHpChangedEvent h=>(h.Target,h.Sequence,Substitute:false),SourceSubstituteDamagedEvent d=>(d.Target,d.Sequence,Substitute:true),_=>throw new InvalidOperationException()}).ToArray();
@@ -173,7 +202,7 @@ public static partial class CampaignMoveAnimationPresentation
                 e is SourceEffectivenessEvent {Effectiveness:WildBattleEffectiveness.NoEffect} effect&&effect.Actor==used.Actor&&effect.Target==hit.Target&&effect.Move==used.Move)).ToArray();
             if(eligibleHits.Length==0)return new(null,"source-no-animation-result");
             var hit=eligibleHits[0];var hitPp=pp.Single(p=>p.Target==hit.Target);
-            return new(new(battle.Id,used.Sequence,attack.Sequence,hitPp.Sequence,hit.Sequence,move,used.Actor,hit.Target,hit.Substitute),"committed-source-animation");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,hitPp.Sequence,hit.Sequence,move,used.Actor,hit.Target,hit.Substitute){MoveTurn=chargeRelease?(byte)1:null},"committed-source-animation");
         }
         if(battle.Slots==4&&definition!.Target=="MOVE_TARGET_BOTH"&&ReductionAnimation(definition) is {} spreadStat)
         {
@@ -206,8 +235,13 @@ public static partial class CampaignMoveAnimationPresentation
         }
         if(definition!.Effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE")
             return GroundSpreadAnimation(battle,used,attack,definition,action,pp);
-        if (!ValidSingleInvocationPp(pp,used,2))
+        if(definition.Effect is "EFFECT_HELPING_HAND" or "EFFECT_IMPRISON" or "EFFECT_TEETER_DANCE")
+            return SupportStatusAnimation(battle,used,attack,definition,action,pp);
+        if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
             return new(null, "unmatched-source-pp-command");
+        if(definition.Effect=="EFFECT_BIDE")return BideSetup(battle,used,attack,definition,action,pp[0]);
+        if(definition.Effect=="EFFECT_BRICK_BREAK"&&action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Reason=="brick-break"))
+            return BrokenScreenAnimation(battle,used,attack,definition,action,pp[0]);
         if(move==273)
         {
             // Successful trywish owns the setup root. Countdown and later healing
@@ -219,17 +253,8 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-wish-setup");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,scheduled.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move==248)
-        {
-            // trysetfutureattack precedes attackanimation. The delayed impact is
-            // a separate general animation and cannot replay this setup root.
-            if((used.Actor.Value < 0 || used.Actor.Value >= battle.Slots)||(used.Target.Value < 0 || used.Target.Value >= battle.Slots)||used.Actor==used.Target||
-                action.Length<2||action[0]!=pp[0]||action[1] is not SourceCalledDelayedEvent {Before:0,After:3,Reason:"scheduled",SourcePartyIndex:null} scheduled||
-                scheduled.Target!=used.Target||scheduled.Move!=used.Move||scheduled.Sequence<=pp[0].Sequence||
-                action.OfType<SourceCalledDelayedEvent>().Count(e=>e.Reason=="scheduled")!=1)
-                return new(null,"unmatched-source-future-setup");
-            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,scheduled.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
-        }
+        if(definition.Effect=="EFFECT_FUTURE_SIGHT")
+            return FutureAttackSetup(battle,used,attack,definition,action,pp[0]);
         if (move is 120 or 153)
         {
             // BattleScript_EffectExplosion animates once immediately after setatkhptozero,
@@ -242,7 +267,7 @@ public static partial class CampaignMoveAnimationPresentation
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
                 used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 207 or 321 or 322 or 339)
+        if(CampaignStatAnimationPresentation.HasGroupedEffect(definition.Effect))
         {
             var result=battle.GroupedResult();
             if(result is null)return new(null,action.Any(e=>e is SourceMoveMissedEvent miss&&miss.Actor==used.Actor&&miss.Move==used.Move)?"source-no-animation-result":"unmatched-source-mixed-effect-result");
@@ -268,6 +293,37 @@ public static partial class CampaignMoveAnimationPresentation
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move &&
                 !CampaignStatAnimationPresentation.IsFailedToxicSecondary(action,used,t.Sequence,moves)))
             return new(null, "source-no-animation-result");
+        if(definition.Effect=="EFFECT_NIGHTMARE")
+            return NightmareAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect is "EFFECT_ROAR" or "EFFECT_TELEPORT")
+        {
+            if(used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                definition.Power!=0||definition.Target!=(definition.Effect=="EFFECT_ROAR"?"MOVE_TARGET_SELECTED":"MOVE_TARGET_USER")||
+                action.Length<2||action[0]!=pp[0]||action[1].Sequence!=pp[0].Sequence+1)return new(null,"unmatched-source-exit-result");
+            if(definition.Effect=="EFFECT_ROAR")
+            {
+                if(used.Actor==used.Target||action[1] is not SourceForcedOutEvent forced||forced.Actor!=used.Actor||
+                    forced.Target!=used.Target||forced.Move!=used.Move||battle.Slots==4&&!forced.TrainerBattle||
+                    action.OfType<SourceForcedOutEvent>().Count()!=1)return new(null,"unmatched-source-force-out-result");
+            }
+            else if(battle.Slots!=2||used.Actor!=used.Target||action[1] is not SourceEndedEvent {Outcome:WildBattleOutcome.Escaped}||
+                action.OfType<SourceEndedEvent>().Count()!=1||action.OfType<SourceForcedOutEvent>().Any())
+                return new(null,"unmatched-source-teleport-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,action[1].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_MIMIC")
+        {
+            if(used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceMoveCopiedEvent copied||copied.Permanent||copied.Replacement is null||
+                copied.Actor!=used.Actor||copied.Target!=used.Target||copied.Actor==copied.Target||copied.Move!=used.Move||
+                copied.MoveSlot!=pp[0].PpSlot||action.OfType<SourceMoveCopiedEvent>().Count()!=1||
+                copied.CopiedMove.Value is "pret:MOVE_MIMIC" or "pret:MOVE_METRONOME" or "pret:MOVE_SKETCH" or "pret:MOVE_STRUGGLE"||
+                Definition(copied.CopiedMove,moves) is not {} replacement||copied.Replacement.Move!=replacement.Id||
+                copied.Replacement.PpUps is <0 or >3||copied.Replacement.CurrentPp!=Math.Min(5,replacement.Pp)||
+                copied.Replacement.MaximumPp!=replacement.Pp+replacement.Pp*20*copied.Replacement.PpUps/100)
+                return new(null,"unmatched-source-copy-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,copied.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
         if(definition.Effect=="EFFECT_HAZE")
         {
             // The source resets changed stages in slot/stat order, then emits one
@@ -298,6 +354,22 @@ public static partial class CampaignMoveAnimationPresentation
             if(Enumerable.Range(markerIndex+1,action.Length-markerIndex-1).Any(i=>action[i] is SourceStatChangedEvent&&!itemSuffix.Contains(i)))
                 return new(null,"unmatched-source-stat-reset-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,markers[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition!.Effect=="EFFECT_ROLE_PLAY")
+        {
+            // trycopyability succeeds before attackanimation, including same-ability
+            // copies and Substitute. It changes only the actor's battle overlay.
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor.Value>=battle.Slots||used.Target.Value>=battle.Slots||used.Actor==used.Target||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceCalledOverlayChangedEvent changed||
+                changed.Side!=used.Actor||changed.Source is not null||changed.Move!=used.Move||changed.Sequence!=pp[0].Sequence+1||
+                action.OfType<SourceCalledOverlayChangedEvent>().Count()!=1||changed.After is not {} after||
+                after.RulesVersion!=WildBattleRules.CalledMoveKernelRulesVersion||after.Ability is not {} ability||
+                ability is "ABILITY_NONE" or "ABILITY_WONDER_GUARD"||!ability.StartsWith("ABILITY_",StringComparison.Ordinal)||ability.Length<=8||
+                ability[8..].Any(c=>!(c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_'))||
+                changed.Before is {} before&&before.RulesVersion!=WildBattleRules.CalledMoveKernelRulesVersion||
+                after!=((changed.Before??new WildBattleCalledOverlay()) with{Ability=ability}))
+                return new(null,"unmatched-source-role-play-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(definition!.Effect is "EFFECT_CONVERSION" or "EFFECT_CONVERSION_2" or "EFFECT_CAMOUFLAGE")
         {
@@ -332,6 +404,18 @@ public static partial class CampaignMoveAnimationPresentation
                 trapped.Side!=used.Target||trapped.Sequence!=pp[0].Sequence+1||action.OfType<SourceTowerVolatileEvent>().Count()!=1)
                 return new(null,"unmatched-source-trapping-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,trapped.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition!.Effect=="EFFECT_INGRAIN")
+        {
+            // trysetroots commits before attackanimation. End-of-turn recovery
+            // and a later switch/root removal cannot create another invocation.
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<2||action[0]!=pp[0]||
+                action[1] is not SourceRootsChangedEvent {Rooted:true,Reason:"ingrain"} roots||
+                roots.Side!=used.Actor||roots.Sequence!=pp[0].Sequence+1||
+                action.OfType<SourceRootsChangedEvent>().Count()!=1)
+                return new(null,"unmatched-source-roots-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,roots.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(FieldSettingAnimation(definition!) is not null||move==277)
         {
@@ -375,13 +459,38 @@ public static partial class CampaignMoveAnimationPresentation
             if(changed.Length!=1)return new(null,"unmatched-source-primary-status-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move is 116 or 203)
+        if(definition.Effect=="EFFECT_FOCUS_ENERGY")
         {
-            var results=action.Where(e=>move==116
-                ? e is SourceFocusEnergyEvent focus&&focus.Side==used.Actor&&focus.Sequence>pp[0].Sequence
-                : e is SourceProtectAttemptEvent protect&&protect.Side==used.Actor&&protect.Move==used.Move&&protect.Succeeded&&protect.Sequence>pp[0].Sequence).ToArray();
-            if(results.Length!=1)return new(null,"unmatched-source-focus-or-endure-result");
-            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,new(used.Actor.Value),new(used.Target.Value),false),"committed-source-animation");
+            var results=action.OfType<SourceFocusEnergyEvent>().Where(focus=>focus.Side==used.Actor&&focus.Sequence>pp[0].Sequence).ToArray();
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||results.Length!=1)
+                return new(null,"unmatched-source-focus-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect is "EFFECT_PROTECT" or "EFFECT_ENDURE")
+        {
+            string state=definition.Effect=="EFFECT_PROTECT"?"protect":"endure";
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                action.Length<3||action[0]!=pp[0]||action[1] is not SourceProtectAttemptEvent attempt||
+                attempt.Side!=used.Actor||attempt.Move!=used.Move||!attempt.Succeeded||!attempt.NotLastAction||
+                attempt.Sequence!=pp[0].Sequence+1||attempt.Before is <0 or >255||
+                attempt.After!=Math.Min(255,attempt.Before+1)||attempt.Threshold!=WildBattleRules.ProtectSuccessThreshold(attempt.Before)||
+                attempt.Roll<0||attempt.Roll>attempt.Threshold||action.OfType<SourceProtectAttemptEvent>().Count()!=1||
+                action[2] is not SourceMtMoonVolatileEvent marker||marker.Side!=used.Actor||marker.Volatile!=state||
+                marker.Before!=0||marker.After!=1||marker.Reason!="move"||marker.Sequence!=attempt.Sequence+1||
+                action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile==state&&e.Reason=="move")!=1)
+                return new(null,"unmatched-source-protection-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,attempt.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_DISABLE")
+        {
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor==used.Target||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceDisableChangedEvent disabled||
+                disabled.Side!=used.Target||disabled.Before!=0||disabled.After is <2 or >5||disabled.Reason!="move"||
+                disabled.Move is not {} disabledMove||Definition(disabledMove,moves) is null||
+                disabled.Sequence!=pp[0].Sequence+1||action.OfType<SourceDisableChangedEvent>().Count(e=>e.Reason=="move")!=1)
+                return new(null,"unmatched-source-disable-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,disabled.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(move==289)
         {
@@ -396,11 +505,62 @@ public static partial class CampaignMoveAnimationPresentation
                 return new(null,"unmatched-source-self-stat-result");
             return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,result.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
-        if(move==48)
+        if(definition.Effect=="EFFECT_CONFUSE")
         {
-            var results=action.OfType<SourceConfusionChangedEvent>().Where(e=>e.Side==used.Target&&e.Before==0&&e.After is >=2 and <=5&&e.Reason=="move"&&e.Sequence>pp[0].Sequence).ToArray();
-            if(results.Length!=1)return new(null,"unmatched-source-confusion-result");
-            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,results[0].Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor==used.Target||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceConfusionChangedEvent confused||
+                confused.Side!=used.Target||confused.Before!=0||confused.After is <2 or >5||confused.Reason!="move"||
+                confused.Sequence!=pp[0].Sequence+1||action.OfType<SourceConfusionChangedEvent>().Count(e=>e.Reason=="move")!=1)
+                return new(null,"unmatched-source-confusion-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,confused.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect is "EFFECT_TAUNT" or "EFFECT_TORMENT")
+        {
+            string state=definition.Effect=="EFFECT_TAUNT"?"taunt":"torment";
+            int after=definition.Effect=="EFFECT_TAUNT"?2:1;
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor==used.Target||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceMtMoonVolatileEvent changed||
+                changed.Side!=used.Target||changed.Volatile!=state||changed.Before!=0||changed.After!=after||
+                changed.Reason!="move"||changed.Sequence!=pp[0].Sequence+1||
+                action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile==state&&e.Reason=="move")!=1)
+                return new(null,"unmatched-source-selected-volatile-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_ATTRACT")
+        {
+            // A later Mental Herb clear does not undo the earlier successful setup.
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor==used.Target||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceInfatuationChangedEvent changed||
+                changed.Side!=used.Target||changed.Before is not null||changed.After!=used.Actor||
+                changed.Reason!="attract"||changed.Sequence!=pp[0].Sequence+1||
+                action.OfType<SourceInfatuationChangedEvent>().Count(e=>e.Reason=="attract")!=1)
+                return new(null,"unmatched-source-infatuation-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_FOLLOW_ME")
+        {
+            string reason=battle.Slots==2?"single-battle-no-redirection":"move";
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_USER"||used.Target!=used.Actor||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||action.Length<2||action[0]!=pp[0]||
+                action[1] is not SourceMtMoonVolatileEvent changed||changed.Side!=used.Actor||changed.Volatile!="follow-me"||
+                changed.Before is <0 or >1||battle.Slots==2&&changed.Before!=0||changed.After!=1||changed.Reason!=reason||changed.Sequence!=pp[0].Sequence+1||
+                action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile=="follow-me"&&e.Reason==reason)!=1)
+                return new(null,"unmatched-source-redirection-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,changed.Sequence,move,used.Actor,used.Actor,false),"committed-source-animation");
+        }
+        if(definition.Effect=="EFFECT_FORESIGHT")
+        {
+            if(definition.Power!=0||definition.Target!="MOVE_TARGET_SELECTED"||used.Actor==used.Target||
+                used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots||
+                action.Length<2||action[0]!=pp[0]||action[1] is not SourceMtMoonVolatileEvent identified||
+                identified.Side!=used.Target||identified.Volatile!="identified"||identified.Before is <0 or >1||
+                identified.After!=1||identified.Reason!="move"||identified.Sequence!=pp[0].Sequence+1||
+                action.OfType<SourceMtMoonVolatileEvent>().Count(e=>e.Volatile=="identified"&&e.Reason=="move")!=1)
+                return new(null,"unmatched-source-identification-result");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,identified.Sequence,move,used.Actor,used.Target,false),"committed-source-animation");
         }
         if(definition.Effect=="EFFECT_REST")
         {
@@ -443,7 +603,7 @@ public static partial class CampaignMoveAnimationPresentation
         // Damage and HP deltas are deliberately not eligibility inputs. Endure and substitute can
         // leave actual Pokémon HP unchanged while the original attack animation still executes.
         var dispatch=new CampaignMoveAnimationDispatch(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,hits[0].Sequence,move,
-            used.Actor,used.Target,hits[0] is SourceSubstituteDamagedEvent);
+            used.Actor,used.Target,hits[0] is SourceSubstituteDamagedEvent){MoveTurn=chargeRelease?(byte)1:null};
         return WithCommittedHitInputs(battle,used,attack,definition!,hits[0],dispatch);
     }
 }

@@ -23,7 +23,7 @@ public sealed class FireSeedAnimationTests
     [TestMethod][DataRow(0,160)][DataRow(1,140)][DataRow(2,240)][DataRow(3,140)]
     public void ExtractedSourceCallbacksMatchEveryTickWithSignedWordsAndAllLayouts(int kind,int expectedCases)
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/fire-seed-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("fire-seed-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_fire_seed_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/fire-seed-source-vectors.json");
         var root=doc.RootElement;var family=Families[kind];int count=0,rows=0;
         foreach(var item in root.GetProperty("cases").EnumerateObject())
         {

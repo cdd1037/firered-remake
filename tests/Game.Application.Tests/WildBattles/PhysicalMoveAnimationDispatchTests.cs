@@ -26,6 +26,7 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
                 new WildBattlePpCommandEvent(3,1,actor,target,0,move,move,10,9,1,0),
                 id is 54 or 113 or 115?new WildBattleMtMoonVolatileEvent(4,1,actor,id==54?"mist":id==113?"light-screen":"reflect",0,5,"move"):id==112?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Defense,6,8):id==111?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Defense,6,7):id==339?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Attack,6,7):id==150?new WildBattleMoveFailedEvent(4,1,actor,actor,move,"nothing-happened"):id==300?new WildBattleMtMoonVolatileEvent(4,1,actor,"mud-sport",0,1,"move"):id==116?new WildBattleFocusEnergyEvent(4,1,actor):id==203?new WildBattleProtectAttemptEvent(4,1,actor,move,0,1,65535,0,true,true):id==48?new WildBattleConfusionChangedEvent(4,1,target,0,3,"move"):id is 105 or 235 or 303?new WildBattleRecoveredEvent(4,1,actor,move,5,10,5):id is 103 or 178 or 319 or 204?new WildBattleStatChangedEvent(4,1,actor,target,id==178?WildBattleStat.Speed:id==204?WildBattleStat.Attack:id==103?WildBattleStat.Defense:WildBattleStat.SpecialDefense,6,4):id is 77 or 78 or 79 or 86 or 92 or 95 or 147?new WildBattleStatusChangedEvent(4,1,target,0,id==92?WildBattleSourceFieldEffects.ToxicPoison:id==77?WildBattleStatus.Poison:id is 78 or 86?WildBattleStatus.Paralysis:3,"move"):id==289?new WildBattleSnatchReadyEvent(4,1,actor,0):new WildBattleHpChangedEvent(4,1,actor,target,move,10,5,5,false,100)]
         };
+        if(id==203)battle=battle with{Events=battle.Events.Add(new WildBattleMtMoonVolatileEvent(5,1,actor,"endure",0,1,"move"))};
         if(id==111)battle=battle with{Events=battle.Events.SetItem(3,new WildBattleStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7)).Insert(3,new WildBattleDefenseCurledEvent(4,1,actor))};
         if(id==339)battle=battle with{Events=battle.Events.Add(new WildBattleStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7))};
         string hash=CanonicalJson.Hash(battle);
@@ -120,6 +121,7 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
             };
             var battle=new CampaignDoubleBattle("projection",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,
                 [new SourceAttackStringEvent(1,1,actor,move,move),new SourceMoveUsedEvent(2,1,actor,target,0,move,10,9),new SourcePpCommandEvent(3,1,actor,target,0,move,move,10,9,1,0),result],1,[],[],0,0,[],[],[],[],0);
+            if(id==203)battle=battle with{Events=battle.Events.Add(new SourceMtMoonVolatileEvent(5,1,actor,"endure",0,1,"move"))};
             if(id==111)battle=battle with{Events=battle.Events.SetItem(3,new SourceStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7)).Insert(3,new SourceDefenseCurledEvent(4,1,actor))};
             if(id==339)battle=battle with{Events=battle.Events.Add(new SourceStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7))};
             string before=CanonicalJson.Hash(battle);var decision=AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On);

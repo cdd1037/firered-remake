@@ -44,7 +44,7 @@ public sealed class HyperBeamAnimationTests
     [TestMethod]
     public void SourceFastMotionWavePriorityAndThreeDrawsRemainSeparateFromApprovedFramePolicy()
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/hyper-beam-source-motion-vectors.json")));var root=doc.RootElement;int cases=0;bool originalUndefined=false;
+        using var doc=SourceVectorFixture.Read("hyper-beam-source-motion-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_hyper_beam_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/hyper-beam-source-motion-vectors.json");var root=doc.RootElement;int cases=0;bool originalUndefined=false;
         foreach(var item in root.GetProperty("cases").EnumerateObject())
         {
             cases++;var key=item.Name.Split(':').Select(int.Parse).ToArray();uint seed=root.GetProperty("seeds")[key[2]].GetUInt32();var battlers=Battlers(true);

@@ -63,8 +63,8 @@ public sealed class SubspriteCompositionTests
     [TestMethod]
     public void SandCrescentFieldPixelsMatchIndependentNativeOamAndSourcePaletteHashes()
     {
-        using var motion=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/weather-motion-source-vectors.json")));
-        using var material=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/weather-material-source-vectors.json")));
+        using var motion=SourceVectorFixture.Read("weather-motion-source-vectors.json", "python tests/Reference/Weather/generate_motion.py content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/weather-motion-source-vectors.json");
+        using var material=SourceVectorFixture.Read("weather-material-source-vectors.json", "python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures");
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
         var resolved=resources.Resolve(201);var recipe=resolved.Script.SpriteRecipes["gFlyingSandCrescentSpriteTemplate"];
         ushort backdrop=(ushort)material.RootElement.GetProperty("backdropRgb555").GetInt32();

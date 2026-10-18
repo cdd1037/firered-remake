@@ -12,7 +12,7 @@ public sealed class HealingItemAnimationTests
     public void OriginalCHealingItemsPreserveAffineLoopsRestartsAlphaAndSharedArgumentTermination()
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
-        using var document=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/healing-item-source-vectors.json")));int cases=0;
+        using var document=SourceVectorFixture.Read("healing-item-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_healing_item_vectors.py --reference content/raw/pokefirered/037335f4 --helper tests/Reference/reference_c.py --output tests/Game.Presentation.Tests/Fixtures/healing-item-source-vectors.json");int cases=0;
         foreach(var item in document.RootElement.GetProperty("cases").EnumerateObject())
         {
             var key=item.Name.Split(':').Select(int.Parse).ToArray();int kind=key[0],actor=key[1],target=key[2];bool egg=kind<2;var source=resources.Resolve(egg?135:208).Script;

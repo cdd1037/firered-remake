@@ -17,7 +17,7 @@ public sealed class DirtScatterAnimationTests
         new("loadspritegfx",["ANIM_TAG_MUD_SAND"],1),new("setarg",["7","777"],2),
         new("createsprite",new[]{Template(source.MoveId),"ANIM_TARGET","2"}.Concat(args.Select(v=>v.ToString(CultureInfo.InvariantCulture))).ToArray(),3),
         new("waitforvisualfinish",[],4),new("end",[],5)]};
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/dirt-scatter-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("dirt-scatter-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_dirt_scatter_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/dirt-scatter-source-vectors.json");
 
     [TestMethod][DataRow(28,0)][DataRow(28,1)][DataRow(28,2)][DataRow(28,3)]
     [DataRow(189,0)][DataRow(189,1)][DataRow(189,2)][DataRow(189,3)]

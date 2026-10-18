@@ -27,7 +27,7 @@ public sealed class ProjectileAdapterAnimationTests
     [TestMethod][DataRow(0)][DataRow(1)][DataRow(2)]
     public void SourceCallbacksMatchEveryTickIncludingSignedArithmeticAndExactHandoffs(int kind)
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/projectile-adapter-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("projectile-adapter-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_projectile_adapter_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/projectile-adapter-source-vectors.json");
         var root=doc.RootElement;var family=Families[kind];int count=0;
         foreach(var item in root.GetProperty("cases").EnumerateObject())
         {

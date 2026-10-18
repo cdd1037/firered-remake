@@ -36,7 +36,7 @@ public sealed class RandomFistSourceVectorTests
     private static SourceVisualSpriteFrame[] Family(SourceAnimationFrame frame)
         =>frame.Sprites.Where(s=>s.Template is Parent or Child).OrderBy(s=>s.Slot).ToArray();
     private static bool IsFamily(object sprite)=>Property<SourceVisualSpriteFrame>(sprite,"Frame").Template is Parent or Child;
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/random-fist-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("random-fist-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_random_fist_vectors.py --repo . --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/random-fist-source-vectors.json");
 
     [TestMethod]
     public void ExtractedCallbackFrameAffineAndOamBoundariesMatchAllFiftyTwoSourceConfigurations()

@@ -139,7 +139,7 @@ public sealed class CosmicPowerKernelDispatchTests
         var attack = events.OfType<SourceAttackStringEvent>().Single();
         var pp = events.OfType<SourcePpCommandEvent>().Single();
         var invocation = Double(events, events.IndexOf(used));
-        Assert.AreEqual<long?>(first, CampaignStatAnimationPresentation.GroupedMoveResultSequence(invocation));
+        Assert.AreEqual<long?>(first, CampaignStatAnimationPresentation.GroupedMoveResultSequence(invocation,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
@@ -165,7 +165,7 @@ public sealed class CosmicPowerKernelDispatchTests
             else Assert.IsNull(wave, "The second stat command and all later receipts cannot replay the grouped wave.");
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true));
             bool cap = events[index] is SourceStatAtMaximumEvent;
-            Assert.AreEqual(cap, CampaignStatAnimationPresentation.IsSilentResultReceipt(battle));
+            Assert.AreEqual(cap, CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             if (actor < 2)
             {
                 var single = Single(events, index);
@@ -173,8 +173,8 @@ public sealed class CosmicPowerKernelDispatchTests
                 Assert.AreEqual(wave, AnimationDispatchFixture.StatAtResult(single, true));
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, false));
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true, true));
-                Assert.AreEqual(cap, CampaignStatAnimationPresentation.IsSilentResultReceipt(single, true));
-                Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single, false));
+                Assert.AreEqual(cap, CampaignStatAnimationPresentation.IsSilentResultReceipt(single, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+                Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single, false,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             }
         }
         Assert.AreEqual(before, JsonSerializer.Serialize(events));
@@ -262,16 +262,16 @@ public sealed class CosmicPowerKernelDispatchTests
             for (int index = 0; index < result.Events.Length; index++)
             {
                 var battle = Double(result.Events, index);
-                Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
+                Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle));
-                Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle), "The whole-move failure text remains visible.");
+                Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves), "The whole-move failure text remains visible.");
                 if (actor >= 2) continue;
                 var single = Single(result.Events, index);
-                Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true));
+                Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(single, true));
-                Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single, true));
+                Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             }
         }
     }

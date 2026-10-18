@@ -63,7 +63,7 @@ public sealed partial class SourceBattleAnimation
         uint mask=(selector&1)!=0?0xeu:0;
         if((selector&2)!=0)mask|=1u<<(16+_cue.Actor.Value);
         if((selector&4)!=0)mask|=1u<<(16+_cue.Target.Value);
-        void Visible(int flag,int slot){if((selector&flag)!=0&&_battlers.TryGetValue(slot,out var b)&&b.Visible)mask|=1u<<(16+slot);}
+        void Visible(int flag,int slot){if((selector&flag)!=0&&IsSourceBattlerVisible(slot))mask|=1u<<(16+slot);}
         Visible(8,_cue.Actor.Value^2);Visible(16,_cue.Target.Value^2);
         if((selector&32)!=0)mask|=1u<<8;if((selector&64)!=0)mask|=1u<<9;
         Visible(128,0);Visible(256,2);Visible(512,1);Visible(1024,3);return mask;
@@ -72,7 +72,7 @@ public sealed partial class SourceBattleAnimation
     {
         int slot=participant switch{0=>_cue.Actor.Value,1=>_cue.Target.Value,2=>_cue.Actor.Value^2,3=>_cue.Target.Value^2,
             4 when shake2=>0,5 when shake2=>2,6 when shake2=>1,7 when shake2=>3,8 when shake2=>_cue.Actor.Value,_=>throw new InvalidDataException("Unadmitted shake participant.")};
-        return _battlers.TryGetValue(slot,out var b)&&(b.Visible||participant==8)?new(slot):null;
+        return _battlers.ContainsKey(slot)&&(IsSourceBattlerVisible(slot)||participant==8)?new(slot):null;
     }
     // StartBlendAnimSpriteColor/AnimTask_BlendSpriteColor_Step2 owns this per-task
     // delay. It does not start a global palette fade or wait on its active flag.

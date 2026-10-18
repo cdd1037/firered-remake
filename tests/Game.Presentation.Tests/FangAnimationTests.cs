@@ -19,7 +19,7 @@ public sealed class FangAnimationTests
     public void SharedPlayersAndDistinctEndHandoffsMatchExtractedCForEveryPosition(int move)
     {
         using var resources=new SourceAnimationResources(Folder);var source=resources.Scripts[move];
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/fang-source-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("fang-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/fang-source-vectors.json");
         foreach(int actor in Enumerable.Range(0,4))foreach(int target in Enumerable.Range(0,4))foreach(string createdAt in new[]{"ANIM_ATTACKER","ANIM_TARGET"})
         {
             var battlers=Battlers(true);var runtime=new SourceBattleAnimation(Isolated(source,createdAt),Cue(move,actor,target),battlers,true,new Audio());

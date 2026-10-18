@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """Bounded structural/phase checks independent of product implementations."""
-import json
+import argparse,json
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
 assertions=0
+p=argparse.ArgumentParser();p.add_argument('--fixtures',type=Path);a=p.parse_args()
+def read(relative, family):
+ path=a.fixtures/f'overlay-{family}-source-vectors.json' if a.fixtures else HERE/relative
+ if not path.is_file():raise FileNotFoundError(f'Missing {path}. Generate explicitly: python tests/Reference/Bg1Overlay/check_vectors.py --repository . --prepare tests/Game.Presentation.Tests/Fixtures')
+ return json.loads(path.read_text())
 
 def check(value):
  global assertions
  assert value
  assertions+=1
 
-overlays=json.loads((HERE/'overlay/vectors.json').read_text())
+overlays=read('overlay/vectors.json', 'task')
+check(overlays['profile'] in ['representative','full']);check(len(overlays['cases'])==(99 if overlays['profile']=='full' else 12))
 for c in overlays['cases']:
  rows=c['rows'];check(rows[0]['phase']==0);check(rows[0]['alive']==1)
  check(rows[0]['registers']==[0x3f42,0x1000,0,0]);check(rows[0]['bg1']==[0,0])
@@ -31,7 +37,8 @@ for c in overlays['cases']:
  for r in rows:
   check(all(-32768<=v<=32767 for v in r['data']));check(all(0<=v<=65535 for v in r['bg1']))
 
-mist=json.loads((HERE/'mist/vectors.json').read_text())
+mist=read('mist/vectors.json', 'mist')
+check(mist['profile'] in ['representative','full']);check(len(mist['cases'])==(180 if mist['profile']=='full' else 30));check({c['args'][5] for c in mist['cases'] if not c['probe']}=={0,1,256,257})
 for c in mist['cases']:
  rows=c['rows'];check(rows[0]['invocation']==-1);check(rows[1]['invocation']==0);check(rows[1]['callback_after']==1)
  check(rows[-1]['alive']==0);check(rows[-1]['visual_count']==0);check(rows[-2]['alive']==1)
@@ -48,9 +55,14 @@ for c in mist['cases']:
  for r in rows:
   check(all(-32768<=v<=32767 for v in r['data']+r['args']+r['position']))
 
-material=json.loads((HERE/'material/vectors.json').read_text())
+material=read('material/vectors.json', 'material')
 for m in material['materials']:
  check(len(m['palette_rgb555'])==16);check(all(0<=v<=32767 for p in m['control_palette_rgb555'] for v in p))
  for s in m['samples']:
   entry,tile,bank,x,y,index,color,opaque=s['value'];check(entry&1023==tile);check(entry>>12==bank);check(opaque==int(index!=0));check(color==m['control_palette_rgb555'][bank][index])
 print(json.dumps({'passed':True,'assertions':assertions,'overlay_cases':len(overlays['cases']),'mist_cases':len(mist['cases']),'materials':len(material['materials'])}))
+
+from glare.generate_glare_vectors import validate as validate_glare
+glare=read('glare/glare-source-vectors.json','glare')
+validate_glare(glare, full=glare['profile']=='full')
+print('Glare source phases and representative boundary coverage passed.')

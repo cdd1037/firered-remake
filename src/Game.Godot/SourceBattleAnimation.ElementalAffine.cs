@@ -13,9 +13,15 @@ public sealed class SourceSpriteAffineProgram
     public int XScale=>_x;
     public int YScale=>_y;
     public int Rotation=>_rotation;
-    public SourceAffineMatrix Matrix=>_x==0||_y==0?throw new InvalidDataException("Zero-scale source affine requires reviewed division semantics."):SourceAffineMatrix.FromScaleRotation(65536/_x,65536/_y,_rotation);
-    public SourceSpriteAffineProgram(SourceSpriteAffineCommand[] commands)
+    // Reviewed safety choice: use the source UBFIX SAFE_DIV zero-axis result.
+    // Unfixed source divides by zero there; every nonzero-axis result is unchanged.
+    public SourceAffineMatrix Matrix=>SourceAffineMatrix.FromScaleRotation(_x==0?0:65536/_x,_y==0?0:65536/_y,_rotation);
+    public SourceSpriteAffineProgram(SourceSpriteAffineCommand[] commands):this(commands,256,256,0){}
+    // ChangeSpriteAffineAnim restarts the program while retaining native matrix state.
+    public SourceSpriteAffineProgram(SourceSpriteAffineCommand[] commands,int xScale,int yScale,int rotation)
     {
+        if(xScale is <short.MinValue or >short.MaxValue||yScale is <short.MinValue or >short.MaxValue||rotation is <0 or >ushort.MaxValue)throw new InvalidDataException("Retained source affine state exceeds native widths.");
+        _x=xScale;_y=yScale;_rotation=rotation;
         if(commands.Length is <1 or >64)throw new InvalidDataException("Unbounded affine program.");
         foreach(var c in commands)
         {
@@ -24,7 +30,7 @@ public sealed class SourceSpriteAffineProgram
         _commands=commands;ApplyCommand();
     }
     private void ApplyRelative(SourceSpriteAffineCommand c)
-    {_x=(short)(_x+c.X);_y=(short)(_y+c.Y);_rotation=(ushort)(_rotation+(c.Rotation<<8));}
+    {_x=(short)(_x+c.X);_y=(short)(_y+c.Y);_rotation=(ushort)((_rotation+(c.Rotation<<8))&~255);}
     private void ApplyCommand()
     {
         var c=_commands[_pc];

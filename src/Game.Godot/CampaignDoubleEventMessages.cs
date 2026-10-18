@@ -38,7 +38,7 @@ public partial class CampaignView
     {
         SourceTrainerEventDisplay Atk(string symbol,BattlerSlot slot)=>DoubleText(symbol,("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(slot)));
         SourceTrainerEventDisplay Def(string symbol,BattlerSlot slot)=>DoubleText(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(slot)));
-        if(CampaignStatAnimationPresentation.IsSilentResultReceipt(b))return DoubleSilent;
+        if(CampaignStatAnimationPresentation.IsSilentResultReceipt(b,moves:_catalog.PokemonContent!.Catalog.Moves))return DoubleSilent;
         if(DoubleItemEventDisplay(b,e) is {} item)return item;
         var invocation=DoubleInvocation(b,e);
         switch(e)

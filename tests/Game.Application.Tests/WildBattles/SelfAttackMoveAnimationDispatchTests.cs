@@ -192,8 +192,8 @@ public sealed class SelfAttackMoveAnimationDispatchTests
             else Assert.IsNull(wave, "Attack text, PP, cap and later pages cannot replay the shared stat wave.");
             Assert.IsNull(single ? AnimationDispatchFixture.StatAtResult(Single(events, index), true, true)
                 : AnimationDispatchFixture.StatAtResult(Double(events, index), true));
-            Assert.IsFalse(single ? CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(events, index), true)
-                : CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events, index)), "An ordinary self-stat cap keeps its result text.");
+            Assert.IsFalse(single ? CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(events, index), true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves)
+                : CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events, index),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves), "An ordinary self-stat cap keeps its result text.");
             if (single)
             {
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), false, SourceBattleScene.On).Dispatch);

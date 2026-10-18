@@ -220,7 +220,6 @@ public partial class CampaignView
         if(_sourceAudio is null)return;
         ProcessSafariBattleAudio();
         ProcessDoubleBattleAudio();
-        ProcessFuchsiaTransformAudio();
         ProcessSourceLeaderIntroAudio();
         ProcessSourceLeaderBadgeAudio();
         if(_session.State.Battle is {Phase:CampaignBattlePhase.Events} lab&&lab.EventIndex<lab.Events.Length)

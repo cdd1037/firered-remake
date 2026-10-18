@@ -5,7 +5,7 @@ namespace Game.Presentation.BattleAnimations;
 public static class SourcePaletteMath
 {
     public static ushort Apply(ushort original,SourcePaletteBlend? blend,bool inverted,bool greyscale=false)
-    {if(greyscale){int average=((original&31)+((original>>5)&31)+((original>>10)&31))/3;original=(ushort)((original&0x8000)|average|(average<<5)|(average<<10));}ushort pixel=blend is null?original:Blend(original,blend.Coefficient,blend.Color);return inverted?(ushort)(pixel^0x7fff):pixel;}
+    {if(blend?.Unfaded is {} normal)original=Apply(original,normal.Blend,normal.Inverted,normal.Greyscale);if(greyscale){int average=((original&31)+((original>>5)&31)+((original>>10)&31))/3;original=(ushort)((original&0x8000)|average|(average<<5)|(average<<10));}ushort pixel=blend is null?original:Blend(original,blend.Coefficient,blend.Color);return inverted?(ushort)(pixel^0x7fff):pixel;}
     public static ushort Blend(ushort original,int coefficient,ushort color)
     {
         if(coefficient is <0 or >16)throw new ArgumentOutOfRangeException(nameof(coefficient));
@@ -51,13 +51,13 @@ public sealed partial class SourceBattleAnimation
     private readonly List<SoundTask> _soundTasks=[];
     private void SetBattlerGreyscaleOrOriginal(int slot,bool original)
     {
-        _paletteBlends.Remove(16+slot);_invertedPalettes.Remove(16+slot);
+        var normal=UnfadedPaletteBlend(16+slot);if(normal is null)_paletteBlends.Remove(16+slot);else _paletteBlends[16+slot]=normal;_invertedPalettes.Remove(16+slot);
         if(original)_greyscale.Remove(slot);else _greyscale.Add(slot);
     }
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
-        {if(i<16)ClearBackgroundPaletteEntries(i);if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);if(coefficient==0)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color);}
+        {if(i<16)ClearBackgroundPaletteEntries(i);if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);var normal=_unfadedPaletteStates.GetValueOrDefault(i);if(coefficient==0&&normal is null)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color){Unfaded=normal};}
     }
     // Source AnimTask_Flash / AnimTask_Flash_Step. Only BG palettes 1..3
     // and currently visible battler OBJ palettes are selected; HUD/text stay separate.
@@ -67,7 +67,7 @@ public sealed partial class SourceBattleAnimation
         private int _state,_counter,_coefficient;
         public FlashTask(SourceBattleAnimation owner)
         {
-            foreach(var b in owner._battlers.Values)if(b.Visible)_mons|=1u<<(16+b.Slot.Value);
+            foreach(var b in owner._battlers.Values)if(owner.IsSourceBattlerVisible(b.Slot.Value))_mons|=1u<<(16+b.Slot.Value);
             owner.BlendPalettes(_mons,16,0);owner.BlendPalettes(0xe,16,0xffff);
         }
         public override void Step(SourceBattleAnimation owner)

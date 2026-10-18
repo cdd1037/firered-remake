@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Content;
 using Game.Domain.Battle;
@@ -482,7 +481,7 @@ public sealed class BattleLifecycleTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public void SingleTurnMatchesFrozenSource(bool struggle)
+    public void SingleTurnPreservesIdentityAndMatchesExplicitDamagePpAndRandomRules(bool struggle)
     {
         WildBattleCombatant Exhaust(WildBattleCombatant body) => body with
         {
@@ -510,14 +509,69 @@ public sealed class BattleLifecycleTests
         var events = result.Events.ToList();
         var trace = result.Trace.ToList();
         result = Drain(result, events, trace);
-        using var golden = JsonDocument.Parse(File.ReadAllText(Path.Combine(TestAssets.Root, "tests/Game.Battle.Tests/Lifecycle/fixtures", struggle ? "source-singles-struggle.json" : "source-singles-normal.json")));
-        string Expected(string field) => Json(golden.RootElement.GetProperty(field));
-        Assert.IsTrue(result.CompletedCleanTurn && Json(result.State.Turn) == Expected("Turn") && Json(result.State.Outcome) == Expected("Outcome"), "same complete ongoing turn as fixed source oracle");
-        string PartyHash(BattleSide side) => Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(Json(result.State.Party(side).Members))));
-        Assert.IsTrue(Json(PartyHash(BattleSide.Player)) == Expected("PlayerSha256") && Json(PartyHash(BattleSide.Opponent)) == Expected("OpponentSha256"), "exact fixed permanent party including HP PP status and identity");
-        Assert.IsTrue(Json(result.State.Get(new(0)).Body!.Status) == Expected("PlayerStatus") && Json(result.State.Get(new(1)).Body!.Status) == Expected("OpponentStatus"), "same fixed active battle statuses");
-        Assert.IsTrue(Json(result.State.Rng) == Expected("Rng") && Json(result.State.RandomTurnNumber) == Expected("RandomTurnNumber"), "same fixed terminal RNG state and ready number");
-        Assert.IsTrue(Json(trace) == Expected("Trace"), "exact fixed source RNG trace including draw order and purpose");
+        Assert.IsTrue(result.CompletedCleanTurn);
+        Assert.AreEqual(1, result.State.Turn);
+        Assert.AreEqual(WildBattleOutcome.Ongoing, result.State.Outcome);
+        // These explicit turn expectations replace opaque serialized-party hashes.
+        // Everything except the authored damage and PP consumption must equal entry.
+        void AssertParty(BattleSide side, int hp)
+        {
+            var initial = start.Party(side).Members.Single();
+            var expected = initial with
+            {
+                Pokemon = initial.Pokemon with
+                {
+                    CurrentHp = hp,
+                    Moves = initial.Pokemon.Moves.Select(m => m with { CurrentPp = struggle ? 0 : m.CurrentPp - 1 }).ToImmutableArray()
+                }
+            };
+            Assert.AreEqual(Json(expected), Json(result.State.Party(side).Members.Single()),
+                "HP/PP change while species, identity, stats, experience, held item and permanent status stay unchanged");
+        }
+        AssertParty(BattleSide.Player, struggle ? 84 : 86);
+        AssertParty(BattleSide.Opponent, struggle ? 74 : 79);
+        Assert.AreEqual(WildBattleStatus.None, result.State.Get(new(0)).Body!.Status);
+        Assert.AreEqual(WildBattleStatus.None, result.State.Get(new(1)).Body!.Status);
+        Assert.AreEqual(new RngState(struggle ? 639010170u : 3648771984u, struggle ? 21UL : 19UL), result.State.Rng);
+        Assert.AreEqual(struggle ? 9750 : 55675, (int)result.State.RandomTurnNumber);
+        // Purpose/bound/result describe the rule sequence; TraceAndEvents below
+        // independently verifies every seed, raw value and cursor via the LCG.
+        (string Purpose, int Bound, int Result)[] expectedDraws = struggle
+            ? [
+                ("wild-battle.opponent.struggle-target", 2, 1),
+                ("wild-battle.opponent.struggle-target", 2, 0),
+                ("wild-battle.opponent.accuracy", 100, 17),
+                ("wild-battle.opponent.critical", 16, 11),
+                ("wild-battle.opponent.damage", 16, 12),
+                ("wild-battle.player.struggle-target", 2, 0),
+                ("wild-battle.player.struggle-target", 2, 0),
+                ("wild-battle.player.struggle-target", 2, 0),
+                ("wild-battle.player.struggle-target", 2, 0),
+                ("wild-battle.player.struggle-target", 2, 0),
+                ("wild-battle.player.struggle-target", 2, 0),
+                ("wild-battle.player.struggle-target", 2, 1),
+                ("wild-battle.player.accuracy", 100, 78),
+                ("wild-battle.player.critical", 16, 11),
+                ("wild-battle.player.damage", 16, 9),
+                ("wild-battle.turn-end.random-turn-number", 65536, 9750),
+            ]
+            : [
+                ("wild-battle.opponent.choose-slot", 4, 3),
+                ("wild-battle.opponent.choose-slot", 4, 2),
+                ("wild-battle.opponent.choose-slot", 4, 1),
+                ("wild-battle.opponent.choose-slot", 4, 3),
+                ("wild-battle.opponent.choose-slot", 4, 0),
+                ("wild-battle.opponent.accuracy", 100, 46),
+                ("wild-battle.opponent.critical", 16, 8),
+                ("wild-battle.opponent.damage", 16, 4),
+                ("wild-battle.opponent.secondary-effect", 100, 94),
+                ("wild-battle.player.accuracy", 100, 20),
+                ("wild-battle.player.critical", 16, 2),
+                ("wild-battle.player.damage", 16, 13),
+                ("wild-battle.player.secondary-effect", 100, 78),
+                ("wild-battle.turn-end.random-turn-number", 65536, 55675),
+            ];
+        CollectionAssert.AreEqual(expectedDraws, trace.Select(d => (d.Purpose, d.Bound, d.Result)).ToArray());
         TraceAndEvents(start, result.State, events, trace);
     }
 

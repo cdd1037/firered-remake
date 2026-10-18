@@ -38,7 +38,7 @@ public sealed partial class SourceBattleAnimation
             if(wall)
             {
                 _paletteTag=args[2];
-                for(int battler=1;battler<owner._battlerCount;battler+=2)if(owner._battlers[battler].Visible)owner.MoveBattlerToBackground(battler,false);
+                for(int battler=1;battler<owner._battlerCount;battler+=2)if(owner.IsSourceBattlerVisible(battler))owner.MoveBattlerToBackground(battler,false);
                 WriteAlpha(owner); // Initial callback invokes Step2 immediately.
             }
         }
@@ -58,7 +58,7 @@ public sealed partial class SourceBattleAnimation
                     owner._alphaA=_alpha;owner._alphaB=16-_alpha;
                     if(--_alpha==-1)
                     {
-                        for(int battler=1;battler<owner._battlerCount;battler+=2)if(owner._battlers[battler].Visible)owner.RestoreBattlerObject(battler);
+                        for(int battler=1;battler<owner._battlerCount;battler+=2)if(owner.IsSourceBattlerVisible(battler))owner.RestoreBattlerObject(battler);
                         _hidden=true;_state=3;
                     }
                     break;

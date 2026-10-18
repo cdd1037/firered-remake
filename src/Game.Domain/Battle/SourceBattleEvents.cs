@@ -172,7 +172,12 @@ public sealed record SourceHeldItemSurvivalEvent(long Sequence, int Turn, Battle
 public sealed record SourceDamageAdjustedEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, string Item, int DamageBefore, int DamageAfter, bool Endured, bool HungOn) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemKnockedOffEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemStolenEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceHpChangedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceHpChangedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent) : SourceBattleEvent(Sequence, Turn)
+{
+    /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
+}
 public sealed record SourceInfatuationBlockedEvent(long Sequence, int Turn, BattlerSlot Side, BattlerSlot Source, MoveId Move) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceInfatuationChangedEvent(long Sequence, int Turn, BattlerSlot Side, BattlerSlot? Before, BattlerSlot? After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceIngrainHealEvent(long Sequence, int Turn, BattlerSlot Side, int HpBefore, int HpAfter, int Restored) : SourceBattleEvent(Sequence, Turn);
@@ -224,7 +229,12 @@ public sealed record SourceStatAtMinimumEvent(long Sequence, int Turn, BattlerSl
 public sealed record SourceStatChangedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, WildBattleStat Stat, int Before, int After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceStatusChangedEvent(long Sequence, int Turn, BattlerSlot Side, uint Before, uint After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceStatusDamageEvent(long Sequence, int Turn, BattlerSlot Side, uint Status, int HpBefore, int HpAfter, int Damage) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceSubstituteDamagedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceSubstituteDamagedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent) : SourceBattleEvent(Sequence, Turn)
+{
+    /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
+}
 public sealed record SourceTowerBallDodgedEvent(long Sequence, int Turn, CaptureBall Ball) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceTowerGhostActionEvent(long Sequence, int Turn, BattlerSlot Side, string StringId) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceTowerHpEvent(long Sequence, int Turn, BattlerSlot Side, string Effect, int HpBefore, int HpAfter, int Damage) : SourceBattleEvent(Sequence, Turn);
@@ -284,7 +294,7 @@ public static class SourceBattleEventAdapter
         SourceDamageAdjustedEvent x => new WildBattleDamageAdjustedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
         SourceHeldItemKnockedOffEvent x => new WildBattleHeldItemKnockedOffEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
         SourceHeldItemStolenEvent x => new WildBattleHeldItemStolenEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
-        SourceHpChangedEvent x => new WildBattleHpChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent),
+        SourceHpChangedEvent x => new WildBattleHpChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter },
         SourceInfatuationBlockedEvent x => new WildBattleInfatuationBlockedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Source), x.Move),
         SourceInfatuationChangedEvent x => new WildBattleInfatuationChangedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Before), Side(x.After), x.Reason),
         SourceIngrainHealEvent x => new WildBattleIngrainHealEvent(x.Sequence, x.Turn, Side(x.Side), x.HpBefore, x.HpAfter, x.Restored),
@@ -324,7 +334,7 @@ public static class SourceBattleEventAdapter
         SourceStatChangedEvent x => new WildBattleStatChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Stat, x.Before, x.After),
         SourceStatusChangedEvent x => new WildBattleStatusChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
         SourceStatusDamageEvent x => new WildBattleStatusDamageEvent(x.Sequence, x.Turn, Side(x.Side), x.Status, x.HpBefore, x.HpAfter, x.Damage),
-        SourceSubstituteDamagedEvent x => new WildBattleSubstituteDamagedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent),
+        SourceSubstituteDamagedEvent x => new WildBattleSubstituteDamagedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter },
         SourceTowerBallDodgedEvent x => new WildBattleTowerBallDodgedEvent(x.Sequence, x.Turn, x.Ball),
         SourceTowerGhostActionEvent x => new WildBattleTowerGhostActionEvent(x.Sequence, x.Turn, Side(x.Side), x.StringId),
         SourceTowerHpEvent x => new WildBattleTowerHpEvent(x.Sequence, x.Turn, Side(x.Side), x.Effect, x.HpBefore, x.HpAfter, x.Damage),

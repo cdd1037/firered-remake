@@ -1,0 +1,55 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define RGB_BLACK 0
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define SPRITE_NONE 255
+#define B_SIDE_PLAYER 0
+#define MON_PIC_HEIGHT 64
+#define SAFE_DIV(a,b) ((b)?(a)/(b):0)
+#define sAnchorX data[6]
+#define sAnchorY data[7]
+#define sTransl_Duration data[0]
+#define sTransl_InitX data[1]
+#define sTransl_DestX data[2]
+#define sTransl_InitY data[3]
+#define sTransl_DestY data[4]
+#define BATTLER_COORD_X 0
+#define BATTLER_COORD_Y 1
+#define BATTLER_COORD_X_2 2
+#define BATTLER_COORD_Y_PIC_OFFSET 3
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void(*SpriteCallback)(struct Sprite*);typedef void(*AnimFunc)(struct Sprite*);typedef void(*AnimCmdFunc)(struct Sprite*);typedef void(*AffineAnimCmdFunc)(u8,struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite {bool8 invisible;struct OamData oam;const union AnimCmd*const*anims;const union AffineAnimCmd*const*affineAnims;const void*images;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse,animBeginning,affineAnimBeginning,usingSheet,animEnded,affineAnimEnded,animPaused,affineAnimPaused,anchored,hFlip,vFlip;u8 animCmdIndex,animNum,animLoopCounter,animDelayCounter,subpriority;u16 sheetTileStart;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};struct OamMatrix {s16 a,b,c,d;};struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+static struct Sprite gSprites[64];static struct Task gTasks[16];static struct AffineAnimState sAffineAnimStates[32];static struct OamMatrix gOamMatrices[32];static s16 gBattleAnimArgs[8];static bool8 gAffineAnimsDisabled;static u8 gBattleAnimAttacker,gBattleAnimTarget;static u16 gPlttBufferUnfaded[512],gPlttBufferFaded[512],regs[256];static int kind,doubles,frame,freeCount,paletteLive,freed;
+static void ObjAffineSet(const struct ObjAffineSrcData*s,struct OamMatrix*d,int n,int stride){assert(n==1&&stride==2&&s->rotation==0);d->a=s->xScale;d->d=s->yScale;d->b=d->c=0;}
+static void UpdateSpriteMatrixAnchorPos(struct Sprite*s,s32 x,s32 y){abort();}static void RequestSpriteFrameImageCopy(u16 image,u16 tile,const void*images){abort();}
+static u8 GetAnimBattlerSpriteId(u8 b){return b==0?gBattleAnimAttacker:gBattleAnimTarget;}static u8 GetBattlerSide(u8 b){return b&1;}static int GetBattlerSpriteBGPriorityRank(u8 b){return b==0||b==3?2:1;}
+static void SetGpuReg(u16 r,u16 v){regs[r]=v;}static void ClearGpuRegBits(u16 r,u16 v){regs[r]&=~v;}static void SetGpuRegBits(u16 r,u16 v){regs[r]|=v;}
+static void PrepareBattlerSpriteForRotScale(u8 id,u8 mode){gSprites[id].invisible=0;gSprites[id].oam.objMode=mode;gSprites[id].oam.affineMode=3;}
+static void SetSpriteRotScale(u8 id,s16 x,s16 y,u16 rotation){assert(rotation==0);gOamMatrices[id].a=x;gOamMatrices[id].d=y;}
+static void ResetSpriteRotScale(u8 id){SetSpriteRotScale(id,256,256,0);gSprites[id].oam.objMode=0;gSprites[id].oam.affineMode=1;}
+static void DestroyAnimVisualTask(u8 id){gTasks[id].isActive=0;}static void DestroySprite(struct Sprite*s){s->inUse=0;}static void DestroyAnimSprite(struct Sprite*s){s->inUse=0;}
+static void StoreSpriteCallbackInData6(struct Sprite*s,SpriteCallback cb){assert(cb==DestroyAnimSprite);s->data[6]=1;s->data[7]=0;}static void SetCallbackToStoredInData6(struct Sprite*s){assert(s->data[6]==1&&s->data[7]==0);s->callback=DestroyAnimSprite;}
+static void RunStoredCallbackWhenAnimEnds(struct Sprite*s){abort();}
+static int GetBattlerYDeltaFromSpriteId(u8 id){return 8;}
+static u8 AllocSpritePalette(u16 tag){assert(tag==ANIM_TAG_BENT_SPOON&&!paletteLive);paletteLive=1;return 4;}static void FreeSpritePaletteByTag(u16 tag){assert(tag==ANIM_TAG_BENT_SPOON&&paletteLive);paletteLive=0;freed++;}
+static void BlendPalette(u16 offset,u16 count,u8 coeff,u16 color){assert(offset+count<=512&&coeff<=16);for(int i=0;i<count;i++){int v=0;for(int shift=0;shift<=10;shift+=5){int c=(gPlttBufferUnfaded[offset+i]>>shift)&31,t=(color>>shift)&31;v|=(c+(((t-c)*coeff)>>4))<<shift;}gPlttBufferFaded[offset+i]=v;}}
+static u8 GetBattlerSpriteCoord(u8 b,u8 coord){int xs[2][4]={{72,176,48,112},{32,200,90,152}},ys[2][4]={{80,40,40,80},{80,40,88,32}};if(coord==0||coord==2)return xs[doubles][b];int y=ys[doubles][b];if(coord==3){y+=8;if(!(b&1))y+=8;if(y>104)y=104;}return y;}
+@PROTOTYPES@
+@ARRAYS@
+@FUNCTIONS@
+static void nums(const s16*a,int n){for(int i=0;i<n;i++)printf("%s%d",i?",":"",a[i]);}
+static void sprite(int id){struct Sprite*s=&gSprites[id];struct AffineAnimState*af=&sAffineAnimStates[s->oam.matrixNum];printf("{\"slot\":%d,\"alive\":%d,\"position\":[%d,%d,%d,%d],\"visible\":%d,\"mode\":%d,\"palette\":%d,\"matrix\":[%d,%d,%d,%d],\"affine\":[%d,%d,%d,%d],\"tile\":%d,\"data\":[",id,s->inUse,s->x,s->y,s->x2,s->y2,!s->invisible,s->oam.objMode,s->oam.paletteNum,gOamMatrices[s->oam.matrixNum].a,gOamMatrices[s->oam.matrixNum].b,gOamMatrices[s->oam.matrixNum].c,gOamMatrices[s->oam.matrixNum].d,af->xScale,af->yScale,af->rotation,s->affineAnimEnded,s->oam.tileNum);nums(s->data,8);printf("]}");}
+static void row(void){printf("{\"frame\":%d,\"alive\":%d,\"blend\":[%d,%d],\"dispcnt\":%d,\"paletteLive\":%d,\"freed\":%d,\"args\":[",frame,kind==3?gSprites[4].inUse:gTasks[0].isActive,regs[REG_OFFSET_BLDCNT],regs[REG_OFFSET_BLDALPHA],regs[REG_OFFSET_DISPCNT],paletteLive,freed);nums(gBattleAnimArgs,8);printf("],\"task\":[");nums(gTasks[0].data,16);printf("],\"body\":");sprite(kind==1?gBattleAnimTarget:gBattleAnimAttacker);printf(",\"copies\":[");for(int i=0;i<(kind==3?1:kind==2?freeCount:0);i++){if(i)printf(",");sprite(4+i);}printf("],\"palette\":[");for(int i=0;i<16;i++)printf("%s%d",i?",":"",gPlttBufferFaded[320+i]);puts("]}");}
+int main(int argc,char**argv){assert(argc==11);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);int hidden=atoi(argv[5]);freeCount=atoi(argv[6]);int speed=atoi(argv[7]),duration=atoi(argv[8]),signal=atoi(argv[9]),hold=atoi(argv[10]);regs[REG_OFFSET_DISPCNT]=DISPCNT_BG1_ON|DISPCNT_BG2_ON;
+for(int i=0;i<64;i++){gSprites[i].inUse=TRUE;gSprites[i].oam.matrixNum=i%32;gSprites[i].oam.affineMode=1;}for(int i=0;i<4;i++){gSprites[i].x=GetBattlerSpriteCoord(i,0);gSprites[i].y=GetBattlerSpriteCoord(i,1)+8;gSprites[i].x2=3;gSprites[i].y2=-2;gSprites[i].oam.paletteNum=i;gSprites[i].data[0]=i;gSprites[i].oam.priority=2;gOamMatrices[i].a=gOamMatrices[i].d=256;for(int j=0;j<16;j++)gPlttBufferUnfaded[256+16*i+j]=(i*503+j*1703)&32767;}gPlttBufferUnfaded[320]=1234;gSprites[gBattleAnimTarget].invisible=hidden;for(int i=0;i<freeCount;i++)gSprites[4+i].inUse=FALSE;gTasks[0].isActive=1;
+if(kind==0){gBattleAnimArgs[0]=hold;AnimTask_NightShadeClone(0);}if(kind==1){gBattleAnimArgs[0]=speed;gBattleAnimArgs[1]=duration;AnimTask_ShrinkTargetCopy(0);}if(kind==2)AnimTask_DoubleTeam(0);if(kind==3){struct Sprite*s=&gSprites[4];memset(s,0,sizeof(*s));s->inUse=s->usingSheet=s->animBeginning=s->affineAnimBeginning=1;s->oam.matrixNum=4;s->oam.affineMode=3;s->anims=sPowerAbsorptionOrbAnimTable;s->affineAnims=sMimicOrbAffineAnimTable;s->callback=AnimMimicOrb;AffineAnimStateReset(4);gBattleAnimArgs[0]=-12;gBattleAnimArgs[1]=24;s->callback(s);AnimateSprite(s);}row();
+for(frame=1;frame<500;frame++){if(kind==3){struct Sprite*s=&gSprites[4];if(s->inUse){s->callback(s);if(s->inUse)AnimateSprite(s);}}else{if(kind==2)for(int i=4;i<4+freeCount;i++)if(gSprites[i].inUse)gSprites[i].callback(&gSprites[i]);if(kind==1&&frame==signal)gBattleAnimArgs[7]=-1;if(gTasks[0].isActive)gTasks[0].func(0);}row();if(!(kind==3?gSprites[4].inUse:gTasks[0].isActive))break;}assert(frame<500);return 0;}

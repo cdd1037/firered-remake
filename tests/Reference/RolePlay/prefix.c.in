@@ -1,0 +1,80 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;typedef u32 bool32;
+#define TRUE 1
+#define FALSE 0
+#define B_SIDE_PLAYER 0
+#define B_POSITION_PLAYER_LEFT 0
+#define B_POSITION_OPPONENT_RIGHT 3
+#define BG_ANIM_PRIORITY 0
+#define SPECIES_NONE 0
+#define MON_DATA_SPECIES 0
+#define MON_DATA_PERSONALITY 1
+#define MON_DATA_OT_ID 2
+#define BATTLER_COORD_X 0
+#define BATTLER_COORD_Y 1
+#define PLTT_SIZE_4BPP 32
+#define OBJ_PLTT_ID(n) (256+(n)*16)
+#define RGB_WHITE 32767
+#define DEOXYS_CHECK_BATTLE_ANIM 2
+#define NUM_SPECIES 412
+#define SPECIES_UNOWN 201
+#define SPECIES_UNOWN_B 413
+#define OBJ_VRAM0 ((uintptr_t)0)
+#define FREE_AND_SET_NULL(p) do{free(p);(p)=NULL;}while(0)
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void(*SpriteCallback)(struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite {struct OamData oam;s16 x,y,x2,y2;bool8 inUse,affineAnimPaused;u8 subpriority;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};
+struct Pokemon {u16 species;u32 personality,ot;};
+struct CompressedSpriteSheet {void *data;};
+struct SpriteTemplate {u16 paletteTag;};
+struct MonCoords {u8 y_offset;};
+struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+struct OamMatrix {s16 a,b,c,d;};
+static struct Sprite gSprites[64];static struct Task gTasks[16];static u16 regs[256];static u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerPartyIndexes[4];
+static struct Pokemon gPlayerParty[6],gEnemyParty[6];static struct {struct {u16 transformSpecies;}battlerData[4];} battleSprites,*gBattleSpritesDataPtr=&battleSprites;
+static struct {void* multiUseBuffer;} monSprites,*gMonSpritesGfxPtr=&monSprites;
+static struct CompressedSpriteSheet gMonFrontPicTable[440],gMonBackPicTable[440];static struct MonCoords gMonFrontPicCoords[440],gMonBackPicCoords[440];
+static struct SpriteTemplate sSpriteTemplates_MoveEffectMons[2]={{55125},{55126}};static int sSpriteSheets_MoveEffectMons[2];static struct OamMatrix gOamMatrices[32];
+static int doubles,frame,taskFreed,copyFreed,paletteFreed,copyId=4,selectedSpecies,selectedRender,selectedBack,selectedYOffset,selectedPid,selectedOt,whiteWritten;static int requestedSpecies,requestedBack;static u32 requestedPid,requestedOt;
+static struct Sprite built;static struct OamMatrix builtMatrix;static int builtAlive;
+static u8 GetAnimBattlerSpriteId(u8 b){return b==0?gBattleAnimAttacker:gBattleAnimTarget;}
+static u8 GetBattlerSide(u8 b){return b&1;}
+static u32 GetMonData(struct Pokemon*p,int field){return field==MON_DATA_SPECIES?p->species:field==MON_DATA_PERSONALITY?p->personality:p->ot;}
+static u8 GetBattlerPosition(u8 b){return b;}
+static u8 GetAnimBgAttribute(u8 bg,int attribute){assert(attribute==BG_ANIM_PRIORITY);return bg-1;}
+static u8 GetBattlerSpriteCoord(u8 b,u8 c){int xs[2][4]={{72,176,48,112},{32,200,90,152}},ys[2][4]={{80,40,40,80},{80,40,88,32}};return c==BATTLER_COORD_X?xs[doubles][b]:ys[doubles][b];}
+static void SetGpuReg(u16 r,u16 v){regs[r]=v;}
+static void DestroyAnimVisualTask(u8 id){gTasks[id].isActive=0;taskFreed++;}
+static void FillPalette(u16 color,u16 start,u16 size){assert(color==RGB_WHITE&&start==OBJ_PLTT_ID(4)&&size==32);whiteWritten++;}
+static u16 LoadSpriteSheet(void*p){assert(p==&sSpriteSheets_MoveEffectMons[0]);return 0;}
+static u16 AllocSpritePalette(u16 tag){assert(tag==55125);return 4;}
+static void* AllocZeroed(u32 n){return calloc(n,1);}
+static void* GetMonSpritePalFromSpeciesAndPersonality(u16 species,u32 ot,u32 pid){requestedSpecies=species;requestedPid=pid;requestedOt=ot;return NULL;}
+static void LoadCompressedPalette(void*p,u16 start,u16 n){assert(start==OBJ_PLTT_ID(4)&&n==32);}
+static bool8 ShouldIgnoreDeoxysForm(int reason,u32 b){assert(0);return FALSE;}
+static void LZ77UnCompWram(void*src,void*dest){int value=(int)(intptr_t)src;selectedRender=value%1000;selectedBack=value>=1000;}
+static void DrawSpindaSpots(s32 species,u32 pid,void*dest,bool8 front){} /* Recolors nonzero indices only; bitmap invariance tested separately. */
+static void LoadSpecialPokePic(const struct CompressedSpriteSheet*s,void*d,s32 species,u32 pid,bool8 front){assert(0);}
+static void RequestDma3Copy(void*src,void*dest,u32 n,int mode){assert(src&&n==0x800&&mode==1);}
+static u8 CreateSprite(const struct SpriteTemplate*t,s16 x,s16 y,u8 sub){assert(t==&sSpriteTemplates_MoveEffectMons[0]);struct Sprite*s=&gSprites[copyId];s->inUse=TRUE;s->x=x;s->y=y;s->subpriority=sub;s->oam.affineMode=1;s->oam.matrixNum=4;s->oam.paletteNum=4;gOamMatrices[4]=(struct OamMatrix){256,0,0,256};return copyId;}
+static bool8 ShouldRotScaleSpeciesBeFlipped(void){return FALSE;}
+static void CalcCenterToCornerVec(struct Sprite*s,int shape,int size,int mode){}
+static void ObjAffineSet(struct ObjAffineSrcData*s,struct OamMatrix*d,int count,int stride){assert(s->rotation==0&&count==1&&stride==2);*d=(struct OamMatrix){s->xScale,0,0,s->yScale};}
+static void DestroySpriteAndFreeResources_(struct Sprite*s){assert(s->inUse);s->inUse=0;copyFreed++;paletteFreed++;}
+@PROTOTYPES@
+@FUNCTIONS@
+static void row(void){struct Sprite*s=&gSprites[copyId];struct OamMatrix*m=&gOamMatrices[4];printf("{\"frame\":%d,\"alive\":%d,\"blend\":[%d,%d],\"taskFreed\":%d,\"copyFreed\":%d,\"paletteFreed\":%d,\"copyAlive\":%d,\"position\":[%d,%d],\"affineMode\":%d,\"matrix\":[%d,%d,%d,%d],\"builtAlive\":%d,\"builtAffine\":%d,\"builtMatrix\":[%d,%d,%d,%d],\"priority\":%d,\"subpriority\":%d,\"selected\":[%d,%d,%d,%u,%u],\"task\":[",frame,gTasks[0].isActive,regs[REG_OFFSET_BLDCNT],regs[REG_OFFSET_BLDALPHA],taskFreed,copyFreed,paletteFreed,s->inUse,s->x,s->y,s->oam.affineMode,m->a,m->b,m->c,m->d,builtAlive,built.oam.affineMode,builtMatrix.a,builtMatrix.b,builtMatrix.c,builtMatrix.d,s->oam.priority,s->subpriority,requestedSpecies,selectedRender,selectedBack,requestedPid,requestedOt);for(int i=0;i<16;i++)printf("%s%d",i?",":"",gTasks[0].data[i]);puts("]}");}
+int main(int argc,char**argv){assert(argc==7);doubles=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=atoi(argv[3]);int species=atoi(argv[4]),transformed=atoi(argv[5]),letter=atoi(argv[6]);
+for(int i=0;i<440;i++){gMonFrontPicTable[i].data=(void*)(intptr_t)i;gMonBackPicTable[i].data=(void*)(intptr_t)(1000+i);gMonFrontPicCoords[i].y_offset=(i==201?15:i==410?0:7);gMonBackPicCoords[i].y_offset=(i==201?8:i==410?0:11);}
+for(int i=0;i<6;i++){gPlayerParty[i]=(struct Pokemon){(u16)(10+i),(u32)(0x10100+i),(u32)(1000+i)};gEnemyParty[i]=(struct Pokemon){(u16)(20+i),(u32)(0x20200+i),(u32)(2000+i)};}
+for(int i=0;i<4;i++)gBattlerPartyIndexes[i]=i/2;
+int index=gBattlerPartyIndexes[gBattleAnimTarget];struct Pokemon*target=(gBattleAnimTarget&1)?&gEnemyParty[index]:&gPlayerParty[index];target->species=transformed?132:species;gBattleSpritesDataPtr->battlerData[gBattleAnimTarget].transformSpecies=transformed?species:0;
+struct Pokemon*identity=(gBattleAnimAttacker&1)?&gPlayerParty[index]:&gEnemyParty[index];identity->personality=letter?3:0;identity->ot=(gBattleAnimAttacker&1)?0x12345678:0x87654321;
+gTasks[0].isActive=1;AnimTask_RolePlaySilhouette(0);row();assert(whiteWritten==1);
+for(frame=1;gTasks[0].isActive&&frame<100;frame++){builtAlive=gSprites[copyId].inUse;built=gSprites[copyId];builtMatrix=gOamMatrices[4];gTasks[0].func(0);row();}assert(frame==41&&taskFreed==1&&copyFreed==1&&paletteFreed==1);return 0;}

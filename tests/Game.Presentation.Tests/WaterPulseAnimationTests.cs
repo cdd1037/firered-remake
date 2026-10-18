@@ -14,7 +14,7 @@ public sealed class WaterPulseAnimationTests
     private static AnimationBattler[] Battlers(bool doubles=true)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
     private static SourceAnimationScript Script(){using var resources=new SourceAnimationResources(Folder);var script=resources.Resolve(352).Script;return script with{SpriteRecipes=script.SpriteRecipes.ToDictionary(p=>p.Key,p=>p.Value)};}
     private static CommittedMoveAnimation Cue(int actor=0,int target=1,uint? seed=0)=>new("water-pulse",1,352,new(actor),new(target)){VisualSeed=seed};
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/water-pulse-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("water-pulse-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_water_pulse_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/water-pulse-source-vectors.json");
     private static uint? RandomState(SourceBattleAnimation runtime)
     {
         var f=typeof(SourceBattleAnimation).GetField("_visualRandom",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(f);

@@ -42,7 +42,7 @@ public sealed partial class SourceBattleAnimation
         bool general=_script.Label=="General_StatsChange";
         if(!general&&(_cue.StatAnimationArgument is not null||_script.Commands.Any(c=>c.Args.FirstOrDefault()=="AnimTask_StatsChange")))throw new InvalidDataException("Stat callback requires exact General_StatsChange root.");
         if(!general)return;
-        if(_script.MoveId!=0||_cue.Actor!=_cue.Target||_cue.StatAnimationArgument is not {} arg||!ValidStatArgument(arg)||!_battlers[_cue.Actor.Value].Visible||
+        if(_script.MoveId!=0||_cue.Actor!=_cue.Target||_cue.StatAnimationArgument is not {} arg||!ValidStatArgument(arg)||!IsSourceBattlerVisible(_cue.Actor.Value)||
             _script.Commands.Length!=3||_script.Commands[0].Op!="createvisualtask"||!_script.Commands[0].Args.SequenceEqual(new[]{"AnimTask_StatsChange","5"})||
             _script.Commands[1].Op!="waitforvisualfinish"||_script.Commands[1].Args.Length!=0||_script.Commands[2].Op!="end"||_script.Commands[2].Args.Length!=0)
             throw new InvalidDataException("General stat source script/argument differs.");
@@ -66,7 +66,7 @@ public sealed partial class SourceBattleAnimation
         {
             if(_phase==0)
             {
-                int partner=owner._doubles&&_slot is 0 or 3&&owner._battlers[_slot^2].Visible?_slot^2:-1;
+                int partner=owner._doubles&&_slot is 0 or 3&&owner.IsSourceBattlerVisible(_slot^2)?_slot^2:-1;
                 owner._statMask=new(true,false,0,0,0,_slot,false,partner);owner._blendEnabled=true;owner._alphaA=0;owner._alphaB=16;_phase++;return;
             }
             if(_phase==1)

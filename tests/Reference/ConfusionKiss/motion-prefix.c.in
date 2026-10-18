@@ -1,0 +1,87 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define NUM_TASKS 16
+#define REVISION 0
+#define HEAD_SENTINEL 0xFE
+#define TAIL_SENTINEL 0xFF
+#define DISPLAY_WIDTH 240
+#define DISPLAY_HEIGHT 160
+#define SAFE_DIV(a,b) ((b)?(a)/(b):0)
+#define sAnchorX data[6]
+#define sAnchorY data[7]
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite *);typedef void (*AnimFunc)(struct Sprite *);typedef void (*AnimCmdFunc)(struct Sprite *);typedef void (*AffineAnimCmdFunc)(u8,struct Sprite *);typedef void (*TaskFunc)(u8);
+struct SpriteTemplate {u16 tileTag,paletteTag;const struct OamData *oam;const union AnimCmd *const *anims;const void *images;const union AffineAnimCmd *const *affineAnims;SpriteCallback callback;};
+struct Sprite {const struct SpriteTemplate *template;bool8 invisible;struct OamData oam;const union AnimCmd *const *anims;const union AffineAnimCmd *const *affineAnims;const void *images;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse,animBeginning,affineAnimBeginning,usingSheet,animEnded,affineAnimEnded,animPaused,affineAnimPaused,anchored,hFlip,vFlip;u8 animCmdIndex,animNum,animLoopCounter,animDelayCounter,subpriority;u16 sheetTileStart;};
+struct Task {TaskFunc func;bool8 isActive;u8 prev,next,priority;s16 data[16];};
+struct OamMatrix {s16 a,b,c,d;};struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+struct Sprite gSprites[64];struct Task gTasks[16];struct AffineAnimState sAffineAnimStates[32];struct OamMatrix gOamMatrices[32];
+s16 gBattleAnimArgs[8];u8 gAnimVisualTaskCount;u32 gRngValue;bool8 gAffineAnimsDisabled=FALSE;
+static int scenario,frame,activeTask=-1,attempt,failAttempt=-1,instanceCounter,instance[64],occupied,callbackEvents[128][7],nCallbacks;
+static long long events[512][8];static int nEvents;static struct ObjAffineSrcData lastAffine;static int affineCalls;
+static void event(int kind,long long a,long long b,long long c,long long d,long long e,long long f,long long g){assert(nEvents<512);long long *p=events[nEvents++];p[0]=kind;p[1]=a;p[2]=b;p[3]=c;p[4]=d;p[5]=e;p[6]=f;p[7]=g;}
+static void ObjAffineSet(const struct ObjAffineSrcData *src,struct OamMatrix *dest,int count,int offset){assert(count==1&&offset==2);lastAffine=*src;affineCalls++;memset(dest,0,sizeof(*dest));}
+static void UpdateSpriteMatrixAnchorPos(struct Sprite *s,s32 x,s32 y){abort();}
+static void RequestSpriteFrameImageCopy(u16 image,u16 tile,const void *images){abort();}
+static void FreeOamMatrix(u8 matrix){event(6,matrix,0,0,0,0,0,0);}
+static void FreeSpriteOamMatrix(struct Sprite *sprite){if(sprite->oam.affineMode&1)FreeOamMatrix(sprite->oam.matrixNum);}
+static void DestroySprite(struct Sprite *sprite){event(4,sprite-gSprites,instance[sprite-gSprites],sprite->data[0],sprite->animEnded,0,0,0);sprite->inUse=FALSE;}
+void DestroyAnimSprite(struct Sprite *sprite);
+static void StoreSpriteCallbackInData6(struct Sprite *sprite,SpriteCallback callback){assert(callback==DestroyAnimSprite);sprite->data[6]=1;sprite->data[7]=0;}
+static void SetCallbackToStoredInData6(struct Sprite *sprite){assert(sprite->data[6]==1&&sprite->data[7]==0);sprite->callback=DestroyAnimSprite;}
+
+u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerPositions[4]={0,1,2,3},gBattlerSpriteIds[4]={0,1,2,3};u32 gBattleTypeFlags;
+static int doubles,kind,visibleMask,yOverride,geometry; static s8 gAnimCustomPanning;static int panBeforeSprites; static u16 registers[64];static bool8 IsContest(void){return FALSE;}static bool8 IsDoubleBattle(void){return doubles;}static bool8 IsBattlerSpriteVisible(u8 id){return (visibleMask>>id)&1;}static bool8 IsBattlerSpritePresent(u8 id){return TRUE;}
+static u8 GetBattlerSpriteSubpriority(u8 id){static const u8 p[4]={30,20,28,18};return p[id];}
+static u8 GetBattlerSpriteBGPriority(u8 id){static const u8 p[4]={2,1,1,2};return p[id];}
+static s16 GetBattlerSpriteCoord(u8 id,u8 coord){static const s16 pos[2][4][2]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};if(coord==BATTLER_COORD_X||coord==BATTLER_COORD_X_2)return pos[doubles][id][0];return pos[doubles][id][1]+(yOverride&&id==gBattleAnimAttacker?yOverride:0)+(coord==BATTLER_COORD_Y_PIC_OFFSET&&!(id&1)?8:0);}
+static s16 GetBattlerSpriteCoord2(u8 id,u8 coord){return GetBattlerSpriteCoord(id,coord);}
+struct HealthBoxData{bool8 statusAnimActive;};struct BattleSpritesData{struct HealthBoxData healthBoxesData[4];};static struct BattleSpritesData battleSprites;static struct BattleSpritesData *gBattleSpritesDataPtr=&battleSprites;
+struct MonCoords{u8 size,y_offset;};static struct MonCoords explicitCoords[4];
+#define GET_MON_COORDS_WIDTH(size) (((size)>>4)*8)
+#define GET_MON_COORDS_HEIGHT(size) (((size)&15)*8)
+static void SetGpuReg(u8 offset,u16 value){registers[offset/2]=value;event(1,offset,value,0,0,0,0,0);}
+static void PlaySE12WithPanning(u16 sound,s8 pan){event(7,sound,pan,0,0,0,0,0);}
+static void PlaySE(u16 sound){event(8,sound,0,0,0,0,0,0);}
+static void DestroyAnimVisualTask(u8 id){gTasks[id].isActive=FALSE;gAnimVisualTaskCount--;event(10,id,0,0,0,0,0,0);}
+u16 gPlttBufferUnfaded[512],gPlttBufferFaded[512];struct PaletteFadeControl gPaletteFade;static bool8 sPlttBufferTransferPending;static u8 paletteHardware[1024];
+#undef PLTT
+#define PLTT paletteHardware
+static void CpuCopy32(const void*src,void*dest,int size){memcpy(dest,src,size);}static u8 UpdateFastPaletteFade(void){abort();}static u8 UpdateHardwarePaletteFade(void){abort();}static void UpdateBlendRegisters(void){abort();}
+static u8 IndexOfSpritePaletteTag(u16 tag){assert(tag==ANIM_TAG_YELLOW_BALL);return 4;}
+u16 Random(void);bool8 BeginNormalPaletteFade(u32,s8,u8,u8,u16);
+@PROTOTYPES@
+static u8 CreateSprite(const struct SpriteTemplate*,s16,s16,u8);static u8 CreateSpriteAt(u8,const struct SpriteTemplate*,s16,s16,u8);
+@ARRAYS@
+@FUNCTIONS@
+static u8 CreateSpriteAt(u8 slot,const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){struct Sprite*s=&gSprites[slot];memset(s,0,sizeof(*s));s->template=t;s->inUse=TRUE;s->animBeginning=s->affineAnimBeginning=TRUE;s->usingSheet=TRUE;s->subpriority=priority;s->oam=*t->oam;s->anims=t->anims;s->affineAnims=t->affineAnims;s->callback=t->callback;s->x=x;s->y=y;if(s->oam.affineMode){s->oam.matrixNum=slot%32;AffineAnimStateReset(slot%32);}instance[slot]=++instanceCounter;return slot;}
+static u8 CreateSprite(const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){return SourceCreateSprite(t,x,y,priority);}
+u16 Random(void){u32 prior=gRngValue;u16 draw=SourceRandom();event(9,draw,prior,0,gRngValue,0,0,0);return draw;}
+bool8 BeginNormalPaletteFade(u32 selected,s8 delay,u8 start,u8 target,u16 color){bool8 accepted=SourceBeginNormalPaletteFade(selected,delay,start,target,color);event(11,4,delay,start,target,color,accepted,0);return accepted;}
+static const char *callbackName(SpriteCallback cb){
+#define CB(name) if(cb==name)return #name
+CB(AnimConfuseRayBallBounce);CB(AnimConfuseRayBallBounce_Step1);CB(AnimConfuseRayBallBounce_Step2);CB(AnimConfuseRayBallSpiral);CB(AnimConfuseRayBallSpiral_Step);CB(AnimDevil);CB(AnimPinkHeart);CB(AnimPinkHeart_Step);CB(AnimAngel);CB(AnimParticleBurst);CB(AnimForesightMagnifyingGlass);CB(AnimForesightMagnifyingGlass_Step);CB(DestroyAnimSprite);CB(DestroyAnimSpriteAndDisableBlend);
+#undef CB
+return "unknown";}
+static const char *taskName(TaskFunc cb){if(cb==SoundTask_AdjustPanningVar_Step)return "SoundTask_AdjustPanningVar_Step";if(cb==AnimTask_BlendColorCycleByTagLoop)return "AnimTask_BlendColorCycleByTagLoop";return "unknown";}
+static void numbers(const s16 *a,int n){for(int i=0;i<n;i++)printf("%s%d",i?",":"",a[i]);}
+static void printEvents(void){printf(",\"events\":[");for(int i=0;i<nEvents;i++){printf("%s[",i?",":"");for(int j=0;j<8;j++)printf("%s%lld",j?",":"",events[i][j]);printf("]");}puts("]}");nEvents=0;}
+static void row(void){struct Sprite*s=&gSprites[4];struct AffineAnimState*a=&sAffineAnimStates[s->oam.matrixNum];
+printf("{\"frame\":%d,\"alive\":%d,\"visualCount\":%u,\"callback\":\"%s\",\"position\":[%d,%d,%d,%d],\"tile\":%u,\"visible\":%d,\"priority\":%u,\"subpriority\":%u,\"affineMode\":%u,\"objMode\":%u,\"xScale\":%d,\"yScale\":%d,\"rotation\":%u,\"animNum\":%u,\"animCmdIndex\":%u,\"animDelay\":%u,\"animEnded\":%u,\"affineEnded\":%u,\"hFlip\":%u,\"vFlip\":%u,\"oamMatrixNum\":%u,\"rng\":%u,\"customPan\":%d,\"registers\":[%u,%u],\"args\":[",frame,s->inUse,gAnimVisualTaskCount,callbackName(s->callback),s->x,s->y,s->x2,s->y2,s->oam.tileNum,!s->invisible,s->oam.priority,s->subpriority,s->oam.affineMode,s->oam.objMode,a->xScale,a->yScale,a->rotation,s->animNum,s->animCmdIndex,s->animDelayCounter,s->animEnded,s->affineAnimEnded,s->hFlip,s->vFlip,s->oam.matrixNum,gRngValue,gAnimCustomPanning,registers[REG_OFFSET_BLDCNT/2],registers[REG_OFFSET_BLDALPHA/2]);numbers(gBattleAnimArgs,8);printf("],\"data\":[");numbers(s->data,8);printf("]");if(kind==10)printf(",\"customPanBeforeSprites\":%d",panBeforeSprites);printEvents();}
+static void taskRow(void){printf("{\"frame\":%d,\"alive\":%u,\"visualCount\":%u,\"callback\":\"%s\",\"customPan\":%d,\"fade\":[%u,%u,%u,%u,%u,%u],\"data\":[",frame,gTasks[3].isActive,gAnimVisualTaskCount,taskName(gTasks[3].func),gAnimCustomPanning,gPaletteFade.active,gPaletteFade.y,gPaletteFade.objPaletteToggle,gPaletteFade.softwareFadeFinishing,gPaletteFade.softwareFadeFinishingCounter,gPaletteFade_selectedPalettes);numbers(gTasks[3].data,16);printf("],\"palette\":[");for(int i=0;i<16;i++)printf("%s%u",i?",":"",gPlttBufferFaded[320+i]);printf("]");printEvents();}
+static void groupRow(void){printf("{\"frame\":%d,\"alive\":%u,\"visualCount\":%u,\"rng\":%u,\"sprites\":[",frame,gAnimVisualTaskCount!=0,gAnimVisualTaskCount,gRngValue);for(int i=4;i<8;i++){struct Sprite*s=&gSprites[i];printf("%s{\"slot\":%d,\"alive\":%u,\"callback\":\"%s\",\"position\":[%d,%d,%d,%d],\"visible\":%u,\"data\":[",i==4?"":",",i,s->inUse,callbackName(s->callback),s->x,s->y,s->x2,s->y2,!s->invisible);numbers(s->data,8);printf("]}");}printf("]");printEvents();}
+int main(int argc,char**argv){assert(argc==16);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);gRngValue=strtoul(argv[5],NULL,10);gAnimCustomPanning=atoi(argv[6]);geometry=atoi(argv[7]);visibleMask=doubles?15:3;gBattleTypeFlags=doubles?BATTLE_TYPE_DOUBLE:0;for(int i=0;i<8;i++)gBattleAnimArgs[i]=atoi(argv[8+i]);int widths[2][4]={{64,40,48,56},{32,64,24,48}},heights[2][4]={{64,48,56,40},{48,32,64,24}};for(int i=0;i<4;i++){explicitCoords[i].size=((widths[geometry][i]/8)<<4)|(heights[geometry][i]/8);gSprites[i].inUse=TRUE;gSprites[i].callback=SpriteCallbackDummy;gSprites[i].anims=gDummySpriteAnimTable;gSprites[i].affineAnims=gDummySpriteAffineAnimTable;gSprites[i].animBeginning=TRUE;gSprites[i].subpriority=GetBattlerSpriteSubpriority(i);}
+gAnimVisualTaskCount=1;
+if(kind==9){s16 recipes[4][2]={{-256,-42},{128,-14},{416,-38},{-128,-22}};gAnimVisualTaskCount=0;for(int i=0;i<4;i++){gBattleAnimArgs[0]=recipes[i][0];gBattleAnimArgs[1]=recipes[i][1];CreateSpriteAndAnimate(&gPinkHeartSpriteTemplate,GetBattlerSpriteCoord(gBattleAnimTarget,BATTLER_COORD_X_2),GetBattlerSpriteCoord(gBattleAnimTarget,BATTLER_COORD_Y_PIC_OFFSET),GetBattlerSpriteSubpriority(gBattleAnimTarget)-3);gAnimVisualTaskCount++;}groupRow();for(frame=1;frame<1000;frame++){AnimateSprites();groupRow();if(!gAnimVisualTaskCount)break;}assert(!gAnimVisualTaskCount);return 0;}
+if(kind==10){s16 saved[8];memcpy(saved,gBattleAnimArgs,sizeof(saved));gAnimVisualTaskCount=2;gTasks[3].isActive=TRUE;gBattleAnimArgs[0]=-64;gBattleAnimArgs[1]=63;gBattleAnimArgs[2]=2;gBattleAnimArgs[3]=0;SoundTask_AdjustPanningVar(3);memcpy(gBattleAnimArgs,saved,sizeof(saved));}
+if(kind==7||kind==8){for(int i=0;i<512;i++)gPlttBufferUnfaded[i]=gPlttBufferFaded[i]=((i+3)&31)|(((i*7+5)&31)<<5)|(((i*11+9)&31)<<10);gTasks[3].isActive=TRUE;if(kind==7)SoundTask_AdjustPanningVar(3);else AnimTask_BlendColorCycleByTag(3);taskRow();for(frame=1;frame<1000;frame++){sPlttBufferTransferPending=FALSE;UpdatePaletteFade();if(gTasks[3].isActive)gTasks[3].func(3);taskRow();if(!gTasks[3].isActive)break;}assert(!gTasks[3].isActive);return 0;}
+const struct SpriteTemplate*ts[]={&gConfuseRayBallBounceSpriteTemplate,&gConfuseRayBallSpiralSpriteTemplate,&gDevilSpriteTemplate,&gPinkHeartSpriteTemplate,&gAngelSpriteTemplate,&gRedHeartBurstSpriteTemplate,&gForesightMagnifyingGlassSpriteTemplate};
+panBeforeSprites=gAnimCustomPanning;CreateSpriteAndAnimate(ts[kind==10?0:kind],GetBattlerSpriteCoord(gBattleAnimTarget,BATTLER_COORD_X_2),GetBattlerSpriteCoord(gBattleAnimTarget,BATTLER_COORD_Y_PIC_OFFSET),GetBattlerSpriteSubpriority(gBattleAnimTarget)-(kind==3||kind==5?3:2));row();for(frame=1;frame<1000;frame++){panBeforeSprites=gAnimCustomPanning;AnimateSprites();if(kind==10){sPlttBufferTransferPending=FALSE;UpdatePaletteFade();if(gTasks[3].isActive)gTasks[3].func(3);}row();if(!gAnimVisualTaskCount)break;}assert(frame<1000);assert(!gSprites[4].inUse);return 0;}

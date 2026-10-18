@@ -31,8 +31,7 @@ public sealed class SelfAttackSourceVectorTests
         var type=typeof(SourceBattleAnimation).GetNestedType(name,BindingFlags.NonPublic)??throw new InvalidOperationException(name);
         return Activator.CreateInstance(type,Instance,null,args,CultureInfo.InvariantCulture)??throw new InvalidOperationException(name);
     }
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
-        "tests/Game.Presentation.Tests/Fixtures/self-attack-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("self-attack-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_self_attack_vectors.py --repo . --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/self-attack-source-vectors.json");
     private static int Number(JsonElement element,string name)=>element.GetProperty(name).GetInt32();
     private static int[] Numbers(JsonElement row)=>row.EnumerateArray().Select(v=>v.GetInt32()).ToArray();
     private static int[][] Rows(JsonElement entry)=>entry.GetProperty("states").EnumerateArray().Select(Numbers).ToArray();

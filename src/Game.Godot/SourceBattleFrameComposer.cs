@@ -55,6 +55,11 @@ public sealed class SourceBattleFrameComposer
             throw new InvalidDataException("Source selected battler material differs.");
         if(frame.BattlerBackgroundMosaic.Length!=2||frame.BackgroundMosaicHorizontal is <0 or >15||frame.BackgroundMosaicVertical is <0 or >15)
             throw new InvalidDataException("Source BG mosaic registers differ.");
+        frame.Window0?.Validate();frame.Brightness?.Validate();
+        if(frame.Brightness is not null&&_backgroundSurface is null)throw new InvalidDataException("Source brightness needs indexed BG3/backdrop provenance.");
+        if(frame.Brightness is not null&&(frame.BlendEnabled||frame.MoveBackground is {Darkening:>0})||
+            frame.Window0 is {Enabled:true}&&(frame.StatMask is {WindowEnabled:true}||frame.Metallic is {WindowEnabled:true}))
+            throw new InvalidDataException("Concurrent source window/color-effect owners are outside the admitted closure.");
         var pixels=new ushort[Width*112];Array.Fill(_baseLayerMasks,(byte)8);
         var palettes=frame.PaletteBlends.ToDictionary(p=>p.Palette);
         if(_backgroundSurface is not null)
@@ -77,16 +82,18 @@ public sealed class SourceBattleFrameComposer
         // script requests distinct banks; it then needs per-pixel bank provenance.
         var backgroundBlend=palettes.GetValueOrDefault(1);
         if(new[]{2,3}.Any(bank=>palettes.GetValueOrDefault(bank) is {} other
-            ?backgroundBlend is null||other.Coefficient!=backgroundBlend.Coefficient||other.Color!=backgroundBlend.Color
+            ?backgroundBlend is null||other.Coefficient!=backgroundBlend.Coefficient||other.Color!=backgroundBlend.Color||other.Unfaded!=backgroundBlend.Unfaded
             :backgroundBlend is not null))throw new InvalidDataException("Terrain palette banks require source membership data.");
         Blit(pixels,_assets["background"],0,0,palettes.GetValueOrDefault(1),inverted:frame.InvertedPalettes.Contains(1));
         }
+        bool SourcePresent(AnimationBattler b)=>frame.BattlerVisibility.FirstOrDefault(v=>v.Slot==b.Slot.Value)?.Present??(b.SourceVisibility?.Present??b.Visible);
+        bool SourceOamVisible(AnimationBattler b)=>frame.BattlerVisibility.FirstOrDefault(v=>v.Slot==b.Slot.Value) is {} state?state.Present&&!state.OamInvisible:b.Visible&&(!frame.BackgroundSlots.Contains(b.Slot.Value)||frame.RestoredObjectSlots.Contains(b.Slot.Value));
         // BG copies retain their original 64x64 tiles. PrepareBattlerSpriteForRotScale
         // can expose a distinct affine OBJ while this copy continues scrolling.
         if(frame.BattlerBackgroundPriorities.Length!=2||frame.BattlerBackgroundPriorities.Any(p=>p is <0 or >3))throw new InvalidDataException("Battler background priorities exceed source registers.");
         foreach(var backgroundLayer in _battlerBackgroundLayers)Array.Clear(backgroundLayer);
         var layer=_objectLayer;
-        foreach(var b in battlers.Where(b=>b.Visible&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
+        foreach(var b in battlers.Where(b=>SourcePresent(b)&&frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))
         {
             Array.Clear(layer);var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.Offsets[b.Slot.Value];
             var copy=frame.StaticBackgroundCopies.SingleOrDefault(c=>c.Slot==b.Slot.Value);
@@ -103,11 +110,13 @@ public sealed class SourceBattleFrameComposer
             material.Render(_battlerBackgroundLayers[0],Width,112,overlay.ScrollX,overlay.ScrollY,_backgroundSurface,frame.PaletteBlends,frame.InvertedPalettes,frame.BackgroundPaletteEntries);
             if(frame.BattlerBackgroundMosaic[0])MosaicBackground(_battlerBackgroundLayers[0],frame.BackgroundMosaicHorizontal+1,frame.BackgroundMosaicVertical+1);
         }
+        if(frame.BattlerBackgroundEnabled.Length!=2)throw new InvalidDataException("Battler BG enable register shape differs.");
+        for(int plane=0;plane<2;plane++)if(!frame.BattlerBackgroundEnabled[plane])Array.Clear(_battlerBackgroundLayers[plane]);
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
         if(frame.Sprites.Any(s=>s.OamPriority is <0 or >3))throw new InvalidDataException("Object priority exceeds source hardware field.");
-        var ordered=battlers.Where(b=>b.Visible&&(!frame.BackgroundSlots.Contains(b.Slot.Value)||frame.RestoredObjectSlots.Contains(b.Slot.Value)))
+        var ordered=battlers.Where(b=>SourceOamVisible(b))
             .Select(b=>(Priority:2,Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Fragment:0,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
             .Concat(frame.Sprites.Where(s=>s.Visible&&s.Asset is not null).SelectMany(ExpandSubsprites).Select(p=>(Priority:p.Frame.OamPriority,Rank:p.Frame.OamRank,Fragment:p.Index,Battler:(AnimationBattler?)null,Sprite:(SourceVisualSpriteFrame?)p.Frame)));
         foreach(var item in ordered.OrderByDescending(x=>x.Priority).ThenByDescending(x=>x.Rank).ThenByDescending(x=>x.Fragment))
@@ -126,7 +135,7 @@ public sealed class SourceBattleFrameComposer
                 if(sprite.BattlerCopySlot>=0)
                 {
                     int slot=sprite.BattlerCopySlot;var matrix=new SourceBattlerAffine(false,sprite.Scale,sprite.Scale);
-                    AffineBattler(layer,SpriteMaterial(sprite),center.X,center.Y,matrix,palettes.GetValueOrDefault(16+slot),frame.InvertedPalettes.Contains(16+slot),frame.GreyscaleSlots.Contains(slot));
+                    AffineBattler(layer,SpriteMaterial(sprite),center.X,center.Y,matrix,sprite.BattlerCopyPalette??palettes.GetValueOrDefault(16+slot),sprite.BattlerCopyPalette is null&&frame.InvertedPalettes.Contains(16+slot),sprite.BattlerCopyPalette is null&&frame.GreyscaleSlots.Contains(slot));
                 }
                 else if(sprite.Subsprites.Length==0&&(sprite.Template is "gBasicHitSplatSpriteTemplate" or "gFlashingHitSplatSpriteTemplate"))AffineImpact(layer,SpriteMaterial(sprite),new(sprite.Position,sprite.Scale,sprite.Asset!),0,0,false);
                 else BlitSprite(layer,SpriteMaterial(sprite),sprite,0,0,false,SelectedSpritePalette(frame,sprite,SpriteMaterial(sprite)));
@@ -134,7 +143,7 @@ public sealed class SourceBattleFrameComposer
             for(int i=0;i<layer.Length;i++)if((layer[i]&0x8000)!=0){objects[i]=layer[i];translucent[i]=blend;objectPriority[i]=(byte)item.Priority;}
         }
         if((frame.BlendFirstTargets&~63)!=0||(frame.BlendSecondTargets&~63)!=0)throw new InvalidDataException("Source alpha targets exceed hardware masks.");
-        if(frame.Overlay is null&&frame.BlendFirstTargets==0&&frame.BlendSecondTargets==63)
+        if(frame.Window0 is null&&frame.Brightness is null&&frame.Overlay is null&&frame.BlendFirstTargets==0&&frame.BlendSecondTargets==63)
         {
             // The common source setalpha mode only blends semi-transparent OBJ.
             // Keep its bounded fast path while sharing the same retained BG planes.
@@ -165,8 +174,11 @@ public sealed class SourceBattleFrameComposer
             Insert(_battlerBackgroundLayers[1][i],frame.BattlerBackgroundPriorities[1],2,4);
             Insert(objects[i],objectPriority[i],0,16);
             bool selected=(firstMask&frame.BlendFirstTargets)!=0||(firstMask==16&&translucent[i]);
-            pixels[i]=frame.BlendEnabled&&selected&&(secondMask&frame.BlendSecondTargets)!=0
-                ?Blend(first,second,frame.AlphaA,frame.AlphaB):first;
+            bool colorEnabled=frame.Window0?.ColorEffectsAt(i%Width,i/Width)??true;
+            pixels[i]=colorEnabled&&frame.BlendEnabled&&selected&&(secondMask&frame.BlendSecondTargets)!=0
+                ?Blend(first,second,frame.AlphaA,frame.AlphaB)
+                :colorEnabled&&frame.Brightness is {} brightness&&(firstMask&frame.BlendFirstTargets)!=0
+                    ?brightness.Apply(first):first;
         }
         if(frame.StatMask is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} mask)
         {
@@ -229,7 +241,7 @@ public sealed class SourceBattleFrameComposer
     private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null,bool greyscale=false,bool inverted=false)
     {
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
-        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0){if(greyscale){int average=((p&31)+((p>>5)&31)+((p>>10)&31))/3;p=(ushort)(0x8000|average|(average<<5)|(average<<10));}dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted);}}
+        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0){dest[dy*240+dx]=SourcePaletteMath.Apply(p,palette,inverted,greyscale);}}
     }
     private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette,bool inverted=false,bool greyscale=false)
     {

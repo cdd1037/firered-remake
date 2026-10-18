@@ -7,7 +7,7 @@ public sealed class SpriteSeekTests
     private static SourceSpriteRecipe Air()=>new("test","test","test",false,[[new(0,3,false,false),new(0,3,true,false),new(0,3,false,true),new(0,3,true,true)]]){LoopStarts=[0]};
     private static void AssertSourceRows(string name,SourceSpriteFrameProgram player,bool paused=false)
     {
-        using var fixture=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/sprite-seek-source-vectors.json")));
+        using var fixture=SourceVectorFixture.Read("sprite-seek-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_sprite_seek_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/sprite-seek-source-vectors.json");
         foreach(var row in fixture.RootElement.GetProperty(name).EnumerateArray())
         {
             var v=row.EnumerateArray().Select(n=>n.GetInt32()).ToArray();if(v[0]>0&&!paused)player.Step();Assert.AreEqual(v[2],player.Frame.Tile);Assert.AreEqual(v[3]!=0,player.Frame.HFlip);Assert.AreEqual(v[4]!=0,player.Frame.VFlip);Assert.AreEqual(v[5],player.DelayCounter);Assert.AreEqual(v[6]!=0,player.Ended);Assert.AreEqual(v[7],player.LoopCounter);

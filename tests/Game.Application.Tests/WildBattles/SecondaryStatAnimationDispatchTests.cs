@@ -69,7 +69,7 @@ public sealed class SecondaryStatAnimationDispatchTests
             }
             else Assert.IsNull(dispatch, $"Unrelated receipt {index} cannot replay the secondary wave.");
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle, true, catalog));
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle));
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             if (!singles) continue;
             var single = Single(events, index);
             Assert.AreEqual(dispatch, AnimationDispatchFixture.StatAtResult(single, true, moves: catalog));
@@ -722,17 +722,35 @@ public sealed class SecondaryStatAnimationDispatchTests
     [TestMethod]
     [DataRow("ANCIENT_POWER", WildBattleStat.Attack, true)]
     [DataRow("SUPERPOWER", WildBattleStat.Attack, true)]
-    [DataRow("OVERHEAT", WildBattleStat.SpecialAttack, true)]
-    public void AllStatsAndSelfReductionEffectsRemainOutsideThisFamily(string name, WildBattleStat stat, bool self)
+    public void AllStatsAndSuperpowerRemainOutsideTheOneStatFamily(string name, WildBattleStat stat, bool self)
     {
         var move = Moves[Id(name)];
         var events = Changed(move, stat, self);
-        if (name is "SUPERPOWER" or "OVERHEAT")
+        if (name == "SUPERPOWER")
         {
             var result = (SourceStatChangedEvent)events[4];
-            events = events.SetItem(4, result with { After = name == "OVERHEAT" ? 4 : 5 });
+            events = events.SetItem(4, result with { After = 5 });
         }
         AssertNone(events, "These source scripts require their own admission and cannot enter the selected-target one-stat family.");
+    }
+
+    [TestMethod]
+    [DataRow("OVERHEAT", 6)]
+    [DataRow("OVERHEAT", 1)]
+    [DataRow("PSYCHO_BOOST", 6)]
+    [DataRow("PSYCHO_BOOST", 1)]
+    public void CertainSelfSpecialAttackDropUsesItsSourceEffectAndRequestedTwoStageWave(string name, int before)
+    {
+        var move = Moves[Id(name)];
+        Assert.AreEqual("EFFECT_OVERHEAT", move.Effect);
+        Assert.AreEqual(100, move.SecondaryEffectChance);
+        var events = Changed(move, WildBattleStat.SpecialAttack, true, before: before);
+        var result = (SourceStatChangedEvent)events[4];
+        events = events.SetItem(4, result with { After = Math.Max(0, before - 2) });
+        AssertOne(events, 5, move.SourceMoveId, 0, 49);
+        AssertNone(events.SetItem(4, result with { Target = new(1), After = Math.Max(0, before - 2) }),
+            "The certain self drop cannot borrow a selected-target stat receipt.");
+        AssertNone(events.SetItem(4, result with { After = before }), "A capped/no-change result owns no source wave.");
     }
 
     [TestMethod]

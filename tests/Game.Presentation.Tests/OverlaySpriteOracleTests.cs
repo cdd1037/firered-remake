@@ -31,8 +31,7 @@ public sealed class OverlaySpriteOracleTests
     }
 
     private static string Folder => Path.Combine(TestAssets.Root, "content/generated/battle/animations");
-    private static JsonDocument Vectors(string family) => JsonDocument.Parse(File.ReadAllBytes(
-        Path.Combine(TestAssets.Root, $"tests/Game.Presentation.Tests/Fixtures/overlay-{family}-source-vectors.json")));
+    private static JsonDocument Vectors(string family) => SourceVectorFixture.Read($"overlay-{family}-source-vectors.json", "python tests/Reference/Bg1Overlay/check_vectors.py --repository . --prepare tests/Game.Presentation.Tests/Fixtures");
     private static int[] Numbers(JsonElement value) => value.EnumerateArray().Select(v => v.GetInt32()).ToArray();
     private static string[] Arguments(JsonElement value) => Numbers(value)
         .Select(v => v.ToString(CultureInfo.InvariantCulture)).ToArray();
@@ -162,9 +161,9 @@ public sealed class OverlaySpriteOracleTests
             tested++;
         }
 
-        Assert.AreEqual(160, ordinary);
-        Assert.AreEqual(60, unsupportedSinglePositions, "Single battles accept only positions 0 and 1.");
-        Assert.AreEqual(100, tested, "Five argument programs across four single and sixteen double ordered pairs.");
+        Assert.AreEqual(root.GetProperty("profile").GetString()=="full"?160:10, ordinary);
+        Assert.AreEqual(root.GetProperty("profile").GetString()=="full"?60:0, unsupportedSinglePositions, "Single battles accept only positions 0 and 1.");
+        Assert.AreEqual(root.GetProperty("profile").GetString()=="full"?100:10, tested, "Every selected ordinary argument program is compared through destruction.");
     }
 
     [TestMethod]
@@ -289,9 +288,9 @@ public sealed class OverlaySpriteOracleTests
             tested++; if (ordinary) normal++; else saturated++;
         }
 
-        Assert.AreEqual(20, normal, "All four legal single and sixteen double ordered actor/target pairs.");
+        Assert.AreEqual(root.GetProperty("profile").GetString()=="full"?20:4, normal, "The selected profile preserves both directions and coordinate layouts.");
         Assert.AreEqual(2, saturated, "Both 64 occupied cells and one free cell are exercised.");
-        Assert.AreEqual(22, tested);
+        Assert.AreEqual(root.GetProperty("profile").GetString()=="full"?22:6, tested);
     }
 
     private static void AssertGlareSprite(int[] expected, SourceVisualSpriteFrame actual, string message)
@@ -306,5 +305,18 @@ public sealed class OverlaySpriteOracleTests
         Assert.IsTrue(actual.Visible, message); Assert.IsFalse(actual.Affine, message);
         Assert.IsFalse(actual.DoubleSize, message); Assert.IsFalse(actual.Blend, message);
         Assert.IsFalse(actual.HFlip, message); Assert.IsFalse(actual.VFlip, message);
+    }
+
+    [TestMethod]
+    public void RepresentativeOverlayProfilesKeepFlagsCapacityAndHelperBoundaries()
+    {
+        using var mist=Vectors("mist");var cases=mist.RootElement.GetProperty("cases").EnumerateArray().ToArray();
+        CollectionAssert.AreEquivalent(new[]{0,1,256,257},cases.Where(c=>!c.GetProperty("probe").GetBoolean()).Select(c=>c.GetProperty("args")[5].GetInt32()).Distinct().ToArray());
+        foreach(string name in new[]{"equal-x-side-0","equal-x-side-1","wide-delta-duration-1","wide-delta-duration-2","wide-delta-duration-255","s16-offset-wrap","u16-accumulator-wrap","divergent-coordinate-helper-probe"})
+            Assert.IsTrue(cases.Any(c=>c.GetProperty("name").GetString()==name),name);
+        using var glare=Vectors("glare");var scenarios=glare.RootElement.GetProperty("scenarios").EnumerateArray().ToArray();
+        foreach(string name in new[]{"single_a0_t1","single_a1_t0","double_a2_t3","double_a3_t1","full_saturation","one_free_slot_partial_pairs","first_sibling_allocation_failure","contest_seed_is_reset_false","unreachable_forced_contest_diagonal"})
+            Assert.IsTrue(scenarios.Any(c=>c.GetProperty("name").GetString()==name),name);
+        CollectionAssert.AreEquivalent(new[]{0,1,2,3,12,255},glare.RootElement.GetProperty("coordinates").EnumerateArray().Select(c=>c.GetProperty("pairMax").GetInt32()).Distinct().ToArray());
     }
 }

@@ -42,7 +42,7 @@ public sealed partial class SourceBattleAnimation
         if(orbs>14||commands.Count(x=>x.Op=="createvisualtask"&&x.Args[0]=="AnimTask_CycleMagicalLeafPal")>1)Fail(c,"Orbital particle closure exceeds reviewed source capacity.");
         if(orbs!=0&&commands.Any(x=>x.Op=="createsprite"&&x.Args[0] is not ("gHiddenPowerOrbSpriteTemplate" or "gHiddenPowerOrbScatterSpriteTemplate")||x.Op=="createvisualtask"&&x.Args[0] is not ("AnimTask_ScaleMonAndRestore" or "AnimTask_BlendMonInAndOut")))Fail(c,"Orbital particle companions exceed the reviewed affine capacity.");
         if(orbs!=0&&_spriteScene.Sprites.Any(s=>s.Frame.Affine||s.Frame.Scale!=256))Fail(c,"Orbital particle closure cannot prove retained affine matrix capacity.");
-        if(orbs!=0&&Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>b.Visible&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<orbs)Fail(c,"Orbital particle closure lacks source sprite cells.");
+        if(orbs!=0&&Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>IsSourceBattlerPresent(b.Slot.Value)&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<orbs)Fail(c,"Orbital particle closure lacks source sprite cells.");
         if(c.Args[0] is "AnimTask_CycleMagicalLeafPal" or "gHiddenPowerOrbSpriteTemplate")
         {
             int start=Array.IndexOf(commands,c);int signal=Array.FindIndex(commands,start+1,x=>x.Op=="setarg"&&x.Args[0]=="7"&&unchecked((short)AnimationArgument(x.Args[1]))==-1);

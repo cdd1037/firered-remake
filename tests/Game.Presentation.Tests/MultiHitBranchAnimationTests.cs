@@ -27,7 +27,7 @@ public sealed class MultiHitBranchAnimationTests
     [TestMethod][DataRow(3)][DataRow(4)]
     public void EverySourceByteTurnChoosesTheOriginalCBranchWithoutInventingHitCounts(int move)
     {
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/multihit-branch-original-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("multihit-branch-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_multihit_branch_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/multihit-branch-original-vectors.json");
         var targets=vectors.RootElement.GetProperty("targets").EnumerateArray().Select(v=>v.GetInt32()).ToArray();
         var branches=vectors.RootElement.GetProperty("branches").EnumerateArray().Select(v=>v.GetInt32()).ToArray();
         Assert.AreEqual(2,targets.Length);Assert.AreEqual(256,branches.Length);

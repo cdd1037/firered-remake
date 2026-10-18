@@ -26,7 +26,7 @@ public sealed class ImpactAdapterAnimationTests
     [TestMethod][DataRow(0,160)][DataRow(1,120)][DataRow(2,80)][DataRow(3,500)][DataRow(4,140)]
     public void ExtractedSourceCallbacksMatchEveryTickAcrossAllLayoutsAndSignedEdges(int kind,int expectedCases)
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/impact-adapter-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("impact-adapter-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_impact_adapter_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/impact-adapter-source-vectors.json");
         var root=doc.RootElement;var family=Families[kind];int count=0,rows=0;
         foreach(var item in root.GetProperty("cases").EnumerateObject())
         {

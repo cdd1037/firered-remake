@@ -1,0 +1,8 @@
+{
+  "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",
+  "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
+  "src/decompress.c": "f190145b3948c1c22213e1a540f261aba89592ed9f30b6d13fa25b78ac417c7f",
+  "include/gba/types.h": "d83a5cb845180b881f3de081ef9c2694b2da017a406fd3d6b0830329cc64ed93",
+  "include/gba/io_reg.h": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0",
+  "include/constants/battle_anim.h": "87437751121d8f9dbcd62e2ba67122b9c7c68ce2255b55096982c7ca8c3cf48e"
+}

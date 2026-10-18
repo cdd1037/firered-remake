@@ -17,7 +17,7 @@ public sealed class RecoveryVisualAnimationTests
     public void CompleteRootsReplayBothSidesComposeAndRetainExactAuthoredCleanup(int move)
     {
         using var resources=new SourceAnimationResources(Folder);var resolved=resources.Resolve(move);
-        using var schedules=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/recovery-schedule-source-vectors.json")));
+        using var schedules=SourceVectorFixture.Read("recovery-schedule-source-vectors.json", "python tests/Reference/Recovery/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures");
         foreach(bool doubles in new[]{false,true})for(int actor=0;actor<(doubles?4:2);actor++)
         {
             int target=move==62?actor^1:actor;var battlers=Battlers(doubles);var assets=resolved.Assets.ToDictionary(p=>p.Key,p=>p.Value);assets["background"]=new(240,112,Enumerable.Repeat((ushort)0x8842,240*112).ToArray());assets.TryAdd("impact",new(32,32,new ushort[1024]));foreach(var b in battlers)assets[b.Asset]=new(64,64,Enumerable.Repeat((ushort)0x83e0,4096).ToArray());
@@ -72,7 +72,7 @@ public sealed class RecoveryVisualAnimationTests
     [TestMethod]
     public void IndependentIndexedMaterialsAndEveryAdmittedTileFlipRenderMatchSourcePixels()
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/recovery-material-source-vectors.json")));using var resources=new SourceAnimationResources(Folder);int cases=0;
+        using var doc=SourceVectorFixture.Read("recovery-material-source-vectors.json", "python tests/Reference/Recovery/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures");using var resources=new SourceAnimationResources(Folder);int cases=0;
         foreach(var source in doc.RootElement.GetProperty("sprites").EnumerateArray())
         {
             string id=source.GetProperty("id").GetString()!;int move=id=="letter-z"?156:id=="green-star"?234:id=="rainbow-rings"?62:236;var asset=resources.Resolve(move).Assets[id];CollectionAssert.AreEqual(source.GetProperty("palette").EnumerateArray().Select(v=>(ushort)v.GetInt32()).ToArray(),asset.Palette);int w=source.GetProperty("frameSize")[0].GetInt32(),h=source.GetProperty("frameSize")[1].GetInt32();var composer=new SourceBattleFrameComposer(new Dictionary<string,SourcePixelAsset>{{id,asset},{"background",new(240,112,new ushort[240*112])},{"impact",new(32,32,new ushort[1024])}},[]);

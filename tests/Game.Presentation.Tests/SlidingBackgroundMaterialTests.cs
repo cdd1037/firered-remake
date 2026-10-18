@@ -8,7 +8,7 @@ public sealed class SlidingBackgroundMaterialTests
     public void SlidingMaterialsMatchSourceMapFlipPaletteAndSmallMapWrapVectors()
     {
         using var catalog=new SourceAnimationBackgroundCatalog(Path.Combine(TestAssets.Root,"content/generated/battle/animations/backgrounds"));
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/sliding-background-pixels.json")));
+        using var vectors=SourceVectorFixture.Read("sliding-background-pixels.json", "python tests/Game.Presentation.Tests/Reference/generate_sliding_background_pixels.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/sliding-background-pixels.json");
         foreach(var row in vectors.RootElement.EnumerateArray())
         {
             var surface=catalog.CreateSurface(0);surface.Apply(catalog.Move(row.GetProperty("id").GetInt32()));

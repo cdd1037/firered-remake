@@ -20,7 +20,7 @@ public sealed class NeedleSpriteAnimationTests
     [TestMethod]
     public void IntegerBiosAnglesMatchAllSignedQuadrantsZeroNarrowingAndNegativeRoundingVectors()
     {
-        var rows=File.ReadAllLines(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/bios-angle-vectors.csv"));Assert.AreEqual(61,rows.Length);
+        var rows=File.ReadAllLines(TestAssets.GeneratedFile("tests/Game.Presentation.Tests/Fixtures/bios-angle-vectors.csv", "python tests/Game.Presentation.Tests/Reference/check_bios_angle_vectors.py --output tests/Game.Presentation.Tests/Fixtures/bios-angle-vectors.csv"));Assert.AreEqual(61,rows.Length);
         foreach(string row in rows.Skip(1))
         {
             var v=row.Split(',');int rawX=int.Parse(v[0],CultureInfo.InvariantCulture),rawY=int.Parse(v[1],CultureInfo.InvariantCulture);
@@ -35,7 +35,7 @@ public sealed class NeedleSpriteAnimationTests
     [TestMethod][DataRow(0)][DataRow(1)][DataRow(2)][DataRow(3)]
     public void StingerMatchesExtractedCallbacksIncludingAllyMirroringAndU16NumeratorWrap(int actor)
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/needle-sprite-original-vectors.json")));
+        using var doc=SourceVectorFixture.Read("needle-sprite-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_needle_sprite_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/needle-sprite-original-vectors.json");
         var configs=doc.RootElement.GetProperty("configs").EnumerateArray().ToArray();Assert.AreEqual(13,configs.Length);
         foreach(int target in new[]{actor^1,actor^2})for(int config=0;config<configs.Length;config++)
         {

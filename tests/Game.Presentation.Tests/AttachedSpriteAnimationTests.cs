@@ -10,7 +10,7 @@ public sealed class AttachedSpriteAnimationTests
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
     private static AnimationBattler[] Battlers(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/attached-physical-original-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("attached-physical-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_attached_physical_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/attached-physical-original-vectors.json");
     [TestMethod]
     [DataRow("EyeSparkle",0)][DataRow("EyeSparkle",1)][DataRow("EyeSparkle",2)][DataRow("EyeSparkle",3)]
     [DataRow("AngerMark",0)][DataRow("AngerMark",1)][DataRow("AngerMark",2)][DataRow("AngerMark",3)]

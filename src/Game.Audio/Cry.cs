@@ -77,12 +77,12 @@ public static class SourceHighPitchCry
 
 }
 
-// Only the source modes used by Howl, Growl and Hyper Voice are admitted.
+// Source modes used by Howl, Growl, Roar and Hyper Voice.
 // Reverse modes select the original alternate tone table, not another sample.
 public static class SourceAnimationCryPreset
 {
-    public const int EchoStart = 4, EchoEnd = 6, Growl1 = 9, Growl2 = 10;
-    public static bool IsSupported(int mode) => mode is SourceHighPitchCry.Mode or EchoStart or EchoEnd or Growl1 or Growl2;
+    public const int EchoStart = 4, EchoEnd = 6, Roar1 = 7, Roar2 = 8, Growl1 = 9, Growl2 = 10;
+    public static bool IsSupported(int mode) => mode is SourceHighPitchCry.Mode or EchoStart or EchoEnd or Roar1 or Roar2 or Growl1 or Growl2;
     public static bool UsesReverse(int mode)
     {
         if (!IsSupported(mode)) throw new NotSupportedException("Unsupported animation cry mode");
@@ -99,6 +99,8 @@ public static class SourceAnimationCryPreset
                 Pitch: SourceHighPitchCry.Pitch, Chorus: SourceHighPitchCry.Chorus, Volume: SourceHighPitchCry.Volume),
             EchoStart => (Length: 25, Release: 100, Pitch: 15600, Chorus: 192, Volume: 90),
             EchoEnd => (Length: 140, Release: 220, Pitch: 15555, Chorus: 192, Volume: 90),
+            Roar1 => (Length: 10, Release: 100, Pitch: 14848, Chorus: 0, Volume: 120),
+            Roar2 => (Length: 60, Release: 225, Pitch: 15616, Chorus: 0, Volume: 120),
             Growl1 => (Length: 15, Release: 125, Pitch: 15200, Chorus: 0, Volume: 120),
             Growl2 => (Length: 100, Release: 225, Pitch: 15200, Chorus: 0, Volume: 120),
             _ => throw new NotSupportedException("Unsupported animation cry mode")

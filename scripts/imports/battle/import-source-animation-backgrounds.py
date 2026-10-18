@@ -14,7 +14,7 @@ import subprocess
 from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-MOVE_BACKGROUNDS = ('BG_NONE', 'BG_DARK', 'BG_PSYCHIC', 'BG_DRILL', 'BG_HIGHSPEED_PLAYER', 'BG_HIGHSPEED_OPPONENT', 'BG_THUNDER', 'BG_SKY', 'BG_COSMIC', 'BG_IMPACT_OPPONENT', 'BG_IMPACT_PLAYER', 'BG_ICE', 'BG_IN_AIR', 'BG_AURORA')
+MOVE_BACKGROUNDS = ('BG_NONE', 'BG_DARK', 'BG_PSYCHIC', 'BG_DRILL', 'BG_HIGHSPEED_PLAYER', 'BG_HIGHSPEED_OPPONENT', 'BG_THUNDER', 'BG_SKY', 'BG_COSMIC', 'BG_IMPACT_OPPONENT', 'BG_IMPACT_PLAYER', 'BG_ICE', 'BG_IN_AIR', 'BG_AURORA', 'BG_GHOST')
 
 
 def read(reference, path):
@@ -185,6 +185,10 @@ def build(reference):
         overlay(identity, declarations['gBattleAnim_ScaryFaceGfx'].replace('.4bpp.lz', '.png'), declarations[map_symbol].removesuffix('.lz'), None, True)
     overlay('fog', 'graphics/weather/fog_horizontal.png', declarations['gBattleAnimFogTilemap'].removesuffix('.lz'), 'graphics/weather/default.pal', False)
     overlay('sandstorm', 'graphics/battle_anims/backgrounds/sandstorm_brew.png', 'graphics/battle_anims/backgrounds/sandstorm_brew.bin', None, True, palette_png='graphics/battle_anims/sprites/flying_dirt.png')
+    for symbol,suffix in [('Gfx','4bpp.lz'),('Pal','gbapal.lz'),('Tilemap','bin.lz')]:
+        if declarations['gBattleAnimBg_Attract'+symbol] != 'graphics/battle_anims/backgrounds/attract.'+suffix:
+            raise ValueError('Attract source overlay material path differs')
+    overlay('attract', declarations['gBattleAnimBg_AttractGfx'].replace('.4bpp.lz', '.png'), declarations['gBattleAnimBg_AttractTilemap'].removesuffix('.lz'), None, True)
     overlay('morning-sun', 'graphics/battle_anims/masks/light_beam.png', 'graphics/battle_anims/masks/light_beam.bin', None, True)
     base_palette = b''.join(palette(read(reference, 'graphics/battle_interface/textbox' + str(i) + '.pal')) for i in (1, 2))
     if len(base_palette) != 64:

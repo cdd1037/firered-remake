@@ -21,8 +21,7 @@ public sealed class ClawSourceVectorTests
     }
     private static string Folder => Path.Combine(TestAssets.Root, "content/generated/battle/animations");
     private static SourceAnimationScript Script(int move)=>AnimationCompositionFixture.Script(move);
-    private static JsonDocument Vectors() => JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
-        "tests/Game.Presentation.Tests/Fixtures/claw-shake-source-vectors.json")));
+    private static JsonDocument Vectors() => SourceVectorFixture.Read("claw-shake-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_claw_shake_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/claw-shake-source-vectors.json");
     private static int[] Numbers(JsonElement values) => values.EnumerateArray().Select(v => v.GetInt32()).ToArray();
     private static AnimationBattler[] Battlers(bool sourceProjectionCenters = false) => Enumerable.Range(0, 4)
         .Select(i => new AnimationBattler(new(i), "b" + i, 0, 0, 64, 64) {

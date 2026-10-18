@@ -15,7 +15,7 @@ public sealed class OverlayAnimationTests
     [TestMethod]
     public void EveryReachableOverlayTaskTickMatchesExtractedSourceRegistersAndCleanup()
     {
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/overlay-task-source-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("overlay-task-source-vectors.json", "python tests/Reference/Bg1Overlay/overlay/generate.py content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/overlay-task-source-vectors.json");
         int checkedCases=0;
         foreach(var entry in vectors.RootElement.GetProperty("cases").EnumerateArray())
         {
@@ -43,7 +43,7 @@ public sealed class OverlayAnimationTests
             }
             for(int i=0;runtime.Active&&i<5;i++)runtime.Tick();Assert.IsFalse(runtime.Active);Assert.IsFalse(runtime.HasResidualSprites);checkedCases++;
         }
-        Assert.AreEqual(48,checkedCases);
+        Assert.AreEqual(vectors.RootElement.GetProperty("profile").GetString()=="full"?48:6,checkedCases);
     }
     [TestMethod][DataRow(114)][DataRow(137)][DataRow(184)][DataRow(296)]
     public void CompleteRootsRenderBothSidesReplayAndDrainAllSourceResources(int move)
@@ -110,5 +110,17 @@ public sealed class OverlayAnimationTests
         }
         var unused=scary with{Subroutines=new Dictionary<string,SourceAnimationCommand[]>{{"unused",[new("monbg",["ANIM_TARGET"],1),new("return",[],2)]}}};
         var accepted=new SourceBattleAnimation(unused,Cue(184),Battlers(),true,new Audio());accepted.Cancel();
+    }
+
+    [TestMethod]
+    public void SourceProfileRetainsExplicitSemanticAndBoundaryCases()
+    {
+        using var vectors=SourceVectorFixture.Read("overlay-task-source-vectors.json", "python tests/Reference/Bg1Overlay/overlay/generate.py content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/overlay-task-source-vectors.json");
+        Assert.IsTrue(vectors.RootElement.GetProperty("profile").GetString() is "representative" or "full");
+        var cases=vectors.RootElement.GetProperty("cases").EnumerateArray().ToArray();
+        CollectionAssert.AreEquivalent(new[]{"scary-face","haze-scrolling-fog","mist-ball-fog","scary-face-cleanup-edge","haze-scrolling-fog-cleanup-edge","mist-ball-fog-cleanup-edge"},cases.Select(c=>c.GetProperty("name").GetString()!).Distinct().ToArray());
+        Assert.IsTrue(cases.Any(c=>c.GetProperty("contest").GetBoolean()));
+        foreach(string name in new[]{"scary-face","haze-scrolling-fog","mist-ball-fog"})
+            CollectionAssert.AreEquivalent(new[]{0,1},cases.Where(c=>c.GetProperty("name").GetString()==name&&!c.GetProperty("contest").GetBoolean()).Select(c=>c.GetProperty("target").GetInt32()&1).Distinct().ToArray());
     }
 }

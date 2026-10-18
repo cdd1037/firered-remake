@@ -193,7 +193,7 @@ public sealed class RecoveryAnimationKernelTests
             bodies[0] = caller with { Pokemon = caller.Pokemon with { CurrentHp = 1 } };
             var result = Kernel.Direct(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Move(id)));
-            Assert.IsTrue(result.Events.OfType<SourceRecoveredEvent>().Any(e => e.Move == Move(id))); Deny(result.Events, single);
+            Assert.IsTrue(result.Events.OfType<SourceRecoveredEvent>().Any(e => e.Move == Move(id))); CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
         }
     }
 }

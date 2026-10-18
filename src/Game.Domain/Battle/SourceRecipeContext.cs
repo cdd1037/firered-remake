@@ -39,7 +39,7 @@ internal abstract partial class SourceRecipeContext : SourceStatRecipeContext
     internal abstract bool CalledSureHit(BattlerSlot actor, BattlerSlot target);
     internal abstract bool BillUnderground(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move);
     internal abstract void SpendEarlyPartyPp(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move);
-    internal abstract int SourceGenericApplyDamage(BattlerSlot actor, BattlerSlot target, MoveId move, int damage, bool critical, int percent);
+    internal abstract int SourceGenericApplyDamage(BattlerSlot actor, BattlerSlot target, MoveId move, int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null);
     internal abstract bool Route11WaterAbsorb(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move);
     internal abstract bool SsAnneFlashFire(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move);
     internal abstract bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move);

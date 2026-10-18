@@ -14,7 +14,7 @@ def build(reference):
  ids={n:int(i) for n,i in re.findall(r'^#define MOVE_(\w+)\s+(\d+)\s*$',elemental.read(reference,'include/constants/moves.h').decode(),re.M)}
  backgrounds={n:int(i) for n,i in re.findall(r'^#define (BG_\w+)\s+(\d+)\s*$',elemental.read(reference,'include/constants/battle_anim.h').decode(),re.M)}
  tag_source=elemental.read(reference,'include/constants/battle_anim.h').decode();tag_start=int(re.search(r'^#define ANIM_SPRITES_START\s+(\d+)\b',tag_source,re.M)[1]);tags={name:tag_start+int(offset) for name,offset in re.findall(r'^#define (ANIM_TAG_\w+)\s+\(ANIM_SPRITES_START\s*\+\s*(\d+)\)',tag_source,re.M)}
- ops=elemental.hit.OPS|BACKGROUND_OPS|{'call','return','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes','createsoundtask','waitsound','jumpifcontest','goto','jumpargeq','jumprettrue','jumpretfalse'}
+ ops=elemental.hit.OPS|BACKGROUND_OPS|{'call','return','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes','createsoundtask','waitsound','jumpifcontest','goto','jumpargeq','jumprettrue','jumpretfalse','visible','invisible'}
  def commands(label,end):
   def block(start):
    match=re.search(r'^'+re.escape(start)+r':\n',source,re.M)
@@ -61,12 +61,15 @@ def build(reference):
   used={c['args'][-1] for c in rows if c['op'] in {'goto','jumpargeq'}}
   return rows,{name:labels[name] for name in sorted(used)}
  sprites=set(elemental.TEMPLATES)|elemental.SHARED_SPRITES|physical.SPRITES|{'gAirWaveCrescentSpriteTemplate'}
- tasks=elemental.TASKS|physical.TASKS|{'AnimTask_SetPsychicBackground','AnimTask_StartSlidingBg','AnimTask_ShakeTargetInPattern','AnimTask_BlendNonAttackerPalettes','SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning','AnimTask_GetAttackerSide'}
+ tasks=elemental.TASKS|physical.TASKS|{'AnimTask_FadeScreenToWhite','AnimTask_SetPsychicBackground','AnimTask_StartSlidingBg','AnimTask_ShakeTargetInPattern','AnimTask_BlendNonAttackerPalettes','SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning','AnimTask_GetAttackerSide'}
  sounds=elemental.SOUNDS|{'SE_M_LEER','SE_M_VITAL_THROW','SE_M_COSMIC_POWER','SE_M_JUMP_KICK','SE_M_RAZOR_WIND','SE_M_BLIZZARD','SE_M_BLIZZARD2'}
  gfx=elemental.GFX|{'ANIM_TAG_FANG_ATTACK','ANIM_TAG_IMPACT','ANIM_TAG_AIR_WAVE_2'}
+ # The elemental producer owns its complete programs and their task/material metadata.
+ # Sharing its callbacks must not publish those roots a second time.
+ elemental_roots={row['moveId'] for row in elemental.discover_scripts(reference)[0]}
  scripts=[];subs={};symbols={};task_affine_programs={}
  for name in re.findall(r'^Move_(\w+):\n',source,re.M):
-  if name not in ids:continue
+  if name not in ids or ids[name] in elemental_roots:continue
   try:
    root,root_labels=commands('Move_'+name,'end');programs={label:commands(label,'return') for label in dict.fromkeys(c['args'][0] for c in root if c['op']=='call')};local={name:p[0] for name,p in programs.items()}
    if any(p[1] for p in programs.values()):raise ValueError('Subroutine branches await shared metadata binding')
@@ -75,9 +78,19 @@ def build(reference):
   flat=root+[c for sub in local.values() for c in sub]
   if not any(c['op']=='fadetobg' for c in flat):continue
   if any(c['op']=='fadetobg' and (len(c['args'])!=1 or c['args'][0] not in BACKGROUND_SYMBOLS) or c['op'] in BACKGROUND_OPS-{'fadetobg','setarg'} and c['args'] or c['op']=='createsprite' and c['args'][0] not in sprites or c['op']=='createvisualtask' and c['args'][0] not in tasks or c['op']=='loadspritegfx' and c['args'][0] not in gfx or c['op'] in {'playsewithpan','loopsewithpan','panse','waitplaysewithpan'} and c['args'][0] not in sounds for c in flat):continue
+  if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_ImprisonOrbs' for c in flat) and 'sImprisonOrbSpriteTemplate' not in sprites:continue
   if any(c['op']=='createsoundtask' and (c['args'][0]!='SoundTask_LoopSEAdjustPanning' or c['args'][1] not in sounds) for c in flat):continue
+  elemental.visibility_contracts(reference,flat)
   row=dict(moveId=ids[name],label='Move_'+name,commands=root,soundEffects=elemental.sound_effects(reference,flat),spriteTags={n:tags[n] for n in sorted({c['args'][0] for c in flat if c['op']=='loadspritegfx'})})
+  if any(c['op']=='createsprite' and c['args'][0]=='gPsychoBoostOrbSpriteTemplate' for c in flat):
+   psychic=elemental.read(reference,'src/battle_anim_psychic.c').decode()
+   body=re.search(r'static void AnimPsychoBoost\(struct Sprite \*sprite\)\s*\{(.*?)^\}',psychic,re.S|re.M)
+   cues=re.findall(r'PlaySE12WithPanning\((SE_\w+), BattleAnimAdjustPanning\(-64\)\);',body[1]) if body else []
+   if cues!=['SE_M_TELEPORT'] or 'ChangeSpriteAffineAnim(sprite, 1);' not in body[1]:raise ValueError('Psycho Boost callback sound or retained affine handoff differs')
+   row['soundEffects'].update(elemental.sound_effects(reference,[dict(op='playsewithpan',args=['SE_M_TELEPORT','SOUND_PAN_ATTACKER'])]))
   if root_labels:row['labels']=root_labels
+  children=elemental.imprison_dependencies(reference,flat)
+  if children:row['spriteDependencies']=children
   if any(c['op']=='createvisualtask' and c['args'][0]=='AnimTask_MeditateStretchAttacker' for c in flat):
    program_name='sAffineAnim_MeditateStretchAttacker'
    psychic=elemental.read(reference,'src/battle_anim_psychic.c').decode()

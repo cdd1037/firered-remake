@@ -21,23 +21,30 @@ public partial class CampaignView
     private BattleArt SingleBattleArt(CampaignWildBattle battle,WildBattleSide side,PokemonInstance identity)
     {
         var appearance=FuchsiaBattleAppearance(battle,side,identity);string face=side==WildBattleSide.Player?"back":"front";
-        if(!BattleForms.HasForms(appearance.Species))return _battleArt[(appearance.Species,face,appearance.Shiny)];
-        var body=SingleDisplayedBody(battle,side)??throw new InvalidDataException("Source form display body is missing.");
+        var displayedBody=SingleDisplayedBody(battle,side);
+        if(!BattleForms.HasForms(appearance.Species)&&displayedBody?.Transform is null)return _battleArt[(appearance.Species,face,appearance.Shiny)];
+        var body=displayedBody??throw new InvalidDataException("Source form display body is missing.");
         return FormBattleArt(body,new((int)side));
     }
 
     private BattleArt DoubleBattleArt(WildBattleCombatant body,int slot)
     {
         var appearance=body.Transform?.CopiedPokemon??body.Pokemon;int species=PresentedRenderSpecies(appearance);
-        if(!BattleForms.HasForms(species))return _battleArt[(species,(slot&1)==0?"back":"front",appearance.IsShiny)];
+        if(!BattleForms.HasForms(species)&&body.Transform is null)return _battleArt[(species,(slot&1)==0?"back":"front",appearance.IsShiny)];
         return FormBattleArt(body,new(slot));
     }
 
     private SourceBattlerFormMaterial FormBattleMaterial(WildBattleCombatant body,AnimationSlot slot)
     {
         var appearance=CampaignBattleFormAppearance.From(body);
-        return BattleForms.Resolve(PresentedRenderSpecies(appearance.RenderPokemon),slot,(int)appearance.Form,
-            appearance.Shiny,appearance.Transformed);
+        int species=PresentedRenderSpecies(appearance.RenderPokemon);string face=slot.IsPlayer?"back":"front";
+        if(BattleForms.HasForms(species))return BattleForms.Resolve(species,slot,(int)appearance.Form,appearance.Shiny,appearance.Transformed);
+        EnsureSourceMoveAssets();
+        var geometry=_sourceBattlerGeometry[(species,face)] with{Slot=slot};
+        var pixels=appearance.Transformed&&BattleForms.TryBaseFrame(species,face,appearance.Shiny,out var baseFrame)
+            ?baseFrame:SourcePixels(_battleArt[(species,face,appearance.Shiny)].Texture,64,64);
+        if(appearance.Transformed)pixels=SourceBattleFormCatalog.TransformPixels(pixels);
+        return new(geometry,pixels);
     }
 
     private BattleArt FormBattleArt(WildBattleCombatant body,AnimationSlot slot)

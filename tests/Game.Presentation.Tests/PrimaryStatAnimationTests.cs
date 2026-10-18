@@ -12,7 +12,7 @@ public sealed class PrimaryStatAnimationTests
     private sealed class Audio:ISourceAnimationAudio
     {public readonly List<SourceAnimationSound> Cues=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound cue)=>Cues.Add(cue);public void StopAnimationEffects(){}}
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/primary-stat-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("primary-stat-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_primary_stat_vectors.py --repo . --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/primary-stat-source-vectors.json");
     private static SourceAnimationCommand C(string op,params string[] args)=>new(op,args,1);
     private static int[] Numbers(JsonElement row)=>row.EnumerateArray().Select(v=>v.GetInt32()).ToArray();
     private static object? Field(object value,string name)=>value.GetType().GetField(name,Instance)!.GetValue(value);

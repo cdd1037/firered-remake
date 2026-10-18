@@ -12,7 +12,7 @@ public sealed class RockFragmentAnimationTests
     public void OriginalCFragmentsAndPackedTranslationPreserveSignedArithmeticAndHandoffs(bool genericMigration)
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
-        using var document=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/rock-fragment-source-vectors.json")));
+        using var document=SourceVectorFixture.Read("rock-fragment-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_rock_fragment_vectors.py --reference content/raw/pokefirered/037335f4 --helper tests/Reference/reference_c.py --output tests/Game.Presentation.Tests/Fixtures/rock-fragment-source-vectors.json");
         var root=document.RootElement;int count=0;
         foreach(var item in root.GetProperty("cases").EnumerateObject())
         {

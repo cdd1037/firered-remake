@@ -11,7 +11,7 @@ public sealed class MusicAnimationTests
     [TestMethod]
     public void OriginalCMusicTrajectoriesPreserveSignedAccumulationPaletteCyclingAndHandHandoff()
     {
-        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/music-trajectory-source-vectors.json")));int count=0;
+        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));using var json=SourceVectorFixture.Read("music-trajectory-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_music_trajectory_vectors.py --reference content/raw/pokefirered/037335f4 --helper tests/Reference/reference_c.py --output tests/Game.Presentation.Tests/Fixtures/music-trajectory-source-vectors.json");int count=0;
         string[] tags=["ANIM_TAG_MUSIC_NOTES","ANIM_TAG_BENT_SPOON","ANIM_TAG_SPHERE_TO_CUBE","ANIM_TAG_LARGE_FRESH_EGG"];
         foreach(var entry in json.RootElement.GetProperty("cases").EnumerateObject())
         {
@@ -50,7 +50,7 @@ public sealed class MusicAnimationTests
         var script=source with{Commands=[C("loadspritegfx","ANIM_TAG_MUSIC_NOTES"),C("createvisualtask","AnimTask_MusicNotesRainbowBlend","2"),C("createsprite","gWavyMusicNotesSpriteTemplate","ANIM_TARGET","2","0","0","32767"),C("waitforvisualfinish"),C("end")],Labels=new Dictionary<string,int>()};
         var runtime=new SourceBattleAnimation(script,new("music-wrap",1,47,new(0),new(1)),Battlers(true),true,new Audio());SourceAnimationFrame frame;do{frame=runtime.Tick();}while(frame.Sprites.Length==0);
         var sprites=(System.Collections.IEnumerable)typeof(SourceBattleAnimation).GetField("_sprites",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(runtime)!;var instance=sprites.Cast<object>().Single();var counter=instance.GetType().GetField("_blendTimer",BindingFlags.NonPublic|BindingFlags.Instance)!;counter.SetValue(instance,32767);
-        using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/music-trajectory-source-vectors.json")));
+        using var json=SourceVectorFixture.Read("music-trajectory-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_music_trajectory_vectors.py --reference content/raw/pokefirered/037335f4 --helper tests/Reference/reference_c.py --output tests/Game.Presentation.Tests/Fixtures/music-trajectory-source-vectors.json");
         foreach(var item in json.RootElement.GetProperty("cases").GetProperty("3:0:1:0").EnumerateArray().Skip(2))
         {
             var row=item.EnumerateArray().Select(v=>v.GetInt32()).ToArray();frame=runtime.Tick();var sprite=frame.Sprites.Single();Assert.AreEqual(row[11],(int)counter.GetValue(instance)!);Assert.AreEqual(new PixelPoint(row[1],row[2]),sprite.Position);Assert.AreEqual(new PixelPoint(row[3],row[4]),sprite.Offset);Assert.AreEqual(4,sprite.PaletteSlot);

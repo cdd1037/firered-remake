@@ -1,0 +1,81 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define NUM_TASKS 16
+#define REVISION 0
+#define DISPLAY_WIDTH 240
+#define DISPLAY_HEIGHT 160
+#define SAFE_DIV(a,b) ((b)?(a)/(b):0)
+#define FREE_SPRITE_TILE(i) abort()
+#define sAnchorX data[6]
+#define sAnchorY data[7]
+@TYPES@
+@DEFINES@
+_Static_assert(sizeof(union AffineAnimCmd)==8,"ARM source command stride must be8");
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite *);typedef void (*AnimFunc)(struct Sprite *);typedef void (*AnimCmdFunc)(struct Sprite *);typedef void (*AffineAnimCmdFunc)(u8,struct Sprite *);typedef void (*TaskFunc)(u8);
+struct SpriteFrameImage {const void *data;u16 size;};
+struct SpriteTemplate {u16 tileTag,paletteTag;const struct OamData *oam;const union AnimCmd *const *anims;const struct SpriteFrameImage *images;const union AffineAnimCmd *const *affineAnims;SpriteCallback callback;};
+struct Sprite {const struct SpriteTemplate *template;bool8 invisible;struct OamData oam;const union AnimCmd *const *anims;const union AffineAnimCmd *const *affineAnims;const struct SpriteFrameImage *images;s16 x,y,x2,y2,data[8];s8 centerToCornerVecX,centerToCornerVecY;SpriteCallback callback;bool8 inUse,animBeginning,affineAnimBeginning,usingSheet,animEnded,affineAnimEnded,animPaused,affineAnimPaused,anchored,hFlip,vFlip;u8 animCmdIndex,animNum,animLoopCounter,animDelayCounter,subpriority;u16 sheetTileStart;};
+struct Task {TaskFunc func;bool8 isActive;u8 prev,next,priority;s16 data[16];};
+struct OamMatrix {s16 a,b,c,d;};struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+struct Sprite gSprites[64],destroyedSprites[64];struct Task gTasks[16];struct AffineAnimState sAffineAnimStates[32];struct OamMatrix gOamMatrices[32];
+s16 gBattleAnimArgs[8];u8 gAnimVisualTaskCount;bool8 gAffineAnimsDisabled=FALSE;
+static int frame,kind,doubles,geometry,capacity,presentMask,logicalMask,spriteMask,instanceCounter,instance[64],tracked[64],wasDestroyed[64],attempt;
+static u8 oamInvisible[4];static u8 gBattleTerrain,gBattlersCount;static int paletteCoef[32],paletteColor[32];
+static long long events[512][8];static int nEvents;
+static s16 rotScale[64][3];static u16 registers[64];static s16 bgAttributes[4][7],bgScroll[4][2];
+static void event(int k,long long a,long long b,long long c,long long d,long long e,long long f,long long g){assert(nEvents<512);long long*p=events[nEvents++];p[0]=k;p[1]=a;p[2]=b;p[3]=c;p[4]=d;p[5]=e;p[6]=f;p[7]=g;}
+static void ObjAffineSet(const struct ObjAffineSrcData*src,struct OamMatrix*dest,int count,int offset){assert(count==1&&offset==2);memset(dest,0,sizeof(*dest));if(src->rotation==0){dest->a=src->xScale;dest->d=src->yScale;}}
+static void UpdateSpriteMatrixAnchorPos(struct Sprite*s,s32 x,s32 y){abort();}
+static void RequestSpriteFrameImageCopy(u16 image,u16 tile,const void*images){abort();}
+static void FreeOamMatrix(u8 matrix){event(6,matrix,0,0,0,0,0,0);}
+static void DestroySprite(struct Sprite*s);
+u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerPositions[4]={0,1,2,3},gBattlerSpriteIds[4]={0,1,2,3};u32 gBattleTypeFlags;
+static bool8 IsContest(void){return FALSE;}static bool8 IsDoubleBattle(void){return doubles;}
+u8 GetBattlerSpriteSubpriority(u8 id);u8 GetBattlerSpriteCoord(u8 id,u8 coord);u8 GetBattlerSpriteCoord2(u8 id,u8 coord);
+struct UCoords8 {u8 x,y;};
+struct HealthBoxData {bool8 statusAnimActive;u8 matrixNum;};struct BattlerData {bool8 invisible;};struct BattleSpritesData {struct HealthBoxData healthBoxesData[4];struct BattlerData battlerData[4];};static struct BattleSpritesData battleSprites;static struct BattleSpritesData*gBattleSpritesDataPtr=&battleSprites;
+struct MonCoords {u8 size,y_offset;};static struct MonCoords explicitCoords[4];
+#define GET_MON_COORDS_WIDTH(size) (((size)>>4)*8)
+#define GET_MON_COORDS_HEIGHT(size) (((size)&15)*8)
+static u8 GetBattlerYDelta(u8 id,u16 species){return explicitCoords[id].y_offset;}
+static u8 GetBattlerElevation(u8 id,u16 species){return 0;}
+static void SetGpuReg(u8 offset,u16 value){registers[offset/2]=value;event(1,offset,value,0,0,0,0,0);}
+static void DestroyAnimVisualTask(u8 id){gTasks[id].isActive=FALSE;gAnimVisualTaskCount--;event(10,id,0,0,0,0,0,0);}
+static void DestroyTask(u8 id){gTasks[id].isActive=FALSE;event(11,id,0,0,0,0,0,0);}
+static void BlendPalette(u16 offset,u16 count,u8 coef,u16 color){assert(count==16&&offset%16==0&&offset/16<32);paletteCoef[offset/16]=coef;paletteColor[offset/16]=color;event(12,offset,count,coef,color,0,0,0);}
+struct Pokemon{u16 hp;};static struct Pokemon gPlayerParty[4],gEnemyParty[4];static u8 gBattlerPartyIndexes[4]={0,1,2,3};static u32 GetMonData(struct Pokemon*p,int field){assert(field==MON_DATA_HP);return p->hp;}
+s16 gBattle_BG1_X,gBattle_BG1_Y;
+static const u8*sBattleAnimScriptPtr;
+static uintptr_t ReadTemplatePointer(const u8*ptr);
+#define T2_READ_32(ptr) ReadTemplatePointer(ptr)
+#define T1_READ_16(ptr) ((u16)((ptr)[0]|((u16)(ptr)[1]<<8)))
+@PROTOTYPES@
+static u8 CreateSprite(const struct SpriteTemplate*,s16,s16,u8);static u8 CreateSpriteAt(u8,const struct SpriteTemplate*,s16,s16,u8);
+@ARRAYS@
+@FUNCTIONS@
+static uintptr_t ReadTemplatePointer(const u8*ptr){assert(ptr[0]==0&&ptr[1]==0&&ptr[2]==0&&ptr[3]==0);return (uintptr_t)&gThinRingShrinkingSpriteTemplate;}
+static void ScriptCreate(void){u8 code[32]={0};code[5]=40;code[6]=4;for(int i=0;i<4;i++){code[7+2*i]=(u16)gBattleAnimArgs[i]&255;code[8+2*i]=(u16)gBattleAnimArgs[i]>>8;}sBattleAnimScriptPtr=code;Cmd_createsprite();}
+static u8 CreateSpriteAt(u8 slot,const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){struct Sprite*s=&gSprites[slot];ResetSprite(s);s->template=t;s->inUse=TRUE;s->animBeginning=s->affineAnimBeginning=TRUE;s->usingSheet=TRUE;s->subpriority=priority;s->oam=*t->oam;s->anims=t->anims;s->affineAnims=t->affineAnims;s->callback=t->callback;s->x=x;s->y=y;CalcCenterToCornerVec(s,s->oam.shape,s->oam.size,s->oam.affineMode);if(s->oam.affineMode&1){s->oam.matrixNum=slot%32;AffineAnimStateReset(slot%32);}instance[slot]=++instanceCounter;wasDestroyed[slot]=0;tracked[slot]=1;return slot;}
+static u8 CreateSprite(const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){u8 slot=SourceCreateSprite(t,x,y,priority);event(3,slot,x,y,priority,++attempt,0,0);return slot;}
+static void DestroySprite(struct Sprite*s){int slot=s-gSprites;event(4,slot,s->data[0],s->data[5],0,0,0,0);if(s->inUse){destroyedSprites[slot]=*s;wasDestroyed[slot]=1;SourceDestroySprite(s);}}
+static void numbers(const s16*a,int n){for(int i=0;i<n;i++)printf("%s%d",i?",":"",a[i]);}
+static void spriteOut(int slot){struct Sprite*s=&gSprites[slot];bool8 dead=!s->inUse;if(dead&&wasDestroyed[slot])s=&destroyedSprites[slot];struct AffineAnimState*a=&sAffineAnimStates[s->oam.matrixNum];printf("{\"slot\":%d,\"alive\":%d,\"position\":[%d,%d,%d,%d],\"tile\":%u,\"visible\":%d,\"priority\":%u,\"subpriority\":%u,\"affineMode\":%u,\"objMode\":%u,\"xScale\":%d,\"yScale\":%d,\"rotation\":%u,\"animEnded\":%u,\"affineEnded\":%u,\"data\":[",slot,!dead,s->x,s->y,s->x2,s->y2,s->oam.tileNum,!s->invisible,s->oam.priority,s->subpriority,s->oam.affineMode,s->oam.objMode,a->xScale,a->yScale,a->rotation,s->animEnded,s->affineAnimEnded);numbers(s->data,8);printf("]}");}
+static void row(void){printf("{\"frame\":%d,\"taskAlive\":%u,\"visualCount\":%u,\"taskData\":[",frame,gTasks[3].isActive,gAnimVisualTaskCount);numbers(gTasks[3].data,16);printf("],\"args\":[");numbers(gBattleAnimArgs,8);printf("],\"registers\":[%u,%u],\"visibility\":[",registers[REG_OFFSET_BLDCNT/2],registers[REG_OFFSET_BLDALPHA/2]);for(int i=0;i<4;i++)printf("%s[%d,%d,%d,%d,%d]",i?",":"",IsBattlerSpritePresent(i),battleSprites.battlerData[i].invisible,gSprites[i].invisible,oamInvisible[i],IsBattlerSpriteVisible(i));printf("],\"battlers\":[");for(int i=0;i<4;i++){struct Sprite*b=&gSprites[i];printf("%s[%d,%d,%d,%d,%d]",i?",":"",b->x,b->y,b->x2,b->y2,b->oam.affineMode);}printf("],\"sprites\":[");int first=1;for(int i=4;i<64;i++)if(tracked[i]||gSprites[i].callback==MoveOdorSleuthClone||wasDestroyed[i]){if(!first)printf(",");first=0;spriteOut(i);}printf("],\"palettes\":[");for(int i=0;i<32;i++)printf("%s[%d,%d]",i?",":"",paletteCoef[i],paletteColor[i]);printf("],\"events\":[");for(int i=0;i<nEvents;i++){printf("%s[",i?",":"");for(int j=0;j<8;j++)printf("%s%lld",j?",":"",events[i][j]);printf("]");}puts("]}");nEvents=0;}
+static void setup(void){gBattlersCount=doubles?4:2;gBattleTypeFlags=doubles?BATTLE_TYPE_DOUBLE:0;for(int i=0;i<32;i++)paletteCoef[i]=-1;for(int i=0;i<64;i++)ResetSprite(&gSprites[i]);for(int i=0;i<4;i++){explicitCoords[i].size=0x88;explicitCoords[i].y_offset=i%2?4:0;gPlayerParty[i].hp=gEnemyParty[i].hp=(presentMask>>i)&1;gBattlerPositions[i]=i;battleSprites.battlerData[i].invisible=(logicalMask>>i)&1;struct Sprite*s=&gSprites[i];s->inUse=TRUE;s->usingSheet=TRUE;s->callback=SpriteCallbackDummy;s->anims=gDummySpriteAnimTable;s->affineAnims=gDummySpriteAffineAnimTable;s->animBeginning=TRUE;s->affineAnimBeginning=TRUE;s->subpriority=GetBattlerSpriteSubpriority(i);s->oam.size=3;s->oam.priority=2;s->oam.paletteNum=i;s->oam.matrixNum=i;s->data[0]=i;s->x=GetBattlerSpriteCoord(i,BATTLER_COORD_X_2);s->y=GetBattlerSpriteCoord(i,BATTLER_COORD_Y_PIC_OFFSET);s->invisible=(spriteMask>>i)&1;oamInvisible[i]=s->invisible;if(geometry){s->x=(s16)(32760-i*21840);s->y=(s16)(-32760+i*21840);s->x2=i%2?32760:-32760;s->y2=i*7-8;}battleSprites.healthBoxesData[i].matrixNum=i;AffineAnimStateReset(i);CalcCenterToCornerVec(s,0,3,0);gOamMatrices[i].a=gOamMatrices[i].d=256;}
+ for(int i=gBattlersCount;i<4;i++)gBattlerPositions[i]=255;
+ for(int i=4+capacity;i<64;i++){gSprites[i].inUse=TRUE;gSprites[i].callback=SpriteCallbackDummy;gSprites[i].usingSheet=TRUE;gSprites[i].anims=gDummySpriteAnimTable;gSprites[i].affineAnims=gDummySpriteAffineAnimTable;gSprites[i].animBeginning=gSprites[i].affineAnimBeginning=TRUE;}}
+static void commands(void){int participant=frame%4;u8 command[2]={0,participant};sBattleAnimScriptPtr=command;if(frame<4)Cmd_invisible();else Cmd_visible();}
+int main(int argc,char**argv){assert(argc==19);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);presentMask=atoi(argv[5]);logicalMask=atoi(argv[6]);spriteMask=atoi(argv[7]);gBattleTerrain=atoi(argv[8]);capacity=atoi(argv[9]);geometry=atoi(argv[10]);for(int i=0;i<8;i++)gBattleAnimArgs[i]=atoi(argv[11+i]);setup();
+ if(kind==8){for(frame=0;frame<8;frame++){commands();for(int i=0;i<4;i++)oamInvisible[i]=gSprites[i].invisible;row();}return 0;}
+ if(kind==9){PrepareBattlerSpriteForRotScale(gBattleAnimAttacker,ST_OAM_OBJ_NORMAL);for(int i=0;i<4;i++)oamInvisible[i]=gSprites[i].invisible;row();return 0;}
+ if(kind==10){ScriptCreate();row();for(frame=1;frame<100;frame++){AnimateSprites();row();if(!gAnimVisualTaskCount)break;}assert(frame<100);return 0;}
+ gTasks[3].isActive=TRUE;gAnimVisualTaskCount=1;
+ switch(kind){case 0:AnimTask_AttackerFadeToInvisible(3);break;case 1:AnimTask_AttackerFadeFromInvisible(3);break;case 2:AnimTask_InitAttackerFadeFromInvisible(3);break;case 3:AnimTask_SetAttackerInvisibleWaitForSignal(3);break;case 4:AnimTask_SetAllNonAttackersInvisiblity(3);break;case 5:AnimTask_SetCamouflageBlend(3);break;case 6:AnimTask_BlendBattleAnimPalExclude(3);break;case 7:AnimTask_OdorSleuthMovement(3);break;default:abort();}
+ row();for(frame=1;frame<5000&&gTasks[3].isActive;frame++){if(kind==3&&frame==5)gBattleAnimArgs[7]=0x1000;AnimateSprites();for(int i=0;i<4;i++)oamInvisible[i]=gSprites[i].invisible;if(gTasks[3].isActive)gTasks[3].func(3);row();}assert(frame<5000);return 0;}

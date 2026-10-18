@@ -18,7 +18,7 @@ public sealed partial class SourceBattleAnimation
         _overlay=new(materialId,0,0);
         // LoadPalette replaces the faded and unfaded source bank; it does not
         // retain a blend or inversion from the previous owner of bank eight.
-        ClearBackgroundPaletteEntries(8);_paletteBlends.Remove(8);_invertedPalettes.Remove(8);
+        ClearBackgroundPaletteEntries(8);ResetPaletteTransform(8);
     }
     private void SetOverlayScroll(int x,int y)
     {
@@ -32,12 +32,12 @@ public sealed partial class SourceBattleAnimation
     }
     private void SetAlphaBlend(int firstTargets,int secondTargets,int a,int b)
     {
-        if((firstTargets&~63)!=0||(secondTargets&~63)!=0||a is <0 or >16||b is <0 or >16)
+        if((firstTargets&~63)!=0||(secondTargets&~63)!=0||a is <0 or >31||b is <0 or >31)
             throw new InvalidDataException("Source alpha blend registers differ.");
-        _blendFirstTargets=firstTargets;_blendSecondTargets=secondTargets;_alphaA=a;_alphaB=b;_blendEnabled=true;
+        _brightness=null;_blendFirstTargets=firstTargets;_blendSecondTargets=secondTargets;_alphaA=a;_alphaB=b;_blendEnabled=true;
     }
     private void ClearAlphaBlend()
-    {_blendEnabled=false;_blendFirstTargets=0;_blendSecondTargets=63;_alphaA=_alphaB=0;}
+    {_brightness=null;_blendEnabled=false;_blendFirstTargets=0;_blendSecondTargets=63;_alphaA=_alphaB=0;}
 
     private int? _moveBackground;
     private ushort BackgroundScrollX {get;set;}
@@ -61,7 +61,7 @@ public sealed partial class SourceBattleAnimation
             if(command.Args.Length!=2||(Number(command.Args[0])<0||Number(command.Args[0])>=AnimationRegisterCount)||AnimationArgument(command.Args[1]) is < -32768 or >65535)Fail(command,"Shared animation argument exceeds source width.");
             return true;
         }
-        if(command.Op=="createvisualtask"&&command.Args.FirstOrDefault()=="AnimTask_SetPsychicBackground")
+        if(command.Op=="createvisualtask"&&command.Args.FirstOrDefault() is "AnimTask_SetPsychicBackground" or "AnimTask_FadeScreenToWhite")
         {
             if(command.Args.Length!=2||Number(command.Args[1]) is <0 or >255||_script.BackgroundPalettes.Count==0||_initialBackgroundPalette is null)Fail(command,"Psychic palette task lacks source colors or priority.");
             return true;
@@ -80,6 +80,7 @@ public sealed partial class SourceBattleAnimation
         if(value=="TRUE")return 1;if(value=="FALSE")return 0;
         if(value=="MAX_BATTLERS_COUNT")return 4;
         if(value=="(MAX_BATTLERS_COUNT + 1)")return 5;
+        if(value=="DOUBLE_CRY_ROAR")return 2; // include/constants/sound.h
         if(value=="DOUBLE_CRY_GROWL")return 255; // include/constants/sound.h
         if(_script.SpriteTags.TryGetValue(value,out int tag))return tag;
         if(_script.SoundEffects.TryGetValue(value,out int song))return song;
@@ -97,7 +98,7 @@ public sealed partial class SourceBattleAnimation
     private void LoadBackgroundPalette(int? id)
     {
         int lastBank=id is null?4:2;
-        for(int bank=2;bank<=lastBank;bank++){ClearBackgroundPaletteEntries(bank);_paletteBlends.Remove(bank);_invertedPalettes.Remove(bank);}
+        for(int bank=2;bank<=lastBank;bank++){ClearBackgroundPaletteEntries(bank);ResetPaletteTransform(bank);}
         if(id is {} selected&&_script.BackgroundPalettes.TryGetValue(selected,out var colors))
         {
             if(colors.Length!=16)throw new InvalidDataException("Move background needs one source palette bank.");
@@ -112,9 +113,11 @@ public sealed partial class SourceBattleAnimation
         if(_unfadedBackgroundPalette is null)return;
         for(int i=0;i<16;i++)_fadedBackgroundPalette![i]=SourcePaletteMath.Blend(_unfadedBackgroundPalette[i],coefficient,color);
     }
-    private sealed class PsychicBackgroundTask:VisualTask
+    private sealed class PsychicBackgroundTask(bool rotateUnfaded=false):VisualTask
     {
         private int _counter;
+        private static void Rotate(ushort[] palette)
+        {ushort last=palette[11];for(int i=10;i>0;i--)palette[i+1]=palette[i];palette[1]=last;}
         public override bool Counted=>false;
         public override void Step(SourceBattleAnimation owner)
         {
@@ -123,7 +126,8 @@ public sealed partial class SourceBattleAnimation
             {
                 _counter=0;
                 if(owner._fadedBackgroundPalette is {} palette)
-                {ushort last=palette[11];for(int i=10;i>0;i--)palette[i+1]=palette[i];palette[1]=last;owner.ClearBackgroundPaletteEntries(2);}
+                {Rotate(palette);owner.ClearBackgroundPaletteEntries(2);}
+                if(rotateUnfaded&&owner._unfadedBackgroundPalette is {} unfaded)Rotate(unfaded);
             }
             if(unchecked((ushort)owner._animationArgs[7])==65535)Finished=true;
         }

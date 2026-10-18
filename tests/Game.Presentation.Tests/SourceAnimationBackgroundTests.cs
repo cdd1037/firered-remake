@@ -10,8 +10,7 @@ namespace FireRed.Tests.Presentation;
 public sealed class SourceAnimationBackgroundTests
 {
     private static string Folder => Path.Combine(TestAssets.Root, "content/generated/battle/animations/backgrounds");
-    private static JsonDocument Vectors() => JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
-        "tests/Game.Presentation.Tests/Fixtures/source-background-vectors.json")));
+    private static JsonDocument Vectors() => SourceVectorFixture.Read("source-background-vectors.json", "python tests/Reference/generate_background_vectors.py content/raw/pokefirered/037335f4 tests/Game.Presentation.Tests/Fixtures/source-background-vectors.json");
     private static string Hash(ushort[] pixels)
     {
         var bytes = new byte[pixels.Length * 2];

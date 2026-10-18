@@ -3,7 +3,21 @@ import sys as _reference_sys
 _reference_sys.path.insert(0, str(next(p for p in _ReferencePath(__file__).resolve().parents if (p / 'Reference/reference_c.py').is_file()) / 'Reference'))
 from reference_c import compile_c, verify_reference
 import hashlib, json, pathlib, subprocess, sys
-root=pathlib.Path(sys.argv[1]); out=pathlib.Path(sys.argv[2]); out.mkdir(parents=True,exist_ok=True)
+import atexit
+import tempfile
+fixtures_only = "--fixtures-only" in sys.argv
+arguments = [argument for argument in sys.argv[1:] if argument != "--fixtures-only"]
+if len(arguments) != 2:
+    raise SystemExit("Usage: source_probe.py PINNED_REFERENCE OUTPUT_DIRECTORY [--fixtures-only]")
+root, fixture_output = (pathlib.Path(argument).resolve() for argument in arguments)
+fixture_output.mkdir(parents=True, exist_ok=True)
+if fixtures_only:
+    temporary_build = tempfile.TemporaryDirectory(prefix="firered-turns-reference-")
+    atexit.register(temporary_build.cleanup)
+    out = pathlib.Path(temporary_build.name)
+else:
+    out = fixture_output
+
 path=root/'src/battle_main.c'; text=path.read_text()
 verify_reference(root)
 
@@ -99,3 +113,12 @@ compile_c(['cc','-std=c99','-O2','-Wall','-Wextra','-Wno-unused-parameter',str(o
 weather_result=subprocess.check_output([str(out/'source-absent-weather-oracle')],text=True)
 (out/'source-absent-weather-vector.csv').write_text(weather_result)
 print('original C absent Cloud Nine vector',weather_result.strip())
+
+# Only independent numeric output is published in fixture preparation mode.
+if fixtures_only:
+    for name in ['source-order-vectors.csv', 'source-absent-weather-vector.csv']:
+        target = fixture_output / name
+        candidate = (out / name).read_bytes()
+        if target.exists() and target.read_bytes() != candidate:
+            raise SystemExit("Existing reference differs; review a new candidate directory: " + str(target))
+        target.write_bytes(candidate)

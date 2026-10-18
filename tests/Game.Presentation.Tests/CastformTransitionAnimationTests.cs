@@ -15,7 +15,7 @@ public sealed class CastformTransitionAnimationTests
     [TestMethod]
     public void TaskRegisterWritesAndSwapMatchExtractedOriginalCallbackOrdinals()
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/castform-transition-vectors.json")));
+        using var doc=SourceVectorFixture.Read("castform-transition-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_castform_transition_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/castform-transition-vectors.json");
         for(int slot=0;slot<4;slot++)
         {
             var before=Battlers();var after=before[slot] with{Asset="after",YOffset=9,Elevation=14,SourceWidth=48,SourceHeight=48};
@@ -73,11 +73,11 @@ public sealed class CastformTransitionAnimationTests
     {
         using var resources=new SourceAnimationResources(Folder);var source=resources.ResolveGeneral(Label).Script;var battlers=Battlers();
         Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(source,Cue(0),battlers,true,new Audio()));
-        var rows=source.Commands.ToArray();int index=Array.FindIndex(rows,c=>c.Args.FirstOrDefault()=="AnimTask_TransformMon");rows[index]=rows[index] with{Args=["AnimTask_TransformMon","2","0"]};
+        var rows=source.Commands.ToArray();int index=Array.FindIndex(rows,c=>c.Args.FirstOrDefault()=="AnimTask_TransformMon");rows[index]=rows[index] with{Args=["AnimTask_TransformMon","2","255"]};
         Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(source with{Commands=rows},Cue(0),battlers,true,new Audio(),battlerReplacements:new Dictionary<int,AnimationBattler>{{0,battlers[0]}}));
         var unused=new SourceAnimationScript(0,Label,[new("end",[],1)]){Subroutines=new Dictionary<string,SourceAnimationCommand[]>{{"Unused",[new("createvisualtask",["AnimTask_TransformMon","2","1"],2),new("return",[],3)]}}};
         var valid=new SourceBattleAnimation(unused,Cue(0),battlers,true,new Audio());Assert.IsNotNull(valid);
-        var malformed=unused with{Subroutines=new Dictionary<string,SourceAnimationCommand[]>{{"Unused",[new("createvisualtask",["AnimTask_TransformMon","2","0"],2),new("return",[],3)]}}};
+        var malformed=unused with{Subroutines=new Dictionary<string,SourceAnimationCommand[]>{{"Unused",[new("createvisualtask",["AnimTask_TransformMon","2","255"],2),new("return",[],3)]}}};
         Assert.Throws<SourceAnimationException>(()=>new SourceBattleAnimation(malformed,Cue(0),battlers,true,new Audio()));
     }
 }

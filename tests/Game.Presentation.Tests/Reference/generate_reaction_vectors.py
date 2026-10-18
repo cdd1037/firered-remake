@@ -5,7 +5,7 @@ Reuses the existing maintained source-player extraction, then replaces only its
 host geometry, scenario runner, and observation adapters. Source callback bodies
 are copied verbatim and audited as exact line spans with SHA-256 hashes.
 """
-import argparse, gzip, hashlib, importlib.util, json, re, subprocess, sys, tempfile
+import argparse, hashlib, importlib.util, json, re, subprocess, sys, tempfile
 sys.dont_write_bytecode = True
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
@@ -156,21 +156,70 @@ int main(void){for(int k=0;k<8;k++)for(mode=0;mode<2;mode++)for(int a=0;a<(mode?
 DATA_HASH='e1efcc8e6bde1c187fe51dafb0bdb8dbdc5ae3761c44f6488f4f42dbf19a71f9'
 EFFECTS3_HASH='bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f'
 
-def selected_case(key):
- k,m,a,t,c=map(int,key.split(':'))
- if (k==1 and c==4) or (k==7 and c==4) or (k==5 and c==2):return False
- pair=(m,a,t)
- if k==0:return c==0 or pair in [(0,0,1),(0,1,0),(1,2,3),(1,3,2)]
- if k==7:
-  pairs={0:[(0,0,1),(0,1,0),(1,0,1),(1,1,0),(1,2,3),(1,3,2)],1:[(1,2,3),(1,3,2)],2:[(0,0,1),(0,1,0),(1,2,3),(1,3,2)],3:[(0,0,1),(1,3,2)]}
-  return pair in pairs[c]
- return pair in ([(0,0,1),(0,1,0),(1,0,1),(1,1,0),(1,2,3),(1,3,2)] if c==0 else [(0,0,1),(0,1,0),(1,2,3),(1,3,2)])
+
+# Whole cases selected from source branches; never sample frames.
+REPRESENTATIVE_CASES = (
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '0:0:0:1:0','0:0:0:1:1','0:0:0:1:2',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '1:0:0:1:0','1:0:0:1:1','1:0:0:1:2','1:0:0:1:3',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '2:0:0:1:0','2:0:0:1:1','2:0:0:1:2','2:0:0:1:3',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '3:0:0:1:0','3:0:0:1:1','3:0:0:1:2',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '4:0:0:1:0','4:0:0:1:1','4:0:0:1:2','4:0:0:1:3',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '5:0:0:1:0','5:0:0:1:1','5:0:0:1:3',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '6:0:0:1:0','6:0:0:1:1','6:0:0:1:2',
+ # Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+ '7:0:0:1:0','7:0:0:1:1','7:0:0:1:2','7:0:0:1:3',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '0:0:1:0:0',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '1:0:1:0:2',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '3:0:1:0:1',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '4:0:1:0:0','4:0:1:0:1',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '5:0:1:0:3',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '6:0:1:0:2',
+ # Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+ '7:0:1:0:0',
+ # Doubles rear geometry with alternate dimensions and allocation pressure
+ '0:1:2:3:1',
+ # Doubles rear geometry with alternate dimensions and allocation pressure
+ '1:1:2:3:3',
+ # Doubles rear geometry with alternate dimensions and allocation pressure
+ '2:1:2:3:3',
+ # Doubles rear geometry with alternate dimensions and allocation pressure
+ '3:1:2:3:2',
+ # Doubles rear geometry with alternate dimensions and allocation pressure
+ '4:1:2:3:3',
+ # Doubles rear geometry with alternate dimensions and allocation pressure
+ '7:1:2:3:1',
+ # Leaf: rear player target geometry; attacker identity does not affect this callback
+ '7:1:3:2:0',
+)
+
+def apply_profile(result, full=False):
+ all_cases=result['cases']
+ assert set(REPRESENTATIVE_CASES) <= all_cases.keys(), 'Missing explicit representative case'
+ result['profile']='full' if full else 'representative'
+ result['cases']=all_cases if full else {key:all_cases[key] for key in REPRESENTATIVE_CASES}
+ coverage=result.setdefault('coverage',{})
+ coverage.update(fullCaseCount=len(all_cases),caseCount=len(result['cases']),rowCount=sum(map(len,result['cases'].values())),representativeCaseCount=len(REPRESENTATIVE_CASES))
+ return result
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=ROOT);p.add_argument('--output-dir',type=Path,required=True);a=p.parse_args();a.output_dir.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=ROOT);p.add_argument('--output-dir',type=Path,required=True);p.add_argument('--full',action='store_true',help='Emit all source-C cases for the same managed comparator');a=p.parse_args();a.output_dir.mkdir(parents=True,exist_ok=True)
+ if (a.output_dir/'reaction_vectors.json').exists():p.error('Refusing to overwrite an existing candidate')
  h,result=build(a.root);c=a.output_dir/'reaction_source.c';exe=a.output_dir/'reaction_source';c.write_text(h)
  command=['cc','-std=c11','-O0','-fwrapv',str(c),'-o',str(exe)];subprocess.run(command,check=True)
- output=subprocess.check_output([str(exe)],text=True);(a.output_dir/'reaction_source.rows').write_text(output)
+ output=subprocess.check_output([str(exe)],text=True);subprocess.run(['cc','-std=c11','-O2','-fwrapv',str(c),'-o',str(exe)],check=True);optimized=subprocess.check_output([str(exe)],text=True);assert output==optimized, 'O0/O2 source-C row mismatch';(a.output_dir/'reaction_source.rows').write_text(output) if a.full else None
  cases={}
  for line in output.splitlines():
   key,typ,tick,phase,*values=line.split(',');tick=int(tick);phase=int(phase);v=list(map(int,values));row=cases.setdefault(key,{}).setdefault(tick,{'tick':tick,'sprites':[],'afterTaskSprites':[],'tasks':[],'palettes':[]})
@@ -180,16 +229,18 @@ def main():
   elif typ=='T':assert len(v)+1==len(STATE_COLUMNS);row['state']=[tick]+v
   else:raise ValueError(typ)
  result['cases']={key:list(rows.values()) for key,rows in cases.items()}
- fullCases=result['cases']
- result['cases']={key:rows for key,rows in fullCases.items() if selected_case(key)}
- result['coverage']={'fullCaseCount':len(fullCases),'focusedCaseCount':len(result['cases']),'focusedRowCount':sum(map(len,result['cases'].values())),'selection':'All canonical triangle actor-target pairs; representative source sides/doubles, small/large picture dimensions, both hand flips, repeat/color boundaries, lower/higher free slots, and partial allocator exhaustion. Invalid zero-count/failure probes are separate.'}
+ # These source paths are intentionally rejected by the managed runtime.
+ # Keep their every-frame evidence separate from the admitted parity cases.
+ def diagnostic(key):
+  kind,mode,actor,target,config=map(int,key.split(':'))
+  return (kind,config) in {(1,4),(7,4),(5,2)}
+ diagnostics={key:rows for key,rows in result['cases'].items() if diagnostic(key)}
+ result['cases']={key:rows for key,rows in result['cases'].items() if not diagnostic(key)}
+ assert len(result['cases'])==560 and len(diagnostics)==60
+ apply_profile(result,a.full)
+ result['diagnosticCases']=diagnostics if a.full else {key:diagnostics[key] for key in ['1:0:0:1:4','7:0:0:1:4','5:0:0:1:2']}
+ result['coverage']['diagnosticCaseCount']=len(result['diagnosticCases'])
  result['build']={'command':['cc','-std=c11','-O0','-fwrapv','reaction_source.c','-o','reaction_source'],'compiler':subprocess.check_output(['cc','--version'],text=True).splitlines()[0],'harnessSha256':hashlib.sha256(h.encode()).hexdigest()}
  out=a.output_dir/'reaction_vectors.json';out.write_text(json.dumps(result,separators=(',',':'))+'\n')
- (a.output_dir/'reaction_vectors.json.gz').write_bytes(gzip.compress(out.read_bytes(),mtime=0))
- full=dict(result);full['cases']=fullCases;(a.output_dir/'reaction_full_vectors.json.gz').write_bytes(gzip.compress((json.dumps(full,separators=(',',':'))+'\n').encode(),mtime=0))
- edges=dict(result);edges['cases']={key:rows for key,rows in fullCases.items() if key in ['1:0:0:1:4','7:0:0:1:4','5:0:0:1:2']};(a.output_dir/'reaction_edge_vectors.json').write_text(json.dumps(edges,separators=(',',':'))+'\n')
- for kind,name in enumerate(KINDS):
-  perKind=dict(result);perKind['cases']={key:rows for key,rows in result['cases'].items() if key.startswith(str(kind)+':')}
-  (a.output_dir/(name+'-source-vectors.json')).write_text(json.dumps(perKind,separators=(',',':'))+'\n')
  print(json.dumps({'cases':len(result['cases']),'rows':sum(len(v) for v in result['cases'].values()),'fixture':str(out),'sha256':hashlib.sha256(out.read_bytes()).hexdigest()}))
 if __name__=='__main__':main()

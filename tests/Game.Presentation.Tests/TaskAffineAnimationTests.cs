@@ -13,7 +13,7 @@ public sealed class TaskAffineAnimationTests
         public void StopAnimationEffects(){}
     }
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/task-affine-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("task-affine-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_task_affine_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/task-affine-vectors.json");
     private static SourceAnimationScript Script(int move)
     =>AnimationCompositionFixture.Script(move);
     private static AnimationBattler[] Battlers(bool doubles,int yOffset=12)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"b"+i,yOffset,0,64,64)).ToArray();

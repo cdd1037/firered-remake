@@ -1,5 +1,28 @@
 # Bounded BG1 overlay reference vectors
 
+## Local preparation and evidence profiles
+
+Generated JSON is ignored local comparison data; it is not stored in Git. Source extractors, semantic case definitions, pinned inputs and comparators remain versioned. `check_vectors.py` is the explicit family preparation entrypoint. It stages all native compilation outside the repository, validates the result, then copies only JSON to the requested destination. It can prepare absent inputs without comparing to a previous generated file. `--fixtures DIR` optionally checks reproducibility against an existing corpus of the same profile.
+
+```sh
+# Prepare every input for this family, including small companion fixtures.
+python tests/Reference/Bg1Overlay/check_vectors.py --repository . --prepare tests/Game.Presentation.Tests/Fixtures
+# Full original-C corpus stays outside the repository.
+python tests/Reference/Bg1Overlay/check_vectors.py --repository . --full --prepare /tmp/firered-full
+# Independently validate an already prepared corpus, without regenerating it.
+python tests/Reference/Bg1Overlay/validate.py --fixtures /tmp/firered-full
+```
+
+`--output /tmp/fresh-stage` optionally retains a named fresh external staging directory; otherwise a unique system-temporary directory is used. Add `--supplement PATH` for missing pinned image/map inputs in the overlay/weather families. Ordinary managed tests only read prepared data, and fail with a concrete preparation command if it is absent. Set `FIRERED_SOURCE_VECTOR_DIR=/tmp/firered-full` to run the same managed comparisons against the full corpus; prepare all families read by the chosen test filter in that directory.
+
+- Task: 12 representative cases / 1,200 rows; full 99 / 12,684. Every task, both target-side material choices, contest and cleanup boundaries remain.
+- Mist: 30 representative cases / 1,274 rows; full 180 / 6,524. Both sides/layouts, all four flags and every equal-X/wide-delta/signed-wrap/accumulator/divergent-helper probe remain.
+- Glare: nine representative scenarios with every frame, plus 468 independent coordinate cases; full 37 scenarios / 3,286 frames plus 13,429 coordinate cases. Direction/layout, full/partial saturation, failed sibling allocation, reset contest and forced contest branches remain. Coordinate cases select endpoints, interior/final/just-past-maximum/unsigned-maximum boundaries, and all actual max12 pairs.
+- Material and pattern-shake remain complete. Managed OverlayAnimationTests and OverlaySpriteOracleTests read the selected profiles with unchanged per-frame comparators; unsupported helper probes retain their existing explicit source-only boundary. OverlayMaterialTests and SlidingEffectTests consume their independent companion data.
+
+Default reduced fixtures have root `profile: representative`; `--full` writes `profile: full`. The family-specific selectors retain complete traces, never every-Nth frames. The native full cases and all original numerical fields remain available on demand. Counts in historical detailed descriptions below refer to the full corpus unless labeled representative.
+
+
 Reference work for pret/pokefirered commit
 `037335f4c725d7c9aecdac87066f2002b4bd7e14`. No product/runtime/importer code supplies
 expected numerical values. The C templates are authored glue; named callbacks,

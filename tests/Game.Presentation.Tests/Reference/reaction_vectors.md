@@ -10,16 +10,16 @@ From the repository root:
 python -B tests/Game.Presentation.Tests/Reference/generate_reaction_vectors.py --root . --output-dir /tmp/firered-reaction-vectors
 ```
 
-The generator imports the maintained authored source-player extraction from `generate_orbit_spray_vectors.py`, verifies pinned input hashes, extracts source C verbatim, and compiles only that authored harness. It does not execute upstream scripts, invoke .NET, or consult the managed implementation to construct expected values. Review the candidate before replacing `Fixtures/reaction_vectors.json`. Normal tests only consume the checked-in fixture.
+The generator imports the maintained authored source-player extraction from `generate_orbit_spray_vectors.py`, verifies pinned input hashes, extracts source C verbatim, and compiles only that authored harness. It does not execute upstream scripts, invoke .NET, or consult the managed implementation to construct expected values. Review the candidate before replacing `Fixtures/reaction_vectors.json`. Normal tests consume explicitly generated, locally ignored JSON and never compile C automatically.
 
 Observed toolchain: Python 3.12.14; cc (Debian 14.2.0-19) 14.2.0. Authored-C compile command: `cc -std=c11 -O0 -fwrapv reaction_source.c -o reaction_source`. The signed arithmetic shift assumption is asserted. The reuse layer fixes the source ARM affine union ABI to eight bytes and provides bounded pointer handles and BIOS affine calculations.
 
 ## Evidence and coverage
 
-- 620 extracted-C scenarios run; 138 focused positive scenarios and 8,226 complete rows are selected for the maintained fixture.
-- The focused JSON is about 6.5 MiB. Full matrix gzip, per-kind files, emitted C/binary, row stream, and explicit invalid/failed-init probes are diagnostic output only and should not be added to the product.
+- Full generation runs 620 extracted-C scenarios: all 560 admitted cases / 33,820 complete rows enter the same managed numeric comparator. The 60 unsafe or unsupported probes remain explicitly separated under `diagnosticCases`; existing rejection tests retain their distinct runtime contract.
+- The default profile selects 43 admitted cases / 2,801 complete rows plus three explicit diagnostic traces. Both profiles use plain numerical JSON. No generated comparison data, C harness, binary, or row stream belongs in Git or product resources.
 - Tick -1 is after synchronous initialization. Each ordinary row records sprite callback/frame/affine work before tasks, then post-task state. Source `CreateSprite` sets the sheet's first tile immediately: newly allocated Leaf Blade controllers/trails already use tile28, while `StartSpriteAnim` defers a different selected frame until the next ordinary sprite pass.
-- Cases include all canonical Triangle actor/target pairs, both battle sides, single/double positions, picture widths/heights8..64, two valid Y-offset profiles (including an exclamation whose unbounded top is below8), both hands, repeat/delay boundaries, all24 Facade colors, every RGB555 entry, and unchanged unfaded/unrelated banks.
+- Full cases include all canonical Triangle actor/target pairs, both battle sides, single/double positions, picture widths/heights8..64, two valid Y-offset profiles (including an exclamation whose unbounded top is below8), both hands, repeat/delay boundaries, all24 Facade colors, every RGB555 entry, and unchanged unfaded/unrelated banks.
 - Source tasks/children retain every relevant signed word. Task affine pointer words are stable host handles `(1,0)`; Leaf Blade words13/14 are real counters and remain exact.
 - Allocator mode0 is ordinary first-free; mode1 holds the initial Triangle/Leaf controller at slot32 and then releases lower slots before ordinary stepping; mode2 leaves only slots61..63 free, covering partial sweat emission and leaf-trail allocation failure. Fake occupied slots have no ownership or callback behavior.
 - Facade and Smelling Salt task affine initialization, repeated preparation, ordinary updates, foot anchoring and restoration use extracted source task/sprite helpers. Battlers use the actual `sAffineAnim_Battler_Normal` data. An initial harness attempt with a dummy END-only battler table asserted after restoration; it was rejected, and the correct source normal-affine table was extracted before producing these vectors.
@@ -55,7 +55,7 @@ Pinned source revision: `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
 `sourceSha256` in the fixture contains every whole-file source digest. `sourceSpans` contains inclusive line numbers, zero-based UTF-8 byte offsets, exact byte lengths, and full SHA-256 digests for each extracted callback/declaration, including the shared source player. These metadata belong to fixture/import tooling and do not enter runtime resources.
 
-Focused fixture SHA-256: `20ca0b285a6f29a56fc4491c3bd5616359e64744532409a9b0ec640016ca2095`.
+
 
 ### New callback spans
 
@@ -85,3 +85,57 @@ Focused fixture SHA-256: `20ca0b285a6f29a56fc4491c3bd5616359e64744532409a9b0ec64
 |src/battle_anim_effects_3.c:3646-3798|`#define IDX_ACTIVE_SPRITES 2  // Used by the sprite callback to modify the number of active sprites`|`cd9a1b3e7021eae3e5de7eaf7ce9dcf7c05e2cc63b3fcfd44656c2f4637d488a`|
 
 Managed parity/cancellation tests were authored and statically reviewed in the staging task; no managed build or test execution was authorized there. Run the repository’s normal serial managed validation after integration before reporting these tests passed.
+
+## Local representative and full evidence
+
+Generated comparison data is local and ignored by Git, including this family's
+plain JSON. Git retains the generator, explicit case selection, and managed
+numerical comparator. Missing data fails with the exact generation command;
+normal tests never skip a missing corpus or implicitly invoke a C compiler.
+
+Default generation writes `profile: representative`: 43 complete cases /
+2,801 callback rows. `--full` writes `profile: full`: 560 admitted cases /
+33,820 rows. Both use the same fixture filename and the same
+managed assertions for every numeric observation. Selection is by whole source
+branch/boundary cases; every tick from -1 through retirement is retained. The
+managed test independently requires the explicit key set and profile-specific
+case/row counts, in addition to its unchanged frame, state and lifetime assertions.
+The small exhaustive 256-byte predicate tables, where present, remain exhaustive.
+
+From the repository root, generate into a new directory and run the same comparator:
+
+```sh
+vectors=$(mktemp -d)
+python tests/Game.Presentation.Tests/Reference/generate_reaction_vectors.py --root . --output-dir "$vectors" --full
+FIRERED_SOURCE_VECTOR_DIR="$vectors" dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --filter 'FullyQualifiedName~ReactionSourceVectorTests'
+```
+
+Omit `--full` to generate representative evidence. To supply normal tests, review
+and copy the resulting `reaction_vectors.json` into
+`tests/Game.Presentation.Tests/Fixtures/`. The output is not staged in Git.
+Both generation profiles compile the unchanged extracted C under `-O0` and `-O2`
+and require byte-identical numeric row streams before emitting JSON. Full mode
+retains its native row stream for audit; the default does not write that large
+full-corpus sidecar. Source file/span hashes remain provenance, never substitutes
+for numerical comparison. Generated harness output and full corpora stay outside
+Git. The corpus redesign itself was verified with native C and Python; managed
+validation belongs to the integrating run, not to those native checks.
+
+### Explicit representative selection
+
+- Every admitted configuration, including cancellation boundaries, dimensions and allocator modes.
+  `0:0:0:1:0`, `0:0:0:1:1`, `0:0:0:1:2`, `1:0:0:1:0`, `1:0:0:1:1`, `1:0:0:1:2`, `1:0:0:1:3`, `2:0:0:1:0`, `2:0:0:1:1`, `2:0:0:1:2`, `2:0:0:1:3`, `3:0:0:1:0`, `3:0:0:1:1`, `3:0:0:1:2`, `4:0:0:1:0`, `4:0:0:1:1`, `4:0:0:1:2`, `4:0:0:1:3`, `5:0:0:1:0`, `5:0:0:1:1`, `5:0:0:1:3`, `6:0:0:1:0`, `6:0:0:1:1`, `6:0:0:1:2`, `7:0:0:1:0`, `7:0:0:1:1`, `7:0:0:1:2`, `7:0:0:1:3`.
+- Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory.
+  `0:0:1:0:0`, `1:0:1:0:2`, `3:0:1:0:1`, `4:0:1:0:0`, `4:0:1:0:1`, `5:0:1:0:3`, `6:0:1:0:2`, `7:0:1:0:0`.
+- Doubles rear geometry with alternate dimensions and allocation pressure.
+  `0:1:2:3:1`, `1:1:2:3:3`, `2:1:2:3:3`, `3:1:2:3:2`, `4:1:2:3:3`, `7:1:2:3:1`.
+- Leaf: rear player target geometry; attacker identity does not affect this callback.
+  `7:1:3:2:0`.
+
+Leaf Blade reads target geometry and side, but never attacker identity. Its seven
+representative traces cover both target sides, front/rear positions, both picture
+profiles, normal/lower-slot/partial allocation, and all seven arc stages; multiplying
+the same target by extra attacker identities would add no callback branch.
+The full `diagnosticCases` set retains all 60 source traces separately because
+unsafe sentinel allocation, zero squish count, and zero exclamation delay are
+rejected input contracts, not admitted runtime parity cases.

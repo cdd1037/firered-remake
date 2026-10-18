@@ -185,7 +185,7 @@ public sealed class FieldEffectLifecycleTests : FieldEffectFixture
     [TestMethod]
     public void Case_944_original_C_setting_commands_field_owner_timers_and_screen_count_vectors()
     {
-        using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/FieldEffects"), "four-field-vectors.json")));
+        using var document = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/FieldEffects/Fixtures/four-field-vectors.json", "python tests/Game.Battle.Tests/FieldEffects/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/FieldEffects/Fixtures --fixtures-only")));
         Assert.IsTrue(document.RootElement.GetProperty("sourceCommit").GetString() == catalog.SourceCommit, "exact source commit");
         SourceFieldRegisters Field(int bits, int duration) => bits switch
         {

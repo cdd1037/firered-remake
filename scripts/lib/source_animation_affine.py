@@ -13,8 +13,9 @@ def task_affine_program(source,name):
   control=re.fullmatch(r'AFFINEANIMCMD_(JUMP|LOOP)\(([^)]+)\)',row)
   if frame:
    x,y,rotation,duration=[int(v.strip(),0) for v in frame[1].split(',')]
-   if not -32768<=x<=32764 or not -32768<=y<=32767 or not -128<=rotation<=255 or not 0<=duration<=255:raise ValueError('Task affine frame outside source representation')
-   command.update(op='frame',x=x,y=y,rotation=rotation&255,duration=duration)
+   if not -32768<=x<=32764 or not -32768<=y<=32767 or not -128<=rotation<=255 or not -128<=duration<=255:raise ValueError('Task affine frame outside source representation')
+   # Both fields are u8 in the source union; Teleport spells duration 200 as -56.
+   command.update(op='frame',x=x,y=y,rotation=rotation&255,duration=duration&255)
   elif control:
    value=int(control[2],0)
    if not 0<=value<=32767:raise ValueError('Task affine control outside source representation')

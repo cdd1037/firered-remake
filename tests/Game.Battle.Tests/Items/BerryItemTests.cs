@@ -433,7 +433,7 @@ public sealed class BerryItemTests
         var type = assembly.GetType("Game.Domain.Battle.SourceFrameBerryItems")!;
         var phaseType = assembly.GetType("Game.Domain.Battle.SourceBerryPhase")!;
         var method = type.GetMethod("Apply", flags)!;
-        using var vectors = JsonDocument.Parse(File.ReadAllText(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/Items"), "source-berry-vectors.json")));
+        using var vectors = JsonDocument.Parse(File.ReadAllText(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Items/Fixtures/source-berry-vectors.json", "python tests/Game.Battle.Tests/Items/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Items/Fixtures --fixtures-only")));
         Assert.IsTrue(vectors.RootElement.GetProperty("sourceCommit").GetString() == "037335f4c725d7c9aecdac87066f2002b4bd7e14", "source pin");
         Assert.IsTrue(vectors.RootElement.GetProperty("pins").EnumerateObject().Count() == 6, "bounded six-file source proof");
         foreach (var v in vectors.RootElement.GetProperty("vectors").EnumerateArray())

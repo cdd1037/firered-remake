@@ -308,7 +308,7 @@ public sealed class MultiHitAnimationDispatchTests
     [DataRow("COMET_PUNCH", "KANGASKHAN", 5, 4)]
     public void PublicKernelOriginalSourceVectorsEmitOneDispatchPerRealHitAtEveryPosition(string name, string species, int level, int id)
     {
-        using var source = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, "tests/Game.Battle.Tests/Moves/source-vectors.json")));
+        using var source = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Moves/source-vectors.json", "python tests/Game.Battle.Tests/Moves/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Moves --fixtures-only")));
         Assert.AreEqual(PokemonFactory.SourceCommit, source.RootElement.GetProperty("sourceCommit").GetString());
         var vectors = source.RootElement.GetProperty("multihit");
         Assert.AreEqual(48, vectors.GetArrayLength(), "Original complete multihit fixture required.");

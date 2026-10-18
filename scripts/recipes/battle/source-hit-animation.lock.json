@@ -155,6 +155,21 @@
     },
     {
       "path": "graphics/pokemon/castform/snowy/shiny.pal"
+    },
+    {
+      "path": "src/data/graphics/pokemon.h"
+    },
+    {
+      "path": "graphics/pokemon/deoxys/front.png"
+    },
+    {
+      "path": "graphics/pokemon/deoxys/back.png"
+    },
+    {
+      "path": "graphics/pokemon/deoxys/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/deoxys/shiny.pal"
     }
   ]
 }

@@ -70,7 +70,10 @@ HARDWARE = {
 }
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--fixture',type=Path,default=ROOT.parent/'Fixtures/bios-angle-vectors.csv');args=parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--fixture', type=Path, default=ROOT.parent / 'Fixtures/bios-angle-vectors.csv')
+    parser.add_argument('--output', type=Path, help='Write independent focused vectors after all arithmetic checks')
+    args = parser.parse_args()
     for vector, expected in HARDWARE.items():
         assert reference(*vector) == compact(*vector) == expected, vector
     assert polynomial(4096) == 0x09FB
@@ -129,7 +132,14 @@ def main():
             rotation = (n + 0xC000) & 65535
             writer.writerow((x, y, s16(x), s16(y), f'0x{a:04X}', f'0x{n:04X}',
                              f'0x{rotation:04X}', rotation >> 8))
-        assert f.getvalue().encode()==args.fixture.read_bytes(), 'Focused BIOS vectors differ'
+        candidate = f.getvalue().encode()
+        if args.output is not None:
+            if args.output.exists() and args.output.read_bytes() != candidate:
+                raise SystemExit('Existing BIOS vectors differ; review a new candidate path: ' + str(args.output))
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_bytes(candidate)
+        else:
+            assert candidate == args.fixture.read_bytes(), 'Focused BIOS vectors differ'
     report = (f'Published hardware anchors: {len(HARDWARE)} + 2 ArcTan asymmetry checks passed\n'
               f'Polynomial domain: 32769 inputs, max absolute product {max_product}; no int32 overflow\n'
               f'All quotient/octant states: {count} passed\n'

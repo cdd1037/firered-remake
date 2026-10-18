@@ -217,6 +217,8 @@ int main(void){for(int k=0;k<6;k++)for(mode=0;mode<2;mode++)for(int a=0;a<(mode?
  if emit_source is not None:emit_source.write_text(h);return None
  with tempfile.TemporaryDirectory(prefix='orbit-spray-source-c-') as tmp:
   c=Path(tmp)/'orbit.c';exe=Path(tmp)/'orbit';c.write_text(h);ref.compile_c(['cc','-std=c11','-O0',str(c),'-o',str(exe)]);output=subprocess.check_output([str(exe)],text=True)
+  ref.compile_c(['cc','-std=c11','-O2',str(c),'-o',str(exe)]);optimized=subprocess.check_output([str(exe)],text=True)
+  assert output==optimized, 'O0/O2 source-C row mismatch'
  cases={}
  for line in output.splitlines():
   key,type,*values=line.split(',');kind=int(key.split(':')[0])
@@ -230,11 +232,51 @@ int main(void){for(int k=0;k<6;k++)for(mode=0;mode<2;mode++)for(int a=0;a<(mode?
   assert rows[0]['state'][0]==-1 and rows[-1]['state'][1]==0,key
   assert rows[-1]['state'][4]==0,key
  return dict(sourceRevision=ref.COMMIT,sourceSha256=SOURCE_SHA256,sourceSpans=sourceSpans,configColumns=[['duration','phase','stopTick'],['phase'],['direction','useTarget','seed'],['leafPaletteSlot','razorLeafPaletteSlot','stopTick','initialDelayCounter'],['delay','stopTick','initialBg3X','initialBg3Y'],['unused']],paletteInputFormula='unfaded[index] = (index * 73 + 31) & 32767',kinds=KINDS,columns=STATE_COLUMNS,spriteColumns=SPRITE_COLUMNS,paletteColumns=PALETTE_COLUMNS,configs=CONFIGS,geometry=dict(x=[[72,176,48,112],[32,200,90,152]],y=[[80,40,40,80],[80,40,88,32]],yOffset=[5,11,7,13],elevation=[2,3,4,5],subpriority=[30,40,20,50]),conventions=dict(tickMinusOne='After synchronous create/init',sprites='After AnimateSprites, before task callback',state='After task callback',palette='After task callback',bg3='u16 source registers; task data are s16',afterTaskSprites='Stretch only: post-task state, including terminal restoration',taskPointerFields='taskData13 and taskData14 are omitted host pointer handles'),cases=result)
+
+# Whole cases selected from source branches; never sample frames.
+REPRESENTATIVE_CASES = (
+ # All branch/boundary configurations: phases, durations, stop transitions, RNG signs and origins
+ '0:0:0:1:0','0:0:0:1:1','0:0:0:1:2','0:0:0:1:3','0:0:0:1:4','0:0:0:1:5','0:0:0:1:6','0:0:0:1:7','0:0:0:1:8','0:0:0:1:9','0:0:0:1:10','0:0:0:1:11','0:0:0:1:12','0:0:0:1:13','0:0:0:1:14','0:0:0:1:15',
+ # All branch/boundary configurations: phases, durations, stop transitions, RNG signs and origins
+ '1:0:0:1:0','1:0:0:1:1','1:0:0:1:2','1:0:0:1:3','1:0:0:1:4','1:0:0:1:5','1:0:0:1:6','1:0:0:1:7',
+ # All branch/boundary configurations: phases, durations, stop transitions, RNG signs and origins
+ '2:0:0:1:0','2:0:0:1:1','2:0:0:1:2','2:0:0:1:3','2:0:0:1:4','2:0:0:1:5','2:0:0:1:6','2:0:0:1:7','2:0:0:1:8','2:0:0:1:9','2:0:0:1:10','2:0:0:1:11','2:0:0:1:12','2:0:0:1:13','2:0:0:1:14','2:0:0:1:15',
+ # Fast: opposite-side priority and radius wrap
+ '0:0:1:0:1','0:0:1:0:10','0:0:1:0:14',
+ # Fast: rear-battler picture coordinates and subpriority
+ '0:1:2:3:2',
+ # Fast: rear-battler picture coordinates and subpriority
+ '0:1:3:2:2',
+ # Scatter: horizontal exits and both vertical exits from distinct source geometry
+ '1:0:1:0:0','1:0:1:0:2','1:0:1:0:4','1:0:1:0:6',
+ # Scatter: horizontal exits and both vertical exits from distinct source geometry
+ '1:1:2:3:0','1:1:2:3:2','1:1:2:3:4','1:1:2:3:6',
+ # Scatter: horizontal exits and both vertical exits from distinct source geometry
+ '1:1:3:2:0','1:1:3:2:2','1:1:3:2:4','1:1:3:2:6',
+ # Spray: both directions and attacker/target origins on each source side
+ '2:0:1:0:0','2:0:1:0:1','2:0:1:0:2','2:0:1:0:3',
+ # Spray: both directions and attacker/target origins on each source side
+ '2:1:2:3:0','2:1:2:3:1','2:1:2:3:2','2:1:2:3:3',
+ # Spray: both directions and attacker/target origins on each source side
+ '2:1:3:2:0','2:1:3:2:1','2:1:3:2:2','2:1:3:2:3',
+)
+
+def apply_profile(result, full=False):
+ all_cases=result['cases']
+ assert set(REPRESENTATIVE_CASES) <= all_cases.keys(), 'Missing explicit representative case'
+ result['profile']='full' if full else 'representative'
+ result['cases']=all_cases if full else {key:all_cases[key] for key in REPRESENTATIVE_CASES}
+ coverage=result.setdefault('coverage',{})
+ coverage.update(fullCaseCount=len(all_cases),caseCount=len(result['cases']),rowCount=sum(map(len,result['cases'].values())),representativeCaseCount=len(REPRESENTATIVE_CASES))
+ return result
+
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=ROOT);p.add_argument('--section',choices=['sprites','tasks'],default='sprites');p.add_argument('--output',type=Path);p.add_argument('--emit-source',type=Path);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=ROOT);p.add_argument('--section',choices=['sprites','tasks'],default='sprites');p.add_argument('--output',type=Path);p.add_argument('--emit-source',type=Path);p.add_argument('--full',action='store_true',help='Emit all source-C cases for the same managed comparator');a=p.parse_args()
  if bool(a.output)==bool(a.emit_source):p.error('Choose one output')
  out=a.output or a.emit_source
  if out.exists():p.error('Refusing to overwrite a source-vector candidate')
  if a.emit_source:build(a.root,a.section,a.emit_source)
  else:
-  result=build(a.root,a.section);out.write_text(json.dumps(result,separators=(',',':'))+'\n');print('cases',len(result['cases']),'rows',sum(map(len,result['cases'].values())))
+  result=build(a.root,a.section)
+  if a.section=='sprites':apply_profile(result,a.full)
+  out.write_text(json.dumps(result,separators=(',',':'))+'\n');print('cases',len(result['cases']),'rows',sum(map(len,result['cases'].values())))

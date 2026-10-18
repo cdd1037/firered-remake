@@ -269,7 +269,7 @@ public sealed class ConditionalHitAnimationKernelTests
             var result = Kernel.Direct(Kernel.Frame(bodies, single) with { Rng = new(seed.Value) });
             Assert.IsTrue(result.Events.OfType<SourceCallerSelectionEvent>().Any(e => e.Caller == Kernel.Id("METRONOME") && e.Result == Move(id)));
             Assert.IsTrue(result.Events.OfType<SourceAttackStringEvent>().Any(e => e.CurrentMove == Move(id) && e.ChosenMove == Kernel.Id("METRONOME")));
-            Deny(result.Events, single);
+            CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, single, id);
         }
     }
 }

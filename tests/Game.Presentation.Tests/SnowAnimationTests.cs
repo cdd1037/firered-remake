@@ -13,7 +13,7 @@ public sealed class SnowAnimationTests
     public void ExtractedSourceSnowVectorsCoverInitialReverseOrbitAndExitAndExistingWiggle(bool beyond)
     {
         using var resources=new SourceAnimationResources(Root);var source=resources.Resolve(59).Script;
-        using var fixture=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/swirling-snow-source-vectors.json")));
+        using var fixture=SourceVectorFixture.Read("swirling-snow-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_snow_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures");
         foreach(var row in fixture.RootElement.GetProperty("cases").EnumerateArray().Where(r=>r.GetProperty("beyond").GetBoolean()==beyond))
         {
             int actor=row.GetProperty("actor").GetInt32(),grouped=row.GetProperty("grouped").GetInt32(),y=row.GetProperty("yOffset").GetInt32();var b=Battlers(true);b[(actor^1)^2]=b[(actor^1)^2] with{Visible=false};

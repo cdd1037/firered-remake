@@ -25,7 +25,7 @@ public sealed class StatefulMoveTests
     {
         proof = TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
         catalog = proof.Catalog;
-        source = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, "tests/Game.Battle.Tests/Moves/source-vectors.json")));
+        source = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Moves/source-vectors.json", "python tests/Game.Battle.Tests/Moves/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Moves --fixtures-only")));
         Assert.AreEqual(5,source.RootElement.GetProperty("rollout").GetArrayLength(),"Complete rollout fixture required");
         Assert.AreEqual(48,source.RootElement.GetProperty("disable").GetArrayLength(),"Complete disable fixture required");
         Assert.AreEqual(48,source.RootElement.GetProperty("multihit").GetArrayLength(),"Complete multihit fixture required");

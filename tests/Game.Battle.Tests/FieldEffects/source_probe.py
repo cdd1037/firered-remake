@@ -5,7 +5,21 @@ from reference_c import compile_c, verify_reference
 """Pinned original C commands/field owner/screen blocks; no upstream scripts run."""
 from pathlib import Path
 import hashlib,itertools,json,subprocess,sys
-source,out=map(Path,sys.argv[1:]);out.mkdir(parents=True,exist_ok=True)
+import atexit
+import tempfile
+fixtures_only = "--fixtures-only" in sys.argv
+arguments = [argument for argument in sys.argv[1:] if argument != "--fixtures-only"]
+if len(arguments) != 2:
+    raise SystemExit("Usage: source_probe.py PINNED_REFERENCE OUTPUT_DIRECTORY [--fixtures-only]")
+source, fixture_output = (Path(argument).resolve() for argument in arguments)
+fixture_output.mkdir(parents=True, exist_ok=True)
+if fixtures_only:
+    temporary_build = tempfile.TemporaryDirectory(prefix="firered-fieldeffects-reference-")
+    atexit.register(temporary_build.cleanup)
+    out = Path(temporary_build.name)
+else:
+    out = fixture_output
+
 commit='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 verify_reference(source)
 paths=['src/battle_script_commands.c','src/battle_util.c','src/pokemon.c','include/constants/battle.h','include/constants/battle_string_ids.h','include/constants/battle_anim.h','include/constants/moves.h','include/constants/pokemon.h']
@@ -98,3 +112,12 @@ result=subprocess.run([str(out/'four-field-oracle')],input=''.join(' '.join(map(
 data=[{'input':row,'output':list(map(int,line.split()))} for row,line in zip(rows,result.stdout.splitlines(),strict=True)]
 (out/'four-field-vectors.json').write_text(json.dumps({'sourceCommit':commit,'pins':pins,'functions':names+['DoFieldEndTurnEffects','CountAliveMonsInBattle'],'screenBlocks':'unchanged Reflect/Light Screen blocks from CalculateBaseDamage','vectors':data},indent=2)+'\n')
 print(f'{len(settings)} setting commands; {len(timers)} complete field-owner timer vectors; {len(screens)} source screen/count vectors')
+
+# Only independent numeric output is published in fixture preparation mode.
+if fixtures_only:
+    for name in ['four-field-vectors.json']:
+        target = fixture_output / name
+        candidate = (out / name).read_bytes()
+        if target.exists() and target.read_bytes() != candidate:
+            raise SystemExit("Existing reference differs; review a new candidate directory: " + str(target))
+        target.write_bytes(candidate)

@@ -319,7 +319,7 @@ public sealed class SwitchingTests
             while (r.State.Queue[r.State.NextAction].Slot.Value != 0)
                 r = Next(r);
             uint afterAccuracy = unchecked(r.State.Rng.Seed * 1103515245u + 24691u);
-            using var vectors = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/Switching"), "source-switch-vectors.json")));
+            using var vectors = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Switching/Fixtures/source-switch-vectors.json", "python tests/Game.Battle.Tests/Switching/build-source-oracle.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Switching/Fixtures --fixtures-only")));
             var key = string.Join(",", afterAccuracy, live, egg, level, 80);
             var values = vectors.RootElement.GetProperty("rows").GetProperty(key).EnumerateArray().Select(x => x.GetInt64()).ToArray();
             r = Next(r);

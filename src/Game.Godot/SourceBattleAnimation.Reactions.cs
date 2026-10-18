@@ -60,7 +60,7 @@ public sealed partial class SourceBattleAnimation
         // Seven eleven-tick arc passes with six-tick pauses peak at eleven trails.
         // Reserve the leader and the single allowed cross-impact companion as well.
         int needed=leaf?13:4;
-        if(Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>b.Visible&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<needed)Fail(c,"Reaction emitter source sprite capacity proof failed.");
+        if(Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>IsSourceBattlerPresent(b.Slot.Value)&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<needed)Fail(c,"Reaction emitter source sprite capacity proof failed.");
     }
     private void ValidateReactionRecipe(SourceAnimationCommand c,string name)
     {

@@ -1,5 +1,7 @@
 # Exact-source Glare callback oracle
 
+Generated JSON is ignored local evidence. The default generator profile keeps nine complete scenarios and 468 semantic coordinate cases; `--full` restores 37 scenarios and all 13,429 coordinate cases. Use `python tests/Reference/Bg1Overlay/check_vectors.py --repository . --prepare tests/Game.Presentation.Tests/Fixtures` for all overlay inputs, or add `--full --prepare /tmp/firered-full` for the external full corpus. Native build products always use a temporary directory or explicit `--build-dir`. The full and representative profiles use the same managed Glare frame comparator. Historical counts below describe the full corpus.
+
 This staging directory contains the authored extraction harness and generated numerical observations for FireRed `AnimTask_GlareEyeDots`, its step callback, `GetGlareEyeDotCoords`, and `AnimGlareEyeDot`. No canonical repository files, upstream scripts, or managed code were executed or edited for this harness.
 
 ## Reproduce

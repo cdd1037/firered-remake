@@ -23,7 +23,7 @@ public sealed class ArcProjectileAnimationTests
     [DataRow(333,0)][DataRow(333,1)][DataRow(333,2)][DataRow(333,3)]
     public void ArcLookAheadMatchesOriginalEightWordRestoreAndRetainedPositionVectors(int move,int actor)
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/arc-projectile-original-vectors.json")));
+        using var doc=SourceVectorFixture.Read("arc-projectile-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_arc_projectile_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/arc-projectile-original-vectors.json");
         var configs=doc.RootElement.GetProperty("configs").EnumerateArray().ToArray();Assert.AreEqual(16,configs.Length);
         foreach(int target in new[]{actor^1,actor^2})for(int config=0;config<configs.Length;config++)
         {

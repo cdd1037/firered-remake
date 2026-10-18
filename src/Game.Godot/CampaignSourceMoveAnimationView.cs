@@ -10,6 +10,11 @@ using Godot;
 public partial class CampaignView
 {
     private readonly SourceBattleAnimation.SpriteScene _sourceSpriteScene=new();
+    private readonly SourceCompletedBattlerState _sourceCompletedState=new();
+    private readonly Dictionary<int,PartyMemberKey> _sourceCompletedMembers=[];
+    private SourceAnimationFrame? _sourceMoveInitialFrame;
+    private IReadOnlyDictionary<string,SourcePixelAsset>? _sourceMoveMaterials;
+    private long? _sourceCompletedMaterialSequence;
     private bool _sourceIdleSpritesPresented;
     private double _sourceIdleRemainder;
     private void RetainResidualMoveSprites()
@@ -20,23 +25,69 @@ public partial class CampaignView
     private void ProcessResidualMoveSprites(double delta)
     {
         if(SourceAnimationBlocking){_sourceIdleSpritesPresented=false;return;}
-        if(!_sourceSpriteScene.HasResidualSprites){_sourceIdleSpritesPresented=false;return;}
         bool doubles=DoubleBattleVisible;
+        RefreshCompletedSourceState(doubles);
+        if(!_sourceSpriteScene.HasResidualSprites&&!_sourceCompletedState.HasState){_sourceIdleSpritesPresented=false;return;}
         var (assets,battlers)=CreateSourceAnimationScene(doubles);
         var composer=new SourceBattleFrameComposer(assets,battlers.ToArray(),backgroundSurface:SourceTerrainSurface(assets["background"]));
         _sourceIdleRemainder+=delta;
-        var frame=_sourceSpriteScene.CaptureIdle(battlers.ToArray(),doubles);
+        var frame=_sourceSpriteScene.CaptureIdle(battlers.ToArray(),doubles,_sourceCompletedState);
         while(_sourceSpriteScene.HasResidualSprites&&_sourceIdleRemainder>=SourceBattleAnimation.SourceFrameSeconds)
         {
             _sourceIdleRemainder-=SourceBattleAnimation.SourceFrameSeconds;
-            frame=_sourceSpriteScene.TickIdle(battlers.ToArray(),doubles);
+            frame=_sourceSpriteScene.TickIdle(battlers.ToArray(),doubles,_sourceCompletedState);
         }
-        _sourceIdleSpritesPresented=_sourceSpriteScene.HasResidualSprites;
+        _sourceIdleSpritesPresented=_sourceSpriteScene.HasResidualSprites||_sourceCompletedState.HasState;
         if(_sourceIdleSpritesPresented)PresentSourceMovePixels(composer.ComposeField(frame));
         QueueRedraw();
     }
+    private void ClearCompletedSourceState()
+    {_sourceCompletedState.Clear();_sourceCompletedMembers.Clear();_sourceMoveInitialFrame=null;_sourceMoveMaterials=null;_sourceCompletedMaterialSequence=null;}
+    private PartyMemberKey SourceDisplayedMember(bool doubles,int slot)=>doubles
+        ?_session.State.DoubleBattle!.DisplayedMembers[slot]
+        :PresentedWildBattle!.DisplayBatch!.Display.Members[slot];
+    private void RefreshCompletedSourceState(bool doubles)
+    {
+        if(!_sourceCompletedState.HasState)return;
+        if(!doubles&&PresentedWildBattle is null){ClearCompletedSourceState();return;}
+        bool changed=false;
+        // Singles applies the receipt before exposing it; doubles applies it on ACK.
+        // Until then the terminal material belongs to the completed visual invocation.
+        long? displayedSequence=doubles?_session.State.DoubleBattle!.CurrentEvent?.Sequence:WildCurrentEvent(PresentedWildBattle!)?.Sequence;
+        bool materialCommitted=_sourceCompletedMaterialSequence is {} boundary&&
+            (displayedSequence is null||(doubles?displayedSequence>boundary:displayedSequence>=boundary));
+        foreach(int slot in _sourceCompletedState.Slots)
+        {
+            bool replaced=SourceDisplayedMember(doubles,slot)!=_sourceCompletedMembers[slot];
+            if(doubles)replaced|=_session.State.DoubleBattle!.CurrentEvent switch
+            {
+                SourceCalledPartySwitchedEvent x=>x.Side.Value==slot&&DoubleSwitchSending(x),
+                SourcePlayerSwitchedEvent x=>x.Slot.Value==slot&&_doublePage>0,
+                SourcePlayerReplacedEvent x=>x.Slot.Value==slot,
+                _=>false
+            };
+            else replaced|=WildCurrentEvent(PresentedWildBattle!) switch
+            {
+                WildBattleCalledPartySwitchedEvent x=> (int)x.Side==slot,
+                WildBattlePlayerReplacedEvent=>slot==0,
+                WildBattlePlayerSwitchedEvent=>slot==0&&!WildWithdrawing(PresentedWildBattle!),
+                _=>false
+            };
+            if(replaced){_sourceCompletedState.DropSlot(slot);_sourceCompletedMembers.Remove(slot);changed=true;}
+            else if(materialCommitted&&_sourceCompletedState.HasMaterial(slot)){_sourceCompletedState.DropMaterial(slot);changed=true;}
+        }
+        if(materialCommitted)_sourceCompletedMaterialSequence=null;
+        if(!_sourceCompletedState.HasState)_sourceIdleSpritesPresented=false;
+        else if(changed&&!SourceAnimationBlocking)
+        {
+            var(assets,battlers)=CreateSourceAnimationScene(doubles);
+            var composer=new SourceBattleFrameComposer(assets,battlers.ToArray(),backgroundSurface:SourceTerrainSurface(assets["background"]));
+            PresentSourceMovePixels(composer.ComposeField(_sourceSpriteScene.CaptureIdle(battlers.ToArray(),doubles,_sourceCompletedState)));
+            _sourceIdleSpritesPresented=true;
+        }
+    }
     private void ClearResidualMoveSprites()
-    {_sourceSpriteScene.Cancel();_sourceIdleSpritesPresented=false;_sourceIdleRemainder=0;}
+    {ClearCompletedSourceState();_sourceSpriteScene.Cancel();_sourceIdleSpritesPresented=false;_sourceIdleRemainder=0;}
     private readonly SourceBattleAnimationGate _sourceMoveAnimationGate=new();
     private readonly Dictionary<(int,string),AnimationBattler> _sourceBattlerGeometry=[];
     private readonly Dictionary<string,SourcePixelAsset> _sourceMoveAssets=[];
@@ -60,7 +111,6 @@ public partial class CampaignView
     private double _sourceMoveRemainder;
     private bool _sourceMoveDoubles;
     private string? _sourceVisualBattle;
-    private long _sourceVisualSequence;
     private sealed class SilentMoveAudio:ISourceAnimationAudio
     { public bool IsPlaying=>false; public void Play(SourceAnimationSound cue){} public void StopAnimationEffects(){}public void SetPan(int pan,int frame){} }
 
@@ -115,6 +165,7 @@ public partial class CampaignView
             var current=_session.State.DoubleBattle!;
             if(_sourceVisualBattle!=current.Id){ResetSourceMoveAnimation("battle-replaced");_sourceVisualBattle=current.Id;}
             if(_sourceMoveContinuation is not null&&!SourceMoveContextMatches())CancelSourceMoveAnimation("context-changed");
+            RefreshCompletedSourceState(true);
             if(TryStartSourceResultMovePresentation(true))return;
             SynchronizeSourceResultPresentation();return;
         }
@@ -124,26 +175,18 @@ public partial class CampaignView
         if(_sourceVisualBattle!=b.Id)
         {
             ResetSourceMoveAnimation("battle-replaced");_sourceVisualBattle=b.Id;
-            _sourceSubstituteHp[WildBattleSide.Player]=b.State.Player.CalledVolatile?.SubstituteHp??0;
-            _sourceSubstituteHp[WildBattleSide.Opponent]=b.State.Opponent.CalledVolatile?.SubstituteHp??0;
-            // Normally battle entry has no substitute. This also makes a dedicated live-view host
-            // at a committed queue boundary reconstruct the earlier display, without changing rules.
-            foreach(var e in b.Events.Reverse())
-                if(e is WildBattleSubstituteDamagedEvent hit)_sourceSubstituteHp[hit.Target]=hit.HpBefore;
-                else if(e is WildBattleMtMoonVolatileEvent {Volatile:"substitute"} created)_sourceSubstituteHp[created.Side]=created.Before;
+
         }
         if(_sourceMoveContinuation is {} pending && (_sourceMoveSession!=_session || _sourceMoveRevision!=_session.Revision || WildCurrentEvent(b)?.Sequence!=pending.Sequence))
             CancelSourceMoveAnimation("context-changed");
-        int count=b.Phase==CampaignBattlePhase.Events?Math.Min(b.Events.Length,b.EventIndex+1):b.Events.Length;
-        foreach(var e in b.Events.Take(count).Where(e=>e.Sequence>_sourceVisualSequence))
+        // The shared event-time body reducer owns substitute creation, damage and
+        // replacement. A new host at this cursor must not reverse the final frame.
+        foreach(var side in new[]{WildBattleSide.Player,WildBattleSide.Opponent})
         {
-            if(e is WildBattleMtMoonVolatileEvent {Volatile:"substitute"} created)_sourceSubstituteHp[created.Side]=created.After;
-            else if(e is WildBattleSubstituteDamagedEvent hit)_sourceSubstituteHp[hit.Target]=hit.HpAfter;
-            else if(e is WildBattlePlayerSwitchedEvent switched)_sourceSubstituteHp[WildBattleSide.Player]=switched.Replacement.CalledVolatile?.SubstituteHp??0;
-            else if(e is WildBattleCalledPartySwitchedEvent {Kind:not WildBattleCalledSwitchKind.BatonPass} swapped)_sourceSubstituteHp[swapped.Side]=0;
-            else if(e is WildBattleFaintedEvent faint)_sourceSubstituteHp[faint.Side]=0;
-            _sourceVisualSequence=e.Sequence;
+            var body=SingleDisplayedBody(b,side)??throw new InvalidDataException("Source display body is missing.");
+            _sourceSubstituteHp[side]=body.Pokemon.CurrentHp>0?body.CalledVolatile?.SubstituteHp??0:0;
         }
+        RefreshCompletedSourceState(false);
         if(TryStartSourceResultMovePresentation(false))return;
         SynchronizeSourceResultPresentation();
     }
@@ -194,7 +237,7 @@ public partial class CampaignView
         {
             var appearance=FuchsiaBattleAppearance(b,side,mon);string face=side==WildBattleSide.Player?"back":"front";
             var displayed=SingleBattleArt(b,side,mon);
-            var sourceGeometry=BattleForms.HasForms(appearance.Species)
+            var sourceGeometry=BattleForms.HasForms(appearance.Species)||SingleDisplayedBody(b,side)?.Transform is not null
                 ?FormBattleMaterial(SingleDisplayedBody(b,side)??throw new InvalidDataException("Source form display body is missing."),new((int)side)).Geometry
                 :_sourceBattlerGeometry[(appearance.Species,face)];
             var geometry=sourceGeometry with{Asset="battler-"+(int)side,Visible=!SingleBattlerFaintShown(b,mon,side)};
@@ -205,6 +248,7 @@ public partial class CampaignView
             if(substitute)geometry=geometry with{DisplayCenter=new(side==WildBattleSide.Player?72:176,side==WildBattleSide.Player?97:56)};
             battlers.Add(geometry);
         }
+            _sourceCompletedState.AddMaterials(assets);
             return (assets,battlers);
         }
         else
@@ -217,7 +261,7 @@ public partial class CampaignView
             // The committed frame may already contain damage and later action results.
             var body=DoubleDisplayedBody(slot);var mon=body.Pokemon;var appearance=body.Transform?.CopiedPokemon??mon;string face=(slot&1)==0?"back":"front";
             var displayed=DoubleBattleArt(body,slot);
-            var sourceGeometry=BattleForms.HasForms(PresentedRenderSpecies(appearance))
+            var sourceGeometry=BattleForms.HasForms(PresentedRenderSpecies(appearance))||body.Transform is not null
                 ?FormBattleMaterial(body,new(slot)).Geometry:_sourceBattlerGeometry[(PresentedRenderSpecies(appearance),face)];
             var geometry=sourceGeometry with{Slot=new(slot),Asset="battler-"+slot,Visible=!DoubleBattlerFaintShown(_session.State.DoubleBattle!,mon,slot)};
             var center=geometry.Center(true);
@@ -231,6 +275,7 @@ public partial class CampaignView
             }
             battlers.Add(geometry);
         }
+            _sourceCompletedState.AddMaterials(assets);
             return (assets,battlers);
         }
     }
@@ -252,21 +297,45 @@ public partial class CampaignView
         var sourceEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
         var visibility=CampaignMoveAnimationPresentation.SpriteVisibilityAtInvocation(sourceEvents,dispatch,_sourceResultEntryCharge);
         if(visibility is null||visibility.Length!=battlers.Count)return false;
-        for(int i=0;i<battlers.Count;i++)battlers[i]=battlers[i] with{Visible=battlers[i].Visible&&visibility[battlers[i].Slot.Value]};
+        for(int i=0;i<battlers.Count;i++)
+        {
+            // Faint presentation owns presence; committed HP can already be zero
+            // before that source sprite has been removed. Charge replay owns flags.
+            bool present=battlers[i].Visible,hidden=!visibility[battlers[i].Slot.Value];
+            battlers[i]=battlers[i] with{Visible=present&&!hidden,SourceVisibility=new(present,hidden,hidden)};
+        }
         var resolved=_sourceAnimationResources!.Resolve(dispatch.SourceMoveId);
         var script=resolved.Script;foreach(var asset in resolved.Assets)assets[asset.Key]=asset.Value;
+        SourceBattlerFormMaterial? additionalMon=null;
+        if(script.Commands.Any(c=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault()=="AnimTask_RolePlaySilhouette"))
+        {
+            additionalMon=AdditionalMonAnimationMaterial(dispatch,doubles);
+            if(additionalMon is null)return false;
+        }
+        Dictionary<int,AnimationBattler>? replacements=null;
+        if(script.Commands.Any(c=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is "AnimTask_TransformMon" or "AnimTask_MonToSubstitute")&&
+            !PrepareMoveBattlerMaterial(dispatch,doubles,assets,battlers,out replacements))return false;
         var backgroundSurface=SourceTerrainSurface(assets["background"]);var backgroundPalette=Enumerable.Range(0,16).Select(i=>backgroundSurface.PaletteColor(2,i)).ToArray();
-        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn,MovePower=dispatch.MovePower,MoveDamage=dispatch.MoveDamage};
+        var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value)){MoveTurn=dispatch.MoveTurn,MovePower=dispatch.MovePower,FuryCutterCounter=dispatch.FuryCutterCounter,RolloutCounter=dispatch.RolloutCounter,MoveDamage=dispatch.MoveDamage};
+        // Domain terrain is captured at battle entry and is independent of the
+        // rendered backdrop. Camouflage consumes only the native terrain range.
+        var terrain=(doubles?_session.State.DoubleBattle!.Frame:PresentedWildBattle!.Frame).Field.Terrain;
+        if(terrain is {} value&&(int)value is >=0 and <=9)cue=cue with{SourceTerrain=(SourceAnimationTerrain)(int)value};
+        // The controller captures gBattleMons[attacker].friendship at launch.
+        // The event-time transformed battle body retains its actor's friendship.
+        var actorBody=doubles?DoubleDisplayedBody(dispatch.Actor.Value):SingleDisplayedBody(PresentedWildBattle!,(WildBattleSide)dispatch.Actor.Value);
+        if(actorBody is not null)cue=cue with{Friendship=checked((byte)actorBody.Pokemon.Friendship)};
         cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         try
         {
-            if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio(),backgroundPalette,spriteScene:_sourceSpriteScene,spriteMaterials:assets,originalPartySpecies:SourceAnimationPartySpecies(doubles))))return false;
+            if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio(),backgroundPalette,battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets,originalPartySpecies:SourceAnimationPartySpecies(doubles),additionalMonMaterial:additionalMon)))return false;
         }
         catch(SourceAnimationException e) when(e.Diagnostic.Reason=="source-cry-audio-unavailable")
         {
             Write("sourceMoveAnimationUnavailable",new{dispatch,e.Diagnostic});return false;
         }
+        ClearCompletedSourceState();_sourceMoveInitialFrame=_sourceMoveAnimationGate.Current!.Snapshot();_sourceMoveMaterials=assets;
         _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds,overlays:resolved.Overlays);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();return true;
@@ -301,8 +370,14 @@ public partial class CampaignView
         {
             // Retire the continuation before executing the sole original ACK. Reentrant Sync/input
             // sees no pending continuation; the gameplay move transaction is never replayed.
-            int finishedFrame=_sourceMoveAnimationGate.Current!.Snapshot().Frame;
+            var completed=_sourceMoveAnimationGate.Current!.Snapshot();
+            int finishedFrame=completed.Frame;
+            if(_sourceMoveInitialFrame is {} initial&&_sourceCompletedState.Capture(initial,completed,_sourceMoveMaterials))
+                foreach(int slot in _sourceCompletedState.Slots)_sourceCompletedMembers[slot]=SourceDisplayedMember(_sourceMoveDoubles,slot);
+            _sourceCompletedMaterialSequence=pending.ResultSequence;
+            _sourceMoveInitialFrame=null;_sourceMoveMaterials=null;
             RetainResidualMoveSprites();
+            _sourceIdleSpritesPresented=_sourceCompletedState.HasState;
             _sourceMoveContinuation=null;_sourceMoveSession=null;_sourceMoveComposer=null;_sourceMoveSound=null;
             bool acknowledge=pending.AcknowledgesCurrentReceipt;
             _wildElapsed=_doubleElapsed=0;
@@ -320,7 +395,7 @@ public partial class CampaignView
     }
     private void ResetSourceMoveAnimation(string reason)
     {
-        ClearResidualMoveSprites();CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceResultAnimationGate.Reset();_sourceVisualBattle=null;_sourceVisualSequence=0;_sourceSubstituteHp.Clear();
+        ClearResidualMoveSprites();CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceResultAnimationGate.Reset();_sourceVisualBattle=null;_sourceSubstituteHp.Clear();
     }
     private void DisposeSourceMoveAnimation()
     {

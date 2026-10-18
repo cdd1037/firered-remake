@@ -26,7 +26,7 @@ public sealed partial class SourceBattleAnimation
     private void PrepareBattlerRotScale(int slot,int objectMode)
     {
         if(objectMode is <0 or >1)throw new InvalidDataException("Unsupported battler object mode.");
-        _restoredObject[slot]=_battlers[slot].Visible;_blendedObject[slot]=objectMode==1;_affineMode[slot]=true;
+        _restoredObject[slot]=IsSourceBattlerVisible(slot);if(_restoredObject[slot])SetSourceBattlerSpriteInvisible(slot,false);_blendedObject[slot]=objectMode==1;_affineMode[slot]=true;
     }
     private void ResetBattlerRotScale(int slot)
     {SetBattlerRotScale(slot,256,256,0);_affineMode[slot]=false;_blendedObject[slot]=false;}

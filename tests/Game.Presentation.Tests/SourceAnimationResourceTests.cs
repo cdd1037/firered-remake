@@ -55,18 +55,20 @@ public sealed class SourceAnimationResourceTests
             var surface=resources.CreateBackgroundSurface(0);
             // Controlled invocation inputs exercise resource composition; receipt-derived
             // values and both branch thresholds are checked by dedicated family tests.
-            var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){MovePower=100,MoveDamage=24,MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn")?(byte)0:null};
+            var cue=new CommittedMoveAnimation("resources",1,script.MoveId,new(0),new(1)){Friendship=128,MovePower=100,FuryCutterCounter=3,RolloutCounter=3,SourceTerrain=SourceAnimationTerrain.Grass,MoveDamage=24,MoveTurn=script.Commands.Any(c=>c.Op is "choosetwoturnanim" or "jumpifmoveturn"||c.Op=="createvisualtask"&&c.Args[0]=="GetIsDoomDesireHitTurn")?(byte)0:null};
             cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
+            var replacements=battlers.ToDictionary(b=>b.Slot.Value,b=>b with{Asset=b.Asset+"-replacement"});
+            foreach(var replacement in replacements.Values)assets.Add(replacement.Asset,new(64,64,Enumerable.Repeat((ushort)0x83e0,4096).ToArray()));
             var scene=new SourceBattleAnimation.SpriteScene();
             // Composition uses controlled finite cry liveness. Source-mode PCM
             // duration and task ordering have their own dedicated audio vectors.
             var audio=new Silent();
-            var runtime=new SourceBattleAnimation(resolved.Script,cue,battlers,true,audio,Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray(),spriteScene:scene,spriteMaterials:assets,originalPartySpecies:Enumerable.Range(0,4).ToDictionary(i=>i,_=>4));
+            var runtime=new SourceBattleAnimation(resolved.Script,cue,battlers,true,audio,Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray(),battlerReplacements:replacements,spriteScene:scene,spriteMaterials:assets,originalPartySpecies:Enumerable.Range(0,4).ToDictionary(i=>i,_=>4),additionalMonMaterial:new(battlers[0] with{Asset="additional-mon"},assets[battlers[1].Asset]));
             var composer=AnimationCompositionFixture.Create(resources,resolved,assets,battlers,surface);int ticks=0;
             while(runtime.Active&&ticks++<2048)
             {
                 audio.Advance();var frame=runtime.Tick();
-                foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null))Assert.IsTrue(assets.ContainsKey(sprite.Asset!),$"Move {script.MoveId} needs {sprite.Asset} through {sprite.Template}.");
+                foreach(var sprite in frame.Sprites.Where(s=>s.Visible&&s.Asset is not null))Assert.IsTrue(assets.ContainsKey(sprite.Asset!)||sprite.Material is {Width:64,Height:64},$"Move {script.MoveId} needs {sprite.Asset} through {sprite.Template}.");
                 Assert.AreEqual(240*112*4,composer.ComposeField(frame).Length,$"Move {script.MoveId}");
             }
             Assert.IsFalse(runtime.Active,$"Move {script.MoveId} did not finish.");

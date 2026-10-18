@@ -334,7 +334,7 @@ public sealed class ActionTurnTests
     [TestMethod]
     public void Case_2048_independently_compiled_original_C_ordering_vectors()
     {
-        foreach (var line in File.ReadLines(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/Turns"), "source-order-vectors.csv")))
+        foreach (var line in File.ReadLines(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Turns/Fixtures/source-order-vectors.csv", "python tests/Game.Battle.Tests/Turns/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Turns/Fixtures --fixtures-only")))
         {
             var x = line.Split(',').Select(ulong.Parse).ToArray();
             int mode = (int)x[0];
@@ -464,7 +464,7 @@ public sealed class ActionTurnTests
         var selected = SourceBattleIdentityRules.CommitSelections(f, f.Revision, Choices(f));
         Assert.IsTrue(selected.Succeeded, "valid absent retained body ordering fixture");
         var actual = SourceBattleTurnOrder.Resolve(catalog, selected.State, WildBattleOrderPhase.Actions);
-        var source = File.ReadAllText(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/Turns"), "source-absent-weather-vector.csv")).Trim().Split(',').Select(ulong.Parse).ToArray();
+        var source = File.ReadAllText(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Turns/Fixtures/source-absent-weather-vector.csv", "python tests/Game.Battle.Tests/Turns/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Turns/Fixtures --fixtures-only")).Trim().Split(',').Select(ulong.Parse).ToArray();
         Assert.IsTrue(actual.Fault is null, "ordering accepted " + actual.Fault);
         Assert.IsTrue(actual.Order.Select(s => (ulong)s.Value).SequenceEqual(source.Take(4)) && actual.Rng.Seed == source[4] && actual.Rng.Cursor == source[5], "source-absent living Cloud Nine suppresses Swift Swim; expected " + string.Join(',', source.Take(4)) + " actual " + string.Join(',', actual.Order.Select(s => s.Value)));
     }

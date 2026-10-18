@@ -428,7 +428,7 @@ public partial class CampaignView
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) return WildLearningInput(key);
         if (b.Phase != CampaignBattlePhase.ChooseMove)
         {
-            if (key.Keycode == Key.Enter && !WildCaptureBallBlocking(b) && !FuchsiaTransformCuePending(b) && _wildElapsed > (b.Phase == CampaignBattlePhase.Events &&
+            if (key.Keycode == Key.Enter && !WildCaptureBallBlocking(b) && _wildElapsed > (b.Phase == CampaignBattlePhase.Events &&
                 WildCurrentEvent(b) is WildBattleWeatherDamageEvent or WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent or WildBattleTowerHpEvent ? .45 : .1))
             {
                 if (WildStatsPage(b) && !_wildStatsTotals) { _wildStatsTotals = true; _wildElapsed = 0; Write("wildBattleStatsPage", new { page = 2 }); }

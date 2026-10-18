@@ -56,9 +56,9 @@ public sealed partial class SourceBattleAnimation
         private bool Generate(SourceBattleAnimation owner)
         {
             var row=Coordinates[_row];var end=new PixelPoint(row.X,row.Y);bool visible=false;
-            if(row.Placement!=2&&owner._battlers.TryGetValue(row.Slot,out var battler)&&battler.Visible)
+            if(row.Placement!=2&&owner.IsSourceBattlerVisible(row.Slot))
             {
-                visible=true;end=battler.Center(owner._doubles,true);int sign=row.Placement==0?-1:1;
+                var battler=owner._battlers[row.Slot];visible=true;end=battler.Center(owner._doubles,true);int sign=row.Placement==0?-1:1;
                 end=new(end.X+sign*(battler.SourceWidth/6),end.Y+sign*(battler.SourceHeight/6));
             }
             int slot=owner.FindFreeSpriteSlot();if(slot==SourceSpriteRegistry<VisualSprite>.Capacity)return false;

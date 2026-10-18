@@ -187,6 +187,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         {
             SourceHighPitchCry.Mode => "HIGH_PITCH", SourceAnimationCryPreset.EchoStart => "ECHO_START",
             SourceAnimationCryPreset.EchoEnd => "ECHO_END", SourceAnimationCryPreset.Growl1 => "GROWL_1",
+            SourceAnimationCryPreset.Roar1 => "ROAR_1", SourceAnimationCryPreset.Roar2 => "ROAR_2",
             SourceAnimationCryPreset.Growl2 => "GROWL_2", _ => throw new NotSupportedException("Unsupported animation cry mode")
         };
         var cue = normal! with { Id = "CRY_" + symbol["SPECIES_".Length..] + "_" + suffix, CryMode = mode };

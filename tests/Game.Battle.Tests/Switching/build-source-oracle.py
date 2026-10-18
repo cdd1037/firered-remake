@@ -6,7 +6,21 @@ from reference_c import compile_c, verify_reference
 """Compile two unchanged original-C commands with bounded trainer-double storage stubs."""
 from pathlib import Path
 import hashlib, subprocess, sys
-root, output = map(Path, sys.argv[1:])
+import atexit
+import tempfile
+fixtures_only = "--fixtures-only" in sys.argv
+arguments = [argument for argument in sys.argv[1:] if argument != "--fixtures-only"]
+if len(arguments) != 2:
+    raise SystemExit("Usage: build-source-oracle.py PINNED_REFERENCE OUTPUT_DIRECTORY [--fixtures-only]")
+root, fixture_output = (Path(argument).resolve() for argument in arguments)
+fixture_output.mkdir(parents=True, exist_ok=True)
+if fixtures_only:
+    temporary_build = tempfile.TemporaryDirectory(prefix="firered-switching-reference-")
+    atexit.register(temporary_build.cleanup)
+    output = Path(temporary_build.name)
+else:
+    output = fixture_output
+
 expected='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 verify_reference(root)
 source=(root/'src/battle_script_commands.c').read_text()
@@ -79,3 +93,12 @@ for seed,level,live in [(0,90,15),(7,90,15),(31,90,7),(0,20,15),(31,20,15),(7,90
   seed=(seed*1103515245+24691)&0xffffffff
 (output/'source-switch-vectors.json').write_text(json.dumps({'sourceCommit':expected,'rows':rows},indent=2)+'\n',encoding='utf-8')
 print('Generated',len(rows),'independent C switch vectors')
+
+# Only independent numeric output is published in fixture preparation mode.
+if fixtures_only:
+    for name in ['source-switch-vectors.json']:
+        target = fixture_output / name
+        candidate = (output / name).read_bytes()
+        if target.exists() and target.read_bytes() != candidate:
+            raise SystemExit("Existing reference differs; review a new candidate directory: " + str(target))
+        target.write_bytes(candidate)

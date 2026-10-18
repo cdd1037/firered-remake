@@ -1,0 +1,33 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define SPRITE_NONE 255
+#define B_SIDE_PLAYER 0
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void(*SpriteCallback)(struct Sprite*);typedef void(*TaskFunc)(u8);
+struct Sprite {struct OamData oam;s16 x,y,x2,y2,data[8];SpriteCallback callback;bool8 inUse,invisible,usingSheet;u8 subpriority;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};
+static struct Sprite gSprites[64];static struct Task gTasks[16];static u16 regs[256];static u8 gBattleAnimAttacker,gBattleAnimTarget,battlerSpriteIds[4];static int doubles,frame,copyId=-1,taskFreed,copyFreed;
+static u8 GetAnimBattlerSpriteId(u8 b){return battlerSpriteIds[b==0?gBattleAnimAttacker:gBattleAnimTarget];}
+static u8 GetBattlerSide(u8 b){return b&1;}
+static void SetGpuReg(u16 r,u16 v){regs[r]=v;}
+static void DestroyAnimVisualTask(u8 id){gTasks[id].isActive=0;taskFreed++;}
+static void DestroySprite(struct Sprite*s){assert(s->inUse&&s->usingSheet);s->inUse=0;copyFreed++;}
+static void SpriteCallbackDummy(struct Sprite*s){}
+static void StoreSpriteCallbackInData6(struct Sprite*s,SpriteCallback cb){assert(cb==SpriteCallbackDummy);s->data[6]=1;s->data[7]=0;}
+static void SetCallbackToStoredInData6(struct Sprite*s){assert(s->data[6]==1&&s->data[7]==0);s->callback=SpriteCallbackDummy;}
+@PROTOTYPES@
+@FUNCTIONS@
+static void row(void){printf("{\"frame\":%d,\"alive\":%d,\"blend\":[%d,%d],\"taskFreed\":%d,\"copyFreed\":%d,\"task\":[",frame,gTasks[0].isActive,regs[REG_OFFSET_BLDCNT],regs[REG_OFFSET_BLDALPHA],taskFreed,copyFreed);for(int i=0;i<16;i++)printf("%s%d",i?",":"",gTasks[0].data[i]);printf("],\"copy\":");if(copyId<0)printf("null");else{struct Sprite*s=&gSprites[copyId];printf("{\"alive\":%d,\"position\":[%d,%d,%d,%d],\"visible\":%d,\"mode\":%d,\"priority\":%d,\"subpriority\":%d,\"callbackDummy\":%d}",s->inUse,s->x,s->y,s->x2,s->y2,!s->invisible,s->oam.objMode,s->oam.priority,s->subpriority,s->callback==SpriteCallbackDummy);}puts("}");}
+int main(int argc,char**argv){assert(argc==8);doubles=atoi(argv[1]);gBattleAnimAttacker=atoi(argv[2]);gBattleAnimTarget=atoi(argv[3]);int hidden=atoi(argv[4]),freeCell=atoi(argv[5]),present=atoi(argv[6]),mapping=atoi(argv[7]);int xs[2][4]={{72,176,48,112},{32,200,90,152}},ys[2][4]={{88,48,48,88},{88,48,96,40}},sub[4]={30,40,20,50},alt[4]={20,6,47,39};
+for(int i=0;i<64;i++)gSprites[i].inUse=TRUE;
+for(int i=0;i<4;i++){int id=battlerSpriteIds[i]=mapping?alt[i]:i;struct Sprite*s=&gSprites[id];s->x=xs[doubles][i];s->y=ys[doubles][i];s->x2=3;s->y2=-2;s->oam.priority=2;s->subpriority=sub[i];s->callback=SpriteCallbackDummy;for(int j=0;j<8;j++)s->data[j]=123+j;}
+gSprites[battlerSpriteIds[gBattleAnimTarget]].invisible=hidden;if(!present)battlerSpriteIds[gBattleAnimTarget]=SPRITE_NONE;if(freeCell)gSprites[4].inUse=FALSE;gTasks[0].isActive=1;AnimTask_NightmareClone(0);if(gTasks[0].isActive)copyId=gTasks[0].data[0];row();
+for(frame=1;gTasks[0].isActive&&frame<200;frame++){if(copyId>=0&&gSprites[copyId].inUse)gSprites[copyId].callback(&gSprites[copyId]);if(gTasks[0].isActive)gTasks[0].func(0);row();}assert(!gTasks[0].isActive);return 0;}

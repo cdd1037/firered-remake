@@ -26,7 +26,7 @@ public sealed partial class SourceBattleAnimation
                 // affine-off tails consume cells, but no source matrix slots.
                 if(_spriteScene.Sprites.Any(s=>s.Frame.Affine||s.Frame.Scale!=256))Fail(command,"Impact emitter cannot prove retained affine matrix capacity.");
                 int needed=name=="AnimTask_BarrageBall"?2:8;
-                if(Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>b.Visible&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<needed)Fail(command,"Impact emitter source sprite capacity proof failed.");
+                if(Enumerable.Range(0,SourceSpriteRegistry<VisualSprite>.Capacity).Count(i=>!_battlers.Values.Any(b=>IsSourceBattlerPresent(b.Slot.Value)&&b.Slot.Value==i)&&!_spriteScene.Sprites.Any(s=>s.Slot==i))<needed)Fail(command,"Impact emitter source sprite capacity proof failed.");
                 if(name=="AnimTask_DrillPeckHitSplats"&&_script.Commands.Any(c=>c.Op=="loadspritegfx"&&c.Args[0]=="ANIM_TAG_WHIRLWIND_LINES"))
                 {
                     if(!_script.MaterialDependencies.Contains("whirlwind-lines"))Fail(command,"Drill Peck load-only source material is missing.");

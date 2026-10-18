@@ -11,7 +11,7 @@ public sealed class RecoveryVisualSourceOracleTests
     private static readonly string[] Templates=["gSleepLetterZSpriteTemplate","gGreenStarSpriteTemplate","gMoonSpriteTemplate","gMoonlightSparkleSpriteTemplate","gAuroraBeamRingSpriteTemplate"];
     private static readonly string[] Tags=["ANIM_TAG_LETTER_Z","ANIM_TAG_GREEN_STAR","ANIM_TAG_MOON","ANIM_TAG_GREEN_SPARKLE","ANIM_TAG_RAINBOW_RINGS"];
     private sealed class Audio:ISourceAnimationAudio{public readonly List<SourceAnimationSound> Cues=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound c)=>Cues.Add(c);public void StopAnimationEffects(){}}
-    private static JsonDocument Vectors(string kind)=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,$"tests/Game.Presentation.Tests/Fixtures/recovery-{kind}-source-vectors.json")));
+    private static JsonDocument Vectors(string kind) => SourceVectorFixture.Read($"recovery-{kind}-source-vectors.json", "python tests/Reference/Recovery/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures");
     private static int[] N(JsonElement e)=>e.EnumerateArray().Select(v=>v.GetInt32()).ToArray();
     private static string Text(int n)=>n.ToString(CultureInfo.InvariantCulture);
     private static SourceAnimationCommand C(string op,params string[] args)=>new(op,args,1);
@@ -112,6 +112,15 @@ public sealed class RecoveryVisualSourceOracleTests
             }
             if(kind==1)Assert.AreEqual(0,runtime.Snapshot().BackgroundPaletteEntries.Length);runtime.Cancel();cases++;
         }
-        Assert.AreEqual(28,cases);Assert.AreEqual(2632,rows);
+        Assert.AreEqual(document.RootElement.GetProperty("profile").GetString()=="full"?28:8,cases);Assert.AreEqual(document.RootElement.GetProperty("profile").GetString()=="full"?2632:816,rows);
+    }
+
+    [TestMethod]
+    public void TaskProfilesKeepEveryKindAndVisibilityWithPreexistingFadeBoundary()
+    {
+        using var data=Vectors("tasks");var cases=data.RootElement.GetProperty("cases").EnumerateArray().ToArray();
+        CollectionAssert.AreEquivalent(new[]{0,1,2,3},cases.Select(c=>c.GetProperty("kind").GetInt32()).Distinct().ToArray());
+        CollectionAssert.AreEquivalent(new[]{(3,false),(3,true),(15,false),(15,true)},cases.Where(c=>c.GetProperty("kind").GetInt32()==1).Select(c=>(c.GetProperty("visibleMask").GetInt32(),c.GetProperty("preexistingFade").GetBoolean())).Distinct().ToArray());
+        CollectionAssert.AreEquivalent(new[]{0,1},cases.Where(c=>c.GetProperty("kind").GetInt32()==0).Select(c=>c.GetProperty("attacker").GetInt32()&1).Distinct().ToArray());
     }
 }

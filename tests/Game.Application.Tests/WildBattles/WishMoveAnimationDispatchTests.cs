@@ -332,7 +332,8 @@ public sealed class WishMoveAnimationDispatchTests
         Assert.IsTrue(result.Events.OfType<SourceCalledDelayedEvent>().Any(e => e.Move == Wish && e.Reason == "scheduled"));
         Assert.IsTrue(result.Events.OfType<SourceAttackStringEvent>().Any(e => e.CurrentMove == Wish && e.ChosenMove == Id("METRONOME")));
         Assert.IsFalse(result.State.Slots[0].Body!.Protected);
-        AssertDenied(result.Events, "called Wish remains outside direct admission", single: true);
+        CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, true, 273);
+        CallerPreludeAnimationKernelFixture.DenyLeaf(result.Events, false, 273);
     }
 
     [TestMethod]

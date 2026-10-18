@@ -21,7 +21,7 @@ public sealed class HailAnimationTests
     public void ExtractedTaskParticlesAndCounterTransfersMatchAllVisibilityAndFormVectors()
     {
         using var resources=new SourceAnimationResources(Folder);var script=Isolated(resources.Resolve(258).Script);
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/hail-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("hail-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_hail_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/hail-source-vectors.json");
         bool lowerSlot=false,samePass=false;
         foreach(var entry in doc.RootElement.GetProperty("cases").EnumerateObject())
         {

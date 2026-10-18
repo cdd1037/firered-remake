@@ -16,7 +16,7 @@ public sealed class AdjustedPanCommandTests
     [TestMethod]
     public void ExtractedSignedByteAdjustmentAndProgressingTaskVectorsMatchTheSharedPlayer()
     {
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/panse-adjustall-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("panse-adjustall-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_panse_adjustall_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/panse-adjustall-source-vectors.json");
         var adjust=typeof(SourceBattleAnimation).GetMethod("AdjustPanning2",BindingFlags.Instance|BindingFlags.NonPublic);Assert.IsNotNull(adjust);
         foreach(var row in doc.RootElement.GetProperty("adjustments").EnumerateArray())
         {
@@ -42,7 +42,7 @@ public sealed class AdjustedPanCommandTests
     {
         // Cmd_panse_adjustnone installs the same source task and raw signed-byte
         // arguments. Player-side noncontest adjusted vectors are its identity case.
-        using var doc=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/panse-adjustall-source-vectors.json")));
+        using var doc=SourceVectorFixture.Read("panse-adjustall-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_panse_adjustall_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/panse-adjustall-source-vectors.json");
         var inputs=doc.RootElement.GetProperty("inputCases");int configurations=0;
         foreach(var entry in doc.RootElement.GetProperty("cases").EnumerateObject())
         {

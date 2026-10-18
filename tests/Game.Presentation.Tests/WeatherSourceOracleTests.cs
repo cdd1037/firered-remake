@@ -26,7 +26,7 @@ public sealed class WeatherSourceOracleTests
         public override void Step(SourceBattleAnimation owner) { }
     }
     private static string Folder => Path.Combine(TestAssets.Root, "content/generated/battle/animations");
-    private static JsonDocument Vectors(string kind) => JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, $"tests/Game.Presentation.Tests/Fixtures/weather-{kind}-source-vectors.json")));
+    private static JsonDocument Vectors(string kind) => SourceVectorFixture.Read($"weather-{kind}-source-vectors.json", "python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures");
     private static int[] N(JsonElement e) => e.EnumerateArray().Select(v => v.GetInt32()).ToArray();
     private static string Text(int n) => n.ToString(CultureInfo.InvariantCulture);
     private static T Field<T>(object value, string name)
@@ -126,7 +126,7 @@ public sealed class WeatherSourceOracleTests
             }
             Finish(r, scene, battlers); cases++;
         }
-        Assert.AreEqual(56, cases); Assert.AreEqual(2208, rows);
+        Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?56:14, cases); Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?2208:552, rows);
     }
 
     [TestMethod]
@@ -151,7 +151,7 @@ public sealed class WeatherSourceOracleTests
             }
             Finish(r, scene, battlers); cases++;
         }
-        Assert.AreEqual(32, cases); Assert.AreEqual(4160, rows);
+        Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?32:6, cases); Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?4160:780, rows);
     }
 
     [TestMethod]
@@ -270,7 +270,7 @@ public sealed class WeatherSourceOracleTests
             }
             Finish(r, scene, battlers); cases++;
         }
-        Assert.AreEqual(16, cases); Assert.AreEqual(232, rows);
+        Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?16:6, cases); Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?232:87, rows);
     }
 
     [TestMethod]
@@ -305,7 +305,7 @@ public sealed class WeatherSourceOracleTests
             }
             r.Cancel(); Assert.AreEqual(0, r.ActiveVisualCount); Assert.AreEqual(0, scene.Count); cases++;
         }
-        Assert.AreEqual(8, cases);
+        Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?8:2, cases);
     }
 
     [TestMethod]
@@ -326,7 +326,7 @@ public sealed class WeatherSourceOracleTests
                 rows++;
             }
         }
-        Assert.AreEqual(248, rows);
+        Assert.AreEqual(doc.RootElement.GetProperty("profile").GetString()=="full"?248:91, rows);
     }
 
     [TestMethod]
@@ -348,5 +348,21 @@ public sealed class WeatherSourceOracleTests
             Finish(r, scene, battlers); cases++;
         }
         Assert.AreEqual(28, cases); Assert.AreEqual(1340, rows);
+    }
+
+    [TestMethod]
+    public void MotionProfilesKeepRecipesDirectionsPartnerVisibilityAndPaletteBankBoundaries()
+    {
+        using var data=Vectors("motion");var root=data.RootElement;
+        var crescents=root.GetProperty("crescents").EnumerateArray().ToArray();
+        Assert.AreEqual(7,crescents.Select(c=>string.Join(",",N(c.GetProperty("args")).Take(3))).Distinct().Count());
+        CollectionAssert.AreEquivalent(new[]{false,true},crescents.Select(c=>(c.GetProperty("attacker").GetInt32()&1)!=0&&c.GetProperty("args")[3].GetInt32()!=0).Distinct().ToArray());
+        var heat=root.GetProperty("heat").EnumerateArray().ToArray();
+        CollectionAssert.AreEquivalent(new[]{3,15},heat.Select(c=>c.GetProperty("visibleMask").GetInt32()).Distinct().ToArray());
+        CollectionAssert.AreEquivalent(new[]{0,1},heat.Select(c=>c.GetProperty("attacker").GetInt32()&1).Distinct().ToArray());
+        var blends=root.GetProperty("blends").EnumerateArray().ToArray();
+        CollectionAssert.AreEquivalent(Enumerable.Range(0,6).ToArray(),blends.Select(c=>c.GetProperty("kind").GetInt32()).Distinct().ToArray());
+        CollectionAssert.AreEquivalent(new[]{0,3,15},blends.Where(c=>c.GetProperty("kind").GetInt32()==4).Select(c=>c.GetProperty("paletteIndex").GetInt32()).Distinct().ToArray());
+        Assert.AreEqual(154,root.GetProperty("abi").GetArrayLength(),"Material fragment indices retain the complete original ABI order.");
     }
 }

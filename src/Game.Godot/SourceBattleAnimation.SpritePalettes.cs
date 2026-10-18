@@ -31,7 +31,7 @@ public sealed partial class SourceBattleAnimation
         if(!_loaded.Add(symbol))return;
         if(!_script.SpriteTags.TryGetValue(symbol,out int tag))return;
         int slot=FindSpritePalette(tag);if(slot!=255)return;
-        slot=AllocateSpritePalette(tag);if(slot==255)return;
+        slot=AllocateSpritePalette(tag);if(slot==255)return;ResetPaletteTransform(16+slot);
         if(_script.SpritePalettes.TryGetValue(tag,out var palette)){Array.Copy(palette,_spritePaletteUnfadedBanks[slot],16);WriteFadedSpritePalette(slot,0,palette);}
     }
     private void RotateSpritePalette(int tag,int first,int count)
@@ -42,14 +42,37 @@ public sealed partial class SourceBattleAnimation
     }
     private void MoveBattlerToBackground(int slot,bool follow)
     {
-        if(!_battlers[slot].Visible)return;
+        if(!IsSourceBattlerVisible(slot))return;
         SetBackgroundPriority(_battlers[slot].BackgroundRank,2);
-        _backgrounds.Add(slot);_restoredObject[slot]=false;
+        _backgrounds.Add(slot);_restoredObject[slot]=false;SetSourceBattlerSpriteInvisible(slot,true);
         if(follow)_staticBackgroundCopies.Remove(slot);
         // MoveBattlerSpriteToBG copies the unfaded source palette. Only its
         // optional updater follows later faded OBJ palette changes.
-        else _staticBackgroundCopies[slot]=new(slot,_offsets[slot],null,false,false);
+        else _staticBackgroundCopies[slot]=new(slot,BattlerBackgroundOffset(slot),UnfadedPaletteBlend(16+slot),false,false);
     }
-    private void RestoreBattlerObject(int slot)=>_restoredObject[slot]=_battlers[slot].Visible;
+    private void MoveBattlerToStaticBackground(int slot)
+    {
+        if(!IsSourceBattlerVisible(slot))return;
+        MoveBattlerToBackground(slot,false);
+        SetSourceBattlerSpriteInvisible(slot,false);
+    }
+    private sealed class ClearStaticBattlerBackgroundTask(int slot,int partner):VisualTask
+    {
+        private int _ticks;
+        public override bool Counted=>false;
+        public override void Step(SourceBattleAnimation owner)
+        {
+            if(++_ticks==1)return;
+            foreach(int selected in new[]{slot,partner})
+            {
+                if(selected<0||!owner.IsSourceBattlerVisible(selected))continue;
+                int rank=owner._battlers[selected].BackgroundRank;
+                foreach(int copied in owner._backgrounds.Where(i=>owner._battlers[i].BackgroundRank==rank).ToArray())
+                {owner._backgrounds.Remove(copied);owner._staticBackgroundCopies.Remove(copied);}
+            }
+            Finished=true;
+        }
+    }
+    private void RestoreBattlerObject(int slot){_restoredObject[slot]=IsSourceBattlerVisible(slot);if(_restoredObject[slot])SetSourceBattlerSpriteInvisible(slot,false);}
     private void ClearBattlerBackgrounds(){_backgrounds.Clear();_staticBackgroundCopies.Clear();}
 }

@@ -82,7 +82,8 @@ internal abstract partial class SourceRecipeContext
         int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
         int rawDamage = SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent, power);
         int damage = AdjustHeldDamage(target, move.Id, rawDamage, purpose);
-        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
+        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent,
+            preparedFuryCutterCounter: fury ? Get(actor).FuryCutterCounter : null);
         HitSequenceReportType(catalog, actor, target, move);
         var secondary = SecondaryEffect(actor, move, purpose, rawDamage == 0, certain: move.Effect == "EFFECT_FAKE_OUT");
         if (secondary.Apply && move.Effect == "EFFECT_FAKE_OUT") ApplySecondaryFlinch(target, secondary.Certain);

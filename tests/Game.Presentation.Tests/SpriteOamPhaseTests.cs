@@ -16,7 +16,7 @@ public sealed class SpriteOamPhaseTests
         var runtime=new SourceBattleAnimation(script,new("phase",1,97,new(0),new(1)),
             [new(new(0),"actor",0,0,32,32),new(new(1),"target",0,0,32,32)],false,new Audio());
         var allocated=runtime.Tick();
-        Assert.AreEqual(2,runtime.ActiveVisualCount,"The task owns its first live clone after RunTasks.");
+        Assert.AreEqual(1,runtime.ActiveVisualCount,"Only the parent task is counted; its raw clone owns no visual counter.");
         Assert.AreEqual(0,allocated.Sprites.Length,"Allocation after OAM construction is not visible yet.");
         Assert.AreEqual(0,runtime.Snapshot().Sprites.Length);
         var shown=runtime.Tick();

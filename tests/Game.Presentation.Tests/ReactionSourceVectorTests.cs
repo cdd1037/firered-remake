@@ -47,7 +47,7 @@ public sealed class ReactionSourceVectorTests
     private static bool Finished(object value) => Property<bool>(value, "Finished");
     private static int[] Numbers(JsonElement value) => value.EnumerateArray().Select(v => v.GetInt32()).ToArray();
     private static int[] Key(string key) => key.Split(':').Select(v => int.Parse(v, CultureInfo.InvariantCulture)).ToArray();
-    private static JsonDocument Vectors() => JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root, "tests/Game.Presentation.Tests/Fixtures", Fixture)));
+    private static JsonDocument Vectors() => SourceVectorFixture.Read(Fixture, "python tests/Game.Presentation.Tests/Reference/generate_reaction_vectors.py --root . --output-dir tests/Game.Presentation.Tests/Fixtures");
     private sealed class Columns(JsonElement root, string name)
     {
         private readonly Dictionary<string, int> _indices = root.GetProperty(name).EnumerateArray().Select((v, i) => (Name: v.GetString()!, Index: i)).ToDictionary(p => p.Name, p => p.Index);
@@ -271,9 +271,7 @@ public sealed class ReactionSourceVectorTests
             }
             Assert.AreEqual(0, probe.Owner.ActiveVisualCount, entry.Name); Assert.AreEqual(0, Sprites(probe.Owner).Length, entry.Name); probe.Owner.Cancel(); cases++;
         }
-        Assert.AreEqual(root.GetProperty("coverage").GetProperty("focusedCaseCount").GetInt32(), cases);
-        Assert.AreEqual(root.GetProperty("coverage").GetProperty("focusedRowCount").GetInt32(), rows);
-        Assert.AreEqual(138, cases); Assert.AreEqual(8226, rows); Assert.AreEqual(12, leafPeak, "Eleven trails plus one controller, not a guessed twenty-slot reservation.");
+        AssertCoverage(root, cases, rows); Assert.AreEqual(12, leafPeak, "Eleven trails plus one controller, not a guessed twenty-slot reservation.");
     }
 
     [TestMethod]
@@ -330,4 +328,64 @@ public sealed class ReactionSourceVectorTests
         probe.Owner.Cancel();
     }
 
+
+    private static void AssertCoverage(JsonElement root, int cases, int rows)
+    {
+        string? profile = root.GetProperty("profile").GetString();
+        Assert.IsTrue(profile is "representative" or "full", "Explicit source-vector profile is required.");
+        string[] required =
+        [
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "0:0:0:1:0","0:0:0:1:1","0:0:0:1:2",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "1:0:0:1:0","1:0:0:1:1","1:0:0:1:2","1:0:0:1:3",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "2:0:0:1:0","2:0:0:1:1","2:0:0:1:2","2:0:0:1:3",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "3:0:0:1:0","3:0:0:1:1","3:0:0:1:2",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "4:0:0:1:0","4:0:0:1:1","4:0:0:1:2","4:0:0:1:3",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "5:0:0:1:0","5:0:0:1:1","5:0:0:1:3",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "6:0:0:1:0","6:0:0:1:1","6:0:0:1:2",
+            // Every admitted configuration, including cancellation boundaries, dimensions and allocator modes
+            "7:0:0:1:0","7:0:0:1:1","7:0:0:1:2","7:0:0:1:3",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "0:0:1:0:0",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "1:0:1:0:2",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "3:0:1:0:1",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "4:0:1:0:0","4:0:1:0:1",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "5:0:1:0:3",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "6:0:1:0:2",
+            // Reverse side: mirrored hand/frame choices, squish, palette and leaf trajectory
+            "7:0:1:0:0",
+            // Doubles rear geometry with alternate dimensions and allocation pressure
+            "0:1:2:3:1",
+            // Doubles rear geometry with alternate dimensions and allocation pressure
+            "1:1:2:3:3",
+            // Doubles rear geometry with alternate dimensions and allocation pressure
+            "2:1:2:3:3",
+            // Doubles rear geometry with alternate dimensions and allocation pressure
+            "3:1:2:3:2",
+            // Doubles rear geometry with alternate dimensions and allocation pressure
+            "4:1:2:3:3",
+            // Doubles rear geometry with alternate dimensions and allocation pressure
+            "7:1:2:3:1",
+            // Leaf: rear player target geometry; attacker identity does not affect this callback
+            "7:1:3:2:0",
+        ];
+        var actual = root.GetProperty("cases").EnumerateObject().Select(entry => entry.Name).ToArray();
+        foreach (string key in required) Assert.IsTrue(actual.Contains(key), "Missing source branch/boundary case " + key);
+        if (profile == "representative") CollectionAssert.AreEquivalent(required, actual, "Representative selection must be exact.");
+        Assert.AreEqual(profile == "full" ? 560 : 43, cases);
+        Assert.AreEqual(profile == "full" ? 33820 : 2801, rows);
+        Assert.AreEqual(cases, root.GetProperty("coverage").GetProperty("caseCount").GetInt32());
+        Assert.AreEqual(rows, root.GetProperty("coverage").GetProperty("rowCount").GetInt32());
+    }
 }

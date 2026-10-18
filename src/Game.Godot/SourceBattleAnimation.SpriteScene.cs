@@ -19,23 +19,25 @@ public sealed partial class SourceBattleAnimation
             if(_current is {Active:true})throw new InvalidOperationException("A scene already has an active animation controller.");
             _current=owner;_idleBattlers=null;
         }
-        internal bool Reserved(int slot)=>_idleBattlers is {} idle?idle.Any(b=>b.Slot.Value==slot&&b.Visible):
-            _current is {} owner&&owner._battlers.TryGetValue(slot,out var b)&&b.Visible;
+        internal bool Reserved(int slot)=>_idleBattlers is {} idle?idle.Any(b=>b.Slot.Value==slot&&InitialSourceVisibility(b).Present):
+            _current is {} owner&&owner.IsSourceBattlerPresent(slot);
         internal void EnsureController(SourceBattleAnimation owner)
         {if(!ReferenceEquals(_current,owner))throw new InvalidOperationException("Only the current controller may advance scene sprites.");}
         internal void Advance()=>Sprites.Advance(s=>s.Owner!.StepSourceSprite(s),s=>s.AdvanceAnimation(s.Owner!));
-        public SourceAnimationFrame TickIdle(AnimationBattler[] battlers,bool doubles)
+        public SourceAnimationFrame TickIdle(AnimationBattler[] battlers,bool doubles,SourceCompletedBattlerState? completedState=null)
         {
             if(_current is {Active:true})throw new InvalidOperationException("The active controller owns the scene tick.");
             _idleBattlers=battlers;
-            Advance();return CaptureIdle(battlers,doubles);
+            Advance();return CaptureIdle(battlers,doubles,completedState);
         }
-        public SourceAnimationFrame CaptureIdle(AnimationBattler[] battlers,bool doubles)
+        public SourceAnimationFrame CaptureIdle(AnimationBattler[] battlers,bool doubles,SourceCompletedBattlerState? completedState=null)
         {
             if(_current is {Active:true})throw new InvalidOperationException("The active controller owns the scene frame.");
-            _idleBattlers=battlers;_current?.SortSourceSprites(battlers,doubles);
-            return new(-1,false,new PixelPoint[4],[],0,0,[],[])
-            {Battlers=battlers,Doubles=doubles,Sprites=_current?.SpriteOamSnapshot()??[],
+            _idleBattlers=battlers;
+            var frame=new SourceAnimationFrame(-1,false,new PixelPoint[4],[],0,0,[],[]){Battlers=battlers,Doubles=doubles};
+            frame=completedState?.Apply(frame)??frame;
+            _current?.SortSourceSprites(frame.Battlers,doubles,frame);
+            return frame with{Sprites=_current?.SpriteOamSnapshot()??[],
                 BattlerOamRanks=battlers.Select(b=>Array.IndexOf(Order,b.Slot.Value)).ToArray()};
         }
         public void Cancel()
@@ -75,7 +77,10 @@ public sealed partial class SourceBattleAnimation
     private SourceVisualSpriteFrame[] SpriteOamSnapshot()=>_spriteOam.Select((frame,i)=>_spriteOamOwners[i].MaterialFrame(frame)).ToArray();
     private SourceVisualSpriteFrame MaterialFrame(SourceVisualSpriteFrame frame)
     {
-        SourcePixelAsset? material=frame.Asset is {} id&&_spriteMaterials is not null?_spriteMaterials[id]:null;
+        // Battler copies resolve their body and detached palette through the battler composer,
+        // not the effect-sheet catalog. Missing ordinary effect assets still fail closed.
+        if(frame.BattlerCopySlot>=0)return frame;
+        SourcePixelAsset? material=frame.Material??(frame.Asset is {} id&&_spriteMaterials is not null?_spriteMaterials[id]:null);
         ushort[]? palette=null;
         if(frame.PaletteSlot is int slot)palette=(ushort[])_spritePaletteBanks[slot].Clone();
         else if(material is {PaletteTag:>=0})

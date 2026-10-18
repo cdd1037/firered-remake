@@ -24,14 +24,14 @@ public sealed partial class SourceBattleAnimation
         if(a[0] is not ("SoundTask_PlayCryHighPitch" or "SoundTask_PlayDoubleCry" or "SoundTask_PlayCryWithEcho" or "SoundTask_WaitForCry"))return false;
         bool selected=a[0] is "SoundTask_PlayCryHighPitch" or "SoundTask_PlayDoubleCry";
         if(a.Length!=(selected?4:2)||Number(a[1]) is <0 or >255||selected&&(Number(a[2]) is <0 or >3||AnimationArgument(a[3]) is <short.MinValue or >short.MaxValue))Fail(c,"Cry task source operands differ.");
-        if(a[0]=="SoundTask_PlayDoubleCry"&&AnimationArgument(a[3])!=255)Fail(c,"Only reviewed Growl double-cry mode is admitted.");
+        if(a[0]=="SoundTask_PlayDoubleCry"&&AnimationArgument(a[3]) is not (2 or 255))Fail(c,"Double-cry selector differs from reviewed Roar/Growl modes.");
         if(_validatingInvokedProgram)
         {
             if(!_audio.SupportsCries)Fail(c,"source-cry-audio-unavailable");
             if(a[0]!="SoundTask_WaitForCry")
             {
                 int participant=selected?Number(a[2]):0,slot=VoiceParticipant(participant);
-                if((participant is not (1 or 3)||_battlers.TryGetValue(slot,out var target)&&target.Visible)&&(!_originalPartySpecies.TryGetValue(slot,out int species)||species is <0 or >ushort.MaxValue))Fail(c,"Original-party cry species is missing or outside source width.");
+                if((participant is not (1 or 3)||IsSourceBattlerVisible(slot))&&(!_originalPartySpecies.TryGetValue(slot,out int species)||species is <0 or >ushort.MaxValue))Fail(c,"Original-party cry species is missing or outside source width.");
             }
         }
         return true;
@@ -53,11 +53,11 @@ public sealed partial class SourceBattleAnimation
         if(a[0]=="SoundTask_WaitForCry"){_tasks.Add(new VoiceCryTask(0,0,0,true));return true;}
         if(a[0] is not ("SoundTask_PlayCryHighPitch" or "SoundTask_PlayDoubleCry" or "SoundTask_PlayCryWithEcho"))return false;
         int participant=a[0]=="SoundTask_PlayCryWithEcho"?0:Number(a[2]),b=VoiceParticipant(participant);
-        if(participant is 1 or 3&&(!_battlers.TryGetValue(b,out var target)||!target.Visible))return true;
+        if(participant is 1 or 3&&!IsSourceBattlerVisible(b))return true;
         int species=_originalPartySpecies[b],pan=AdjustPanning(-64);if(species==0)return true;
-        int mode=a[0] switch{"SoundTask_PlayCryHighPitch"=>3,"SoundTask_PlayDoubleCry"=>9,_=>4};
+        int mode=a[0] switch{"SoundTask_PlayCryHighPitch"=>3,"SoundTask_PlayDoubleCry"=>AnimationArgument(a[3])==255?9:7,_=>4};
         _audio.PlayCry(new(species,mode,pan,_frame));
-        if(mode!=3)_tasks.Add(new VoiceCryTask(species,pan,mode==9?10:6,false));return true;
+        if(mode!=3)_tasks.Add(new VoiceCryTask(species,pan,mode==9?10:mode==7?8:6,false));return true;
     }
     private sealed class VoiceCryTask(int species,int pan,int secondMode,bool waitOnly):VisualTask
     {
@@ -107,7 +107,7 @@ public sealed partial class SourceBattleAnimation
             {
                 _affine=new(recipe.AffineAnimations[0]);var first=owner._battlers[a[5]==0?owner._cue.Actor.Value:owner._cue.Target.Value];var second=owner._battlers[a[5]==0?owner._cue.Target.Value:owner._cue.Actor.Value];
                 PixelPoint Coord(AnimationBattler b)=>a[6]!=0?b.Center(owner._doubles,true):b.Base(owner._doubles);
-                bool Partner(AnimationBattler b,out AnimationBattler p){if(owner._doubles&&owner._battlers.TryGetValue(b.Slot.Value^2,out var q)&&q.Visible){p=q;return true;}p=b;return false;}
+                bool Partner(AnimationBattler b,out AnimationBattler p){if(owner._doubles&&owner._battlers.TryGetValue(b.Slot.Value^2,out var q)&&owner.IsSourceBattlerVisible(q.Slot.Value)){p=q;return true;}p=b;return false;}
                 var start=Coord(first);_position=new(unchecked((short)(start.X+(first.Slot.IsPlayer?-a[0]:a[0]))),unchecked((short)(start.Y+a[1])));
                 if(!first.Slot.IsPlayer)_priority=unchecked((byte)((Partner(second,out var secondPartner)?secondPartner:second).Subpriority-1));
                 else if(Partner(first,out var p)&&first.Base(true).X<p.Base(true).X)_priority=unchecked((byte)(p.Subpriority+1));

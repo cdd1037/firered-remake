@@ -35,7 +35,12 @@ public sealed record WildBattleCalledDelayedState
 }
 public sealed record WildBattleSubstituteDamagedEvent(long Sequence, int Turn, WildBattleSide Actor,
     WildBattleSide Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent)
-    : WildBattleEvent(Sequence, Turn);
+    : WildBattleEvent(Sequence, Turn)
+{
+    /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
+}
 public sealed record WildBattleCalledDelayedEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move,
     int Before, int After, string Reason, int? SourcePartyIndex = null) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleMagicCoatPressurePpEvent(long Sequence, int Turn, WildBattleSide PressuringActor, WildBattleSide Reflector, int Slot, int Before, int After) : WildBattleEvent(Sequence, Turn);

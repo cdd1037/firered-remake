@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
+import tempfile
 import argparse,json,subprocess,sys,re
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from source_extract import *
 from validate_common import verify,compile_pair,observe
-p=argparse.ArgumentParser();p.add_argument('reference',type=Path);args=p.parse_args();root=args.reference;out=Path(__file__).resolve().parent
+HERE=Path(__file__).resolve().parent
+p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('--build-dir',type=Path);p.add_argument('--output',type=Path,default=(HERE.parents[2]/ 'Game.Presentation.Tests/Fixtures')/'overlay-mist-source-vectors.json');p.add_argument('--full', action='store_true', help='Emit the complete original-C corpus instead of semantic representatives');args=p.parse_args();root=args.reference;out=(args.build_dir or Path(tempfile.mkdtemp(prefix='overlay-mist-reference-'))).resolve();out.mkdir(parents=True,exist_ok=True)
 paths=['src/battle_anim_ice.c','src/battle_anim_mons.c','src/battle_anim.c','include/battle_anim.h','include/constants/battle.h','src/sprite.c','src/battle_main.c','src/main.c','data/battle_anim_scripts.s']
 verify(root,paths)
 sources={p:(root/p).read_text() for p in paths}
 names={paths[0]:['AnimThrowMistBall'],paths[1]:['SetAnimSpriteInitialXOffset','InitSpritePosToAnimAttacker','InitAnimLinearTranslation','StartAnimLinearTranslation','AnimTranslateLinear','AnimTranslateLinear_WithFollowup','TranslateAnimSpriteToTargetMonLocation'],paths[2]:['DestroyAnimSprite']}
 functions='\n'.join(function(sources[path],name) for path,ns in names.items() for name in ns)
-generated=(out/'harness.c.in').read_text().replace('@FUNCTIONS@',functions).replace('@ARRAY@',array(sources[paths[1]],'sBattlerCoords')).replace('@ENUM@',enum_containing(sources[paths[3]],'BATTLER_COORD_X_2')).replace('@DEFINES@',macros([sources[paths[3]],sources[paths[4]]],['MAX_BATTLERS_COUNT','B_SIDE_PLAYER','sTransl_Speed','sTransl_InitX','sTransl_InitY','sTransl_DestX','sTransl_DestY']))
+generated=(HERE/'harness.c.in').read_text().replace('@FUNCTIONS@',functions).replace('@ARRAY@',array(sources[paths[1]],'sBattlerCoords')).replace('@ENUM@',enum_containing(sources[paths[3]],'BATTLER_COORD_X_2')).replace('@DEFINES@',macros([sources[paths[3]],sources[paths[4]]],['MAX_BATTLERS_COUNT','B_SIDE_PLAYER','sTransl_Speed','sTransl_InitX','sTransl_InitY','sTransl_DestX','sTransl_DestY']))
 (out/'generated.c').write_text(generated);compile_pair(out/'generated.c',out/'oracle')
 script=sources['data/battle_anim_scripts.s'];m=re.search(r'^\s*createsprite gMistBallSpriteTemplate, ANIM_TARGET, 0, ([^\n]+)',script,re.M);recipe=[int(x.strip(),0) for x in m[1].split(',')];assert recipe==[0,0,0,0,30,0]
 cases=[]
@@ -31,6 +33,13 @@ for side in range(2):
  run('u16-accumulator-wrap',1,side,side^1,recipe,mode=1)
 for side in range(2):
  for flag in [0,1,256,257]:run('divergent-coordinate-helper-probe',1,side,side^1,[11,-9,13,-7,30,flag],mode=2)
-result=dict(optimization_parity=['O0','O2'],schema='firered-mist-ball-source-v1',commit=COMMIT,sources=identity(root,paths),source_functions=names,recipe=recipe,callback_ids={'0':'AnimThrowMistBall','1':'TranslateAnimSpriteToTargetMonLocation','2':'StartAnimLinearTranslation','3':'AnimTranslateLinear_WithFollowup','4':'DestroyAnimSprite'},stub_picture_offsets=[8,3,12,-4],normal_coord2_picture_offsets=[8,3,12,-4],divergent_probe_coord2_picture_offsets=[10,7,14,-2],cases=cases)
-(out/'vectors.json').write_text(json.dumps(result,separators=(',',':'))+'\n')
-print(json.dumps({'cases':len(cases),'rows':sum(len(c['rows']) for c in cases),'recipe_destroy_invocation':cases[0]['rows'][-1]['invocation'],'path':str(out/'vectors.json')}))
+def representative(c):
+    # Every signed/wide/equal-coordinate/accumulator boundary is retained.
+    # Normal/offset flag recipes use opposing sides and both layouts.
+    return c['probe'] or (c['double'], c['attacker'], c['target']) in [(False, 0, 1), (True, 3, 2)]
+
+if not args.full:
+    cases = [c for c in cases if representative(c)]
+result=dict(profile='full' if args.full else 'representative',optimization_parity=['O0','O2'],schema='firered-mist-ball-source-v1',commit=COMMIT,sources=identity(root,paths),source_functions=names,recipe=recipe,callback_ids={'0':'AnimThrowMistBall','1':'TranslateAnimSpriteToTargetMonLocation','2':'StartAnimLinearTranslation','3':'AnimTranslateLinear_WithFollowup','4':'DestroyAnimSprite'},stub_picture_offsets=[8,3,12,-4],normal_coord2_picture_offsets=[8,3,12,-4],divergent_probe_coord2_picture_offsets=[10,7,14,-2],cases=cases)
+args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,separators=(',',':'))+'\n')
+print(json.dumps({'cases':len(cases),'rows':sum(len(c['rows']) for c in cases),'recipe_destroy_invocation':cases[0]['rows'][-1]['invocation'],'path':str(args.output)}))

@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """Structural and lifetime checks independent of product implementations."""
-import json,hashlib
+import argparse,json,hashlib
 from pathlib import Path
 here=Path(__file__).resolve().parent;n=0
+
+p=argparse.ArgumentParser();p.add_argument('--fixtures',type=Path);a=p.parse_args()
 
 def check(v):
  global n
  assert v
  n+=1
 
-def read(f):return json.loads((here/f).read_text())
+def read(f):
+ path = a.fixtures / ('weather-'+f.replace('-vectors.json','-source-vectors.json')) if a.fixtures else here / (f)
+ if not path.is_file():raise FileNotFoundError(f'Missing {path}. Generate explicitly: python tests/Reference/Weather/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures')
+ return json.loads(path.read_text())
 bg=read('bg-vectors.json')
 for c in bg['cases']:
  rows=c['rows'];check(rows[0]['registers']==[0x3f42,0x1000,0,0]);check(rows[-1]['alive']==0);check(rows[-1]['registers'][:2]==[0,0]);check(rows[-1]['bg1']==[0,0]);check(rows[-1]['data'][12]==4)
@@ -37,6 +42,7 @@ for c in engine['cases']:
  if c['scenario']<=3:ends.append((c['seed'],state));check(len(alloc)==40)
 check(len({state for seed,state in ends if seed==1})==1)
 m=read('motion-vectors.json')
+check(m['profile'] in ['representative','full']);check(len(m['abi'])==154);check({c['kind'] for c in m['blends']}==set(range(6)));check({c['visibleMask'] for c in m['heat']}=={3,15})
 for c in m['crescents']:
  r=c['rows'];check(r[-1]['alive']==0 and r[-1]['visualCount']==0);check(r[-2]['alive']==1 and r[-2]['callback']==1);check(r[1]['flip']==(8 if c['args'][3] and c['attacker']&1 else 0));check(r[1]['subspriteMode']==1);check(r[1]['args'][1]==(-c['args'][1] if c['args'][3] and c['attacker']&1 else c['args'][1]))
 for c in m['heat']:
@@ -59,4 +65,4 @@ for c in schedule['cases']:
 for f in here.glob('*-vectors.json'):
  txt=f.read_text();check('/tmp/' not in txt and '/workspace/' not in txt and 'compilerVersion' not in txt)
 summary={'passed':True,'assertions':n,'fixtures':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(here.glob('*-vectors.json'))},'rows':{'background':sum(len(c['rows']) for c in bg['cases']),'spriteEngine':sum(len(c['rows']) for c in engine['cases']),'crescents':sum(len(c['rows']) for c in m['crescents']),'heat':sum(len(c['rows']) for c in m['heat']),'palette':sum(len(c['rows']) for c in m['blends']),'oam':len(m['abi']),'fragmentHashes':len(mat['fragmentRenders']),'sound':sum(len(c['rows']) for c in pan['cases']),'scheduling':sum(len(c['rows']) for c in schedule['cases'])}}
-(here/'verification.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary))
+print(json.dumps(summary))

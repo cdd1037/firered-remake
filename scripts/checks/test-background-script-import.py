@@ -5,6 +5,15 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('background_scripts', ROOT/'scripts/imports/battle/import-source-background-scripts.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=imp.ROOT/'content/raw/pokefirered/037335f4'
 class BackgroundScriptImportTests(unittest.TestCase):
+ def test_complete_elemental_programs_have_one_owner(self):
+  owned=imp.elemental.discover_scripts(REFERENCE)[0]
+  background=json.loads(imp.build(REFERENCE))['scripts']
+  self.assertIn(100,{row['moveId'] for row in owned})
+  self.assertFalse({row['moveId'] for row in owned}&{row['moveId'] for row in background})
+  # Ownership follows discovery, rather than a second manually maintained ID list.
+  with patch.object(imp.elemental,'discover_scripts',return_value=(owned+[{'moveId':158}],{})):
+   self.assertNotIn(158,{row['moveId'] for row in json.loads(imp.build(REFERENCE))['scripts']})
+
  def test_self_stat_variants_keep_source_background_closure_task_data_and_sound(self):
   pack=json.loads(imp.build(REFERENCE));rows={r['moveId']:r for r in pack['scripts']}
   self.assertEqual({'SE_M_HEADBUTT','SE_M_TAKE_DOWN'},set(rows[96]['soundEffects']));self.assertEqual({'SE_M_METRONOME'},set(rows[133]['soundEffects']))
@@ -22,7 +31,7 @@ class BackgroundScriptImportTests(unittest.TestCase):
   with patch.object(imp.elemental,'read',side_effect=read),self.assertRaises(ValueError):imp.build(REFERENCE)
 
  def test_dependency_discovery_and_source_symbols(self):
-  pack=json.loads(imp.build(REFERENCE));self.assertEqual({96,133,158,59,60,87,93,94,95,138,149,168,177,196,242,248,322},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_PSYCHIC':3,'BG_THUNDER':11,'BG_COSMIC':16,'BG_SKY':18,'BG_ICE':15,'BG_HIGHSPEED_PLAYER':10,'BG_HIGHSPEED_OPPONENT':9},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
+  pack=json.loads(imp.build(REFERENCE));self.assertEqual({59, 60, 87, 93, 94, 95, 96, 133, 138, 149, 158, 168, 177, 185, 196, 242, 248, 264, 286, 322, 354},{r['moveId'] for r in pack['scripts']});self.assertEqual({'BG_IMPACT_OPPONENT':4,'BG_IMPACT_PLAYER':5,'BG_DARK':1,'BG_PSYCHIC':3,'BG_THUNDER':11,'BG_COSMIC':16,'BG_SKY':18,'BG_ICE':15,'BG_HIGHSPEED_PLAYER':10,'BG_HIGHSPEED_OPPONENT':9},pack['backgroundSymbols']);self.assertNotIn('spriteRecipes',pack);self.assertNotIn('assets',pack);self.assertEqual(imp.build(REFERENCE),(ROOT/'content/generated/battle/animations/background-scripts.json').read_bytes())
   for script in pack['scripts']:
    commands=script['commands']+[c for name in dict.fromkeys(c['args'][0] for c in script['commands'] if c['op']=='call') for c in pack['subroutines'][name]];ops=[c['op'] for c in commands];self.assertGreaterEqual(ops.count('waitbgfadein'),2);self.assertEqual(1,ops.count('restorebg'))
  def test_uncovered_background_and_sprite_fail_closed(self):

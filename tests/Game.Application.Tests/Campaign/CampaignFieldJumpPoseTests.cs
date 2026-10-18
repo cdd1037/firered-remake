@@ -11,7 +11,7 @@ public sealed class CampaignFieldJumpPoseTests : WildBattleFixture
     [TestMethod]
     public void EverySourceJumpCallbackMatchesSharedLiveAndRecordedPose()
     {
-        using var source=JsonDocument.Parse(File.ReadAllText(Path.Combine(TestAssets.Root,"tests","Reference","field-jump-source-vectors.json")));
+        using var source=JsonDocument.Parse(File.ReadAllText(TestAssets.GeneratedFile("tests/Reference/field-jump-source-vectors.json", "python tests/Reference/generate_field_jump_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Reference/field-jump-source-vectors.json")));
         var cases=source.RootElement.GetProperty("cases").EnumerateArray().ToArray();
         Assert.AreEqual(20,cases.Length);
         foreach(var item in cases)

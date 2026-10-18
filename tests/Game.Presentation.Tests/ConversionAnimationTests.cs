@@ -15,7 +15,7 @@ public sealed class ConversionAnimationTests
     public void SpriteCallbacksMatchOriginalCPositionPauseDelayLinearAndDestroyHandoffs()
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
-        using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/conversion-vectors.json")));
+        using var json=SourceVectorFixture.Read("conversion-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_conversion_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/conversion-vectors.json");
         var rows=json.RootElement.GetProperty("sprites").EnumerateArray().Select(r=>r.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).ToArray();int cases=0;
         foreach(var group in rows.GroupBy(r=>(Kind:r[0],Actor:r[1],Target:r[2],Delay:r[3])))
         {
@@ -40,7 +40,7 @@ public sealed class ConversionAnimationTests
     [TestMethod]
     public void AlphaTasksMatchOriginalCRegistersAndSharedTerminationExactly()
     {
-        using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/conversion-vectors.json")));
+        using var json=SourceVectorFixture.Read("conversion-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_conversion_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/conversion-vectors.json");
         var rows=json.RootElement.GetProperty("alpha").EnumerateArray().Select(r=>r.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).ToArray();
         foreach(int kind in new[]{0,1})
         {
@@ -53,7 +53,7 @@ public sealed class ConversionAnimationTests
     [TestMethod]
     public void FlashTaskMatchesOriginalSourceRequestsAndActiveFadeRefusal()
     {
-        using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/conversion-vectors.json")));
+        using var json=SourceVectorFixture.Read("conversion-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_conversion_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/conversion-vectors.json");
         var rows=json.RootElement.GetProperty("flash").EnumerateArray().Select(r=>r.EnumerateArray().Select(v=>v.GetInt32()).ToArray()).ToArray();
         foreach(int scenario in new[]{0,1})
         {

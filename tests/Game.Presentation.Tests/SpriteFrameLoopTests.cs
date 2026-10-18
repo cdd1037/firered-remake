@@ -27,7 +27,7 @@ public sealed class SpriteFrameLoopTests
     [DataRow("orb")][DataRow("marked")][DataRow("sequential")][DataRow("jump")][DataRow("limits")]
     public void SharedFrameEngineMatchesExtractedFiniteLoopZeroDurationFlipAndJumpCadence(string name)
     {
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/sprite-frame-loop-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("sprite-frame-loop-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_sprite_frame_loop_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/sprite-frame-loop-vectors.json");
         var source=Script();var runtime=Runtime(source,Recipe(name,source.SpriteRecipes["gEclipsingOrbSpriteTemplate"]));
         for(int i=0;i<3;i++)Assert.AreEqual(0,runtime.Tick().Sprites.Length);
         foreach(var row in vectors.RootElement.GetProperty(name).EnumerateArray())
@@ -45,7 +45,7 @@ public sealed class SpriteFrameLoopTests
     [DataRow("orb")][DataRow("marked")][DataRow("sequential")][DataRow("jump")][DataRow("limits")]
     public void SharedPlayerCountersAndEndFlagMatchExtractedOriginalFrameInterpreter(string name)
     {
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/sprite-frame-loop-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("sprite-frame-loop-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_sprite_frame_loop_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/sprite-frame-loop-vectors.json");
         var source=Script();var player=new SourceSpriteFrameProgram(Recipe(name,source.SpriteRecipes["gEclipsingOrbSpriteTemplate"]));
         foreach(var row in vectors.RootElement.GetProperty(name).EnumerateArray())
         {

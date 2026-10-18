@@ -8,19 +8,21 @@ public sealed class AnimationCryTests
 {
     private static Resources Resources => TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack")));
     private static NormalCryCatalog Catalog => TestAssets.Cached(() => NormalCryCatalog.FromFile(Path.Combine(TestAssets.Root, "content/generated/audio/synth/normal-cries.bin")));
-    public static IEnumerable<object[]> ModesAndSpecies => new[] { 3, 4, 6, 9, 10 }
+    public static IEnumerable<object[]> ModesAndSpecies => new[] { 3, 4, 6, 7, 8, 9, 10 }
         .SelectMany(mode => new[] { 4, 16, 39, 161, 410 }.Select(species => new object[] { mode, species }));
 
     [TestMethod]
     [DataRow(3, 50, 200, 90, 62, 28, 48, false)]
     [DataRow(4, 25, 100, 90, 61, 56, 120, true)]
     [DataRow(6, 140, 220, 90, 61, 33, 97, false)]
+    [DataRow(7, 10, 100, 120, 58, 64, 80, false)]
+    [DataRow(8, 60, 225, 120, 61, 64, 80, false)]
     [DataRow(9, 15, 125, 120, 59, 112, 0, true)]
     [DataRow(10, 100, 225, 120, 59, 112, 0, false)]
     public void SourceModeFieldsMatchPinnedSetterVectors(int mode, int length, int release, int volume, int key, int tune1, int tune2, bool reverse)
     {
         var (song, sequence) = SourceAnimationCryPreset.Build(Resources, Catalog, 4, mode, -64);
-        int tracks = mode is 9 or 10 ? 1 : 2;
+        int tracks = mode is 7 or 8 or 9 or 10 ? 1 : 2;
         Assert.AreEqual(tracks, sequence[0]);
         Assert.AreEqual(tracks, song.Tracks.Length);
         Assert.AreEqual(reverse ? Catalog.Get(4).ReverseToneAddress : Catalog.Get(4).ToneAddress, song.Voices);
@@ -78,6 +80,39 @@ public sealed class AnimationCryTests
         }
         for (int index = 0; index < reverse.Length; index++)
             Assert.AreEqual((double)decoded[reverse.Length - 1 - index], synth.ReadSample(reverse, index));
+    }
+
+    [TestMethod][DataRow(7)][DataRow(8)]
+    public void RoarModesUseEveryForwardSampleAndReuseNormalDecodedResources(int mode)
+    {
+        var synth = new Synth(Resources, AudioProfile.SourceFiltered, Catalog);
+        synth.StartNormalCry(4, duckBgm: false);
+        synth.Render(new float[1024]);
+        var normal = synth.Voices.Single(v => v.Active && v.Player?.Id == 2);
+        var normalInstrument = normal.Instrument;
+        var samples = normal.DecodedSamples!;
+        int prepared = synth.PreparedCryCount, bytes = synth.PreparedCryBytes;
+        synth.StartAnimationCry(4, mode, -64, duckBgm: false);
+        synth.Render(new float[1024]);
+        var roar = synth.Voices.Single(v => v.Active && v.Player?.Id == 2);
+        Assert.AreSame(samples, roar.DecodedSamples);
+        Assert.IsNotNull(roar.Instrument);
+        Assert.AreEqual(0x20, roar.Instrument!.Type);
+        Assert.IsFalse(SourceAnimationCryPreset.UsesReverse(mode));
+        for (int i = 0; i < roar.Length; i++) Assert.AreEqual((double)samples[i], synth.ReadSample(roar, i));
+        Assert.AreEqual(prepared, synth.PreparedCryCount);Assert.AreEqual(bytes, synth.PreparedCryBytes);
+        synth.StartNormalCry(4, duckBgm: false);
+        // A replacement waits for the next m4a frame. The preceding 512-frame
+        // blocks leave this restart between boundaries, so another 512 is too short.
+        long beforeFrame = synth.GameFrames;
+        int sourceFrameSamples = (int)((Synth.Rate * Synth.FrameCycles + Synth.Cpu - 1) / Synth.Cpu);
+        synth.Render(new float[sourceFrameSamples * 2]);
+        Assert.AreEqual(beforeFrame + 1, synth.GameFrames);
+        var restored = synth.Voices.Single(v => v.Active && v.Player?.Id == 2);
+        Assert.AreSame(samples, restored.DecodedSamples);Assert.AreEqual(normalInstrument, restored.Instrument);
+        Assert.AreEqual(60, restored.MidiKey);Assert.IsNotNull(restored.Track);
+        Assert.AreEqual(0, restored.Track!.Tune);Assert.AreEqual(0, restored.Track.Pan);
+        Assert.AreEqual(0, restored.Track.ReleaseOverride);
     }
 
     // This is the explicitly approved safe boundary rule, not an original ARM
@@ -153,7 +188,7 @@ public sealed class AnimationCryTests
         synth.Render(new float[2048]);
         var current = synth.Voices.Single(v => v.Active && v.Player?.Id == 2).Player;
         Assert.Throws<InvalidDataException>(() => synth.StartAnimationCry(4, SourceAnimationCryPreset.Growl1));
-        foreach (int mode in new[] { 0, 1, 2, 5, 7, 8, 11, 12, 255 })
+        foreach (int mode in new[] { 0, 1, 2, 5, 11, 12, 255 })
             Assert.Throws<NotSupportedException>(() => synth.StartAnimationCry(4, mode));
         Assert.AreSame(current, synth.Voices.Single(v => v.Active && v.Player?.Id == 2).Player);
     }

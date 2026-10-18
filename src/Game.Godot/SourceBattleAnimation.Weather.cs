@@ -116,7 +116,7 @@ public sealed partial class SourceBattleAnimation
         public HeatWaveTargetsTask(SourceBattleAnimation owner)
         {
             _direction=owner._cue.Actor.IsPlayer?1:-1;int target=owner._cue.Target.Value,partner=target^2;
-            _slots=owner._battlers.TryGetValue(partner,out var other)&&other.Visible?[target,partner]:[target];
+            _slots=owner.IsSourceBattlerVisible(partner)?[target,partner]:[target];
         }
         public override void Step(SourceBattleAnimation owner)
         {

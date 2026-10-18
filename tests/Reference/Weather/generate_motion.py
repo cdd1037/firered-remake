@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import tempfile
 import argparse,json,re,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
 from source_extract import function,array,macros,identity,COMMIT,verify
-p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent
+HERE=Path(__file__).resolve().parent
+p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('--build-dir',type=Path);p.add_argument('--output',type=Path,default=(HERE.parents[1]/ 'Game.Presentation.Tests/Fixtures')/'weather-motion-source-vectors.json');p.add_argument('--full', action='store_true', help='Emit the complete original-C corpus instead of semantic representatives');a=p.parse_args();r=a.reference;out=(a.build_dir or Path(tempfile.mkdtemp(prefix='weather-motion-reference-'))).resolve();out.mkdir(parents=True,exist_ok=True)
 paths=['src/battle_anim_rock.c','src/battle_anim_fire.c','src/battle_anim_utility_funcs.c','src/battle_anim_mons.c','src/battle_anim_normal.c','src/blend_palette.c','src/sprite.c','include/sprite.h','include/gba/types.h','include/constants/battle.h','include/constants/battle_anim.h','include/palette.h','data/battle_anim_scripts.s']
 verify(r,paths)
 s={p:(r/p).read_text() for p in paths};header=s['include/sprite.h'];types=header[header.index('enum\n{\n    SUBSPRITES_OFF'):header.index('struct Sprite;')];oam=s['include/gba/types.h'];types+='\n'+oam[oam.index('struct PlttData'):oam.index('struct BgAffineSrcData')]
@@ -17,7 +19,7 @@ for path,ns in funcs.items():
 protos='\n'.join(f[:f.index('{')].strip()+';' for f in bodies)
 arrays='\n'.join(array(s['src/battle_anim_rock.c'],n) for n in ['sFlyingSandSubsprites','sFlyingSandSubspriteTable'])+'\n'+array(s['src/sprite.c'],'sOamDimensions')+'\nstatic const struct SubspriteTable sNullSubspriteTable[]={{0,NULL}};\n'
 defs=macros(list(s.values()),['B_SIDE_PLAYER','BIT_FLANK','ANIM_TARGET','ANIM_DEF_PARTNER','ANIM_ATTACKER','ANIM_ATK_PARTNER','SPRITE_NONE','BATTLE_PARTNER','BG_ANIM_PAL_1','BG_ANIM_PAL_2','BG_PLTT_ID','B_POSITION_PLAYER_LEFT','B_POSITION_PLAYER_RIGHT','B_POSITION_OPPONENT_LEFT','B_POSITION_OPPONENT_RIGHT','F_PAL_BG','F_PAL_BATTLERS_2'])
-c=(out/'motion-prefix.c.in').read_text().replace('@TYPES@',types).replace('@DEFINES@',defs).replace('@PROTOTYPES@',protos).replace('@ARRAYS@',arrays).replace('@FUNCTIONS@','\n'.join(bodies));(out/'motion.c').write_text(c)
+c=(HERE/'motion-prefix.c.in').read_text().replace('@TYPES@',types).replace('@DEFINES@',defs).replace('@PROTOTYPES@',protos).replace('@ARRAYS@',arrays).replace('@FUNCTIONS@','\n'.join(bodies));(out/'motion.c').write_text(c)
 for opt in ['O0','O2']:subprocess.run(['cc','-std=c11','-'+opt,'-fwrapv','-fno-strict-aliasing',str(out/'motion.c'),'-o',str(out/('motion-'+opt))],check=True)
 def run(args):
  data=[subprocess.check_output([str(out/('motion-'+opt)),*map(str,args)]) for opt in ['O0','O2']];assert data[0]==data[1];return [json.loads(x) for x in data[0].splitlines()]
@@ -35,5 +37,23 @@ for initial,limit,null in [(0,0,0),(0,1,0),(62,64,0),(63,64,0),(64,64,0),(126,12
  abi.append(dict(center=[0,0],flip=0,tile=0,priority=3,mode=1,initialIndex=initial,limit=limit,nullTable=bool(null),row=run([3,0,0,0,0,3,1,initial,limit,null])[0]))
 for c in crescents:assert c['rows'][-1]['alive']==0 and c['rows'][-2]['callback']==1 and c['rows'][-2]['alive']==1
 for c in heat:assert len(c['rows'])==130 and c['rows'][-1]['alive']==0
-result=dict(schema='firered-weather-motion-palette-abi-source-v1',commit=COMMIT,sources=identity(r,paths),source_functions=funcs,optimization_parity=['O0','O2'],compiler_flags=['-std=c11','-fwrapv','-fno-strict-aliasing'],semantics={'blendKinds':['sunlight-fade-in','sunlight-fade-out','rain-fade-in','rain-fade-out','heat-particle-red','heat-background-red'],'paletteRowBanks':[1,2,3,8,16,17,18,19,31],'oamPieceFields':['x_u9','y_u8','shape','size','tile_u10','priority','palette','matrixNum','objMode','mosaic'],'abiBoundary':'Verbatim AddSubspritesToOamBuffer with exact source OamData and Subsprite bitfields; no global OAM sorting or matrix BIOS claim. center is logical parent center, source oam origin starts center minus16/minus8.','stubs':['visibility is supplied four-bit mask','battler position-to-id map is identity','sprite palette slot is supplied explicitly','stored source tasks run after an explicit immediate initializer','DestroyAnimSprite marks inUse false and updates count; fields retained for inspection']},crescents=crescents,heat=heat,blends=blend,abi=abi)
-(out/'motion-vectors.json').write_text(json.dumps(result,separators=(',',':'))+'\n');print('motion',len(crescents),len(heat),len(blend),len(abi))
+def representative_crescent(c):
+    # Every script recipe; sign/flip branch on the opposing side.
+    return (c['attacker'], c['args'][3]) in [(0, 0), (1, 1)]
+
+def representative_heat(c):
+    # Both increment signs, partner present/absent, and selected ally.
+    return (c['attacker'], c['target'], c['visibleMask']) in [
+        (0, 1, 3), (0, 1, 15), (1, 0, 3), (1, 0, 15), (2, 0, 15), (3, 1, 15)]
+
+def representative_blend(c):
+    # All palette operations plus high-bank index and double-side mask.
+    return c['attacker'] == 0 and c['visibleMask'] == 3 and c['paletteIndex'] == 0 or c['kind'] in [0, 2] and c['attacker'] == 1 and c['visibleMask'] == 15 or c['kind'] == 4 and c['attacker'] == 1 and c['visibleMask'] == 15 and c['paletteIndex'] in [3, 15]
+
+if not a.full:
+    crescents = [c for c in crescents if representative_crescent(c)]
+    heat = [c for c in heat if representative_heat(c)]
+    blend = [c for c in blend if representative_blend(c)]
+    # abi stays complete: material fragmentRenders refer to its stable indices.
+result=dict(profile='full' if a.full else 'representative',schema='firered-weather-motion-palette-abi-source-v1',commit=COMMIT,sources=identity(r,paths),source_functions=funcs,optimization_parity=['O0','O2'],compiler_flags=['-std=c11','-fwrapv','-fno-strict-aliasing'],semantics={'blendKinds':['sunlight-fade-in','sunlight-fade-out','rain-fade-in','rain-fade-out','heat-particle-red','heat-background-red'],'paletteRowBanks':[1,2,3,8,16,17,18,19,31],'oamPieceFields':['x_u9','y_u8','shape','size','tile_u10','priority','palette','matrixNum','objMode','mosaic'],'abiBoundary':'Verbatim AddSubspritesToOamBuffer with exact source OamData and Subsprite bitfields; no global OAM sorting or matrix BIOS claim. center is logical parent center, source oam origin starts center minus16/minus8.','stubs':['visibility is supplied four-bit mask','battler position-to-id map is identity','sprite palette slot is supplied explicitly','stored source tasks run after an explicit immediate initializer','DestroyAnimSprite marks inUse false and updates count; fields retained for inspection']},crescents=crescents,heat=heat,blends=blend,abi=abi)
+a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(result,separators=(',',':'))+'\n');print('motion',len(crescents),len(heat),len(blend),len(abi))

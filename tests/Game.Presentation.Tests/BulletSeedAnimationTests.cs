@@ -20,7 +20,7 @@ public sealed class BulletSeedAnimationTests
     private static SourceAnimationScript Particle(SourceAnimationScript source,int x=20,int y=0,int unused2=0,int unused3=0)=>source with{Commands=[
         new("loadspritegfx",["ANIM_TAG_SEED"],1),new("setarg",["2",unused2.ToString(CultureInfo.InvariantCulture)],2),new("setarg",["3",unused3.ToString(CultureInfo.InvariantCulture)],3),new("setarg",["7","777"],4),
         new("createsprite",[Template,"ANIM_TARGET","2",x.ToString(CultureInfo.InvariantCulture),y.ToString(CultureInfo.InvariantCulture)],5),new("waitforvisualfinish",[],6),new("end",[],7)]};
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/bullet-seed-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("bullet-seed-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_bullet_seed_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/bullet-seed-source-vectors.json");
     // Observe the private stream without adding a production telemetry/rollback API.
     // Null proves cancellation before impact did not even initialize the lazy RNG.
     private static uint? RandomState(SourceBattleAnimation runtime)

@@ -6,15 +6,20 @@ namespace Game.Application;
 
 public static partial class CampaignMoveAnimationPresentation
 {
-    private static bool ValidSingleInvocationPp(SourcePpCommandEvent[] commands,SourceMoveUsedEvent used,int maximumCost)
+    private static bool ValidSingleInvocationPp(SourcePpCommandEvent[] commands,SourceMoveUsedEvent used,int maximumCost,bool retained=false)
     {
         if(commands.Length!=1)return false;
         var pp=commands[0];
-        return pp.Actor==used.Actor&&pp.PpOwner==used.Actor&&pp.Target==used.Target&&
-            pp.CurrentMove==used.Move&&pp.ChosenMove==used.Move&&pp.PpSlot==used.Slot&&
-            pp.Before==used.PpBefore&&pp.After==used.PpAfter&&pp.Before is >=1 and <=255&&
-            pp.After is >=0 and <=255&&pp.CommandCost>=1&&pp.CommandCost<=maximumCost&&
-            pp.After==Math.Max(0,pp.Before-pp.CommandCost);
+        if(pp.Actor!=used.Actor||pp.PpOwner!=used.Actor||pp.Target!=used.Target||
+            pp.CurrentMove!=used.Move||pp.ChosenMove!=used.Move||pp.PpSlot!=used.Slot||
+            pp.Before!=used.PpBefore||pp.After!=used.PpAfter||pp.CommandCost<1||pp.CommandCost>maximumCost)return false;
+        // Forced Struggle still executes ppreduce and reports its nominal Pressure
+        // cost, but NO_PPDEDUCT preserves the synthetic slot's zero PP.
+        if(used.Move==WildBattleRules.StruggleMove)
+            return used.Slot==-1&&pp.Before==0&&pp.After==0;
+        if(retained)return used.Slot is >=0 and <=3&&pp.Before is >=0 and <=255&&pp.After==pp.Before;
+        return used.Slot is >=0 and <=3&&pp.Before is >=1 and <=255&&
+            pp.After is >=0 and <=255&&pp.After==Math.Max(0,pp.Before-pp.CommandCost);
     }
 
     private static bool PreventedTarget(IEnumerable<SourceBattleEvent> action,SourceMoveUsedEvent used,BattlerSlot target)=>action.Any(e=>
@@ -68,10 +73,32 @@ public static partial class CampaignMoveAnimationPresentation
     private static CampaignMoveAnimationDecision WithCommittedHitInputs(Invocation battle,SourceMoveUsedEvent used,
         SourceAttackStringEvent attack,PokemonMoveDefinition definition,SourceBattleEvent hit,CampaignMoveAnimationDispatch dispatch)
     {
-        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT"&&
+        if(definition.Effect is "EFFECT_RAGE" or "EFFECT_PURSUIT" or "EFFECT_FLAIL" or "EFFECT_FURY_CUTTER" or "EFFECT_BRICK_BREAK"&&
             (definition.Target!="MOVE_TARGET_SELECTED"||definition.Power<=0||used.Actor==used.Target||
              used.Actor.Value<0||used.Actor.Value>=battle.Slots||used.Target.Value<0||used.Target.Value>=battle.Slots))
             return new(null,"unmatched-source-animation-hit-input");
+        if(definition.Effect=="EFFECT_ROLLOUT")return WithRolloutInputs(battle,definition,hit,dispatch,false);
+        if(definition.Effect=="EFFECT_BRICK_BREAK")dispatch=dispatch with{MoveTurn=0};
+        if(definition.Effect=="EFFECT_FURY_CUTTER")
+        {
+            int? counter=hit switch{SourceHpChangedEvent h=>h.PreparedFuryCutterCounter,SourceSubstituteDamagedEvent s=>s.PreparedFuryCutterCounter,_=>null};
+            if(counter is null or <1 or >5)return new(null,"unmatched-source-prepared-fury-counter");
+            var changes=battle.Events.Skip(battle.EventIndex+1).TakeWhile(e=>e.Sequence<hit.Sequence)
+                .OfType<SourceMtMoonVolatileEvent>().Where(e=>e.Volatile=="fury-cutter").ToArray();
+            if(changes.Length>1||changes.Length==0&&counter!=5||changes.Any(e=>e.Side!=used.Actor||e.Reason!="hit"||
+                e.Before is <0 or >4||e.After!=e.Before+1||e.After!=counter||e.Sequence<=dispatch.PpSequence))
+                return new(null,"unmatched-source-fury-counter-change");
+            dispatch=dispatch with{FuryCutterCounter=checked((byte)counter.Value)};
+        }
+        if(definition.Effect=="EFFECT_FLAIL")
+        {
+            // remaininghptopower runs before attackcanceler. Consume that frozen
+            // command value, never reconstruct it from later HP or dealt damage.
+            int? power=hit switch{SourceHpChangedEvent h=>h.PreparedBasePower,SourceSubstituteDamagedEvent s=>s.PreparedBasePower,_=>null};
+            if(power is not (20 or 40 or 80 or 100 or 150 or 200))
+                return new(null,"unmatched-source-prepared-power");
+            dispatch=dispatch with{MovePower=checked((ushort)power.Value)};
+        }
         if(definition.Effect=="EFFECT_RAGE")
         {
             int damage=hit switch{SourceHpChangedEvent h=>h.Damage,SourceSubstituteDamagedEvent s=>s.Damage,_=>-1};

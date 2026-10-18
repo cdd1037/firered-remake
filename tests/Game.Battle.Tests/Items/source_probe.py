@@ -4,7 +4,21 @@ _reference_sys.path.insert(0, str(next(p for p in _ReferencePath(__file__).resol
 from reference_c import compile_c, verify_reference
 from pathlib import Path
 import hashlib,json,re,subprocess,sys
-source=Path(sys.argv[1]);out=Path(sys.argv[2]);out.mkdir(parents=True,exist_ok=True)
+import atexit
+import tempfile
+fixtures_only = "--fixtures-only" in sys.argv
+arguments = [argument for argument in sys.argv[1:] if argument != "--fixtures-only"]
+if len(arguments) != 2:
+    raise SystemExit("Usage: source_probe.py PINNED_REFERENCE OUTPUT_DIRECTORY [--fixtures-only]")
+source, fixture_output = (Path(argument).resolve() for argument in arguments)
+fixture_output.mkdir(parents=True, exist_ok=True)
+if fixtures_only:
+    temporary_build = tempfile.TemporaryDirectory(prefix="firered-items-reference-")
+    atexit.register(temporary_build.cleanup)
+    out = Path(temporary_build.name)
+else:
+    out = fixture_output
+
 commit='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 verify_reference(source)
 # Verify only the six directly exercised source files, including item definitions and constants.
@@ -75,3 +89,12 @@ assert 'REQUEST_HELDITEM_BATTLE' in commands.split('static void Cmd_removeitem(v
 assert 'if (gBattleMons[battlerId].hp)' in normal and 'gBattleMons[battlerId].hp' not in movecases
 (out/'source-berry-vectors.json').write_text(json.dumps(dict(sourceCommit=commit,pins=pins,items={b:{k:selected[b][k] for k in ['itemId','holdEffect','holdEffectParam']} for b in berries},vectors=vectors),indent=2)+'\n')
 print('35 independently compiled original C berry cases; six source files pinned; twelve campaign berry definitions verified')
+
+# Only independent numeric output is published in fixture preparation mode.
+if fixtures_only:
+    for name in ['source-berry-vectors.json']:
+        target = fixture_output / name
+        candidate = (out / name).read_bytes()
+        if target.exists() and target.read_bytes() != candidate:
+            raise SystemExit("Existing reference differs; review a new candidate directory: " + str(target))
+        target.write_bytes(candidate)

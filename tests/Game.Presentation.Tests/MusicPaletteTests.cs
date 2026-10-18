@@ -14,7 +14,7 @@ public sealed class MusicPaletteTests
     public void OriginalCAllocationFreeAndRainbowWritesPreserveDuplicateTagsExhaustionAndRetainedBytes()
     {
         using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));var script=resources.Resolve(47).Script;
-        using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/music-palette-source-vectors.json")));
+        using var json=SourceVectorFixture.Read("music-palette-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_music_palette_vectors.py --reference content/raw/pokefirered/037335f4 --helper tests/Reference/reference_c.py --output tests/Game.Presentation.Tests/Fixtures/music-palette-source-vectors.json");
         var rows=json.RootElement.GetProperty("rows").EnumerateArray().Select(r=>r.EnumerateArray().Select(x=>x.GetInt32()).ToArray()).ToArray();
         Assert.AreEqual(20,rows.Length);
         for(int scenario=0;scenario<5;scenario++)

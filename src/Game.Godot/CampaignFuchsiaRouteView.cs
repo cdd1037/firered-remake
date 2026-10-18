@@ -15,16 +15,6 @@ public partial class CampaignView
 
     }
 
-    private bool FuchsiaTransformCuePending(CampaignWildBattle battle) => WildCurrentEvent(battle) is WildBattleTransformedEvent && _wildElapsed < 49.0 / 60;
-
-    private void ProcessFuchsiaTransformAudio()
-    {
-        if (PresentedWildBattle is not { Phase: CampaignBattlePhase.Events } battle || WildCurrentEvent(battle) is not WildBattleTransformedEvent transformed) return;
-        string key = $"{battle.Id}:transform:{transformed.Sequence}";
-        if (_audioTrainerOneShots.Add(key + ":start")) SourceSound("SE_M_TELEPORT");
-        if (_wildElapsed >= 48.0 / 60 && _audioTrainerOneShots.Add(key + ":48")) SourceSound("SE_M_MINIMIZE");
-    }
-
     private ForestMessage? FuchsiaRouteWildMessage(WildBattleEvent current) => current switch
     {
         WildBattleTransformedEvent transformed => new("sText_PkmnTransformedInto",

@@ -31,7 +31,7 @@ public sealed class SourceBattleAnimationAudioAdapter(SynthSourceAudioPlayer bac
         long token=backend.PlaySoundEffect(cue.Id);
         if(token==0)throw new InvalidOperationException("Source animation sound was not admitted: "+cue.Id);
         _ownedTokens.Add(token);
-        if(!backend.SetBattleAnimationSoundPan(token,cue.Pan))
+        if(cue.ApplyPanning&&!backend.SetBattleAnimationSoundPan(token,cue.Pan))
             throw new InvalidOperationException("Source animation sound has no owned active SE track: "+cue.Id);
         controlObserver?.Invoke(cue);
     }

@@ -6,7 +6,7 @@ namespace Game.Application;
 
 /// <summary>Original General_StatsChange, before its result text. This is separate from
 /// the dedicated move root and completes without acknowledging the result event.</summary>
-public sealed record CampaignStatAnimationDispatch(string BattleId,long Sequence,long AttackSequence,long PpSequence,
+public sealed record CampaignStatAnimationDispatch(string BattleId,long Sequence,long? AttackSequence,long PpSequence,
     int SourceMoveId,BattlerSlot Affected,int AnimationArgument);
 public static partial class CampaignStatAnimationPresentation
 {
@@ -79,7 +79,8 @@ public static partial class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
-        if(Grouped(battle,true) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
+        if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.EventIndex,2,moves,affectedBehindSubstitute) is {} charge)return charge;
+        if(Grouped(battle,true,moves) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
             WildBattleDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_DEFENSE_CURL"),
@@ -96,7 +97,8 @@ public static partial class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignDoubleBattle battle,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
-        if(Grouped(battle) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
+        if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.ToArray(),battle.EventIndex,4,moves,affectedBehindSubstitute) is {} charge)return charge;
+        if(Grouped(battle,moves) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
         return Match(battle.Id,battle.Events.Select(e=>e switch
         {
             SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),

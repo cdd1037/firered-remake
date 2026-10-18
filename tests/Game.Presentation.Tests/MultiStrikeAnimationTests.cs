@@ -19,7 +19,7 @@ public sealed class MultiStrikeAnimationTests
     [TestMethod][DataRow(154)][DataRow(292)]
     public void SourceTargetParityFrameSelectionAndDirectLifetimesMatchExtractedCallbacks(int move)
     {
-        using var resources=new SourceAnimationResources(Folder);var source=resources.Scripts[move];using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/multi-strike-source-vectors.json")));
+        using var resources=new SourceAnimationResources(Folder);var source=resources.Scripts[move];using var vectors=SourceVectorFixture.Read("multi-strike-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_multi_strike_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/multi-strike-source-vectors.json");
         var configs=vectors.RootElement.GetProperty("configs").EnumerateArray().Select(r=>r.EnumerateArray().Select(n=>n.GetInt32()).ToArray()).ToArray();
         for(int actor=0;actor<4;actor++)for(int target=0;target<4;target++)for(int config=0;config<configs.Length;config++)
         {

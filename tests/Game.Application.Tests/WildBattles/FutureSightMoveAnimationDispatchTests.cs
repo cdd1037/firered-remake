@@ -115,7 +115,7 @@ public sealed class FutureSightMoveAnimationDispatchTests
                 Assert.AreEqual(248, cue.SourceMoveId); Assert.AreEqual(actor, cue.Actor.Value); Assert.AreEqual(target, cue.Target.Value);
                 Assert.AreEqual(used.Sequence, cue.Sequence); Assert.AreEqual(attack.Sequence, cue.AttackSequence);
                 Assert.AreEqual(pp.Sequence, cue.PpSequence); Assert.AreEqual(scheduled.Sequence, cue.ResultSequence);
-                Assert.IsTrue(cue.AcknowledgesCurrentReceipt); Assert.IsNull(cue.MoveTurn); Assert.IsFalse(cue.HitsSubstitute);
+                Assert.IsTrue(cue.AcknowledgesCurrentReceipt); Assert.AreEqual((byte)0,cue.MoveTurn); Assert.IsFalse(cue.HitsSubstitute);
             }
             else Assert.IsNull(decision.Dispatch);
         }

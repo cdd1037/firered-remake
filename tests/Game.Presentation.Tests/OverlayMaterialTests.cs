@@ -8,7 +8,7 @@ namespace FireRed.Tests.Presentation;
 public sealed class OverlayMaterialTests
 {
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/overlay-material-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("overlay-material-source-vectors.json", "python tests/Reference/Bg1Overlay/check_vectors.py --repository . --prepare tests/Game.Presentation.Tests/Fixtures");
     private static int[] Ints(JsonElement a)=>a.EnumerateArray().Select(x=>x.GetInt32()).ToArray();
     private static string Hash(byte[] bytes)=>Convert.ToHexStringLower(SHA256.HashData(bytes));
     private static ushort Pixel(byte[] rgba,int x,int y)

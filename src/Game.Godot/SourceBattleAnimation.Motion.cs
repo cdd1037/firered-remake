@@ -33,7 +33,7 @@ public sealed partial class SourceBattleAnimation
         if(c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_StatsChange"){Range(1,5,5);return;}
         if(c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_Flash"){Range(1,2,2);return;}
         if(c.Op=="delay")Range(0,0,255);
-        if(c.Op=="setalpha"){Range(0,0,16);Range(1,0,16);}
+        if(c.Op=="setalpha"){Range(0,0,31);Range(1,0,31);}
         if(c.Op=="createvisualtask")
         {
             Range(1,2,5);Range(2,0,c.Args[0]=="AnimTask_ShakeMon2"?8:c.Args[0]=="AnimTask_ShakeMon"?3:1);Range(3,-127,127);Range(4,-127,127);Range(5,1,32767);

@@ -16,7 +16,7 @@ public sealed class SourceSoundPlayerPolicyTests
         var audio=new Audio();var battlers=Enumerable.Range(0,2).Select(i=>new AnimationBattler(new(i),"b"+i,0,0,64,64)).ToArray();
         var runtime=new SourceBattleAnimation(script,new("named-player",1,322,new(0),new(0)),battlers,false,audio);
         Assert.AreEqual(0,audio.Cues.Count);var frame=runtime.Tick();var cue=audio.Cues.Single();
-        Assert.AreEqual(0,cue.Frame);Assert.AreEqual(player,cue.PanningPlayer!.Value);Assert.AreEqual(0,cue.Pan);
+        Assert.IsTrue(cue.ApplyPanning);Assert.AreEqual(0,cue.Frame);Assert.AreEqual(player,cue.PanningPlayer!.Value);Assert.AreEqual(0,cue.Pan);
         CollectionAssert.AreEqual(new short[]{236,0,0,0,0,0,666,777}.Concat(new short[8]).ToArray(),frame.AnimationArguments);
         Assert.AreEqual(0,runtime.ActiveVisualCount);
         while(runtime.Active)runtime.Tick();Assert.AreEqual(1,audio.Cues.Count);

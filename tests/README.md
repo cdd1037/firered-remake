@@ -15,7 +15,7 @@
 
 Domain 的输入矩阵不依赖内容加载。Battle 使用经过认证的内容验证领域行为，Application 验证会话接线；同一功能出现在不同层时，各自承担不同职责。不会为了每个功能建立一个项目。
 
-`Shared/TestAssets.cs` 只提供仓库／输入路径、唯一临时目录和内容缓存，以源码链接方式共享。场景夹具留在各功能目录内；没有额外公共测试框架或套件注册表。`Reference/reference_c.py` 供显式参考向量生成器使用，不参与普通测试执行。
+`Shared/TestAssets.cs` 只提供仓库／输入路径、缺失生成数据的明确报错、唯一临时目录和内容缓存，以源码链接方式共享。场景夹具留在各功能目录内；没有额外公共测试框架或套件注册表。`Reference/reference_c.py` 供显式参考向量生成器使用，不参与普通测试执行。
 
 ## 运行入口
 
@@ -58,7 +58,10 @@ dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/tes
 - 游戏资源需已在 `content/raw` 和 `content/generated`；导入器读取 `content/raw/pokefirered/037335f4`，测试不下载素材或安装编译器。
 - 音频需要 `content/generated/audio/synth/firered.pack` 和同目录的 `normal-cries.bin`（相对主游戏根目录）。
 - 应用与 Continue 默认使用 `checkpoints/current-ownership-v3-20261015/continued-checkpoint.json`，可用 `FIRERED_TEST_CHECKPOINT` 指定有效的当前存档。部分用例在内存中准备位置、HP、PP、EXP 等受控状态，不代表自然路线重放或历史缺失证明已恢复。
-- 数值与冻结夹具放在对应功能的 `Fixtures` 或 `fixtures` 目录，普通测试只读取。Python 独立计算参考值，以及从固定原版 C 函数提取的参考向量，保留显式生成器；生成候选需人工审阅，不允许按产品输出重写预期。
+- 生成的参考数值、逐帧轨迹和验证报告仅存放在本地忽略目录，不纳入 Git；源码、明确语义用例、独立生成器仍受版本控制。手写的 schema 输入和固定源版本清单是测试定义，不是生成结果。
+- 普通测试读取已准备的本地数据，不启动 C 编译器，不自动下载，也不会因缺失数据跳过。缺失时明确失败并给出对应生成命令；先按提示显式准备，再重跑所选测试。不要以当前产品输出重新生成参考期望。
+- 大型动画族的生成器默认选择有明确分支/边界意义的代表案例，保留所选案例初始化到销毁的每一帧。`--full` 在外部输出目录生成完整组合，`FIRERED_SOURCE_VECTOR_DIR` 指向该目录后，同一托管比较器逐值检查全量数据。指定目录缺文件时不得回退到较小本地数据。具体命令与覆盖身份写在对应族的 `tests/Reference` 或 `Game.Presentation.Tests/Reference` 文档中。
+- 全量迁移对照是显式工程检查，不属于每次普通测试；保留的局部规则断言、完整根播放、取消和资源所有权测试照常运行。历史完整证据保留在外部迁移备份，移出索引不重写 Git 历史。
 - 文件系统用例使用唯一的 `.toolhome/mstest` 临时目录；TRX 使用标准结果目录或显式 `--results-directory`。
 
 72 个依赖已删除 API 的历史项目退休清单见 `docs/test-retirement-20261015.json`，不代表所有历史对照都有一对一替代。功能目录里的旧验收说明仅供历史证据参考，旧 shell／console 命令不再是运行入口。
@@ -66,3 +69,11 @@ dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/tes
 音频离线测试不证明真实声卡输出。历史 `results/phase4/render-coverage.json` 缺失，PCM 历史哈希等价性不在已验证范围；可选 PAN_ORACLE 研究比较也未计入。自然完整剧情、画面对照和实际扬声器输出仍需单独验收。
 
 本次重组与实际验证见 [测试项目整理记录](../docs/test-layout-20261015.md)；之前原生 MSTest 迁移的验证保留在 [迁移记录](../docs/mstest-migration-20261015.md)。
+
+## 生成证据治理（2026-10-18）
+
+111份生成对照数据与报告（158,372,572字节）退出版本控制，本地文件和外部迁移原件保留。Git中的测试数据仅保留手写schema输入、固定源输入定义和获取来源说明；不以压缩或换扩展名继续跟踪轨迹。
+
+20个大型族改为显式代表／边界输入，常规本地结果合计16,419,741字节；每个选中案例保留连续逐帧断言。其余生成结果同样忽略，尚未全部缩减组合。完整原始组合由独立生成器显式生成，复用同一托管比较器，迁移全量72/72通过；完整数值与外部原件逐值核对。两个历史单回合snapshot改为明确HP、PP、身份字段和随机调用规则用例，原hash仅留外部迁移对照。
+
+同一25类常规筛选：原196例墙钟233.868秒，治理后203例墙钟193.502秒（新增7项用例选择检查，约减少17.25%）。额外Presentation40、Battle83、Domain22、Application154和按需Audio1例通过。解决方案构建0警告0错误。此计时不代表所有测试或真实游戏性能；普通测试不隐式编译C，缺数据的命令提示和指定全量目录禁止回退均有测试。

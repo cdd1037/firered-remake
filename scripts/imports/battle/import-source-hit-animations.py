@@ -69,6 +69,32 @@ def castform_assets(raw, generic_geometry, rgb555):
                 assets.append(dict(id=identity,path=identity+'.rgb555',species=species,form=form,side=side,paletteVariant=variant))
     return geometry,assets,blobs
 
+def additional_mon_assets(raw):
+    # CreateAdditionalMonSpriteForMoveAnim(ignoreDeoxys=TRUE) DMA-copies the
+    # first 0x800-byte frame, unlike ordinary FireRed Deoxys display (frame1).
+    species=int(re.search(r'^#define SPECIES_DEOXYS\s+(\d+)',raw['include/constants/species.h'].decode(),re.M)[1])
+    graphics=raw['src/data/graphics/pokemon.h'].decode()
+    block=re.search(r'#ifdef FIRERED\n(.*?gMonFootprint_Deoxys.*?\n)#endif',graphics,re.S)
+    if block is None:raise ValueError('Deoxys FireRed graphics block is missing')
+    assets=[];blobs={}
+    for side in ['front','back']:
+        image=f'graphics/pokemon/deoxys/{side}.png'
+        if f'gMon{side.title()}Pic_Deoxys[] = INCBIN_U32("{image[:-4]}.4bpp.lz")' not in block[1]:raise ValueError('Deoxys base sheet binding differs')
+        with Image.open(io.BytesIO(raw[image])) as im:
+            if im.mode!='P' or im.size!=(64,128):raise ValueError('Deoxys concatenated frames differ')
+            indices=list(im.crop((0,0,64,64)).tobytes())
+        if len(indices)!=4096 or any(i>15 for i in indices):raise ValueError('Deoxys base 4bpp frame differs')
+        for variant in ['normal','shiny']:
+            text=raw[f'graphics/pokemon/deoxys/{variant}.pal'].decode().splitlines()
+            if text[:3]!=['JASC-PAL','0100','16']:raise ValueError('Deoxys palette header differs')
+            palette=[tuple(map(int,line.split())) for line in text[3:]]
+            if len(palette)!=16 or any(len(c)!=3 or any(v<0 or v>255 for v in c) for c in palette):raise ValueError('Deoxys palette values differ')
+            values=[(palette[i][0]>>3)|((palette[i][1]>>3)<<5)|((palette[i][2]>>3)<<10)|(0x8000 if i else 0) for i in indices]
+            identity=f'deoxys-base-{side}-{variant}'
+            blobs[identity+'.rgb555']=struct.pack('<HH',64,64)+struct.pack('<4096H',*values)
+            assets.append(dict(id=identity,path=identity+'.rgb555',species=species,side=side,paletteVariant=variant,frame=0))
+    return assets,blobs
+
 def build(reference):
  raw=read_sources(reference);script=raw['data/battle_anim_scripts.s'].decode();scripts=[]
  macros=set(re.findall(r'^\s*\.macro (\w+)',raw['asm/macros/battle_anim_script.inc'].decode(),re.M))
@@ -152,9 +178,10 @@ def build(reference):
  if len(sines)!=320:raise ValueError('Original sine table differs')
  anim={'sineTable':sines,'schemaVersion':1,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
  forms,form_assets,form_blobs=castform_assets(raw,geometry,rgb555)
- art={'schemaVersion':1,'formGeometry':forms,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back),*form_assets]}
+ additional_assets,additional_blobs=additional_mon_assets(raw)
+ art={'schemaVersion':1,'formGeometry':forms,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back),*form_assets,*additional_assets]}
  def encode(x):return (json.dumps(x,separators=(',',':'))+'\n').encode()
- return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back,**form_blobs}}
+ return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back,**form_blobs,**additional_blobs}}
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('legacy_reference',type=Path,nargs='?');p.add_argument('legacy_output',type=Path,nargs='?');p.add_argument('--reference',type=Path);p.add_argument('--output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()

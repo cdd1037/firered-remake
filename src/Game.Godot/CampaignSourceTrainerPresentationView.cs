@@ -72,7 +72,7 @@ public partial class CampaignView
     private SourceTrainerEventDisplay? SourceTrainerEventDisplay(CampaignWildBattle battle)
     {
         if (!SourceTrainerPresentationActive(battle) || battle.Phase != CampaignBattlePhase.Events || WildCurrentEvent(battle) is null) return null;
-        if(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,true))return new([]);
+        if(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,true,moves:_catalog.PokemonContent!.Catalog.Moves))return new([]);
         string PartyName(WildBattleSide side, int index)
         {
             if (side == WildBattleSide.Player)

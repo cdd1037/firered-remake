@@ -40,7 +40,7 @@ public sealed class SlidingEffectTests
     [TestMethod]
     public void PatternShakePreservesOmittedSignedPatternAndUsesZeroVersusNonzeroSourceBranch()
     {
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/overlay-pattern-shake-source-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("overlay-pattern-shake-source-vectors.json", "python tests/Reference/Bg1Overlay/generate_pattern_shake_vectors.py --repository . --output tests/Game.Presentation.Tests/Fixtures/overlay-pattern-shake-source-vectors.json");
         int count=0;
         foreach(var sample in vectors.RootElement.GetProperty("cases").EnumerateArray())foreach(bool explicitPattern in new[]{false,true})
         {

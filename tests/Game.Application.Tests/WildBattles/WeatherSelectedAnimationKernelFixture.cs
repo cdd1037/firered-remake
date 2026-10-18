@@ -52,14 +52,15 @@ internal static class WeatherSelectedAnimationKernelFixture
     }
     internal static SourceBattleFrame Frame(WildBattleCombatant[] bodies, bool single = false) => Previous.Frame(bodies, single);
     internal static SourceKernelResult Direct(SourceBattleFrame frame, int actor = 0, int target = 1) => Previous.Resolve(frame, actor, target);
-    internal static SourceFourActionResult Ordered(SourceBattleFrame frame, int actor = 0, int target = 1)
+    internal static SourceFourActionResult Ordered(SourceBattleFrame frame, int actor = 0, int target = 1, bool forcedStruggle = false)
     {
         string before = JsonSerializer.Serialize(frame);
         var choices = frame.Slots.Take(frame.BattlerCount).Select(s => {
             var move = Mechanics.Catalog.Moves[s.Body!.Pokemon.Moves[0].Move];
             int recipient = s.Slot.Value == actor ? target : move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED"
                 ? s.Slot.Value : s.Slot.Value ^ 1;
-            return new SourceActionSelection(s.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
+            return forcedStruggle&&s.Slot.Value==actor?SourceActionSelection.Struggle(s.Occupant!.Value,new(recipient))
+                :new SourceActionSelection(s.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
         }).ToImmutableArray();
         var start = SourceFourActionTurns.BeginActions(Mechanics.Catalog, frame, frame.Revision, choices);
         Assert.IsTrue(start.Succeeded, start.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(start.State));

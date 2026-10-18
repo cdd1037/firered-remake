@@ -69,8 +69,8 @@ public sealed partial class SourceBattleAnimation
         public MetallicTask(SourceBattleAnimation owner,bool restore,bool tint,ushort color)
         {
             _restore=restore;_slot=owner._cue.Actor.Value;var b=owner._battlers[_slot];var center=b.DisplayCenter??b.Center(owner._doubles);
-            int partner=owner._doubles&&_slot is 0 or 3&&owner._battlers[_slot^2].Visible?_slot^2:-1;
-            owner._metallic=new(true,true,96-center.X,32-center.Y,_slot,b.Visible,partner);
+            int partner=owner._doubles&&_slot is 0 or 3&&owner.IsSourceBattlerVisible(_slot^2)?_slot^2:-1;
+            owner._metallic=new(true,true,96-center.X,32-center.Y,_slot,owner.IsSourceBattlerVisible(_slot),partner);
             if(tint)owner.BlendPalettes(1u<<(16+_slot),11,color);else owner.SetBattlerGreyscaleOrOriginal(_slot,false);owner._blendEnabled=true;owner._alphaA=8;owner._alphaB=12;
         }
         public override void Step(SourceBattleAnimation owner)
@@ -122,8 +122,8 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly uint _mask;private readonly int _delay,_initial,_target;private readonly ushort _color;
         private int _remaining;private bool _restore;
-        public BlendCycleTask(SourceBattleAnimation owner,int[] args)
-        {_mask=owner.SelectPalettes(args[0]);_delay=args[1];_remaining=args[2];_initial=args[3];_target=args[4];_color=(ushort)args[5];Begin(owner,0,_target);}
+        public BlendCycleTask(SourceBattleAnimation owner,int[] args,uint? paletteMask=null)
+        {_mask=paletteMask??owner.SelectPalettes(args[0]);_delay=args[1];_remaining=args[2];_initial=args[3];_target=args[4];_color=(ushort)args[5];Begin(owner,0,_target);}
         private void Begin(SourceBattleAnimation owner,int from,int to)
         {if(!owner.PaletteFadeActive){owner._fade=new(_mask,from,to,_color,_delay);owner._fade.Update(owner);}_remaining--;_restore=!_restore;}
         public override void Step(SourceBattleAnimation owner)

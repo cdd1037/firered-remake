@@ -8,15 +8,16 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('physical_import',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class PhysicalImportTests(unittest.TestCase):
- def test_random_fist_closes_only_double_kick_and_names_the_raw_impact(self):
+ def test_random_fist_names_raw_impact_for_double_kick_and_thrash(self):
   data,blocked=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==24)
   self.assertEqual(['gBasicHitSplatSpriteTemplate'],script['spriteDependencies'])
   self.assertEqual([['gFistFootRandomPosSpriteTemplate','ANIM_ATTACKER','3','1','20','1']],[c['args'] for c in script['commands'] if c['op']=='createsprite'])
   self.assertEqual({'SE_M_VITAL_THROW2':116},script['soundEffects'])
   self.assertEqual({'ANIM_TAG_HANDS_AND_FEET':10143,'ANIM_TAG_IMPACT':10135},script['spriteTags'])
   self.assertEqual(2,sum(c['op']=='waitforvisualfinish' for c in script['commands']))
-  self.assertNotIn(37,{s['moveId'] for s in pack['scripts']})
-  self.assertTrue({'callback:AnimTask_ThrashMoveMonHorizontal','callback:AnimTask_ThrashMoveMonVertical'}<=set(next(s for s in blocked if s['moveId']==37)['missing']))
+  thrash=next(s for s in pack['scripts'] if s['moveId']==37)
+  self.assertEqual(['gBasicHitSplatSpriteTemplate'],thrash['spriteDependencies'])
+  self.assertTrue({'AnimTask_ThrashMoveMonHorizontal','AnimTask_ThrashMoveMonVertical'}<={c['args'][0] for c in thrash['commands'] if c['op']=='createvisualtask'})
   parent=next(r for r in pack['spriteRecipes'] if r['template']=='gFistFootRandomPosSpriteTemplate')
   child=next(r for r in pack['spriteRecipes'] if r['template']=='gBasicHitSplatSpriteTemplate')
   self.assertEqual(('hands-and-feet',32,32,False,[]),(parent['asset'],parent['width'],parent['height'],parent['blend'],parent['affineAnimations']))
@@ -112,7 +113,7 @@ class PhysicalImportTests(unittest.TestCase):
  def test_regeneration_matches_generated_only_runtime_input(self):
   data,_=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
-  scripts=json.loads(data)['scripts'];self.assertEqual({161,263,265,348,237,310,327,345,6,65,140,238,89,99,222,228,24,273,309,154,292,162,305,331,28,189,5,25,299,42,333,40,41,131,232,306,337,20,35,2,3,4,125,198,167,66,11,21,22,23,26,27,29,34,36,38,64,67,70,77,78,79,136,150,289,300,303,339,111,207,321},{s['moveId'] for s in scripts})
+  scripts=json.loads(data)['scripts'];self.assertEqual({2,3,4,5,6,11,13,20,21,22,23,24,25,26,27,28,29,34,35,36,37,38,40,41,42,50,64,65,66,67,70,77,78,79,89,99,111,117,122,125,130,131,136,140,150,154,161,162,165,167,175,189,197,198,207,210,216,218,222,228,232,237,238,239,246,251,252,263,265,273,280,289,292,299,300,303,305,306,309,310,317,321,327,331,333,337,339,345,348,353},{s['moveId'] for s in scripts})
   for s in scripts:
    self.assertTrue(any(c['op']=='end' for c in s['commands']));self.assertLessEqual(len(s['commands']),128)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
@@ -172,7 +173,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertIn('graphics:ANIM_TAG_SLAM_HIT_2',slam['missing'])
  def test_task_affine_program_is_parsed_as_task_data_not_sprite_affine(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data)
-  self.assertEqual({'sSplashEffectAffineAnimCmds','sGrowAndShrinkAffineAnimCmds','sSlackOffSquishAffineAnimCmds','DefenseCurlDeformMonAffineAnimCmds'},set(pack['taskAffinePrograms']))
+  self.assertEqual({'DefenseCurlDeformMonAffineAnimCmds','sAffineAnims_StretchBattlerUp','sFacadeSquishAffineAnimCmds','sGrowAndShrinkAffineAnimCmds','sSlackOffSquishAffineAnimCmds','sSmellingSaltsSquishAffineAnimCmds','sSplashEffectAffineAnimCmds','sStrongFrustrationAffineAnimCmds','sThrashMoveMonAffineAnimCmds'},set(pack['taskAffinePrograms']))
   commands=pack['taskAffinePrograms']['sSplashEffectAffineAnimCmds']
   self.assertEqual([(-6,4,8),(10,-10,8),(-4,6,8),(0,0,0)],[(c['x'],c['y'],c['duration']) for c in commands])
   self.assertEqual('end',commands[-1]['op'])
@@ -278,10 +279,10 @@ class PhysicalImportTests(unittest.TestCase):
    with patch.object(imp,'read_sources',return_value=changed):data,blocked=imp.build(REFERENCE)
    self.assertNotIn(3,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn(4,{s['moveId'] for s in json.loads(data)['scripts']})
    self.assertTrue(any(x.startswith('control-flow:') for x in next(b for b in blocked if b['moveId']==3)['missing']))
- def test_complete_pixels_do_not_admit_an_unsupported_move_turn_invocation(self):
-  data,blocked=imp.build(REFERENCE);self.assertNotIn(251,{s['moveId'] for s in json.loads(data)['scripts']})
-  self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==251)['missing'])
-  raw=imp.read_sources(REFERENCE);raw['src/data/battle_moves.h']=raw['src/data/battle_moves.h'].replace(b'[MOVE_DOUBLE_SLAP] =\n    {\n        .effect = EFFECT_MULTI_HIT,',b'[MOVE_DOUBLE_SLAP] =\n    {\n        .effect = EFFECT_BEAT_UP,')
+ def test_complete_pixels_do_not_admit_an_unreviewed_move_turn_invocation(self):
+  data,blocked=imp.build(REFERENCE);self.assertIn(251,{s['moveId'] for s in json.loads(data)['scripts']})
+  self.assertNotIn(251,{b['moveId'] for b in blocked})
+  raw=imp.read_sources(REFERENCE);raw['src/data/battle_moves.h']=raw['src/data/battle_moves.h'].replace(b'[MOVE_DOUBLE_SLAP] =\n    {\n        .effect = EFFECT_MULTI_HIT,',b'[MOVE_DOUBLE_SLAP] =\n    {\n        .effect = EFFECT_SKY_ATTACK,')
   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
   self.assertNotIn(3,{s['moveId'] for s in json.loads(data)['scripts']})
   self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==3)['missing'])

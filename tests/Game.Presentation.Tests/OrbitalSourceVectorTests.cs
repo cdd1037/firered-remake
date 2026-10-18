@@ -43,8 +43,9 @@ public sealed class OrbitalSourceVectorTests
     private static IList Tasks(SourceBattleAnimation owner) => Field<IList>(owner, "_tasks");
     private static long[] Numbers(JsonElement row) => row.EnumerateArray().Select(v => v.GetInt64()).ToArray();
     private static int[] Key(string key) => key.Split(':').Select(v => int.Parse(v, CultureInfo.InvariantCulture)).ToArray();
-    private static JsonDocument Vectors(string file) => JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,
-        "tests/Game.Presentation.Tests/Fixtures", file)));
+    private static JsonDocument Vectors(string file) => SourceVectorFixture.Read(file, file == "orbit_spray_vectors.json"
+        ? "python tests/Game.Presentation.Tests/Reference/generate_orbit_spray_vectors.py --root . --section sprites --output tests/Game.Presentation.Tests/Fixtures/orbit_spray_vectors.json"
+        : "python tests/Game.Presentation.Tests/Reference/generate_orbit_spray_vectors.py --root . --section tasks --output tests/Game.Presentation.Tests/Fixtures/magical_sky_stretch_vectors.json");
 
     private sealed class Columns(JsonElement root, string name)
     {
@@ -124,10 +125,10 @@ public sealed class OrbitalSourceVectorTests
     }
 
     [TestMethod]
-    [DataRow(0, 320, 11420)]
-    [DataRow(1, 160, 2466)]
-    [DataRow(2, 320, 10240)]
-    public void OrbitalAndSprayInitializersAndEveryOrdinaryCallbackMatchSourceC(int kind, int expectedCases, int expectedRows)
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void OrbitalAndSprayInitializersAndEveryOrdinaryCallbackMatchSourceC(int kind)
     {
         using var document = Vectors("orbit_spray_vectors.json");
         var root = document.RootElement;
@@ -171,8 +172,7 @@ public sealed class OrbitalSourceVectorTests
             Assert.AreEqual(0, owner.ActiveVisualCount, entry.Name);
             owner.Cancel(); cases++;
         }
-        Assert.AreEqual(expectedCases, cases);
-        Assert.AreEqual(expectedRows, rows);
+        AssertCoverage(root, cases, rows, kind);
     }
 
     private static void AssertParticle(object sprite, long[] row, Columns c, int kind, SourceSpriteRecipe recipe, string context)
@@ -427,5 +427,46 @@ public sealed class OrbitalSourceVectorTests
             owner.Cancel(); cases++;
         }
         Assert.AreEqual(20, cases); Assert.AreEqual(440, rows);
+    }
+
+    private static void AssertCoverage(JsonElement root, int cases, int rows, int kind)
+    {
+        string? profile = root.GetProperty("profile").GetString();
+        Assert.IsTrue(profile is "representative" or "full", "Explicit source-vector profile is required.");
+        string[] required =
+        [
+            // All branch/boundary configurations: phases, durations, stop transitions, RNG signs and origins
+            "0:0:0:1:0","0:0:0:1:1","0:0:0:1:2","0:0:0:1:3","0:0:0:1:4","0:0:0:1:5","0:0:0:1:6","0:0:0:1:7","0:0:0:1:8","0:0:0:1:9","0:0:0:1:10","0:0:0:1:11","0:0:0:1:12","0:0:0:1:13","0:0:0:1:14","0:0:0:1:15",
+            // All branch/boundary configurations: phases, durations, stop transitions, RNG signs and origins
+            "1:0:0:1:0","1:0:0:1:1","1:0:0:1:2","1:0:0:1:3","1:0:0:1:4","1:0:0:1:5","1:0:0:1:6","1:0:0:1:7",
+            // All branch/boundary configurations: phases, durations, stop transitions, RNG signs and origins
+            "2:0:0:1:0","2:0:0:1:1","2:0:0:1:2","2:0:0:1:3","2:0:0:1:4","2:0:0:1:5","2:0:0:1:6","2:0:0:1:7","2:0:0:1:8","2:0:0:1:9","2:0:0:1:10","2:0:0:1:11","2:0:0:1:12","2:0:0:1:13","2:0:0:1:14","2:0:0:1:15",
+            // Fast: opposite-side priority and radius wrap
+            "0:0:1:0:1","0:0:1:0:10","0:0:1:0:14",
+            // Fast: rear-battler picture coordinates and subpriority
+            "0:1:2:3:2",
+            // Fast: rear-battler picture coordinates and subpriority
+            "0:1:3:2:2",
+            // Scatter: horizontal exits and both vertical exits from distinct source geometry
+            "1:0:1:0:0","1:0:1:0:2","1:0:1:0:4","1:0:1:0:6",
+            // Scatter: horizontal exits and both vertical exits from distinct source geometry
+            "1:1:2:3:0","1:1:2:3:2","1:1:2:3:4","1:1:2:3:6",
+            // Scatter: horizontal exits and both vertical exits from distinct source geometry
+            "1:1:3:2:0","1:1:3:2:2","1:1:3:2:4","1:1:3:2:6",
+            // Spray: both directions and attacker/target origins on each source side
+            "2:0:1:0:0","2:0:1:0:1","2:0:1:0:2","2:0:1:0:3",
+            // Spray: both directions and attacker/target origins on each source side
+            "2:1:2:3:0","2:1:2:3:1","2:1:2:3:2","2:1:2:3:3",
+            // Spray: both directions and attacker/target origins on each source side
+            "2:1:3:2:0","2:1:3:2:1","2:1:3:2:2","2:1:3:2:3",
+        ];
+        var actual = root.GetProperty("cases").EnumerateObject().Select(entry => entry.Name).ToArray();
+        foreach (string key in required) Assert.IsTrue(actual.Contains(key), "Missing source branch/boundary case " + key);
+        if (profile == "representative") CollectionAssert.AreEquivalent(required, actual, "Representative selection must be exact.");
+        (int Cases, int Rows)[] expected = profile == "full"
+            ? [(320, 11420),(160, 2466),(320, 10240)]
+            : [(21, 761),(20, 303),(28, 896)];
+        Assert.AreEqual(expected[kind].Cases, cases); Assert.AreEqual(expected[kind].Rows, rows);
+        Assert.AreEqual(actual.Length, root.GetProperty("coverage").GetProperty("caseCount").GetInt32());
     }
 }

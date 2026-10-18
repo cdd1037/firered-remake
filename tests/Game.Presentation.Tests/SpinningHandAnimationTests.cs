@@ -22,7 +22,7 @@ public sealed class SpinningHandAnimationTests
     [DataRow(299,0)][DataRow(299,1)][DataRow(299,2)][DataRow(299,3)]
     public void SpinResetPauseAndCallbackHandoffsMatchExtractedOriginalVectors(int move,int actor)
     {
-        using var vectors=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/spinning-sprite-original-vectors.json")));
+        using var vectors=SourceVectorFixture.Read("spinning-sprite-original-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_spinning_sprite_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/spinning-sprite-original-vectors.json");
         var configs=vectors.RootElement.GetProperty("configs").EnumerateArray().ToArray();
         foreach(int target in new[]{actor^1,actor^2})for(int index=0;index<configs.Length;index++)
         {

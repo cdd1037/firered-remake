@@ -608,7 +608,7 @@ public sealed class EndTurnResidualTests
         var type = typeof(SourceFourActionTurns).Assembly.GetType("Game.Domain.Battle.FrameEndTurnContext")!;
         var baseType = type.BaseType!;
         var initial = EndBoundary(Frame()).State;
-        using var doc = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Fixtures("Game.Battle.Tests/Residuals"), "source-residual-vectors.json")));
+        using var doc = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Residuals/Fixtures/source-residual-vectors.json", "python tests/Game.Battle.Tests/Residuals/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Residuals/Fixtures --fixtures-only")));
         foreach (var row in doc.RootElement.GetProperty("vectors").EnumerateArray())
         {
             var x = row.EnumerateArray().Select(n => n.GetInt32()).ToArray();

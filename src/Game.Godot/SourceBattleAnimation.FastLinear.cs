@@ -17,6 +17,13 @@ public sealed class SourceFastLinear
         _vx=(ushort)(((unchecked((ushort)(Math.Abs(deltaX)<<4))/Remaining)&~1)|(deltaX<0?1:0));
         _vy=(ushort)(((unchecked((ushort)(Math.Abs(deltaY)<<4))/Remaining)&~1)|(deltaY<0?1:0));
     }
+    // InitAnimFastLinearTranslation uses an authored duration rather than speed.
+    public static SourceFastLinear FromDuration(int deltaX,int deltaY,int duration)
+    {
+        if(duration is <1 or >short.MaxValue)throw new InvalidDataException("Source fast-linear duration is not positive.");
+        ushort Velocity(int delta)=>(ushort)(((unchecked((ushort)(Math.Abs(delta)<<4))/duration)&~1)|(delta<0?1:0));
+        return new(Velocity(deltaX),Velocity(deltaY),(short)duration);
+    }
     private SourceFastLinear(ushort vx,ushort vy,short remaining){_vx=vx;_vy=vy;Remaining=remaining;}
     public SourceFastLinear ReverseCopy()=>new((ushort)(_vx^1),(ushort)(_vy^1),Remaining);
     public void ResetAccumulators(){_x=0;_y=0;_offset=default;}

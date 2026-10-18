@@ -19,11 +19,11 @@ def declaration(source,name):
  m=re.search(r'^(?:static )?const union (?:AffineAnimCmd|AnimCmd) '+name+r'\[\]\s*=\s*\{.*?\};',source,re.M|re.S)
  if not m:raise ValueError('Missing source declaration '+name)
  return m[0]
-def build(reference,helper):
- spec=importlib.util.spec_from_file_location('reference_c',helper);ref=importlib.util.module_from_spec(spec);spec.loader.exec_module(ref);ref.verify_reference(reference)
- sprite=(reference/'src/sprite.c').read_text();mons=(reference/'src/battle_anim_mons.c').read_text();one=(reference/'src/battle_anim_effects_1.c').read_text();three=(reference/'src/battle_anim_effects_3.c').read_text();header=(reference/'include/sprite.h').read_text()
+def sprite_harness(reference,callbacks,extra=''):
+ """Shared extracted native frame/affine engine; callers supply actual callbacks."""
+ sprite=(reference/'src/sprite.c').read_text();header=(reference/'include/sprite.h').read_text()
  names=['AnimateSprites','AnimateSprite','BeginAnim','ContinueAnim','AnimCmd_frame','AnimCmd_end','AnimCmd_jump','AnimCmd_loop','BeginAnimLoop','ContinueAnimLoop','JumpToTopOfAnimLoop','DecrementAnimDelayCounter','BeginAffineAnim','ContinueAffineAnim','AffineAnimDelay','AffineAnimCmd_jump','AffineAnimCmd_end','AffineAnimCmd_frame','AffineAnimStateRestartAnim','AffineAnimStateReset','ApplyAffineAnimFrameAbsolute','DecrementAffineAnimDelayCounter','ApplyAffineAnimFrameRelativeAndUpdateMatrix','ConvertScaleParam','GetAffineAnimFrame','ApplyAffineAnimFrame']
- funcs=[function(sprite,n) for n in names]+[function(three,'AnimFang'),function(one,'AnimSuperFang'),function(mons,'RunStoredCallbackWhenAnimEnds')]
+ funcs=[function(sprite,n) for n in names]+callbacks
  h=r'''
 #include <assert.h>
 #include <stdint.h>
@@ -68,7 +68,13 @@ static void UnsupportedAffineLoop(u8 n,struct Sprite*s){abort();}
 '''
  h+='\n'.join(f.split('\n{',1)[0]+';' for f in funcs)+'\n'
  h+='static void (*sAnimFuncs[])(struct Sprite*)={ContinueAnim,BeginAnim};\nstatic void (*sAnimCmdFuncs[])(struct Sprite*)={AnimCmd_loop,AnimCmd_jump,AnimCmd_end,AnimCmd_frame};\nstatic void (*sAffineAnimFuncs[])(struct Sprite*)={ContinueAffineAnim,BeginAffineAnim};\nstatic void (*sAffineAnimCmdFuncs[])(u8,struct Sprite*)={UnsupportedAffineLoop,AffineAnimCmd_jump,AffineAnimCmd_end,AffineAnimCmd_frame};\n'
- h+='\n'.join(funcs)+'\n'+declaration(three,'sFangAnimCmds')+'\n'+declaration(three,'sFangAffineAnimCmds')+'\n'+declaration(one,'sSuperFangAnimCmds')+r'''
+ h+=extra+'\n'+'\n'.join(funcs)+'\n'
+ return h
+def build(reference,helper):
+ spec=importlib.util.spec_from_file_location('reference_c',helper);ref=importlib.util.module_from_spec(spec);spec.loader.exec_module(ref);ref.verify_reference(reference)
+ mons=(reference/'src/battle_anim_mons.c').read_text();one=(reference/'src/battle_anim_effects_1.c').read_text();three=(reference/'src/battle_anim_effects_3.c').read_text()
+ h=sprite_harness(reference,[function(three,'AnimFang'),function(one,'AnimSuperFang'),function(mons,'RunStoredCallbackWhenAnimEnds')])
+ h+=declaration(three,'sFangAnimCmds')+'\n'+declaration(three,'sFangAffineAnimCmds')+'\n'+declaration(one,'sSuperFangAnimCmds')+r'''
 static const union AnimCmd *const fang[]={sFangAnimCmds},*const super[]={sSuperFangAnimCmds};
 static const union AffineAnimCmd *const affine[]={sFangAffineAnimCmds};
 static void run(int mode){

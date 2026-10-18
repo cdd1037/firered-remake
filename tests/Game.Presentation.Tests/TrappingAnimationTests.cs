@@ -13,7 +13,7 @@ public sealed class TrappingAnimationTests
     [TestMethod]
     public void BothCallbacksMatchNativeAffineRestartPauseAlphaSubpriorityAndSoundVectors()
     {
-        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));using var json=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/trapping-vectors.json")));int cases=0,rows=0;
+        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));using var json=SourceVectorFixture.Read("trapping-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_trapping_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/trapping-vectors.json");int cases=0,rows=0;
         foreach(var c in json.RootElement.GetProperty("cases").EnumerateArray())
         {
             int kind=c.GetProperty("kind").GetInt32(),actor=c.GetProperty("actor").GetInt32(),target=c.GetProperty("target").GetInt32();bool doubles=c.GetProperty("mode").GetInt32()!=0;

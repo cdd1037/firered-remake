@@ -87,7 +87,7 @@ public sealed class GroupedStatAnimationDispatchTests
         int trigger, int argument, bool checkSingle = true)
     {
         var battle = Double(events);
-        Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
+        Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
         Assert.IsNotNull(root.Dispatch, root.Reason);
         Assert.AreEqual(id, root.Dispatch.SourceMoveId);
@@ -110,14 +110,14 @@ public sealed class GroupedStatAnimationDispatchTests
             }
             else Assert.IsNull(dispatch, $"{id}: unexpected replay at {index}");
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(current, true));
-            Assert.AreEqual(IsCap(events[index]), CampaignStatAnimationPresentation.IsSilentResultReceipt(current),
+            Assert.AreEqual(IsCap(events[index]), CampaignStatAnimationPresentation.IsSilentResultReceipt(current,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves),
                 $"{id}: only the script's individual caps are silent at {index}");
         }
         Assert.AreEqual(events, battle.Events);
         if (!checkSingle) return;
         var single = Single(events);
-        Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true));
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, false));
+        Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, false,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         var singleRoot = AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On);
         Assert.IsNotNull(singleRoot.Dispatch, singleRoot.Reason);
         Assert.AreEqual(4L, singleRoot.Dispatch.ResultSequence);
@@ -128,8 +128,8 @@ public sealed class GroupedStatAnimationDispatchTests
                 AnimationDispatchFixture.StatAtResult(current, true));
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(current, false));
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(current, true, true));
-            Assert.AreEqual(IsCap(events[index]), CampaignStatAnimationPresentation.IsSilentResultReceipt(current, true));
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(current, false));
+            Assert.AreEqual(IsCap(events[index]), CampaignStatAnimationPresentation.IsSilentResultReceipt(current, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(current, false,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         }
     }
 
@@ -162,21 +162,21 @@ public sealed class GroupedStatAnimationDispatchTests
         bool checkSingle = true)
     {
         var battle = Double(events);
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle), reason);
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves), reason);
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On).Dispatch, reason);
         for (int index = 0; index < events.Length; index++)
         {
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(battle with { EventIndex = index }), reason);
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle with { EventIndex = index }), reason);
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle with { EventIndex = index },moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves), reason);
         }
         if (!checkSingle) return;
         var single = Single(events);
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true), reason);
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(single, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves), reason);
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch, reason);
         for (int index = 0; index < events.Length; index++)
         {
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(single with { EventIndex = index }, true), reason);
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single with { EventIndex = index }, true), reason);
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(single with { EventIndex = index }, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves), reason);
         }
     }
 
@@ -341,12 +341,12 @@ public sealed class GroupedStatAnimationDispatchTests
         var first = Scenario(321, "both", 0, 1);
         var later = Scenario(207, "confusion", 1, 0).Select(e => e with { Sequence = e.Sequence + 10 }).ToImmutableArray();
         var events = first.AddRange(later);
-        Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events)));
-        Assert.AreEqual<long?>(14L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events, 6)));
+        Assert.AreEqual<long?>(4L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+        Assert.AreEqual<long?>(14L, CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events, 6),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         Assert.AreEqual(57, AnimationDispatchFixture.StatAtResult(Double(events, 3))!.AnimationArgument);
         Assert.AreEqual(39, AnimationDispatchFixture.StatAtResult(Double(events, 8))!.AnimationArgument);
         var incomplete = first.RemoveAt(4).AddRange(later);
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(incomplete)));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(incomplete),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(incomplete, 3)));
         var switched = first.Insert(4, new SourceCalledPartySwitchedEvent(5, 1, new(1), 0, 1, WildBattleCalledSwitchKind.Forced))
             .SetItem(5, first[4] with { Sequence = 6 });
@@ -359,20 +359,20 @@ public sealed class GroupedStatAnimationDispatchTests
         var events = Scenario(339, "attack-cap", 0, 0);
         var finished = Double(events, 3) with { Stage = CampaignDoubleBattleStage.Finished };
         Assert.IsNull(AnimationDispatchFixture.StatAtResult(finished));
-        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(finished));
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(finished with { EventIndex = 1 }));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(finished,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(finished with { EventIndex = 1 },moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         var singleResults = Single(events, 3) with { Phase = CampaignBattlePhase.Results };
         Assert.IsNull(AnimationDispatchFixture.StatAtResult(singleResults, true));
-        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(singleResults, true));
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(singleResults with { EventIndex = 1 }, true));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(singleResults, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(singleResults with { EventIndex = 1 }, true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         foreach (int index in new[] { -1, events.Length, events.Length + 1 })
         {
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(Double(events, index)));
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events, index)));
-            Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events, index)));
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events, index),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+            Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events, index),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(Single(events, index), true));
-            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(events, index), true));
-            Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Single(events, index), true));
+            Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(events, index), true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+            Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Single(events, index), true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         }
         MoveId barrier = new("pret:MOVE_BARRIER");
         ImmutableArray<SourceBattleEvent> existing = [new SourceAttackStringEvent(1, 1, new(0), barrier, barrier),
@@ -381,11 +381,27 @@ public sealed class GroupedStatAnimationDispatchTests
             new SourceStatChangedEvent(4, 1, new(0), new(0), WildBattleStat.Defense, 11, 12)];
         Assert.AreEqual(40, AnimationDispatchFixture.StatAtResult(Double(existing, 3))!.AnimationArgument);
         Assert.AreEqual(40, AnimationDispatchFixture.StatAtResult(Single(existing, 3), true)!.AnimationArgument);
-        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(existing)));
-        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(existing, 3)));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(existing),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(existing, 3),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
         var capped = existing.SetItem(3, new SourceStatAtMaximumEvent(4, 1, new(0), new(0), WildBattleStat.Defense));
-        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(capped, 3)));
-        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(capped, 3), true));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(capped, 3),moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Single(capped, 3), true,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
+    }
+
+    [TestMethod]
+    public void GroupedResultsRequireCurrentEffectMetadataRatherThanMoveNames()
+    {
+        var events=Scenario(322,"defense-cap",0,0);
+        var moves=CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves;
+        Assert.IsNotNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events),moves));
+        Assert.IsTrue(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events,3),moves));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events),null));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events,3),null));
+        var changed=moves.ToDictionary(p=>p.Key,p=>p.Value);
+        changed[Move(322)]=changed[Move(322)] with{Effect="EFFECT_HIT"};
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Double(events),changed));
+        Assert.IsFalse(CampaignStatAnimationPresentation.IsSilentResultReceipt(Double(events,3),changed));
+        Assert.IsNull(CampaignStatAnimationPresentation.GroupedMoveResultSequence(Single(events),true,changed));
     }
 
     private static WildBattleCombatant KernelMon(SourceMechanicsCatalog mechanics, string species, int level, string move)
@@ -476,7 +492,7 @@ public sealed class GroupedStatAnimationDispatchTests
             var first = events.OfType<SourceStatChangedEvent>().First(e => e.Actor.Value == actor && e.Target.Value == target);
             int usedIndex = events.IndexOf(used), resultIndex = events.IndexOf(first);
             var battle = Double(events, usedIndex);
-            Assert.AreEqual<long?>(first.Sequence, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
+            Assert.AreEqual<long?>(first.Sequence, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.IsNotNull(root.Dispatch, root.Reason); Assert.AreEqual(first.Sequence, root.Dispatch.ResultSequence);
             var dispatches = Enumerable.Range(0, events.Length).Select(i => AnimationDispatchFixture.StatAtResult(battle with { EventIndex = i }))
@@ -502,7 +518,7 @@ public sealed class GroupedStatAnimationDispatchTests
             var consumed = events.OfType<SourceHeldItemConsumedEvent>().Single(e => e.Side.Value == target && e.Item == item);
             Assert.IsTrue(first.Sequence < consumed.Sequence);
             var battle = Double(events, events.IndexOf(used));
-            Assert.AreEqual<long?>(first.Sequence, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle));
+            Assert.AreEqual<long?>(first.Sequence, CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,moves:CurrentCampaignFixture.Catalog.PokemonContent!.Catalog.Moves));
             var root = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
             Assert.IsNotNull(root.Dispatch, root.Reason); Assert.AreEqual(first.Sequence, root.Dispatch.ResultSequence);
             var stats = Enumerable.Range(0, events.Length).Select(i => AnimationDispatchFixture.StatAtResult(battle with { EventIndex = i }))

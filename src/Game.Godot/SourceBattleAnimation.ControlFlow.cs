@@ -21,7 +21,7 @@ public sealed partial class SourceBattleAnimation
             _validatingInvokedProgram=invoked.ContainsKey(name);
             ValidateProgram(commands,LabelsFor(name),true);
         }
-        _validatingInvokedProgram=true;_programLabels=_script.Labels;
+        _validatingInvokedProgram=true;_programLabels=_script.Labels;ValidatePaletteBackupProgram();
     }
     private void ValidateProgram(SourceAnimationCommand[] commands,IReadOnlyDictionary<string,int> labels,bool subroutine)
     {
@@ -63,12 +63,21 @@ public sealed partial class SourceBattleAnimation
             if(a.Length!=3||(Number(a[0])<0||Number(a[0])>=AnimationRegisterCount)||AnimationArgument(a[1]) is <short.MinValue or >ushort.MaxValue||!ValidProgramLabel(a[2]))Fail(c,"Argument branch needs a source argument, signed16 comparison and scoped label.");
             return true;
         }
-        if(c.Op!="createvisualtask"||a.FirstOrDefault() is not ("AnimTask_IsContest" or "AnimTask_IsTargetPlayerSide" or "AnimTask_GetAttackerSide"))return false;
-        if(a.Length!=2||Number(a[1]) is <0 or >255)Fail(c,"Source side/engine predicate takes only task priority.");
+        if(c.Op!="createvisualtask"||a.FirstOrDefault() is not ("AnimTask_IsContest" or "AnimTask_IsTargetPlayerSide" or "AnimTask_GetAttackerSide" or "GetIsDoomDesireHitTurn"))return false;
+        if(a.Length!=2||Number(a[1]) is <0 or >255)Fail(c,"Source argument predicate takes only task priority.");
+        if(a[0]=="GetIsDoomDesireHitTurn"&&_validatingInvokedProgram&&_cue.MoveTurn is null)Fail(c,"Delayed-attack predicate requires the committed source move turn.");
         return true;
     }
     private bool TryRunArgumentPredicate(SourceAnimationCommand c)
     {
+        if(c.Args[0]=="GetIsDoomDesireHitTurn")
+        {
+            // The source has two independent ifs, not an else assignment. Turns
+            // above two retain ARG_RET_ID and still destroy the task immediately.
+            if(_cue.MoveTurn!.Value<2)_animationArgs[7]=0;
+            if(_cue.MoveTurn.Value==2)_animationArgs[7]=1;
+            return true;
+        }
         short? result=c.Args[0] switch
         {
             "AnimTask_IsContest"=>0,

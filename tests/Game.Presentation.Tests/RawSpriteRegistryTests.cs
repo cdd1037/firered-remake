@@ -19,7 +19,7 @@ public sealed class RawSpriteRegistryTests
     [DataRow(5)][DataRow(6)][DataRow(7)][DataRow(8)][DataRow(9)]
     public void LiveRegistryTraversalMatchesExtractedSourceAllocationAndDeletion(int scenario)
     {
-        using var source=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/raw-sprite-registry-source-vectors.json")));
+        using var source=SourceVectorFixture.Read("raw-sprite-registry-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_raw_sprite_registry_vectors.py --reference content/raw/pokefirered/037335f4 --helper tests/Reference/reference_c.py --extractor tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py --output tests/Game.Presentation.Tests/Fixtures/raw-sprite-registry-source-vectors.json");
         var registry=new SourceSpriteRegistry<Sprite>(s=>s.Slot);var actual=new List<string>();int tick=0,once=0;
         void Log(string op,int slot)=>actual.Add($"{tick},{op},{slot}");
         void Frame(Sprite sprite){if(sprite.Kind!=0)Log("F",sprite.Slot);}

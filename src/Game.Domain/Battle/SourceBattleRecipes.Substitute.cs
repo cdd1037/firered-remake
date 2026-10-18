@@ -64,7 +64,7 @@ internal abstract partial class SourceRecipeContext
 
     // IGNORE_SUBSTITUTE costs, passive damage and healing never enter this boundary.
     internal bool ConsumeSubstituteDamage(BattlerSlot actor, BattlerSlot target, MoveId move,
-        int damage, bool critical, int percent, out int lost, bool noEffect = false)
+        int damage, bool critical, int percent, out int lost, bool noEffect = false, int? preparedBasePower = null, int? preparedFuryCutterCounter = null)
     {
         SubstituteLifecycle.Hit.Remove(target); lost = 0;
         var value = Get(target).CalledVolatile;
@@ -74,7 +74,7 @@ internal abstract partial class SourceRecipeContext
         Set(target, Get(target) with { CalledVolatile = next == new WildBattleCalledVolatileState() ? null : next });
         SubstituteLifecycle.Hit.Add(target);
         if (result.After == 0) SubstituteLifecycle.Faded.Add(target);
-        Add(n => new SourceSubstituteDamagedEvent(n, Turn, actor, target, move, value.SubstituteHp, result.After, damage, critical, percent));
+        Add(n => new SourceSubstituteDamagedEvent(n, Turn, actor, target, move, value.SubstituteHp, result.After, damage, critical, percent) { PreparedBasePower = preparedBasePower, PreparedFuryCutterCounter = preparedFuryCutterCounter });
         if (critical) Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         return true;
     }

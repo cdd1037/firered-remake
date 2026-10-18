@@ -22,7 +22,7 @@ public sealed class PowerShakeAnimationTests
         Commands=[C("createvisualtask",new[]{callback,"5"}.Concat(args.Select(v=>v.ToString())).ToArray()),C("delay","255"),C("end")],Labels=new Dictionary<string,int>()};
     private static CommittedMoveAnimation Cue(int move,int actor,ushort? power=null,int? damage=null,byte? turn=null)=>new("power-shake",1,move,new(actor),new(actor^1)){MovePower=power,MoveDamage=damage,MoveTurn=turn};
     private static SourceBattleAnimation Runtime(SourceAnimationScript script,CommittedMoveAnimation cue,int mask=15)=>new(script,cue,Battlers(mask:mask),true,new Audio());
-    private static JsonDocument Vectors()=>JsonDocument.Parse(File.ReadAllBytes(Path.Combine(TestAssets.Root,"tests/Game.Presentation.Tests/Fixtures/power-shake-source-vectors.json")));
+    private static JsonDocument Vectors()=>SourceVectorFixture.Read("power-shake-source-vectors.json", "python tests/Game.Presentation.Tests/Reference/generate_power_shake_vectors.py --root . --output tests/Game.Presentation.Tests/Fixtures/power-shake-source-vectors.json");
     private static void Initialize(SourceBattleAnimation runtime,bool initial)
     {
         if(!initial)return;

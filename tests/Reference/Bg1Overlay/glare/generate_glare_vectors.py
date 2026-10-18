@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compile only authored bounded glue and verbatim pinned-source extracts."""
 import argparse
+import tempfile
 import hashlib
 import importlib.util
 import json
@@ -38,15 +39,29 @@ def extract_function(text, name):
         end += 1
     return match.start(), end
 
+def representative(s):
+    # Direction and both coordinate layouts plus every capacity/failure/
+    # contest probe; coordinates stay complete for signed endpoint bounds.
+    return s['name'] in ['single_a0_t1', 'single_a1_t0', 'double_a2_t3', 'double_a3_t1'] or s['name'] not in [f'{layout}_a{actor}_t{target}' for layout in ['single', 'double'] for actor in range(4) for target in range(4)]
+
+def representative_coordinate(c):
+    # Independent helper inputs: preserve endpoints, first/interior/last pair,
+    # just beyond each maximum, unsigned maximum, and every actual max12 pair.
+    maximum = c['pairMax']
+    return c['pairNum'] in {0, 1, maximum // 2, maximum - 1, maximum, maximum + 1, 255} or maximum == 12 and c['pairNum'] <= 12
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--repository', type=Path, required=True)
-    p.add_argument('--output', type=Path, default=HERE / 'glare-source-vectors.json')
+    p.add_argument('--output', type=Path, default=HERE.parents[2] / 'Game.Presentation.Tests/Fixtures/overlay-glare-source-vectors.json')
+    p.add_argument('--build-dir', type=Path)
+    p.add_argument('--full', action='store_true', help='Emit all source scenarios instead of semantic representatives')
     a = p.parse_args()
     if a.output.exists():
         raise SystemExit('Refuse overwriting an existing oracle. Generate a new candidate path.')
-    if not a.output.resolve().is_relative_to(HERE):
-        raise SystemExit('Output must remain inside the glare stage directory.')
+    build = (a.build_dir or Path(tempfile.mkdtemp(prefix='glare-reference-'))).resolve()
+    build.mkdir(parents=True, exist_ok=True)
     raw = a.repository / 'content/raw/pokefirered/037335f4'
     inputs, source = [], {}
     for relative, expected in PINS.items():
@@ -91,7 +106,7 @@ def main():
         match = re.search(r'^#define ' + name + r'[^\n]*', source[relative], re.M)
         if match is None: raise ValueError(name)
         constants.append(record(relative, name, match.start(), match.end()))
-    generated = HERE / 'glare-harness.generated.c'
+    generated = build / 'glare-harness.generated.c'
     prefix = (HERE / 'harness_prefix.c').read_text()
     suffix = (HERE / 'harness_suffix.c').read_text()
     c = '\n'.join(constants) + '\n' + prefix + '\n' + coords + '\n#define AnimGlareEyeDot ObservedGlareEyeDot\n' + template + '\n#undef AnimGlareEyeDot\n'
@@ -104,7 +119,7 @@ def main():
     module.verify_reference(raw)
     outputs, commands = [], []
     for optimization in ('-O0', '-O2'):
-        executable = HERE / ('glare-harness-' + optimization[1:])
+        executable = build / ('glare-harness-' + optimization[1:])
         command = ['cc', '-std=c11', optimization, '-fwrapv', '-Wall', '-Wextra', '-Wno-unused-parameter', str(generated), '-o', str(executable)]
         module.compile_c(command)
         commands.append([*command[:-3], generated.name, "-o", executable.name])
@@ -113,7 +128,10 @@ def main():
         raise AssertionError('O0 and O2 source observations differ')
     actual = json.loads(outputs[1])
     assertions = validate(actual)
-    result = {'schema': 'firered.glare.source-oracle.v1', 'referenceCommit': COMMIT,
+    if not a.full:
+        actual['scenarios'] = [s for s in actual['scenarios'] if representative(s)]
+        actual['coordinates'] = [c for c in actual['coordinates'] if representative_coordinate(c)]
+    result = {'profile': 'full' if a.full else 'representative', 'schema': 'firered.glare.source-oracle.v1', 'referenceCommit': COMMIT,
               'sourceInputs': inputs, 'sourceExtracts': extracts,
               'harness': {'generatorSha256': digest(Path(__file__).read_bytes()),
                           'prefixSha256': digest((HERE / 'harness_prefix.c').read_bytes()),
@@ -129,17 +147,19 @@ def main():
                   'callFields': ['slot', 'instance', 'timerBefore', 'timerAfterOrAtDestroyEntry', 'parentCountBefore', 'parentCountAfter', 'destroyed'],
                   'allocationFields': ['attempt', 'pairNum', 'siblingIndex', 'x', 'y', 'subpriority', 'resultSlotOr64', 'instanceOrZero'],
                   'readFields': ['kind: 0=side 1=coordinate 2=attribute', 'battler', 'selector', 'value'],
-                  'layoutCoverage': 'All 16 ordered actor/target IDs for both source coordinate tables; same-side and self pairs are helper probes, not claims that a move script targets those pairs.',
+                  'layoutCoverage': 'Full profile has all 16 ordered actor/target IDs per layout; representative profile keeps direction/layout and allocation/contest boundaries. Same-side/self pairs are helper probes.',
                   'stubs': ['Controlled battler side/coordinate/height reads', 'CreateSpriteAt performs zeroed sprite allocation, can fail a chosen attempt; tile/palette/OAM loading is outside scope', 'DestroySprite records the timer at entry, zeroes/frees the slot, and does not mutate the global animation count', 'DestroyTask records task teardown', 'BuildOamBuffer observes live child slots; does not claim rendered pixel or native OAM sorting correctness', 'AnimateSprite and unrelated battle rendering callbacks are inert'],
                   'verbatimFunctions': ['AnimTask_GlareEyeDots', 'AnimTask_GlareEyeDots_Step', 'GetGlareEyeDotCoords', 'AnimGlareEyeDot', 'CreateSprite', 'AnimateSprites', 'FindFirstActiveTask', 'RunTasks', 'DestroyAnimVisualTask', 'BattleMainCB2'],
                   'instrumentation': 'Preprocessor aliases route CreateSprite through a return-value observer and the source sprite template through a callback observer. Both observers call the verbatim source function once, without eager child callbacks.',
                   'contest': 'Normal initializer forcibly writes FALSE; explicit forced-state cases reach the otherwise unreachable offset branch. They are coverage probes, not reachable FireRed behavior.',
                   'integerModel': 'C11 fixed-width s16/u8, 32-bit int, arithmetic signed right shift and GNU native signed-left-shift behavior, -fwrapv; complete O0/O2 output equality checked. Negative signed left shift in the original source is not portable ISO C.'},
               **actual}
+    validate(actual, full=a.full)
+    a.output.parent.mkdir(parents=True, exist_ok=True)
     a.output.write_text(json.dumps(result, separators=(',', ':')) + '\n')
     print(json.dumps({'output': str(a.output), 'sha256': digest(a.output.read_bytes()), 'scenarios': len(actual['scenarios']), 'frameRows': sum(len(s['frames']) for s in actual['scenarios']), 'coordinateRows': len(actual['coordinates']), 'assertions': assertions}))
 
-def validate(data):
+def validate(data, full=True):
     scenarios = data['scenarios']
     assert scenarios and data['coordinates']
     for scenario in scenarios:
@@ -177,7 +197,12 @@ def validate(data):
             assert frames[-1]['frame'] == 81
             assert len(created) == 2
         assert frames[0]['taskData'][7] == int(scenario['forceContestBranch'])
-    assert len({(s['layout'], s['attacker'], s['target']) for s in scenarios[:32]}) == 32
+    assert len(scenarios) == (37 if full else 9)
+    if full:
+        assert len({(s['layout'], s['attacker'], s['target']) for s in scenarios[:32]}) == 32
+    else:
+        assert all(representative(s) for s in scenarios)
+        assert all(representative_coordinate(c) for c in data['coordinates'])
     assert all(s['contestAfterInit'] == 0 for s in scenarios)
     failed = next(s for s in scenarios if s['name'] == 'first_sibling_allocation_failure')
     assert failed['frames'][4]['allocations'][0][6] == 64

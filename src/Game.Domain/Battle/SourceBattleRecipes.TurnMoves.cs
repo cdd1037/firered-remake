@@ -98,7 +98,7 @@ internal abstract partial class SourceRecipeContext
         bool critical = SourceGenericCritical(Get(actor), Get(target), move, purpose);
         int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
         int damage = RolloutDamage(catalog, actor, target, move, critical, percent, power, purpose);
-        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
+        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent, power);
         RolloutReportType(catalog, actor, target, move);
         Draw($"{purpose}.secondary-effect", 100);
         RolloutFinish(catalog, actor, target, move, purpose, lost);

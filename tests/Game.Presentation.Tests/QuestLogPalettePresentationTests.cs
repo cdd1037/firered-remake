@@ -11,7 +11,7 @@ public sealed class QuestLogPalettePresentationTests
     [TestMethod]
     public void EveryRgb555ColorMatchesOriginalCAtEveryRestorationTone()
     {
-        using var document=JsonDocument.Parse(File.ReadAllText(Path.Combine(TestAssets.Root,"tests","Reference","quest-palette-source-vectors.json")));
+        using var document=JsonDocument.Parse(File.ReadAllText(TestAssets.GeneratedFile("tests/Reference/quest-palette-source-vectors.json", "python tests/Reference/generate_quest_palette_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Reference/quest-palette-source-vectors.json")));
         foreach(var row in document.RootElement.GetProperty("tones").EnumerateArray())
         {
             int tone=row.GetProperty("tone").GetInt32();var bytes=new byte[32768*2];

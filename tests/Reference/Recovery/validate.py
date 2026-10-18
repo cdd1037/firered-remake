@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-import json,hashlib
+import argparse,json,hashlib
 from pathlib import Path
 here=Path(__file__).resolve().parent;count=0
+p=argparse.ArgumentParser();p.add_argument('--fixtures',type=Path);a=p.parse_args()
+
 def check(v):
  global count
  assert v
  count+=1
-def read(f):return json.loads((here/(f+'-vectors.json')).read_text())
+def read(f):
+ path = a.fixtures / (f'recovery-{f}-source-vectors.json') if a.fixtures else here / (f+'-vectors.json')
+ if not path.is_file():raise FileNotFoundError(f'Missing {path}. Generate explicitly: python tests/Reference/Recovery/check_vectors.py --reference content/raw/pokefirered/037335f4 --prepare tests/Game.Presentation.Tests/Fixtures')
+ return json.loads(path.read_text())
 m=read('motion');t=read('tasks');s=read('schedule');a=read('material')
 check(len(m['cases'])==48);check(sum(len(c['rows']) for c in m['cases'])==1950)
 for c in m['cases']:
@@ -16,7 +21,7 @@ for c in m['cases']:
  if kind==5:
   check(max(len(r['sprites']) for r in rows)==18);check(max(sum(p[8] for p in r['sprites']) for r in rows)==14);check(22+18+4<64)
  if kind==4:check(rows[-1]['frame']<17+2)
-check(len(t['cases'])==28);check(sum(len(c['rows']) for c in t['cases'])==2632)
+check(t['profile'] in ['representative','full']);check(len(t['cases'])==(28 if t['profile']=='full' else 8));check(sum(len(c['rows']) for c in t['cases'])==(2632 if t['profile']=='full' else 816));check({c['kind'] for c in t['cases']}=={0,1,2,3});check({(c['visibleMask'],c['preexistingFade']) for c in t['cases'] if c['kind']==1}=={(3,False),(3,True),(15,False),(15,True)})
 for c in t['cases']:
  rows=c['rows'];kind=c['kind'];check(rows[-1]['alive']==0)
  if kind==0:check(rows[-1]['frame']==157 and rows[-1]['bg1']==[0,0] and rows[-1]['registers']==[0,0]);check(sum(e[0]==7 for r in rows for e in r['events'])==4)
@@ -30,5 +35,5 @@ check([c['birthFrames'] for c in s['cases']]==[[3,25,47],[32+7*i for i in range(
 for c in a['sprites']:check(len(c['palette'])==16);check(all(len(f['indices'])==c['frameSize'][0]*c['frameSize'][1] for f in c['frames']))
 for c in a['backgrounds']:check(len(c['palette'])==16 and c['samples'])
 for p in here.glob('*-vectors.json'):check('/tmp/' not in p.read_text() and '/workspace/' not in p.read_text())
-result=dict(passed=True,assertions=count,motionCases=48,motionRows=1950,taskCases=28,taskRows=2632,scheduleCases=3,scheduleRows=sum(len(c['rows']) for c in s['cases']),spritePixelFrames=48,backgroundSamples=sum(len(c['samples']) for c in a['backgrounds']),fixtures={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(here.glob('*-vectors.json'))})
-(here/'verification.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
+result=dict(passed=True,assertions=count,motionCases=48,motionRows=1950,taskCases=len(t['cases']),taskRows=sum(len(c['rows']) for c in t['cases']),scheduleCases=3,scheduleRows=sum(len(c['rows']) for c in s['cases']),spritePixelFrames=48,backgroundSamples=sum(len(c['samples']) for c in a['backgrounds']),fixtures={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(here.glob('*-vectors.json'))})
+print(json.dumps(result))

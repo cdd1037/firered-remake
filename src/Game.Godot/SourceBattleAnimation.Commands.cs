@@ -162,7 +162,13 @@ public sealed partial class SourceBattleAnimation
     {
         private readonly int _slot,_axis,_amplitude,_speed;private int _phase,_remaining,_half;
         public SwayMonTask(SourceBattleAnimation owner,int[] args)
-        {_slot=owner.Resolve(args[4].ToString(System.Globalization.CultureInfo.InvariantCulture)).Value;_axis=args[0];_amplitude=args[1]*(owner._cue.Actor.IsPlayer?1:-1);_speed=args[2];_remaining=args[3];}
+        {
+            _slot=owner.Resolve(args[4].ToString(System.Globalization.CultureInfo.InvariantCulture)).Value;_axis=args[0];
+            // Source mutates the shared signed16 register before copying the
+            // amplitude. The sign follows the attacker, not the selected mon.
+            if(!owner._cue.Actor.IsPlayer)owner._animationArgs[1]=unchecked((short)-owner._animationArgs[1]);
+            _amplitude=owner._animationArgs[1];_speed=args[2];_remaining=args[3];
+        }
         public override void Step(SourceBattleAnimation owner)
         {
             _phase=(_phase+_speed)&65535;int angle=_phase>>8;

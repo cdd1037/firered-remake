@@ -21,8 +21,13 @@ public static partial class CampaignMoveAnimationPresentation
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return new(null,"not-hit-result");
         var rows=battle.Events.ToArray();
+        if(BeatUpResult(battle.Id,rows,battle.EventIndex,4,moves,supports) is {} member)return member;
+        if(ChargeSetup(battle.Id,rows,battle.EventIndex,4,moves,supports) is {} charge)return charge;
+        if(BideRelease(battle.Id,rows,battle.EventIndex,4,moves,supports) is {} bide)return bide;
         if(battle.EventIndex>=0&&battle.EventIndex<rows.Length&&rows[battle.EventIndex] is SourceRecoveredEvent)
             return RecoveryResult(battle.Id,rows,battle.EventIndex,4,moves,supports);
+        if(battle.EventIndex>=0&&battle.EventIndex<rows.Length&&rows[battle.EventIndex] is SourceConfusionChangedEvent)
+            return StatusResult(battle.Id,rows,battle.EventIndex,4,moves,supports);
         return MultiHitResult(battle.Id,rows.Select(MultiHitRead).ToArray(),battle.EventIndex,4,moves,supports);
     }
     public static CampaignMoveAnimationDecision AtResult(CampaignWildBattle battle,bool sourceRules,SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
@@ -30,8 +35,13 @@ public static partial class CampaignMoveAnimationPresentation
         if(!sourceRules)return new(null,"historical-rules");
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Phase!=CampaignBattlePhase.Events)return new(null,"not-hit-result");
+        if(BeatUpResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports) is {} member)return member;
+        if(ChargeSetup(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports) is {} charge)return charge;
+        if(BideRelease(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports) is {} bide)return bide;
         if(battle.EventIndex>=0&&battle.EventIndex<battle.Events.Length&&battle.Events[battle.EventIndex] is WildBattleRecoveredEvent)
             return RecoveryResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
+        if(battle.EventIndex>=0&&battle.EventIndex<battle.Events.Length&&battle.Events[battle.EventIndex] is WildBattleConfusionChangedEvent)
+            return StatusResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
         return MultiHitResult(battle.Id,battle.Events.Select(MultiHitRead).ToArray(),battle.EventIndex,2,moves,supports);
     }
     private static CampaignMoveAnimationDecision RecoveryResult(string id,SourceBattleEvent[] rows,int index,int slots,
