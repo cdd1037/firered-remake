@@ -143,11 +143,13 @@ public sealed class SourceCompletedBattlerState
         int count=frame.Doubles?4:2;
         return frame.Battlers.Length==count&&frame.Battlers.Select(b=>b.Slot.Value).Order().SequenceEqual(Enumerable.Range(0,count))&&
             frame.Offsets.Length==4&&frame.ObjectOffsets.Length==4&&
+            frame.BattlerObjectPriorities.Length==4&&frame.BattlerObjectPriorities.All(p=>p is >=0 and <=3)&&
             (frame.BattlerVisibility.Length==0||frame.BattlerVisibility.Length==count&&
                 frame.BattlerVisibility.Select(v=>v.Slot).Order().SequenceEqual(Enumerable.Range(0,count)))&&
             (frame.BattlerAffine.Length==0||frame.BattlerAffine.Length==count&&frame.BattlerAffine.All(a=>a is not null));
     }
     private static bool CleanMaterials(SourceAnimationFrame frame)=>
+        frame.BattlerObjectPriorities.All(p=>p==2)&&
         frame.BackgroundSlots.Length==0&&frame.StaticBackgroundCopies.Length==0&&frame.Overlay is null&&
         frame.StatMask is null&&frame.Metallic is null&&!frame.BlendEnabled&&frame.BlendedObjectSlots.Length==0&&
         frame.PaletteBlends.All(p=>p.Coefficient==0&&p.Unfaded is null)&&frame.InvertedPalettes.Length==0&&frame.GreyscaleSlots.Length==0&&

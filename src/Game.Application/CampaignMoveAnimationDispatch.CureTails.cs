@@ -9,7 +9,8 @@ public static partial class CampaignMoveAnimationPresentation
     // These non-damaging self scripts finish with the common immunity phase,
     // complete held-item groups, then active-party synchronization. Unknown rows
     // cannot become a harmless tail merely because a valid PP command precedes them.
-    private static bool CureMoveEndTail(SourceBattleEvent[] rows,int start,SourceMoveUsedEvent used,int slots)
+    private static bool CureMoveEndTail(SourceBattleEvent[] rows,int start,SourceMoveUsedEvent used,int slots,
+        Func<SourceBattleEvent[],int,SourceCalledPartyChangedEvent,SourceMoveUsedEvent,bool>? activeSync=null)
     {
         int i=start,lastImmunity=-1,lastItem=-1;
         while(i<rows.Length&&rows[i] is SourceAbilityActivatedEvent ability)
@@ -46,7 +47,7 @@ public static partial class CampaignMoveAnimationPresentation
         {
             if(rows[i] is not SourceCalledPartyChangedEvent {Reason:"active-sync"} sync||
                 !Enum.IsDefined(sync.Side)||sync.PartyIndex is <0 or >=6||!synchronized.Add((sync.Side,sync.PartyIndex))||
-                synchronized.Count(p=>p.Item1==sync.Side)>slots/2||!CureActiveSync(rows,i,sync,used))return false;
+                synchronized.Count(p=>p.Item1==sync.Side)>slots/2||!(activeSync??CureActiveSync)(rows,i,sync,used))return false;
         }
         return true;
     }

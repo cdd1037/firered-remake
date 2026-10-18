@@ -11,14 +11,18 @@ public sealed partial class SourceBattleAnimation
 {
     private SourceAnimationOverlayFrame? _overlay;
     private int _blendFirstTargets,_blendSecondTargets=63;
-    private void BeginOverlay(string materialId)
+    private void BeginOverlayMaterial(string materialId)
     {
         if(!_script.OverlayDependencies.Contains(materialId)||!_script.OverlayPalettes.TryGetValue(materialId,out var palette)||palette.Length!=16)
             throw new InvalidDataException("Source BG1 overlay dependency is missing.");
         _overlay=new(materialId,0,0);
+    }
+    private void BeginOverlay(string materialId)
+    {
+        BeginOverlayMaterial(materialId);
         // LoadPalette replaces the faded and unfaded source bank; it does not
         // retain a blend or inversion from the previous owner of bank eight.
-        ClearBackgroundPaletteEntries(8);ResetPaletteTransform(8);
+        ClearBackgroundPaletteLoads(8);ResetPaletteTransform(8);
     }
     private void SetOverlayScroll(int x,int y)
     {
@@ -104,7 +108,7 @@ public sealed partial class SourceBattleAnimation
     private void LoadBackgroundPalette(int? id)
     {
         int lastBank=id is null?4:2;
-        for(int bank=2;bank<=lastBank;bank++){ClearBackgroundPaletteEntries(bank);ResetPaletteTransform(bank);}
+        for(int bank=2;bank<=lastBank;bank++){ClearBackgroundPaletteLoads(bank);ResetPaletteTransform(bank);}
         if(id is {} selected&&_script.BackgroundPalettes.TryGetValue(selected,out var colors))
         {
             if(colors.Length!=16)throw new InvalidDataException("Move background needs one source palette bank.");

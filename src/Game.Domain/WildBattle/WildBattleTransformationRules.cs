@@ -30,6 +30,11 @@ public static class WildBattleTransformationRules
     public static PokemonInstance PersistentPokemon(WildBattleCombatant mon) => mon.Transform is { } transform
         ? transform.OriginalPokemon with { CurrentHp = mon.Pokemon.CurrentHp } : WildBattleCopyMoveRules.PersistentPokemon(mon);
 
+    // Source STATUS2_TRANSFORMED / mimickedMoves exclude these live PP slots
+    // from party persistence. Consumers must not infer this from equal PP values.
+    internal static byte TransientMoveSlots(WildBattleCombatant mon) => mon.Transform is not null ? (byte)15
+        : (byte)(mon.CopyMoves?.Slots.Aggregate(0, (mask, slot) => mask | (1 << slot.Slot)) ?? 0);
+
     public static uint PersistentStatus(WildBattleCombatant mon) => SourcePartyStatusRules.FromBattle(
         mon.SourcePartyStatusOverride ?? mon.Transform?.PartyStatusOverride ?? mon.Status);
 

@@ -1,0 +1,54 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+typedef uint8_t u8;typedef int8_t s8;typedef uint16_t u16;typedef int16_t s16;typedef uint32_t u32;typedef int32_t s32;typedef u8 bool8;
+#define TRUE 1
+#define FALSE 0
+#define MAX_SPRITES 64
+#define DISPLAY_WIDTH 240
+#define DISPLAY_HEIGHT 160
+#define SAFE_DIV(a,b) (assert((b)!=0),(a)/(b))
+#define sAnchorX data[6]
+#define sAnchorY data[7]
+@TYPES@
+@DEFINES@
+struct Sprite;typedef void (*SpriteCallback)(struct Sprite *);typedef void (*AnimFunc)(struct Sprite *);typedef void (*AnimCmdFunc)(struct Sprite *);typedef void (*AffineAnimCmdFunc)(u8,struct Sprite *);typedef void (*TaskFunc)(u8);
+struct SpriteTemplate {u16 tileTag,paletteTag;const struct OamData *oam;const union AnimCmd *const *anims;const void *images;const union AffineAnimCmd *const *affineAnims;SpriteCallback callback;};
+struct Sprite {const struct SpriteTemplate *template;bool8 invisible;struct OamData oam;const union AnimCmd *const *anims;const union AffineAnimCmd *const *affineAnims;const void *images;s16 x,y,x2,y2,data[8];SpriteCallback callback,stored;bool8 inUse,animBeginning,affineAnimBeginning,usingSheet,animEnded,affineAnimEnded,animPaused,affineAnimPaused,anchored,hFlip,vFlip;u8 animCmdIndex,animNum,animLoopCounter;u8 animDelayCounter:6;u8 subpriority;u16 sheetTileStart;};
+struct Task {TaskFunc func;bool8 isActive;s16 data[16];};
+struct OamMatrix {s16 a,b,c,d;};struct ObjAffineSrcData {s16 xScale,yScale;u16 rotation;};
+static struct Sprite gSprites[64];static struct Task gTasks[1];static struct AffineAnimState sAffineAnimStates[32];static struct OamMatrix gOamMatrices[32];
+static s16 gBattleAnimArgs[8];static u8 gAnimVisualTaskCount;static bool8 gAffineAnimsDisabled;
+static u8 gBattleAnimAttacker,gBattleAnimTarget,gBattlerPositions[4]={0,1,2,3};static u32 gBattleTypeFlags;static s8 gAnimCustomPanning;
+static int height,yoff,alpha=0;static int kind,doubles,frame,instance[64],nextInstance,sounds[128][2],soundCount;
+static void ObjAffineSet(const struct ObjAffineSrcData *src,struct OamMatrix *dest,int count,int stride){assert(count==1&&stride==2);memset(dest,0,sizeof(*dest));}
+static void UpdateSpriteMatrixAnchorPos(struct Sprite*s,s32 x,s32 y){abort();}
+static void RequestSpriteFrameImageCopy(u16 image,u16 tile,const void*images){abort();}
+static void FreeOamMatrix(u8 matrix){}
+static void FreeSpriteOamMatrix(struct Sprite*s){}
+static void DestroySprite(struct Sprite*s){s->inUse=FALSE;}
+static void StoreSpriteCallbackInData6(struct Sprite*s,SpriteCallback callback){s->stored=callback;s->data[6]=1234;s->data[7]=5678;}
+static void SetCallbackToStoredInData6(struct Sprite*s){s->callback=s->stored;}
+static bool8 IsContest(void){return FALSE;}static bool8 IsDoubleBattle(void){return doubles;}
+static u8 GetBattlerSpriteSubpriority(u8 id){static const u8 p[]={30,40,20,50};return p[id];}
+static u8 GetBattlerSpriteBGPriority(u8 id){static const u8 p[]={2,1,1,2};return p[id];}
+static s16 GetBattlerSpriteCoord(u8 id,u8 coord){static const s16 pos[2][4][2]={{{72,80},{176,40},{48,40},{112,80}},{{32,80},{200,40},{90,88},{152,32}}};return pos[doubles][id][coord&1]+(coord==BATTLER_COORD_Y_PIC_OFFSET?yoff+(!(id&1)?8:0):0);}
+static s16 GetBattlerSpriteCoord2(u8 id,u8 coord){return GetBattlerSpriteCoord(id,coord);}
+struct HealthBoxData{bool8 statusAnimActive;};struct BattleSpritesData{struct HealthBoxData healthBoxesData[4];};static struct BattleSpritesData battleSprites;static struct BattleSpritesData *gBattleSpritesDataPtr=&battleSprites;
+static void PlaySE12WithPanning(u16 sound,s8 pan){assert(soundCount<128);sounds[soundCount][0]=sound;sounds[soundCount++][1]=pan;}
+static void DestroyAnimVisualTask(u8 id){assert(id==0);gTasks[id].isActive=FALSE;gAnimVisualTaskCount--;}
+static void SetGpuReg(u16 reg,u16 value){assert(reg==REG_OFFSET_BLDALPHA);alpha=value;}
+static s16 GetBattlerSpriteCoordAttr(u8 id,u8 attr){assert(attr==BATTLER_COORD_ATTR_TOP);return GetBattlerSpriteCoord(id,BATTLER_COORD_Y_PIC_OFFSET)-height/2;}
+static u8 GetAnimBattlerSpriteId(u8 id){return id==ANIM_ATTACKER?gBattleAnimAttacker:gBattleAnimTarget;}
+@PROTOTYPES@
+static u8 CreateSpriteAt(u8,const struct SpriteTemplate*,s16,s16,u8);
+@ARRAYS@
+@FUNCTIONS@
+static u8 CreateSpriteAt(u8 slot,const struct SpriteTemplate*t,s16 x,s16 y,u8 priority){struct Sprite*s=&gSprites[slot];memset(s,0,sizeof(*s));s->template=t;s->inUse=TRUE;s->animBeginning=s->affineAnimBeginning=TRUE;s->usingSheet=TRUE;s->subpriority=priority;s->oam=*t->oam;s->anims=t->anims;s->affineAnims=t->affineAnims;s->callback=t->callback;s->x=x;s->y=y;SetSpriteSheetFrameTileNum(s);if(s->oam.affineMode){s->oam.matrixNum=slot%32;AffineAnimStateReset(slot%32);}instance[slot]=++nextInstance;return slot;}
+static void row(int slot){struct Sprite*s=&gSprites[slot];struct AffineAnimState*a=&sAffineAnimStates[s->oam.matrixNum];printf("{\"frame\":%d,\"alive\":%d,\"args\":[",frame,kind==5?gTasks[0].isActive:s->inUse);for(int i=0;i<8;i++)printf("%s%d",i?",":"",gBattleAnimArgs[i]);printf("],\"data\":[");for(int i=0;i<8;i++)printf("%s%d",i?",":"",s->data[i]);printf("],\"sprite\":[%d,%d,%d,%d,%u,%d,%u,%u,%u,%u,%d,%d,%u,%u],\"alpha\":[%d,%d]}\n",s->x,s->y,s->x2,s->y2,s->oam.tileNum,!s->invisible,s->oam.priority,s->subpriority,s->animEnded,s->animDelayCounter,a->xScale,a->yScale,a->rotation,s->affineAnimEnded,alpha&31,(alpha>>8)&31);}
+int main(int argc,char**argv){assert(argc==15);kind=atoi(argv[1]);doubles=atoi(argv[2]);gBattleAnimAttacker=atoi(argv[3]);gBattleAnimTarget=atoi(argv[4]);height=atoi(argv[5]);yoff=atoi(argv[6]);gBattleTypeFlags=doubles?BATTLE_TYPE_DOUBLE:0;for(int i=0;i<8;i++)gBattleAnimArgs[i]=atoi(argv[7+i]);gAnimVisualTaskCount=1;int slot=0;
+ if(kind==5){gTasks[0].isActive=TRUE;AnimTask_GetTargetSide(0);row(slot);return 0;}
+ const struct SpriteTemplate*templates[]={&gTrickBagSpriteTemplate,&gRecycleSpriteTemplate,&gSilverWindBigSparkSpriteTemplate,&gSilverWindMediumSparkSpriteTemplate,&gSilverWindSmallSparkSpriteTemplate};slot=CreateSpriteAndAnimate(templates[kind],GetBattlerSpriteCoord(gBattleAnimTarget,2),GetBattlerSpriteCoord(gBattleAnimTarget,3),2);row(slot);
+ for(frame=1;frame<3000;frame++){AnimateSprites();row(slot);if(!gSprites[slot].inUse)return 0;}abort();}

@@ -41,6 +41,25 @@ internal static class SourceTrainerPresentationModel
     private static WildBattleSide Other(WildBattleSide side) => side == WildBattleSide.Player ? WildBattleSide.Opponent : WildBattleSide.Player;
     private static SourceTrainerEventDisplay Text(string symbol, params (string Key, string Value)[] fields) => new([new(symbol, fields)]);
 
+    // The successful source commands own their text even when permanent party
+    // storage already matches and therefore emits no conditional write receipt.
+    internal static SourceTrainerEventDisplay RecycledItem(string actor, string item, Func<string, string>? itemName) =>
+        itemName is null || item == "ITEM_NONE" ? Unsupported : Text("sText_XFoundOneY",
+            ("B_ATK_NAME_WITH_PREFIX", actor), ("B_LAST_ITEM", itemName(item)));
+
+    internal static SourceTrainerEventDisplay SwappedItems(string actor, string target,
+        string actorItemBefore, string targetItemBefore, Func<string, string>? itemName)
+    {
+        if (itemName is null || actorItemBefore == "ITEM_NONE" && targetItemBefore == "ITEM_NONE") return Unsupported;
+        SourceTrainerText obtained = actorItemBefore == "ITEM_NONE"
+            ? new("sText_PkmnObtainedX", ("B_ATK_NAME_WITH_PREFIX", actor), ("B_BUFF1", itemName(targetItemBefore)))
+            : targetItemBefore == "ITEM_NONE"
+                ? new("sText_PkmnObtainedX2", ("B_DEF_NAME_WITH_PREFIX", target), ("B_BUFF2", itemName(actorItemBefore)))
+                : new("sText_PkmnObtainedXYObtainedZ", ("B_ATK_NAME_WITH_PREFIX", actor),
+                    ("B_BUFF1", itemName(targetItemBefore)), ("B_DEF_NAME_WITH_PREFIX", target), ("B_BUFF2", itemName(actorItemBefore)));
+        return new([new("sText_PkmnSwitchedItems", ("B_ATK_NAME_WITH_PREFIX", actor)), obtained]);
+    }
+
     // Stop at the next printed invocation: caller announcements can have no MoveUsed counterpart.
     internal static bool PairedMoveUsed(IReadOnlyList<WildBattleEvent> events, int index, WildBattleAttackStringEvent attack)
     {
@@ -118,6 +137,10 @@ internal static class SourceTrainerPresentationModel
             case WildBattleMoveUsedEvent used when used.Move.Value is "pret:MOVE_HEAL_BELL" or "pret:MOVE_AROMATHERAPY":
                 return new([new("sText_AttackerUsedX", ("B_ATK_NAME_WITH_PREFIX", name(used.Actor)), ("B_BUFF2", moveName(used.Move) + "!")),
                     new(used.Move.Value == "pret:MOVE_HEAL_BELL" ? "sText_BellChimed" : "sText_SoothingAroma")]);
+            case WildBattleHeldItemRecycledEvent recycled:
+                return RecycledItem(name(recycled.Actor), recycled.Item, itemName);
+            case WildBattleHeldItemsSwappedEvent swapped:
+                return SwappedItems(name(swapped.Actor), name(swapped.Target), swapped.ActorItemBefore, swapped.TargetItemBefore, itemName);
             case WildBattlePpCommandEvent or WildBattleDamageAdjustedEvent or WildBattleCalledMoveTransitionEvent or WildBattleCalledPartySwitchRequiredEvent or WildBattleCalledPartySwitchedEvent:
                 return Silent;
             case WildBattleCallerSelectionEvent selection:
@@ -163,26 +186,9 @@ internal static class SourceTrainerPresentationModel
                         ? Silent : Atk("sText_PkmnSwappedAbilities", overlay.Side);
                 return Unsupported;
             case WildBattleCalledPartyChangedEvent party:
-                if (party.Reason is "heal-bell" or "aromatherapy")
-                    return Silent;
-                if (party.Reason == "trick-party-write")
-                {
-                    if (PriorMatching(events, index, e => e is WildBattleCalledPartyChangedEvent p && p.Reason == party.Reason)) return Silent;
-                    var result = ImmutableArray.CreateBuilder<SourceTrainerText>();
-                    result.Add(new("sText_PkmnSwitchedItems", ("B_ATK_NAME_WITH_PREFIX", name(party.Side))));
-                    if (itemName is not null)
-                        foreach (var change in events.Skip(index).TakeWhile(e => e is not WildBattleAttackStringEvent).OfType<WildBattleCalledPartyChangedEvent>().Where(p => p.Reason == party.Reason))
-                        {
-                            string item = WildBattleSourcePartyEffects.PersistentHeldItem(change.After);
-                            if (item != "ITEM_NONE") result.Add(new("sText_PkmnObtainedX", ("B_ATK_NAME_WITH_PREFIX", name(change.Side)), ("B_BUFF1", itemName(item))));
-                        }
-                    return new(result.ToImmutable());
-                }
-                if (party.Reason == "active-sync" && LastMove(events, index, party.Side)?.Value == "pret:MOVE_RECYCLE" &&
-                    WildBattleSourcePartyEffects.PersistentHeldItem(party.Before) != WildBattleSourcePartyEffects.PersistentHeldItem(party.After) &&
-                    WildBattleSourcePartyEffects.PersistentHeldItem(party.After) is { } recycled && recycled != "ITEM_NONE" && itemName is not null)
-                    return Text("sText_XFoundOneY", ("B_ATK_NAME_WITH_PREFIX", name(party.Side)), ("B_LAST_ITEM", itemName(recycled)));
-                return party.Reason is "active-sync" or "consumed-item" or "steal-party-write" or "knock-off-battle-only" ? Silent : Unsupported;
+                return party.Reason is "heal-bell" or "aromatherapy" or "trick-party-write" or "recycle-party-write" or
+                    "active-sync" or "consumed-item" or "steal-party-write" or "knock-off-battle-only" or "changed-item-applied"
+                    ? Silent : Unsupported;
             case WildBattleCalledDelayedEvent delayed:
                 if (IsSilentDelayedReceipt(delayed.Move, delayed.Reason)) return Silent;
                 if (delayed.Move.Value == "pret:MOVE_WISH")

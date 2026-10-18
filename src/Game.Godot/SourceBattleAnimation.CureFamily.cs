@@ -3,7 +3,7 @@ namespace Game.Presentation.BattleAnimations;
 public sealed partial class SourceBattleAnimation
 {
     private const string CureOverlay="cure-bubbles";
-    private static bool CureTemplate(string name)=>name is "gAromatherapySmallFlowerSpriteTemplate" or "gAromatherapyBigFlowerSpriteTemplate" or "gSparklingStarsSpriteTemplate" or "gBlendThinRingExpandingSpriteTemplate" or "gBellSpriteTemplate" or "gHealBellMusicNoteSpriteTemplate";
+    private static bool CureTemplate(string name)=>name is "gAromatherapySmallFlowerSpriteTemplate" or "gAromatherapyBigFlowerSpriteTemplate" or "gSparklingStarsSpriteTemplate" or "gBlendThinRingExpandingSpriteTemplate" or "gBellSpriteTemplate" or "gHealBellMusicNoteSpriteTemplate" or "gSilverWindBigSparkSpriteTemplate" or "gSilverWindMediumSparkSpriteTemplate" or "gSilverWindSmallSparkSpriteTemplate";
     private bool ValidateCureCommand(SourceAnimationCommand c)
     {
         var a=c.Args;string name=a.FirstOrDefault()??"";
@@ -51,11 +51,14 @@ public sealed partial class SourceBattleAnimation
             Fail(c,"Cure sprite source shape or callback operands differ.");
         if(flower)
         {
-            bool big=name=="gAromatherapyBigFlowerSpriteTemplate";
-            if(r.Asset!="flower"||r.Width!=(big?16:8)||r.Height!=r.Width||r.Blend||r.AffineDoubleSize||r.Animations.Length!=1||!r.Animations[0].SequenceEqual(new[]{new SourceSpriteAnimFrame(big?0:4,1,false,false)})||!r.LoopStarts.SequenceEqual(new[]{-1})||r.AffineAnimations.Length!=(big?1:0)||
+            bool big=name=="gAromatherapyBigFlowerSpriteTemplate",silver=r.Asset=="sparkle-6";
+            int scale=name=="gSilverWindMediumSparkSpriteTemplate"?192:name=="gSilverWindSmallSparkSpriteTemplate"?143:256;
+            int rotation=name=="gSilverWindMediumSparkSpriteTemplate"?-12:name=="gSilverWindSmallSparkSpriteTemplate"?-15:-10;
+            if(r.Asset!=(silver?"sparkle-6":"flower")||silver!=(name is "gSilverWindBigSparkSpriteTemplate" or "gSilverWindMediumSparkSpriteTemplate" or "gSilverWindSmallSparkSpriteTemplate")||r.Width!=(big||silver?16:8)||r.Height!=r.Width||r.Blend||r.AffineDoubleSize||r.Animations.Length!=1||!r.Animations[0].SequenceEqual(new[]{new SourceSpriteAnimFrame(big||silver?0:4,1,false,false)})||!r.LoopStarts.SequenceEqual(new[]{silver?0:-1})||r.AffineAnimations.Length!=(big||silver?1:0)||
                 Number(a[5]) is <0 or >255||Number(a[6]) is <1 or >255||Number(a[7]) is <0 or >255||Number(a[8]) is <0 or >3||Number(a[9]) is <0 or >1||_script.SineTable.Length!=320)
-                Fail(c,"Flying flower source programs, phase, positive speed or participants differ.");
-            if(big&&!r.AffineAnimations[0].SequenceEqual(new SourceSpriteAffineCommand[]{new("frame",256,256,0,0,0),new("frame",0,0,4,1,0),new("jump",0,0,0,0,1)}))Fail(c,"Flower source rotation differs.");
+                Fail(c,"Flying particle source programs, phase, positive speed or participants differ.");
+            if((big||silver)&&!r.AffineAnimations[0].SequenceEqual(new SourceSpriteAffineCommand[]{new("frame",scale,scale,0,0,0),new("frame",0,0,silver?rotation&255:4,1,0),new("jump",0,0,0,0,1)}))Fail(c,"Flying particle source rotation differs.");
+            if(silver&&_validatingInvokedProgram)ValidateItemWindCapacity(c);
         }
         else if(star)
         {
@@ -124,14 +127,14 @@ public sealed partial class SourceBattleAnimation
     }
     private sealed class CureScrollingMaskTask:VisualTask
     {
-        private readonly CureWindowCopy[] _copies;private short _phase,_delay,_alpha,_hold,_fraction,_scroll;
+        private readonly ObjectWindowCopy[] _copies;private short _phase,_delay,_alpha,_hold,_fraction,_scroll;
         public CureScrollingMaskTask(SourceBattleAnimation o,bool partner)
         {
             int actor=o._cue.Actor.Value;int[] bodies=partner&&o._doubles&&o.IsSourceBattlerVisible(actor^2)?[actor,actor^2]:[actor];
             int free=Enumerable.Range(0,64).Count(i=>!o.IsReservedSpriteSlot(i)&&o._spriteScene.Sprites[i] is null);
             if(!o.IsSourceBattlerPresent(actor)||free<bodies.Length)throw new InvalidDataException("Cure raw sprite allocation is exhausted.");
             o._window0=new(false,0,0,63,63);o.SetObjectWindow(true);o.SetAlphaBlend(2,63,0,16);o.SetBackgroundPriority(1,0);
-            _copies=bodies.Select(b=>{var copy=new CureWindowCopy(o.RequireFreeSpriteSlot(),o,b);o._sprites.Add(copy);return copy;}).ToArray();
+            _copies=bodies.Select(b=>{var copy=new ObjectWindowCopy(o.RequireFreeSpriteSlot(),o,b);o._sprites.Add(copy);return copy;}).ToArray();
             o.BeginOverlay(CureOverlay);o.SetOverlayScroll(0,0);
         }
         public override void Step(SourceBattleAnimation o)
@@ -147,20 +150,6 @@ public sealed partial class SourceBattleAnimation
                     foreach(var copy in _copies)o._sprites.Remove(copy);Finished=true;break;
             }
         }
-    }
-    private sealed class CureWindowCopy:VisualSprite
-    {
-        private readonly SourceVisualSpriteFrame _frame;
-        public CureWindowCopy(int slot,SourceBattleAnimation o,int source):base(slot,o._battlers[source].Subpriority)
-        {
-            var b=o._battlers[source];SourcePixelAsset? material=null;o._spriteMaterials?.TryGetValue(b.Asset,out material);
-            _frame=new(slot,"CreateInvisibleSpriteCopy",o.BattlerPosition(source),o._offsets[source],0,!o.SourceBattlerSpriteInvisible(source),false,false,256,b.Asset,Subpriority)
-                {Width=64,Height=64,BattlerCopySlot=source,Material=material,ObjectWindow=true,OamPriority=0,Affine=o._affineMode[source],DoubleSize=o._affineMode[source],MatrixA=o._xScale[source],MatrixB=o._matrixB[source],MatrixC=o._matrixC[source],MatrixD=o._yScale[source]};
-            o._oamY[slot]=o._oamY[source];
-        }
-        public override bool Counted=>false;
-        public override void Step(SourceBattleAnimation o){}
-        public override SourceVisualSpriteFrame Frame=>_frame;
     }
     private sealed class CureFlowerSprite:VisualSprite
     {

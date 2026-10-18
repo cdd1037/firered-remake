@@ -252,7 +252,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     ?? initial.Party(key.Side).Members[key.Index];
                 var after = Frame.Party(key.Side).Members[key.Index];
                 if (!WildBattleSourcePartyEffects.SameMember(before, after))
-                    Add(n => new SourceCalledPartyChangedEvent(n, Turn, key.Side, key.Index, "active-sync", before, after));
+                    Add(n => new SourceCalledPartyChangedEvent(n, Turn, key.Side, key.Index, "active-sync", before, after) { SourceSlot = slot, TransientMoveSlots = WildBattleTransformationRules.TransientMoveSlots(Get(slot)) });
             }
         Frame = Frame with { Revision = checked(Frame.Revision + 1) };
     }

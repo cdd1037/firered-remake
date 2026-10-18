@@ -4,6 +4,15 @@ public sealed partial class SourceBattleAnimation
 {
     // Hardware BG1/BG2 priority registers start at the battle template values.
     private readonly int[] _battlerBackgroundPriorities=[0,1];
+    private readonly int[] _battlerObjectPriorities=[2,2,2,2];
+    private readonly int[] _battlerObjectOamPriorities=[2,2,2,2];
+    private int BattlerObjectPriority(int slot)=>_battlerObjectPriorities[slot];
+    private void SetBattlerObjectPriority(int slot,int priority)
+    {
+        if(!_battlers.ContainsKey(slot)||priority is <0 or >3)throw new InvalidDataException("Battler OBJ priority exceeds its source hardware field.");
+        _battlerObjectPriorities[slot]=priority;
+    }
+
     private int BattlerBackgroundPriority(int slot)=>_battlerBackgroundPriorities[_battlers[slot].BackgroundRank-1];
     private void SetBackgroundPriority(int bgId,int priority)
     {

@@ -34,6 +34,8 @@ internal abstract partial class SourceRecipeContext
             SetUsedHeldItem(actor, null);
             // The source controller writes the permanent item even when Knock Off's bit remains set.
             WriteRecycledPartyItem(actor, used);
+            // Successful recycle remains observable even when the party write is already synchronized.
+            Add(n => new SourceHeldItemRecycledEvent(n, Turn, actor, move.Id, used));
             return;
         }
         if (move.Effect == "EFFECT_TRICK")
@@ -52,6 +54,8 @@ internal abstract partial class SourceRecipeContext
             if (foe.HeldItem != "ITEM_NONE") QueueChangedItem(actor, foe.HeldItem);
             WritePartyItem(actor, foe.HeldItem, "trick-party-write");
             WritePartyItem(target, user.HeldItem, "trick-party-write");
+            // tryswapitems also succeeds for equal nonempty items and one-sided giving.
+            Add(n => new SourceHeldItemsSwappedEvent(n, Turn, actor, target, move.Id, user.HeldItem, foe.HeldItem));
             return;
         }
         bool hit = SourceGenericAccuracy(actor, target, move, purpose);

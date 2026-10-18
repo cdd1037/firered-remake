@@ -221,6 +221,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleMagnitudeEvent), "magnitude")]
 [JsonDerivedType(typeof(WildBattleSelfDestructEvent), "self-destruct")]
 [JsonDerivedType(typeof(WildBattleHeldItemStolenEvent), "held-item-stolen")]
+[JsonDerivedType(typeof(WildBattleHeldItemRecycledEvent), "held-item-recycled")]
+[JsonDerivedType(typeof(WildBattleHeldItemsSwappedEvent), "held-items-swapped")]
 public abstract record WildBattleEvent(long Sequence, int Turn);
 public sealed record WildBattleStartedEvent(long Sequence, int Turn) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleOrderEvent(long Sequence, int Turn, WildBattleOrderPhase Phase,
@@ -387,6 +389,10 @@ public sealed record WildBattleSelfDestructEvent(long Sequence, int Turn, WildBa
 
 public sealed record WildBattleHeldItemStolenEvent(long Sequence, int Turn, WildBattleSide Actor,
     WildBattleSide Target, MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleHeldItemRecycledEvent(long Sequence, int Turn, WildBattleSide Actor,
+    MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleHeldItemsSwappedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, string ActorItemBefore, string TargetItemBefore) : WildBattleEvent(Sequence, Turn);
 
 public sealed record WildBattleRecoveredEvent(long Sequence, int Turn, WildBattleSide Side, MoveId Move, int HpBefore, int HpAfter, int Recovered) : WildBattleEvent(Sequence, Turn);
 

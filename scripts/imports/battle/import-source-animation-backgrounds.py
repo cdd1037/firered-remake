@@ -14,7 +14,7 @@ import subprocess
 from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
-MOVE_BACKGROUNDS = ('BG_NONE', 'BG_DARK', 'BG_PSYCHIC', 'BG_DRILL', 'BG_HIGHSPEED_PLAYER', 'BG_HIGHSPEED_OPPONENT', 'BG_THUNDER', 'BG_SKY', 'BG_COSMIC', 'BG_IMPACT_OPPONENT', 'BG_IMPACT_PLAYER', 'BG_ICE', 'BG_IN_AIR', 'BG_AURORA', 'BG_GHOST', 'BG_SOLAR_BEAM_OPPONENT', 'BG_SOLAR_BEAM_PLAYER', 'BG_GUILLOTINE_OPPONENT', 'BG_GUILLOTINE_PLAYER')
+MOVE_BACKGROUNDS = ('BG_NONE', 'BG_DARK', 'BG_PSYCHIC', 'BG_DRILL', 'BG_HIGHSPEED_PLAYER', 'BG_HIGHSPEED_OPPONENT', 'BG_THUNDER', 'BG_SKY', 'BG_COSMIC', 'BG_IMPACT_OPPONENT', 'BG_IMPACT_PLAYER', 'BG_ICE', 'BG_IN_AIR', 'BG_AURORA', 'BG_GHOST', 'BG_SOLAR_BEAM_OPPONENT', 'BG_SOLAR_BEAM_PLAYER', 'BG_GUILLOTINE_OPPONENT', 'BG_GUILLOTINE_PLAYER', 'BG_BUG_OPPONENT', 'BG_BUG_PLAYER')
 
 
 def read(reference, path):
@@ -51,6 +51,19 @@ def indexed_tiles(data, count=None):
         pal = struct.pack('<16H', *(sum((colors[j * 3 + c] // 8) << (5 * c) for c in range(3)) for j in range(16)))
     return bytes(indices[i] | indices[i + 1] << 4 for i in range(0, len(indices), 2)), pal
 
+
+def curse_overlay_inputs(read_source):
+    graphics=read_source('src/graphics.c').decode();utility=read_source('src/battle_anim_utility_funcs.c').decode()
+    declarations=dict(re.findall(r'(\w+)\[\] = INCBIN_[US]\d+\("([^"]+)"\)',graphics))
+    for symbol,suffix in [('sheet','4bpp.lz'),('tilemap','bin.lz')]:
+        if declarations.get('gFile_graphics_battle_anims_masks_curse_'+symbol)!='graphics/battle_anims/masks/curse.'+suffix:
+            raise ValueError('Curse indexed BG1 source declaration differs')
+    for statement in ['AnimLoadCompressedBgTilemap(animBgData.bgId, gFile_graphics_battle_anims_masks_curse_tilemap);','AnimLoadCompressedBgGfx(animBgData.bgId, gFile_graphics_battle_anims_masks_curse_sheet, animBgData.tilesOffset);','LoadPalette(sRgbWhite, BG_PLTT_ID(animBgData.paletteId) + 1, PLTT_SIZEOF(1));']:
+        if statement not in utility:raise ValueError('Curse partial BG1 palette owner differs')
+    if not re.search(r'sRgbWhite\[\]\s*=\s*\{\s*RGB_WHITE\s*\}',utility):raise ValueError('Curse single white palette entry differs')
+    png='graphics/battle_anims/masks/curse.png';tilemap='graphics/battle_anims/masks/curse.bin';tiles,pal=indexed_tiles(read_source(png))
+    if any((b&15)>1 or (b>>4)>1 for b in tiles) or struct.unpack('<16H',pal)[1]!=32767:raise ValueError('Curse indexed pixels use an unloaded palette entry')
+    return png,tilemap
 
 def build(reference):
     bg = read(reference, 'src/battle_bg.c').decode()
@@ -197,6 +210,8 @@ def build(reference):
     if 'StartMonScrollingBgMask(taskId, 0, 0x1A0, gBattleAnimAttacker, gBattleAnimArgs[0], 10, 2, 30, gCureBubblesGfx, gCureBubblesTilemap, gCureBubblesPal);' not in effects3 or 'AnimLoadCompressedBgGfx(animBgData.bgId, gfx, animBgData.tilesOffset);' not in utility or 'LoadCompressedPalette(palette, BG_PLTT_ID(animBgData.paletteId), PLTT_SIZE_4BPP);' not in utility:
         raise ValueError('Status-cleared indexed BG1 owner differs')
     overlay('cure-bubbles', 'graphics/battle_anims/masks/cure_bubbles.png', 'graphics/battle_anims/masks/cure_bubbles.bin', None, True)
+    curse_png,curse_map=curse_overlay_inputs(lambda path:read(reference,path))
+    overlay('curse',curse_png,curse_map,None,True)
     base_palette = b''.join(palette(read(reference, 'graphics/battle_interface/textbox' + str(i) + '.pal')) for i in (1, 2))
     if len(base_palette) != 64:
         raise ValueError('Source textbox palette ownership differs')

@@ -26,6 +26,32 @@ public sealed partial class SourceBattleAnimation
     // Direct source gPlttBufferFaded writes retain palette indices. Whole-bank
     // loads/fades replace these entries; snapshots detach their current values.
     private readonly Dictionary<int,ushort> _fadedBackgroundEntries=[];
+    // Partial LoadPalette changes both source buffers, while direct faded writes
+    // remain temporary. Retain only explicitly loaded indexed entries; ordinary
+    // bank colors still come from the canonical background/overlay material.
+    private readonly Dictionary<int,ushort> _unfadedBackgroundEntries=[];
+    private void LoadBackgroundPaletteRange(int bank,int start,ReadOnlySpan<ushort> colors)
+    {
+        if(bank is <0 or >15||start is <0 or >15||start+colors.Length>16)
+            throw new ArgumentOutOfRangeException(nameof(start));
+        foreach(ushort color in colors)if(color>0x7fff)throw new InvalidDataException("Source background palette load exceeds RGB555.");
+        for(int i=0;i<colors.Length;i++)
+        {
+            _unfadedBackgroundEntries[bank*16+start+i]=colors[i];
+            if(bank==2&&_unfadedBackgroundPalette is {} loaded)loaded[start+i]=colors[i];
+        }
+        WriteBackgroundPaletteRange(bank,start,colors);
+    }
+    private void ClearBackgroundPaletteLoads(int bank)
+    {
+        ClearBackgroundPaletteEntries(bank);
+        for(int i=0;i<16;i++)_unfadedBackgroundEntries.Remove(bank*16+i);
+    }
+    private void BlendLoadedBackgroundPaletteEntries(int bank,int coefficient,ushort color)
+    {
+        for(int i=0;i<16;i++)if(_unfadedBackgroundEntries.TryGetValue(bank*16+i,out var normal))
+            _fadedBackgroundEntries[bank*16+i]=SourcePaletteMath.Blend(normal,coefficient,color);
+    }
     private void WriteBackgroundPaletteRange(int bank,int start,ReadOnlySpan<ushort> colors)
     {
         if(bank is <0 or >15||start is <0 or >15||start+colors.Length>16)
@@ -57,7 +83,7 @@ public sealed partial class SourceBattleAnimation
     private void BlendPalettes(uint mask,int coefficient,ushort color)
     {
         for(int i=0;i<32;i++)if((mask&(1u<<i))!=0)
-        {if(i<16)ClearBackgroundPaletteEntries(i);if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);var normal=_unfadedPaletteStates.GetValueOrDefault(i);if(coefficient==0&&normal is null)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color){Unfaded=normal};}
+        {if(i<16){ClearBackgroundPaletteEntries(i);BlendLoadedBackgroundPaletteEntries(i,coefficient,color);}if(i>=20){int slot=i-16;for(int index=0;index<16;index++)_spritePaletteBanks[slot][index]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][index],coefficient,color);continue;}if(i==2)BlendBackgroundPalette(coefficient,color);_invertedPalettes.Remove(i);if(i>=16)_greyscale.Remove(i-16);var normal=_unfadedPaletteStates.GetValueOrDefault(i);if(coefficient==0&&normal is null)_paletteBlends.Remove(i);else _paletteBlends[i]=new(i,coefficient,color){Unfaded=normal};}
     }
     // Source AnimTask_Flash / AnimTask_Flash_Step. Only BG palettes 1..3
     // and currently visible battler OBJ palettes are selected; HUD/text stay separate.

@@ -73,6 +73,11 @@ public sealed record CampaignBattleDisplayBodies(
                 if(x.PpRecovery is {} heldRecovery)PersistentPp(x.Side,heldRecovery);break;
             case SourceHeldItemKnockedOffEvent x:Change(x.Target,m=>m with{HeldItem="ITEM_NONE",KnockedOffItem=x.Item});break;
             case SourceHeldItemStolenEvent x:Change(x.Target,m=>m with{HeldItem="ITEM_NONE"});Change(x.Actor,m=>m with{HeldItem=x.Item});break;
+            case SourceHeldItemRecycledEvent x:Change(x.Actor,m=>m with{HeldItem=x.Item});break;
+            case SourceHeldItemsSwappedEvent x:
+                // The source queues the actor's received item until move-end.
+                Change(x.Actor,m=>m with{HeldItem="ITEM_NONE",SourceChoiceMove=null});
+                Change(x.Target,m=>m with{HeldItem=x.ActorItemBefore,SourceChoiceMove=null});break;
             case SourceStatusChangedEvent x:Change(x.Side,m=>m with{Status=x.After});break;
             case SourceConfusionChangedEvent x:Change(x.Side,m=>m with{ConfusionTurnsRemaining=x.After});break;
             case SourceFocusEnergyEvent x:Change(x.Side,m=>m with{FocusEnergy=true});break;

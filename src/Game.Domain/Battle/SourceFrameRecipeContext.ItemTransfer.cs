@@ -42,7 +42,8 @@ internal sealed partial class FrameRecipeContext
         var after = WildBattleSourcePartyEffects.WithPersistentHeldItem(before, item);
         Frame = Frame with { Parties = Frame.Parties.SetItem((int)key.Side, party with { Members = party.Members.SetItem(key.Index, after) }) };
         if (!WildBattleSourcePartyEffects.SameMember(before, after))
-            Add(n => new SourceCalledPartyChangedEvent(n, Turn, slot.Side, key.Index, reason, before, after));
+            Add(n => new SourceCalledPartyChangedEvent(n, Turn, slot.Side, key.Index, reason, before, after) {
+                SourceSlot = reason is "trick-party-write" or "recycle-party-write" or "changed-item-applied" ? slot : null });
     }
     internal override void SetKnockedOffItem(BattlerSlot slot, string item)
     {

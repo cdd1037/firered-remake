@@ -29,6 +29,12 @@ public sealed partial class SourceBattleAnimation
         ushort[] colors=new ushort[count];for(int i=0;i<count;i++)colors[i]=SourcePaletteMath.Blend(_spritePaletteUnfadedBanks[slot][first+i],coefficient,color);
         WriteFadedSpritePalette(slot,first,colors);
     }
+    private void SetSpriteGreyscaleOrOriginal(int slot,bool original)
+    {
+        if(slot is <4 or >15)throw new InvalidDataException("Source grayscale palette has no owned sprite bank.");
+        var normal=_spritePaletteUnfadedBanks[slot];
+        WriteFadedSpritePalette(slot,0,original?normal:normal.Select(c=>SourcePaletteMath.Apply(c,null,false,true)).ToArray());
+    }
     private IReadOnlyDictionary<int,ushort[]> SpritePaletteTagSnapshot()
     {
         Dictionary<int,ushort[]> result=[];

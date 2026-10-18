@@ -56,6 +56,8 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceDamageAdjustedEvent), "SourceDamageAdjustedEvent")]
 [JsonDerivedType(typeof(SourceHeldItemSurvivalEvent), "SourceHeldItemSurvivalEvent")]
 [JsonDerivedType(typeof(SourceHeldItemStolenEvent), "SourceHeldItemStolenEvent")]
+[JsonDerivedType(typeof(SourceHeldItemRecycledEvent), "SourceHeldItemRecycledEvent")]
+[JsonDerivedType(typeof(SourceHeldItemsSwappedEvent), "SourceHeldItemsSwappedEvent")]
 [JsonDerivedType(typeof(SourceHpChangedEvent), "SourceHpChangedEvent")]
 [JsonDerivedType(typeof(SourceInfatuationBlockedEvent), "SourceInfatuationBlockedEvent")]
 [JsonDerivedType(typeof(SourceInfatuationChangedEvent), "SourceInfatuationChangedEvent")]
@@ -133,7 +135,11 @@ public sealed record SourceCalledOverlayChangedEvent(long Sequence, int Turn, Ba
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattlerSlot? Source { get; init; }
 }
-public sealed record SourceCalledPartyChangedEvent(long Sequence, int Turn, BattleSide Side, int PartyIndex, string Reason, WildBattleCalledPartyMember Before, WildBattleCalledPartyMember After) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceCalledPartyChangedEvent(long Sequence, int Turn, BattleSide Side, int PartyIndex, string Reason, WildBattleCalledPartyMember Before, WildBattleCalledPartyMember After) : SourceBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattlerSlot? SourceSlot { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public byte? TransientMoveSlots { get; init; }
+}
 public sealed record SourceCalledPartySwitchRequiredEvent(long Sequence, int Turn, SourcePendingSwitch Pending) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledPartySwitchedEvent(long Sequence, int Turn, BattlerSlot Side, int OutgoingIndex, int IncomingIndex, WildBattleCalledSwitchKind Kind) : SourceBattleEvent(Sequence, Turn)
 {
@@ -172,6 +178,10 @@ public sealed record SourceHeldItemSurvivalEvent(long Sequence, int Turn, Battle
 public sealed record SourceDamageAdjustedEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, string Item, int DamageBefore, int DamageAfter, bool Endured, bool HungOn) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemKnockedOffEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemStolenEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
+/// <summary>Successful recycle command, before animation and possible move-end reconsumption.</summary>
+public sealed record SourceHeldItemRecycledEvent(long Sequence, int Turn, BattlerSlot Actor, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
+/// <summary>Successful tryswapitems command; the actor receives TargetItemBefore during move-end.</summary>
+public sealed record SourceHeldItemsSwappedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string ActorItemBefore, string TargetItemBefore) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHpChangedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent) : SourceBattleEvent(Sequence, Turn)
 {
     /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
@@ -266,7 +276,7 @@ public static class SourceBattleEventAdapter
         SourceCalledDelayedEvent x => new WildBattleCalledDelayedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Before, x.After, x.Reason, x.SourcePartyIndex),
         SourceCalledMoveTransitionEvent x => new WildBattleCalledMoveTransitionEvent(x.Sequence, x.Turn, ExportInvocation(x.Invocation)),
         SourceCalledOverlayChangedEvent x => new WildBattleCalledOverlayChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.Before, x.After),
-        SourceCalledPartyChangedEvent x => new WildBattleCalledPartyChangedEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.PartyIndex, x.Reason, x.Before, x.After),
+        SourceCalledPartyChangedEvent x => new WildBattleCalledPartyChangedEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.PartyIndex, x.Reason, x.Before, x.After) { SourceSlot = x.SourceSlot is {} source ? Side(source) : null, TransientMoveSlots = x.TransientMoveSlots },
         SourceCalledPartySwitchRequiredEvent x => new WildBattleCalledPartySwitchRequiredEvent(x.Sequence, x.Turn, ExportPending(x.Pending)),
         SourceCalledPartySwitchedEvent x => new WildBattleCalledPartySwitchedEvent(x.Sequence, x.Turn, Side(x.Side), x.OutgoingIndex, x.IncomingIndex, x.Kind),
         SourceCalledSpikesChangedEvent x => new WildBattleCalledSpikesChangedEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.Before, x.After),
@@ -294,6 +304,8 @@ public static class SourceBattleEventAdapter
         SourceDamageAdjustedEvent x => new WildBattleDamageAdjustedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
         SourceHeldItemKnockedOffEvent x => new WildBattleHeldItemKnockedOffEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
         SourceHeldItemStolenEvent x => new WildBattleHeldItemStolenEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
+        SourceHeldItemRecycledEvent x => new WildBattleHeldItemRecycledEvent(x.Sequence, x.Turn, Side(x.Actor), x.Move, x.Item),
+        SourceHeldItemsSwappedEvent x => new WildBattleHeldItemsSwappedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.ActorItemBefore, x.TargetItemBefore),
         SourceHpChangedEvent x => new WildBattleHpChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter },
         SourceInfatuationBlockedEvent x => new WildBattleInfatuationBlockedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Source), x.Move),
         SourceInfatuationChangedEvent x => new WildBattleInfatuationChangedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Before), Side(x.After), x.Reason),
@@ -378,6 +390,16 @@ public static class SourceBattleEventHooks
             value is SourceCalledPartyChangedEvent party && (!Enum.IsDefined(party.Side) || party.PartyIndex < 0 || party.PartyIndex >= frame.Party(party.Side).Members.Length) ||
             value is SourceCalledBeatUpMemberEvent contributor && (!Enum.IsDefined(contributor.Side) || contributor.PartyIndex < 0 || contributor.PartyIndex >= frame.Party(contributor.Side).Members.Length))
             return "source_event_party_identity";
+        if (value is SourceCalledPartyChangedEvent { SourceSlot: { } source } synchronized &&
+            (synchronized.Reason is not ("active-sync" or "trick-party-write" or "recycle-party-write" or "changed-item-applied") || source.Value >= frame.BattlerCount ||
+             frame.Get(source).Member != new PartyMemberKey(synchronized.Side, synchronized.PartyIndex)))
+            return "source_event_active_sync_identity";
+        if (value is SourceCalledPartyChangedEvent { Reason: "active-sync", SourceSlot: not null, TransientMoveSlots: null })
+            return "source_event_active_sync_persistence";
+        if (value is SourceCalledPartyChangedEvent { TransientMoveSlots: { } mask } persistence &&
+            (persistence.Reason != "active-sync" || persistence.SourceSlot is not { } slot || slot.Value >= frame.BattlerCount ||
+             frame.Get(slot).Body is not { } body || mask > 15 || mask != WildBattleTransformationRules.TransientMoveSlots(body)))
+            return "source_event_active_sync_persistence";
         if (value is SourceMedicineAppliedEvent medicine && ((medicine.Actor is null) != (medicine.TargetSide is null) || medicine.Actor is { } actor &&
             (actor.Value >= frame.BattlerCount || frame.Get(actor).Body is null || medicine.TargetSide != actor.Side) ||
             medicine.TargetSide is { } targetSide && (!Enum.IsDefined(targetSide) || medicine.PartyIndex < 0 || medicine.PartyIndex >= frame.Party(targetSide).Members.Length) ||
@@ -427,7 +449,7 @@ public static class SourceBattleEventHooks
             SourceCalledDelayedEvent x => [x.Target],
             SourceCalledMoveTransitionEvent x => [x.Invocation.Actor, x.Invocation.Target, x.Invocation.PpOwner],
             SourceCalledOverlayChangedEvent x => [x.Side, x.Source],
-            SourceCalledPartyChangedEvent x => [],
+            SourceCalledPartyChangedEvent x => [x.SourceSlot],
             SourceCalledPartySwitchRequiredEvent x => [x.Pending.Slot, x.Pending.Invocation?.Actor, x.Pending.Invocation?.Target, x.Pending.Invocation?.PpOwner],
             SourceCalledPartySwitchedEvent x => [x.Side],
             SourceCalledSpikesChangedEvent x => [],
@@ -456,6 +478,8 @@ public static class SourceBattleEventHooks
             SourceHeldItemSurvivalEvent x => [x.Target],
             SourceHeldItemKnockedOffEvent x => [x.Actor, x.Target],
             SourceHeldItemStolenEvent x => [x.Actor, x.Target],
+            SourceHeldItemRecycledEvent x => [x.Actor],
+            SourceHeldItemsSwappedEvent x => [x.Actor, x.Target],
             SourceHpChangedEvent x => [x.Actor, x.Target],
             SourceInfatuationBlockedEvent x => [x.Side, x.Source],
             SourceInfatuationChangedEvent x => [x.Side, x.Before, x.After],

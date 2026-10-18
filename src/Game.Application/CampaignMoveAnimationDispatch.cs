@@ -254,12 +254,16 @@ public static partial class CampaignMoveAnimationPresentation
             return SupportStatusAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_YAWN" or "EFFECT_SKILL_SWAP" or "EFFECT_GRUDGE" or "EFFECT_SPIKES")
             return UtilityAnimation(battle,used,attack,definition,action,pp);
+        if(definition.Effect is "EFFECT_DESTINY_BOND" or "EFFECT_PERISH_SONG" or "EFFECT_CURSE")
+            return GhostSongAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect=="EFFECT_LOCK_ON")
             return TargetMarkAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_SNORE" or "EFFECT_UPROAR"&&!SoundHitDefinition(definition))
             return new(null,"unmatched-source-sound-hit-definition");
         if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
             return new(null, "unmatched-source-pp-command");
+        if(definition.Effect is "EFFECT_TRICK" or "EFFECT_RECYCLE")
+            return ItemTransferAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_REFRESH" or "EFFECT_HEAL_BELL")
             return CureAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect=="EFFECT_BIDE")return BideSetup(battle,used,attack,definition,action,pp[0]);

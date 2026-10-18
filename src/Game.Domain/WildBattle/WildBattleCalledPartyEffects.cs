@@ -43,7 +43,11 @@ public sealed record WildBattleCalledPartyState(ImmutableArray<WildBattleCalledP
 public sealed record WildBattleCalledOverlayChangedEvent(long Sequence, int Turn, WildBattleSide Side,
     MoveId Move, WildBattleCalledOverlay? Before, WildBattleCalledOverlay? After) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleCalledPartyChangedEvent(long Sequence, int Turn, WildBattleSide Side, int PartyIndex,
-    string Reason, WildBattleCalledPartyMember Before, WildBattleCalledPartyMember After) : WildBattleEvent(Sequence, Turn);
+    string Reason, WildBattleCalledPartyMember Before, WildBattleCalledPartyMember After) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? SourceSlot { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public byte? TransientMoveSlots { get; init; }
+}
 public sealed record WildBattleCalledPartySwitchRequiredEvent(long Sequence, int Turn,
     WildBattleCalledPendingSwitch Pending) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleCalledPartySwitchedEvent(long Sequence, int Turn, WildBattleSide Side,

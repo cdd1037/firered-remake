@@ -132,9 +132,10 @@ public sealed class SourceBattleFrameComposer
         // The PPU selects one frontmost OBJ pixel before alpha blending. Lower OBJ
         // pixels never become another OBJ's second target, including battler copies.
         var objects=_objectPixels;Array.Clear(objects);var translucent=_objectTranslucency;var objectPriority=_objectPriorities;
+        if(frame.BattlerObjectPriorities.Length!=4||frame.BattlerObjectPriorities.Any(p=>p is <0 or >3))throw new InvalidDataException("Battler object priority exceeds source hardware field.");
         if(frame.Sprites.Any(s=>s.OamPriority is <0 or >3))throw new InvalidDataException("Object priority exceeds source hardware field.");
         var ordered=battlers.Where(b=>SourceOamVisible(b))
-            .Select(b=>(Priority:2,Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Fragment:0,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
+            .Select(b=>(Priority:frame.BattlerObjectPriorities[b.Slot.Value],Rank:frame.BattlerOamRanks.Length>b.Slot.Value?frame.BattlerOamRanks[b.Slot.Value]:b.Slot.Value,Fragment:0,Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
             .Concat(frame.Sprites.Where(s=>s.Visible&&!s.ObjectWindow&&s.Asset is not null).SelectMany(ExpandSubsprites).Select(p=>(Priority:p.Frame.OamPriority,Rank:p.Frame.OamRank,Fragment:p.Index,Battler:(AnimationBattler?)null,Sprite:(SourceVisualSpriteFrame?)p.Frame)));
         foreach(var item in ordered.OrderByDescending(x=>x.Priority).ThenByDescending(x=>x.Rank).ThenByDescending(x=>x.Fragment))
         {

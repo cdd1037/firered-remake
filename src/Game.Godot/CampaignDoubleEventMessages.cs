@@ -53,7 +53,9 @@ public partial class CampaignView
                     ("B_BUFF1",_catalog.PokemonContent!.SpeciesNames[_catalog.PresetDoublePokemon!.Species[x.AppearanceSpecies].SourceSpeciesId]));
             case SourceMoveCopiedEvent x:return DoubleText(x.Permanent?"sText_PkmnSketchedMove":"sText_PkmnLearnedMove2",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_BUFF1",MoveName(x.CopiedMove)));
             case SourceCalledOverlayChangedEvent x:return DoubleOverlayMessage(b,x);
-            case SourceCalledPartyChangedEvent x:return DoublePartyMessage(b,x);
+            case SourceHeldItemRecycledEvent x:return SourceTrainerPresentationModel.RecycledItem(DoublePrefixed(x.Actor),x.Item,DoubleItem);
+            case SourceHeldItemsSwappedEvent x:return SourceTrainerPresentationModel.SwappedItems(DoublePrefixed(x.Actor),DoublePrefixed(x.Target),x.ActorItemBefore,x.TargetItemBefore,DoubleItem);
+            case SourceCalledPartyChangedEvent:return DoubleSilent;
             case SourceHeldItemConsumedEvent x:return DoubleConsumedMessage(b,x);
             case SourceHeldItemHealEvent x:return DoubleText("sText_PkmnsItemRestoredHPALittle",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_LAST_ITEM",DoubleItem(x.Item)));
             case SourceHeldItemKnockedOffEvent x:return DoubleText("sText_PkmnKnockedOff",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_LAST_ITEM",DoubleItem(x.Item)));
@@ -178,28 +180,6 @@ public partial class CampaignView
         if(x.Move.Value=="pret:MOVE_SKILL_SWAP")return DoublePrior(b,x,e=>e is SourceCalledOverlayChangedEvent prior&&prior.Move==x.Move)?DoubleSilent:
             DoubleText("sText_PkmnSwappedAbilities",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(invocation?.Actor??x.Side)));
         return null;
-    }
-    private SourceTrainerEventDisplay DoublePartyMessage(CampaignDoubleBattle b,SourceCalledPartyChangedEvent x)
-    {
-        BattlerSlot? Slot(BattleSide side,int member)
-        {for(int i=0;i<b.DisplayedMembers.Length;i++)if(b.DisplayedMembers[i]==new PartyMemberKey(side,member))return new(i);return null;}
-        if(x.Reason=="trick-party-write")
-        {
-            if(DoublePrior(b,x,e=>e is SourceCalledPartyChangedEvent p&&p.Reason==x.Reason))return DoubleSilent;
-            var texts=ImmutableArray.CreateBuilder<SourceTrainerText>();var actor=DoubleInvocation(b,x)?.Actor??Slot(x.Side,x.PartyIndex);
-            if(actor is null)return new([],true);
-            texts.Add(new("sText_PkmnSwitchedItems",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(actor.Value))));
-            foreach(var change in b.Events.Where(e=>e.Sequence>=x.Sequence).TakeWhile(e=>e is not SourceAttackStringEvent).OfType<SourceCalledPartyChangedEvent>().Where(p=>p.Reason==x.Reason))
-            {
-                string item=WildBattleSourcePartyEffects.PersistentHeldItem(change.After);
-                if(item!="ITEM_NONE"&&Slot(change.Side,change.PartyIndex) is {} receiver)texts.Add(new("sText_PkmnObtainedX",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(receiver)),("B_BUFF1",DoubleItem(item))));
-            }
-            return new(texts.ToImmutable());
-        }
-        if(x.Reason=="active-sync"&&Slot(x.Side,x.PartyIndex) is {} slot&&DoubleLastMove(b,x,slot)?.Value=="pret:MOVE_RECYCLE"&&
-            WildBattleSourcePartyEffects.PersistentHeldItem(x.Before)!=WildBattleSourcePartyEffects.PersistentHeldItem(x.After)&&WildBattleSourcePartyEffects.PersistentHeldItem(x.After) is {} recycled&&recycled!="ITEM_NONE")
-            return DoubleText("sText_XFoundOneY",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(slot)),("B_LAST_ITEM",DoubleItem(recycled)));
-        return DoubleSilent;
     }
     private SourceTrainerEventDisplay DoubleConsumedMessage(CampaignDoubleBattle b,SourceHeldItemConsumedEvent x)
     {
