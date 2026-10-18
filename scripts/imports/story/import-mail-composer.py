@@ -9,6 +9,7 @@ from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 from world_source import WorldSource
+from easy_chat_templates import templates as editor_templates, profile as editor_profile
 
 import argparse
 import json
@@ -140,19 +141,27 @@ def contracts(src):
     # Single-character text encoding. EOS is never a player-name character.
     chars = {unescape(c): int(v, 16) for c, v in chars.items() if len(unescape(c)) == 1 and int(v, 16) < 0xFA}
     need(chars[' '] == 0 and chars['A'] == 0xBB, 'Source character map differs')
+    templates = editor_templates(src)
     texts = []
     for symbol in ['gText_CombineNineWordsOrPhrases', 'gText_AndMakeAMessage', 'gText_TheMailMessage', 'gText_IsAsShownOkay', 'gText_AllTextBeingEditedWill', 'gText_BeDeletedThatOkay', 'gText_StopGivingPkmnMail', 'gText_DelAllCancelOk']:
         text, ref = source_string(src, 'src/strings.c', symbol); texts.append(dict(symbol=symbol, text=text))
     for suffix in ['ABCDEFothers', 'GHIJKL', 'MNOPQRS', 'TUVWXYZ']:
         symbol = 'gText_EasyChatKeyboard_' + suffix
         text, ref = source_string(src, 'src/keyboard_text.c', symbol); texts.append(dict(symbol=symbol, text=text))
+    symbols = []
+    for template in templates:
+        symbols += ([template['titleTextSymbol']] if template['titleTextSymbol'] else [])
+        symbols += template['instructionTextSymbols'] + template['confirmTextSymbols'] + template['cancelTextSymbols']
+    for symbol in dict.fromkeys(symbols):
+        if symbol not in {text['symbol'] for text in texts}:
+            text, ref = source_string(src, 'src/strings.c', symbol); texts.append(dict(symbol=symbol, text=text))
     return dict(seenPokemonGroup=ec['EC_GROUP_POKEMON'], nationalPokemonGroup=ec['EC_GROUP_POKEMON_2'],
         deoxysSpecies=sp['SPECIES_DEOXYS'], unownSpecies=sp['SPECIES_UNOWN'],
-        nameCharacters=chars, texts=texts)
+        nameCharacters=chars, texts=texts, templates=templates, profileDefinition=editor_profile(src))
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--reference-root', type=Path, required=True); parser.add_argument('--project-root', type=Path, default=ROOT)
+    parser.add_argument('--reference-root', type=Path, default=ROOT/'content/raw/pokefirered/037335f4'); parser.add_argument('--project-root', type=Path, default=ROOT)
     parser.add_argument('--dependency-root', type=Path, default=ROOT); parser.add_argument('--check', action='store_true')
     args = parser.parse_args(); target = args.project_root.absolute(); dependency = args.dependency_root.absolute()
     src = WorldSource(args.reference_root.absolute())

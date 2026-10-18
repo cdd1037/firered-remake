@@ -14,6 +14,8 @@ public sealed record SourceEasyChatCatalog(ImmutableArray<SourceEasyChatGroup> G
     ImmutableDictionary<string, byte> NameCharacters, int SeenPokemonGroup, int NationalPokemonGroup,
     int DeoxysSpecies, int UnownSpecies)
 {
+    public ImmutableDictionary<string, SourceEasyChatTemplate> Templates { get; init; } = ImmutableDictionary<string, SourceEasyChatTemplate>.Empty;
+    public SourceEasyChatProfileDefinition? ProfileDefinition { get; init; }
     public ImmutableDictionary<string, string> Texts { get; init; } = ImmutableDictionary<string, string>.Empty;
 }
 /// <summary>SeenSpeciesIds contains original internal SPECIES_* numbers, not National Dex numbers.</summary>
@@ -67,9 +69,12 @@ public static class SourceEasyChatRules
     }
 
     public static string? ValidateWords(SourceEasyChatCatalog catalog, ImmutableArray<ushort> words, bool requireNonempty = false)
+        => ValidateWords(catalog, words, 9, requireNonempty)?.Replace("easy_chat_", "mail_", StringComparison.Ordinal);
+
+    public static string? ValidateWords(SourceEasyChatCatalog catalog, ImmutableArray<ushort> words, int wordCount, bool requireNonempty = false)
     {
-        if (words.IsDefault || words.Length != 9) return "mail_word_count";
-        if (words.Any(w => !IsKnownWord(catalog, w))) return "mail_unknown_word";
-        return requireNonempty && words.All(w => w == BlankWord) ? "mail_message_empty" : null;
+        if (words.IsDefault || words.Length != wordCount) return "easy_chat_word_count";
+        if (words.Any(w => !IsKnownWord(catalog, w))) return "easy_chat_unknown_word";
+        return requireNonempty && words.All(w => w == BlankWord) ? "easy_chat_message_empty" : null;
     }
 }

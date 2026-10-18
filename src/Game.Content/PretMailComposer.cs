@@ -3,7 +3,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-/// <summary>Complete Easy Chat vocabulary and nine-slot Mail composition.
+/// <summary>Complete Easy Chat vocabulary and source-owned Mail/profile editor templates.
 /// Selection availability is applied by Domain against live progression, never during source loading.</summary>
 public sealed class PretMailComposer
 {
@@ -44,9 +44,28 @@ public sealed class PretMailComposer
         }
         Need(contracts.NameCharacters.Count > 100 && contracts.NameCharacters[" "] == 0 && contracts.NameCharacters["A"] == 0xBB &&
             contracts.NameCharacters.All(p => p.Key.Length == 1 && p.Value < 0xFA), "Original author charmap differs.");
+        var texts = contracts.Texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
+        Need(!contracts.Templates.IsDefaultOrEmpty && contracts.Templates.Length == 2 &&
+            contracts.Templates.Select(t => t.Id).Order().SequenceEqual(new[] { "mail", "profile" }), "Easy Chat template selection differs.");
+        var templates = contracts.Templates.ToImmutableDictionary(t => t.Id, StringComparer.Ordinal);
+        foreach (var template in templates.Values)
+        {
+            Need(template.Columns > 0 && template.Rows > 0 && template.WordCount == Math.Min(template.Columns * template.Rows, 9) &&
+                !template.InstructionTextSymbols.IsDefaultOrEmpty && !template.ConfirmTextSymbols.IsDefaultOrEmpty &&
+                !template.CancelTextSymbols.IsDefaultOrEmpty &&
+                template.InstructionTextSymbols.Concat(template.ConfirmTextSymbols).Concat(template.CancelTextSymbols).All(texts.ContainsKey) &&
+                (template.TitleTextSymbol is null || texts.ContainsKey(template.TitleTextSymbol)), "Easy Chat template text/layout differs.");
+        }
+        Need(templates["profile"] is { Type: 0, Columns: 2, Rows: 2, WordCount: 4, FrameId: 0, TitleTextSymbol: not null } &&
+            templates["mail"] is { Type: 4, Columns: 2, Rows: 5, WordCount: 9, FrameId: 2, TitleTextSymbol: null }, "Easy Chat editor layout differs.");
+        var profile = contracts.ProfileDefinition;
+        Need(profile is not null && profile.Type == templates["profile"].Type &&
+            !profile.DefaultWords.IsDefault && profile.DefaultWords.Length == templates["profile"].WordCount &&
+            !profile.SpecialPhrase.IsDefault && profile.SpecialPhrase.Length == templates["profile"].WordCount &&
+            profile.DefaultWords.Concat(profile.SpecialPhrase).All(words.ContainsKey), "Easy Chat profile phrases differ.");
         var catalog = new SourceEasyChatCatalog(document.Groups, words, document.Alphabetical,
             contracts.NameCharacters, contracts.SeenPokemonGroup, contracts.NationalPokemonGroup, contracts.DeoxysSpecies, contracts.UnownSpecies)
-            { Texts = contracts.Texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal) };
+            { Texts = texts, Templates = templates, ProfileDefinition = profile };
         return new(catalog, contracts.Texts);
     }
 
@@ -55,6 +74,7 @@ public sealed class PretMailComposer
     private sealed record ComposerText(string Symbol, string Text);
     private sealed record ComposerContracts(int SeenPokemonGroup, int NationalPokemonGroup,
         int DeoxysSpecies, int UnownSpecies,
-        ImmutableDictionary<string, byte> NameCharacters, ImmutableArray<ComposerText> Texts);
+        ImmutableDictionary<string, byte> NameCharacters, ImmutableArray<ComposerText> Texts,
+        ImmutableArray<SourceEasyChatTemplate> Templates, SourceEasyChatProfileDefinition? ProfileDefinition);
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
 }

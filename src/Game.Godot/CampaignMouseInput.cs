@@ -54,7 +54,7 @@ public partial class CampaignView
         if (_busy && _session?.State.Pc?.View is CampaignPcView.Move or CampaignPcView.MoveItems or CampaignPcView.Deposit or CampaignPcView.Withdraw && mouse is { Pressed: true, DoubleClick: false })
         { _pcNotice = StorageMoveBusyNotice; QueueRedraw(); GetViewport().SetInputAsHandled(); return true; }
         if (mouse is { DoubleClick: true } || _menuMouseActionFrame == Engine.GetProcessFrames() ||
-            _busy || (!NamingScreenActive && (_session is null || _fade > 0 || (_session.State.ScreenIsBlack && !_session.State.TrainerTowerRecordsVisible && !MoveTutorActive) ||
+            _busy || (!NamingScreenActive && (_session is null || _fade > 0 || (_session.State.ScreenIsBlack && _session.EasyChatEditor is null && !_session.State.TrainerTowerRecordsVisible && !MoveTutorActive) ||
             _tracks.Any(t => t.Time < t.Duration)))) return true;
 
         // Godot already removes viewport stretch/letterboxing before _UnhandledInput.
@@ -92,7 +92,7 @@ public partial class CampaignView
         }
         if (right)
         {
-            if (_session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } || _session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
+            if (_session.EasyChatEditor is not null || _session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } || _session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
                 _session.State.SafariBattle is not null || DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
                 _session.State.Battle is not null || FieldDialogueVisible || MoveTutorActive || DaisyGroomingChoosing || SizeRecordChoosing || NameRaterChoosing || NpcTradeChoosing || NpcTradePresenting || TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible || SeagallopMenuActive || SilphElevatorMenuActive || DepartmentElevatorMenuActive || RooftopMenuActive || GameCornerCoinMenuActive || GameCornerPrizeMenuActive || RocketElevatorMenuActive || SourceMenuActive || SourceGridMenuActive || FossilLabMenuActive || BillPcMenuActive || BillPcPictureActive ||
@@ -103,7 +103,7 @@ public partial class CampaignView
             return true;
         }
 
-        bool acted = _session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } ? MouseEvolutionLearning(point) : SourceMenuActive ? MouseSourceMenu(point) : SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : DaisyGroomingChoosing ? MouseDaisyGrooming(point) : SizeRecordChoosing ? MouseSizeRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
+        bool acted = _session.EasyChatEditor is not null ? EasyChatEditorMouse(point, null) : _session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } ? MouseEvolutionLearning(point) : SourceMenuActive ? MouseSourceMenu(point) : SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : DaisyGroomingChoosing ? MouseDaisyGrooming(point) : SizeRecordChoosing ? MouseSizeRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
             : TownMapActive ? MouseTownMap(point)
             : FieldMenuOpen ? MouseFieldMenu(point)
             : _session.State.Shop is not null ? MouseShop(point)
@@ -154,6 +154,7 @@ public partial class CampaignView
     }
     private bool NavigateMenuPointer(Vector2 point, int direction)
     {
+        if(_session.EasyChatEditor is not null)return EasyChatEditorMouse(point,direction);
         if(SourceMenuActive)return NavigateSourceMenuPointer(point,direction);
         if(SourceGridMenuActive)return NavigateSourceGridPointer(point,direction);
         if(TrainerTowerMenuActive)return NavigateTrainerTowerPointer(point,direction);

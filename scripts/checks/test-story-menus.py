@@ -19,6 +19,9 @@ class StoryMenuImportTests(unittest.TestCase):
         self.assertEqual(rows[0], old[0])
         self.assertEqual([o['text'] for o in rows[1]['options']], ['YES', 'NO', 'INFO'])
         self.assertEqual([o['text'] for o in rows[2]['options']], ['SINGLE', 'DOUBLE', 'KNOCKOUT', 'MIXED', 'EXIT'])
+        profile = next(row for row in rows if row['id'] == 'MULTICHOICE_YES_NO_INFO_2')
+        self.assertEqual(profile['sourceId'], 18)
+        self.assertEqual([o['text'] for o in profile['options']], ['YES', 'NO', 'INFO'])
         self.assertEqual(len({r['sourceId'] for r in rows}), len(rows))
 
     def test_badge_list_is_source_ordered_four_row_suspendable_menu(self):

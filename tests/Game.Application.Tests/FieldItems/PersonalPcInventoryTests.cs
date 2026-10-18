@@ -91,7 +91,7 @@ public sealed class PersonalPcInventoryTests
         Assert.IsNull(session.State.MailComposer); Assert.AreSame(inventory, session.State.Inventory);
         Assert.AreSame(mail, session.State.Mail); Assert.AreEqual(holder, session.State.Party[0]);
         Send(session, give);
-        ushort word = c.MailComposer!.Words.Values.First(w => SourceEasyChatRules.IsSelectable(c.MailComposer, session.MailSelectionFacts, w.Value)).Value;
+        ushort word = c.MailComposer!.Words.Values.First(w => SourceEasyChatRules.IsSelectable(c.MailComposer, session.EasyChatSelectionFacts, w.Value)).Value;
         Compose(session, "mail_compose_word", choice: 0, quantity: word);
         Compose(session, "mail_compose_done"); Compose(session, "mail_compose_confirm", choice: 0);
         Assert.IsNull(session.State.MailComposer);

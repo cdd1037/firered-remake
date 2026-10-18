@@ -31,6 +31,11 @@ public sealed partial class CampaignSession
             while(pending.TryDequeue(out var probe))
             {
                 if(++steps>budget)throw new InvalidDataException("script_preflight_budget: "+program);
+                if(probe.ProfileEditor is {} profile)
+                {
+                    if(!IsProfileCallback(probe,profile))throw new InvalidDataException("profile_preflight_callback_context");
+                    continue;
+                }
                 if(probe.SlotMachine is not null)
                 {
                     if(!CampaignSlotMachineTransactions.OwnsCallback(probe,_content))throw new InvalidDataException("slot_preflight_callback_context");

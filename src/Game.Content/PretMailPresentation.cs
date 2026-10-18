@@ -12,6 +12,8 @@ public sealed record MailStationery(ushort ItemId, string ItemSymbol, string Nam
     ImmutableArray<int> WordsPerLine, int AuthorX, int AuthorY, string AuthorPrefix,
     ImmutableArray<byte> TextRgb, ImmutableArray<byte> ShadowRgb, string IconKind, int IconCenterX, int IconCenterY);
 public sealed record MailReaderLine(int X, int Y, string Text);
+public sealed record EasyChatPresentationTemplate(string Id, int FrameLeft, int FrameTop, int FrameWidth, int FrameHeight,
+    int FieldX, int FieldY, ImmutableDictionary<string, string> BackgroundIds, int TitleX, int TitleY, int TitleWidth);
 
 /// <summary>All original Mail paper, item metadata and settled Easy Chat surfaces, reusing existing source blobs and icons.</summary>
 public sealed class PretMailPresentation
@@ -24,6 +26,7 @@ public sealed class PretMailPresentation
     public ImmutableDictionary<string, byte[]> PngFiles { get; }
     public ImmutableDictionary<string, string> Texts { get; }
     public JsonElement EasyChat { get; }
+    public ImmutableDictionary<string, EasyChatPresentationTemplate> Templates { get; }
 
     private PretMailPresentation(JsonElement document, ImmutableDictionary<string, byte[]> files, SharedItemCatalog items)
     {
@@ -32,6 +35,22 @@ public sealed class PretMailPresentation
         Assets = Parse<ImmutableArray<MailPresentationAsset>>(document.GetProperty("assets")).ToImmutableDictionary(a => a.Id, StringComparer.Ordinal);
         Texts = Parse<ImmutableArray<NpcTradeMailText>>(document.GetProperty("texts")).ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
         PngFiles = files; EasyChat = document.GetProperty("easyChat").Clone();
+        Templates = Parse<ImmutableArray<EasyChatPresentationTemplate>>(document.GetProperty("templates"))
+            .ToImmutableDictionary(t => t.Id, StringComparer.Ordinal);
+        Need(Templates.Keys.Order().SequenceEqual(new[] { "mail", "profile" }), "easy_chat_presentation_templates");
+        foreach (var template in Templates.Values)
+        {
+            Need(template.FrameLeft >= 1 && template.FrameTop >= 0 && template.FrameWidth > 0 && template.FrameHeight > 0 &&
+                template.FrameLeft + template.FrameWidth < 30 && template.FrameTop + template.FrameHeight <= 20 &&
+                template.FieldX == template.FrameLeft * 8 + 17 && template.FieldY == template.FrameTop * 8 + 2 &&
+                template.TitleX >= 0 && template.TitleY >= 0 && template.TitleWidth > 0 && template.TitleX + template.TitleWidth <= 240 &&
+                template.BackgroundIds.Keys.Order().SequenceEqual(new[] { "fields", "groups", "words" }) &&
+                template.BackgroundIds.Values.All(id => Assets.TryGetValue(id, out var asset) && asset is { Width: 240, Height: 160 }),
+                "easy_chat_presentation_layout");
+        }
+        foreach (var key in new[] { "titleRgb", "titleShadowRgb" })
+            Need(EasyChat.GetProperty(key).GetArrayLength() == 3 && EasyChat.GetProperty(key).EnumerateArray().All(c => c.TryGetByte(out _)),
+                "easy_chat_title_palette");
         Need(Stationery.Length == 12 && Stationery.Select(s => (int)s.ItemId).SequenceEqual(Enumerable.Range(121, 12)) &&
             Stationery.All(s => s.ItemSymbol == SourceMailRules.ItemSymbol(s.ItemId) && s.BackgroundIds.Length == 2 &&
                 s.WordsPerLine.SequenceEqual(new[] { 2,2,2,2,1 }) && s.MessageX == 32 && s.MessageY == 35 && s.LineHeight == 16 &&

@@ -72,6 +72,9 @@ public sealed class SourceMailScreen : IDisposable
     public SourceGameFont EditorFont => Font(
         _content.EasyChat.GetProperty("textRgb").EnumerateArray().Select(c => c.GetByte()).ToImmutableArray(),
         _content.EasyChat.GetProperty("shadowRgb").EnumerateArray().Select(c => c.GetByte()).ToImmutableArray());
+    public SourceGameFont TitleFont => Font(
+        _content.EasyChat.GetProperty("titleRgb").EnumerateArray().Select(c => c.GetByte()).ToImmutableArray(),
+        _content.EasyChat.GetProperty("titleShadowRgb").EnumerateArray().Select(c => c.GetByte()).ToImmutableArray());
     public static float TextWidth(SourceGameFont font, string text) => font.Font.GetStringSize(PrepareText(font, text), fontSize: font.Size).X;
     public static void Text(CanvasItem canvas, SourceGameFont font, Vector2 position, string text) =>
         canvas.DrawString(font.Font, position + new Vector2(0, font.Baseline), PrepareText(font, text), fontSize: font.Size);
@@ -91,31 +94,28 @@ public sealed class SourceMailScreen : IDisposable
             canvas.DrawTexture(image, new(paper.IconCenterX - 16, paper.IconCenterY - 16));
         }
     }
-    public void DrawEditorFields(CanvasItem canvas, ImmutableArray<ushort> words, Func<ushort, string> wordText)
+    public void DrawEditorFields(CanvasItem canvas, EasyChatPresentationTemplate layout, SourceEasyChatTemplate template,
+        ImmutableArray<ushort> words, Func<ushort, string> wordText)
     {
-        if (words.IsDefault || words.Length != 9) throw new InvalidDataException("mail_editor_word_count");
-        var font = EditorFont; int slot = 0;
-        for (int row = 0; row < 5; row++)
+        if (words.IsDefault || words.Length != template.WordCount) throw new InvalidDataException("easy_chat_editor_word_count");
+        for (int slot = 0; slot < words.Length; slot++)
         {
-            float x = 41; int y = 2 + row * 16;
-            for (int column = 0; column < (row == 4 ? 1 : 2); column++, slot++)
-            {
-                if (words[slot] == ushort.MaxValue)
-                {
-                    for (int i = 0; i < 7; i++) canvas.DrawTexture(Texture("easy-chat-underscore"), new(x + i * 10, y));
-                    x += 70;
-                }
-                else { string word = wordText(words[slot]); Text(canvas, font, new(x, y), word); x += TextWidth(font, word); }
-                x += 17;
-            }
+            var position = FieldPosition(layout, template, words, wordText, slot);
+            if (words[slot] == ushort.MaxValue)
+                for (int i = 0; i < 7; i++) canvas.DrawTexture(Texture("easy-chat-underscore"), position + new Vector2(i * 10, 0));
+            else Text(canvas, EditorFont, position, wordText(words[slot]));
         }
     }
-    public Vector2 FieldPosition(ImmutableArray<ushort> words, Func<ushort, string> wordText, int slot)
+    public Vector2 FieldPosition(EasyChatPresentationTemplate layout, SourceEasyChatTemplate template,
+        ImmutableArray<ushort> words, Func<ushort, string> wordText, int slot)
     {
-        if (slot is < 0 or > 8) throw new ArgumentOutOfRangeException(nameof(slot));
-        float x = 41;
-        if (slot % 2 == 1) x += 17 + (words[slot - 1] == ushort.MaxValue ? 70 : TextWidth(EditorFont, wordText(words[slot - 1])));
-        return new(x, 2 + slot / 2 * 16);
+        if (slot < 0 || slot >= template.WordCount || words.IsDefault || words.Length != template.WordCount)
+            throw new ArgumentOutOfRangeException(nameof(slot));
+        int row = slot / template.Columns;
+        float x = layout.FieldX;
+        for (int preceding = row * template.Columns; preceding < slot; preceding++)
+            x += 17 + (words[preceding] == ushort.MaxValue ? 70 : TextWidth(EditorFont, wordText(words[preceding])));
+        return new(x, layout.FieldY + row * 16);
     }
     public void DrawTriangle(CanvasItem canvas, Vector2 center) => canvas.DrawTexture(Texture("easy-chat-triangle-cursor"), center - new Vector2(4, 4));
     public void DrawRectangle(CanvasItem canvas, Vector2 center, int frame)

@@ -183,7 +183,7 @@ class RuntimeProofRetirementTests(unittest.TestCase):
         from generated_output_compare import check_item_outputs
         raw = ROOT / 'content/raw/pokefirered/037335f4'
         generated = ROOT / 'content/generated'
-        for name, count in [('story/import-npc-trade-mail.py', 9), ('presentation/import-mail-presentation.py', 48)]:
+        for name, count in [('story/import-npc-trade-mail.py', 9), ('presentation/import-mail-presentation.py', 51)]:
             with self.subTest(compiler=name):
                 outputs = load('imports/' + name).generate(raw)
                 self.assertEqual(count, len(outputs))

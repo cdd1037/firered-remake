@@ -37,5 +37,6 @@
     <Compile Include="../../src/Game.Godot/SlotMachineVisualPresentation.cs" Link="SlotMachineVisualPresentation.cs" />
     <Compile Include="../../src/Game.Godot/TeachyTvPresentation.cs" Link="TeachyTvPresentation.cs" />
     <Compile Include="../../src/Game.Godot/TeachyTvTextPresentation.cs" Link="TeachyTvTextPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/EasyChatEditorNavigation.cs" Link="EasyChatEditorNavigation.cs" />
   </ItemGroup>
 </Project>

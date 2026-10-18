@@ -248,7 +248,7 @@ public partial class CampaignView:Node2D
         foreach(var effect in after.PresentationEffects.Where(e=>e.Opcode=="playfanfare"&&e.Sequence>_lastFanfareSequence))
         {_fanfareRemaining=(_cues.CounterFor(effect.Args[0])+1)/60.0;_lastFanfareSequence=effect.Sequence;}
         SynchronizeNamingScreen(before,after);
-        SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
+        SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeEasyChatEditor();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
         SynchronizeNoncombatFieldPresentation(after);SynchronizeEvolutionView(before);SynchronizeItemfinderPresentation();SynchronizeSavedOptions();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSourceGridMenu();SynchronizeSourceMenu();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeDaisyGroomingPresentation(before,after);SynchronizeSizeRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);SynchronizeSlotMachine();SynchronizeFameChecker();SynchronizeVsSeekerPresentation(before,after);SynchronizeTeachyTvPresentation();SynchronizeTeachyTvFieldPresentation();SynchronizeTeachyTvBattle();
         SynchronizeTrainerCardPhoto(before,after);
         SynchronizeDiplomaPresentation(before,after);
@@ -303,6 +303,7 @@ public partial class CampaignView:Node2D
         ProcessCenterHealing(delta);
         _fanfareRemaining=Math.Max(0,_fanfareRemaining-delta);
         if(_fade>0){_fade=Math.Max(0,_fade-delta);QueueRedraw();return;}
+        if(_session.EasyChatEditor is not null){_held=null;_repeat=0;QueueRedraw();return;}
         if(MoveTutorActive||DaisyGroomingChoosing||SizeRecordChoosing||NameRaterChoosing||NpcTradeChoosing||_regionalServiceNotice is not null){QueueRedraw();return;}
         if(ProcessRocketSpin(delta)){QueueRedraw();return;}
         if(ProcessFishingPresentation(delta)){QueueRedraw();return;}
@@ -433,6 +434,9 @@ public partial class CampaignView:Node2D
         if(TryMenuMouseInput(input))return;
         if(SilphElevatorMenuActive&&input is InputEventKey silphKey&&TrySilphInput(silphKey)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(SilphElevatorMenuActive&&input is not InputEventKey {Keycode:Key.Escape or Key.F12}){GetViewport().SetInputAsHandled();return;}
+        if(_session?.EasyChatEditor is not null && input is InputEventKey editorKey &&
+            editorKey.Keycode is not (Key.Escape or Key.F5 or Key.F9 or Key.F12))
+        { EasyChatEditorInput(editorKey); QueueRedraw(); GetViewport().SetInputAsHandled(); return; }
         if(TryFieldMenuToggle(input))return;
         if(_session is null||input is not InputEventKey key||key.Echo)return;
         if(_fade>0&&key.Pressed&&key.Keycode is not (Key.Escape or Key.F12))return;
@@ -554,6 +558,7 @@ public partial class CampaignView:Node2D
         if(DrawNamingScreen())return;
         if(PlayerEntryActive){DrawPlayerEntry();return;}
         if(DrawQuestLogPlayback())return;
+        if(_session.EasyChatEditor is not null){DrawEasyChatEditorScreen();return;}
         if(_session.State.ItemMenu?.Toss?.BattleOwner is not null && DrawBagToss())return;
         if(DrawDiploma())return;
         if(DrawSlotMachine())return;

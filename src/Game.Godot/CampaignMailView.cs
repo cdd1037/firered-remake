@@ -1,5 +1,6 @@
 using Game.Application;
 using Game.Content;
+using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Godot;
 
@@ -20,7 +21,6 @@ public partial class CampaignView
         .Select((message, index) => (message, index)).Where(pair => pair.message is not null).Select(pair => pair.index).ToArray();
     private void SynchronizeMail()
     {
-        SynchronizeMailComposer();
         var pending = _session.State.MailInteraction;
         string? key = pending is null ? MailScreen ? "party:held" : null :
             $"{pending.Origin}:{pending.Phase}:{pending.PartyIndex}:{pending.TargetInstanceId}:{pending.MailboxSlot}";
@@ -51,10 +51,25 @@ public partial class CampaignView
         "mail_egg" => "An EGG can't hold MAIL.",
         "held_item_target_stale" or "item_party_index_invalid" => "The selected POKéMON changed.",
         _ => "The MAIL couldn't be transferred." };
+    private void LoadMailStationeryIcons()
+    {
+        if (!_session.MailComposerEnabled) return;
+        foreach (var paper in MailSourceScreen.Content.Stationery.Where(s => s.ItemId < 130))
+        {
+            var id = new ItemId("pret:" + paper.ItemSymbol);
+            if (!_catalog.EarlyShop!.Items.Any(i => i.Id == id)) throw new InvalidDataException("mail_inventory_icon_binding");
+            _earlyItemIcons.Add(id, MailSourceScreen.Texture(paper.ItemIconId));
+        }
+    }
     private bool MailInput(InputEventKey key)
     {
         if (!MailScreen) return false;
-        if (_session.State.MailComposer is not null) return MailComposerInput(key);
+        if (_session.State.MailComposer is { Phase: CampaignMailComposePhase.Preview } preview)
+        {
+            if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace)
+                MailAction(new("mail_compose_back", Text: preview.WaitId));
+            return true;
+        }
         if (!key.Pressed || key.Echo) return true;
         var pending = _session.State.MailInteraction;
         if (pending?.Phase is CampaignMailPhase.Reader or CampaignMailPhase.Message)
@@ -108,12 +123,13 @@ public partial class CampaignView
     private bool DrawMailScreen()
     {
         if (!MailScreen) return false;
-        if (_session.State.MailComposer is not null) return DrawMailComposerScreen();
+        if (_session.State.MailComposer is { Phase: CampaignMailComposePhase.Preview } preview)
+        { MailSourceScreen.DrawReader(this, preview.ItemId, _session.State.PlayerGender, null, _session.EasyChatWordText, MailSpeciesIcon); return true; }
         var pending = _session.State.MailInteraction;
         if (pending?.Phase == CampaignMailPhase.Reader)
         {
             var mail = _session.MailReader ?? throw new InvalidDataException("Mail reader no longer owns its message.");
-            MailSourceScreen.DrawReader(this, mail.ItemId, _session.State.PlayerGender, mail, _session.MailWordText, MailSpeciesIcon);
+            MailSourceScreen.DrawReader(this, mail.ItemId, _session.State.PlayerGender, mail, _session.EasyChatWordText, MailSpeciesIcon);
         }
         else if (pending?.Origin == "pc") DrawMailbox(pending);
         else
@@ -170,7 +186,8 @@ public partial class CampaignView
     }
     private bool MailMouse(Vector2 point, int? direction = null)
     {
-        if (_session.State.MailComposer is not null) return MailComposerMouse(point, direction);
+        if (_session.State.MailComposer is { Phase: CampaignMailComposePhase.Preview })
+            return direction is null && MouseConfirm(point, new(0,0,240,160));
         var phase = _session.State.MailInteraction?.Phase;
         if (phase is CampaignMailPhase.Reader) return direction is null && MouseConfirm(point, new(0, 0, 240, 160));
         if (phase is CampaignMailPhase.Message) return direction is null && MouseConfirm(point, MouseMessage);

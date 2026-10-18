@@ -20,6 +20,7 @@ BASE = 'content/generated/ui/mail-presentation/'
 NAMES = ['orange','harbor','glitter','mech','wood','wave','bead','shadow','tropic','dream','fab','retro']
 
 from image_io import png as encode_rgba_png
+from easy_chat_templates import layout as editor_layout
 
 def need(ok, message):
     if not ok: raise ValueError(message)
@@ -105,7 +106,10 @@ def generate(raw):
     src.read('include/constants/species.h')
     # Settled Easy Chat surfaces. Keep source sheets; only three compact background PNGs are materialized.
     ec=src.text('src/easy_chat_3.c');ec2=src.text('src/easy_chat_2.c');sourcegfx=src.text('src/graphics.c')
-    need('.type = EASY_CHAT_TYPE_MAIL,\n        .numColumns = 2,\n        .numRows = 5,\n        .frameId = 2,' in ec2,'Original Mail editor template differs')
+    templates = editor_layout(src)
+    from easy_chat_templates import templates as source_templates
+    source_template_by_id = {t['id']: t for t in source_templates(src)}
+    need({t['id'] for t in templates} == {'profile', 'mail'}, 'Easy Chat presentation template selection differs')
     need('RedrawFrameByRect(1, 10, 23, 10);' in ec and 'RedrawFrameByRect(0, 10, 30, 10);' in ec and
          'ChangeBgY(2, 0x800, 0);' in ec,'Original picker frame/scroll differs')
     wpath='graphics/easy_chat/window.png';ww,wh,wi,wp=codec.indexed_png(src.read(wpath));wt=codec.tile_list(src.read(wpath));wpal=codec.colors(wp)
@@ -119,26 +123,34 @@ def generate(raw):
             for px in range(8):
                 source=(py*8+px)*4;target=((y*8+py)*240+x*8+px)*4
                 if rgba[source+3]:out[target:target+4]=rgba[source:source+4]
-    for mode in ('fields','groups','words'):
+    for template in templates:
+      left, top, width, height = (template['frame' + name] for name in ('Left', 'Top', 'Width', 'Height'))
+      for mode in ('fields','groups','words'):
         out=codec.canvas(240,160)
         for y in range(20):
             for x in range(30):
                 e=wmap[y*32+x];need(e>>12==0,'Easy Chat base palette differs')
                 codec.blit(out,240,codec.tile_rgba(wt[e&1023],wpal,bool(e&1024),bool(e&2048),False),8,8,x*8,y*8)
-        # Source phrase window overwrites BG3 pixels and the orange frame has transparent center tile 0.
-        codec.blit(out,240,bytes([*textpal[1],255])*192*80,192,80,24,0)
+        # Source phrase window overwrites BG3 pixels; transparent frame tile 0 exposes that window.
+        codec.blit(out,240,bytes([*textpal[1],255])*width*8*height*8,width*8,height*8,left*8,top*8)
         codec.blit(out,240,bytes([*textpal[1],255])*192*16,192,16,32,88)
-        for y in range(10):
-            for x in range(2,28): tile(out,ft,orange,5 if x==2 else 7 if x==27 else 0,x,y)
+        right, bottom = left + width, top + height
+        for y in range(top, bottom):
+            for x in range(left-1, right+1): tile(out,ft,orange,5 if x==left-1 else 7 if x==right else 0,x,y)
+        # Source frame 2 extends off the top/bottom of the phrase area and has no horizontal edges.
+        if source_template_by_id[template['id']]['frameId'] != 2:
+            for x in range(left-1, right+1):
+                tile(out,ft,orange,1 if x==left-1 else 3 if x==right else 2,x,top-1)
+                tile(out,ft,orange,9 if x==left-1 else 11 if x==right else 10,x,bottom)
         if mode!='fields':
-            left,width=(1,23) if mode=='groups' else (0,30);right=left+width-1
+            picker_left,picker_width=(1,23) if mode=='groups' else (0,30);picker_right=picker_left+picker_width-1
             # Window0 exposes BG2 only inside the green frame; BG2 source origin is y=-8.
-            codec.blit(out,240,bytes([*textpal[1],255])*(width-2)*8*64,(width-2)*8,64,(left+1)*8,88)
+            codec.blit(out,240,bytes([*textpal[1],255])*(picker_width-2)*8*64,(picker_width-2)*8,64,(picker_left+1)*8,88)
             for y in range(10,20):
-                for x in range(left,right+1):
-                    n=(1 if x==left else 3 if x==right else 2) if y==10 else (9 if x==left else 11 if x==right else 10) if y==19 else (5 if x==left else 7 if x==right else 0)
+                for x in range(picker_left,picker_right+1):
+                    n=(1 if x==picker_left else 3 if x==picker_right else 2) if y==10 else (9 if x==picker_left else 11 if x==picker_right else 10) if y==19 else (5 if x==picker_left else 7 if x==picker_right else 0)
                     tile(out,ft,green,n,x,y)
-        asset('easy-chat-'+mode,240,160,bytes(out),[wpath,'graphics/easy_chat/window.bin',fpath,'graphics/easy_chat/text_input_frame_orange.pal','graphics/easy_chat/text_input_frame_green.pal','graphics/easy_chat/text.pal'])
+        asset(template['backgroundIds'][mode],240,160,bytes(out),[wpath,'graphics/easy_chat/window.bin',fpath,'graphics/easy_chat/text_input_frame_orange.pal','graphics/easy_chat/text_input_frame_green.pal','graphics/easy_chat/text.pal'])
     for name in ('triangle_cursor','rectangle_cursor','button_window','mode','scroll_indicator','start_select_buttons'):
         path='graphics/easy_chat/'+name+'.png';w,h,indices,pal=codec.indexed_png(src.read(path))
         if name in ('mode','scroll_indicator','start_select_buttons'):
@@ -169,12 +181,18 @@ def generate(raw):
     for symbol in textsyms:
         m,ref=capture('src/strings.c',r'^const u8 '+symbol+r'\[\] = _\("((?:[^"\\]|\\.)*)"\);',symbol)
         texts.append(dict(symbol=symbol,text=m[1].replace('\\n','\n'),source=ref))
-    document=dict(schemaVersion=1,assets=assets,stationery=stationery,items=items,
+    titlepath='graphics/easy_chat/title_text.pal'
+    title_rows=src.text(titlepath).splitlines()
+    need(title_rows[:3]==['JASC-PAL','0100','4'], 'Easy Chat title palette differs')
+    titlepal=[expand([int(c)>>3 for c in row.split()]) for row in title_rows[3:] if row.strip()]
+    need(len(titlepal)==4 and all(len(row)==3 for row in titlepal), 'Easy Chat title palette shape differs')
+    assets.sort(key=lambda a: a['id'].startswith('easy-chat-profile-'))
+    document=dict(schemaVersion=1,assets=assets,stationery=stationery,items=items,templates=templates,
         texts=texts,
         iconRules=dict(unownOffset=30000,unownForms=28,unownSpecies=201,unownB=413,maxSpecies=411,frame=0),
         easyChat=dict(fieldColumns=2,fieldRows=5,lastRowColumns=1,fieldX=41,fieldY=2,fieldAdvance=17,blankAdvance=advance,lineHeight=16,
             groupTextX=[18,102],wordTextX=[32,136],pickerTextY=90,pickerRows=4,footerTextX=[32,119,196],footerTextY=90,
-            alphabetColumnOffsets=[0,12,24,56,68,80,92],textRgb=textpal[2],shadowRgb=textpal[3],blankRgb=textpal[4],specialGlyphs=specials))
+            alphabetColumnOffsets=[0,12,24,56,68,80,92],titleRgb=titlepal[2],titleShadowRgb=titlepal[3],textRgb=textpal[2],shadowRgb=textpal[3],blankRgb=textpal[4],specialGlyphs=specials))
     outputs['ui/mail-presentation/catalog.json']=encoded(document)
     return outputs
 
