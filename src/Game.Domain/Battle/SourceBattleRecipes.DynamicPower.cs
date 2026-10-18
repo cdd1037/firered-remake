@@ -58,9 +58,10 @@ internal abstract partial class SourceRecipeContext
         if (power == 0) throw new SourceRecipeUnsupported("source_dynamic_power_unprepared");
         bool critical = SourceGenericCritical(Get(actor), Get(target), move, purpose);
         int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
-        int rawDamage = SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent, power);
+        var calculated = SourceGenericDamageResult(catalog, Get(actor), Get(target), target, move, critical, percent, power);
+        int rawDamage = calculated.Damage;
         int damage = FixedDamageAdjust(target, move, rawDamage, purpose);
-        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent, power);
+        int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent, power, preparedAnimationPower: calculated.SourceMovePower);
         if (critical && lost == 0 && rawDamage > 0 && !FixedDamageZeroCriticalPrinted(target))
             Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         DynamicPowerReportType(catalog, actor, target, move);

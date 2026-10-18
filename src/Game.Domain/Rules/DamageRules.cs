@@ -15,7 +15,12 @@ public sealed record DamageInput(
     bool Critical, int RandomPercent,
     UnsupportedBattleMechanics ActiveMechanics = UnsupportedBattleMechanics.None);
 public sealed record DamageStep(string Operation, int Value);
-public sealed record DamageResult(int Damage, DamageCategory Category, ImmutableArray<DamageStep> Steps);
+public sealed record DamageResult(int Damage, DamageCategory Category, ImmutableArray<DamageStep> Steps)
+{
+    /// <summary>The actual source CalculateBaseDamage move-power register after Sport and ability modifiers.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? SourceMovePower { get; init; }
+}
 
 /// <summary>Ordinary one-hit damage only. Attack/Defense inputs are the selected physical or special stats.</summary>
 public static class DamageRules

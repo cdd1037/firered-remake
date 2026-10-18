@@ -39,6 +39,8 @@ public sealed record WildBattleSubstituteDamagedEvent(long Sequence, int Turn, W
 {
     /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
+    /// <summary>Source attack-animation power retained from CalculateBaseDamage after Sport and ability modifiers; zero is valid.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedAnimationPower { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
 }
 public sealed record WildBattleCalledDelayedEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move,

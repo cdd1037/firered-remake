@@ -98,7 +98,7 @@ public static class SourceBattleDamage
             new(Critical: critical, Rain: rain, Reflect: reflect, Sun: sun, LightScreen: lightScreen,
                 WeatherSuppressed: weatherSuppressed, SolarBeamWeakWeather: sourceSolarBeamWeakWeather,
                 DoubleBattle: sourceDoubleBattle, DefenderCount: sourceDefenderCount,
-                PlusMinusBoost: sourcePlusMinusBoost, MudSport: sourceMudSport, WaterSport: sourceWaterSport), steps);
+                PlusMinusBoost: sourcePlusMinusBoost, MudSport: sourceMudSport, WaterSport: sourceWaterSport), out int sourceMovePower, steps);
         if (critical) value *= 2;
         steps.Add(new("critical", value));
         if (sourceDamageMultiplier == 1)
@@ -130,7 +130,7 @@ public static class SourceBattleDamage
         if (immune) value = 0;
         value = value == 0 ? 0 : Math.Max(1, value * randomPercent / 100);
         steps.Add(new("random-percent", value));
-        return new(value, category, steps.ToImmutable());
+        return new(value, category, steps.ToImmutable()) { SourceMovePower = sourceMovePower };
     }
 
     // pokemon.c CalculateBaseDamage: no variable-power preprocessing, TypeCalc, randomness,
@@ -138,7 +138,12 @@ public static class SourceBattleDamage
     // keeps its own TypeCalc semantics; execution supplies its already-resolved power and type.
     internal static int CalculateBase(PokemonCatalog catalog, WildBattleCombatant user,
         WildBattleCombatant target, int power, ElementType type, string? effect, string? moveTarget,
-        SourceBaseDamageContext context, ImmutableArray<DamageStep>.Builder? steps = null)
+        SourceBaseDamageContext context, ImmutableArray<DamageStep>.Builder? steps = null) =>
+        CalculateBase(catalog, user, target, power, type, effect, moveTarget, context, out _, steps);
+
+    private static int CalculateBase(PokemonCatalog catalog, WildBattleCombatant user,
+        WildBattleCombatant target, int power, ElementType type, string? effect, string? moveTarget,
+        SourceBaseDamageContext context, out int sourceMovePower, ImmutableArray<DamageStep>.Builder? steps)
     {
         bool physical = TypeRules.Category(type) == DamageCategory.Physical;
         bool critical = context.Critical, reflect = context.Reflect, lightScreen = context.LightScreen;
@@ -212,6 +217,7 @@ public static class SourceBattleDamage
             (type, userAbility) is (ElementType.Grass, "ABILITY_OVERGROW") or
                 (ElementType.Fire, "ABILITY_BLAZE") or (ElementType.Water, "ABILITY_TORRENT") or
                 (ElementType.Bug, "ABILITY_SWARM")) power = power * 150 / 100;
+        sourceMovePower = power;
         // Critical hits ignore unfavorable attack stages and favorable defense stages.
         int attackStage = physical ? user.AttackStage : 6 + user.SpecialAttackStageDelta, defenseStage = physical ? target.DefenseStage : 6 + target.SpecialDefenseStageDelta;
         int Stage(int basis, int stage) => stage < 6 ? basis * 2 / (8 - stage) : basis * (stage - 4) / 2;

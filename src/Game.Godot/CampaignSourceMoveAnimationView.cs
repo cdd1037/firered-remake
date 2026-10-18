@@ -345,6 +345,14 @@ public partial class CampaignView
         // The event-time transformed battle body retains its actor's friendship.
         var actorBody=doubles?DoubleDisplayedBody(dispatch.Actor.Value):SingleDisplayedBody(PresentedWildBattle!,(WildBattleSide)dispatch.Actor.Value);
         if(actorBody is not null)cue=cue with{Friendship=checked((byte)actorBody.Pokemon.Friendship)};
+        var doubleBattle=doubles?_session.State.DoubleBattle:null;
+        var singleBattle=doubles?null:PresentedWildBattle;
+        var display=doubleBattle is not null
+            ?new CampaignBattleDisplayBodies(doubleBattle.DisplayedSlots,doubleBattle.DisplayedMembers)
+            :singleBattle?.DisplayBatch?.Display;
+        if(display is not null)cue=cue with{ActorHpQuarterTier=CampaignMoveAnimationPresentation.ActorHpQuarterTierAtInvocation(
+            dispatch,display,sourceEvents,doubleBattle?.EventIndex??singleBattle!.DisplayBatch!.NextEventIndex,
+            _catalog.PokemonContent!.Catalog.Moves)};
         cue=cue with{VisualSeed=SourceAnimationVisualSeed.For(cue)};
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         try

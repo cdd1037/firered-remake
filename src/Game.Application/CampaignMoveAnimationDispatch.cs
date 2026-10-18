@@ -198,6 +198,7 @@ public static partial class CampaignMoveAnimationPresentation
             return new(null,"unmatched-source-forced-invocation");
         bool chargeRelease=HasChargeAnimation(definition!);
         if(chargeRelease&&(!AuthenticatedChargeRelease(battle,used,definition,action)||action.OfType<SourceMtMoonVolatileEvent>().Any(e=>e.Side==used.Actor&&e.Volatile=="called-charge")))return new(null,"unmatched-source-charge-release");
+        if(definition!.Effect=="EFFECT_ERUPTION")return HpScaledAnimation(battle,used,attack,definition,action,pp);
         if(battle.Slots == 4 && definition!.Target == "MOVE_TARGET_BOTH" && definition.Power > 0)
         {
             // Source MOVEEND_NEXT_TARGET revisits the hit script without another attack string.
@@ -264,6 +265,7 @@ public static partial class CampaignMoveAnimationPresentation
             return new(null,"unmatched-source-sound-hit-definition");
         if (!ValidSingleInvocationPp(pp,used,2,chargeRelease))
             return new(null, "unmatched-source-pp-command");
+        if(definition.Effect=="EFFECT_PAIN_SPLIT")return PainSplitAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_TRICK" or "EFFECT_RECYCLE")
             return ItemTransferAnimation(battle,used,attack,definition,action,pp);
         if(definition.Effect is "EFFECT_REFRESH" or "EFFECT_HEAL_BELL")

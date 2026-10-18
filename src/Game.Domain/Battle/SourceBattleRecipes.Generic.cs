@@ -105,15 +105,23 @@ internal abstract partial class SourceRecipeContext
 
         internal int SourceGenericDamage(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
             BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null, bool suppressTypeMiss = true, SourceTypeCommand typeCommand = SourceTypeCommand.TypeCalc, bool pursuitSwitch = false) =>
-            SourceTypeDamage(catalog, targetSide, move, SourceBattleDamage.Calculate(catalog, actor, target, move, critical, percent, pursuitSwitch: pursuitSwitch, dynamicPower: dynamicPower, rain: SourceCalledRain, reflect: RockTunnelReflects(targetSide),
+            SourceGenericDamageResult(catalog, actor, target, targetSide, move, critical, percent, dynamicPower,
+                effectiveType, damageMultiplier, suppressTypeMiss, typeCommand, pursuitSwitch).Damage;
+
+        internal DamageResult SourceGenericDamageResult(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
+            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null, bool suppressTypeMiss = true, SourceTypeCommand typeCommand = SourceTypeCommand.TypeCalc, bool pursuitSwitch = false)
+        {
+            var calculated = SourceBattleDamage.Calculate(catalog, actor, target, move, critical, percent, pursuitSwitch: pursuitSwitch, dynamicPower: dynamicPower, rain: SourceCalledRain, reflect: RockTunnelReflects(targetSide),
                 sourceEffectiveType: effectiveType, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
                 sourceDamageMultiplier: damageMultiplier ?? SourceChargeRules.DamageMultiplier(SemiInvulnerable(targetSide),move),
                 sourceSolarBeamWeakWeather: move.Effect == "EFFECT_SOLAR_BEAM" && (SourceCalledRain || StruggleSandstorm || SettingWeather.HailTurnsRemaining > 0),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
                 sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),
                 sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor),
-                sourceMudSport: FieldMudSport, sourceWaterSport: FieldWaterSport).Damage,
-                effectiveType is { } type ? SourceDynamicTypeRules.Symbol(type) : null, suppressTypeMiss, typeCommand);
+                sourceMudSport: FieldMudSport, sourceWaterSport: FieldWaterSport);
+            return calculated with { Damage = SourceTypeDamage(catalog, targetSide, move, calculated.Damage,
+                effectiveType is { } type ? SourceDynamicTypeRules.Symbol(type) : null, suppressTypeMiss, typeCommand) };
+        }
 
         // The canonical owner emits result text here, after actual HP/critical commands.
         // Legacy singles retain their existing event timing through the empty default.
@@ -150,8 +158,8 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal int SourceGenericApplyDamage(BattlerSlot side, BattlerSlot targetSide, PokemonMoveDefinition move,
-            int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null)
-            => SourceGenericApplyDamage(side, targetSide, move.Id, damage, critical, percent, preparedBasePower, preparedFuryCutterCounter);
+            int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null, int? preparedAnimationPower = null)
+            => SourceGenericApplyDamage(side, targetSide, move.Id, damage, critical, percent, preparedBasePower, preparedFuryCutterCounter, preparedAnimationPower);
 
         internal void SourceGenericContact(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move, string purpose, int damage)

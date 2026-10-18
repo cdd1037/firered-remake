@@ -196,11 +196,26 @@ public sealed partial class SourceBattleAnimation
         for(int i=soundStart;i<_soundTasks.Count;i++)
         {_soundTasks[i].Priority=1;_soundTasks[i].Order=_nextTaskOrder++;}
     }
+    private SourceTask? _executingSourceTask;
+    private void AddSourceVisualTask(VisualTask task,int priority)
+    {
+        if(priority is <0 or >255||task.Finished)throw new InvalidOperationException("Invalid source task insertion.");
+        if(_executingSourceTask is {} current&&(current.Finished||
+            !_tasks.Cast<SourceTask>().Concat(_soundTasks).Contains(current)))
+            throw new InvalidOperationException("Source task creation after current-task destruction is unsupported.");
+        task.Priority=priority;task.Order=_nextTaskOrder++;_tasks.Add(task);
+    }
     private void RunSourceTasks()
     {
-        foreach(var task in _tasks.Cast<SourceTask>().Concat(_soundTasks).OrderBy(t=>t.Priority).ThenBy(t=>t.Order).ToArray())
+        int priority=-1;long order=-1;
+        while(true)
         {
-            task.Step(this);
+            var task=_tasks.Cast<SourceTask>().Concat(_soundTasks)
+                .Where(t=>!t.Finished&&(t.Priority>priority||t.Priority==priority&&t.Order>order))
+                .OrderBy(t=>t.Priority).ThenBy(t=>t.Order).FirstOrDefault();
+            if(task is null)break;
+            priority=task.Priority;order=task.Order;_executingSourceTask=task;
+            try{task.Step(this);}finally{_executingSourceTask=null;}
             if(!task.Finished)continue;
             if(task is VisualTask visual)_tasks.Remove(visual);else _soundTasks.Remove((SoundTask)task);
         }

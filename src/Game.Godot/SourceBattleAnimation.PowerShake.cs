@@ -33,18 +33,23 @@ public sealed partial class SourceBattleAnimation
                 _animationArgs[15]=(short)(_cue.MovePower!.Value>99?1:0);return true;
             case "AnimTask_HorizontalShake":
             {
-                int selector=_animationArgs[0];int[] slots;
-                if(selector==5)slots=[];
-                else if(selector==4)slots=[.._battlers.Values.Where(b=>IsSourceBattlerVisible(b.Slot.Value)).OrderBy(b=>b.Slot.Value).Select(b=>b.Slot.Value)];
-                else if(ResolveShakeParticipant(selector,false) is {} slot)slots=[slot.Value];
-                else return true;
-                int intensity=_animationArgs[1]!=0?_animationArgs[1]:_cue.MovePower!.Value/10;
-                _tasks.Add(new HorizontalShakeTask(selector==5,slots,unchecked((short)(intensity+3)),_animationArgs[2],BackgroundScrollX));return true;
+                if(CreateHorizontalShakeTask() is {} task)_tasks.Add(task);return true;
             }
             case "AnimTask_ShakeTargetBasedOnMovePowerOrDmg":
                 _tasks.Add(new PowerTargetShakeTask(this));return true;
             default:return false;
         }
+    }
+
+    private VisualTask? CreateHorizontalShakeTask()
+    {
+        int selector=_animationArgs[0];int[] slots;
+        if(selector==5)slots=[];
+        else if(selector==4)slots=[.._battlers.Values.Where(b=>IsSourceBattlerVisible(b.Slot.Value)).OrderBy(b=>b.Slot.Value).Select(b=>b.Slot.Value)];
+        else if(ResolveShakeParticipant(selector,false) is {} slot)slots=[slot.Value];
+        else return null;
+        int intensity=_animationArgs[1]!=0?_animationArgs[1]:_cue.MovePower!.Value/10;
+        return new HorizontalShakeTask(selector==5,slots,unchecked((short)(intensity+3)),_animationArgs[2],BackgroundScrollX);
     }
 
     private sealed class HorizontalShakeTask(bool terrain,int[] slots,short initial,short maximum,ushort background):VisualTask
