@@ -198,6 +198,9 @@ public sealed partial class SourceBattleAnimation
     public bool PaletteFadeActive=>_fade?.Active==true||_hardwareFade is not null;
     public bool GraphicsLoaded=>_loaded.Count>0||_spriteScene.OwnedDynamicSpriteGraphics(this).Length>0;
     public SourceBattleAnimation(SourceAnimationScript script,CommittedMoveAnimation cue,IEnumerable<AnimationBattler> battlers,bool doubles,ISourceAnimationAudio audio,ushort[]? backgroundPalette=null,IReadOnlyDictionary<int,AnimationBattler>? battlerReplacements=null,SpriteScene? spriteScene=null,IReadOnlyDictionary<string,SourcePixelAsset>? spriteMaterials=null,IReadOnlyDictionary<int,int>? originalPartySpecies=null,SourceBattlerFormMaterial? additionalMonMaterial=null)
+        :this(script,cue,battlers,doubles,audio,false,backgroundPalette,battlerReplacements,spriteScene,spriteMaterials,originalPartySpecies,additionalMonMaterial){}
+    // Preparation validates against the actual shared scene without acquiring it.
+    internal SourceBattleAnimation(SourceAnimationScript script,CommittedMoveAnimation cue,IEnumerable<AnimationBattler> battlers,bool doubles,ISourceAnimationAudio audio,bool deferSceneAttachment,ushort[]? backgroundPalette=null,IReadOnlyDictionary<int,AnimationBattler>? battlerReplacements=null,SpriteScene? spriteScene=null,IReadOnlyDictionary<string,SourcePixelAsset>? spriteMaterials=null,IReadOnlyDictionary<int,int>? originalPartySpecies=null,SourceBattlerFormMaterial? additionalMonMaterial=null)
     {
         if(backgroundPalette is not null&&backgroundPalette.Length!=16)throw new ArgumentException("Initial BG3 palette bank has sixteen colors.");
         _originalPartySpecies=originalPartySpecies?.ToDictionary(p=>p.Key,p=>p.Value)??new Dictionary<int,int>();
@@ -226,10 +229,10 @@ public sealed partial class SourceBattleAnimation
         InitializeSourceVisibility();
         // ValidatePrograms proves bounded termination across scoped source branches.
         // A physical final goto may legitimately rejoin an earlier end.
-        if(cue.GeneralAnimationLabel is {} label&&(script.MoveId!=0||script.Label!=label||!label.StartsWith("General_",StringComparison.Ordinal)))throw new InvalidDataException("General source label differs.");
+        if(cue.GeneralAnimationLabel is {} label&&(script.MoveId!=0||script.Label!=label||!(label.StartsWith("General_",StringComparison.Ordinal)||label.StartsWith("Special_",StringComparison.Ordinal))))throw new InvalidDataException("General source label differs.");
         ValidateStatRoot();
         ValidatePrograms();_instructionBudget=checked(SourceAnimationProgramDependencies.MaximumCost(_script,_=>1)+1);
-        _spriteScene.Attach(this);
+        if(!deferSceneAttachment)AttachPrepared();
     }
     private void Fail(SourceAnimationCommand c,string reason)=>throw new SourceAnimationException(new(_script.MoveId,_script.Label,c.Line,c.Op,reason));
     private void Validate(SourceAnimationCommand c)
@@ -259,14 +262,22 @@ public sealed partial class SourceBattleAnimation
     private AnimationSlot Resolve(string s)=>Number(s) switch{0=>_cue.Actor,1=>_cue.Target,_=>throw new InvalidDataException("Unknown animation participant.")};
     public SourceAnimationFrame Snapshot()=>new(_frame,Active,Enumerable.Range(0,4).Select(BattlerBackgroundOffset).ToArray(),[.._backgrounds.Order()],SnapshotAlpha(false),SnapshotAlpha(true),[.._sprites.OfType<HitSplat>().OrderBy(x=>x.Slot).Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){Scanline=_spriteScene.ScanlineFrame?.Detach(),BackgroundScrollOffsets=[ScanlineBackgroundOffset(1),ScanlineBackgroundOffset(2)],Battlers=_battlers.Values.OrderBy(b=>b.Slot.Value).ToArray(),BattlerVisibility=SourceVisibilitySnapshot(),BattlerBackgroundMosaic=(bool[])_battlerBackgroundMosaic.Clone(),BattlerBackgroundEnabled=(bool[])_battlerBackgroundEnabled.Clone(),BackgroundMosaicHorizontal=_backgroundMosaicHorizontal,BackgroundMosaicVertical=_backgroundMosaicVertical,StaticBackgroundCopies=_staticBackgroundCopies.Values.ToArray(),SpritePalettes=SpritePaletteTagSnapshot(),SpritePaletteSlots=_spritePaletteBanks.Select(p=>(ushort[])p.Clone()).ToArray(),RestoredObjectSlots=Enumerable.Range(0,_battlerCount).Where(i=>_restoredObjectOam[i]).ToArray(),BlendedObjectSlots=Enumerable.Range(0,_battlerCount).Where(i=>_blendedObjectOam[i]).ToArray(),AnimationArguments=(short[])_animationArgs.Clone(),MoveBackground=BackgroundFrame,Overlay=_overlay,Window0=_window0,Window1=_window1,ObjectWindow=_objectWindow,Brightness=_brightness,BlendFirstTargets=_blendFirstTargets,BlendSecondTargets=_blendSecondTargets,InvertedPalettes=_invertedPalettes.Order().ToArray(),BattlerBackgroundPriorities=(int[])_battlerBackgroundPriorities.Clone(),BattlerObjectPriorities=(int[])_battlerObjectOamPriorities.Clone(),Metallic=_metallic,GreyscaleSlots=[.._greyscale.Order()],BattlerAffine=Enumerable.Range(0,_battlerCount).Select(i=>new SourceBattlerAffine(_affineOamMode[i],_xScale[i],_yScale[i]){MatrixB=_matrixB[i],MatrixC=_matrixC[i]}).ToArray(),StatMask=_statMask,PaletteBlends=[.._paletteBlends.Values.OrderBy(p=>p.Palette)],BackgroundPaletteEntries=[.._fadedBackgroundEntries.OrderBy(p=>p.Key).Select(p=>new SourcePaletteEntry(p.Key,p.Value))],BlendEnabled=_blendEnabled,Doubles=_doubles,BattlerOamRanks=Enumerable.Range(0,_battlerCount).Select(i=>Array.IndexOf(_oamOrder,i)).ToArray(),ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=SpriteOamSnapshot()};
     public bool HasResidualSprites=>!Active&&_sprites.Any(s=>!s.Counted);
-    public SourceAnimationFrame Tick()
+    public SourceAnimationFrame Tick()=>Tick(null);
+    internal SourceAnimationFrame Tick(Func<SourceBattleAnimation?>? completedMoveHandoff,bool controllerCompletion=false,bool controllerLaunch=false)
     {
+        if(!_sceneAttached)throw new InvalidOperationException("A prepared animation has not acquired its scene.");
         _spriteScene.EnsureController(this);
-        if(!Active)throw new InvalidOperationException("Animation already ended.");
+        if(controllerCompletion&&controllerLaunch||Active==controllerCompletion)throw new InvalidOperationException("Animation is not in its requested script/controller phase.");
         _frame++;_trace.Clear();
         // callback1 then BattleMainCB2: AnimateSprites, BuildOamBuffer, palette fade, RunTasks.
         bool general=_cue.StatAnimationArgument is not null||_cue.GeneralAnimationLabel is not null;
-        if(!general)AdvanceScriptCallback();
+        if(!general&&!controllerCompletion&&!controllerLaunch)
+        {
+            AdvanceScriptCallback();
+            // The controller starts its restore table task in callback1, before
+            // this frame's single AnimateSprites / BuildOam / RunTasks pass.
+            if(!Active&&completedMoveHandoff?.Invoke() is {} successor)return successor.Tick();
+        }
         AdvanceSourceSprites();
         for(int i=0;i<_battlerCount;i++)
         {
@@ -286,7 +297,7 @@ public sealed partial class SourceBattleAnimation
         // General animations run the script in the priority-10 table task, after
         // OAM construction and the priority-5 visual callback. Newly created tasks
         // therefore begin on the following frame. Dedicated move roots keep callback1.
-        if(general)AdvanceScriptCallback();
+        if(general&&!controllerCompletion&&!controllerLaunch)AdvanceScriptCallback();
         TransferHardwareFade();
         AdvanceScanlineVBlank();
         return Snapshot();
@@ -338,9 +349,9 @@ public sealed partial class SourceBattleAnimation
             switch(c.Op)
             {
                 case "setarg":_animationArgs[Number(a[0])]=unchecked((short)AnimationArgument(a[1]));break;
-                case "fadetobgfromset":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(_script.BackgroundSymbols[a[_cue.Target.IsPlayer?1:0]]));break;
-                case "fadetobg":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(_script.BackgroundSymbols[a[0]]));break;
-                case "restorebg":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(null));break;
+                case "fadetobgfromset":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(_script.BackgroundSymbols[a[_cue.Target.IsPlayer?1:0]],this));break;
+                case "fadetobg":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(_script.BackgroundSymbols[a[0]],this));break;
+                case "restorebg":_backgroundFadeState=1;_tasks.Add(new FadeToBackgroundTask(null,this));break;
                 case "waitbgfadeout":if(_backgroundFadeState!=2)return;break;
                 case "waitbgfadein":if(_backgroundFadeState!=0)return;break;
                 case "jumpargeq":
@@ -483,13 +494,14 @@ public sealed partial class SourceBattleAnimation
         }
         if(budget<=0)throw new InvalidDataException("Source script exceeded per-frame instruction bound.");
     }
-    public void Cancel()
+    public void Cancel()=>CancelCore(_sceneAttached);
+    internal void CancelCore(bool stopAudio)
     {
         if(_cancelled)return;_cancelled=true;ReleaseOwnedDynamicSpriteGraphics();Active=false;ResetBattlerMaterials();ResetSourceVisibility();_visualRandom=null;_loaded.Clear();ResetSpritePalettes();_retiredSpritePalettes.Clear();
         Array.Clear(_restoredObject);Array.Clear(_restoredObjectOam);Array.Clear(_blendedObject);Array.Clear(_blendedObjectOam);Array.Clear(_animationArgs);_unfadedBackgroundPalette=_fadedBackgroundPalette=null;
         _hardwareFade=null;_hardwareDarkening=0;BackgroundScrollX=BackgroundScrollY=0;BackgroundScreenSize=1;_moveBackground=null;_backgroundFadeState=0;_backgroundRevision=0;
         _spriteScene.CancelScanlines(this);_scanlineTerminalAlpha=null;Array.Clear(_queuedBackgroundRegisters);_queuedAlphaRegister=false;
-        _invertedPalettes.Clear();Array.Fill(_battlerObjectPriorities,2);Array.Fill(_battlerObjectOamPriorities,2);SetBackgroundPriority(1,0);SetBackgroundPriority(2,1);_metallic=null;_greyscale.Clear();_fade=null;Array.Clear(_affineMode);Array.Clear(_affineOamMode);Array.Fill(_xScale,256);Array.Fill(_yScale,256);Array.Clear(_matrixB);Array.Clear(_matrixC);_statMask=null;_audio.StopAnimationEffects();_audio.StopAnimationCries();_soundTasks.Clear();_paletteBlends.Clear();_unfadedPaletteStates.Clear();_paletteBackup=null;_fadedBackgroundEntries.Clear();_unfadedBackgroundEntries.Clear();_sprites.Clear();_spriteOam=[];_spriteOamOwners=[];_tasks.Clear();ClearBattlerBackgrounds();Array.Clear(_offsets);Array.Clear(_battlerPositionOffsets);Array.Clear(_objectOffsets);ResetSpriteCoordOffsets();_alphaA=_alphaB=0;_blendEnabled=false;_window0=null;_window1=null;_objectWindow=null;_brightness=null;_overlay=null;_blendFirstTargets=0;_blendSecondTargets=63;_clearTicks=-1;
+        _invertedPalettes.Clear();Array.Fill(_battlerObjectPriorities,2);Array.Fill(_battlerObjectOamPriorities,2);SetBackgroundPriority(1,0);SetBackgroundPriority(2,1);_metallic=null;_greyscale.Clear();_fade=null;Array.Clear(_affineMode);Array.Clear(_affineOamMode);Array.Fill(_xScale,256);Array.Fill(_yScale,256);Array.Clear(_matrixB);Array.Clear(_matrixC);_statMask=null;if(stopAudio){_audio.StopAnimationEffects();_audio.StopAnimationCries();}_soundTasks.Clear();_paletteBlends.Clear();_unfadedPaletteStates.Clear();_paletteBackup=null;_fadedBackgroundEntries.Clear();_unfadedBackgroundEntries.Clear();_sprites.Clear();_spriteOam=[];_spriteOamOwners=[];_tasks.Clear();ClearBattlerBackgrounds();Array.Clear(_offsets);Array.Clear(_battlerPositionOffsets);Array.Clear(_objectOffsets);ResetSpriteCoordOffsets();_alphaA=_alphaB=0;_blendEnabled=false;_window0=null;_window1=null;_objectWindow=null;_brightness=null;_overlay=null;_blendFirstTargets=0;_blendSecondTargets=63;_clearTicks=-1;
     }
     // Existing callbacks retain their reviewed combined step; raw-aware callbacks
     // use the separate animation phase, with a fresh registry-cell read between phases.
@@ -651,17 +663,19 @@ public sealed partial class SourceBattleAnimation
     }
 }
 
-public sealed class SourceBattleAnimationGate
+public sealed partial class SourceBattleAnimationGate
 {
     private readonly HashSet<(string,long)> _started=[];
-    public SourceBattleAnimation? Current{get;private set;}
-    public bool IsBlocking=>Current?.Active==true;
+    private SourceBattleAnimation? _current;
+    private SourceMoveAnimationSequence? _sequence;
+    public SourceBattleAnimation? Current=>_sequence?.Current??_current;
+    public bool IsBlocking=>_sequence?.Active??_current?.Active==true;
     public bool TryStart(CommittedMoveAnimation cue,Func<SourceBattleAnimation> create)
     {
         if(IsBlocking||_started.Contains((cue.BattleId,cue.Sequence)))return false;
-        var candidate=create();_started.Add((cue.BattleId,cue.Sequence));Current=candidate;return true;
+        var candidate=create();_started.Add((cue.BattleId,cue.Sequence));_sequence=null;_current=candidate;return true;
     }
-    public void Reset(){Current?.Cancel();Current=null;_started.Clear();}
+    public void Reset(){if(_sequence is {} sequence)sequence.Cancel();else _current?.Cancel();_sequence=null;_current=null;_started.Clear();}
 }
 
 public static class SourceHitAnimationCatalog

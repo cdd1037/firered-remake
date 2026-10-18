@@ -12,6 +12,8 @@ public partial class CampaignView
     private readonly SourceBattleAnimation.SpriteScene _sourceSpriteScene=new();
     private readonly SourceCompletedBattlerState _sourceCompletedState=new();
     private readonly CampaignChargeAnimationPoseLifetime _sourceChargePoseLifetime=new();
+    private readonly CampaignSubstituteAnimationLifetime _sourceSubstituteLifetime=new();
+    private bool _sourceMoveRestoresSubstitute;
     private readonly Dictionary<int,PartyMemberKey> _sourceCompletedMembers=[];
     private SourceAnimationFrame? _sourceMoveInitialFrame;
     private IReadOnlyDictionary<string,SourcePixelAsset>? _sourceMoveMaterials;
@@ -57,6 +59,7 @@ public partial class CampaignView
         :PresentedWildBattle!.DisplayBatch!.Display.Members[slot];
     private void RefreshCompletedSourceState(bool doubles)
     {
+        RefreshSubstituteController(doubles);
         if(!_sourceCompletedState.HasState)return;
         if(!doubles&&PresentedWildBattle is null){ClearCompletedSourceState();return;}
         bool changed=false;
@@ -107,7 +110,7 @@ public partial class CampaignView
         }
     }
     private void ClearResidualMoveSprites()
-    {ClearCompletedSourceState();_sourceSpriteScene.Cancel();_sourceIdleSpritesPresented=false;_sourceIdleRemainder=0;}
+    {ClearCompletedSourceState();_sourceSubstituteLifetime.Clear();_sourceSpriteScene.Cancel();_sourceIdleSpritesPresented=false;_sourceIdleRemainder=0;}
     private readonly SourceBattleAnimationGate _sourceMoveAnimationGate=new();
     private readonly Dictionary<(int,string),AnimationBattler> _sourceBattlerGeometry=[];
     private readonly Dictionary<string,SourcePixelAsset> _sourceMoveAssets=[];
@@ -223,7 +226,7 @@ public partial class CampaignView
     }
     private bool DrawSourceSubstitute(WildBattleSide side)
     {
-        if(_sourceSubstituteHp.GetValueOrDefault(side)<=0)return false;
+        if(_sourceSubstituteHp.GetValueOrDefault(side)<=0||SourceSubstituteRevealed(false,(int)side))return false;
         EnsureSourceMoveAssets();DrawTexture(_sourceSubstituteTextures[side==WildBattleSide.Player?"substitute-back":"substitute-front"],side==WildBattleSide.Player?new(40,65):new(144,24));return true;
     }
     private void AcknowledgeWildAttackText()
@@ -262,10 +265,11 @@ public partial class CampaignView
             var sourceGeometry=BattleForms.HasForms(appearance.Species)||SingleDisplayedBody(b,side)?.Transform is not null
                 ?FormBattleMaterial(SingleDisplayedBody(b,side)??throw new InvalidDataException("Source form display body is missing."),new((int)side)).Geometry
                 :_sourceBattlerGeometry[(appearance.Species,face)];
-            var geometry=sourceGeometry with{Asset="battler-"+(int)side,Visible=!SingleBattlerFaintShown(b,mon,side)};
+            var geometry=sourceGeometry with{Slot=new((int)side),Asset="battler-"+(int)side,Visible=!SingleBattlerFaintShown(b,mon,side)};
             var center=geometry.Center(false);
             if(displayed.Position!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated campaign/source battler geometry differs.");
             bool substitute=hit is {Boundary:CampaignMoveAnimationBoundary.BeforeHitResult}&&hit.Target.Value==(int)side?hit.HitsSubstitute:_sourceSubstituteHp.GetValueOrDefault(side)>0;
+            substitute&=!SourceSubstituteRevealed(doubles,geometry.Slot.Value);
             assets.Add(geometry.Asset,substitute?_sourceMoveAssets["substitute-"+face]:SourcePixels(displayed.Texture,64,64));
             if(substitute)geometry=geometry with{DisplayCenter=new(side==WildBattleSide.Player?72:176,side==WildBattleSide.Player?97:56)};
             battlers.Add(geometry);
@@ -289,6 +293,7 @@ public partial class CampaignView
             var center=geometry.Center(true);
             if(displayed.Position+DoubleSpriteOffsets[slot]!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated doubles/source battler geometry differs.");
             bool substitute=hit is {Boundary:CampaignMoveAnimationBoundary.BeforeHitResult}&&hit.Target.Value==slot?hit.HitsSubstitute:body.CalledVolatile?.SubstituteHp>0;
+            substitute&=!SourceSubstituteRevealed(doubles,geometry.Slot.Value);
             assets.Add(geometry.Asset,substitute?_sourceMoveAssets["substitute-"+face]:SourcePixels(displayed.Texture,64,64));
             if(substitute)
             {
@@ -339,6 +344,14 @@ public partial class CampaignView
             additionalMon=AdditionalMonAnimationMaterial(dispatch,doubles);
             if(additionalMon is null)return false;
         }
+        var actorBody=doubles?DoubleDisplayedBody(dispatch.Actor.Value):SingleDisplayedBody(PresentedWildBattle!,(WildBattleSide)dispatch.Actor.Value);
+        bool behindSubstitute=actorBody?.CalledVolatile?.SubstituteHp>0;
+        var controllerInitial=battlers.ToArray();
+        if(behindSubstitute)
+        {
+            int actorIndex=battlers.FindIndex(b=>b.Slot.Value==dispatch.Actor.Value);
+            battlers[actorIndex]=SubstituteControllerBody(actorBody!,battlers[actorIndex],assets);
+        }
         Dictionary<int,AnimationBattler>? replacements=null;
         if(script.Commands.Any(c=>c.Op=="createvisualtask"&&c.Args.FirstOrDefault() is "AnimTask_TransformMon" or "AnimTask_MonToSubstitute")&&
             !PrepareMoveBattlerMaterial(dispatch,doubles,assets,battlers,out replacements))return false;
@@ -350,7 +363,6 @@ public partial class CampaignView
         if(terrain is {} value&&(int)value is >=0 and <=9)cue=cue with{SourceTerrain=(SourceAnimationTerrain)(int)value};
         // The controller captures gBattleMons[attacker].friendship at launch.
         // The event-time transformed battle body retains its actor's friendship.
-        var actorBody=doubles?DoubleDisplayedBody(dispatch.Actor.Value):SingleDisplayedBody(PresentedWildBattle!,(WildBattleSide)dispatch.Actor.Value);
         if(actorBody is not null)cue=cue with{Friendship=checked((byte)actorBody.Pokemon.Friendship)};
         var doubleBattle=doubles?_session.State.DoubleBattle:null;
         var singleBattle=doubles?null:PresentedWildBattle;
@@ -364,7 +376,39 @@ public partial class CampaignView
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         try
         {
-            if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio(),backgroundPalette,battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets,originalPartySpecies:SourceAnimationPartySpecies(doubles),additionalMonMaterial:additionalMon)))return false;
+            ISourceAnimationAudio audio=(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio();
+            if(!behindSubstitute)
+            {
+                if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,audio,backgroundPalette,battlerReplacements:replacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets,originalPartySpecies:SourceAnimationPartySpecies(doubles),additionalMonMaterial:additionalMon)))return false;
+                _sourceMoveRestoresSubstitute=false;
+            }
+            else
+            {
+                // Validate every selected phase before revealing the doll. Only the
+                // controller's current runtime attaches to the shared sprite scene.
+                bool reveal=!SourceSubstituteRevealed(doubles,dispatch.Actor.Value);
+                bool restore=dispatch.SubstituteControllerHitCounter<2;
+                var body=battlers.Single(b=>b.Slot.Value==dispatch.Actor.Value);
+                var finalBody=replacements?.GetValueOrDefault(dispatch.Actor.Value)??body;
+                SourceBattleAnimation Prepared(SourceAnimationScript program,CommittedMoveAnimation stageCue,
+                    IReadOnlyList<AnimationBattler> stageBattlers,IReadOnlyDictionary<int,AnimationBattler>? stageReplacements)=>
+                    new(program,stageCue,stageBattlers,doubles,audio,deferSceneAttachment:true,backgroundPalette:backgroundPalette,
+                        battlerReplacements:stageReplacements,spriteScene:_sourceSpriteScene,spriteMaterials:assets,
+                        originalPartySpecies:SourceAnimationPartySpecies(doubles),additionalMonMaterial:additionalMon);
+                SourceBattleAnimation Special(string label,IReadOnlyList<AnimationBattler> initial,AnimationBattler replacement)
+                {
+                    var named=_sourceAnimationResources.ResolveGeneral(label);
+                    foreach(var asset in named.Assets)assets[asset.Key]=asset.Value;
+                    var specialCue=cue with{MoveId=0,Target=cue.Actor,GeneralAnimationLabel=label};
+                    return Prepared(named.Script,specialCue,initial,new Dictionary<int,AnimationBattler>{{dispatch.Actor.Value,replacement}});
+                }
+                if(!_sourceMoveAnimationGate.TryStartSequence(cue,()=>new SourceMoveAnimationSequence(
+                    Prepared(script,cue,battlers,replacements),
+                    reveal?Special("Special_SubstituteToMon",controllerInitial,body):null,
+                    restore?Special("Special_MonToSubstitute",battlers,SubstituteControllerDoll(finalBody,doubles)):null)))return false;
+                _sourceSubstituteLifetime.Reveal(dispatch.Actor.Value,SourceDisplayedMember(doubles,dispatch.Actor.Value));
+                _sourceMoveRestoresSubstitute=restore;
+            }
         }
         catch(SourceAnimationException e) when(e.Diagnostic.Reason=="source-cry-audio-unavailable")
         {
@@ -372,7 +416,7 @@ public partial class CampaignView
         }
         ClearCompletedSourceState(preserveChargeVisibility:true);_sourceMoveInitialFrame=_sourceMoveAnimationGate.Current!.Snapshot();_sourceMoveMaterials=assets;
         _sourceMoveComposer=new(assets,battlers.ToArray(),statMaterial:resolved.StatMask,metallicMaterial:resolved.Metallic,backgroundSurface:backgroundSurface,moveBackgrounds:resolved.Backgrounds,overlays:resolved.Overlays);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
-        PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
+        PresentSourceMoveFrame(_sourceMoveAnimationGate.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();return true;
     }
     private bool SourceMoveContextMatches()
@@ -400,13 +444,15 @@ public partial class CampaignView
         {CancelSourceMoveAnimation("context-changed");return false;}
         _sourceMoveRemainder+=delta;
         while(_sourceMoveRemainder>=SourceBattleAnimation.SourceFrameSeconds&&_sourceMoveAnimationGate.IsBlocking)
-        {_sourceMoveRemainder-=SourceBattleAnimation.SourceFrameSeconds;PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());}
+        {_sourceMoveRemainder-=SourceBattleAnimation.SourceFrameSeconds;PresentSourceMoveFrame(_sourceMoveAnimationGate.Tick());}
         if(!_sourceMoveAnimationGate.IsBlocking)
         {
             // Retire the continuation before executing the sole original ACK. Reentrant Sync/input
             // sees no pending continuation; the gameplay move transaction is never replayed.
             var completed=_sourceMoveAnimationGate.Current!.Snapshot();
             int finishedFrame=completed.Frame;
+            if(_sourceMoveRestoresSubstitute)_sourceSubstituteLifetime.Restore(pending.Actor.Value);
+            _sourceMoveRestoresSubstitute=false;
             var completedEvents=_sourceMoveDoubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
             if(completed.BattlerVisibility.Any(v=>v.Slot==pending.Actor.Value&&!v.SpriteInvisible)&&_sourceChargePoseLifetime.CompleteRelease(pending,completedEvents))_sourceCompletedState.DropVisibility(pending.Actor.Value);
             if(_sourceMoveInitialFrame is {} initial)_sourceCompletedState.Capture(initial,completed,_sourceMoveMaterials);
@@ -427,14 +473,14 @@ public partial class CampaignView
     }
     private void CancelSourceMoveAnimation(string reason)
     {
-        ClearResidualMoveSprites();CancelSourceResultAnimation(reason);
+        _sourceMoveAnimationGate.Cancel();ClearResidualMoveSprites();CancelSourceResultAnimation(reason);
         var pending=_sourceMoveContinuation;_sourceMoveContinuation=null;_sourceMoveSession=null;
-        _sourceMoveAnimationGate.Current?.Cancel();_sourceMoveSound=null;_sourceMoveComposer=null;_sourceMoveRemainder=0;
+        _sourceMoveRestoresSubstitute=false;_sourceMoveSound=null;_sourceMoveComposer=null;_sourceMoveRemainder=0;
         if(pending is not null)Write("sourceMoveAnimationCancelled",new{pending.BattleId,pending.Sequence,reason});
     }
     private void ResetSourceMoveAnimation(string reason)
     {
-        ClearResidualMoveSprites();CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceResultAnimationGate.Reset();_sourceVisualBattle=null;_sourceSubstituteHp.Clear();
+        CancelSourceMoveAnimation(reason);_sourceMoveAnimationGate.Reset();_sourceResultAnimationGate.Reset();_sourceVisualBattle=null;_sourceSubstituteHp.Clear();
     }
     private void DisposeSourceMoveAnimation()
     {

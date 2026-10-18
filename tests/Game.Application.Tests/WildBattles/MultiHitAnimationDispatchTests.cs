@@ -62,6 +62,7 @@ public sealed class MultiHitAnimationDispatchTests
             Assert.AreEqual(sourceMoveId, result.Dispatch.SourceMoveId);
             Assert.AreEqual(actor, result.Dispatch.Actor.Value);
             Assert.AreEqual(target, result.Dispatch.Target.Value);
+            Assert.AreEqual((byte)(events.OfType<SourceMultiHitEvent>().Single().PlannedHits-ordinal),result.Dispatch.SubstituteControllerHitCounter);
             Assert.AreEqual((byte)ordinal++, result.Dispatch.MoveTurn);
             Assert.IsFalse(result.Dispatch.AcknowledgesCurrentReceipt,"Per-hit playback resumes the same receipt without submitting ACK.");
             Assert.AreEqual(events[index] is SourceSubstituteDamagedEvent, result.Dispatch.HitsSubstitute);

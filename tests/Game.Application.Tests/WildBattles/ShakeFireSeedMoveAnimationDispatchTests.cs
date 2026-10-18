@@ -155,6 +155,7 @@ public sealed class ShakeFireSeedMoveAnimationDispatchTests
                 Assert.AreEqual(pp.Sequence, dispatch.PpSequence); Assert.AreEqual(hit.Sequence, dispatch.ResultSequence);
                 Assert.AreEqual(hit is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
                 Assert.AreEqual(wanted.MoveTurn, dispatch.MoveTurn); Assert.IsTrue(dispatch.AcknowledgesCurrentReceipt);
+                Assert.AreEqual((byte)(id==228&&wanted.MoveTurn==1?(wanted.Actor>=2?2:1):0),dispatch.SubstituteControllerHitCounter);
                 ushort? power = id == 222 ? (ushort)events.OfType<SourceMagnitudeEvent>().Single().Power : id == 228 ? (ushort)40 : null;
                 int? damage = id == 99 ? hit switch { SourceHpChangedEvent h => h.Damage, SourceSubstituteDamagedEvent s => s.Damage, _ => null } : null;
                 Assert.AreEqual(power, dispatch.MovePower); Assert.AreEqual(damage, dispatch.MoveDamage);

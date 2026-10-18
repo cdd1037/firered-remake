@@ -71,6 +71,7 @@ internal static class BeatUpAnimationKernelFixture
             Assert.AreEqual(251,cue.SourceMoveId);Assert.AreEqual(used.Actor,cue.Actor);Assert.AreEqual(used.Target,cue.Target);
             Assert.AreEqual(events[i].Sequence,cue.Sequence);Assert.AreEqual(events[i].Sequence,cue.ResultSequence);
             Assert.AreEqual(attack.Sequence,cue.AttackSequence);Assert.AreEqual(pp.Sequence,cue.PpSequence);
+            Assert.AreEqual((byte)0,cue.SubstituteControllerHitCounter,"Beat Up loops contributors without changing gMultiHitCounter.");
             Assert.AreEqual((byte)ordinal,cue.MoveTurn);Assert.AreEqual(CampaignMoveAnimationBoundary.BeforeHitResult,cue.Boundary);
             Assert.IsFalse(cue.AcknowledgesCurrentReceipt);Assert.AreEqual(events[i] is SourceSubstituteDamagedEvent,cue.HitsSubstitute);
             Assert.IsTrue(contributors[ordinal].Sequence<events[i].Sequence);

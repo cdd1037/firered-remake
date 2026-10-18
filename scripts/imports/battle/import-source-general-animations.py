@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import named source general animations and their exact material dependencies."""
+"""Import named source table animations and their exact material dependencies."""
 import argparse,importlib.util,io,json,re,struct
 from PIL import Image
 from pathlib import Path
@@ -78,6 +78,9 @@ def build(reference):
  roots={name:commands(name,'end') for name in ['General_HeldItemEffect','General_WishHeal']}
  castform,castform_labels=branched_program(source,'General_CastformChange')
  roots['General_CastformChange']=castform
+ # Shared move-controller wrappers remain named programs, not move identities.
+ for name in ['Special_SubstituteToMon','Special_MonToSubstitute']:
+  roots[name]=commands(name,'end')
  # These are named controller programs, never additional move identities.
  for name in ['General_Rain','General_FutureSightHit','General_DoomDesireHit','General_FocusPunchSetUp']:
   roots[name]=commands(name,'end')

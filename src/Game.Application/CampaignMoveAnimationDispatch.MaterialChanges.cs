@@ -5,7 +5,7 @@ using Game.Domain.WildBattle;
 namespace Game.Application;
 
 public sealed record CampaignBattlerMaterialChangeRequest(BattlerSlot Affected,long ResultSequence,
-    WildBattleCombatant BeforeBody,WildBattleCombatant AfterBody);
+    WildBattleCombatant BeforeBody,WildBattleCombatant AfterBody,bool CreatesSubstitute);
 
 public static partial class CampaignMoveAnimationPresentation
 {
@@ -89,7 +89,7 @@ public static partial class CampaignMoveAnimationPresentation
         var owned=MaterialChangeAnimation(new(dispatch.BattleId,source,at,count,()=>null,_=>null){Context=context},used,definition).Dispatch;
         if(owned!=dispatch)return null;
         var before=displayed.Bodies[actor];
-        if(before.Pokemon.CurrentHp<=0||before.CalledVolatile?.SubstituteHp>0)return null;
+        if(before.Pokemon.CurrentHp<=0||definition.Effect=="EFFECT_SUBSTITUTE"&&before.CalledVolatile?.SubstituteHp>0)return null;
         if(events[last] is SourceTransformedEvent transformed)
         {
             var donor=displayed.Bodies[target];var original=WildBattleTransformationRules.PersistentPokemon(before);
@@ -103,6 +103,6 @@ public static partial class CampaignMoveAnimationPresentation
         else if(events[last-1] is not SourceHpChangedEvent cost||cost.HpBefore!=before.Pokemon.CurrentHp)return null;
         var after=displayed;
         for(int i=nextEventIndex;i<=last;i++)after=after.Apply(events[i]);
-        return new(dispatch.Actor,dispatch.ResultSequence,before,after.Bodies[actor]);
+        return new(dispatch.Actor,dispatch.ResultSequence,before,after.Bodies[actor],definition.Effect=="EFFECT_SUBSTITUTE");
     }
 }

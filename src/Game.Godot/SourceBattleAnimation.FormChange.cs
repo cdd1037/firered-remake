@@ -5,10 +5,10 @@ public sealed partial class SourceBattleAnimation
     private bool ValidateFormChangeCommand(SourceAnimationCommand command)
     {
         var a=command.Args;if(command.Op!="createvisualtask"||a.Length==0)return false;
-        if(a[0] is not ("AnimTask_IsMonInvisible" or "AnimTask_CastformGfxChange" or "AnimTask_TransformMon" or "AnimTask_MonToSubstitute"))return false;
+        if(a[0] is not ("AnimTask_IsMonInvisible" or "AnimTask_CastformGfxChange" or "AnimTask_TransformMon" or "AnimTask_MonToSubstitute" or "AnimTask_SwapMonSpriteToFromSubstitute"))return false;
         int length=a[0] is "AnimTask_IsMonInvisible" or "AnimTask_MonToSubstitute"?2:3;
         int mode=length==3&&a.Length==length?Number(a[2]):-1;
-        if(a.Length!=length||Number(a[1])!=2||length==3&&(a[0]=="AnimTask_TransformMon"?mode is <0 or >1:mode!=1))
+        if(a.Length!=length||Number(a[1])!=2||length==3&&(a[0] is "AnimTask_TransformMon" or "AnimTask_SwapMonSpriteToFromSubstitute"?mode is <0 or >1:mode!=1))
             Fail(command,"Form transition task source operands differ.");
         if(a[0]!="AnimTask_IsMonInvisible"&&_validatingInvokedProgram&&!_battlerReplacements.ContainsKey(_cue.Actor.Value))
             Fail(command,"Form transition requires an authenticated replacement material.");
@@ -20,11 +20,46 @@ public sealed partial class SourceBattleAnimation
         {
             case "AnimTask_IsMonInvisible":_animationArgs[7]=(short)(SourceBattlerSpriteInvisible(_cue.Actor.Value)?1:0);return true;
             case "AnimTask_CastformGfxChange":SwapBattlerMaterial(_cue.Actor.Value);return true;
+            case "AnimTask_SwapMonSpriteToFromSubstitute":
+                var swap=new SwapMonSpriteToFromSubstituteTask(_cue.Actor.Value);swap.Step(this);_tasks.Add(swap);return true;
             case "AnimTask_MonToSubstitute":
                 var substitute=new MonToSubstituteTask(_cue.Actor.Value);substitute.Step(this);_tasks.Add(substitute);return true;
             case "AnimTask_TransformMon":
                 var task=new FormChangeMosaicTask(_cue.Actor.Value);task.Step(this);_tasks.Add(task);return true;
             default:return false;
+        }
+    }
+    // The shared move controller supplies the authenticated body or doll for this
+    // special stage. This callback never changes visibility, y2 or audio.
+    private sealed class SwapMonSpriteToFromSubstituteTask(int slot):VisualTask
+    {
+        private readonly short[] _data=new short[16];
+        public override void Step(SourceBattleAnimation owner)
+        {
+            var d=_data;var offset=owner._offsets[slot];bool player=owner._battlers[slot].Slot.IsPlayer;
+            switch(d[10])
+            {
+                case 0:
+                    d[11]=owner._animationArgs[0];d[0]=unchecked((short)(d[0]+0x500));
+                    offset=new(unchecked((short)(offset.X+(player?-1:1)*(d[0]>>8))),offset.Y);
+                    owner._offsets[slot]=offset;d[0]&=0xFF;
+                    if(unchecked((uint)(owner.BattlerPosition(slot).X+offset.X+32))>304)d[10]++;
+                    break;
+                case 1:
+                    int x=owner.BattlerPosition(slot).X;
+                    owner.SwapBattlerMaterial(slot);
+                    var body=owner._battlers[slot];var center=body.DisplayCenter??body.Center(owner._doubles);
+                    // LoadBattleMonGfxAndAnimate resets raw y to the material's
+                    // default y, retaining raw x and both secondary offsets.
+                    owner.SetBattlerPosition(slot,new(x,center.Y));d[10]++;
+                    break;
+                case 2:
+                    d[0]=unchecked((short)(d[0]+0x500));
+                    offset=new(unchecked((short)(offset.X+(player?1:-1)*(d[0]>>8))),offset.Y);d[0]&=0xFF;
+                    if(player?offset.X>=0:offset.X<=0){offset=new(0,offset.Y);Finished=true;}
+                    owner._offsets[slot]=offset;
+                    break;
+            }
         }
     }
     private sealed class FormChangeMosaicTask(int slot):VisualTask

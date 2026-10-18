@@ -1,6 +1,6 @@
 # Full-project audit: first repair batch
 
-Scope: reachable single-player behavior, shared runtime boundaries and repeated work. The 354 move identities and ten named general animation programs remain unchanged. Static audit, managed checks and native acceptance are distinct evidence; this document does not claim an exhaustive campaign or real-speaker pass.
+Scope: reachable single-player behavior, shared runtime boundaries and repeated work. The first repair batch left the 354 move identities and ten named general animation programs unchanged. The subsequent shared Substitute controller repair adds two Special programs, described separately below. Static audit, managed checks and native acceptance are distinct evidence; this document does not claim an exhaustive campaign or real-speaker pass.
 
 ## Findings and changes
 
@@ -12,7 +12,7 @@ Scope: reachable single-player behavior, shared runtime boundaries and repeated 
 
 ## Remaining concrete follow-ups
 
-- The shared controller must temporarily replace an attacker's Substitute doll with its body around move playback, then restore the doll. The missing wrapper also prevents Transform behind a Substitute, reachable via Baton Pass into Ditto. Removing that guard alone would render the wrong material.
+- The shared Substitute controller repair is described in [Substitute move controller](substitute-move-controller.md). It addresses body reveal/restoration and the reachable Baton Pass into Ditto Transform path through a single scene-owned sequence; its own validation record is separate from this first batch.
 - Trainer Tower settlement history grows without bound and is repeatedly validated. A bounded current/last receipt plus explicit serial requires a carefully tested save representation transition; it is not truncated by this batch.
 - Quest transition/weather details and actual speaker acceptance remain separate recorded boundaries. Missing native observations do not establish a missing game feature.
 

@@ -106,19 +106,20 @@ public sealed partial class SourceBattleAnimation
         if(values.Length>AnimationOperandCount)throw new InvalidDataException("Source animation has only eight shared arguments.");
         for(int i=0;i<values.Length;i++)_animationArgs[i]=unchecked((short)AnimationArgument(values[i]));
     }
-    private void SetMoveBackground(int? id)
-    {_moveBackground=id;_backgroundRevision++;LoadBackgroundPalette(id);}
-    private void LoadBackgroundPalette(int? id)
+    private ushort[]? BackgroundPaletteFor(int? id)=>id is {} selected?_script.BackgroundPalettes.GetValueOrDefault(selected):_initialBackgroundPalette;
+    private void SetMoveBackground(int? id)=>SetMoveBackgroundPalette(id,BackgroundPaletteFor(id));
+    private void SetMoveBackgroundPalette(int? id,ushort[]? colors)
+    {_moveBackground=id;_backgroundRevision++;LoadBackgroundPaletteColors(id,colors);}
+    private void LoadBackgroundPalette(int? id)=>LoadBackgroundPaletteColors(id,BackgroundPaletteFor(id));
+    private void LoadBackgroundPaletteColors(int? id,ushort[]? colors)
     {
         int lastBank=id is null?4:2;
         for(int bank=2;bank<=lastBank;bank++){ClearBackgroundPaletteLoads(bank);ResetPaletteTransform(bank);}
-        if(id is {} selected&&_script.BackgroundPalettes.TryGetValue(selected,out var colors))
+        if(colors is not null)
         {
             if(colors.Length!=16)throw new InvalidDataException("Move background needs one source palette bank.");
             _unfadedBackgroundPalette=(ushort[])colors.Clone();_fadedBackgroundPalette=(ushort[])colors.Clone();
         }
-        else if(id is null&&_initialBackgroundPalette is {} original)
-        {_unfadedBackgroundPalette=(ushort[])original.Clone();_fadedBackgroundPalette=(ushort[])original.Clone();}
         else _unfadedBackgroundPalette=_fadedBackgroundPalette=null;
     }
     private void BlendBackgroundPalette(int coefficient,ushort color)
@@ -220,8 +221,11 @@ public sealed partial class SourceBattleAnimation
             if(task is VisualTask visual)_tasks.Remove(visual);else _soundTasks.Remove((SoundTask)task);
         }
     }
-    private sealed class FadeToBackgroundTask(int? id):VisualTask
+    private sealed class FadeToBackgroundTask(int? id,SourceBattleAnimation source):VisualTask
     {
+        // This global task can outlive its script. Capture its constant material
+        // before a controller table launch changes the current script catalog.
+        private readonly ushort[]? _palette=source.BackgroundPaletteFor(id) is {} colors?(ushort[])colors.Clone():null;
         private int _state;
         public override bool Counted=>false;
         public override void Step(SourceBattleAnimation owner)
@@ -231,7 +235,7 @@ public sealed partial class SourceBattleAnimation
             if(_state==1){_state=2;owner._backgroundFadeState=2;}
             else if(_state==2)
             {
-                owner.SetMoveBackground(id);
+                owner.SetMoveBackgroundPalette(id,_palette);
                 owner.BeginHardwareFade(16,0,true);_state=3;return;
             }
             if(owner.PaletteFadeActive)return;

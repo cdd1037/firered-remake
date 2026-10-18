@@ -14,6 +14,10 @@ public sealed record CampaignMoveAnimationDispatch(string BattleId, long Sequenc
     long? PpSequence, long ResultSequence, int SourceMoveId, BattlerSlot Actor, BattlerSlot Target,
     bool HitsSubstitute)
 {
+    // Controller byte 11 is gMultiHitCounter, separate from animTurn.
+    // Multi-hit loops and switch interception override the ordinary reset value;
+    // Beat Up and single-hit called leaves keep zero.
+    public byte SubstituteControllerHitCounter {get;init;}
     public byte? MoveTurn {get;init;}
     public ushort? MovePower {get;init;}
     public byte? FuryCutterCounter {get;init;}
@@ -142,7 +146,13 @@ public static partial class CampaignMoveAnimationPresentation
         SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
         if(!sourceRules)return new(null,"historical-rules");
-        if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
+        // Source attackanimation still performs the two material-changing moves
+        // with NO_ANIMATIONS. Only this current MoveUsed can opt in; an eventual
+        // called leaf never enables the caller prelude or an unrelated receipt.
+        if(scene!=SourceBattleScene.On&&(scene!=SourceBattleScene.Off||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||
+            battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent current||
+            Definition(current.Move,moves)?.Effect is not("EFFECT_TRANSFORM" or "EFFECT_SUBSTITUTE")))
+            return new(null,"animations-disabled");
         if(battle.Phase!=CampaignBattlePhase.Events || battle.EventIndex<0 || battle.EventIndex>=battle.Events.Length)
             return new(null,"not-attack-text");
         return AtAttackText(new(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,
@@ -153,7 +163,10 @@ public static partial class CampaignMoveAnimationPresentation
     public static CampaignMoveAnimationDecision AtAttackText(CampaignDoubleBattle battle,
         SourceBattleScene scene, IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves, Func<int,string,bool> supports)
     {
-        if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
+        if(scene!=SourceBattleScene.On&&(scene!=SourceBattleScene.Off||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||
+            battle.Events[battle.EventIndex] is not SourceMoveUsedEvent current||
+            Definition(current.Move,moves)?.Effect is not("EFFECT_TRANSFORM" or "EFFECT_SUBSTITUTE")))
+            return new(null,"animations-disabled");
         if(battle.Stage!=CampaignDoubleBattleStage.Combat || battle.EventIndex<0 || battle.EventIndex>=battle.Events.Length)
             return new(null,"not-attack-text");
         return AtAttackText(new(battle.Id,battle.Events.ToArray(),battle.EventIndex,4,

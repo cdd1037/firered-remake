@@ -401,7 +401,7 @@ public partial class CampaignView
             var asset=DoubleBattleArt(body,i);
             if(!SourceAnimationPresented)
             {
-                if(body.CalledVolatile?.SubstituteHp>0)DrawDoubleSubstitute(i);
+                if(body.CalledVolatile?.SubstituteHp>0&&!SourceSubstituteRevealed(true,i))DrawDoubleSubstitute(i);
                 else DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
             }
             healthForeground.Add(()=>DrawDoubleHealth(i,body));

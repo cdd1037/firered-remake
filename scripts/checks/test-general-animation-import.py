@@ -7,8 +7,14 @@ class GeneralImportTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):cls.data,cls.blobs=module.build(ROOT/'content/raw/pokefirered/037335f4');cls.pack=json.loads(cls.data)
  def test_named_root_has_no_move_id(self):
-  self.assertEqual([r['label'] for r in self.pack['generalScripts']],['General_HeldItemEffect','General_WishHeal','General_CastformChange','General_Rain','General_FutureSightHit','General_DoomDesireHit','General_FocusPunchSetUp','General_Sun','General_Sandstorm','General_Hail'])
+  self.assertEqual([r['label'] for r in self.pack['generalScripts']],['General_HeldItemEffect','General_WishHeal','General_CastformChange','Special_SubstituteToMon','Special_MonToSubstitute','General_Rain','General_FutureSightHit','General_DoomDesireHit','General_FocusPunchSetUp','General_Sun','General_Sandstorm','General_Hail'])
   for root in self.pack['generalScripts']:self.assertNotIn('moveId',root);self.assertEqual(root['commands'][-1]['op'],'goto' if root.get('programReferences') else 'end')
+ def test_substitute_specials_keep_exact_shared_callback_and_direction(self):
+  rows={r['label']:r for r in self.pack['generalScripts']}
+  for label,arg in [('Special_SubstituteToMon','TRUE'),('Special_MonToSubstitute','FALSE')]:
+   root=rows[label]
+   self.assertEqual([(c['op'],c['args']) for c in root['commands']],[('createvisualtask',['AnimTask_SwapMonSpriteToFromSubstitute','2',arg]),('end',[])])
+   self.assertEqual(root['soundEffects'],{});self.assertEqual(root['spriteTags'],{})
  def test_exact_star_script_operands(self):
   rows=self.pack['subroutines']['GrantingStarsEffect'];self.assertEqual([r['args'][3:] for r in rows if r['op']=='createsprite'],[['-15','0','0','0','32','60'],['12','-5','0','0','32','60']])
  def test_native_sheet_shapes(self):

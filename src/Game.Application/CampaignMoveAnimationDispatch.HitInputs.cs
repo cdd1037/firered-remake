@@ -136,7 +136,7 @@ public static partial class CampaignMoveAnimationPresentation
         }
         if(definition.Effect=="EFFECT_PURSUIT")
         {
-            byte turn=0;
+            byte turn=0,controllerHitCounter=0;
             int markerIndex=battle.EventIndex-2;
             if(markerIndex>=0&&battle.Events[markerIndex] is SourcePursuitInterceptedEvent intercepted)
             {
@@ -145,10 +145,14 @@ public static partial class CampaignMoveAnimationPresentation
                     markerIndex>0&&battle.Events[markerIndex-1] is SourcePursuitInterceptedEvent)
                     return new(null,"unmatched-source-pursuit-interception");
                 turn=1;
+                // ActionSwitch probes the right opposing position with counter
+                // 2, then the left with counter 1, before swapping the actor.
+                controllerHitCounter=checked((byte)(used.Actor.Value>=2?2:1));
             }
             // Pursuit's doubled interception damage does not change the source
             // move-power register. Animation turn is independent of ACK ownership.
-            dispatch=dispatch with{MovePower=checked((ushort)definition.Power),MoveTurn=turn};
+            dispatch=dispatch with{MovePower=checked((ushort)definition.Power),MoveTurn=turn,
+                SubstituteControllerHitCounter=controllerHitCounter};
         }
         if(definition.Effect=="EFFECT_PRESENT")
         {

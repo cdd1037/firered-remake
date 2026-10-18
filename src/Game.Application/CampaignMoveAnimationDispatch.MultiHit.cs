@@ -97,10 +97,15 @@ public static partial class CampaignMoveAnimationPresentation
             summary.Planned<minPlanned||summary.Planned>maxPlanned||summary.Actual<1||summary.Actual>summary.Planned||hits.Length!=summary.Actual||
             hits.Any(h=>h.Actor!=used.Actor||h.Target!=used.Target||h.Move!=used.Move||h.Sequence<=pp.Sequence||h.Sequence>=summary.Sequence||
                 h.Before<1||h.After<0||h.After>h.Before||h.Damage<0))return Reject("unmatched-source-multihit-summary");
+        // The controller receives the still-undecremented source loop counter.
+        // An early KO, Endure or attacker interruption must not turn the last
+        // committed hit into an invented final planned hit.
         int ordinal=Array.FindIndex(hits,h=>h.Sequence==current.Sequence);
         if(ordinal<0)return Reject("unmatched-source-multihit-result");
         return new(new(battle,current.Sequence,attack.Sequence,pp.Sequence,current.Sequence,move,new(used.Actor),new(used.Target),
-            current.Kind=="substitute"){MoveTurn=checked((byte)ordinal),Boundary=CampaignMoveAnimationBoundary.BeforeHitResult},"committed-source-multihit-animation");
+            current.Kind=="substitute"){MoveTurn=checked((byte)ordinal),
+                SubstituteControllerHitCounter=checked((byte)(summary.Planned-ordinal)),
+                Boundary=CampaignMoveAnimationBoundary.BeforeHitResult},"committed-source-multihit-animation");
     }
     private static MultiHitRow MultiHitRead(SourceBattleEvent e)=>e switch
     {

@@ -18,7 +18,7 @@ public partial class CampaignView
         int slot=request.Affected.Value,index=battlers.FindIndex(b=>b.Slot.Value==slot);
         if(index<0)return false;
         var initial=battlers[index];SourceBattlerFormMaterial material;
-        if(request.AfterBody.CalledVolatile?.SubstituteHp is not >0&&request.AfterBody.Transform is not null)
+        if(!request.CreatesSubstitute)
         {
             // Front Spinda requires the source indexed personality spot masks, which
             // are not in the current material catalog. Never substitute static pixels.
