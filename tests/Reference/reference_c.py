@@ -1,6 +1,6 @@
 """Compile authored, bounded C reference harnesses without executing upstream scripts.
 
-Normal tests consume committed numerical vectors; this module is only for explicit
+Normal tests consume ignored, locally generated numerical vectors; this module is only for explicit
 fixture generation. Windows uses an installed Visual Studio C compiler, Linux cc.
 """
 import hashlib

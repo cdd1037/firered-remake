@@ -4,6 +4,17 @@ namespace Game.Presentation.BattleAnimations;
 // renderer's opacity bit, independent of the GBA palette's unused high bit.
 public static class SourcePaletteMath
 {
+    // Hardware EVA/EVB saturate at 16. Blend the five-bit channels before their
+    // final display conversion; this is not RGBA interpolation in the host.
+    public static ushort AlphaBlend(int pixel, int under, int eva, int evb)
+    {
+        eva = Math.Clamp(eva, 0, 16); evb = Math.Clamp(evb, 0, 16);
+        int result = 0x8000;
+        for (int shift = 0; shift <= 10; shift += 5)
+            result |= Math.Min(31, (((pixel >> shift) & 31) * eva + ((under >> shift) & 31) * evb) >> 4) << shift;
+        return (ushort)result;
+    }
+
     public static ushort Apply(ushort original,SourcePaletteBlend? blend,bool inverted,bool greyscale=false)
     {if(blend?.Unfaded is {} normal)original=Apply(original,normal.Blend,normal.Inverted,normal.Greyscale);if(greyscale){int average=((original&31)+((original>>5)&31)+((original>>10)&31))/3;original=(ushort)((original&0x8000)|average|(average<<5)|(average<<10));}ushort pixel=blend is null?original:Blend(original,blend.Coefficient,blend.Color);return inverted?(ushort)(pixel^0x7fff):pixel;}
     public static ushort Blend(ushort original,int coefficient,ushort color)

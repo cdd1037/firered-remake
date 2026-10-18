@@ -23,7 +23,8 @@ SOURCE_SHA256 = {
     'src/battle_anim_mons.c': 'fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb',
     'src/battle_anim_effects_3.c': 'bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f',
     'src/battle_anim_bug.c': '4f71759597e362d998f978aa41a9b64b617d1db4d966db5bbf32549d15b2dcb2',
-    'src/battle_anim_dark.c': '2d4607e9b60aec356c3d75bdb12bba30fa8ee5c6d50741eff54ab7760df98bfb',
+    # Exact pinned blob; the former local copy had one additional trailing newline.
+    'src/battle_anim_dark.c': '2030a1999963c452238f51d6bb624bbd8f0214e3368ddbbfedf08ee7608c31f5',
     'src/trig.c': '4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810',
     'src/battle_anim_utility_funcs.c': '8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297',
     'src/blend_palette.c': '219a02b2ed9ab3010e203e0131fa8133571dcc271e025d7f6f14bf7993a51090',

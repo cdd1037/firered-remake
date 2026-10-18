@@ -1,5 +1,6 @@
 using Game.Application;
 using Game.Content;
+using Game.Presentation.BattleAnimations;
 using Godot;
 
 // Source-backed evolution staging. The Application command remains the only species mutation.
@@ -14,13 +15,17 @@ public partial class CampaignView
     private double _evolutionFanfare;
     private PretEvolutionScene? _evolutionSceneAssets;
     private readonly Dictionary<string, Texture2D> _evolutionSceneTextures = new(StringComparer.Ordinal);
-    private readonly Dictionary<Texture2D, Texture2D> _evolutionSilhouettes = new();
+    private readonly Dictionary<Texture2D, SourcePixelAsset> _evolutionSourcePixels = new();
+    private readonly Dictionary<(Texture2D Source, int Coefficient), Texture2D> _evolutionWhiteTextures = new();
+    private ImageTexture? _evolutionBackgroundTexture;
+    private (int Palette, int Angle)? _evolutionBackgroundFrame;
 
     private void DisposeEvolutionScenePresentation()
     {
         foreach (var texture in _evolutionSceneTextures.Values) texture.Dispose();
-        foreach (var texture in _evolutionSilhouettes.Values) texture.Dispose();
-        _evolutionSceneTextures.Clear(); _evolutionSilhouettes.Clear(); _evolutionSceneAssets=null;
+        foreach (var texture in _evolutionWhiteTextures.Values) texture.Dispose();
+        _evolutionBackgroundTexture?.Dispose(); _evolutionBackgroundTexture = null; _evolutionBackgroundFrame = null;
+        _evolutionSceneTextures.Clear(); _evolutionWhiteTextures.Clear(); _evolutionSourcePixels.Clear(); _evolutionSceneAssets=null;
         _evolutionAnimation=null; _evolutionAnimationKey=null; _evolutionViewKey=null;
     }
 
@@ -42,15 +47,27 @@ public partial class CampaignView
         return texture;
     }
 
-    private Texture2D EvolutionSilhouette(Texture2D texture)
+    private SourcePixelAsset EvolutionSourcePixels(Texture2D texture, int width, int height)
     {
-        if (_evolutionSilhouettes.TryGetValue(texture, out var result)) return result;
-        using var image = texture.GetImage();
-        for (int y = 0; y < image.GetHeight(); y++)
-        for (int x = 0; x < image.GetWidth(); x++)
-            image.SetPixel(x, y, new Color(1, 1, 1, image.GetPixel(x, y).A));
-        result = ImageTexture.CreateFromImage(image); _evolutionSilhouettes.Add(texture, result); return result;
+        // Capture each immutable original/crop once, never once per draw or fade step.
+        if (!_evolutionSourcePixels.TryGetValue(texture, out var source))
+        { source = SourcePixels(texture, width, height); _evolutionSourcePixels.Add(texture, source); }
+        return source;
     }
+
+    private Texture2D EvolutionWhiteTexture(Texture2D texture, int width, int height, int coefficient)
+    {
+        // Zero restores the existing RGB8 texture exactly, without quantizing it again.
+        if (coefficient == 0) return texture;
+        var key = (texture, coefficient);
+        if (_evolutionWhiteTextures.TryGetValue(key, out var result)) return result;
+        var pixels = EvolutionScenePixels.Whiten(EvolutionSourcePixels(texture, width, height), coefficient);
+        using var image = Image.CreateFromData(width, height, false, Image.Format.Rgba8, SourcePixelRgba(pixels));
+        result = ImageTexture.CreateFromImage(image); _evolutionWhiteTextures.Add(key, result); return result;
+    }
+
+    // The trade screen also uses the all-white portrait endpoint.
+    private Texture2D EvolutionSilhouette(Texture2D texture) => EvolutionWhiteTexture(texture, 64, 64, 16);
 
     private void ProcessEvolutionPresentation(double delta)
     {
@@ -96,7 +113,9 @@ public partial class CampaignView
         if (_session.State.Evolution is not { } scene)
         {
             _evolutionViewKey = null; _evolutionAnimationKey = null; _evolutionAnimation = null; _evolutionIntroName = null;
-            if (_session.State.EggHatch is null) DisposeEvolutionScenePresentation();
+            // NPC trade borrows the all-white portrait endpoint from this cache.
+            // Keep it for that presentation owner; its exit synchronizes here too.
+            if (_session.State.EggHatch is null && !NpcTradePresenting) DisposeEvolutionScenePresentation();
             return;
         }
         string animationKey = $"{scene.BattleId}:{scene.Proposal.InstanceId}:{scene.Proposal.PreviousSpecies}:{scene.Proposal.TargetSpecies}:{scene.ProposalIndex}";
@@ -171,8 +190,17 @@ public partial class CampaignView
         int dx = _captureBallAssets.Sine[angle + 64] * 4 >> 8, dy = _captureBallAssets.Sine[angle] * 4 >> 8;
         int outerAngle = (angle + 128) & 255;
         int outerX = _captureBallAssets.Sine[outerAngle + 64] * 4 >> 8, outerY = _captureBallAssets.Sine[outerAngle] * 4 >> 8;
-        DrawTexture(EvolutionSceneTexture($"background-1-{palette}"), new(-8 - outerX, -16 - outerY));
-        DrawTexture(EvolutionSceneTexture($"background-0-{palette}"), new(-8 - dx, -16 - dy), new Color(1,1,1,.5f));
+        if (_evolutionBackgroundFrame != (palette, angle))
+        {
+            var inner = EvolutionSourcePixels(EvolutionSceneTexture($"background-0-{palette}"), 256, 256);
+            var outer = EvolutionSourcePixels(EvolutionSceneTexture($"background-1-{palette}"), 256, 256);
+            var pixels = EvolutionScenePixels.MovingBackground(inner, outer, 8 + dx, 16 + dy, 8 + outerX, 16 + outerY);
+            using var image = Image.CreateFromData(240, 112, false, Image.Format.Rgba8, SourcePixelRgba(pixels));
+            if (_evolutionBackgroundTexture is null) _evolutionBackgroundTexture = ImageTexture.CreateFromImage(image);
+            else _evolutionBackgroundTexture.Update(image);
+            _evolutionBackgroundFrame = (palette, angle);
+        }
+        DrawTexture(_evolutionBackgroundTexture!, Vector2.Zero);
     }
 
     private void DrawEvolutionPokemon(CampaignEvolution scene, Game.Domain.Pokemon.PartyPokemon owned)
@@ -187,8 +215,7 @@ public partial class CampaignView
             if (scale <= 0) return;
             float size=64*scale/256f;
             var rect=new Rect2(120-size/2,64-size/2,size,size);
-            DrawTextureRect(texture,rect,false);
-            if (a.WhiteAmount>0) DrawTextureRect(EvolutionSilhouette(texture),rect,false,new Color(1,1,1,a.WhiteAmount));
+            DrawTextureRect(EvolutionWhiteTexture(texture,64,64,a.PortraitWhiteCoefficient),rect,false);
         }
         Portrait(previous,a.PreviousScale);
         if (a.Phase is EvolutionScenePhase.Morph or EvolutionScenePhase.Circle or EvolutionScenePhase.Reveal) Portrait(target,a.TargetScale);
@@ -199,7 +226,7 @@ public partial class CampaignView
     {
         var particles = a.Sparkles(_captureBallAssets.Sine);
         if (particles.IsEmpty) return;
-        var texture = EvolutionSceneTexture("sparkle");
+        var texture = EvolutionWhiteTexture(EvolutionSceneTexture("sparkle"),8,8,a.SparkleWhiteCoefficient);
         foreach (var particle in particles.OrderByDescending(p => p.Subpriority))
         {
             float size = 8 * particle.Scale;
@@ -221,8 +248,14 @@ public partial class CampaignView
         var owned = _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId);
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         DrawEvolutionBackground();
-        if (_evolutionAnimation is { BackgroundWhiteAmount: > 0 } flash)
-            DrawRect(new(0, 0, 240, 112), new Color(1, 1, 1, flash.BackgroundWhiteAmount));
+        if (_evolutionAnimation is { Phase: EvolutionScenePhase.Reveal } flash)
+        {
+            // Both moving banks were blacked before this fade. Every visible field
+            // sample is opaque, so identical faded banks blend to this RGB555 gray.
+            int channel = SourcePaletteMath.Blend(0x8000,flash.BackgroundWhiteCoefficient,0x7fff) & 31;
+            float gray = (channel * 255 / 31) / 255f;
+            DrawRect(new(0, 0, 240, 112), new Color(gray,gray,gray,1));
+        }
         if (scene.Stage == CampaignEvolutionStage.LearnMove)
         {
             DrawMoveSelectionSummary("evolution", owned, scene.PendingMoves[0].Move, _evolutionMoveCursor);

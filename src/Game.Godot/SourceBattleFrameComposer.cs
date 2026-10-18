@@ -369,12 +369,7 @@ public sealed class SourceBattleFrameComposer
     }
 
     private static ushort Blend(int pixel,int under,int eva,int evb)
-    {
-        eva=Math.Clamp(eva,0,16);evb=Math.Clamp(evb,0,16);
-        int result=0x8000;
-        for(int shift=0;shift<=10;shift+=5)result|=Math.Min(31,((((pixel>>shift)&31)*eva+((under>>shift)&31)*evb)>>4))<<shift;
-        return (ushort)result;
-    }
+        => SourcePaletteMath.AlphaBlend(pixel, under, eva, evb);
     private static void AffineImpact(ushort[] dest,SourcePixelAsset source,HitSplatFrame hit,int eva,int evb,bool blendEnabled)
     {
         // Original ConvertScaleParam: inverse OAM matrix, zero rotation, normal 32x32 canvas.

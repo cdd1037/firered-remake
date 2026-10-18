@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Game.Presentation.BattleAnimations;
 
 /// <summary>Read-only 60 Hz evolution scene. Never owns a Pokemon, inventory,
 /// gameplay RNG or an evolution decision.</summary>
@@ -53,15 +54,17 @@ public sealed class EvolutionScenePresentation
     public bool CanCancel => _allowCancellation && Phase == EvolutionScenePhase.Morph;
     public bool Animating => Phase is not (EvolutionScenePhase.Complete or EvolutionScenePhase.Cancelled);
     public bool MovingBackgroundVisible => Phase is EvolutionScenePhase.Spiral or EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle;
-    public bool Silhouette => Phase is EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle;
-    public float WhiteAmount => Phase switch
+    public int PortraitWhiteCoefficient => Phase switch
     {
-        EvolutionScenePhase.Spiral => (_fade?.ObjectBlend ?? 0) / 16f,
-        EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle => 1,
-        EvolutionScenePhase.Reveal => PhaseFrame < 33 ? 1 : (_fade?.ObjectBlend ?? 0) / 16f,
+        EvolutionScenePhase.Spiral => _fade?.ObjectBlend ?? 0,
+        EvolutionScenePhase.Arc or EvolutionScenePhase.Morph or EvolutionScenePhase.Circle => 16,
+        EvolutionScenePhase.Reveal => PhaseFrame < 33 ? 16 : _fade?.ObjectBlend ?? 0,
         _ => 0
     };
-    public float BackgroundWhiteAmount => Phase == EvolutionScenePhase.Reveal ? (_fade?.BackgroundBlend ?? 0) / 16f : 0;
+    public int BackgroundWhiteCoefficient => Phase == EvolutionScenePhase.Reveal ? _fade?.BackgroundBlend ?? 0 : 0;
+    // The up-flash mask 0xFFF90F1C excludes portrait banks 17/18 but includes
+    // sparkle bank 20. The return mask 0xFFFF0F1C includes all three OBJ banks.
+    public int SparkleWhiteCoefficient => Phase == EvolutionScenePhase.Reveal ? _fade?.ObjectBlend ?? 0 : 0;
     private readonly bool _allowCancellation;
     private readonly ImmutableArray<(int Spawn, int Velocity, int Height)> _spray;
     private EvolutionPaletteFade? _fade;
@@ -187,5 +190,38 @@ public sealed class EvolutionScenePresentation
             }
         }
         return result.ToImmutable();
+    }
+}
+
+/// <summary>Pure RGB555 evolution pixels. Source assets remain unchanged; bit 15
+/// is retained opacity. Field composition is bounded to the existing 240x112 crop.</summary>
+public static class EvolutionScenePixels
+{
+    public static SourcePixelAsset Whiten(SourcePixelAsset source, int coefficient)
+    {
+        if (coefficient is < 0 or > 16) throw new ArgumentOutOfRangeException(nameof(coefficient));
+        if (source.Width <= 0 || source.Height <= 0 || source.Pixels.Length != source.Width * source.Height)
+            throw new ArgumentException("Invalid evolution pixel asset.", nameof(source));
+        var pixels = new ushort[source.Pixels.Length];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = SourcePaletteMath.Blend(source.Pixels[i], coefficient, 0x7fff);
+        return new(source.Width, source.Height, pixels);
+    }
+
+    public static SourcePixelAsset MovingBackground(SourcePixelAsset inner, SourcePixelAsset outer,
+        int innerScrollX, int innerScrollY, int outerScrollX, int outerScrollY)
+    {
+        if (inner.Width != 256 || inner.Height != 256 || inner.Pixels.Length != 256 * 256 ||
+            outer.Width != 256 || outer.Height != 256 || outer.Pixels.Length != 256 * 256)
+            throw new ArgumentException("Evolution backgrounds must be 256x256 source crops.");
+        var pixels = new ushort[240 * 112];
+        for (int y = 0; y < 112; y++)
+        for (int x = 0; x < 240; x++)
+        {
+            ushort first = inner.Pixels[((y + innerScrollY) & 255) * 256 + ((x + innerScrollX) & 255)];
+            ushort second = outer.Pixels[((y + outerScrollY) & 255) * 256 + ((x + outerScrollX) & 255)];
+            pixels[y * 240 + x] = (first & 0x8000) == 0 ? ((second & 0x8000) == 0 ? (ushort)0x8000 : second)
+                : (second & 0x8000) == 0 ? first : SourcePaletteMath.AlphaBlend(first, second, 8, 8);
+        }
+        return new(240, 112, pixels);
     }
 }

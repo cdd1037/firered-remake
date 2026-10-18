@@ -2,7 +2,17 @@
 
 Audit date: 2026-10-16, static inspection principally 14:14–14:17 UTC. Code snapshot inspected: `720b31f65633325810ae759f9cccc780687406be`, with concurrent development in progress. This is an independent static audit, not a build, playthrough, audio-output test, or certification of current work in progress. Only this document was written by this audit.
 
-## Current reconciliation — 2026-10-17, checkpoint 269b664
+## Current reconciliation — 2026-10-18
+
+The current move-identity inventory covers all 354 identities through 352 dedicated scripts and two authenticated called-leaf forwarding paths. Named general result/weather/healing dispatch and the shared Substitute controller have their separate evidence; identity coverage is not a claim that every runtime branch has been visually watched. See the [battle matrix](battle-system-completion-matrix.md) and [audit repairs](full-project-audit-repairs.md).
+
+The subsequent ordinary-service review found and repaired the reachable Pewter profile woman: canonical menu, shared Mail/profile Easy Chat editor, source message timing and validated saved profile words. See [profile service](easy-chat-profile-service.md). Trainer Tower retains one authenticated settlement receipt with explicit legacy conversion, rather than unbounded history. These are actual repairs, not additional playthrough evidence.
+
+Concrete remaining presentation work is Quest warp/door/forced-transition phases and connected-edge pixel continuity, weather-specific palette behavior, broader special pose/facing/landing/shadow details, and evolution introduction/restoration boundaries. Evolution's confirmed shared RGB555 palette/alpha difference is corrected through shared palette arithmetic; its separate introduction/restoration boundaries remain open. Existing Quest records do not identify transition causes; future implementation must derive those from a shared live transition authority, not guess them from map changes.
+
+Acceptance remains separate: real non-Dummy speaker output, current-binary window-level samples for the new profile and other documented scenes, fresh exported-build persistence, and broader natural legal routes/branches. Chinese, external communication/e-Reader/ROM interchange/cloud save and the unspecified trade-evolution replacement remain deferred. The bounded review found no further concrete missing ordinary service; this is not proof of exhaustive story/acquisition closure.
+
+## Earlier reconciliation — 2026-10-17, checkpoint 269b664
 
 Sections 1–6 below preserve the original inspection and must not be read as a current missing-feature list. Current implementation and evidence are maintained in [current scope](first-clear-remaining-scope.md) and the linked feature documents. This reconciliation inspected those documents and their current owners; it is not a new exhaustive source audit or playthrough.
 

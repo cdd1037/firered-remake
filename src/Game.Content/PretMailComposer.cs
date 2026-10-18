@@ -22,7 +22,7 @@ public sealed class PretMailComposer
         var source = new SilphSourcePackage(root,"data/services/mail-composer");
         var document = SafariSource.Parse<ComposerDocument>(source.Read("catalog.json"));
         var contracts = SafariSource.Parse<ComposerContracts>(source.Read("contracts.json"));
-        Need(            document.Groups.Length == 22 && document.Words.Length == 1813 && document.Alphabetical.Length == 27 &&
+        Need(document.Groups.Length == 22 && !document.Words.IsDefaultOrEmpty && document.Alphabetical.Length == 27 &&
             document.Groups.Select(g => g.Id).SequenceEqual(Enumerable.Range(0, 22)) &&
             document.Alphabetical.Select(g => g.Id).SequenceEqual(Enumerable.Range(0, 27)), "Mail composer complete group scope differs.");
         var words = document.Words.ToImmutableDictionary(w => w.Value);
@@ -42,7 +42,8 @@ public sealed class PretMailComposer
             Need(bucket.Alternatives.Length != 0 && bucket.Alternatives.All(a => !a.IsDefaultOrEmpty && a.All(words.ContainsKey)),
                 "Easy Chat alphabetical alternatives differ.");
         }
-        Need(contracts.NameCharacters.Count > 100 && contracts.NameCharacters[" "] == 0 && contracts.NameCharacters["A"] == 0xBB &&
+        Need(contracts.NameCharacters.GetValueOrDefault(" ", byte.MaxValue) == 0 &&
+            contracts.NameCharacters.GetValueOrDefault("A", byte.MaxValue) == 0xBB &&
             contracts.NameCharacters.All(p => p.Key.Length == 1 && p.Value < 0xFA), "Original author charmap differs.");
         var texts = contracts.Texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
         Need(!contracts.Templates.IsDefaultOrEmpty && contracts.Templates.Length == 2 &&

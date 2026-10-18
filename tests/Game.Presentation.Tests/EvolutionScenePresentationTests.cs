@@ -86,15 +86,44 @@ public sealed class EvolutionScenePresentationTests
     {
         var scene = Reach(EvolutionScenePhase.Reveal); int paletteFrame = scene.BackgroundFrame;
         Assert.IsFalse(scene.CanCancel); Assert.IsFalse(scene.MovingBackgroundVisible);
-        Assert.AreEqual(0f, scene.BackgroundWhiteAmount); Assert.AreEqual(1f, scene.WhiteAmount);
-        scene.AdvanceFrames(2); Assert.AreEqual(.125f, scene.BackgroundWhiteAmount);
-        scene.AdvanceFrames(31); Assert.AreEqual(1f, scene.BackgroundWhiteAmount); Assert.AreEqual(1f, scene.WhiteAmount);
-        scene.AdvanceFrames(18); Assert.AreEqual(.875f, scene.BackgroundWhiteAmount); Assert.AreEqual(1f, scene.WhiteAmount);
-        scene.AdvanceFrames(1); Assert.AreEqual(.875f, scene.WhiteAmount);
+        Assert.AreEqual(0, scene.BackgroundWhiteCoefficient); Assert.AreEqual(16, scene.PortraitWhiteCoefficient);
+        scene.AdvanceFrames(2); Assert.AreEqual(2, scene.BackgroundWhiteCoefficient);
+        scene.AdvanceFrames(31); Assert.AreEqual(16, scene.BackgroundWhiteCoefficient); Assert.AreEqual(16, scene.PortraitWhiteCoefficient);
+        scene.AdvanceFrames(18); Assert.AreEqual(14, scene.BackgroundWhiteCoefficient); Assert.AreEqual(16, scene.PortraitWhiteCoefficient);
+        scene.AdvanceFrames(1); Assert.AreEqual(14, scene.PortraitWhiteCoefficient);
         Assert.AreEqual(paletteFrame, scene.BackgroundFrame);
         scene.AdvanceFrames(130); Assert.AreEqual(EvolutionScenePhase.Reveal, scene.Phase);
-        Assert.AreEqual(0f, scene.WhiteAmount); scene.AdvanceFrames(1);
+        Assert.AreEqual(0, scene.PortraitWhiteCoefficient); scene.AdvanceFrames(1);
         Assert.AreEqual(EvolutionScenePhase.Complete, scene.Phase);
+    }
+    [TestMethod]
+    public void PaletteMasksKeepPortraitSparkleAndBackgroundCoefficientsIndependent()
+    {
+        static void Check(EvolutionScenePresentation scene, int portrait, int sparkle, int background)
+        {
+            Assert.AreEqual(portrait, scene.PortraitWhiteCoefficient, $"{scene.Phase}/{scene.PhaseFrame}: portrait");
+            Assert.AreEqual(sparkle, scene.SparkleWhiteCoefficient, $"{scene.Phase}/{scene.PhaseFrame}: sparkle");
+            Assert.AreEqual(background, scene.BackgroundWhiteCoefficient, $"{scene.Phase}/{scene.PhaseFrame}: background");
+        }
+        var spiral = Reach(EvolutionScenePhase.Spiral); Check(spiral, 0, 0, 0);
+        spiral.AdvanceFrames(12); Check(spiral, 0, 0, 0); // BG pass is outside the portrait mask.
+        spiral.AdvanceFrames(1); Check(spiral, 2, 0, 0);
+        spiral.AdvanceFrames(84); Check(spiral, 16, 0, 0);
+        foreach (var phase in new[] { EvolutionScenePhase.Arc, EvolutionScenePhase.Morph, EvolutionScenePhase.Circle })
+            Check(Reach(phase), 16, 0, 0);
+        var reveal = Reach(EvolutionScenePhase.Reveal); Check(reveal, 16, 0, 0);
+        reveal.AdvanceFrames(2); Check(reveal, 16, 0, 2);
+        reveal.AdvanceFrames(1); Check(reveal, 16, 2, 2);
+        reveal.AdvanceFrames(13); Check(reveal, 16, 14, 16);
+        reveal.AdvanceFrames(1); Check(reveal, 16, 16, 16);
+        reveal.AdvanceFrames(16); Check(reveal, 16, 16, 16); // Return fade begins at frame 33.
+        reveal.AdvanceFrames(18); Check(reveal, 16, 16, 14);
+        reveal.AdvanceFrames(1); Check(reveal, 14, 14, 14);
+        reveal.AdvanceFrames(125); Check(reveal, 2, 2, 0);
+        reveal.AdvanceFrames(1); Check(reveal, 0, 0, 0);
+        reveal.AdvanceFrames(5); Assert.AreEqual(EvolutionScenePhase.Complete, reveal.Phase); Check(reveal, 0, 0, 0);
+        var cancelled = Reach(EvolutionScenePhase.Morph); Assert.IsTrue(cancelled.Cancel()); Check(cancelled, 0, 0, 0);
+        Check(Reach(EvolutionScenePhase.Intro), 0, 0, 0);
     }
     [TestMethod]
     public void SourceSprayHasBurstSkippedFadeFrameAffineSizeAndBoundedLifetimes()
