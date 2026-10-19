@@ -70,3 +70,63 @@ Remaining acceptance is finite: other NPC shadow sizes and live/recap variants
 have source/data tests, not a full native route matrix. Grass/water-specific
 landing particles and the broader special-pose catalog remain separate. No
 new all-campaign or audible-output completion claim follows from this slice.
+
+## Reachable tall-grass landing closure (2026-10-19)
+
+Route1's ordinary south ledge at (10,5) takes a public move from (10,4)
+onto tall grass at (10,6). The fixed map blocks are 0x30e3, 0x04b0 and
+0x300d respectively; the two standing tiles have collision0/elevation3.
+This exposed an actual omission: selecting TallGrass suppressed dust, but
+neither grass impact nor its stationary actor-linked cover was drawn.
+
+The shared ordinary-jump path now uses both source effects:
+- `GroundEffect_JumpOnTallGrass` starts the 16×8 impact (four frames,
+  8+8+8+9 visible callback ages, removed at33), then deduplicates a cover
+  by actor and tile.
+- The cover uses the existing 16×16 normal grass sheet. Argument7=1 invokes
+  `SeekSpriteAnim(4)`, selecting image0 rather than the walking rustle.
+  Animation END is observed at age10; age11 can remove a departed cover.
+- Accepted movement supplies source current/previous tiles. A normal walk
+  retains the old tile until completion; a far jump drops it at midpoint16.
+  The cover marks departure then removes on the next callback (17 for a
+  normal16-tick walk). Departure remains sticky if the actor returns.
+- Terrain replacement, actor removal and field-map reconstruction clear
+  applicable owners. No saved fields, extra walking steps or battle RNG are
+  used. The same transient owner is driven by recorded source actions and
+  a historical terrain lookup during recap.
+- Both effects use priority2. Source elevation/subpriority and top-Y ties
+  place them in front of the standing actor; the normal grass adjustment
+  moves the cover behind a southward overlapping actor. The ordinary actor
+  ordering remains unchanged outside these insertions.
+
+This is jump-origin cover ownership, not a claim that ordinary walking
+rustle/spawn or every connected-camera field-effect rebase is implemented.
+Existing map reconstruction drops these transient owners. Water-specific
+jump particles remain unadmitted: the bounded imported ledge scan found no
+water destination, and inspected supported movement scripts established no
+ordinary water jump. Do not add a guessed route or count a selector as a
+rendered effect.
+
+Validation: Application320/320 (22s) covers original source rows, every imported
+ grass-ledge geometry, public Route1 movement/state immutability, and shared
+ live/recap standing/departure timing. Application and Godot builds both have
+ zero warnings/errors. The original-C extension adds35 impact,160 cover and7
+ depth rows, preserving every pre-existing oracle value. Import tests7/7,
+ shadow regressions4/4 and shared-overworld regeneration parity pass.
+
+Own-cloud X11 acceptance used the fixed Godot4.7.2/.NET10.0.12 DLL
+ `adf77e323e7687528b53b615e3e4013376ce041dae961a49e1064f7c3cc19bd8`
+ (MVID `ab8487aa-3a73-4a5b-84ee-0c466badcbfb`). Public Down moved
+ (10,4)→(10,6), showed the green impact and persistent lower-feet cover;
+ a second public Down moved to(10,7), exposed the feet southward and cleared
+ the old tile's cover. Both commands were accepted without a wild battle;
+ normal Escape exit returned0, with no errors/exceptions and unchanged DLL.
+ The controlled location retained actual saved party/inventory/encounter
+ counters/RNG. It is a representative scene, not a natural campaign route.
+
+Evidence is `/workspace/shared/grass-landing-native/acceptance.json`;
+ selected images are `jump-04.png`, `standing-cover.png` and
+ `departed-cover-cleared.png`. Sampling used time-scale0.1 and Dummy audio:
+ callback ordinals are source/managed evidence, not a hardware-cycle claim
+ or actual sound acceptance. Source outputs/screenshots remain local and
+ ignored; no generated tests or assets enter Git.

@@ -194,7 +194,7 @@ public partial class CampaignView:Node2D
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)).Concat(_art is null?[]:[PresentationMapKey(_art.Source.Id)]));
         var next=GetMapArt(id);ReleaseMapEdits();_art=next;
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)));
-        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_held=null;_repeat=0;_fade=fade ? .16 : 0;
+        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;_held=null;_repeat=0;_fade=fade ? .16 : 0;
     }
     private void Synchronize(CampaignState? before,CampaignState after,CampaignState? motionOrigin=null)
     {
@@ -625,7 +625,10 @@ public partial class CampaignView:Node2D
         if(hero.Visible&&!(CinnabarLanding&&CinnabarFallPose.FixedPriority)&&!SixIslandLandingFixedPriority)entries.Add(("LOCALID_PLAYER",CurrentPlayerSprite));
         DrawLiveFieldJumpEffects(camera);
         DrawSsAnneWake();DrawFieldStrengthDust(camera);DrawFieldSurfLanding(camera);DrawCinnabarLandingDust(camera);
-        foreach(var (id,asset) in entries.OrderBy(e=>_poses[e.Id].Position.Y).ThenBy(e=>e.Id,StringComparer.Ordinal))DrawCityServicesActor(id,asset,_poses[id],camera);
+        DrawFieldActorsWithGrass(entries.OrderBy(e=>e.Id==CampaignQuestLogRecorder.PlayerId?0:_session.State.ObjectSlots?.FirstOrDefault(slot=>slot.Value==e.Id).Key??_session.State.Actors[e.Id].SourceLocalId).Select(e=>(e.Id,e.Asset,_poses[e.Id])).ToArray(),
+            _fieldGrass.Covers,_fieldJumpCues,camera,(x,y)=>_catalog.Maps[_session.State.World.Player.MapId].GetTile(x,y)?.Elevation??0,
+            (x,y)=>JumpBehavior(_session.State.World.Player.MapId,_session.State.MapLayout,_session.State.MapEdits?.Values??[],x,y),texture=>texture,
+            (id,asset,pose)=>DrawCityServicesActor(id,asset,pose,camera));
         if(_art.Border is {} borderTop)DrawMapBorder(borderTop.Top,camera);DrawConnectedNeighbors(camera,2);DrawBillMapLayer(_art.Top,camera,2);
         if(hero.Visible&&(CinnabarLanding&&CinnabarFallPose.FixedPriority||SixIslandLandingFixedPriority))DrawCityServicesActor("LOCALID_PLAYER",CurrentPlayerSprite,hero,camera);
         DrawVsSeekerIcons(camera);DrawCutGrassParticles(camera);DrawEventIslandFragments(camera);DrawSsAnneSmoke();DrawFieldFlashMask();DrawFieldMoveBanner();DrawFieldFlashBanner();DrawFieldStrengthBanner();DrawFourIslandBanner();DrawFishingDots();

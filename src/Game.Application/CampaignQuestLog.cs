@@ -382,6 +382,7 @@ public sealed class CampaignQuestLogPlayback
     private readonly CampaignQuestLog _log;
     private readonly string _playerName;
     private readonly QuestLogSource? _source;
+    private readonly Func<string,string?,ImmutableArray<FieldMetatileEdit>,int,int,int?>? _fieldBehavior;
     private readonly CampaignQuestLogScene? _savedScene;
     private CampaignQuestLogTimeline _timeline=null!;
     private string? _savedCaption;
@@ -403,6 +404,7 @@ public sealed class CampaignQuestLogPlayback
     public double Frame=>_timeline.Frame;
     public double MapFrames=>_timeline.MapFrames;
     public IEnumerable<CampaignFieldJumpCue> JumpEffects=>_timeline.JumpEffects;
+    public IReadOnlyList<CampaignFieldGrassLandingCover> GrassCovers=>_timeline.GrassCovers;
     public CampaignQuestLogActor MapOriginPlayer=>_timeline.MapOriginPlayer;
     public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_timeline.ActiveTransitionTiming;
     public double TransitionElapsedFrames=>_timeline.TransitionElapsedFrames;
@@ -412,14 +414,15 @@ public sealed class CampaignQuestLogPlayback
     public string? Caption=>Ending?null:SavedGameVisible?_savedCaption:_timeline.Caption;
     public IEnumerable<CampaignQuestLogActor> Actors=>_timeline.Actors;
     public (CampaignQuestLogActor From,double Fraction,int DrawYOffset,bool IsJump)? Movement(string id)=>_timeline.Movement(id);
-    public CampaignQuestLogPlayback(CampaignQuestLog log,string playerName="RED",QuestLogSource? source=null,CampaignQuestLogScene? savedScene=null)
+    public CampaignQuestLogPlayback(CampaignQuestLog log,string playerName="RED",QuestLogSource? source=null,CampaignQuestLogScene? savedScene=null,
+        Func<string,string?,ImmutableArray<FieldMetatileEdit>,int,int,int?>? fieldBehavior=null)
     {
         if(CampaignQuestLogRecorder.Validate(log,source) is {} error)throw new InvalidDataException(error);
-        _log=log;_playerName=playerName;_source=source;_savedScene=savedScene;BeginScene();
+        _log=log;_playerName=playerName;_source=source;_savedScene=savedScene;_fieldBehavior=fieldBehavior;BeginScene();
     }
     private void BeginScene()
     {
-        _timeline=new(CurrentScene,_playerName,_source,SavedGameVisible);
+        _timeline=new(CurrentScene,_playerName,_source,SavedGameVisible,_fieldBehavior);
         if(SavedGameVisible){_savedCaption=_timeline.Caption;_savedWait=0;}
     }
     private void BeginExit(){Ending=true;_exitFrames=0;}

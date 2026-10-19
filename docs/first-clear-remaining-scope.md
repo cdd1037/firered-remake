@@ -50,7 +50,7 @@
 - 战斗外队伍招式：挖洞、瞬间移动、甜甜香气、生蛋／喝牛奶的场外入口、规则与演出已接入；有界命令／共享规则检查已通过，原生交互和逐帧表现仍待抽样。复用离洞绳、治疗地点、陆地／水面／狩猎遭遇和队伍生命值事务，不增加地区特判。见[场外招式](noncombat-field-moves.md)。
 - Quest Log：格式2采用独立演员／字幕时间线、有限场景和稀疏历史地图投影；Continue、回顾叠层、跳过及回到存档现场已做代表性原生检查。仍在补源事件／时序细节，不能称完整逐帧还原。早期实验回顾格式不兼容，没有回顾记录的存档不受影响。见[Quest Log](quest-log.md)。
 - 共享命名：开局、宝可梦昵称与PC盒名使用同一源模板／键盘呈现和直接键盘输入，保留各自事务／字符上限／取消语义；PC命名及实际捕获昵称已有有界原生验证，IME／Help组合仍未独立验证。见[共享命名](shared-naming-presentation.md)。
-- Quest表现：历史灰度／退出恢复原色、24种跳跃位移弧线已有共享采样。新记录通过真实生产者保存普通warp／连接、门、梯子、方向楼梯与相应预览／Flash／静态SHADE及fog的已支持阶段；菜单返回和Tower原地白fade也已分别闭合。旧记录不猜传送原因。普通跳跃阴影与普通地面落地尘已接入同一 live／recap 采样；仍未闭合的是草地／水面专属落地效果、其他特殊姿态／场地效果，以及已记录边界以外的特殊程序；不能继续把全部门／天气列为缺失。见[共享过渡](plain-field-transition-presentation.md)、[灰度](quest-log-palette-presentation.md)与[跳跃](shared-field-jump-presentation.md)。
+- Quest表现：历史灰度／退出恢复原色、24种跳跃位移弧线已有共享采样。新记录通过真实生产者保存普通warp／连接、门、梯子、方向楼梯与相应预览／Flash／静态SHADE及fog的已支持阶段；菜单返回和Tower原地白fade也已分别闭合。旧记录不猜传送原因。普通跳跃阴影与普通地面落地尘已接入同一 live／recap 采样；草地跳跃落地现已接入源冲击和actor/tile持有草层，普通行走草丛生成／摆动仍是单独表现边界；水面普通跳跃尚未建立实际可达路径。其他特殊姿态／场地效果与已记录边界以外程序仍需明确来源及入口后限定范围；不能继续把全部门／天气列为缺失。见[共享过渡](plain-field-transition-presentation.md)、[灰度](quest-log-palette-presentation.md)与[跳跃](shared-field-jump-presentation.md)。
 - 战斗与学招界面：已接战斗队伍只读Summary、完整招式信息与学招第五候选行；FIGHT中的SELECT排序共用事务，覆盖普通单／双打、首战、变身和模仿。原生窗口已检查跨计时刻度浏览、排序后攻击及实际升级进入学招界面；具体边界见[Summary](summary-native-presentation.md)。
 - 场地与本地服务：CUT清草、相邻地图视野保存／重载、粉末罐赠送／登记使用及零粉末商店已接入。没有加入无线碾树果的粉末获得方式；见[清草与粉末罐](field-cut-and-powder.md)。
 

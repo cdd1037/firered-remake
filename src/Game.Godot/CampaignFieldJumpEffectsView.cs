@@ -6,10 +6,15 @@ using Godot;
 public partial class CampaignView
 {
     private readonly List<CampaignFieldJumpCue> _fieldJumpCues=[];
+    private readonly CampaignFieldGrassLandingEffects _fieldGrass=new();
+    private double _fieldGrassFrame;
+    private Texture2D _fieldGrassCoverTexture=null!,_fieldGrassImpactTexture=null!;
     private readonly Texture2D[] _fieldJumpShadows=new Texture2D[4];
 
     private void LoadFieldJumpEffects()
     {
+        _fieldGrassCoverTexture=Texture(System.IO.Path.Combine(_root,"content/generated/sprites/overworld/field-tall-grass.png"));
+        _fieldGrassImpactTexture=Texture(System.IO.Path.Combine(_root,"content/generated/sprites/overworld/field-jump-tall-grass.png"));
         string[] names=["s","m","l","xl"];
         for(int i=0;i<names.Length;i++)
             _fieldJumpShadows[i]=Texture(System.IO.Path.Combine(_root,"content/generated/sprites/overworld/field-shadow-"+names[i]+".png"));
@@ -17,7 +22,7 @@ public partial class CampaignView
 
     private void SynchronizeFieldJumpEffects(CampaignState? before,CampaignState after,bool normalStep)
     {
-        if(before is null||before.World.Player.MapId!=after.World.Player.MapId)_fieldJumpCues.Clear();
+        if(before is null||before.World.Player.MapId!=after.World.Player.MapId){_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;}
         if(before is not null&&!normalStep&&before.Motions.SequenceEqual(after.Motions))return;
         foreach(var track in _tracks)
         {
@@ -25,6 +30,8 @@ public partial class CampaignView
             double start=0;
             foreach(var clip in track.Clips)
             {
+                _fieldGrass.QueueMovement(track.Actor,(int)clip.From.X/16,(int)clip.From.Y/16,(int)clip.To.X/16,(int)clip.To.Y/16,
+                    clip.Action,(int)Math.Round(clip.Duration*60),_fieldGrassFrame+start*60);
                 if(CampaignFieldJumpEffects.IsOrdinaryJump(clip.Action))
                 {
                     _fieldJumpCues.Add(new(track.Actor,after.World.Player.MapId.Value,
@@ -38,8 +45,11 @@ public partial class CampaignView
 
     private void AdvanceFieldJumpEffects(double seconds)
     {
+        _fieldGrassFrame+=seconds*60;
+        _fieldGrass.AdvanceTo(_fieldGrassFrame,(x,y)=>JumpBehavior(_session.State.World.Player.MapId,_session.State.MapLayout,_session.State.MapEdits?.Values??[],x,y),
+            id=>id==CampaignQuestLogRecorder.PlayerId||_session.State.Actors.TryGetValue(id,out var actor)&&actor.Active);
         for(int i=0;i<_fieldJumpCues.Count;i++)_fieldJumpCues[i]=_fieldJumpCues[i] with{ElapsedFrames=_fieldJumpCues[i].ElapsedFrames+seconds*60};
-        _fieldJumpCues.RemoveAll(c=>c.ElapsedFrames>=c.Duration+CampaignFieldJumpEffects.DustLifetimeFrames);
+        _fieldJumpCues.RemoveAll(c=>c.ElapsedFrames>=c.Duration+CampaignFieldJumpEffects.LandingLifetimeFrames);
     }
 
     private void DrawLiveFieldJumpEffects(Vector2 camera)
@@ -88,4 +98,58 @@ public partial class CampaignView
                 DrawTextureRectRegion(palette(_fieldStrengthDust!),new(new Vector2(cue.ToX*16,cue.ToY*16+8)-camera,new(16,8)),new(0,frame*8,16,8));
         }
     }
+    private void DrawFieldActorsWithGrass((string Id,SpriteAsset Asset,Pose Pose)[] actors,
+        IReadOnlyList<CampaignFieldGrassLandingCover> covers,IEnumerable<CampaignFieldJumpCue> jumps,Vector2 camera,
+        Func<int,int,int> elevation,Func<int,int,int?> behavior,Func<Texture2D,Texture2D> palette,
+        Action<string,SpriteAsset,Pose> drawActor)
+    {
+        if(covers.Count==0&&!jumps.Any(j=>CampaignFieldJumpEffects.GrassImpactFrame(j,behavior(j.ToX,j.ToY))>=0))
+        {
+            foreach(var actor in actors.OrderBy(a=>a.Pose.Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))drawActor(actor.Id,actor.Asset,actor.Pose);
+            return;
+        }
+        CampaignFieldGrassActorGeometry Geometry((string Id,SpriteAsset Asset,Pose Pose) actor)
+        {
+            var center=actor.Pose.Position.Floor()+new Vector2(8,8)-actor.Asset.Anchor+new Vector2(actor.Asset.Width/2,actor.Asset.Height/2);
+            int z=elevation((int)actor.Pose.Position.X/16,(int)actor.Pose.Position.Y/16);
+            return new((int)center.X,(int)center.Y,actor.Asset.Height,
+                CampaignFieldGrassLandingEffects.Subpriority(z,(int)center.Y,actor.Asset.Height,-(int)camera.Y,1));
+        }
+        var geometry=actors.Select(Geometry).ToArray();
+        var paints=new List<(int X,int Y,int Height,int Frame,int Priority,bool Cover)>();
+        foreach(var cover in covers)
+        {
+            int x=cover.X*16+8,y=cover.Y*16+8;
+            int priority=CampaignFieldGrassLandingEffects.Subpriority(elevation(cover.X,cover.Y),y,16,-(int)camera.Y,0);
+            priority=CampaignFieldGrassLandingEffects.AdjustCoverSubpriority(x,y,priority,geometry);
+            paints.Add((x,y,16,0,priority,true));
+        }
+        foreach(var jump in jumps)
+        {
+            int frame=CampaignFieldJumpEffects.GrassImpactFrame(jump,behavior(jump.ToX,jump.ToY));
+            if(frame<0)continue;
+            int x=jump.ToX*16+8,y=jump.ToY*16+12;
+            paints.Add((x,y,8,frame,CampaignFieldGrassLandingEffects.Subpriority(elevation(jump.ToX,jump.ToY),y,8,-(int)camera.Y,0),false));
+        }
+        // Actor order is unchanged. Grass inserts using the source subpriority and
+        // top-Y tie break; the cover alone may move behind a southward actor.
+        paints=paints.OrderByDescending(p=>p.Priority).ThenBy(p=>p.Y-p.Height/2).ToList();
+        void Paint((int X,int Y,int Height,int Frame,int Priority,bool Cover) p)=>DrawTextureRectRegion(
+            palette(p.Cover?_fieldGrassCoverTexture:_fieldGrassImpactTexture),
+            new(new Vector2(p.X-8,p.Y-p.Height/2)-camera,new(16,p.Height)),new(0,p.Frame*p.Height,16,p.Height));
+        foreach(var actor in actors.OrderBy(a=>a.Pose.Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
+        {
+            var shape=Geometry(actor);
+            int actorPriority=CampaignFieldGrassLandingEffects.ObjectPriority(elevation((int)actor.Pose.Position.X/16,(int)actor.Pose.Position.Y/16));
+            for(int j=0;j<paints.Count;)
+            {
+                var p=paints[j];
+                if(actorPriority<2||actorPriority==2&&(p.Priority>shape.Subpriority||p.Priority==shape.Subpriority&&p.Y-p.Height/2<=shape.CenterY-shape.Height/2))
+                {Paint(p);paints.RemoveAt(j);}else j++;
+            }
+            drawActor(actor.Id,actor.Asset,actor.Pose);
+        }
+        foreach(var p in paints)Paint(p);
+    }
+
 }

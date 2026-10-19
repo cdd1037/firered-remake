@@ -90,6 +90,7 @@ def build(raw, *, selection=None):
         effect.putdata([(*colors[index], 0 if index == 0 else 255) for index in pixels])
         outputs['itemfinder.png'] = encode_png(effect)
     outputs.update(shadow_outputs(raw, colors))
+    outputs.update(grass_outputs(raw))
     outputs['catalog.json'] = (json.dumps(catalog,sort_keys=True,separators=(',',':'))+'\n').encode()
     return outputs
 
@@ -108,6 +109,55 @@ def shadow_outputs(raw, colors):
             image = Image.new('RGBA', dimensions)
             image.putdata([(*colors[index], 0 if index == 0 else 255) for index in pixels])
             outputs[f'field-shadow-{size}.png'] = encode_png(image)
+    return outputs
+
+
+def grass_outputs(raw):
+    """Decode the ordinary grass overlays with their actual General1 OBJ palette."""
+    from image_io import encode_png, indexed_png
+    from presentation_pixels import palette, rgba
+    objects = (raw / 'src/data/field_effects/field_effect_objects.h').read_text()
+    graphics = (raw / 'src/data/object_events/object_event_graphics.h').read_text()
+    scripts = (raw / 'data/field_effect_scripts.s').read_text()
+
+    def body(symbol):
+        found = re.search(r'\b' + symbol + r'(?:\[\])?\s*=\s*\{(.*?)\};', objects, re.S)
+        if found is None:
+            raise ValueError('Missing grass source declaration: ' + symbol)
+        return found[1]
+
+    def require(pattern, text, label):
+        if re.search(pattern, text) is None:
+            raise ValueError('Grass source binding differs: ' + label)
+
+    require(r'\.data\s*=\s*gFieldEffectObjectPalette1\s*,\s*\.tag\s*=\s*FLDEFF_PAL_TAG_GENERAL_1',
+            body('gSpritePalette_GeneralFieldEffect1'), 'General1 palette')
+    require(r'gFieldEffectObjectPalette1\[\]\s*=\s*INCBIN_U16\("graphics/field_effects/palettes/general_1\.gbapal"\)',
+            graphics, 'General1 palette path')
+    colors = palette((raw / 'graphics/field_effects/palettes/general_1.pal').read_bytes())
+    if len(colors) != 16:
+        raise ValueError('Grass source palette must contain 16 colors')
+    outputs = {}
+    for symbol, stem in (('TallGrass', 'tall_grass'), ('JumpTallGrass', 'jump_tall_grass')):
+        require(r'gFldEffScript_' + symbol + r'::\s*loadfadedpal_callnative\s+gSpritePalette_GeneralFieldEffect1,\s*FldEff_' + symbol + r'\b',
+                scripts, symbol + ' palette load')
+        require(r'gFieldEffectObjectPic_' + symbol + r'\[\]\s*=\s*INCBIN_U16\("graphics/field_effects/pics/' + stem + r'\.4bpp"\)',
+                graphics, symbol + ' image path')
+        template = body('gFieldEffectObjectTemplate_' + symbol)
+        require(r'\.paletteTag\s*=\s*FLDEFF_PAL_TAG_GENERAL_1\b', template, symbol + ' palette tag')
+        require(r'\.images\s*=\s*sPicTable_' + symbol + r'\b', template, symbol + ' image table')
+        frames = re.findall(r'overworld_frame\(gFieldEffectObjectPic_' + symbol + r',\s*(\d+),\s*(\d+),\s*(\d+)\)',
+                            body('sPicTable_' + symbol))
+        frames = [tuple(map(int, frame)) for frame in frames]
+        if not frames or any((x, y) != frames[0][:2] or index != n for n, (x, y, index) in enumerate(frames)):
+            raise ValueError('Grass source frame table differs: ' + symbol)
+        width, frame_height = (dimension * 8 for dimension in frames[0][:2])
+        require(r'\.oam\s*=\s*&gObjectEventBaseOam_' + str(width) + 'x' + str(frame_height) + r'\b',
+                template, symbol + ' OAM geometry')
+        w, h, indices, _ = indexed_png((raw / f'graphics/field_effects/pics/{stem}.png').read_bytes())
+        if (w, h) != (width, frame_height * len(frames)):
+            raise ValueError('Grass source image geometry differs: ' + symbol)
+        outputs['field-' + stem.replace('_', '-') + '.png'] = encode_png(Image.frombytes('RGBA', (w, h), rgba(indices, colors)))
     return outputs
 
 

@@ -64,6 +64,7 @@ public partial class CampaignView
         return new(owner,0,revision,false,new(scene.Map,actors,scene.Layout,scene.Tiles){FlashLevel=scene.FlashLevel},poses,keepPresentedPoses?_fieldSurfBlobFrames:0,state.PlayerGender)
         {
             Jumps=keepPresentedPoses?_fieldJumpCues.ToArray():[],
+            GrassCovers=keepPresentedPoses?_fieldGrass.Covers.ToArray():[],
             Weather=state.FieldWeather??_catalog.MapDefinition(state.World.Player.MapId).Weather,
             Fog=HasFieldFog(scene.Map,state.FieldWeather)?keepPresentedPoses&&_fieldFogScene is {} fog?fog:
                 FreshFieldFog(FieldCameraAt(new(state.World.Player.X*16,state.World.Player.Y*16))):null

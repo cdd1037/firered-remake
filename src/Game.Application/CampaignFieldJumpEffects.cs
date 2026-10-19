@@ -13,6 +13,14 @@ public static class CampaignFieldJumpEffects
     // AnimateSprites invokes UpdateJumpImpactEffect before advancing the animation.
     // The end command marks age 24 ended; its callback removes the sprite at age 25.
     public const int DustLifetimeFrames=25;
+    public const int LandingLifetimeFrames=33;
+
+    public static int GrassImpactFrame(CampaignFieldJumpCue cue,int? destinationBehavior)
+    {
+        if(Duration(cue.Action) is not {} duration||LandingKind(destinationBehavior)!=CampaignFieldJumpLanding.TallGrass)return -1;
+        int age=(int)Math.Floor(cue.ElapsedFrames-duration+1e-7);
+        return age<0||age>=LandingLifetimeFrames?-1:Math.Min(3,age/8);
+    }
 
     public static bool IsOrdinaryJump(string? action)=>Duration(action) is not null;
     public static int? Duration(string? action)=>action switch

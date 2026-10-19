@@ -31,7 +31,7 @@ public partial class CampaignView
     private void StartQuestLogPlayback()
     {
         ResetQuestLogPlayback();
-        _questLogPlayback=_session.State.QuestLog is {} log?new(log,_session.State.PlayerName,_catalog.QuestLogSource,CampaignQuestLogRecorder.SavedScene(_session.State,_catalog.QuestLogSource)):null;
+        _questLogPlayback=_session.State.QuestLog is {} log?new(log,_session.State.PlayerName,_catalog.QuestLogSource,CampaignQuestLogRecorder.SavedScene(_session.State,_catalog.QuestLogSource),(map,layout,tiles,x,y)=>JumpBehavior(new(map),layout,tiles,x,y)):null;
         _held=null;_repeat=0;ResetPlayTimeHost();QueueRedraw();
     }
     private void ResetQuestLogPlayback()
@@ -100,7 +100,7 @@ public partial class CampaignView
                 DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0});
         }
         var snapshot=new FieldSnapshot(playback,playback.SceneIndex,playback.ArtRevision,playback.SavedGameVisible,
-            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender){Fog=_questFogScene,Jumps=playback.JumpEffects.ToArray()};
+            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender){Fog=_questFogScene,Jumps=playback.JumpEffects.ToArray(),GrassCovers=playback.GrassCovers.ToArray()};
         var warp=QuestLogFieldWarpSample(playback);
         if(playback.ActiveTransitionTiming is {} timing)
         {
@@ -174,26 +174,34 @@ public partial class CampaignView
         DrawFieldSnapshotLayer(snapshot,art,camera,0,neighbors,lowerTarget);DrawFieldSnapshotLayer(snapshot,art,camera,1,neighbors,lowerTarget);
         if(snapshot.Fog is {} fog)DrawFieldFogSample(fog,FieldSnapshotPaletteTexture(_fieldFogTexture!,false));
         DrawFieldJumpEffects(snapshot.Jumps,projection,snapshot.Poses,camera,art,texture=>FieldSnapshotPaletteTexture(texture,false));
-        foreach(var actor in projection.Actors.Where(a=>a.Visible&&snapshot.Poses[a.Id].Visible)
-            .OrderBy(a=>snapshot.Poses[a.Id].Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
-        {
-            bool player=actor.Id==CampaignQuestLogRecorder.PlayerId;
-            int gender=CampaignQuestLogAvatar.Gender(actor.Graphics,snapshot.PlayerGender);
-            SpriteAsset? asset=player?(CampaignQuestLogAvatar.IsBike(actor.Graphics)?_cityCycleSprites.GetValueOrDefault(gender):gender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
-            if(asset is null)throw new InvalidDataException("field_snapshot_actor_art_missing:"+actor.Graphics);
-            var pose=snapshot.Poses[actor.Id];
-            if(player&&CampaignQuestLogAvatar.IsSurf(actor.Graphics))
+        var actorEntries=projection.Actors.Where(a=>a.Visible&&snapshot.Poses[a.Id].Visible)
+            .Select(actor=>
             {
-                int phase=(int)Math.Floor(snapshot.Frame+1e-7)/48%2;
-                DrawSurfPose(pose,camera,gender,phase,pose.Position,new CampaignFieldMovementPose(0,pose.DrawYOffset,pose.IsJump).RiderYOffset(phase),
-                    textureTransform:texture=>FieldSnapshotPaletteTexture(texture,false));
-            }
-            else
+                bool player=actor.Id==CampaignQuestLogRecorder.PlayerId;
+                int gender=CampaignQuestLogAvatar.Gender(actor.Graphics,snapshot.PlayerGender);
+                SpriteAsset? asset=player?(CampaignQuestLogAvatar.IsBike(actor.Graphics)?_cityCycleSprites.GetValueOrDefault(gender):gender==1?_femalePlayer:art.Player):art.Npcs.GetValueOrDefault(actor.Graphics);
+                if(asset is null)throw new InvalidDataException("field_snapshot_actor_art_missing:"+actor.Graphics);
+                return(actor.Id,Asset:asset,Pose:snapshot.Poses[actor.Id]);
+            }).ToArray();
+        DrawFieldActorsWithGrass(actorEntries,snapshot.GrassCovers,snapshot.Jumps,camera,
+            (x,y)=>_catalog.Maps[new(projection.Map)].GetTile(x,y)?.Elevation??0,
+            (x,y)=>JumpBehavior(new(projection.Map),projection.Layout,projection.Tiles,x,y),texture=>FieldSnapshotPaletteTexture(texture,false),
+            (id,asset,pose)=>
             {
-                var original=snapshot.SavedGameVisible?SixIslandPaletteTexture(asset.Texture,false):asset.Texture;
-                DrawActor(asset,pose,camera,FieldSnapshotPaletteTexture(original,false));
-            }
-        }
+                var actor=projection.Actors.Single(a=>a.Id==id);
+                int gender=CampaignQuestLogAvatar.Gender(actor.Graphics,snapshot.PlayerGender);
+                if(id==CampaignQuestLogRecorder.PlayerId&&CampaignQuestLogAvatar.IsSurf(actor.Graphics))
+                {
+                    int phase=(int)Math.Floor(snapshot.Frame+1e-7)/48%2;
+                    DrawSurfPose(pose,camera,gender,phase,pose.Position,new CampaignFieldMovementPose(0,pose.DrawYOffset,pose.IsJump).RiderYOffset(phase),
+                        textureTransform:texture=>FieldSnapshotPaletteTexture(texture,false));
+                }
+                else
+                {
+                    var original=snapshot.SavedGameVisible?SixIslandPaletteTexture(asset.Texture,false):asset.Texture;
+                    DrawActor(asset,pose,camera,FieldSnapshotPaletteTexture(original,false));
+                }
+            });
         DrawFieldSnapshotLayer(snapshot,art,camera,2,neighbors);
         if(projection.FlashLevel is >0)DrawFieldFlashMask(FieldFlashSourcePresentation.Radius(projection.FlashLevel.Value));
     }

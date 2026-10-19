@@ -51,9 +51,11 @@ typedef int16_t s16; typedef uint32_t u32; typedef uint8_t bool8;
 #define TRUE 1
 #define FALSE 0
 #define MAX_SPRITES 64
+#define OBJECT_EVENTS_COUNT 1
 #define NELEMS(a) (sizeof(a)/sizeof((a)[0]))
 #define ST_OAM_AFFINE_ON_MASK 1
 #define FLDEFF_SHADOW 1
+#define FLDEFF_TALL_GRASS 4
 #define GROUND_EFFECT_FLAG_LAND_IN_TALL_GRASS 2
 #define GROUND_EFFECT_FLAG_LAND_IN_LONG_GRASS 5
 #define GROUND_EFFECT_FLAG_LAND_IN_SHALLOW_WATER 3
@@ -63,7 +65,8 @@ union AnimCmd { struct { s16 imageValue; u8 duration,hFlip,vFlip; } frame; s16 t
 #define ANIMCMD_FRAME(i,d) {.frame={i,d,0,0}}
 #define ANIMCMD_END {.type=-1}
 struct Sprite {
-    s16 x,y,data[8];
+    s16 x,y,data[8],centerToCornerVecX,centerToCornerVecY;
+    u8 subpriority;
     u8 inUse,animEnded,animBeginning,affineAnimBeginning,animPaused,animNum,animCmdIndex,animDelayCounter,animLoopCounter,usingSheet;
     u16 sheetTileStart;
     struct { u8 affineMode,priority; u16 tileNum; } oam;
@@ -71,21 +74,42 @@ struct Sprite {
     void *images;
     void (*callback)(struct Sprite *);
 };
-struct ObjectEvent { u8 active,hasShadow,currentMetatileBehavior,previousMetatileBehavior,spriteId,landingJump,disableJumpLandingGroundEffect; };
+struct ObjectEvent { u8 active,hasShadow,currentMetatileBehavior,previousMetatileBehavior,spriteId,landingJump,disableJumpLandingGroundEffect,graphicsId;
+    struct { s16 x,y; } currentCoords,previousCoords; };
+struct ObjectEventGraphicsInfo { u8 unused; };
+static const struct ObjectEventGraphicsInfo graphicsInfo={0};
+static const struct ObjectEventGraphicsInfo *GetObjectEventGraphicsInfo(u8 id) { return &graphicsInfo; }
+static struct { u8 active; s16 x,y; } gCamera;
+struct SaveBlock { struct { u8 mapNum,mapGroup; } location; };
+static struct SaveBlock saveBlock,*gSaveBlock1Ptr=&saveBlock;
+static s16 gSpriteCoordOffsetY;
 static struct Sprite gSprites[MAX_SPRITES];
 static struct ObjectEvent gObjectEvents[1];
 static const u8 gAffineAnimsDisabled=TRUE;
-static int imageIndex;
-static u8 TryGetObjectEventIdByLocalIdAndMap(s16 a,s16 b,s16 c,u8 *id) { *id=0; return 0; }
+static int imageIndex,missingActor,grassBehavior=2,grassCase,grassAge,coverImage;
+static u8 TryGetObjectEventIdByLocalIdAndMap(s16 a,s16 b,s16 c,u8 *id) { *id=0; return missingActor; }
+static u8 MapGridGetMetatileBehaviorAt(s16 x,s16 y) { return grassBehavior; }
 static void FieldEffectStop(struct Sprite *s,int effect) { s->inUse=0; }
 static void UpdateObjectEventSpriteInvisibility(struct Sprite *s,u8 invisible) { }
-static void SetObjectSubpriorityByElevation(int elevation,struct Sprite *s,int offset) { }
 static void SetSpriteOamFlipBits(struct Sprite *s,u8 h,u8 v) { }
-static void RequestSpriteFrameImageCopy(s16 image,u16 tile,void *images) { imageIndex=image; }
+static void RequestSpriteFrameImageCopy(s16 image,u16 tile,void *images) { imageIndex=image;if(images)*(int *)images=image; }
 static void UnsupportedCommand(struct Sprite *s) { abort(); }
 '''
 
 MAIN = r'''
+static void GrassActorCallback(struct Sprite *sprite) {
+    struct ObjectEvent *o=&gObjectEvents[0];
+    if (grassAge==1) {
+        if (grassCase==1 || grassCase==2 || grassCase==3 || grassCase==7) ShiftObjectEventCoords(o,0,1);
+        if (grassCase==6) ShiftStillObjectEventCoords(o);
+    }
+    if (grassAge==8 && (grassCase==2 || grassCase==7)) ShiftStillObjectEventCoords(o);
+    if (grassAge==9 && grassCase==7) ShiftObjectEventCoords(o,0,0);
+    if (grassAge==16 && grassCase==1) ShiftStillObjectEventCoords(o);
+    if (grassAge==16 && grassCase==3) ShiftObjectEventCoords(o,0,2);
+    if (grassAge==2 && grassCase==4) missingActor=1;
+    if (grassAge==2 && grassCase==5) grassBehavior=0;
+}
 int main(void) {
     unsigned b,kind; int age;
     for (b=0;b<NUM_METATILE_BEHAVIORS;b++) {
@@ -105,6 +129,38 @@ int main(void) {
         AnimateSprites();
         printf("D %d %d %u\n",age,gSprites[0].inUse?imageIndex:-1,gSprites[0].animEnded);
     }
+    memset(gSprites,0,sizeof(gSprites));
+    gSprites[0].inUse=TRUE;gSprites[0].animBeginning=TRUE;
+    gSprites[0].anims=jumpGrassAnims;gSprites[0].callback=UpdateJumpImpactEffect;
+    for(age=0;age<35;age++) {
+        AnimateSprites();
+        printf("J %d %d %u\n",age,gSprites[0].inUse?imageIndex:-1,gSprites[0].animEnded);
+    }
+    for(grassCase=0;grassCase<8;grassCase++) {
+        memset(gSprites,0,sizeof(gSprites));memset(gObjectEvents,0,sizeof(gObjectEvents));
+        missingActor=0;grassBehavior=MB_TALL_GRASS;coverImage=-1;
+        gObjectEvents[0].active=TRUE;gObjectEvents[0].spriteId=0;
+        gSprites[0].inUse=TRUE;gSprites[0].callback=GrassActorCallback;
+        gSprites[0].anims=dustAnims;gSprites[0].animBeginning=TRUE;gSprites[0].animPaused=TRUE;
+        gSprites[0].x=8;gSprites[0].centerToCornerVecX=-8;gSprites[0].centerToCornerVecY=-16;
+        gSprites[63].inUse=TRUE;gSprites[63].callback=UpdateTallGrassFieldEffect;
+        gSprites[63].anims=grassAnims;gSprites[63].images=&coverImage;
+        gSprites[63].x=8;gSprites[63].y=8;gSprites[63].centerToCornerVecX=-8;gSprites[63].centerToCornerVecY=-8;
+        SeekSpriteAnim(&gSprites[63],4);
+        for(grassAge=0;grassAge<20;grassAge++) {
+            AnimateSprites();
+            printf("C %d %d %d %u %d\n",grassCase,grassAge,gSprites[63].inUse?coverImage:-1,gSprites[63].animEnded,gSprites[63].data[7]);
+        }
+    }
+    missingActor=0;grassBehavior=MB_TALL_GRASS;
+    for (age=0;age<7;age++) {
+        static const s16 positions[7][2]={{8,0},{8,1},{8,-1},{0,1},{16,1},{7,0},{9,0}};
+        struct Sprite *actor=&gSprites[0],*cover=&gSprites[63];
+        actor->x=positions[age][0];actor->y=positions[age][1];
+        SetObjectSubpriorityByElevation(3,actor,1);
+        UpdateGrassFieldEffectSubpriority(cover,3,0);
+        printf("P %d %d %d %u %u\n",age,actor->x,actor->y,actor->subpriority,cover->subpriority);
+    }
     return fflush(stdout)==0?0:2;
 }
 '''
@@ -118,32 +174,39 @@ def generate(reference):
     helpers=read('src/field_effect_helpers.c'); behaviors=read('src/metatile_behavior.c')
     movement=read('src/event_object_movement.c'); sprite=read('src/sprite.c')
     body=[function(behaviors,n) for n in ['MetatileBehavior_IsPokeGrass','MetatileBehavior_IsReflective','MetatileBehavior_IsSurfable','MetatileBehavior_IsTallGrass','MetatileBehavior_IsLongGrass','MetatileBehavior_IsPuddle','MetatileBehavior_IsShallowFlowingWater','MetatileBehavior_IsATile']]
-    body += [function(helpers,n) for n in ['UpdateShadowFieldEffect','UpdateJumpImpactEffect']]
-    body += [function(movement,'GetGroundEffectFlags_JumpLanding')]
-    body += [function(sprite,n) for n in ['BeginAnim','ContinueAnim','AnimCmd_frame','AnimCmd_end','DecrementAnimDelayCounter','AnimateSprite','AnimateSprites']]
+    body += [function(helpers,n) for n in ['UpdateShadowFieldEffect','UpdateJumpImpactEffect','UpdateTallGrassFieldEffect','UpdateGrassFieldEffectSubpriority']]
+    body += [function(movement,n) for n in ['GetGroundEffectFlags_JumpLanding','ShiftObjectEventCoords','ShiftStillObjectEventCoords','SetObjectSubpriorityByElevation']]
+    body += [function(sprite,n) for n in ['BeginAnim','ContinueAnim','AnimCmd_frame','AnimCmd_end','DecrementAnimDelayCounter','AnimateSprite','AnimateSprites','SeekSpriteAnim']]
     declarations='\n'.join(re.split(r'\s*\{',b,1)[0]+';' for b in body)
     constants='\n'.join(re.findall(r'^#define (?:MB_|NUM_METATILE_BEHAVIORS)[^\n]+',read('include/constants/metatile_behaviors.h'),re.M))
     surfable=re.search(r'^static const bool8 sBehaviorSurfable\[NUM_METATILE_BEHAVIORS\] = \{.*?^\};',behaviors,re.M|re.S).group()
-    dust=array(read('src/data/field_effects/field_effect_objects.h'),'sAnim_GroundImpactDust')
+    animations='\n'.join(array(read('src/data/field_effects/field_effect_objects.h'),name) for name in ['sAnim_GroundImpactDust','sAnim_JumpTallGrass','sAnim_TallGrass'])
+    elevation=array(movement,'sElevationToSubpriority')
     tables='''
 static void (*sAnimFuncs[])(struct Sprite *)={ContinueAnim,BeginAnim};
 static void (*sAffineAnimFuncs[])(struct Sprite *)={UnsupportedCommand,UnsupportedCommand};
 static void (*sAnimCmdFuncs[])(struct Sprite *)={UnsupportedCommand,UnsupportedCommand,AnimCmd_end,AnimCmd_frame};
 static const union AnimCmd *const dustAnims[]={sAnim_GroundImpactDust};
+static const union AnimCmd *const jumpGrassAnims[]={sAnim_JumpTallGrass};
+static const union AnimCmd *const grassAnims[]={sAnim_TallGrass};
 '''
-    c=HEADER+'\n'+constants+'\n'+surfable+'\n'+declarations+'\n'+dust+'\n'+tables+'\n'+'\n'.join(body)+MAIN
+    c=HEADER+'\n'+constants+'\n'+surfable+'\n'+elevation+'\n'+declarations+'\n'+animations+'\n'+tables+'\n'+'\n'.join(body)+MAIN
     with tempfile.TemporaryDirectory() as directory:
         source=Path(directory)/'jump_effects.c';exe=Path(directory)/('jump_effects.exe' if os.name=='nt' else 'jump_effects')
         source.write_text(c);compile_c(['cc','-std=c11','-O2',str(source),'-o',str(exe)])
         output=subprocess.check_output([str(exe)],text=True)
-    data={'sourceCommit':COMMIT,'shadowPairs':[],'landings':[],'dust':[]}
-    keys={'S':'shadowPairs','L':'landings','D':'dust'}
+    data={'sourceCommit':COMMIT,'shadowPairs':[],'landings':[],'dust':[],'grassImpact':[],'grassCover':[],'grassPriority':[]}
+    keys={'S':'shadowPairs','L':'landings','D':'dust','J':'grassImpact','C':'grassCover','P':'grassPriority'}
     for line in output.splitlines():
         tag,*values=line.split();data[keys[tag]].append(list(map(int,values)))
     if len(data['shadowPairs'])!=480 or len(data['landings'])!=240 or len(data['dust'])!=27:
         raise ValueError('Incomplete source output')
     if [r[1] for r in data['dust']] != [0]*8+[1]*8+[2]*9+[-1]*2:
         raise ValueError('Source callback-before-animation dust lifetime differs')
+    if len(data['grassImpact'])!=35 or len(data['grassCover'])!=160 or len(data['grassPriority'])!=7:
+        raise ValueError('Incomplete grass source output')
+    if [r[1] for r in data['grassImpact']] != [0]*8+[1]*8+[2]*8+[3]*9+[-1]*2:
+        raise ValueError('Source callback-before-animation grass impact lifetime differs')
     return data
 
 
@@ -152,6 +215,6 @@ def main():
     parser.add_argument('--reference',type=Path,required=True);parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();data=generate(args.reference)
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(data,separators=(',',':'))+'\n')
-    print('480 source shadow gates; 240 landing selectors; 27 sprite callback frames')
+    print('480 source shadow gates; 240 landing selectors; 27 dust, 35 grass impact, 160 cover and 7 priority rows')
 
 if __name__=='__main__':main()
