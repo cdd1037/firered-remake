@@ -89,7 +89,7 @@ def compile_region(src, region, names):
             contract['retainedAnchor']=dict(connection=north)
             contract['serviceBindings']=[selphy_service(src,worlds,scripts)]
             wanted={p['item'] for p in contract['itemPickups']}|{p['event']['item'] for p in contract['hiddenItems']}
-            documents['items.json']=dict(declarations=[{k:r[k] for k in ('itemId','english','pocket','price')} for r in src.json('src/data/items.json')['items'] if r['itemId'] in wanted])
+            documents['items.json']=dict(declarations=[{k:r[k] for k in ('itemId','pocket','price')} for r in src.json('src/data/items.json')['items'] if r['itemId'] in wanted])
         if region=='six-island':
             documents['encounters.json']=default_version_headers(src.json('src/data/wild_encounters.json')['wild_encounter_groups'], {w['events']['id'] for w in worlds})
     documents['contracts.json']=contract

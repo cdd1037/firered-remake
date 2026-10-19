@@ -34,16 +34,32 @@ public sealed class MachineItemDefinitionTests
     {
         var machine = SharedMachineCatalog.LoadProject(TestAssets.Root).Definition(new("pret:ITEM_" + symbol)).Machine;
         Action<MachineItem> validate = symbol == "TM06" ? FuchsiaGymItemRules.ValidateMachine : CeladonGymItemRules.ValidateMachine;
-        validate(AlternateText(machine));
-        Assert.ThrowsExactly<NotSupportedException>(() => validate(machine with { Description = "  " }));
+        var changed = AlternateText(machine) with { Item = machine.Item with { Name = "Training Disc" } };
+        validate(changed);
+        Assert.ThrowsExactly<NotSupportedException>(() => validate(changed with { Description = "  " }));
+        foreach (var name in new string?[] { null, "", " \t\n" })
+            Assert.ThrowsExactly<NotSupportedException>(() => validate(changed with {
+                Item = changed.Item with { Name = name! } }));
         foreach (var invalid in new[] {
+            machine.Item with { Id = new("pret:ITEM_POTION") },
+            machine.Item with { SourceItemSymbol = "ITEM_POTION" },
+            machine.Item with { SourceItemId = machine.Item.SourceItemId + 1 },
             machine.Item with { Pocket = "POCKET_ITEMS" },
+            machine.Item with { Type = "ITEM_TYPE_FIELD" },
+            machine.Item with { Importance = 1 },
+            machine.Item with { Registrability = 1 },
             machine.Item with { HoldEffect = "HOLD_EFFECT_LEFTOVERS" },
+            machine.Item with { HoldEffectParam = 1 },
             machine.Item with { CanToss = false },
+            machine.Item with { CanSell = false },
+            machine.Item with { CanGive = false },
             machine.Item with { BattleUsage = 1 },
+            machine.Item with { BattleUseFunction = "BattleUseFunc_PokeBallEtc" },
             machine.Item with { FieldUseFunction = "FieldUseFunc_Medicine" },
-            machine.Item with { Price = -1 } })
-            Assert.ThrowsExactly<NotSupportedException>(() => validate(machine with { Item = invalid }));
+            machine.Item with { SecondaryId = 1 },
+            machine.Item with { Price = 2999 } })
+            Assert.ThrowsExactly<NotSupportedException>(() => validate(changed with {
+                Item = invalid with { Name = changed.Item.Name } }));
     }
 
     [TestMethod]

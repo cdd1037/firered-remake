@@ -25,27 +25,27 @@ public static class QuestItemRules
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in catalog.Items)
         {
-            if (item is null || item.SourceItemSymbol is null || !seen.Add(item.SourceItemSymbol) ||
+            if (item is null || string.IsNullOrWhiteSpace(item.Name) || item.SourceItemSymbol is null || !seen.Add(item.SourceItemSymbol) ||
                 item.Id != new ItemId("pret:" + item.SourceItemSymbol) || item.HoldEffect != "HOLD_EFFECT_NONE" ||
                 item.HoldEffectParam != 0)
                 throw new NotSupportedException("Invalid quest item definition.");
             bool valid = item.SourceItemSymbol switch
             {
-                ParcelSymbol => item.Registrability == 0 && item.SourceItemId == 349 && item.Name == "OAK'S PARCEL" && item.Price == 0 &&
+                ParcelSymbol => item.Registrability == 0 && item.SourceItemId == 349 && item.Price == 0 &&
                     item.Importance == 2 && item.Pocket == "POCKET_KEY_ITEMS" && item.Type == "ITEM_TYPE_BAG_MENU" &&
                     item.FieldUseFunction == "FieldUseFunc_OakStopsYou" && item.BattleUsage == 0 &&
                     item.BattleUseFunction == "NULL" && item.SecondaryId == 0 &&
                     !item.CanToss && !item.CanSell && !item.CanGive,
-                PokeBallSymbol => item.Registrability == 0 && item.SourceItemId == 4 && item.Name == "POKé BALL" && item.Price == 200 &&
+                PokeBallSymbol => item.Registrability == 0 && item.SourceItemId == 4 && item.Price == 200 &&
                     item.Importance == 0 && item.Pocket == "POCKET_POKE_BALLS" && item.Type == "3" &&
                     item.FieldUseFunction == "NULL" && item.BattleUsage == 2 &&
                     item.BattleUseFunction == "BattleUseFunc_PokeBallEtc" && item.SecondaryId == 3 &&
                     item.CanToss && item.CanSell && item.CanGive,
-                TeachyTvSymbol => item.SourceItemId == 366 && item.Name == "TEACHY TV" && item.Price == 0 &&
+                TeachyTvSymbol => item.SourceItemId == 366 && item.Price == 0 &&
                     item.Importance == 1 && item.Registrability == 1 && item.Pocket == "POCKET_KEY_ITEMS" && item.Type == "ITEM_TYPE_FIELD" &&
                     item.FieldUseFunction == "FieldUseFunc_TeachyTv" && item.BattleUsage == 0 && item.BattleUseFunction == "NULL" &&
                     item.SecondaryId == 0 && !item.CanToss && !item.CanSell && !item.CanGive,
-                TownMapSymbol => item.SourceItemId == 361 && item.Name == "TOWN MAP" && item.Price == 0 &&
+                TownMapSymbol => item.SourceItemId == 361 && item.Price == 0 &&
                     item.Importance == 1 && item.Registrability == 1 && item.Pocket == "POCKET_KEY_ITEMS" && item.Type == "ITEM_TYPE_BAG_MENU" &&
                     item.FieldUseFunction == "FieldUseFunc_TownMap" && item.BattleUsage == 0 && item.BattleUseFunction == "NULL" &&
                     item.SecondaryId == 0 && !item.CanToss && !item.CanSell && !item.CanGive,

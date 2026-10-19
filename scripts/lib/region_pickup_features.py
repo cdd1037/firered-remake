@@ -48,5 +48,5 @@ def compile_pickups(src, selection, regions=('seafoam','cerulean-cave','power-pl
         documents[prefix+'contracts.json']=contract
         if region != 'cinnabar':
             symbols={p['item'] for p in pickups}|{p['event']['item'] for p in hidden}
-            documents[prefix+'items.json']=dict(declarations=[{k:r[k] for k in ('itemId','english','pocket','price')} for r in src.json('src/data/items.json')['items'] if r['itemId'] in symbols])
+            documents[prefix+'items.json']=dict(declarations=[{k:r[k] for k in ('itemId','pocket','price')} for r in src.json('src/data/items.json')['items'] if r['itemId'] in symbols])
     return documents

@@ -9,7 +9,7 @@ public static class CeladonGymItemRules
     public static ItemId Tm19Id { get; } = new("pret:ITEM_TM19");
     private static bool IsSupportedItem(QuestItemDefinition? item) => item is not null &&
         item.Id == Tm19Id && item.SourceItemSymbol == "ITEM_TM19" && item.SourceItemId == 307 &&
-        item.Name == "TM19" && item.Price == 3000 && item.Importance == 0 && item.Registrability == 0 &&
+        !string.IsNullOrWhiteSpace(item.Name) && item.Price == 3000 && item.Importance == 0 && item.Registrability == 0 &&
         item.Pocket == "POCKET_TM_CASE" && item.Type == "ITEM_TYPE_PARTY_MENU" &&
         item.HoldEffect == "HOLD_EFFECT_NONE" && item.HoldEffectParam == 0 && item.FieldUseFunction == "NULL" &&
         item.BattleUsage == 0 && item.BattleUseFunction == "NULL" && item.SecondaryId == 0 &&

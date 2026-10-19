@@ -65,6 +65,43 @@ class WorldFieldRuleTests(unittest.TestCase):
                 for item in value:visit(item)
         for value in self.outputs.values():visit(value)
 
+    def test_pickup_declarations_keep_business_facts_without_display_names(self):
+        source_items = {r['itemId']: r for r in WorldSource(RAW).json('src/data/items.json')['items']}
+        for region in ('seafoam', 'cerulean-cave', 'power-plant', 'lost-cave'):
+            with self.subTest(region=region):
+                rows = self.outputs['maps/regions/' + region + '/items.json']['declarations']
+                self.assertTrue(rows)
+                for row in rows:
+                    self.assertEqual(set(row), {'itemId', 'pocket', 'price'})
+                    self.assertEqual(row, {key: source_items[row['itemId']][key] for key in row})
+
+    def test_pickup_declarations_do_not_depend_on_source_display_names(self):
+        src = WorldSource(RAW)
+        path = 'src/data/items.json'
+        items = src.json(path)
+        for row in items['items']:
+            row['english'] = 'Edited display name'
+        src.data[path] = json.dumps(items).encode()
+        regions = ('seafoam', 'cerulean-cave', 'power-plant', 'lost-cave')
+        actual = compile_rules(src, SELECTION, regions)
+        self.assertEqual(actual, {path: self.outputs[path] for path in actual})
+
+    def test_pickup_declarations_follow_source_pocket_and_price(self):
+        src = WorldSource(RAW)
+        path = 'src/data/items.json'
+        items = src.json(path)
+        for row in items['items']:
+            row['price'] += 1
+            row['pocket'] = 'POCKET_KEY_ITEMS'
+        src.data[path] = json.dumps(items).encode()
+        regions = ('seafoam', 'cerulean-cave', 'power-plant', 'lost-cave')
+        actual = compile_rules(src, SELECTION, regions)
+        for region in regions:
+            key = 'maps/regions/' + region + '/items.json'
+            expected = dict(declarations=[dict(row, pocket='POCKET_KEY_ITEMS', price=row['price'] + 1)
+                                          for row in self.outputs[key]['declarations']])
+            self.assertEqual(actual[key], expected)
+
     def test_saffron_stock_follows_source(self):
         from saffron_mart_features import compile_saffron
         src=WorldSource(RAW);path='data/maps/SaffronCity_Mart/scripts.inc'

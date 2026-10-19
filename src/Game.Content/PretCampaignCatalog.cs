@@ -116,7 +116,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
 
 
-    private static ImmutableArray<FieldPickupDefinition> SourceRegionPickupDefinitions(IReadOnlyDictionary<MapId,PretWorldMap> regionMaps,JsonElement items,JsonElement contracts,Func<string,MapId> resolveMap,string proofId,EarlyShopCatalog shop,PretStoryCompilation scripts)
+    internal static ImmutableArray<FieldPickupDefinition> SourceRegionPickupDefinitions(IReadOnlyDictionary<MapId,PretWorldMap> regionMaps,JsonElement items,JsonElement contracts,Func<string,MapId> resolveMap,string proofId,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         var definitions = items.GetProperty("declarations").EnumerateArray()
             .ToDictionary(e => e.GetProperty("itemId").GetString()!, StringComparer.Ordinal);
@@ -126,7 +126,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
                 ?? throw new InvalidDataException(proofId+"_pickup_item_missing:" + symbol);
             if (!definitions.TryGetValue(symbol, out var source) || item.Id.Value != "pret:" + symbol ||
                 !scripts.TryConstant(symbol, out var id) || item.SourceItemId != id ||
-                item.Name != source.GetProperty("english").GetString() || item.Pocket != source.GetProperty("pocket").GetString() ||
+                item.Pocket != source.GetProperty("pocket").GetString() ||
                 item.Price != source.GetProperty("price").GetInt32())
                 throw new InvalidDataException(proofId+"_pickup_item_source:" + symbol);
             return item;

@@ -90,7 +90,7 @@ public sealed class PretTownMap
         Require(Gift.SourceItemId==361 && Gift.Pocket=="POCKET_KEY_ITEMS" && Gift.AvailableScene==1 && Gift.ReceivedScene==2 &&
             Gift.HideFlag=="FLAG_HIDE_TOWN_MAP" && Gift.Texts.Count==8,"Town Map gift profile differs.");
         Require(Item.Id.Value=="pret:ITEM_TOWN_MAP" && Item.SourceItemSymbol==Gift.ItemId && Item.SourceItemId==361 &&
-            Item.Name=="TOWN MAP" && Item.Price==0 && Item.Importance==1 && Item.Registrability==1 &&
+            Item.Price==0 && Item.Importance==1 && Item.Registrability==1 &&
             Item.Pocket=="POCKET_KEY_ITEMS" && Item.Type=="ITEM_TYPE_BAG_MENU" && Item.HoldEffect=="HOLD_EFFECT_NONE" &&
             Item.HoldEffectParam==0 && Item.FieldUseFunction=="FieldUseFunc_TownMap" && Item.BattleUsage==0 &&
             Item.BattleUseFunction=="NULL" && Item.SecondaryId==0 && !Item.CanToss && !Item.CanSell && !Item.CanGive &&
