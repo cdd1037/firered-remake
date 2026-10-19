@@ -515,7 +515,7 @@ public sealed partial class CampaignSession
         result=ReferenceEquals(log,result.State.QuestLog)?result:result with{State=result.State with{QuestLog=log}};
         _fieldWarpEntryPresentation=_fieldWarpEntryReceipt is {} receipt&&_fieldWarpEntryArrival is {} entryArrival&&
             ReferenceEquals(result.State.FieldTransition,receipt)?new(commandOrigin,receipt,entryArrival):null;
-        CaptureFieldTransitionObservation(state,result.State,command);
+        CaptureFieldTransitionObservation(state,result.State,command,departure.Item2);
         return result;
     }
 }

@@ -5,45 +5,48 @@ using Godot;
 public partial class CampaignView
 {
     // The reserved UI palette avoids Quest Log grayscale, but FadeScreen selects
-    // PALETTES_ALL: these BG colors follow the same black fade as the field BG.
-    // Retain at most the sixteen nonzero source fade steps until playback resets.
-    private readonly ImageTexture?[] _questLogUiWindows = new ImageTexture?[17];
-    private readonly SourceGameFont?[] _questLogUiFonts = new SourceGameFont?[17];
+    // PALETTES_ALL: UI colors follow the same black/white target as the field BG.
+    // Cache the bounded source coefficients for both targets until playback resets.
+    private readonly ImageTexture?[] _questLogUiWindows = new ImageTexture?[34];
+    private readonly SourceGameFont?[] _questLogUiFonts = new SourceGameFont?[34];
 
-    private Color QuestLogUiColor(int index, int blackCoefficient)
+    private Color QuestLogUiColor(int index, int blackCoefficient,ushort fadeColor=0)
     {
-        ValidateQuestLogUiFade(blackCoefficient);
+        ValidateQuestLogUiFade(blackCoefficient,fadeColor);
         var color = QuestLogColor(index);
         if (blackCoefficient == 0) return color;
         ushort original = (ushort)((color.R8 >> 3) | ((color.G8 >> 3) << 5) | ((color.B8 >> 3) << 10));
-        ushort faded = SourcePaletteMath.Blend(original, blackCoefficient, 0);
+        ushort faded = SourcePaletteMath.Blend(original, blackCoefficient, fadeColor);
         static byte Expand(int channel) => (byte)((channel << 3) | (channel >> 2));
         return Color.Color8(Expand(faded & 31), Expand((faded >> 5) & 31), Expand((faded >> 10) & 31));
     }
 
-    private Texture2D QuestLogUiWindow(int blackCoefficient)
+    private Texture2D QuestLogUiWindow(int blackCoefficient,ushort fadeColor=0)
     {
-        ValidateQuestLogUiFade(blackCoefficient);
+        ValidateQuestLogUiFade(blackCoefficient,fadeColor);
         if (blackCoefficient == 0) return _questLogWindow!;
-        if (_questLogUiWindows[blackCoefficient] is {} cached) return cached;
+        int cache=blackCoefficient+(fadeColor==0?0:17);
+        if (_questLogUiWindows[cache] is {} cached) return cached;
         using var image = _questLogWindow!.GetImage();
         image.Convert(Image.Format.Rgba8);
         var pixels = image.GetData();
-        QuestLogPalettePresentation.TransformRgba(pixels, 0, blackCoefficient);
+        QuestLogPalettePresentation.TransformRgba(pixels, 0, blackCoefficient,fadeColor);
         using var transformed = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgba8, pixels);
-        return _questLogUiWindows[blackCoefficient] = ImageTexture.CreateFromImage(transformed);
+        return _questLogUiWindows[cache] = ImageTexture.CreateFromImage(transformed);
     }
 
-    private SourceGameFont QuestLogUiFont(int blackCoefficient)
+    private SourceGameFont QuestLogUiFont(int blackCoefficient,ushort fadeColor=0)
     {
-        ValidateQuestLogUiFade(blackCoefficient);
+        ValidateQuestLogUiFade(blackCoefficient,fadeColor);
         if (blackCoefficient == 0) return _questLogFont!;
-        return _questLogUiFonts[blackCoefficient] ??= _questLogFont!.CreateColorVariant(
-            QuestLogUiColor(1, blackCoefficient), QuestLogUiColor(12, blackCoefficient));
+        int cache=blackCoefficient+(fadeColor==0?0:17);
+        return _questLogUiFonts[cache] ??= _questLogFont!.CreateColorVariant(
+            QuestLogUiColor(1, blackCoefficient,fadeColor), QuestLogUiColor(12, blackCoefficient,fadeColor));
     }
 
-    private static void ValidateQuestLogUiFade(int coefficient)
+    private static void ValidateQuestLogUiFade(int coefficient,ushort fadeColor)
     {
+        if(fadeColor is not (0 or 0x7fff))throw new ArgumentOutOfRangeException(nameof(fadeColor));
         if (coefficient is < 0 or > 16) throw new ArgumentOutOfRangeException(nameof(coefficient));
     }
 

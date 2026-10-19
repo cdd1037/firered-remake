@@ -436,7 +436,7 @@ public sealed class CampaignQuestLogOrdinaryDoorRouteTests
         // Re-run the observation boundary with the real public command's receipt.
         // Reflection only injects the malformed recording/story proof under test.
         typeof(CampaignSession).GetMethod("CaptureFieldTransitionObservation", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(session, [before, state, new CampaignCommand("move", Direction.South)]);
+            .Invoke(session, [before, state, new CampaignCommand("move", Direction.South), null]);
         Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, FieldWarpPresentation.MinimumDepartureFrames,
             FieldWarpPresentation.MinimumDepartureFrames + FieldDoorPresentation.AnimatedArrivalFrames));
         Assert.IsNull(LastTransition(session.State).TransitionTiming);

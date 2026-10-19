@@ -18,7 +18,7 @@ internal sealed record PretRuntimeMapDocument(int SchemaVersion, string StableId
     ImmutableArray<PretWorldArtifact> Artifacts, PretWorldSpawn? TechnicalSpawn, JsonElement Events,
     string Blocks, string BorderBlocks,
     ImmutableArray<ImmutableArray<uint>> Metatiles, ImmutableArray<PretRuntimeMapBehavior> Behaviors,
-    ImmutableArray<string> ScriptPaths);
+    ImmutableArray<string> ScriptPaths, bool HasCavePreview);
 
 /// <summary>
 /// Map catalogs reference the one compact payload at each ordinary generated path.
@@ -113,6 +113,7 @@ public sealed class PretRuntimeMapData : IFieldMap
     public string SourceMapName => _data.SourceMapName;
     public string TexturePath => _data.TexturePath;
     public JsonElement Events => _data.Events;
+    public bool HasCavePreview => _data.HasCavePreview;
     public PretWorldSpawn? TechnicalSpawn => _data.TechnicalSpawn;
     public ImmutableArray<PretWorldArtifact> Artifacts => _data.Artifacts;
     public ImmutableArray<string> ScriptPaths => _data.ScriptPaths;

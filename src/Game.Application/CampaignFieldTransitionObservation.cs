@@ -21,11 +21,17 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public FieldTransitionDeparture Departure{get;init;}
     [JsonIgnore] public FieldTransitionDeparture EffectiveDeparture=>Cause==FieldTransitionCause.NonAnimatedDoor?FieldTransitionDeparture.StepOntoWarp:Departure;
 
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public FieldTransitionInterlude Interlude{get;init;}
+    [JsonIgnore] public int InterludeFrames=>Interlude==FieldTransitionInterlude.CaveExit?FieldCaveTransitionPresentation.ExitFrames:0;
+    [JsonIgnore] public int DepartureEndFrame=>SwitchFrame-InterludeFrames;
+
     internal bool HasValidPhases()
     {
         if((Cause==FieldTransitionCause.StairWarp?DepartureStairBehavior is not (>=0x6c and <=0x6f):DepartureStairBehavior is not null)||
             (Arrival==FieldTransitionArrival.Stair?ArrivalStairBehavior is not (>=0x6c and <=0x6f):ArrivalStairBehavior is not null))return false;
         if(!Enum.IsDefined(Departure)||Departure!=FieldTransitionDeparture.Immediate&&(Cause!=FieldTransitionCause.PlainWarp||Arrival!=FieldTransitionArrival.Plain))return false;
+        if(!Enum.IsDefined(Interlude)||Interlude!=FieldTransitionInterlude.None&&
+            (Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor)||Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)))return false;
         if(SwitchFrame<0||EndFrame<=SwitchFrame)return false;
         if(Cause==FieldTransitionCause.ConnectedEdge)
             return Arrival==FieldTransitionArrival.Plain&&SwitchFrame==0&&EndFrame==1;
@@ -33,14 +39,14 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
             Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor or FieldTransitionArrival.Stair))return false;
         int minimum=FieldDoorPresentation.DepartureFrames(Cause,EffectiveDeparture);
         int arrival=FieldDoorPresentation.ArrivalFrames(Arrival);
-        return SwitchFrame>=minimum&&EndFrame-SwitchFrame==arrival;
+        return DepartureEndFrame>=minimum&&EndFrame-SwitchFrame==arrival;
     }
 }
 
 public static partial class CampaignQuestLogRecorder
 {
     private static int TransitionTimingBytes(CampaignQuestLogTransitionTiming? timing)=>timing is null?0:
-        8+(timing.Departure==FieldTransitionDeparture.StepOntoWarp?1:0)+(timing.Arrival==FieldTransitionArrival.Plain?0:1)+(timing.DepartureDoor is null?0:4)+(timing.ArrivalDoor is null?0:4)+(timing.DepartureStairBehavior is null?0:1)+(timing.ArrivalStairBehavior is null?0:1);
+        8+(timing.Interlude==FieldTransitionInterlude.None?0:1)+(timing.Departure==FieldTransitionDeparture.StepOntoWarp?1:0)+(timing.Arrival==FieldTransitionArrival.Plain?0:1)+(timing.DepartureDoor is null?0:4)+(timing.ArrivalDoor is null?0:4)+(timing.DepartureStairBehavior is null?0:1)+(timing.ArrivalStairBehavior is null?0:1);
 
     private static string? ValidateTransitionTiming(CampaignQuestLogAction action,CampaignQuestLogActor player)
     {
@@ -122,7 +128,8 @@ public sealed partial class CampaignSession
             (from.MapType!="MAP_TYPE_INDOOR"||to.MapType!="MAP_TYPE_INDOOR"))return false;
         // Both source preview paths are skipped within the same named section.
         // Cross-section preview behavior needs its own presentation contract.
-        if(receipt.Cause!=FieldTransitionCause.ConnectedEdge&&
+        bool caveExit=FieldTransitionInterludeFor(receipt)==FieldTransitionInterlude.CaveExit;
+        if(!caveExit&&receipt.Cause!=FieldTransitionCause.ConnectedEdge&&
             (string.IsNullOrEmpty(from.RegionMapSection)||from.RegionMapSection!=to.RegionMapSection))return false;
         static bool OrdinaryMap(FieldMapDefinition map)=>
             (map.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR")&&
@@ -135,9 +142,23 @@ public sealed partial class CampaignSession
             (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY")&&!map.RequiresFlash;
         // Same-section underground -> underground has no flash-transition table row.
         // Its ladder step, black fade and stationary arrival use the existing controllers.
+        if(caveExit)return NormalCave(from)&&OrdinaryMap(to);
         if(ladder)return NormalCave(from)&&NormalCave(to);
         return (receipt.Departure==FieldTransitionDeparture.Immediate||receipt.Cause==FieldTransitionCause.NonAnimatedDoor)&&
             OrdinaryMap(from)&&OrdinaryMap(to);
+    }
+
+    public FieldTransitionInterlude FieldTransitionInterludeFor(FieldTransitionReceipt receipt)
+    {
+        var from=_content.MapDefinition(receipt.From.MapId);var to=_content.MapDefinition(receipt.To.MapId);
+        // The source preview selector precedes the map-type interlude selector.
+        bool preview=from.RegionMapSection!=to.RegionMapSection&&to.HasCavePreview;
+        return !preview&&from.MapType=="MAP_TYPE_UNDERGROUND"&&
+            to.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR"&&
+            receipt.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor&&
+            receipt.Arrival is FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor&&
+            receipt.DepartureStairBehavior is null&&receipt.ArrivalStairBehavior is null
+            ?FieldTransitionInterlude.CaveExit:FieldTransitionInterlude.None;
     }
 
     // Called once by the owner of a completed live transition. The receipt instance
@@ -149,6 +170,7 @@ public sealed partial class CampaignSession
             !ObservationMatches(State,pending))return false;
         var timing=new CampaignQuestLogTransitionTiming(receipt.Cause,switchFrame,endFrame)
         {
+            Interlude=FieldTransitionInterludeFor(receipt),
             Departure=receipt.Cause==FieldTransitionCause.PlainWarp?receipt.Departure:FieldTransitionDeparture.Immediate,
             Arrival=receipt.Arrival,DepartureStairBehavior=receipt.DepartureStairBehavior,ArrivalStairBehavior=receipt.ArrivalStairBehavior,
             DepartureDoor=receipt.Cause==FieldTransitionCause.AnimatedDoor?new(receipt.From.X,receipt.From.Y-1):
@@ -192,7 +214,7 @@ public sealed partial class CampaignSession
         return state with{QuestLog=updated};
     }
 
-    private void CaptureFieldTransitionObservation(CampaignState before,CampaignState after,CampaignCommand command)
+    private void CaptureFieldTransitionObservation(CampaignState before,CampaignState after,CampaignCommand command,CampaignQuestLogAction? departureCaption)
     {
         // A clock commit does not replace the live owner or its provisional marker.
         if(command.Kind=="play_time_tick"&&_fieldTransitionObservation is {Timing:null} active&&ObservationMatches(after,active))return;
@@ -207,13 +229,14 @@ public sealed partial class CampaignSession
             projection.Map!=receipt.To.MapId.Value||before.QuestLog?.Scenes.LastOrDefault()?.Actions.Contains(marker)==true)return;
         if(index!=scene.Actions.Length-1)
         {
-            // OnTransition can record the first-arrival caption in the same accepted
+            // Map loading can record a producer-owned departure or first-arrival caption in the same accepted
             // command. Source overworld playback cannot display it while warp field
             // controls are locked. Authenticate the producer payload, then retain its
             // offset after the provisional marker when observed duration is known.
             var caption=scene.Actions[^1];
             var arrival=(_content as ICampaignQuestLogCatalog)?.QuestLogSource is {} source?
                 CampaignQuestLogRecorder.FirstArrival(before,after,source):null;
+            arrival??=departureCaption;
             if(arrival is null||caption.StartFrame!=marker.StartFrame+marker.Frames||caption.Arguments.IsDefault||
                 !caption.Arguments.SequenceEqual(arrival.Arguments)||
                 (caption with{StartFrame=arrival.StartFrame,Arguments=arrival.Arguments})!=arrival)return;

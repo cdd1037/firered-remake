@@ -27,6 +27,9 @@ def compile_presentation(raw, generated, selected):
     source = WorldSource(raw)
     layouts = {row.get('layout') or source.json('data/maps/' + row['sourceName'] + '/map.json')['layout'] for row in selected}
     (generated / 'maps/tilesets.json').write_bytes(encode(fields.compile_tables(PROJECT_ROOT, raw=raw, used=layouts)))
+    from field_cave_art import compile_outputs as compile_cave
+    for name, data in compile_cave(source).items():
+        (generated / name).write_bytes(data)
     from field_door_art import compile_outputs as compile_doors
     for name, data in compile_doors(source, layouts).items():
         (generated / name).write_bytes(data)
@@ -64,6 +67,8 @@ def compile_world(raw, generated, selection):
         events = source.json('data/maps/' + row['sourceName'] + '/map.json')
         symbols[events['id']] = row['stableId']
     tilesets = tileset_bindings(source)
+    from field_cave_art import preview_types
+    previews = preview_types(source)
     entries = []
     for row in selected:
         name = row['sourceName']
@@ -78,7 +83,8 @@ def compile_world(raw, generated, selection):
         entries.append(entry)
         render_map(source, name, row['stableId'], Path(generated) / row['path'], tilesets=tilesets,
                    render_border=row.get('renderBorder', True), layout_symbol=row.get('layout'),
-                   technical_spawn=row.get('technicalSpawn'))
+                   technical_spawn=row.get('technicalSpawn'),
+                   has_cave_preview=previews.get(events['region_map_section']) == 'MPS_TYPE_CAVE')
     index = dict(schemaVersion=3, maps=entries, mapSymbols=symbols)
     (Path(generated) / 'maps').mkdir(parents=True, exist_ok=True)
     (Path(generated) / 'maps/world.json').write_bytes(encode(index))

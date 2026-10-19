@@ -15,12 +15,13 @@ public static class QuestLogPalettePresentation
         return (ushort)((color&0x8000)|r|(g<<5)|(b<<10));
     }
 
-    public static void TransformRgba(byte[] pixels,int coefficient,int blackCoefficient=0)
+    public static void TransformRgba(byte[] pixels,int coefficient,int blackCoefficient=0,ushort fadeColor=0)
     {
         ArgumentNullException.ThrowIfNull(pixels);
         if(pixels.Length%4!=0)throw new ArgumentException("RGBA pixels must contain complete pixels.",nameof(pixels));
         if(coefficient is <0 or >16)throw new ArgumentOutOfRangeException(nameof(coefficient));
         if(blackCoefficient is <0 or >16)throw new ArgumentOutOfRangeException(nameof(blackCoefficient));
+        if(fadeColor>0x7fff)throw new ArgumentOutOfRangeException(nameof(fadeColor));
         if(coefficient==0&&blackCoefficient==0)return;
         for(int i=0;i<pixels.Length;i+=4)
         {
@@ -30,7 +31,8 @@ public static class QuestLogPalettePresentation
             {
                 // Quest tones modify the normal palette before the field fade acts
                 // on it. Both steps retain the original RGB555 integer rounding.
-                int channel=(((color>>(5*c))&31)*(16-blackCoefficient))>>4;
+                int channel=(color>>(5*c))&31;
+                channel+=(((fadeColor>>(5*c))&31)-channel)*blackCoefficient>>4;
                 pixels[i+c]=(byte)((channel<<3)|(channel>>2));
             }
         }

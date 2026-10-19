@@ -68,6 +68,7 @@ public sealed class PretWorldMap : IFieldMap
     public ImmutableArray<PretWorldCell> BorderCells => _data.ExpandBorderCells();
     public ImmutableArray<PretWorldArtifact> Artifacts => _data.Artifacts;
     public JsonElement Events => _data.Events;
+    public bool HasCavePreview => _data.HasCavePreview;
     public string SourceMapSymbol => _data.SourceMapSymbol;
     public ImmutableArray<PretWorldWarp> Warps => Events.GetProperty("warp_events").EnumerateArray().Select((e, index) =>
         new PretWorldWarp(index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),

@@ -36,7 +36,7 @@ public partial class CampaignView
     }
     private void ResetQuestLogPlayback()
     {
-        _questLogPlayback=null;ClearQuestLogUiPalette();ClearQuestLogPaletteTextures();ResetQuestLogArt();ResetPlayTimeHost();
+        _questLogPlayback=null;ClearCaveTransitionTexture();ClearQuestLogUiPalette();ClearQuestLogPaletteTextures();ResetQuestLogArt();ResetPlayTimeHost();
     }
     private void FinishQuestLogPlayback()
     {
@@ -121,36 +121,42 @@ public partial class CampaignView
                 }
             }
         }
-        DrawFieldSnapshot(snapshot,playback.GrayscaleCoefficient,warp.BackgroundBlend,warp.ObjectBlend);
+        ushort fadeColor=playback.ActiveTransitionTiming is {Interlude:FieldTransitionInterlude.CaveExit} caveTiming&&playback.TransitionElapsedFrames>=caveTiming.SwitchFrame?(ushort)0x7fff:(ushort)0;
+        if(playback.ActiveTransitionTiming is {Interlude:FieldTransitionInterlude.CaveExit} interlude&&
+            playback.TransitionElapsedFrames>=interlude.DepartureEndFrame&&playback.TransitionElapsedFrames<interlude.SwitchFrame)
+        { DrawCaveExitFrame((int)Math.Floor(playback.TransitionElapsedFrames)-interlude.DepartureEndFrame);return true; }
+        DrawFieldSnapshot(snapshot,playback.GrayscaleCoefficient,warp.BackgroundBlend,warp.ObjectBlend,fadeColor);
         int barHeight=playback.BarHeight;
         if(barHeight>0)
         {
-            DrawRect(new(0,0,240,barHeight),QuestLogUiColor(15,warp.BackgroundBlend));
-            DrawRect(new(0,160-barHeight,240,barHeight),QuestLogUiColor(15,warp.BackgroundBlend));
+            DrawRect(new(0,0,240,barHeight),QuestLogUiColor(15,warp.BackgroundBlend,fadeColor));
+            DrawRect(new(0,160-barHeight,240,barHeight),QuestLogUiColor(15,warp.BackgroundBlend,fadeColor));
         }
         string header=_catalog.QuestLogSource.Texts["PreviouslyOnYourQuest"];
         if(!playback.SavedGameVisible)header+=(playback.SceneCount-playback.SceneIndex).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if(playback.HeaderVisible)SourceText(QuestLogUiFont(warp.BackgroundBlend),new(2,2),header);
+        if(playback.HeaderVisible)SourceText(QuestLogUiFont(warp.BackgroundBlend,fadeColor),new(2,2),header);
         if(playback.Caption is {} caption)
         {
             for(int y=0;y<6;y++)for(int x=0;x<30;x++)
-                DrawTextureRectRegion(QuestLogUiWindow(warp.BackgroundBlend),new(x*8,112+y*8,8,8),new(0,(y==0?0:y==5?2:1)*8,8,8));
+                DrawTextureRectRegion(QuestLogUiWindow(warp.BackgroundBlend,fadeColor),new(x*8,112+y*8,8,8),new(0,(y==0?0:y==5?2:1)*8,8,8));
             var lines=caption.Split('\n');int top=lines.Length==1?17:lines.Length==2?10:3;
-            for(int i=0;i<lines.Length;i++)SourceText(QuestLogUiFont(warp.BackgroundBlend),new(2,112+top+i*16),lines[i]);
+            for(int i=0;i<lines.Length;i++)SourceText(QuestLogUiFont(warp.BackgroundBlend,fadeColor),new(2,112+top+i*16),lines[i]);
         }
         DrawFieldDoorWipe(warp);
         return true;
     }
-    private void DrawFieldSnapshot(FieldSnapshot snapshot,int grayscale,int backgroundBlend,int objectBlend)
+    private void DrawFieldSnapshot(FieldSnapshot snapshot,int grayscale,int backgroundBlend,int objectBlend,ushort fadeColor=0)
     {
         var projection=snapshot.Projection;
         var hero=snapshot.Poses[CampaignQuestLogRecorder.PlayerId];
         var camera=(hero.Position+new Vector2(8-120,8-80)).Floor();
         var neighbors=FieldSnapshotNeighbors(new MapId(projection.Map)).Where(neighbor=>new Rect2(neighbor.Origin,
             new(_catalog.Maps[neighbor.Map].Width*16,_catalog.Maps[neighbor.Map].Height*16)).Intersects(new(camera,new(240,160)))).ToArray();
-        PrepareFieldSnapshotPalette(snapshot,grayscale,backgroundBlend,objectBlend,neighbors);
+        PrepareFieldSnapshotPalette(snapshot,grayscale,backgroundBlend,objectBlend,neighbors,fadeColor);
         var art=GetFieldSnapshotMapArt(snapshot,neighbors);
-        DrawRect(new(0,0,240,160),Colors.Black);
+        int backdrop=fadeColor==0x7fff?(31*backgroundBlend)>>4:0;
+        byte background=(byte)((backdrop<<3)|(backdrop>>2));
+        DrawRect(new(0,0,240,160),Color.Color8(background,background,background));
         DrawFieldSnapshotLayer(snapshot,art,camera,0,neighbors);DrawFieldSnapshotLayer(snapshot,art,camera,1,neighbors);
         foreach(var actor in projection.Actors.Where(a=>a.Visible&&snapshot.Poses[a.Id].Visible)
             .OrderBy(a=>snapshot.Poses[a.Id].Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))

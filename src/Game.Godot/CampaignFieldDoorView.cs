@@ -87,11 +87,11 @@ public partial class CampaignView
         bool doorCue=false;
         for(int frame=first;frame<=last;frame++)
         {
-            var sample=FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame,timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture);
+            var sample=FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame,timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture,timing.Interlude);
             doorCue|=sample.OpenDoorSoundRequested;
             bool exit=timing.Cause==Game.Domain.World.FieldTransitionCause.PlainWarp&&timing.EffectiveDeparture==Game.Domain.World.FieldTransitionDeparture.Immediate&&frame==0;
             if(timing.EffectiveDeparture==Game.Domain.World.FieldTransitionDeparture.StepOntoWarp&&frame<timing.SwitchFrame&&sample.MusicFadeRequested)
-                exit=frame==0||!FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame-1,departureKind:timing.EffectiveDeparture).MusicFadeRequested;
+                exit=frame==0||!FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame-1,departureKind:timing.EffectiveDeparture,interludeKind:timing.Interlude).MusicFadeRequested;
             if(timing.Cause==Game.Domain.World.FieldTransitionCause.StairWarp&&frame==1)exit=true;
             if(exit)SourceSound("SE_EXIT");
         }

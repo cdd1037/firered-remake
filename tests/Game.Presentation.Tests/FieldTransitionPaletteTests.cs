@@ -6,7 +6,9 @@ namespace FireRed.Tests.Presentation;
 public sealed class FieldTransitionPaletteTests
 {
     [TestMethod]
-    public void RecordedTonePrecedesFieldFadeWithIndependentIntegerRounding()
+    [DataRow(0)]
+    [DataRow(32767)]
+    public void RecordedTonePrecedesFieldFadeWithIndependentIntegerRounding(int fadeColor)
     {
         ushort[] colors = [0,1,31,32,0x3e0,0x400,0x7c00,0x7fff,0x1234,0x4210,0x2bb9];
         foreach (int tone in Enumerable.Range(0,17))
@@ -15,12 +17,13 @@ public sealed class FieldTransitionPaletteTests
         {
             int[] channels=[color&31,(color>>5)&31,(color>>10)&31];
             byte[] pixels=[Expand(channels[0]),Expand(channels[1]),Expand(channels[2]),127,9,17,33,0];
-            QuestLogPalettePresentation.TransformRgba(pixels,tone,fade);
+            QuestLogPalettePresentation.TransformRgba(pixels,tone,fade,(ushort)fadeColor);
             int gray=(76*channels[0]+151*channels[1]+29*channels[2])/256;
             for(int c=0;c<3;c++)
             {
                 int tinted=channels[c]+(int)Math.Floor(tone*(gray-channels[c])/16d);
-                int faded=tinted+(int)Math.Floor(-fade*tinted/16d);
+                int target=(fadeColor>>(5*c))&31;
+                int faded=tinted+(int)Math.Floor(fade*(target-tinted)/16d);
                 Assert.AreEqual(Expand(faded),pixels[c],$"{color:x4}:tone{tone}:fade{fade}:channel{c}");
             }
             Assert.AreEqual((byte)127,pixels[3]);

@@ -31,30 +31,33 @@ public static partial class FieldDoorPresentation
         bool MusicFadeRequested,bool TeleportTask,bool OpenDoorSoundRequested);
 
     /// <summary>Replays the exact observed transfer; no current audio readiness is consulted.</summary>
-    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null,FieldTransitionDeparture departureKind=FieldTransitionDeparture.Immediate)
+    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null,FieldTransitionDeparture departureKind=FieldTransitionDeparture.Immediate,FieldTransitionInterlude interludeKind=FieldTransitionInterlude.None)
     {
+        int interludeFrames=interludeKind==FieldTransitionInterlude.CaveExit?FieldCaveTransitionPresentation.ExitFrames:0;
+        int departureEnd=switchFrame-interludeFrames;
         int minimum=DepartureFrames(cause,departureKind);
         _=ArrivalFrames(arrivalKind);
-        if(switchFrame<minimum)throw new ArgumentOutOfRangeException(nameof(switchFrame));
+        if(departureEnd<minimum)throw new ArgumentOutOfRangeException(nameof(switchFrame));
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
         if(elapsedFrames<switchFrame)
         {
+            elapsedFrames=Math.Min(elapsedFrames,departureEnd);
             if(cause==FieldTransitionCause.StairWarp)return FromPlain(FieldStairPresentation.SampleDeparture(
                 departureStairBehavior??throw new ArgumentException("stair_departure_behavior_missing"),switchFrame,elapsedFrames).Phase);
             if(cause==FieldTransitionCause.AnimatedDoor)
             {
                 var departure=new Departure();
-                for(int frame=1;frame<=elapsedFrames;frame++)departure.Advance(frame>=switchFrame-1);
+                for(int frame=1;frame<=elapsedFrames;frame++)departure.Advance(frame>=departureEnd-1);
                 return departure.Sample;
             }
             if(cause==FieldTransitionCause.NonAnimatedDoor||departureKind==FieldTransitionDeparture.StepOntoWarp)
             {
                 var step=new StepDeparture();
-                for(int frame=1;frame<=elapsedFrames;frame++)step.Advance(frame>=switchFrame-1);
+                for(int frame=1;frame<=elapsedFrames;frame++)step.Advance(frame>=departureEnd-1);
                 return step.Sample;
             }
             var plain=new FieldWarpPresentation.Departure();
-            for(int frame=1;frame<=elapsedFrames;frame++)plain.Advance(frame>=switchFrame-1);
+            for(int frame=1;frame<=elapsedFrames;frame++)plain.Advance(frame>=departureEnd-1);
             return FromPlain(plain.Sample);
         }
         if(arrivalKind==FieldTransitionArrival.Stair)return FromPlain(FieldStairPresentation.SampleArrival(

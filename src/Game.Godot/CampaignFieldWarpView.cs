@@ -22,6 +22,8 @@ public partial class CampaignView
         public FieldStairPresentation.Departure? StairDeparture;
         public FieldStairPresentation.Arrival? StairArrival;
         public FieldDoorArtEntry? DepartureArt,ArrivalArt;
+        public FieldTransitionInterlude Interlude;
+        public FieldCaveTransitionPresentation.Exit? CaveExit;
         public bool Arriving;
         public FieldDoorPresentation.PhaseSample Sample=>Arriving
             ?StairArrival is {} sa?FieldDoorPresentation.FromPlain(sa.Sample.Phase):DoorArrival?.Sample??StepArrival?.Sample??FieldDoorPresentation.FromPlain(Arrival!.Sample)
@@ -67,7 +69,7 @@ public partial class CampaignView
         var owner=new object();
         var animation=new FieldWarpAnimation
         {
-            Receipt=receipt,Origin=before,ArrivalState=arrivalState,
+            Receipt=receipt,Origin=before,ArrivalState=arrivalState,Interlude=_session.FieldTransitionInterludeFor(receipt),
             OriginView=CaptureFieldSnapshot(before,owner,0,true),
             DestinationView=CaptureFieldSnapshot(arrivalState,owner,1,false)
         };
@@ -120,27 +122,40 @@ public partial class CampaignView
             if(!animation.Arriving)
             {
                 bool musicReady=!animation.WaitForMusic||_sourceAudio is null||_audioFaulted||_sourceAudio.Snapshot().Music?.Playing!=true;
-                if(animation.StairDeparture is {} stair)
+                if(animation.CaveExit is {} cave)
                 {
-                    bool requested=stair.Sample.MusicFadeRequested;stair.Advance(musicReady);
-                    if(!requested&&stair.Sample.MusicFadeRequested){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
-                    if(!stair.Complete)continue;
+                    cave.Advance();if(!cave.Complete)continue;
                 }
-                else if(animation.DoorDeparture is {} door)
+                else
                 {
-                    bool requested=door.MusicFadeRequested;
-                    door.Advance(musicReady);
-                    if(!requested&&door.MusicFadeRequested)BeginFieldWarpMusicFade(animation);
-                    if(door.Sample.OpenDoorSoundRequested)SourceSound(animation.DepartureArt!.SoundEffect);
-                    if(!door.Complete)continue;
+                    if(animation.StairDeparture is {} stair)
+                    {
+                        bool requested=stair.Sample.MusicFadeRequested;stair.Advance(musicReady);
+                        if(!requested&&stair.Sample.MusicFadeRequested){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
+                        if(!stair.Complete)continue;
+                    }
+                    else if(animation.DoorDeparture is {} door)
+                    {
+                        bool requested=door.MusicFadeRequested;
+                        door.Advance(musicReady);
+                        if(!requested&&door.MusicFadeRequested)BeginFieldWarpMusicFade(animation);
+                        if(door.Sample.OpenDoorSoundRequested)SourceSound(animation.DepartureArt!.SoundEffect);
+                        if(!door.Complete)continue;
+                    }
+                    else if(animation.StepDeparture is {} step)
+                    {
+                        bool requested=step.MusicFadeRequested;step.Advance(musicReady);
+                        if(!requested&&step.MusicFadeRequested){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
+                        if(!step.Complete)continue;
+                    }
+                    else{animation.Departure.Advance(musicReady);if(!animation.Departure.Complete)continue;}
+                    if(animation.Interlude==FieldTransitionInterlude.CaveExit)
+                    {
+                        var art=CaveTransitionArt;
+                        animation.CaveExit=new(art.TransitionPalette,art.WhitePalette);
+                        continue;
+                    }
                 }
-                else if(animation.StepDeparture is {} step)
-                {
-                    bool requested=step.MusicFadeRequested;step.Advance(musicReady);
-                    if(!requested&&step.MusicFadeRequested){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
-                    if(!step.Complete)continue;
-                }
-                else{animation.Departure.Advance(musicReady);if(!animation.Departure.Complete)continue;}
                 animation.SwitchFrame=animation.ProcessedFrames;
                 animation.Arriving=true;
                 if(animation.Receipt.Arrival==FieldTransitionArrival.Stair)animation.StairArrival=new(animation.Receipt.ArrivalStairBehavior!.Value);
@@ -188,6 +203,7 @@ public partial class CampaignView
     private bool DrawFieldWarpPresentation()
     {
         if(_fieldWarp is not {} animation)return false;
+        if(!animation.Arriving&&animation.CaveExit is {} cave){DrawCaveExit(cave.Sample);return true;}
         var sample=animation.Sample;
         var snapshot=animation.Arriving?animation.DestinationView:animation.OriginView;
         if(animation.Arriving&&animation.StairArrival is {} sa)snapshot=WithFieldStairPose(snapshot,sa.Sample);
@@ -200,7 +216,8 @@ public partial class CampaignView
             snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.ArrivalAnchor.X,animation.Receipt.ArrivalAnchor.Y,Direction.South);
         else if(!animation.Arriving&&animation.Receipt.DepartureStep is {} step)
             snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.From.X,animation.Receipt.From.Y,step.Facing);
-        DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend);
+        DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend,
+            animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveExit?(ushort)0x7fff:(ushort)0);
         DrawFieldDoorWipe(sample);
         return true;
     }
@@ -209,17 +226,17 @@ public partial class CampaignView
         playback.ActiveTransitionTiming is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp} timing
             ?FieldDoorPresentation.SampleRecorded(timing.Cause,
                 timing.Arrival,timing.SwitchFrame,
-                (int)Math.Floor(playback.TransitionElapsedFrames+1e-7),timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture)
+                (int)Math.Floor(playback.TransitionElapsedFrames+1e-7),timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture,timing.Interlude)
             :default;
 
     private void ReleaseFinishedFieldSnapshot()
     {
         if(!_fieldSnapshotReleasePending)return;
-        _fieldSnapshotReleasePending=false;ClearQuestLogPaletteTextures();ResetQuestLogArt();
+        _fieldSnapshotReleasePending=false;ClearCaveTransitionTexture();ClearQuestLogPaletteTextures();ResetQuestLogArt();
     }
     private void ResetFieldWarpPresentation()
     {
-        _fieldWarp=null;_fieldWarpSynchronizing=false;_fieldSnapshotReleasePending=false;
+        _fieldWarp=null;_fieldWarpSynchronizing=false;_fieldSnapshotReleasePending=false;ClearCaveTransitionTexture();
         ClearQuestLogPaletteTextures();ResetQuestLogArt();
     }
 }
