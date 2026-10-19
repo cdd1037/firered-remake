@@ -56,8 +56,7 @@ public sealed partial class CampaignSession
         var owned=state.Party[active];string id="forest-trainer-battle:"+((state.ForestTrainerHistory?.Length??0)+1);
         var presentation=new CampaignWildBattle(id,owned,frame,ProjectTrainerWildEvents(prepared.Events),0,combat.Battle.Player.Pokemon,combat.Battle.Opponent.Pokemon,
             CampaignBattlePhase.Events,[],0,prepared.Trace)
-        {DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), SourceEvents=prepared.Events,ActivePartyIndex=active,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),
-            OpponentHpAtLastSwitch=combat.Battle.Opponent.Pokemon.CurrentHp};
+        {DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), SourceEvents=prepared.Events,ActivePartyIndex=active,OpponentHpAtLastSwitch=combat.Battle.Opponent.Pokemon.CurrentHp};
         var battle=new CampaignForestTrainerBattle(id,trainer,Route22RivalActor,presentation,CampaignForestTrainerStage.Combat,
             state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),ProjectTrainerEvents(frame,prepared.Events),0,0,[0]);
         return PrepareForestTrainerPresentation(ProjectSourceTrainerOwnedParty(ResetFieldPoisonCounterForBattle(state) with{ForestTrainerBattle=battle,Dialogue=null,Motions=[],PresentationTicks=0,

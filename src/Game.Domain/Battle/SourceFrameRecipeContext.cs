@@ -487,6 +487,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             throw new SourceRecipeUnsupported("source_kernel_faint_owner_required");
         if (Get(slot).Pokemon.CurrentHp != 0) throw new SourceRecipeUnsupported("source_kernel_faint_requires_zero_hp");
         if (Frame.IsSourceAbsent(slot)) return; // Cmd_tryfaintmon tests absence, independently of HP.
+        Set(slot, SourceBattleFriendshipRules.Faint(Frame, slot));
         Frame = SourceOpponentFaintResults.Record(Frame, slot, invocation.Actor);
         ResolveLateTurnFaint(slot);
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);

@@ -14,27 +14,19 @@ public sealed partial class CampaignSession
         var b=state.WildBattle??throw new InvalidDataException("source_wild_owned_context");
         var frame=b.Frame??throw new InvalidDataException("canonical_wild_frame_required");var actual=frame.Party(BattleSide.Player);
         if(actual.Members.Length!=state.Party.Length)throw new InvalidDataException("source_wild_owned_count");
-        var owned=state.Party.ToBuilder();var members=actual.Members;var fainted=b.FaintedMembers??ImmutableSortedSet<long>.Empty;
+        var owned=state.Party.ToBuilder();var members=actual.Members;
         for(int i=0;i<owned.Count;i++)
         {
             var member=members[i];
             if(member.IsEgg!=owned[i].IsEgg||!SourceOwnedIdentity(member.Pokemon,owned[i].Pokemon))
                 throw new InvalidDataException("source_wild_owned_identity");
             var pokemon=member.Pokemon;
-            if(pokemon.CurrentHp==0&&!fainted.Contains(owned[i].InstanceId))
-            {
-                pokemon=pokemon with{Friendship=Math.Max(0,pokemon.Friendship-1)};
-                fainted=fainted.Add(owned[i].InstanceId);member=member with{Pokemon=pokemon};members=members.SetItem(i,member);
-                frame=frame with{Slots=frame.Slots.Select(c=>c.Member==new PartyMemberKey(BattleSide.Player,i)?c with{
-                    Body=WildBattleTransformationRules.ApplyPersistentPokemon(c.Body!,pokemon)}:c).ToImmutableArray()};
-            }
             owned[i]=owned[i] with{Pokemon=pokemon,Status=member.Status,HeldItem=WildBattleSourcePartyEffects.PersistentHeldItem(member)};
         }
-        frame=frame with{Parties=frame.Parties.SetItem(0,actual with{Members=members})};
         int index=frame.Get(new(0)).Member!.Value.Index;
         if(index!=b.ActivePartyIndex)b=b with{ActivePartyIndex=index,OwnedBefore=owned[index],
             OpponentHpAtLastSwitch=frame.Get(new(1)).Body!.Pokemon.CurrentHp};
-        return state with{Party=owned.ToImmutable(),WildBattle=b with{Frame=frame,FaintedMembers=fainted}};
+        return state with{Party=owned.ToImmutable(),WildBattle=b with{Frame=frame}};
     }
 
     private Decision<CampaignState> DecideSourceWildPartyChoice(CampaignState state,CampaignCommand command)

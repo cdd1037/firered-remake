@@ -256,7 +256,7 @@ public abstract class WildBattleFixture
             EntryLevels = party.Select(p => p.Pokemon.Level).ToImmutableArray(),
             ActivePartyIndex = 0,
             Origin = new("MAPSEC_ROUTE_1", enemy.Pokemon.Level, enemy.Nickname),
-            FaintedMembers = ImmutableSortedSet<long>.Empty,
+
             OpponentHpAtLastSwitch = enemy.Pokemon.CurrentHp
         };
         var state = basis with

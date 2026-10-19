@@ -42,7 +42,9 @@ public sealed class BatonPassAnimationKernelTests
         var campaign=(ICampaignCatalog)CurrentCampaignFixture.Catalog;
         var setup=SourceTrainerEncounterEntry.Prepare(new(42),"baton-pass-animation");
         var made=SaffronGymTrainerPartyFactory.Create(campaign.SaffronGymTrainerParties!,campaign.OpponentPokemon!,SaffronGymTrainerPartyFactory.Sabrina,setup.Rng);
-        var entry=SourceTrainerEncounterEntry.Begin(Kernel.Mechanics.Catalog,setup,made,[Kernel.Mon("WAILORD","SPLASH",100)],0);
+        var rewards=new SourceFourRewardState{Context=new(SourceRewardBattleKind.OrdinaryTrainer,42,"RED","MAPSEC_SAFFRON_CITY"),
+            Metadata=[new(new(BattleSide.Player,0),"RED","MAPSEC_PALLET_TOWN","ITEM_POKE_BALL",SourceRewardPokerusHistory.NeverInfected)]};
+        var entry=SourceTrainerEncounterEntry.Begin(Kernel.Mechanics.Catalog,setup,made,[Kernel.Mon("WAILORD","SPLASH",100)],0,rewards:rewards);
         Assert.IsTrue(entry.Succeeded,entry.Fault);var frame=entry.State!;
         var choices=ImmutableArray.Create(new SourceActionSelection(frame.Slots[0].Occupant!.Value,SourceActionKind.Move,0,new(0)),
             new SourceActionSelection(frame.Slots[1].Occupant!.Value,SourceActionKind.Switch,Incoming:new(BattleSide.Opponent,1)));

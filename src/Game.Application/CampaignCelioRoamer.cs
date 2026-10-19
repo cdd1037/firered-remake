@@ -58,7 +58,6 @@ public sealed partial class CampaignSession
             CelioRoamer = origin, CelioRoamerEncounterTrace = gateTrace, ActivePartyIndex = active,
             Origin = new(_content.MapDefinition(origin.Map).RegionMapSection, SourceRoamerRules.Level,
                 _content.PokemonContent!.SpeciesNames[battle.Opponent.Pokemon.SourceSpeciesId]),
-            FaintedMembers = state.Party.Where(p => p.Pokemon.CurrentHp == 0).Select(p => p.InstanceId).ToImmutableSortedSet(),
             OpponentHpAtLastSwitch = battle.Opponent.Pokemon.CurrentHp
         };
         return PrepareWildPresentation(state with { WildBattle = presentation,

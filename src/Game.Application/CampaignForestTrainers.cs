@@ -134,7 +134,7 @@ public sealed partial class CampaignSession
             combat.Get(new(0)).Body!.Pokemon, combat.Get(new(1)).Body!.Pokemon, CampaignBattlePhase.Events,
             [], 0, prepared.Trace)
         { DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), SourceEvents = prepared.Events, ActivePartyIndex = active,
-            FaintedMembers = state.Party.Where(p => p.Pokemon.CurrentHp == 0).Select(p => p.InstanceId).ToImmutableSortedSet(), OpponentHpAtLastSwitch = combat.Get(new(1)).Body!.Pokemon.CurrentHp };
+            OpponentHpAtLastSwitch = combat.Get(new(1)).Body!.Pokemon.CurrentHp };
         var battle = new CampaignForestTrainerBattle(id, trainer, actorId, presentation,
             CampaignForestTrainerStage.Intro, state.Party.Select(p => p.Pokemon.Level).ToImmutableArray(),
             ProjectTrainerEvents(combat, prepared.Events), 0, 0, [0])

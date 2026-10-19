@@ -41,7 +41,13 @@ public sealed class TrainerPolicyTests
         var setup = SourceTrainerEncounterEntry.Prepare(new(seed), "fuchsia-gym-trainer");
         Assert.IsTrue(setup.Succeeded && setup.Trace.Length == 4 && setup.Trace.All(t => t.Bound == 16), "four source entry AI setup draws");
         var made = FuchsiaGymTrainerPartyFactory.Create(gym, trainerCatalog, new("pret:TRAINER_" + name), setup.Rng);
-        var entered = SourceTrainerEncounterEntry.Begin(catalog, setup, made, [Player(0), Player(3)], 0, terrain: WildBattleTerrain.Building);
+        var rewards = new SourceFourRewardState {
+            Context = new(SourceRewardBattleKind.OrdinaryTrainer, 42, "RED", "MAPSEC_FUCHSIA_CITY"),
+            Metadata = Enumerable.Range(0, 2).Select(i => new SourceRewardMetadata(new(BattleSide.Player, i),
+                "RED", "MAPSEC_PALLET_TOWN", "ITEM_POKE_BALL", SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray()
+        };
+        var entered = SourceTrainerEncounterEntry.Begin(catalog, setup, made, [Player(0), Player(3)], 0,
+            terrain: WildBattleTerrain.Building, rewards: rewards);
         Assert.IsTrue(entered.Succeeded, "authentic canonical entry " + entered.Fault);
         var frame = entered.State!;
         Assert.IsTrue(SourceFourActionTurns.ValidateCapability(catalog, frame)is null, "canonical capability");
@@ -227,7 +233,8 @@ public sealed class TrainerPolicyTests
         Assert.IsTrue(!SourceTrainerEncounterPolicy.CanOfferShift(initial with { TrainerEncounter = initial.TrainerEncounter!with { BattleStyle = ForestTrainerBattleStyle.Set } }), "Set suppresses choice");
         var noReserve = initial with
         {
-            Parties = initial.Parties.SetItem(0, initial.Party(BattleSide.Player)with { Members = [initial.Party(BattleSide.Player).Members[0]] })
+            Parties = initial.Parties.SetItem(0, initial.Party(BattleSide.Player)with { Members = [initial.Party(BattleSide.Player).Members[0]] }),
+            Rewards = initial.Rewards! with { Metadata = [initial.Rewards.Metadata[0]] }
         };
         Assert.IsTrue(!SourceTrainerEncounterPolicy.CanOfferShift(noReserve), "Shift requires a real player reserve");
         var observed = SourceTrainerEncounterPolicy.Observe(initial, [new SourceFaintedEvent(1, initial.Turn, new(0))]);

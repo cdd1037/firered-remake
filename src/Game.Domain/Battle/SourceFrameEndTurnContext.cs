@@ -108,6 +108,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
         var occupant = Frame.Get(slot).Occupant!.Value;
         if (Get(slot).Pokemon.CurrentHp != 0 || Frame.FourTurn!.Defeats.Any(d => d.Occupant == occupant))
             throw new SourceRecipeUnsupported("source_end_turn_faint_contract");
+        Set(slot, SourceBattleFriendshipRules.Faint(Frame, slot));
         Frame = SourceOpponentFaintResults.Record(Frame, slot, scriptAttacker);
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
         Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));

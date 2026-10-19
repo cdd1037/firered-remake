@@ -80,6 +80,9 @@ public static class SourceTrainerEncounterEntry
             SourceBattleAdmission.ValidateOwnedEntry(owned, playerParty, playerIndex) is { } ||
             created.Party.Any(m => !owned.Opponents.Catalog.Species.ContainsKey(m.Pokemon.Species))))
             return Fail("source_trainer_entry_campaign_admission");
+        var friendship = SourceBattleFriendshipRules.TrainerEntry(created.Trainer, playerParty, rewards);
+        if (friendship.Fault is { } friendshipFault) return Fail(friendshipFault);
+        playerParty = friendship.Party;
         try
         {
             var players = playerParty.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem, m.Status, m.IsEgg)).ToImmutableArray();
