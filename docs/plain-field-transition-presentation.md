@@ -366,3 +366,39 @@ A strict Godot headless checkpoint then drove the actual hosted entry, dialogue,
 ## Cloud display verification correction (2026-10-19)
 
 Earlier DISPLAY/Xvfb statements above describe the isolated command-shell environment only. The existing own-cloud X11 desktop can see this repository and the fixed Godot toolchain. It rendered the current project through Mesa software OpenGL during the ordinary-jump acceptance; no display installation or user-computer access was required. This corrects environment availability, but does not retroactively verify those earlier transition routes or actual speaker output. See [jump evidence](shared-field-jump-presentation.md).
+
+## Bounded own-cloud native acceptance (2026-10-19)
+
+Five isolated checkpoints reused the maintained typed route builders and strict
+save validation; earned party/flags came from the existing checkpoint. Only
+controlled placement and omitted recap playback distinguish these from a
+campaign run. X11/Mesa llvmpipe rendered the actual fixed Godot4.7.2/.NET10.0.12
+window. Time scale0.1 helped capture short phases; these are visible-layer checks,
+not hardware timing or speaker-output verification (audio remained Dummy).
+
+- Route4→MtMoon: departure, full named preview and cave arrival visible.
+- South gate→Viridian Forest: named picture and shaded field visible. This exposed
+  a remake rendering bug: transparent font-quad texels copied the field over the
+  name window. The dedicated forest shader now discards transparent fragments,
+  retaining already drawn BG0 primitives. Transparent picture pixels likewise
+  retain the underlying field; RGB555 blend arithmetic is unchanged. This is not
+  an original-game deviation. Fixed source `MapPreview_CreateMapNameWindow` fills
+  the window before printing the name.
+- Mansion SHADE stairs: public ascent/turn/descent retained muted background,
+  separately colored player and stair occlusion.
+- RockTunnel dark ladder: level4 dark circle survived1F→B1F with the hero centered
+  and changed ladder/floor visible only inside the mask.
+- Tower5F: horizontal fog, Start→Bag→Start→field, dark return fade and restored
+  fog/UI were visible. This check does not exercise purification itself.
+
+The original five runs exited0 without runtime errors/exceptions/leaks. The
+forest correction rebuilt with zero warnings/errors and passed16 focused
+source/controller/color-math tests. The corrected forest window was then retested:
+its title panel is solid and readable; exactly736 changed pixels lie within the
+previous faulty glyph rectangle (x7..96,y2..15), while the rest of the240×160
+preview is pixel-identical to the original capture. Arrival remains correct.
+Native artifacts and the separately retained
+failed title capture are under `/workspace/shared/field-transition-native`;
+raw/generated assets, screenshots and generated oracle data remain outside Git.
+These observations do not cover every route, every preview variant, all native
+recap combinations or actual audible output.

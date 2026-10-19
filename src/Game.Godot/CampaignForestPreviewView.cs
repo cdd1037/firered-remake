@@ -23,12 +23,14 @@ public partial class CampaignView
                 uniform int alpha_b;
                 void fragment() {
                     vec4 foreground = COLOR;
+                    // Transparent texels leave prior BG0 primitives (including the name window) intact.
+                    if (foreground.a < 0.5) { discard; }
                     vec4 field = texture(screen_texture, SCREEN_UV);
                     vec3 a = floor(foreground.rgb * 255.0 / 8.0 + 0.0001);
                     vec3 b = floor(field.rgb * 255.0 / 8.0 + 0.0001);
                     vec3 value = min(vec3(31.0), floor((a * float(alpha_a) + b * float(alpha_b)) / 16.0));
                     vec3 rgb = (value * 8.0 + floor(value / 4.0)) / 255.0;
-                    COLOR = vec4(foreground.a < 0.5 ? field.rgb : rgb, 1.0);
+                    COLOR = vec4(rgb, 1.0);
                 }
                 """};
             _forestPreviewMaterial=new ShaderMaterial{Shader=shader};
