@@ -164,8 +164,11 @@ public sealed class WildBattleFlowTests : WildBattleFixture
     }
 
     [TestMethod]
-    public void EXP_learning_pause_uses_frame_cursor_and_never_reapplies_reward()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void EXP_learning_pause_uses_frame_cursor_and_never_reapplies_reward(bool translated)
     {
+        content = GrowthResultTextFixture.WithTranslations(content, translated);
         var a = Owned("BULBASAUR", 19, 101, "TACKLE", "GROWL", "LEECH_SEED", "VINE_WHIP");
         var species = catalog.Species[a.Pokemon.Species];
         var target = species.LevelUpMoves.First(m => m.Level > 19 && m.Level < 40 && !a.Pokemon.Moves.Any(x => x.Move == m.Move));
@@ -195,6 +198,13 @@ public sealed class WildBattleFlowTests : WildBattleFixture
         var rejected = session.Execute("wrong-learning", session.Revision, new("wild_learn", MoveSlot: 4));
         Assert.IsTrue(rejected.Status == CommandStatus.Rejected && ReferenceEquals(session.State.WildBattle!.Frame, rewardFrame), "bad learning choice leaves canonical state identical");
         Send(session, new("wild_learn", MoveSlot: 0));
+        Assert.IsTrue(session.State.WildBattle!.SourceEvents.OfType<SourceRewardLearningEvent>().Any(e =>
+            e.Outcome == SourceRewardLearningOutcome.Replaced && e.Candidate.Move == target.Move), "Actual replacement receipt");
+        GrowthResultTextFixture.AssertPages(content, session.State.WildBattle!.Pages.Select(page => page.Text),
+            "sText_PkmnLearnedMove", ("B_BUFF1", content.PokemonDisplayName(session.State.Party[0])),
+            ("B_BUFF2", content.BattleContent.MoveNames[target.Move.Value]));
+        Assert.IsTrue(session.State.WildBattle.Pages.All(page => page.Reward is null && page.PartyIndex == 0),
+            "Manual-learning pages keep their original reward/recipient metadata.");
         Drain(session);
         Assert.IsTrue(session.State.WildBattle is null && session.State.Party[0].Pokemon.Experience == xp, "learning resumes without duplicate EXP");
         Assert.IsTrue(session.State.Party[0].Pokemon.Moves[0].Move == target.Move, "chosen learning persisted");

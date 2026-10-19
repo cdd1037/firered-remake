@@ -51,18 +51,18 @@ public sealed partial class CampaignSession
         }
         if (effect.Opcode != "multichoice" || a.Length != 4) return false;
         var context = (effect.Source.Path, effect.Source.Symbol, a[2]);
-        (string X, string Y, int Origin, ImmutableArray<string> Options)? menu = context switch
+        (string X, string Y, int Origin, ImmutableArray<(int? Destination, string TextSymbol)> Options)? menu = context switch
         {
             (EventTicketFerrySource, "VermilionCity_EventScript_HasMysticTicket", "MULTICHOICE_SEVII_NAVEL") =>
-                ("17", "6", 0, ["SEVII ISLANDS", "NAVEL ROCK", "EXIT"]),
+                ("17", "6", 0, [(null, "gText_SeviiIslands"), (9, "gText_NavelRock"), (null, "gOtherText_Exit")]),
             (EventTicketFerrySource, "VermilionCity_EventScript_HasAuroraTicket", "MULTICHOICE_SEVII_BIRTH") =>
-                ("13", "6", 0, ["SEVII ISLANDS", "BIRTH ISLAND", "EXIT"]),
+                ("13", "6", 0, [(null, "gText_SeviiIslands"), (10, "gText_BirthIsland"), (null, "gOtherText_Exit")]),
             (EventTicketFerrySource, "VermilionCity_EventScript_HasMysticAndAuroraTickets", "MULTICHOICE_SEVII_NAVEL_BIRTH") =>
-                ("13", "5", 0, ["SEVII ISLANDS", "NAVEL ROCK", "BIRTH ISLAND", "EXIT"]),
+                ("13", "5", 0, [(null, "gText_SeviiIslands"), (9, "gText_NavelRock"), (10, "gText_BirthIsland"), (null, "gOtherText_Exit")]),
             ("data/maps/NavelRock_Harbor/scripts.inc", "NavelRock_Harbor_EventScript_Sailor", "MULTICHOICE_SEAGALLOP_VERMILION") =>
-                ("20", "8", 9, ["VERMILION", "EXIT"]),
+                ("20", "8", 9, [(0, "gText_Vermilion"), (null, "gOtherText_Exit")]),
             ("data/maps/BirthIsland_Harbor/scripts.inc", "BirthIsland_Harbor_EventScript_Sailor", "MULTICHOICE_SEAGALLOP_VERMILION") =>
-                ("20", "8", 10, ["VERMILION", "EXIT"]),
+                ("20", "8", 10, [(0, "gText_Vermilion"), (null, "gOtherText_Exit")]),
             _ => null
         };
         if (menu is not { } selected) return false;
@@ -71,10 +71,11 @@ public sealed partial class CampaignSession
             state.World.Player.MapId.Value != (selected.Origin == 0 ? "map.vermilion-city" : EventIslandHarbor(selected.Origin)))
             throw new InvalidDataException("event_ticket_ferry_menu_context");
         if (selected.Origin == 0 && (!EventTicketFerryStoryGate(state) ||
-            selected.Options.Contains("NAVEL ROCK") != EventIslandTicketAvailable(state, 9) ||
-            selected.Options.Contains("BIRTH ISLAND") != EventIslandTicketAvailable(state, 10)))
+            selected.Options.Any(option => option.Destination == 9) != EventIslandTicketAvailable(state, 9) ||
+            selected.Options.Any(option => option.Destination == 10) != EventIslandTicketAvailable(state, 10)))
             throw new InvalidDataException("event_ticket_ferry_menu_access");
-        next = state with { SeagallopMenu = new(a[2], selected.Options) };
+        next = state with { SeagallopMenu = new(a[2], selected.Options
+            .Select(option => BattleContent.Texts[option.TextSymbol]).ToImmutableArray()) };
         return true;
     }
 }

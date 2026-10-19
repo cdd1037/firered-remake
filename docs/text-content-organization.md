@@ -282,3 +282,18 @@ crossed_circle光标诊断。窗口发生于后续点字窄修之前；点字仅
 PC提示与旧ReferenceWorld显示复用单遍绑定，VsSeeker的源分页展开也先于名字插入。
 保留未知token可诊断，不扩大合法昵称字符限制。Application49、Presentation91项通过，
 相关三项目编译零警告错误；本窄修没有新增原生窗口验收。
+
+养成与特殊菜单共用当前catalog的一份battle文本bank；SourceBattleText分页器从Content移到
+Domain，原有Godot、Application和测试使用同一实现，Content只负责装载及覆盖。进化、
+糖果和奖励学习结果使用既有源symbol，介绍文字恢复源换行“What?\\n{name} is evolving!”。
+第一轮审计曾把两处Added续学页误称为手动换招页；实际Replaced事件原先被过滤且没有结果页，
+现由同一成功模板生成结果页，学习决定与PP/招式规则不变。8处Godot已按Reward重绘的旧文本
+不计作本批新增可见覆盖。
+
+船票／化石菜单的13个唯一标签使用既有源symbol（取消为gOtherText_Exit）。事件岛访问
+校验使用目的地9/10与真实票据／旗标，不再依赖显示字符串，重名覆盖不改变选项身份。
+
+本批验证：Application 67项／22秒，Content 36项／457毫秒，Presentation 74项／252毫秒，
+无跳过；四个相关项目编译零警告错误。已有公开进化、糖果、野战及训练家学招用例增加
+英文／替换包参数化，真实Replaced回执对应成功页；菜单19行参数化覆盖全部已接入上下文、
+重名标签和票据负例。未再做原生画面或实音抽验；进化介绍源换行由源文本及分页断言验证。

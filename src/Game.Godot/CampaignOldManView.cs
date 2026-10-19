@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Text;
 using Game.Application;
 using Game.Content;
@@ -133,7 +134,7 @@ public partial class CampaignView
                 ["B_SCR_ACTIVE_NAME_WITH_PREFIX"] = _catalog.PokemonDisplayName(tutorial.PartyBefore[tutorial.HiddenPlayerIndex]),
                 ["B_SCR_ACTIVE_ABILITY"] = "INTIMIDATE", ["B_DEF_NAME_WITH_PREFIX"] = "Wild WEEDLE"
             };
-            _oldManText = string.Join('\n', PretBattleText.Pages(PretBattleText.Load(_root), "sText_PkmnCutsAttackWith", values));
+            _oldManText = string.Join('\n', SourceBattleText.Pages(_battleText, "sText_PkmnCutsAttackWith", values));
         }
         if (kind is OldManTutorialEventKind.MoveCursorToBag or OldManTutorialEventKind.OpenDemoBag
             or OldManTutorialEventKind.SelectPokeBall)

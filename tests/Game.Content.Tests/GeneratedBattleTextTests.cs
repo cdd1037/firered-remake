@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using Game.Content;
 
 namespace FireRed.Tests.Content;
@@ -16,7 +17,7 @@ public sealed class GeneratedBattleTextTests
         };
         Assert.AreSequenceEqual(new[] {
             "Literal {MOVE}\\p{WAIT_SE} used Name {ACTOR}\\n!\nNext", "Next\nLast", "Done"
-        }, PretBattleText.Pages(source, "message", values));
+        }, SourceBattleText.Pages(source, "message", values));
     }
 
     [TestMethod]
@@ -28,7 +29,7 @@ public sealed class GeneratedBattleTextTests
     [DataRow("bad\\")]
     public void BattleTemplatesStillRejectUnknownOrMalformedControls(string template)
     {
-        Assert.ThrowsExactly<InvalidDataException>(() => PretBattleText.Pages(
+        Assert.ThrowsExactly<InvalidDataException>(() => SourceBattleText.Pages(
             new Dictionary<string, string> { ["message"] = template }, "message", new Dictionary<string, string>()));
     }
 

@@ -20,15 +20,15 @@ public sealed partial class CampaignSession
     private bool InFirstSeviiScript(CampaignState state)=>state.Script.Stack.Any(frame=>_content.FindProgram(frame.ProgramId)?.Instructions.Any(i=>FirstSeviiSource(i.Source.Path))==true);
     private int SeviiValue(CampaignState state,string token)=>token.StartsWith("VAR_",StringComparison.Ordinal)?state.Script.Variables.GetValueOrDefault(token):
         int.TryParse(token,out int n)?n:_content.TryConstant(token,out n)?n:throw new InvalidDataException("first_sevii_operand_missing: "+token);
-    private static readonly ImmutableDictionary<string,ImmutableArray<string>> SeagallopMenus=new Dictionary<string,ImmutableArray<string>>
+    private static readonly ImmutableDictionary<string,ImmutableArray<string>> SeagallopMenuTextSymbols=new Dictionary<string,ImmutableArray<string>>
     {
-        ["MULTICHOICE_ISLAND_23"]=["TWO ISLAND","THREE ISLAND","EXIT"],
-        ["MULTICHOICE_ISLAND_13"]=["ONE ISLAND","THREE ISLAND","EXIT"],
-        ["MULTICHOICE_ISLAND_12"]=["ONE ISLAND","TWO ISLAND","EXIT"],
-        ["MULTICHOICE_SEAGALLOP_V23"]=["VERMILION","TWO ISLAND","THREE ISLAND","EXIT"],
-        ["MULTICHOICE_SEAGALLOP_V13"]=["VERMILION","ONE ISLAND","THREE ISLAND","EXIT"],
-        ["MULTICHOICE_SEAGALLOP_V12"]=["VERMILION","ONE ISLAND","TWO ISLAND","EXIT"],
-        ["MULTICHOICE_SEAGALLOP_123"]=["ONE ISLAND","TWO ISLAND","THREE ISLAND","EXIT"]
+        ["MULTICHOICE_ISLAND_23"]=["gText_TwoIsland","gText_ThreeIsland","gOtherText_Exit"],
+        ["MULTICHOICE_ISLAND_13"]=["gText_OneIsland","gText_ThreeIsland","gOtherText_Exit"],
+        ["MULTICHOICE_ISLAND_12"]=["gText_OneIsland","gText_TwoIsland","gOtherText_Exit"],
+        ["MULTICHOICE_SEAGALLOP_V23"]=["gText_Vermilion","gText_TwoIsland","gText_ThreeIsland","gOtherText_Exit"],
+        ["MULTICHOICE_SEAGALLOP_V13"]=["gText_Vermilion","gText_OneIsland","gText_ThreeIsland","gOtherText_Exit"],
+        ["MULTICHOICE_SEAGALLOP_V12"]=["gText_Vermilion","gText_OneIsland","gText_TwoIsland","gOtherText_Exit"],
+        ["MULTICHOICE_SEAGALLOP_123"]=["gText_OneIsland","gText_TwoIsland","gText_ThreeIsland","gOtherText_Exit"]
     }.ToImmutableDictionary(StringComparer.Ordinal);
     private TilePosition SeagallopDestination(int destination)
     {
@@ -75,11 +75,11 @@ public sealed partial class CampaignSession
             next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",number.ToString(System.Globalization.CultureInfo.InvariantCulture))};return true;
         }
         if(effect.Opcode=="multichoice"&&(ferry||effect.Source.Path=="data/maps/VermilionCity/scripts.inc")&&
-            a.Length==4&&SeagallopMenus.TryGetValue(a[2],out var options))
+            a.Length==4&&SeagallopMenuTextSymbols.TryGetValue(a[2],out var textSymbols))
         {
-            if(a[0]!="19"||a[1]!=(options.Length==3?"6":"5")||a[3]!="FALSE"||state.Script.Wait?.Kind!=StoryWaitKind.MenuChoice)
+            if(a[0]!="19"||a[1]!=(textSymbols.Length==3?"6":"5")||a[3]!="FALSE"||state.Script.Wait?.Kind!=StoryWaitKind.MenuChoice)
                 throw new InvalidDataException("seagallop_menu_source_context");
-            next=state with{SeagallopMenu=new(a[2],options)};return true;
+            next=state with{SeagallopMenu=new(a[2],textSymbols.Select(symbol=>BattleContent.Texts[symbol]).ToImmutableArray())};return true;
         }
         if(effect.Opcode=="specialvar"&&a.Length==2)
         {

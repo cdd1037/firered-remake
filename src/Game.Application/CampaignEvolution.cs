@@ -85,9 +85,11 @@ public sealed partial class CampaignSession
         var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal);
         int target = evolved.Pokemon.Pokemon.SourceSpeciesId;
         var pages = ImmutableArray.CreateBuilder<string>();
-        pages.Add($"Congratulations! Your {PokemonName(owned)}\nevolved into {SpeciesName(target)}!");
+        pages.AddRange(BattleMessagePages("gText_CongratsPkmnEvolved",
+            ("STR_VAR_1", PokemonName(owned)), ("STR_VAR_2", SpeciesName(target))));
         foreach (var learned in evolved.LearnedMoves)
-            pages.Add($"{PokemonName(evolved.Pokemon)} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
+            pages.AddRange(BattleMessagePages("sText_PkmnLearnedMove",
+                ("B_BUFF1", PokemonName(evolved.Pokemon)), ("B_BUFF2", BattleContent.MoveNames[learned.Move.Value])));
         var stats = state.GameStats ?? ImmutableSortedDictionary<string, int>.Empty.WithComparers(StringComparer.Ordinal);
         return new(CommandStatus.Accepted, state with
         {
@@ -148,9 +150,11 @@ public sealed partial class CampaignSession
             if (result.Outcome == LevelEvolutionOutcome.Evolved)
             {
                 int target = result.Pokemon.Pokemon.SourceSpeciesId;
-                pages.Add($"Congratulations! Your {PokemonName(owned)}\nevolved into {SpeciesName(target)}!");
+                pages.AddRange(BattleMessagePages("gText_CongratsPkmnEvolved",
+                    ("STR_VAR_1", PokemonName(owned)), ("STR_VAR_2", SpeciesName(target))));
                 foreach (var learned in result.LearnedMoves)
-                    pages.Add($"{PokemonName(result.Pokemon)} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
+                    pages.AddRange(BattleMessagePages("sText_PkmnLearnedMove",
+                        ("B_BUFF1", PokemonName(result.Pokemon)), ("B_BUFF2", BattleContent.MoveNames[learned.Move.Value])));
                 var history = new CampaignEvolutionHistory(owned.InstanceId, scene.BattleId,
                     owned.Pokemon.SourceSpeciesId, target, scene.Proposal.LevelBeforeBattle, scene.Proposal.Level) { Item = candyScene ? RareCandyItem : null,
                     NormalTrigger = NormalEvolutionTrigger(BattlePokemon.Species[owned.Pokemon.Species].Evolutions.Single(e => e.Target == result.TargetSpecies).Method, owned.Pokemon) };
@@ -163,7 +167,7 @@ public sealed partial class CampaignSession
                     GameStats = stats.SetItem(EvolutionCountStat, Math.Min(0xffffff, stats.GetValueOrDefault(EvolutionCountStat) + 1))
                 };
             }
-            else pages.Add($"Huh? {PokemonName(owned)}\nstopped evolving!");
+            else pages.AddRange(BattleMessagePages("gText_PkmnStoppedEvolving", ("STR_VAR_1", PokemonName(owned))));
             return new(CommandStatus.Accepted, next with
             {
                 Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = pages.ToImmutable(), PageIndex = 0, PendingMoves = result.PendingMoves }
@@ -184,13 +188,12 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Rejected, state, "pokemon_learning_effect_unsupported");
             if (command.MoveSlot >= 0)
                 owned = ReplaceOwnedLevelMove(owned, command.MoveSlot, move.Move);
-            string message = command.MoveSlot < 0
-                ? $"{PokemonName(owned)} did not learn\n{BattleContent.MoveNames[move.Move.Value]}."
-                : $"{PokemonName(owned)} learned\n{BattleContent.MoveNames[move.Move.Value]}!";
+            var pages = BattleMessagePages(command.MoveSlot < 0 ? "sText_DidNotLearnMove" : "sText_PkmnLearnedMove",
+                ("B_BUFF1", PokemonName(owned)), ("B_BUFF2", BattleContent.MoveNames[move.Move.Value]));
             return new(CommandStatus.Accepted, state with
             {
                 Party = state.Party.SetItem(index, owned),
-                Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = [message], PageIndex = 0, PendingMoves = scene.PendingMoves.RemoveAt(0) }
+                Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = pages, PageIndex = 0, PendingMoves = scene.PendingMoves.RemoveAt(0) }
             });
         }
         return new(CommandStatus.Rejected, state, "evolution_decision_required");
@@ -212,7 +215,8 @@ public sealed partial class CampaignSession
                 return state with
                 {
                     Party = state.Party.SetItem(index, owned with { Pokemon = owned.Pokemon with { Moves = learning.Moves } }),
-                    Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = [$"{PokemonName(owned)} learned\n{BattleContent.MoveNames[move.Move.Value]}!"], PageIndex = 0 }
+                    Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = BattleMessagePages("sText_PkmnLearnedMove",
+                        ("B_BUFF1", PokemonName(owned)), ("B_BUFF2", BattleContent.MoveNames[move.Move.Value])), PageIndex = 0 }
                 };
         }
         if (scene.CandyUse is { } candyUse)

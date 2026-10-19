@@ -21,6 +21,8 @@ public sealed record CampaignLabBattle(string Id,TrainerId Trainer,PartyPokemon 
 public sealed partial class CampaignSession
 {
     private CampaignBattleContent BattleContent=>_content.BattleContent??throw new InvalidDataException("trainerbattle_earlyrival_not_implemented");
+    private ImmutableArray<string> BattleMessagePages(string symbol, params (string Key,string Value)[] values) =>
+        SourceBattleText.Pages(BattleContent.Texts,symbol,values.ToDictionary(pair=>pair.Key,pair=>pair.Value,StringComparer.Ordinal));
     private PokemonCatalog BattlePokemon=>_binding.Pokemon;
     private (TrainerPartyCreationResult Created,FirstBattleResult Started) PrepareLabBattle(CampaignState state,TrainerId trainer)
     {

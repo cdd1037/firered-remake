@@ -25,7 +25,8 @@ public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,Immutabl
     public bool RequiresFlash { get; init; }
     public MapPreviewDefinition? MapPreview { get; init; }
 }
-public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames);
+public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames,
+    ImmutableSortedDictionary<string,string> Texts);
 public sealed record CampaignOakRatingProjection(int Seen,int Caught,string RatingTextSymbol,bool KantoComplete);
 public sealed record CampaignNationalDexProjection(int Seen,int Caught,bool Complete);
 public sealed record CampaignMapMetatileCell(int X,int Y,int SourceMetatileId,int Collision,int Elevation,

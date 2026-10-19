@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
@@ -91,7 +92,7 @@ public partial class CampaignView
             ["B_OPPONENT_MON1_NAME"]=DoubleName(1),["B_OPPONENT_MON2_NAME"]=DoubleName(3)
         };
         foreach(var (key,value) in extra) values[key]=value;
-        return PretBattleText.Pages(_battleText,symbol,values);
+        return SourceBattleText.Pages(_battleText,symbol,values);
     }
     private void SynchronizeDoubleBattle()
     {

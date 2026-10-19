@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Collections.Immutable;
 using Game.Application;
 using Game.Content;
@@ -94,7 +95,7 @@ public partial class CampaignView
         if (battle.Capture is { Stage: CampaignCaptureStage.DexNotice or CampaignCaptureStage.NicknameChoice } capture)
         {
             string symbol = capture.Stage == CampaignCaptureStage.DexNotice ? "sText_PkmnDataAddedToDex" : "sText_GiveNicknameCaptured";
-            _safariPages = PretBattleText.Pages(_battleText, symbol, new Dictionary<string, string>(StringComparer.Ordinal)
+            _safariPages = SourceBattleText.Pages(_battleText, symbol, new Dictionary<string, string>(StringComparer.Ordinal)
                 { ["B_OPPONENT_MON1_NAME"] = (_catalog.SourceSpeciesName(capture.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")) });
         }
         else if (_session.VisibleSafariMessage is { } text)

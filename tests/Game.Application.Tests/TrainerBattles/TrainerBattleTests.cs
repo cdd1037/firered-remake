@@ -103,7 +103,7 @@ public sealed class TrainerBattleTests
         Assert.IsTrue(result.Status == CommandStatus.Accepted, command.Kind + ": " + result.Error);
     }
 
-    private void Drain(CampaignSession session, ICampaignCatalog content, bool acceptShift = true)
+    private void Drain(CampaignSession session, ICampaignCatalog content, bool acceptShift = true, bool learnSourceMove = false)
     {
         for (int budget = 0; budget < 500; budget++)
         {
@@ -119,7 +119,21 @@ public sealed class TrainerBattleTests
 
                 if (p.Phase == CampaignBattlePhase.Results)
                 {
-                    Send(session, !p.PendingMoves.IsEmpty && p.PageIndex + 1 >= p.Pages.Length ? new("wild_learn", MoveSlot: -1) : new("ack"));
+                    if (!p.PendingMoves.IsEmpty && p.PageIndex + 1 >= p.Pages.Length && learnSourceMove)
+                    {
+                        var pending = p.PendingMoves[0]; int recipient = p.RewardPartyIndex;
+                        int slot = Enumerable.Range(0, state.Party[recipient].Pokemon.Moves.Length)
+                            .First(i => !PokemonMoveRules.IsHiddenMachineMove(state.Party[recipient].Pokemon.Moves[i].Move));
+                        Send(session, new("wild_learn", MoveSlot: slot));
+                        Assert.IsTrue(session.State.ForestTrainerBattle!.Presentation.SourceEvents.OfType<SourceRewardLearningEvent>().Any(e =>
+                            e.Outcome == SourceRewardLearningOutcome.Replaced && e.Candidate.Move == pending.Move), "Actual trainer replacement receipt");
+                        var pages = session.State.ForestTrainerBattle!.Presentation.Pages
+                            .Where(page => page.Reward is null && page.PartyIndex == recipient);
+                        GrowthResultTextFixture.AssertPages(current, pages.Select(page => page.Text), "sText_PkmnLearnedMove",
+                            ("B_BUFF1", current.PokemonDisplayName(session.State.Party[recipient])),
+                            ("B_BUFF2", current.BattleContent.MoveNames[pending.Move.Value]));
+                    }
+                    else Send(session, !p.PendingMoves.IsEmpty && p.PageIndex + 1 >= p.Pages.Length ? new("wild_learn", MoveSlot: -1) : new("ack"));
                     continue;
                 }
 
@@ -236,8 +250,11 @@ public sealed class TrainerBattleTests
     }
 
     [TestMethod]
-    public void RoseSourceLevelLearning()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void RoseSourceLevelLearning(bool translated)
     {
+        current = GrowthResultTextFixture.WithTranslations(current, translated);
         int learnerIndex = Enumerable.Range(0, roseState.Party.Length).Single(i => roseState.Party[i].Pokemon.Species.Value == "pret:SPECIES_ARCANINE");
         var learner = roseState.Party[learnerIndex];
         var pokemon = learner.Pokemon;
@@ -264,7 +281,7 @@ public sealed class TrainerBattleTests
         };
         var learning = CampaignSession.RestoreCurrent(current, learningState, checkpoint.Generation);
         Send(learning, new("interact"));
-        Drain(learning, current);
+        Drain(learning, current, learnSourceMove: true);
         Assert.IsTrue(learning.State.Party[0].Pokemon.Level == targetLevel, "actual EXP reaches next source learning level");
         Assert.IsTrue(learningChoices > 0, "actual source learning cursor answered once");
         Assert.IsTrue(learning.State.Party.Sum(p => (long)p.Pokemon.Experience) - learningState.Party.Sum(p => (long)p.Pokemon.Experience) == learning.State.ForestTrainerHistory!.Value.Last().ExperienceGained, "learning continuation does not duplicate EXP");

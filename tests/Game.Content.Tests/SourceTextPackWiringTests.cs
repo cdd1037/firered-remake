@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Text.Json;
 using Game.Content;
 
@@ -44,7 +45,7 @@ public sealed class SourceTextPackWiringTests
             ["B_BUFF2"] = "招式{WAIT_SE}"
         };
         Assert.AreSequenceEqual(new[] { "名字{B_BUFF2}\\p 使用了\n招式{WAIT_SE}" },
-            PretBattleText.Pages(translated, symbol, values));
+            SourceBattleText.Pages(translated, symbol, values));
         Assert.IsFalse(Directory.Exists(Path.Combine(output.Path, "content")), "Only the small override pack is written.");
     }
 

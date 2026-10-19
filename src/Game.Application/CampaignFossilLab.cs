@@ -164,7 +164,7 @@ public sealed partial class CampaignSession
             if (effect.Source.Symbol != FossilLabPrefix + "ChooseFossil" + branch ||
                 !a.SequenceEqual(new[] { "0", "0", menu, "FALSE" }) || state.Script.Wait?.Kind != StoryWaitKind.MenuChoice)
                 throw new InvalidDataException("fossil_lab_menu_source");
-            next = state with { FossilMenu = new(menu, available.Select(f => ShopCatalog.Items.Single(i => i.Id == f.Item).Name).Append("EXIT").ToImmutableArray()) };
+            next = state with { FossilMenu = new(menu, available.Select(f => ShopCatalog.Items.Single(i => i.Id == f.Item).Name).Append(BattleContent.Texts["gOtherText_Exit"]).ToImmutableArray()) };
             return true;
         }
         var fossil = effect.Opcode switch

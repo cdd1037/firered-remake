@@ -36,10 +36,11 @@ public sealed partial class CampaignSession
         if (page != (effect.Source.Symbol.EndsWith('1') ? 0 : 1) || !RainbowIslandAvailable(origin)) throw new InvalidDataException("seagallop_page_context");
         if (effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "DrawSeagallopDestinationMenu" }))
         {
-            string[] labels = ["VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND", "FOUR ISLAND",
-                "FIVE ISLAND", "SIX ISLAND", "SEVEN ISLAND"];
+            string[] textSymbols = ["gText_Vermilion", "gText_OneIsland", "gText_TwoIsland", "gText_ThreeIsland", "gText_FourIsland",
+                "gText_FiveIsland", "gText_SixIsland", "gText_SevenIsland"];
             var destinations = RainbowPageDestinations(origin, page);
-            next = state with { SeagallopMenu = new("SEVII_PAGE_" + page, destinations.Select(d => labels[d]).Concat(["OTHER", "EXIT"]).ToImmutableArray()),
+            next = state with { SeagallopMenu = new("SEVII_PAGE_" + page, destinations.Select(d => textSymbols[d]).Concat(["gText_Other", "gOtherText_Exit"])
+                .Select(symbol => BattleContent.Texts[symbol]).ToImmutableArray()),
                 Dialogue = null, Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 255) } }; return true;
         }
         if (effect.Opcode == "waitstate")

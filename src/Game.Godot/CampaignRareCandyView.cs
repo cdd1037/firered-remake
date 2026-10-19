@@ -76,7 +76,7 @@ public partial class CampaignView
         }
         else DrawTexture(_battleArt[(PresentedRenderSpecies(owned.Pokemon), "front", owned.Pokemon.IsShiny)].Texture, new(88, 24));
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
-        string text = stats ? $"{_catalog.PokemonDisplayName(owned)} grew to\nLV. {owned.Pokemon.Level}!"
+        string text = stats ? scene.Pages[0]
             : scene.Stage == CampaignRareCandyStage.LearnMove ? MoveLearningPrompt(scene.PendingMoves[0].Move)
             : scene.Pages[scene.PageIndex];
         var lines = text.Split('\n');

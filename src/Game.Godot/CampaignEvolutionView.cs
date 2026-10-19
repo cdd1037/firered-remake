@@ -1,6 +1,7 @@
 using Game.Application;
 using Game.Content;
 using Game.Domain.Options;
+using Game.Domain.Events;
 using Game.Presentation.BattleAnimations;
 using Game.Domain.World;
 using Godot;
@@ -12,6 +13,8 @@ public partial class CampaignView
     private int _evolutionMoveCursor;
     private string? _evolutionAnimationKey;
     private string? _evolutionIntroName;
+    private string EvolutionIntroText(string name) => string.Join('\n', SourceBattleText.Pages(_battleText,
+        "gText_PkmnIsEvolving", new Dictionary<string, string>(StringComparer.Ordinal) { ["STR_VAR_1"] = name }));
     private EvolutionScenePresentation? _evolutionAnimation;
     private bool _evolutionCommitRequested, _evolutionCompletionCue, _evolutionCryStarted;
     private double _evolutionFanfare;
@@ -172,7 +175,7 @@ public partial class CampaignView
             _evolutionIntroCueAvailable = true; _evolutionIntroTextPressed = false;
             // Ordinary saved result pages must not propose or commit evolution a second time.
             _evolutionAnimation = scene.Stage == CampaignEvolutionStage.Proposal || scene.ItemUse is not null && scene.PageIndex == 0
-                ? new EvolutionScenePresentation(scene.ItemUse is null, $"What? {_evolutionIntroName}\nis evolving!",
+                ? new EvolutionScenePresentation(scene.ItemUse is null, EvolutionIntroText(_evolutionIntroName),
                     _session.EffectiveOptions.TextSpeed switch { SourceTextSpeed.Slow => 8, SourceTextSpeed.Mid => 4, _ => 1 }) : null;
         }
         string key = $"{animationKey}:{scene.ProposalIndex}:{scene.Stage}:{scene.PageIndex}:{scene.PendingMoves.Length}";
@@ -314,7 +317,7 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
         string text = _evolutionAnimation?.Animating == true ? _evolutionAnimation.IntroVisibleText : scene.Stage switch
         {
-            CampaignEvolutionStage.Proposal => $"What? {_evolutionIntroName ?? _catalog.PokemonDisplayName(owned)}\nis evolving!",
+            CampaignEvolutionStage.Proposal => EvolutionIntroText(_evolutionIntroName ?? _catalog.PokemonDisplayName(owned)),
             CampaignEvolutionStage.LearnMove => MoveLearningPrompt(scene.PendingMoves[0].Move),
             _ => scene.Pages[scene.PageIndex]
         };

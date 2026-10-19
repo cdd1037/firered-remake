@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Collections.Immutable;
 using System.Globalization;
 using Game.Application;
@@ -25,7 +26,7 @@ public partial class CampaignView
     private ImmutableArray<InventoryStack> FieldItemStacks => _session.State.ItemMenu is { Origin: "bag" } menu &&
         (menu.View == "berries" || menu.View == "message" && menu.ReturnView == "berries")
         ? _session.State.Inventory!.Berries ?? [] : _session.State.Inventory!.BagItems;
-    private string HmCannotForgetText => string.Join('\n', PretBattleText.Pages(_battleText, "sText_HMMovesCantBeForgotten", ImmutableDictionary<string, string>.Empty));
+    private string HmCannotForgetText => string.Join('\n', SourceBattleText.Pages(_battleText, "sText_HMMovesCantBeForgotten", ImmutableDictionary<string, string>.Empty));
 
     private void LoadSsAnnePresentation()
     {

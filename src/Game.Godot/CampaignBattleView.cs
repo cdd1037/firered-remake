@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -30,7 +31,7 @@ public partial class CampaignView
     private string? _battleNoticeReturn;
     private void LoadBattlePresentation()
     {
-        _battleText=PretBattleText.Load(_root);
+        _battleText=(_catalog.BattleContent??throw new InvalidDataException("Battle content is unavailable.")).Texts;
         _battleSelectionText=new(_battleText);
         _summaryPartyText=new(_battleText);
         var ui=System.IO.Path.Combine(_root,"content/generated/ui/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
@@ -83,7 +84,7 @@ public partial class CampaignView
         var b=_session.State.Battle!;
         var values=new Dictionary<string,string>(StringComparer.Ordinal){["B_PLAYER_NAME"]=_session.State.PlayerName,["PLAYER"]=_session.State.PlayerName,["B_TRAINER1_CLASS"]="RIVAL",["B_TRAINER1_NAME"]=_session.State.RivalName,["B_PLAYER_MON1_NAME"]=_catalog.PokemonDisplayName(b.OwnedBefore),["B_OPPONENT_MON1_NAME"]=BattleName(FirstBattleSide.Opponent)};
         foreach(var (key,value) in extra)values[key]=value;
-        return PretBattleText.Pages(_battleText,symbol,values);
+        return SourceBattleText.Pages(_battleText,symbol,values);
     }
     private string PrefixedName(FirstBattleSide side)=>(side==FirstBattleSide.Opponent?_battleSelectionText.FoePrefix:"")+BattleName(side);
     private string MoveName(Game.Domain.Ids.MoveId move)=>_catalog.BattleContent!.MoveNames[move.Value];

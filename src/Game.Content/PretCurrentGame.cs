@@ -243,7 +243,7 @@ public sealed partial class PretCampaignCatalog
             var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/trainer-battles/lab/lab-trainers.json"), Encoding.UTF8), SharedTrainerCatalog.LoadProject(projectRoot));
             var names = canonicalPokemon.MoveCatalog.MoveNames.ToImmutableSortedDictionary(
                 pair => pair.Key.Value, pair => pair.Value, StringComparer.Ordinal);
-            battleContent = new(trainers, names);
+            battleContent = new(trainers, names, PretBattleText.Load(projectRoot));
         }
 
         OpeningItemsCatalog openingItems;

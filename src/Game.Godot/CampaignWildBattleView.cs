@@ -1,3 +1,4 @@
+using Game.Domain.Events;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -165,7 +166,7 @@ public partial class CampaignView
         };
         AddForestTrainerTextValues(values);
         foreach (var (key, value) in extra) values[key] = value;
-        return PretBattleText.Pages(_battleText, symbol, values);
+        return SourceBattleText.Pages(_battleText, symbol, values);
     }
     private static bool WildStatsPage(CampaignWildBattle b) => b.Phase == CampaignBattlePhase.Results &&
         b.PageIndex < b.Pages.Length && b.Pages[b.PageIndex] is { Text: "", Reward: WildRewardLevelEvent };

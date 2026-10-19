@@ -81,8 +81,10 @@ public sealed partial class CampaignSession
                     if(reward is WildRewardMoveLearnedEvent learned)pages.Add(new($"{name} learned\n{BattleContent.MoveNames[learned.Move.Value]}!",reward,applied.Recipient.Index));
                 }
             }
-            else if(e is SourceRewardLearningEvent {Outcome:SourceRewardLearningOutcome.Added} learned)
-                pages.Add(new($"{PokemonName(state.Party[learned.Recipient.Index])} learned\n{BattleContent.MoveNames[learned.Candidate.Move.Value]}!",null,learned.Recipient.Index));
+            else if(e is SourceRewardLearningEvent {Outcome:SourceRewardLearningOutcome.Added or SourceRewardLearningOutcome.Replaced} learned)
+                foreach(var text in BattleMessagePages("sText_PkmnLearnedMove",
+                    ("B_BUFF1", PokemonName(state.Party[learned.Recipient.Index])), ("B_BUFF2", BattleContent.MoveNames[learned.Candidate.Move.Value])))
+                    pages.Add(new(text,null,learned.Recipient.Index));
         }
         var next=b with{DisplayBatch=BeginDisplayBatch(b),Frame=result.State,SourceEvents=result.Events,Events=ProjectCanonicalWildEvents(result.Events),EventIndex=0,
             Phase=CampaignBattlePhase.Events,Pages=pages.ToImmutable(),PageIndex=0,

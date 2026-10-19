@@ -188,8 +188,11 @@ public sealed class FieldItemTests
     }
 
     [TestMethod]
-    public void RareCandy()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void RareCandy(bool translated)
     {
+        catalog = GrowthResultTextFixture.WithTranslations(catalog, translated);
         var candyStart = Supply(fixture, ("RARE_CANDY", 2));
         var candy = Restore(candyStart);
         Accepted(candy, "candy open bag", new("bag_open"));
@@ -197,6 +200,9 @@ public sealed class FieldItemTests
         Reject(candy, "candy move slot guard", new("field_rare_candy", Text: Item("RARE_CANDY").Value, MoveSlot: 0), "field_rare_candy_context_invalid");
         Reject(candy, "candy party index guard", new("field_rare_candy", Text: Item("RARE_CANDY").Value, PartyIndex: 6), "item_party_index_invalid");
         Accepted(candy, "candy current source admission", new("field_rare_candy", Text: Item("RARE_CANDY").Value));
+        GrowthResultTextFixture.AssertPages(catalog, candy.State.RareCandy!.Pages, "sText_PkmnGrewToLv",
+            ("B_BUFF1", catalog.PokemonDisplayName(candy.State.Party[0])),
+            ("B_BUFF2", candy.State.Party[0].Pokemon.Level.ToString(System.Globalization.CultureInfo.InvariantCulture)));
         Assert.IsTrue(catalog.PokemonContent!.Pokemon.Catalog.Species.ContainsKey(lead.Pokemon.Species), "candy species is in the explicit owned roster");
         Assert.IsTrue(Count(candy.State, "RARE_CANDY") == 1 && candy.State.Party[0].Pokemon.Level == lead.Pokemon.Level + 1, "current candy raises the prepared original member exactly once");
         Same(candyStart.Party[0].Pokemon.Moves, candy.State.Party[0].Pokemon.Moves, "candy preserves existing PP and moves");
@@ -250,8 +256,12 @@ public sealed class FieldItemTests
     }
 
     [TestMethod]
-    public void RareCandyLearningAndHmProtection()
+    [DataRow(false, true)]
+    [DataRow(true, true)]
+    [DataRow(true, false)]
+    public void RareCandyLearningAndHmProtection(bool translated, bool learn)
     {
+        catalog = GrowthResultTextFixture.WithTranslations(catalog, translated);
         var candyStart = Supply(fixture, ("RARE_CANDY", 2));
         int learningIndex = Enumerable.Range(0, candyStart.Party.Length).Single(i => candyStart.Party[i].Pokemon.Species.Value == "pret:SPECIES_ARCANINE");
         var learner = candyStart.Party[learningIndex];
@@ -288,17 +298,53 @@ public sealed class FieldItemTests
         DrainCandy(learning, "candy learning");
         Assert.IsTrue(learning.State.RareCandy?.Stage == CampaignRareCandyStage.LearnMove && learning.State.RareCandy.PendingMoves[0].Move == learnMove.Move, "next source move awaits explicit replacement");
         Reject(learning, "candy learning protects HM", new("rare_candy_learn", MoveSlot: 0), "hm_move_cannot_be_forgotten");
-        Accepted(learning, "candy learns source move", new("rare_candy_learn", MoveSlot: replacementSlot));
+        Accepted(learning, "candy answers source move", new("rare_candy_learn", MoveSlot: learn ? replacementSlot : -1));
+        GrowthResultTextFixture.AssertPages(catalog, learning.State.RareCandy!.Pages,
+            learn ? "sText_PkmnLearnedMove" : "sText_DidNotLearnMove",
+            ("B_BUFF1", catalog.PokemonDisplayName(learning.State.Party[1])),
+            ("B_BUFF2", catalog.BattleContent.MoveNames[learnMove.Move.Value]));
         DrainCandy(learning, "candy learned move");
-        Assert.IsTrue(learning.State.Party[1].Pokemon.Moves[replacementSlot].Move == learnMove.Move && learning.State.Party[1].Pokemon.Moves[replacementSlot].CurrentPp == learning.State.Party[1].Pokemon.Moves[replacementSlot].MaximumPp, "learned move receives full PP");
+        if (learn)
+            Assert.IsTrue(learning.State.Party[1].Pokemon.Moves[replacementSlot].Move == learnMove.Move && learning.State.Party[1].Pokemon.Moves[replacementSlot].CurrentPp == learning.State.Party[1].Pokemon.Moves[replacementSlot].MaximumPp, "learned move receives full PP");
+        else Same(learningStart.Party[1].Pokemon.Moves, learning.State.Party[1].Pokemon.Moves, "declined move preserves all slots");
         Same(cut, learning.State.Party[1].Pokemon.Moves[0], "existing HM depletion and PP Ups preserved");
         Same(learningStart.Party[1], learning.State.Party[1] with { Pokemon = learningStart.Party[1].Pokemon }, "learning preserves owned identity");
         Assert.IsTrue(Count(learning.State, "RARE_CANDY") == 1, "learning pages never consume candy again");
     }
 
     [TestMethod]
-    public void RareCandyEvolution()
+    public void RareCandyAutomaticLearningUsesSelectedSourceText()
     {
+        catalog = GrowthResultTextFixture.WithTranslations(catalog, true);
+        var start = Supply(fixture, ("RARE_CANDY", 1));
+        int index = Enumerable.Range(0, start.Party.Length).Single(i => start.Party[i].Pokemon.Species.Value == "pret:SPECIES_ARCANINE");
+        var learner = start.Party[index];
+        var candidate = catalog.PokemonContent!.Catalog.Species[learner.Pokemon.Species].LevelUpMoves
+            .First(m => m.Level > learner.Pokemon.Level && !learner.Pokemon.Moves.Any(s => s.Move == m.Move));
+        learner = CurrentFixturePokemon.AtLevel(catalog.PokemonContent, learner, candidate.Level - 1);
+        learner = learner with { Pokemon = learner.Pokemon with { Moves = learner.Pokemon.Moves.Take(1).ToImmutableArray() } };
+        var session = Restore(start with { Party = start.Party.SetItem(index, learner) });
+        Accepted(session, "automatic candy open bag", new("bag_open"));
+        Accepted(session, "automatic candy level", new("field_rare_candy", Text: Item("RARE_CANDY").Value, PartyIndex: index));
+        Assert.IsTrue(session.State.RareCandy!.Result.LearnedMoves.Any(m => m.Move == candidate.Move));
+        Accepted(session, "automatic candy gain", new("ack"));
+        Accepted(session, "automatic candy total", new("ack"));
+        Accepted(session, "automatic candy learning", new("ack"));
+        Assert.AreEqual(CampaignRareCandyStage.MoveMessage, session.State.RareCandy!.Stage);
+        GrowthResultTextFixture.AssertPages(catalog, session.State.RareCandy.Pages, "sText_PkmnLearnedMove",
+            ("B_BUFF1", catalog.PokemonDisplayName(session.State.Party[index])),
+            ("B_BUFF2", catalog.BattleContent.MoveNames[candidate.Move.Value]));
+        DrainCandy(session, "automatic candy result");
+        Assert.AreEqual(0, Count(session.State, "RARE_CANDY"));
+    }
+
+    [TestMethod]
+    [DataRow(false, true)]
+    [DataRow(true, true)]
+    [DataRow(true, false)]
+    public void RareCandyEvolution(bool translated, bool evolve)
+    {
+        catalog = GrowthResultTextFixture.WithTranslations(catalog, translated);
         var candyStart = Supply(fixture, ("RARE_CANDY", 2));
         var evolutionStart = CurrentFixturePokemon.BringToLead(catalog, candyStart, 23);
         var evolving = Restore(evolutionStart);
@@ -306,13 +352,20 @@ public sealed class FieldItemTests
         Accepted(evolving, "candy triggers delayed Ekans evolution", new("field_rare_candy", Text: Item("RARE_CANDY").Value, PartyIndex: 0));
         DrainCandy(evolving, "candy evolution");
         Assert.IsTrue(evolving.State.Evolution?.Proposal.TargetSpecies.Value == "pret:SPECIES_ARBOK", "legal source Ekans evolution proposed");
-        Accepted(evolving, "candy accept Arbok evolution", new("evolution_choice", Choice: 1));
+        Accepted(evolving, "candy answer Arbok evolution", new("evolution_choice", Choice: evolve ? 1 : 0));
+        var expectedEvolution = GrowthResultTextFixture.Pages(catalog,
+            evolve ? "gText_CongratsPkmnEvolved" : "gText_PkmnStoppedEvolving",
+            ("STR_VAR_1", catalog.PokemonDisplayName(evolutionStart.Party[0])),
+            ("STR_VAR_2", catalog.SourceSpeciesName(24)!));
+        Assert.AreSequenceEqual(expectedEvolution, evolving.State.Evolution!.Pages.Take(expectedEvolution.Length));
         for (int n = 0; n < 12 && evolving.State.Evolution is { } scene; n++)
             Accepted(evolving, "candy evolution result " + n, scene.Stage == CampaignEvolutionStage.LearnMove ? new("evolution_learn", MoveSlot: -1) : new("ack"));
-        Assert.IsTrue(evolving.State.Evolution is null && evolving.State.ItemMenu?.View == "bag" && evolving.State.Party[0].Pokemon.Species.Value == "pret:SPECIES_ARBOK", "candy evolution returns to bag");
+        Assert.IsTrue(evolving.State.Evolution is null && evolving.State.ItemMenu?.View == "bag" && evolving.State.Party[0].Pokemon.Species.Value == (evolve ? "pret:SPECIES_ARBOK" : "pret:SPECIES_EKANS"), "candy evolution returns to bag");
         Assert.IsTrue(evolving.State.Party[0].InstanceId == evolutionStart.Party[0].InstanceId && Count(evolving.State, "RARE_CANDY") == 1, "evolution preserves identity and once-only consumption");
         Same(evolutionStart.Party[0].Pokemon.Moves, evolving.State.Party[0].Pokemon.Moves, "evolution preserves all existing PP");
-        Assert.IsTrue(evolving.State.EvolutionHistory!.Value[^1].Item == Item("RARE_CANDY").Value, "evolution records original candy item");
+        if (evolve)
+            Assert.IsTrue(evolving.State.EvolutionHistory!.Value[^1].Item == Item("RARE_CANDY").Value, "evolution records original candy item");
+        else Same(evolutionStart.EvolutionHistory, evolving.State.EvolutionHistory, "cancelled evolution adds no receipt");
     }
 
     [TestMethod]

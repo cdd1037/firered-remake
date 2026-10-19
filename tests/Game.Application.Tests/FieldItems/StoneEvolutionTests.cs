@@ -127,7 +127,18 @@ public sealed class StoneEvolutionTests
     private void Drain(CampaignSession session)
     {
         for (int i = 0; i < 25 && session.State.Evolution is not null; i++)
-            Send(session, session.State.Evolution.Stage == CampaignEvolutionStage.LearnMove ? new("evolution_learn", MoveSlot: -1) : new("ack"));
+        {
+            var scene = session.State.Evolution;
+            if (scene.Stage == CampaignEvolutionStage.LearnMove)
+            {
+                var member = session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId);
+                var candidate = scene.PendingMoves[0].Move;
+                Send(session, new("evolution_learn", MoveSlot: -1));
+                GrowthResultTextFixture.AssertPages(catalog, session.State.Evolution!.Pages, "sText_DidNotLearnMove",
+                    ("B_BUFF1", catalog.PokemonDisplayName(member)), ("B_BUFF2", catalog.BattleContent.MoveNames[candidate.Value]));
+            }
+            else Send(session, new("ack"));
+        }
         Assert.IsTrue(session.State.Evolution is null && session.State.ItemMenu is { Origin: "bag", View: "bag" }, "evolution returns to original bag");
         Send(session, new("menu_back"));
     }
@@ -142,7 +153,7 @@ public sealed class StoneEvolutionTests
         Assert.IsTrue(restored.Revision == session.Revision && Hash(restored.State) == Hash(session.State), name + " exact strict codec and Restore");
     }
 
-    private CampaignState Evolve(CampaignState fixture, string item, int target, string name, bool hm = false)
+    private CampaignState Evolve(CampaignState fixture, string item, int target, string name, bool hm = false, bool learn = false)
     {
         var session = Session(fixture);
         int index = fixture.Party.Length - 1;
@@ -152,6 +163,9 @@ public sealed class StoneEvolutionTests
         Send(session, new("field_evolution", Text: item, PartyIndex: index));
         var after = session.State.Party[index];
         Assert.IsTrue(after.Pokemon.SourceSpeciesId == target && session.State.Evolution?.ItemUse is not null, name + " actual public stone evolution");
+        var expectedEvolution = GrowthResultTextFixture.Pages(catalog, "gText_CongratsPkmnEvolved",
+            ("STR_VAR_1", catalog.PokemonDisplayName(before)), ("STR_VAR_2", catalog.SourceSpeciesName(target)!));
+        Assert.AreSequenceEqual(expectedEvolution, session.State.Evolution!.Pages.Take(expectedEvolution.Length));
         Assert.IsTrue(after.InstanceId == before.InstanceId && after.Pokemon.Personality == before.Pokemon.Personality && after.Pokemon.Ivs == before.Pokemon.Ivs && after.Pokemon.OriginalTrainerId == before.Pokemon.OriginalTrainerId && after.MetLevel == before.MetLevel && after.MetLocation == before.MetLocation, name + " original owned identity retained");
         Assert.IsTrue(Hash(after.Pokemon.Moves) == Hash(before.Pokemon.Moves), name + " existing PP, PP Ups and moves retained");
         Assert.IsTrue(before.Pokemon.CurrentHp == 0 ? after.Pokemon.CurrentHp == 0 : after.Pokemon.Stats.MaxHp - after.Pokemon.CurrentHp == before.Pokemon.Stats.MaxHp - before.Pokemon.CurrentHp, name + " living HP deficit or fainting retained");
@@ -167,6 +181,15 @@ public sealed class StoneEvolutionTests
                 Send(session, new("ack"));
             Assert.IsTrue(session.State.Evolution?.Stage == CampaignEvolutionStage.LearnMove, "Sun Stone exact-level move reaches decision");
             Reject(session, new("evolution_learn", MoveSlot: 0), "hm_move_cannot_be_forgotten");
+            if (learn)
+            {
+                var candidate = session.State.Evolution!.PendingMoves[0].Move;
+                Send(session, new("evolution_learn", MoveSlot: 1));
+                GrowthResultTextFixture.AssertPages(catalog, session.State.Evolution!.Pages, "sText_PkmnLearnedMove",
+                    ("B_BUFF1", catalog.PokemonDisplayName(session.State.Party[index])),
+                    ("B_BUFF2", catalog.BattleContent.MoveNames[candidate.Value]));
+                Assert.AreEqual(candidate, session.State.Party[index].Pokemon.Moves[1].Move);
+            }
         }
 
         Drain(session);
@@ -225,8 +248,11 @@ public sealed class StoneEvolutionTests
     }
 
     [TestMethod]
-    public void MoonStonePublicEvolution()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void MoonStonePublicEvolution(bool translated)
     {
+        catalog = GrowthResultTextFixture.WithTranslations(catalog, translated);
         var moon = Fixture(35, "pret:ITEM_MOON_STONE");
         Evolve(moon, "pret:ITEM_MOON_STONE", 36, "moon-clefable");
     }
@@ -288,8 +314,12 @@ public sealed class StoneEvolutionTests
     }
 
     [TestMethod]
-    public void HmLearningDecision()
+    [DataRow(false, false)]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    public void HmLearningDecision(bool translated, bool learn)
     {
+        catalog = GrowthResultTextFixture.WithTranslations(catalog, translated);
         var sun = Fixture(44, "pret:ITEM_SUN_STONE");
         var sourceGloom = sun.Party[^1];
         var bellossom = content.Catalog.Species[new("pret:SPECIES_BELLOSSOM")];
@@ -310,6 +340,6 @@ public sealed class StoneEvolutionTests
                 Moves = hmMoves
             }
         };
-        Evolve(sun with { Party = sun.Party.SetItem(sun.Party.Length - 1, hmGloom) }, "pret:ITEM_SUN_STONE", 182, "sun-hm-decision", hm: true);
+        Evolve(sun with { Party = sun.Party.SetItem(sun.Party.Length - 1, hmGloom) }, "pret:ITEM_SUN_STONE", 182, "sun-hm-decision", hm: true, learn: learn);
     }
 }
