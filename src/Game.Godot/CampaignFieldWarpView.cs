@@ -78,7 +78,7 @@ public partial class CampaignView
             if(animation.DepartureArt is null)return false;
             animation.DoorDeparture=new();
         }
-        if(receipt.Cause==FieldTransitionCause.NonAnimatedDoor)animation.StepDeparture=new();
+        if(receipt.Departure==FieldTransitionDeparture.StepOntoWarp)animation.StepDeparture=new();
         if(receipt.Arrival==FieldTransitionArrival.AnimatedDoor)
         {
             animation.ArrivalArt=FindFieldDoor(animation.DestinationView.Projection,receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y);
@@ -209,7 +209,7 @@ public partial class CampaignView
         playback.ActiveTransitionTiming is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp} timing
             ?FieldDoorPresentation.SampleRecorded(timing.Cause,
                 timing.Arrival,timing.SwitchFrame,
-                (int)Math.Floor(playback.TransitionElapsedFrames+1e-7),timing.DepartureStairBehavior,timing.ArrivalStairBehavior)
+                (int)Math.Floor(playback.TransitionElapsedFrames+1e-7),timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture)
             :default;
 
     private void ReleaseFinishedFieldSnapshot()

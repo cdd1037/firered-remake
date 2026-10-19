@@ -31,9 +31,9 @@ public static partial class FieldDoorPresentation
         bool MusicFadeRequested,bool TeleportTask,bool OpenDoorSoundRequested);
 
     /// <summary>Replays the exact observed transfer; no current audio readiness is consulted.</summary>
-    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null)
+    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null,FieldTransitionDeparture departureKind=FieldTransitionDeparture.Immediate)
     {
-        int minimum=DepartureFrames(cause);
+        int minimum=DepartureFrames(cause,departureKind);
         _=ArrivalFrames(arrivalKind);
         if(switchFrame<minimum)throw new ArgumentOutOfRangeException(nameof(switchFrame));
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
@@ -47,7 +47,7 @@ public static partial class FieldDoorPresentation
                 for(int frame=1;frame<=elapsedFrames;frame++)departure.Advance(frame>=switchFrame-1);
                 return departure.Sample;
             }
-            if(cause==FieldTransitionCause.NonAnimatedDoor)
+            if(cause==FieldTransitionCause.NonAnimatedDoor||departureKind==FieldTransitionDeparture.StepOntoWarp)
             {
                 var step=new StepDeparture();
                 for(int frame=1;frame<=elapsedFrames;frame++)step.Advance(frame>=switchFrame-1);
@@ -78,7 +78,8 @@ public static partial class FieldDoorPresentation
         return FromPlain(plainArrival.Sample);
     }
 
-    public static int DepartureFrames(FieldTransitionCause cause)=>cause switch
+    public static int DepartureFrames(FieldTransitionCause cause,FieldTransitionDeparture departure=FieldTransitionDeparture.Immediate)=>
+        cause==FieldTransitionCause.PlainWarp&&departure==FieldTransitionDeparture.StepOntoWarp?MinimumStepDepartureFrames:cause switch
     {
         FieldTransitionCause.StairWarp=>FieldStairPresentation.MinimumDepartureFrames,
         FieldTransitionCause.PlainWarp=>FieldWarpPresentation.MinimumDepartureFrames,

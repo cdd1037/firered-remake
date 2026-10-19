@@ -12,6 +12,36 @@ public sealed class FieldDoorPresentationTests
         "python tests/Reference/generate_field_door_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Game.Presentation.Tests/Fixtures/field-door-source-vectors.json")));
 
     [TestMethod]
+    [DataRow(40)]
+    [DataRow(73)]
+    public void LadderRecordedStepAndPlainArrivalReuseTheSourceControllers(int switchFrame)
+    {
+        var live=new FieldDoorPresentation.StepDeparture();
+        Assert.AreEqual(40,FieldDoorPresentation.DepartureFrames(FieldTransitionCause.PlainWarp,FieldTransitionDeparture.StepOntoWarp));
+        for(int frame=0;frame<switchFrame;frame++)
+        {
+            if(frame>0)live.Advance(frame>=switchFrame-1);
+            var recorded=FieldDoorPresentation.SampleRecorded(FieldTransitionCause.PlainWarp,FieldTransitionArrival.Plain,
+                switchFrame,frame,departureKind:FieldTransitionDeparture.StepOntoWarp);
+            Assert.AreEqual(live.Sample,recorded,$"departure {frame}");
+            Assert.AreEqual(Math.Min(frame,16),recorded.WalkPixels);
+            Assert.AreEqual(frame>16,recorded.MusicFadeRequested);
+        }
+        live.Advance(true);Assert.IsTrue(live.Complete);
+        var arrival=new FieldWarpPresentation.PlainArrival();
+        for(int frame=0;frame<=24;frame++)
+        {
+            if(frame>0)arrival.Advance();
+            Assert.AreEqual(FieldDoorPresentation.FromPlain(arrival.Sample),FieldDoorPresentation.SampleRecorded(
+                FieldTransitionCause.PlainWarp,FieldTransitionArrival.Plain,switchFrame,switchFrame+frame,
+                departureKind:FieldTransitionDeparture.StepOntoWarp),$"arrival {frame}");
+        }
+        Assert.IsTrue(arrival.Complete);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldDoorPresentation.SampleRecorded(
+            FieldTransitionCause.PlainWarp,FieldTransitionArrival.Plain,39,0,departureKind:FieldTransitionDeparture.StepOntoWarp));
+    }
+
+    [TestMethod]
     public void FreshNormalWalkDisplaysEightFootCallbacksThenEightStandingCallbacks()
     {
         // Original sAnim_GoSouth/North: foot,stand,alternate-foot,stand each8.
