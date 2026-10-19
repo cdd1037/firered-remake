@@ -11,13 +11,10 @@ public partial class CampaignView
     private readonly Dictionary<int,PokedexMenuEntry> _towerDexEntries = [];
     private readonly Dictionary<string,byte[]> _towerDexTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<(bool Ghost,bool Shiny,int Block),Texture2D> _towerMosaic = [];
-    private double _towerWhiteTicks, _towerRevealTicks;
-    private int _towerWhiteDuration;
-    private float _towerWhiteFrom, _towerWhiteTo;
-    private long _towerWhiteEffect;
+    private double _towerRevealTicks;
     private string? _towerRevealBattle;
     private bool _towerRevealStartSound, _towerRevealEndSound;
-    private bool PokemonTowerInputLocked => _catalog is not null && (_towerWhiteTicks < _towerWhiteDuration || _session?.State.PokeFlute is not null);
+    private bool PokemonTowerInputLocked => _catalog is not null && (_session?.State.PokeFlute is not null);
 
     private void LoadPokemonTowerPresentation()
     {
@@ -94,31 +91,18 @@ public partial class CampaignView
     }
     private void SynchronizePokemonTowerPresentation(CampaignState? before,CampaignState after)
     {
-        if(before is null)
-        { _towerWhiteFrom=_towerWhiteTo=after.ScreenIsWhite?1:0;_towerWhiteDuration=0;_towerWhiteTicks=0;_towerWhiteEffect=after.Script.EffectSequence; }
-        foreach(var effect in after.PresentationEffects.Where(e=>e.Sequence>_towerWhiteEffect&&e.Opcode=="fadescreen"&&e.Args.Length==1&&e.Args[0] is "FADE_TO_WHITE" or "FADE_FROM_WHITE"))
-        {
-            _towerWhiteEffect=effect.Sequence;_towerWhiteFrom=TowerWhiteAmount;_towerWhiteTo=after.ScreenIsWhite?1:0;
-            _towerWhiteDuration=Math.Max(1,after.PresentationTicks);_towerWhiteTicks=0;
-        }
         if(after.WildBattle?.Id!=_towerRevealBattle)
         { _towerRevealBattle=after.WildBattle?.Id;_towerRevealTicks=0;_towerRevealStartSound=false;_towerRevealEndSound=false; }
     }
-    private float TowerWhiteAmount => _towerWhiteDuration==0 ? _towerWhiteTo : Mathf.Lerp(_towerWhiteFrom,_towerWhiteTo,(float)Math.Clamp(_towerWhiteTicks/_towerWhiteDuration,0,1));
     private void ProcessPokemonTowerPresentation(double delta)
     {
         ProcessPokemonTowerFlute(delta);
-        _towerWhiteTicks=Math.Min(_towerWhiteDuration,_towerWhiteTicks+delta*60);
         if(PresentedWildBattle is {} b&&TowerRevealing(b))
         {
             if(!_towerRevealStartSound){_towerRevealStartSound=true;SourceSound("SE_M_TELEPORT");}
             _towerRevealTicks=Math.Min(94,_towerRevealTicks+delta*60);
             if(!_towerRevealEndSound&&_towerRevealTicks>=48){_towerRevealEndSound=true;SourceSound("SE_M_MINIMIZE");}
         }
-    }
-    private void DrawPokemonTowerWhiteFade()
-    {
-        if(TowerWhiteAmount>0)DrawRect(new(0,0,240,160),new Color(1,1,1,TowerWhiteAmount));
     }
     private bool TowerRevealing(CampaignWildBattle b)=>b.State.TowerBattleKind==PokemonTowerBattleKind.RevealedMarowak&&
         b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is WildBattleStartedEvent&&_wildPage==1;

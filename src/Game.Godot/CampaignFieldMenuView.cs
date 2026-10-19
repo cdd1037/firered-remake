@@ -260,7 +260,7 @@ public partial class CampaignView
     private void DrawFieldMenu(int paletteBlend=0)
     {
         if (!FieldMenuOpen) return;
-        var font=paletteBlend==0?_sourceNormal:FieldReturnUiFont(paletteBlend);
+        var font=paletteBlend==0?_sourceNormal:FieldPaletteUiFont(paletteBlend);
         Func<Texture2D,Texture2D>? palette=paletteBlend==0?null:texture=>FieldSnapshotPaletteTexture(texture,true,applyShade:false);
         if (_fieldMenuMode is "start" or "save-confirm" or "save-overwrite")
         {

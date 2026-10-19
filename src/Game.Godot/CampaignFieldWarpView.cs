@@ -63,6 +63,7 @@ public partial class CampaignView
         }
         return new(owner,0,revision,false,new(scene.Map,actors,scene.Layout,scene.Tiles){FlashLevel=scene.FlashLevel},poses,keepPresentedPoses?_fieldSurfBlobFrames:0,state.PlayerGender)
         {
+            Weather=state.FieldWeather??_catalog.MapDefinition(state.World.Player.MapId).Weather,
             Fog=HasFieldFog(scene.Map,state.FieldWeather)?keepPresentedPoses&&_fieldFogScene is {} fog?fog:
                 FreshFieldFog(FieldCameraAt(new(state.World.Player.X*16,state.World.Player.Y*16))):null
         };
@@ -296,7 +297,7 @@ public partial class CampaignView
     private void ReleaseFinishedFieldSnapshot()
     {
         if(!_fieldSnapshotReleasePending)return;
-        _fieldSnapshotReleasePending=false;ClearFieldReturnUiPalette();ClearCaveTransitionTexture();ClearQuestLogPaletteTextures();ResetQuestLogArt();
+        _fieldSnapshotReleasePending=false;ClearFieldUiPalette();ClearCaveTransitionTexture();ClearQuestLogPaletteTextures();ResetQuestLogArt();
     }
     private void ResetFieldWarpPresentation()
     {

@@ -252,7 +252,7 @@ public partial class CampaignView:Node2D
         foreach(var effect in after.PresentationEffects.Where(e=>e.Opcode=="playfanfare"&&e.Sequence>_lastFanfareSequence))
         {_fanfareRemaining=(_cues.CounterFor(effect.Args[0])+1)/60.0;_lastFanfareSequence=effect.Sequence;}
         SynchronizeNamingScreen(before,after);
-        SynchronizeFieldFog(before,after);SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeEasyChatEditor();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
+        SynchronizeFieldFog(before,after);SynchronizeFieldScreenFade(before,after);SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeEasyChatEditor();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
         SynchronizeNoncombatFieldPresentation(after);SynchronizeEvolutionView(before);SynchronizeItemfinderPresentation();SynchronizeSavedOptions();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSourceGridMenu();SynchronizeSourceMenu();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeDaisyGroomingPresentation(before,after);SynchronizeSizeRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);SynchronizeSlotMachine();SynchronizeFameChecker();SynchronizeVsSeekerPresentation(before,after);SynchronizeTeachyTvPresentation();SynchronizeTeachyTvFieldPresentation();SynchronizeTeachyTvBattle();
         SynchronizeTrainerCardPhoto(before,after);
         SynchronizeDiplomaPresentation(before,after);
@@ -339,6 +339,7 @@ public partial class CampaignView:Node2D
             if(clip.Action is "disable_anim" or "slide_down" or "restore_anim")pose.Frame=0;
             if(track.Time>=track.Duration||clip.Action is "cycle" or "cycle-stairs"&&track.Time+1e-9>=track.Duration){track.Time=track.Duration;pose.Position=clip.To;pose.Frame=0;pose.DrawYOffset=0;pose.IsJump=false;}
         }
+        ProcessFieldScreenFade(delta);
         if(ProcessFieldFlyTravelPresentation(delta)){QueueRedraw();return;}
         if(ProcessNoncombatFieldPresentation(delta)){QueueRedraw();return;}
         ProcessSevenIslandFieldPresentation(delta);ProcessEventIslandFieldPresentation(delta);
@@ -350,7 +351,7 @@ public partial class CampaignView:Node2D
         _waitElapsed+=delta;
         if(NpcTradePresenting){ProcessNpcTradeSceneAudio();QueueRedraw();return;}
         if(_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff){QueueRedraw();return;}
-        if(!_busy&&_session.State.Script.Wait is {} wait&&wait.CorrelationId!=_blockedAutomaticWait&&(FieldCutVisualComplete||FieldRockSmashVisualComplete||_waitElapsed>=_waitDuration&&_tracks.All(t=>t.Time>=t.Duration)))
+        if(!_busy&&_session.State.Script.Wait is {} wait&&wait.CorrelationId!=_blockedAutomaticWait&&(FieldCutVisualComplete||FieldRockSmashVisualComplete||(FieldScreenFadeWait?_fieldScreenFade?.ScriptReady==true:_waitElapsed>=_waitDuration&&_tracks.All(t=>t.Time>=t.Duration))))
         {
             bool rendered=FieldTextComplete&&wait.Kind==StoryWaitKind.MessagePrinting&&(_session.State.Dialogue is null||_session.State.Dialogue.Page+1==_session.State.Dialogue.Pages.Length);
             if((wait.Kind==StoryWaitKind.Presentation||rendered)&&SourceAudioWaitReady()){Apply(new("ack"));QueueRedraw();return;}
@@ -604,6 +605,8 @@ public partial class CampaignView:Node2D
         if(DrawDaisyGroomingParty())return;
         if(DrawSizeRecordParty())return;
         if(DrawNameRaterParty())return;
+        if(!DrawFieldScreenFade())
+        {
         Rid? lowerTarget=_fieldFogScene is null?null:BeginFieldFog(Colors.Black);
         if(lowerTarget is null)DrawRect(new(0,0,240,160),Colors.Black);
         var hero=_poses["LOCALID_PLAYER"];
@@ -623,6 +626,7 @@ public partial class CampaignView:Node2D
         if(_art.Border is {} borderTop)DrawMapBorder(borderTop.Top,camera);DrawConnectedNeighbors(camera,2);DrawBillMapLayer(_art.Top,camera,2);
         if(hero.Visible&&(CinnabarLanding&&CinnabarFallPose.FixedPriority||SixIslandLandingFixedPriority))DrawCityServicesActor("LOCALID_PLAYER",CurrentPlayerSprite,hero,camera);
         DrawVsSeekerIcons(camera);DrawCutGrassParticles(camera);DrawEventIslandFragments(camera);DrawSsAnneSmoke();DrawFieldFlashMask();DrawFieldMoveBanner();DrawFieldFlashBanner();DrawFieldStrengthBanner();DrawFourIslandBanner();DrawFishingDots();
+        }
         DrawCenterHealing();DrawPokemonLeagueRecording();
         DrawMagikarpMoneyBox();DrawGameCornerCoinsBox();DrawBerryPowderAmount();
         if(_session.State.MonPicture is {} picture&&!DrawBillPcPicture()&&!DrawNamedPokemonPicture(picture))
@@ -633,9 +637,9 @@ public partial class CampaignView:Node2D
         if(!DrawSeviiRubyBraille()&&FieldDialogueVisible&&PresentedFieldText is {} text)
         {
             text=PewterDisplayText(text);
-            _battleSkin.DrawDialogue(this);
+            _battleSkin.DrawDialogue(this,_fieldScreenFade?.Fade is null?null:FieldDialoguePalette);
             var color=_session.State.Script.Variables.GetValueOrDefault("VAR_TEXT_COLOR") switch{0=>new Color("345077"),1=>new Color("a44756"),_=>new Color("283840")};
-            var lines=text.Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(_sourceNormal,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);
+            var lines=text.Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(FieldDialogueFont,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);
             if(!TrainerTowerMenuActive&&!SeagallopMenuActive&&FieldTextComplete&&_session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length)
             {
                 int x=FieldChoiceFrameX,y=FieldChoiceTextY,step=FieldChoiceRowHeight;
@@ -648,14 +652,13 @@ public partial class CampaignView:Node2D
                 int width=((int)Math.Max(_sourceNormal.Font.GetStringSize("YES",fontSize:_sourceNormal.Size).X,_sourceNormal.Font.GetStringSize("NO",fontSize:_sourceNormal.Size).X)+9)/8+1;
                 _battleSkin.DrawUserFrame(this,new(144,56,width*8+16,48));SourceText(_sourceNormal,new(160,66),"YES");SourceText(_sourceNormal,new(160,80),"NO");SourceText(_sourceNormal,new(152,_choiceYes?66:80),"▶");
             }
-            else if(FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawTextCursor(_sourceNormal,LabBattleUiSkin.DialogueText,lines,15,_waitElapsed);
+            else if(FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawTextCursor(FieldDialogueFont,LabBattleUiSkin.DialogueText,lines,15,_waitElapsed);
         }
         DrawDayCareResidents();DrawSourceGridMenu();DrawSourceMenu();DrawFossilLabMenu();DrawBillPcMenu();DrawBikeShopMenu();DrawRocketElevatorMenu();DrawDepartmentElevatorMenu();DrawRooftopMenu();DrawGameCornerCoinMenu();DrawGameCornerPrizeMenu();DrawSilphElevatorMenu();DrawSeagallopMenu();DrawTrainerTowerMenu();
         if(_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro&&_wildNotice is not null)ItemMessageBox(_wildNotice);
         if(_lastCommandFault||_status.StartsWith("starter_",StringComparison.Ordinal))
         {DrawRect(new(2,137,236,21),new Color("741e2b"));DrawString(_font,new(6,147),"事件暂未接入，当前步骤未提交",fontSize:8,modulate:Colors.White);DrawString(_font,new(6,156),"详细错误已写本地日志；Esc退出",fontSize:7,modulate:Colors.White);}
         if(_session.State.ScreenIsBlack)DrawRect(new(0,0,240,160),SourceScreenFadeColor);
-        DrawPokemonTowerWhiteFade();
         if(_regionalServiceNotice is not null)ItemMessageBox(_regionalServiceNotice);
         if(_session.State.Pc is not null)DrawStorage();
         if(_session.State.ItemMenu is not null&&!DrawBagToss()&&!DrawMachines()&&!DrawQuestPocket())DrawItemMenu();

@@ -12,7 +12,7 @@ public partial class CampaignView
     private void PrepareFieldSnapshotPalette(FieldSnapshot snapshot,int grayscale,int backgroundBlend,int objectBlend,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors,ushort fadeColor=0)
     {
         var state=(snapshot.Owner,snapshot.Scene,snapshot.Revision,snapshot.SavedGameVisible,grayscale,backgroundBlend,objectBlend,fadeColor,
-            ((snapshot.SavedGameVisible?_session.State.FieldWeather:null)??_catalog.MapDefinition(new MapId(snapshot.Projection.Map)).Weather)=="WEATHER_SHADE",
+            (snapshot.Weather??(snapshot.SavedGameVisible?_session.State.FieldWeather:null)??_catalog.MapDefinition(new MapId(snapshot.Projection.Map)).Weather)=="WEATHER_SHADE",
             string.Join('|',neighbors.Select(neighbor=>neighbor.Map.Value).Order(StringComparer.Ordinal)),snapshot.Door);
         if(_questPaletteState==state)return;
         // Only this visible revision and both current bank coefficients are held.

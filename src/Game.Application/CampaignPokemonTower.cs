@@ -56,7 +56,9 @@ public sealed partial class CampaignSession
         if(e.Opcode=="fadescreen"&&e.Source.Path=="data/maps/PokemonTower_5F/scripts.inc")
         {
             if(a.Length!=1||a[0] is not("FADE_TO_WHITE" or "FADE_FROM_WHITE"))throw new InvalidDataException("tower_white_fade_source");
-            next=s with{ScreenIsWhite=a[0]=="FADE_TO_WHITE",PresentationTicks=16};return true;
+            bool fromWhite=a[0]=="FADE_FROM_WHITE";
+            var palette=FieldArrivalPalettePresentation.ForWeather(s.FieldWeather??_content.MapDefinition(s.World.Player.MapId).Weather);
+            next=s with{ScreenIsWhite=!fromWhite,PresentationTicks=FieldScreenFadePresentation.ScriptWaitFrames(fromWhite,palette)};return true;
         }
         if(e.Opcode is "release" or "releaseall"&&e.Source.Path==TowerHouseSource)
         {next=s with{MessagePointer=null,Dialogue=null,SignMessage=null};return true;}

@@ -94,11 +94,12 @@ public sealed class LabBattleUiSkin : IDisposable
     public void DrawBattleMessage(CanvasItem canvas) => Draw(canvas, "battle-message");
     public void DrawActionMenu(CanvasItem canvas) => Draw(canvas, "action-menu");
     public void DrawMoveMenu(CanvasItem canvas) => Draw(canvas, "move-menu");
-    public void DrawDialogue(CanvasItem canvas) => Draw(canvas, "dialogue");
-    public void Draw(CanvasItem canvas, string id, Color? tint = null)
+    public void DrawDialogue(CanvasItem canvas,Func<Texture2D,Texture2D>? palette=null) => Draw(canvas, "dialogue",palette:palette);
+    public void Draw(CanvasItem canvas, string id, Color? tint = null,Func<Texture2D,Texture2D>? palette=null)
     {
         canvas.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-        canvas.DrawTextureRect(_userWindows is not null&&_userWindows.TryGetValue(id,out var selected)?selected:_textures[id], _rects[id], false, tint ?? Colors.White);
+        var texture=_userWindows is not null&&_userWindows.TryGetValue(id,out var selected)?selected:_textures[id];
+        canvas.DrawTextureRect(palette is null?texture:palette(texture), _rects[id], false, tint ?? Colors.White);
     }
 
     /// <summary>Settled HP/EXP pixels only. No damage animation, status icon or game-state mutation.</summary>

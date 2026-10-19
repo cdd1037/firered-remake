@@ -33,11 +33,12 @@ public sealed class FieldArrivalPalettePresentation
         _=>throw new ArgumentException("Unsupported field arrival weather.",nameof(weather))
     };
 
-    public FieldArrivalPalettePresentation(FieldArrivalPalette kind=FieldArrivalPalette.Normal)
+    public FieldArrivalPalettePresentation(FieldArrivalPalette kind=FieldArrivalPalette.Normal,bool weatherInitialized=false)
     {
         if(!Enum.IsDefined(kind))
             throw new ArgumentOutOfRangeException(nameof(kind));
         Kind=kind;
+        _weatherInitialized=weatherInitialized;
         FadeFromBlack();
     }
 

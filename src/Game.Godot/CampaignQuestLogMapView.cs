@@ -10,7 +10,7 @@ public partial class CampaignView
     // belong to the visible snapshot, never to the already-committed destination.
     private sealed record FieldSnapshot(object Owner,int Scene,int Revision,bool SavedGameVisible,
         CampaignQuestLogMapProjection Projection,IReadOnlyDictionary<string,Pose> Poses,double Frame,int PlayerGender)
-    { public FieldDoorPaint? Door {get;init;} public FieldHorizontalFogPresentation.Scene? Fog {get;init;} }
+    { public FieldDoorPaint? Door {get;init;} public FieldHorizontalFogPresentation.Scene? Fog {get;init;} public string? Weather {get;init;} }
     private (object Owner,int Scene,int Revision,bool Saved,FieldDoorPaint? Door)? _fieldSnapshotArtState;
     private int _fieldSnapshotArtSerial;
     private string? _fieldSnapshotArtKey;

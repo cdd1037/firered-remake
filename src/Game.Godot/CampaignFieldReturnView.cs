@@ -8,24 +8,6 @@ public partial class CampaignView
     private FieldSnapshot? _fieldReturnSnapshot;
     private double _fieldReturnFrames;
     private int _fieldReturnProcessed;
-    private SourceGameFont? _fieldReturnUiFont;
-    private int _fieldReturnUiCoefficient=-1;
-    private SourceGameFont FieldReturnUiFont(int coefficient)
-    {
-        if(coefficient==0)return _sourceNormal;
-        if(_fieldReturnUiCoefficient!=coefficient)
-        {
-            _fieldReturnUiFont?.Dispose();
-            _fieldReturnUiFont=_sourceNormal.CreatePaletteVariant(coefficient);
-            _fieldReturnUiCoefficient=coefficient;
-        }
-        return _fieldReturnUiFont!;
-    }
-    private void ClearFieldReturnUiPalette()
-    {
-        _fieldReturnUiFont?.Dispose();_fieldReturnUiFont=null;_fieldReturnUiCoefficient=-1;
-    }
-
     // One ownership boundary covers nested ordinary menus and battle submenus.
     // Start/save dialogs and personal-PC text menus still belong to the field.
     private FieldReturnPresentation.Owner FieldDisplayOwner()
