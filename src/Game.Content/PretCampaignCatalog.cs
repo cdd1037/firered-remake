@@ -21,6 +21,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public GamePokemonCatalog GamePokemon { get; }
     public GameOpponentPokemonCatalog OpponentPokemon { get; }
     public MachineCatalog Machines { get; }
+    public SharedItemCatalog Items { get; }
     public SourceDisplayNames DisplayNames { get; }
     public string ContentVersion { get; }
     public CampaignPokemonContent PokemonContent { get; }

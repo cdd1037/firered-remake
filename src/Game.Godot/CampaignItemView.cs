@@ -136,7 +136,7 @@ public partial class CampaignView
         for(int i=0;i<labels.Length;i++)SourceText(_sourceNormal,fieldBag?new Vector2(184,y+10+i*16):pc?OpeningItemUiSkin.PcActionText(i):OpeningItemUiSkin.BattleBagActionText(i),labels[i]);
         SourceText(_sourceNormal,fieldBag?new Vector2(176,y+10+selected*16):pc?OpeningItemUiSkin.PcActionCursor(selected):OpeningItemUiSkin.BattleBagActionCursor(selected),_itemSkin.Text("gText_SelectorArrow2"));
         _itemSkin.DrawStandardFrame(this,OpeningItemUiSkin.PcSelectedFrame);
-        ItemLines(_sourceNormal,OpeningItemUiSkin.PcSelectedText,_itemSkin.FormatText("gText_Var1IsSelected",itemName??_itemSkin.PotionName));
+        ItemLines(_sourceNormal,OpeningItemUiSkin.PcSelectedText,_itemSkin.FormatText("gText_Var1IsSelected",itemName??InventoryName(OpeningInventoryRules.PotionId)));
     }
     private void ItemLines(SourceGameFont font,Vector2 origin,string text,int step=14)
     {var lines=text.Split('\n');for(int i=0;i<lines.Length;i++)SourceText(font,origin+new Vector2(0,i*step),lines[i]);}

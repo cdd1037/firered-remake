@@ -41,6 +41,15 @@ public static class PretQuestItemUi
         }
     }
 
+    /// <summary>Project every assembled pocket row once, after regional art has been loaded.</summary>
+    public static QuestItemUiDocument WithDisplayText(QuestItemUiDocument document, SharedItemCatalog items, MachineItem tmCase) =>
+        document with { Items = document.Items.Select(row =>
+        {
+            var id = new Game.Domain.Ids.ItemId(row.Id);
+            return row with { Name = items.Definition(id).Name,
+                Description = id == tmCase.Item.Id ? tmCase.Description : items.Description(id) };
+        }).ToImmutableArray() };
+
     public static byte[] ReadTexture(string directory, QuestItemUiAsset asset)
     {
         if (asset.TexturePath != asset.Id + ".png" || asset.TexturePath.Contains('/') || asset.TexturePath.Contains('\\')

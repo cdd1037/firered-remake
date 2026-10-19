@@ -11,6 +11,7 @@ from io import StringIO
 import json
 from pathlib import Path
 import re
+import shutil
 import unittest
 import tempfile
 from item_catalog import ROOT, RAW, compile_catalog, described_items, item_definition, item_json
@@ -24,7 +25,8 @@ class ItemCatalogTests(unittest.TestCase):
         original = {row['itemId']: row for row in json.loads((raw / 'src/data/items.json').read_text())['items']
                     if row['itemId'] != 'ITEM_NONE'}
         document = compile_catalog(ROOT)
-        self.assertEqual({'schemaVersion', 'items'}, set(document))
+        self.assertEqual({'schemaVersion', 'items', 'descriptions'}, set(document))
+        self.assertEqual(2, document['schemaVersion'])
         self.assertEqual(307, len(document['items']))
         self.assertEqual(set(original), {row['sourceItemSymbol'] for row in document['items']})
         fields = dict(name='english', price='price', importance='importance', registrability='registrability',
@@ -44,6 +46,67 @@ class ItemCatalogTests(unittest.TestCase):
             self.assertEqual(source['price'] != 0, item['canSell'])
             self.assertNotIn('source', item)
         self.assertEqual(document, json.loads((ROOT / 'content/generated/data/items.json').read_text()))
+
+    def test_all_descriptions_match_source_and_current_inventory_bytes(self):
+        raw = ROOT / RAW
+        source = json.loads((raw / 'src/data/items.json').read_bytes())['items']
+        moves = (raw / 'src/move_descriptions.c').read_text()
+        document = compile_catalog(ROOT)
+        descriptions = document['descriptions']
+        self.assertEqual({item['id']['value'] for item in document['items']}, set(descriptions))
+        for item in source:
+            symbol = item['itemId']
+            if symbol == 'ITEM_NONE':
+                continue
+            expected = item['description_english'].replace('\\n', '\n')
+            if re.fullmatch(r'ITEM_(?:TM|HM)\d+', symbol):
+                match = re.search(r'^const u8 gMoveDescription_' + re.escape(item['moveId']) +
+                                  r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$', moves, re.M)
+                self.assertIsNotNone(match, symbol)
+                expected = json.loads(match[1])
+            actual = descriptions['pret:' + symbol]
+            self.assertTrue(actual.strip(), symbol)
+            self.assertEqual(expected.encode('utf-8'), actual.encode('utf-8'), symbol)
+        current = json.loads((ROOT / 'content/generated/data/available-items.json').read_bytes())
+        self.assertTrue(current['items'])
+        for item in current['items']:
+            self.assertEqual(item['description'].encode('utf-8'),
+                             descriptions[item['item']].encode('utf-8'), item['item'])
+
+    def test_complete_descriptions_use_explicit_source_root_and_reject_empty_text(self):
+        raw = ROOT / RAW
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in ('include/constants/items.h', 'src/data/items.json', 'src/move_descriptions.c'):
+                target = root / RAW / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(raw / relative, target)
+            item_path = root / RAW / 'src/data/items.json'
+            source = json.loads(item_path.read_bytes())
+            potion = next(row for row in source['items'] if row['itemId'] == 'ITEM_POTION')
+            potion['description_english'] = 'Independent item text.'
+            item_path.write_text(json.dumps(source))
+            move_path = root / RAW / 'src/move_descriptions.c'
+            move_source = move_path.read_text()
+            machine = next(row for row in source['items'] if row['itemId'] == 'ITEM_TM04')
+            pattern = r'(^const u8 gMoveDescription_' + re.escape(machine['moveId']) + r'\[\] = _\()"(?:[^"\\]|\\.)*"(\);$)'
+            move_path.write_text(re.sub(pattern, r'\1"Independent machine text."\2', move_source, flags=re.M))
+            document = compile_catalog(root)
+            self.assertEqual('Independent item text.', document['descriptions']['pret:ITEM_POTION'])
+            self.assertEqual('Independent machine text.', document['descriptions']['pret:ITEM_TM04'])
+            for invalid in ('', ' \t\n'):
+                potion['description_english'] = invalid
+                item_path.write_text(json.dumps(source))
+                with self.subTest(kind='item', text=repr(invalid)), self.assertRaisesRegex(ValueError, 'nonempty'):
+                    compile_catalog(root)
+            potion['description_english'] = 'Independent item text.'
+            item_path.write_text(json.dumps(source))
+            move_path.write_text(re.sub(pattern, r'\1""\2', move_source, flags=re.M))
+            with self.subTest(kind='machine'), self.assertRaisesRegex(ValueError, 'nonempty'):
+                compile_catalog(root)
+            move_path.unlink()
+            with self.assertRaises(FileNotFoundError):
+                compile_catalog(root)
 
     def test_storage_catalogs_regenerate_without_runtime_proofs(self):
         for kind in ('opening', 'quest'):

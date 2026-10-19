@@ -72,8 +72,7 @@ public partial class CampaignView
 
     private int QuestPocketListStart => Math.Max(0, _questPocketCursor - 5);
     private QuestItemUiEntry QuestPocketItem(InventoryStack stack)
-        => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value) with
-        { Name = _catalog.DisplayNames.ItemName(stack.Item.Value[5..]) };
+        => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value);
 
     private InventoryMenuEntry[] QuestPocketActions()
     {

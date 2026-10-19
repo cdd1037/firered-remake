@@ -57,8 +57,6 @@ public sealed class OpeningItemUiSkin : IDisposable
     public Rect2 Rect(string id) => _rects[id];
     /// <summary>Verified source display text. STR_VAR placeholders remain; terminal wait controls are metadata only.</summary>
     public string Text(string symbol) => _texts[symbol];
-    public string PotionName => Text("ITEM_POTION_NAME");
-    public string PotionDescription => Text("ITEM_POTION_DESCRIPTION");
     public string FormatText(string symbol, string? strVar1 = null, string? strVar2 = null)
     {
         var text = Text(symbol);

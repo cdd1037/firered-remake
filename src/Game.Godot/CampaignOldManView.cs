@@ -1,4 +1,5 @@
 using Game.Domain.Events;
+using Game.Domain.Items;
 using System.Text;
 using Game.Application;
 using Game.Content;
@@ -278,13 +279,13 @@ public partial class CampaignView
         int count = pocket == 1 ? 0 : 1;
         if (count == 1)
         {
-            SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, 0), pocket == 0 ? _itemSkin.PotionName : ball.Name);
+            SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, 0), pocket == 0 ? InventoryName(OpeningInventoryRules.PotionId) : ball.Name);
             SourceText(_sourceSmall, OpeningItemUiSkin.QuantityText(false, 0), _itemSkin.FormatText("gText_TimesStrVar1", "  1"));
             if (pocket == 0) _itemSkin.DrawPotion(this); else DrawQuestPocketAsset(ball.Icon);
         }
         SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, count), _itemSkin.Text("gFameCheckerText_Cancel"));
         SourceText(_sourceNormal, OpeningItemUiSkin.ListCursor(false, 0), _itemSkin.Text("gText_SelectorArrow2"));
-        ItemLines(_sourceWhite, OpeningItemUiSkin.DescriptionText, pocket == 0 ? _itemSkin.PotionDescription : pocket == 1 ? _itemSkin.Text("gText_CloseBag") : ball.Description);
+        ItemLines(_sourceWhite, OpeningItemUiSkin.DescriptionText, pocket == 0 ? InventoryDescription(OpeningInventoryRules.PotionId) : pocket == 1 ? _itemSkin.Text("gText_CloseBag") : ball.Description);
         if (kind == OldManTutorialEventKind.SelectPokeBall)
         {
             _battleSkin.DrawStandardFrame(this, OpeningItemUiSkin.BattleBagActionFrame);

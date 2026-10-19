@@ -7,16 +7,17 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record SharedItemDocument(int SchemaVersion,
-    ImmutableArray<QuestItemDefinition> Items);
+    ImmutableArray<QuestItemDefinition> Items, ImmutableDictionary<string, string> Descriptions);
 
-/// <summary>Immutable item business definitions. Resolving an item never admits it to an inventory or field service.</summary>
+/// <summary>Immutable item definitions and display descriptions. Resolving an item never admits it to an inventory or field service.</summary>
 public sealed class SharedItemCatalog
 {
     private readonly ImmutableDictionary<ItemId, QuestItemDefinition> _items;
+    private readonly ImmutableDictionary<ItemId, string> _descriptions;
     internal SourceTextPack TextPack { get; }
     private SharedItemCatalog(SharedItemDocument document, SourceTextPack pack)
     {
-        if (document.SchemaVersion != 1 ||
+        if (document.SchemaVersion != 2 ||
             document.Items.IsDefault || document.Items.Length != 307)
             throw new InvalidDataException("item_catalog_shape");
         _items = document.Items.ToImmutableDictionary(item => item.Id);
@@ -27,7 +28,13 @@ public sealed class SharedItemCatalog
                 item.CanToss != (item.Importance == 0) || item.CanGive != (item.Importance == 0) ||
                 item.CanSell != (item.Price != 0)))
             throw new InvalidDataException("item_catalog_definition");
+        if (document.Descriptions.Count != _items.Count ||
+            _items.Keys.Any(id => !document.Descriptions.ContainsKey(id.Value)) ||
+            document.Descriptions.Values.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidDataException("item_catalog_descriptions");
         TextPack = pack;
+        _descriptions = pack.Apply("item-descriptions", document.Descriptions)
+            .ToImmutableDictionary(pair => new ItemId(pair.Key), pair => pair.Value);
         var names = pack.Apply("item-names", _items.ToDictionary(pair => pair.Key.Value, pair => pair.Value.Name));
         _items = _items.ToImmutableDictionary(pair => pair.Key,
             pair => pair.Value with { Name = names[pair.Key.Value] });
@@ -36,6 +43,8 @@ public sealed class SharedItemCatalog
         File.ReadAllText(Path.Combine(root, "content/generated/data/items.json")), ContentJson.CreateOptions()), pack ?? SourceTextPack.Current);
     public QuestItemDefinition Definition(ItemId id) => _items.TryGetValue(id, out var item)
         ? item : throw new InvalidDataException("item_definition_missing: " + id.Value);
+    public string Description(ItemId id) => _descriptions.TryGetValue(id, out var description)
+        ? description : throw new InvalidDataException("item_description_missing: " + id.Value);
     public ImmutableDictionary<ItemId, QuestItemDefinition> Select(IEnumerable<ItemId> ids) =>
         ids.Distinct().ToImmutableDictionary(id => id, Definition);
     public JsonSerializerOptions CreateJsonOptions()

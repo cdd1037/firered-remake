@@ -16,7 +16,7 @@ public static class OpeningInventoryRules
         var p = catalog.Potion;
         if (catalog.Limits != SourceLimits || catalog.InitialPcItems.IsDefault ||
             catalog.InitialPcItems.Length != 1 || catalog.InitialPcItems[0] != new InventoryStack(PotionId, 1) ||
-            p is null || p.Id != PotionId || p.SourceItemId != 13 || p.Name != "POTION" || p.Price != 300 ||
+            p is null || p.Id != PotionId || p.SourceItemId != 13 || string.IsNullOrWhiteSpace(p.Name) || p.Price != 300 ||
             p.Pocket != "POCKET_ITEMS" || p.Type != "ITEM_TYPE_PARTY_MENU" ||
             p.FieldUseFunction != "FieldUseFunc_Medicine" || p.BattleUsage != 1 ||
             p.BattleUseFunction != "BattleUseFunc_Medicine" || p.HealHp != 20 ||

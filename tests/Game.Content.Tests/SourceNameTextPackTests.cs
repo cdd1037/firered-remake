@@ -99,6 +99,49 @@ public sealed class SourceNameTextPackTests
     }
 
     [TestMethod]
+    [DataRow("pret:ITEM_POTION", "Healing Bottle")]
+    [DataRow("pret:ITEM_SUPER_POTION", "Greater Healing Bottle")]
+    public void MedicineDisplayNamesDoNotReplaceIdentityOrEffectValidation(string value, string name)
+    {
+        using var temp = TestAssets.TemporaryOutput();
+        Write(temp.Path, "item-names", value, name);
+        var items = SharedItemCatalog.LoadProject(TestAssets.Root, SourceTextPack.Load(temp.Path));
+        var original = SharedItemCatalog.LoadProject(TestAssets.Root, English);
+        var id = new ItemId(value);
+        QuestItemDefinition item;
+        ImmutableArray<int> effects;
+        Action<QuestItemDefinition, ImmutableArray<int>> validate;
+        if (id == OpeningInventoryRules.PotionId)
+        {
+            var catalog = PretOpeningItems.Load(File.ReadAllText(Path.Combine(TestAssets.Root,
+                "content/generated/data/items/opening/opening-items.json")), items);
+            item = catalog.Potion.Item;
+            effects = catalog.Potion.EffectBytes;
+            validate = (candidate, bytes) => OpeningInventoryRules.ValidateCatalog(catalog with
+                { Potion = catalog.Potion with { Item = candidate, EffectBytes = bytes } });
+        }
+        else
+        {
+            var document = PretCeruleanItems.LoadProject(TestAssets.Root,
+                SharedMachineCatalog.LoadProject(TestAssets.Root, items));
+            var row = document.Item;
+            var potion = new EarlyShopItemDefinition(row.Metadata.Item, row.Metadata.Description,
+                row.Metadata.Item.HoldEffectParam, 0, row.EffectBytes, row.UseSupport);
+            item = potion.Item;
+            effects = potion.EffectBytes;
+            validate = (candidate, bytes) => CeruleanItemRules.ValidateSuperPotion(potion with
+                { Item = candidate, EffectBytes = bytes });
+        }
+        Assert.AreSame(items.Definition(id), item);
+        Assert.AreEqual(original.Definition(id) with { Name = name }, item);
+        validate(item, effects);
+        Assert.ThrowsExactly<NotSupportedException>(() => validate(item with { Id = new("pret:ITEM_ANTIDOTE") }, effects));
+        Assert.ThrowsExactly<NotSupportedException>(() => validate(item,
+            effects.SetItem(effects.Length - 1, effects[^1] + 1)));
+        Assert.ThrowsExactly<NotSupportedException>(() => validate(item with { Name = " \t" }, effects));
+    }
+
+    [TestMethod]
     public void SummaryProseOverridesRetainSourceParametersAndPortraitBehavior()
     {
         using var temp = TestAssets.TemporaryOutput();
@@ -156,6 +199,31 @@ public sealed class SourceNameTextPackTests
     }
 
     [TestMethod]
+    [DataRow("pret:ITEM_TEA")]
+    [DataRow("pret:ITEM_TOWN_MAP")]
+    [DataRow("pret:ITEM_TM39")]
+    public void SharedDescriptionsAcceptQuestAndMachineIdsWithoutChangingAdmission(string id)
+    {
+        using var temp = TestAssets.TemporaryOutput();
+        const string replacement = "Shared item instructions.";
+        Write(temp.Path, "item-descriptions", id, replacement);
+        var originalItems = SharedItemCatalog.LoadProject(TestAssets.Root, English);
+        var items = SharedItemCatalog.LoadProject(TestAssets.Root, SourceTextPack.Load(temp.Path));
+        Assert.AreEqual(replacement, items.Description(new(id)));
+        Assert.AreEqual(originalItems.Definition(new(id)), items.Definition(new(id)));
+        var originalShop = CurrentItemCatalog.Load(TestAssets.Root, originalItems);
+        var shop = CurrentItemCatalog.Load(TestAssets.Root, items);
+        Assert.IsFalse(shop.Items.Any(item => item.Id.Value == id));
+        Assert.AreEqual(JsonSerializer.Serialize(originalShop), JsonSerializer.Serialize(shop));
+        var originalMachines = SharedMachineCatalog.LoadProject(TestAssets.Root, originalItems);
+        var machines = SharedMachineCatalog.LoadProject(TestAssets.Root, items);
+        Assert.AreEqual(originalMachines.Definition(MachineRules.Tm39Id), machines.Definition(MachineRules.Tm39Id));
+        Assert.ThrowsExactly<InvalidDataException>(() => machines.Definition(new("pret:ITEM_HM08")));
+        if (id != MachineRules.Tm39Id.Value)
+            Assert.ThrowsExactly<InvalidDataException>(() => machines.Definition(new(id)));
+    }
+
+    [TestMethod]
     [DataRow("species-names", "99999")]
     [DataRow("item-names", "pret:ITEM_MISSING")]
     [DataRow("move-names", "pret:MOVE_MISSING")]
@@ -166,8 +234,10 @@ public sealed class SourceNameTextPackTests
     [DataRow("summary-moves", "MOVE_MISSING")]
     [DataRow("summary-abilities", "ABILITY_MISSING")]
     [DataRow("summary-locations", "MAPSEC_MISSING")]
-    [DataRow("item-descriptions", "pret:ITEM_TM39")]
+    [DataRow("item-descriptions", "pret:ITEM_MISSING")]
+    [DataRow("item-descriptions", "pret:ITEM_NONE")]
     [DataRow("machine-descriptions", "pret:ITEM_POTION")]
+    [DataRow("machine-descriptions", "pret:ITEM_HM08")]
     public void UnknownIdsAndWrongDescriptionCatalogsFailAtTheOwningLoader(string group, string id)
     {
         using var temp = TestAssets.TemporaryOutput();
@@ -236,9 +306,8 @@ public sealed class SourceNameTextPackTests
         else
         {
             var items = SharedItemCatalog.LoadProject(TestAssets.Root, pack);
-            if (group == "item-descriptions") _ = CurrentItemCatalog.Load(TestAssets.Root, items);
-            else if (group == "machine-descriptions") _ = SharedMachineCatalog.LoadProject(TestAssets.Root, items);
-            else _ = SourceDisplayNames.LoadProject(TestAssets.Root, items, Pokemon);
+            if (group == "machine-descriptions") _ = SharedMachineCatalog.LoadProject(TestAssets.Root, items);
+            else if (group != "item-descriptions") _ = SourceDisplayNames.LoadProject(TestAssets.Root, items, Pokemon);
         }
     }
     private static void Write(string root, string group, string id, string value) =>

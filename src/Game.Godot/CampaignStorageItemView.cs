@@ -219,7 +219,7 @@ public partial class CampaignView
 
     private string StorageItemDescription(ItemId item) =>
         (_catalog.Machines is { } machines ? MachineRules.Definition(machines, item)?.Machine.Description : null)
-        ?? EarlyItem(item)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$')
+        ?? EarlyItem(item)?.Description
         ?? _questPocketUi?.Items.SingleOrDefault(i => i.Id == item.Value)?.Description
         ?? _storageText.Get("notice.item-description-unavailable");
 

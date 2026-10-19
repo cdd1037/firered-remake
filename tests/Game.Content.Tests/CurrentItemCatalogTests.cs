@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Game.Content;
 using Game.Domain.Items;
@@ -17,7 +18,11 @@ public sealed class CurrentItemCatalogTests
         Assert.AreEqual(current.Shops.Length, current.Shops.Select(shop => shop.Id).Distinct().Count());
         Assert.AreEqual("ViridianCity_Mart_Items", current.Shops[0].Id);
         Assert.IsTrue(current.Shops.Any(shop => shop.Id == "TrainerTower_Lobby_Mart_Items"));
-        foreach (var item in current.Items) Assert.AreSame(shared.Definition(item.Id), item.Item);
+        foreach (var item in current.Items)
+        {
+            Assert.AreSame(shared.Definition(item.Id), item.Item);
+            Assert.AreEqual(shared.Description(item.Id), item.Description);
+        }
         var potion = current.Items.Single(item => item.Id.Value == "pret:ITEM_POTION");
         Assert.AreEqual(20, potion.HealHp);
         Assert.AreEqual(EarlyShopUseSupport.Potion, potion.UseSupport);
@@ -56,6 +61,41 @@ public sealed class CurrentItemCatalogTests
         Assert.AreSame(shared.Definition(OpeningInventoryRules.PotionId), catalog.Items[0].Item);
         original["items"]!.AsArray().Add(potion.DeepClone());
         Assert.ThrowsExactly<InvalidDataException>(() => CurrentItemCatalog.Parse(original.ToJsonString(), shared));
+    }
+
+    [TestMethod]
+    public void CurrentDescriptionProjectionUsesSharedTextAndAcceptsOverridesOutsideItsAdmission()
+    {
+        using var temp = TestAssets.TemporaryOutput();
+        Directory.CreateDirectory(Path.Combine(temp.Path, "source"));
+        File.WriteAllText(Path.Combine(temp.Path, "source/item-descriptions.json"),
+            JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["pret:ITEM_POTION"] = "Shared potion text.",
+                ["pret:ITEM_TEA"] = "Shared tea text.",
+                ["pret:ITEM_HM08"] = "Shared machine item text."
+            }));
+        var shared = SharedItemCatalog.LoadProject(TestAssets.Root, SourceTextPack.Load(temp.Path));
+        var original = JsonNode.Parse(File.ReadAllText(Path.Combine(TestAssets.Root,
+            "content/generated/data/available-items.json")))!;
+        var potion = original["items"]!.AsArray().Single(row => row!["item"]!.GetValue<string>() == "pret:ITEM_POTION")!;
+        potion["description"] = "Stale admission copy.";
+        var current = CurrentItemCatalog.Parse(original.ToJsonString(), shared);
+        var projected = current.Items.Single(item => item.Id == OpeningInventoryRules.PotionId);
+        Assert.AreEqual("Shared potion text.", projected.Description);
+        Assert.AreSame(shared.Definition(projected.Id), projected.Item);
+        Assert.AreEqual("Shared tea text.", shared.Description(new("pret:ITEM_TEA")));
+        Assert.AreEqual("Shared machine item text.", shared.Description(new("pret:ITEM_HM08")));
+        Assert.IsFalse(current.Items.Any(item => item.Id.Value is "pret:ITEM_TEA" or "pret:ITEM_HM08"));
+        original["items"] = new JsonArray(potion.DeepClone());
+        original["shops"] = new JsonArray(new JsonObject
+        {
+            ["id"] = "PotionCounter",
+            ["items"] = new JsonArray(new JsonObject { ["value"] = "pret:ITEM_POTION" })
+        });
+        var selected = CurrentItemCatalog.Parse(original.ToJsonString(), shared);
+        Assert.AreEqual(1, selected.Items.Length);
+        Assert.AreEqual(JsonSerializer.Serialize(projected), JsonSerializer.Serialize(selected.Items[0]));
     }
 
     [TestMethod]

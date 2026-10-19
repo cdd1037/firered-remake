@@ -94,8 +94,13 @@ def inventory_item(item, description, heal_hp, cure_status, effect_bytes, use_su
 
 
 def compile_catalog(project_root=ROOT):
-    return dict(schemaVersion=1,
-                items=[item.fields for item in definitions(Path(project_root).resolve()).values()])
+    root = Path(project_root).resolve()
+    items = definitions(root)
+    descriptions = {row['metadata']['item']: row['metadata']['description']
+                    for row in described_items(lambda path: (root / RAW / path).read_bytes(), items)}
+    if any(not description.strip() for description in descriptions.values()):
+        raise ValueError('Item descriptions must be nonempty')
+    return dict(schemaVersion=2, items=[item.fields for item in items.values()], descriptions=descriptions)
 
 
 def described_items(read, symbols):

@@ -49,9 +49,7 @@ public static class CurrentItemCatalog
                  item.CureStatus == 0))
                 throw new InvalidDataException("current_item_status_effect");
         }
-        var descriptions = items.TextPack.Apply("item-descriptions",
-            catalog.Items.ToDictionary(item => item.Id.Value, item => item.Description));
         return catalog with { Items = catalog.Items.Select(item =>
-            item with { Description = descriptions[item.Id.Value] }).ToImmutableArray() };
+            item with { Description = items.Description(item.Id) }).ToImmutableArray() };
     }
 }

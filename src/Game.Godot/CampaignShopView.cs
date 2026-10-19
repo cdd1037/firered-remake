@@ -73,10 +73,8 @@ public partial class CampaignView
     private bool CanSelectFieldMedicine(ItemId id) => FieldMedicineEffectFor(id) is
         FieldMedicineEffect.HealHp or FieldMedicineEffect.CureStatus or FieldMedicineEffect.CureSleep ||
         _catalog.EarlyShop is {} shop && _catalog.PresetDoubleItems is {} sourceItems && (SourceFieldStatusCureRules.Supports(shop, sourceItems, id) || SourceFieldHpMedicineRules.Supports(shop, sourceItems, id));
-    private string InventoryName(ItemId id) => EarlyItem(id)?.Name ??
-        (_catalog.Machines is {} machines ? MachineRules.Definition(machines, id)?.Machine.Item.Name : null) ??
-        (id == OpeningInventoryRules.PotionId ? _itemSkin.PotionName : _catalog.QuestItems?.Items.SingleOrDefault(i => i.Id == id)?.Name ?? throw new InvalidDataException("inventory_item_name_missing"));
-    private string InventoryDescription(ItemId id) => EarlyItem(id)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$') ?? _itemSkin.PotionDescription;
+    private string InventoryName(ItemId id) => _catalog.Items.Definition(id).Name;
+    private string InventoryDescription(ItemId id) => _catalog.Items.Description(id);
     private void DrawInventoryIcon(ItemId id)
     {
         if (_earlyItemIcons.TryGetValue(id, out var icon)) DrawTexture(icon, new(8, 112));

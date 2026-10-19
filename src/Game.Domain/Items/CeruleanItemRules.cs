@@ -17,7 +17,7 @@ public static class CeruleanItemRules
         var metadata = item?.Item;
         if (item is null || metadata is null || item.Id != SuperPotionId ||
             item.SourceItemSymbol != "ITEM_SUPER_POTION" || item.SourceItemId != 22 ||
-            item.Name != "SUPER POTION" || item.Price != 700 || item.Importance != 0 ||
+            string.IsNullOrWhiteSpace(item.Name) || item.Price != 700 || item.Importance != 0 ||
             item.Pocket != "POCKET_ITEMS" || string.IsNullOrWhiteSpace(item.Description) ||
             item.Type != "ITEM_TYPE_PARTY_MENU" || item.FieldUseFunction != "FieldUseFunc_Medicine" ||
             item.BattleUsage != 1 || item.BattleUseFunction != "BattleUseFunc_Medicine" ||

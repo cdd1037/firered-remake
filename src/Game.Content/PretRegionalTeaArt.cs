@@ -30,7 +30,8 @@ public sealed class PretRegionalTeaArt
         Require(item.Id.Value == "pret:ITEM_TEA" && item.SourceItemId == 369 && item.SourceItemSymbol == "ITEM_TEA" &&
             item.Pocket == "POCKET_KEY_ITEMS" && item.Price == 0 && !item.CanToss && !item.CanSell && !item.CanGive &&
             item.FieldUseFunction == "FieldUseFunc_OakStopsYou" && ui.Id == item.Id.Value && ui.SourceSymbol == item.SourceItemSymbol &&
-            ui.Name == item.Name && ui.Description == tea.Description && ui.FieldUseFunction == item.FieldUseFunction,
+            !string.IsNullOrWhiteSpace(ui.Name) && !string.IsNullOrWhiteSpace(ui.Description) &&
+            ui.FieldUseFunction == item.FieldUseFunction,
             "Tea presentation differs from the authoritative key item.");
         var asset = document.Asset;
         Require(asset.Id == "regional-tea" && ui.Icon == asset.Id && asset.TexturePath == "regional-tea.png" &&
