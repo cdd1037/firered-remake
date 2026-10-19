@@ -9,7 +9,7 @@ internal sealed class CampaignQuestLogTimeline
     private ImmutableArray<CampaignQuestLogActor> _segmentActors;
     public string Map{get;private set;}
     private readonly ImmutableArray<CampaignQuestLogAction> _moves;
-    private readonly ImmutableArray<(int Start,int End,string Text)> _captions;
+    private readonly ImmutableArray<(int Start,int VisibleEnd,string Text)> _captions;
     private readonly Dictionary<string,CampaignQuestLogActor> _actors;
     private readonly Dictionary<string,(CampaignQuestLogActor From,int Start,int Duration,string? Action)> _moving=new(StringComparer.Ordinal);
     private readonly int _end;
@@ -24,7 +24,7 @@ internal sealed class CampaignQuestLogTimeline
     public double Frame=>_frame;
     public string? Layout{get;private set;}
     public ImmutableArray<FieldMetatileEdit> Tiles{get;private set;}
-    public string? Caption=>_captions.Where(c=>c.Start<=_frame&&c.End>_frame).Select(c=>c.Text).FirstOrDefault();
+    public string? Caption=>_captions.Where(c=>c.Start<=_frame&&c.VisibleEnd>_frame).Select(c=>c.Text).FirstOrDefault();
     public bool Finished=>_frame>=_end;
     public (CampaignQuestLogActor From,double Fraction,int DrawYOffset,bool IsJump)? Movement(string id)
     {
@@ -37,7 +37,13 @@ internal sealed class CampaignQuestLogTimeline
         Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;
         Map=scene.Map;_segmentActors=scene.Actors;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
         _moves=scene.Actions.Where(a=>a.Event==CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame).ToImmutableArray();
-        var captions=ImmutableArray.CreateBuilder<(int Start,int End,string Text)>();int captionEnd=0;
+        // Ordinary warp tasks lock field controls until their recorded release.
+        // The source skips the Quest callback during that lock, but actor/map tasks
+        // continue. Only authenticated observed intervals provide this evidence;
+        // seamless edges and older unknown map markers do not imply a pause.
+        var locks=_moves.Where(a=>a.TransitionTiming?.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor)
+            .Select(a=>(Start:a.StartFrame,Switch:a.StartFrame+a.TransitionTiming!.SwitchFrame,End:a.StartFrame+a.TransitionTiming.EndFrame)).ToArray();
+        var captions=ImmutableArray.CreateBuilder<(int Start,int VisibleEnd,string Text)>();int captionEnd=0;
         foreach(var action in scene.Actions.Where(a=>CampaignQuestLogRecorder.IsCaption(a)).OrderBy(a=>a.StartFrame))
         {
             string text=source is not null&&action.TextKey is {} key?source.Expand(key,player,action.Arguments):action.Event switch{CampaignQuestLogEvent.Arrived=>$"{player} arrived at {CampaignQuestLogRecorder.Location(scene.Map)}.",CampaignQuestLogEvent.PokemonCenter=>$"{player} restored the POKEMON at a POKEMON CENTER.",CampaignQuestLogEvent.TrainerWon=>$"{player} defeated a TRAINER in battle.",CampaignQuestLogEvent.WildWon=>$"{player} defeated a wild POKEMON.",_=>player+" continued the adventure."};
@@ -53,7 +59,21 @@ internal sealed class CampaignQuestLogTimeline
         void Add(string text,CampaignQuestLogAction action)
         {
             int count=text.Count(c=>c!='\n');int duration=source is null||savedScene?action.Frames:count<20?95:count<36?127:count<46?191:255;
-            int start=Math.Max(captionEnd,action.StartFrame);captionEnd=start+duration;captions.Add((start,captionEnd,text));
+            int start=Math.Max(captionEnd,action.StartFrame);
+            foreach(var held in locks)
+                if(start>=held.Start&&start<held.End)start=held.End;
+            int end=start+duration;
+            foreach(var held in locks)
+            {
+                if(held.Start>=end)break;
+                if(held.End>start)end+=held.End-Math.Max(start,held.Start);
+            }
+            // Map reconstruction clears WIN_DESCRIPTION without restarting the
+            // active event timer. The next queued caption still waits for its end.
+            int visibleEnd=end;
+            foreach(var held in locks)
+                if(held.Switch>=start){visibleEnd=Math.Min(visibleEnd,held.Switch);break;}
+            captionEnd=end;captions.Add((start,visibleEnd,text));
         }
     }
     public void Tick(double seconds)
