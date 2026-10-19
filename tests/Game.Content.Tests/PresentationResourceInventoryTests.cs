@@ -9,11 +9,12 @@ public sealed class PresentationResourceInventoryTests
     [TestMethod]
     public void PresentationLoadersUseTextureBindingsWithoutImportInventories()
     {
+        var speciesCatalog = TestAssets.Cached(() => PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root)).Catalog;
         AssertFiles(PretSeafoamPresentation.Load(TestAssets.Root).Files, "sprites/pokemon/seafoam");
         AssertFiles(PretMemorialPillarPresentation.Load(TestAssets.Root).Files, "sprites/pokemon/memorial-pillar");
         AssertFiles(PretQwilfishPresentation.Load(TestAssets.Root).Files, "sprites/pokemon/qwilfish");
-        AssertFiles(PretStoneEvolutionPresentation.Load(TestAssets.Root).Files, "sprites/pokemon/stone-evolution");
-        AssertFiles(PretOrdinaryEvolutionPresentation.Load(TestAssets.Root).Files, "sprites/pokemon/ordinary-evolution");
+        AssertFiles(PretStoneEvolutionPresentation.Load(TestAssets.Root, speciesCatalog).Files, "sprites/pokemon/stone-evolution");
+        AssertFiles(PretOrdinaryEvolutionPresentation.Load(TestAssets.Root, speciesCatalog).Files, "sprites/pokemon/ordinary-evolution");
         Assert.AreEqual(4, PretSsAnneBattleArt.Load(TestAssets.Root).Portraits.Length);
         Assert.AreEqual(3, PretVermilionGymFieldMoveArt.Load(TestAssets.Root).Assets.Length);
     }

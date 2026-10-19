@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+
 namespace Game.Content;
 
 public sealed record GameCornerDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
@@ -16,8 +19,9 @@ public static class PretGameCornerPresentation
 
     public static readonly ImmutableArray<int> Species = [147, 148, 149, 137];
 
-    public static GameCornerPresentationData Load(string root, string? inheritedRoot = null)
+    public static GameCornerPresentationData Load(string root, PokemonCatalog speciesCatalog, string? inheritedRoot = null)
     {
+        ArgumentNullException.ThrowIfNull(speciesCatalog);
         byte[] Read(string path)
         {
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
@@ -69,6 +73,8 @@ public static class PretGameCornerPresentation
             manifest.GetProperty("sprites").GetArrayLength() != 16 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 4 ||
             manifest.GetProperty("footprints").GetArrayLength() != 4 )
             throw new InvalidDataException("Game Corner presentation inventory differs.");
+        if (dex.Entries.Any(entry => string.IsNullOrWhiteSpace(entry.Name)))
+            throw new InvalidDataException("GameCorner display name is missing.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png))
                 throw new InvalidDataException("Game Corner dex texture differs.");
@@ -84,8 +90,9 @@ public static class PretGameCornerPresentation
             foreach (var asset in rows)
             {
                 int species = asset.GetProperty("sourceSpeciesId").GetInt32();
-                var entry = dex.Entries.Single(e => e.SourceSpeciesId == species);
-                if (asset.GetProperty("speciesId").GetString() != "pret:SPECIES_" + entry.Name)
+                string? id = asset.GetProperty("speciesId").GetString();
+                if (!StableId.IsValid(id) || !speciesCatalog.Species.TryGetValue(new(id!), out var definition) ||
+                    definition.SourceSpeciesId != species)
                     throw new InvalidDataException("Game Corner asset species differs.");
             }
         }

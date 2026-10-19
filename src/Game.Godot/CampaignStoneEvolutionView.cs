@@ -13,9 +13,9 @@ public partial class CampaignView
         if (_catalog.PokemonContent?.Pokemon is not { } owned) return;
         if (_qwilfishArt is null)
             throw new InvalidDataException("Stone evolution presentation requires the current Qwilfish predecessor.");
-        var art = PretStoneEvolutionPresentation.Load(_root);
+        var art = PretStoneEvolutionPresentation.Load(_root, owned.Mechanics.Catalog);
         foreach (var entry in art.DexEntries.Values)
-            if (!owned.Catalog.Species.TryGetValue(new("pret:SPECIES_" + entry.Name), out var species) || species.SourceSpeciesId != entry.SourceSpeciesId ||
+            if (!owned.Catalog.Species.Values.Any(species => species.SourceSpeciesId == entry.SourceSpeciesId) ||
                 _pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Stone evolution owned species or source dex binding differs.");
 

@@ -3,6 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+
 namespace Game.Content;
 
 public sealed record OrdinaryEvolutionDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
@@ -18,8 +21,9 @@ public static class PretOrdinaryEvolutionPresentation
 
     public static readonly ImmutableArray<int> Species = [112, 80, 169, 242];
 
-    public static OrdinaryEvolutionPresentationData Load(string root, string? inheritedRoot = null)
+    public static OrdinaryEvolutionPresentationData Load(string root, PokemonCatalog speciesCatalog, string? inheritedRoot = null)
     {
+        ArgumentNullException.ThrowIfNull(speciesCatalog);
         byte[] Read(string path)
         {
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
@@ -73,6 +77,8 @@ public static class PretOrdinaryEvolutionPresentation
             manifest.GetProperty("inheritedSprites").GetArrayLength() != 16 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 4 ||
             manifest.GetProperty("footprints").GetArrayLength() != 4)
             throw new InvalidDataException("Ordinary evolution presentation inventory differs.");
+        if (dex.Entries.Any(entry => string.IsNullOrWhiteSpace(entry.Name)))
+            throw new InvalidDataException("OrdinaryEvolution display name is missing.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png) )
                 throw new InvalidDataException("Ordinary evolution dex texture differs.");
@@ -81,7 +87,7 @@ public static class PretOrdinaryEvolutionPresentation
         {
             var original = inheritedDex.RootElement.GetProperty("entries").EnumerateArray()
                 .Single(e => e.GetProperty("sourceSpeciesId").GetInt32() == entry.SourceSpeciesId).Deserialize<PokedexMenuEntry>(options);
-            if (entry with { Portrait = null,Footprint = null } != original || entry.Name != entry.Name.ToUpperInvariant())
+            if (entry with { Portrait = null,Footprint = null } != original)
                 throw new InvalidDataException("Ordinary evolution source dex metadata differs.");
         }
         var sprites = manifest.GetProperty("inheritedSprites").EnumerateArray().ToArray();
@@ -96,8 +102,9 @@ public static class PretOrdinaryEvolutionPresentation
             foreach (var asset in rows)
             {
                 int species = asset.GetProperty("sourceSpeciesId").GetInt32();
-                var entry = dex.Entries.Single(e => e.SourceSpeciesId == species);
-                if (asset.GetProperty("speciesId").GetString() != "pret:SPECIES_" + entry.Name)
+                string? id = asset.GetProperty("speciesId").GetString();
+                if (!StableId.IsValid(id) || !speciesCatalog.Species.TryGetValue(new(id!), out var definition) ||
+                    definition.SourceSpeciesId != species)
                     throw new InvalidDataException("Ordinary evolution asset species differs.");
             }
         }

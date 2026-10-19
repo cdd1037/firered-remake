@@ -1,3 +1,4 @@
+using Game.Content;
 using Game.Domain.Pokemon;
 using Godot;
 
@@ -6,6 +7,7 @@ using Godot;
 public partial class CampaignView
 {
     private readonly record struct FieldMenuEntry(string Id, string Label);
+    private static readonly PresentationTextCatalog FieldMenuText = PresentationTextCatalog.English("field-menu");
     private string _fieldMenuMode = "closed";
     private int _fieldMenuCursor, _fieldPartyCursor, _fieldPartyAction, _fieldSummaryPage, _fieldSaveChoice;
     private int _fieldSwapSource = -1;
@@ -22,13 +24,14 @@ public partial class CampaignView
     // Player is the real saved name, not the literal text "PLAYER".
     private FieldMenuEntry[] FieldMenuEntries()
     {
+        FieldMenuEntry Menu(string id) => new(id, FieldMenuText.Get("start." + id));
         if (_session.State.SafariVisit is { Active: true }) return
-            [new("safari-retire", "RETIRE"), new("pokedex", "POKéDEX"), new("pokemon", "POKéMON"),
-             new("bag", "BAG"), new("player", _session.State.PlayerName), new("option", "OPTION"), new("exit", "EXIT")];
+            [Menu("safari-retire"), Menu("pokedex"), Menu("pokemon"),
+             Menu("bag"), new("player", _session.State.PlayerName), Menu("option"), Menu("exit")];
         List<FieldMenuEntry> entries = [];
-        if (_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")) entries.Add(new("pokedex", "POKéDEX"));
-        if (_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEMON_GET")) entries.Add(new("pokemon", "POKéMON"));
-        entries.AddRange([new("bag", "BAG"), new("player", _session.State.PlayerName), new("save", "SAVE"), new("option", "OPTION"), new("exit", "EXIT")]);
+        if (_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")) entries.Add(Menu("pokedex"));
+        if (_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEMON_GET")) entries.Add(Menu("pokemon"));
+        entries.AddRange([Menu("bag"), new("player", _session.State.PlayerName), Menu("save"), Menu("option"), Menu("exit")]);
         return entries.ToArray();
     }
 
@@ -130,7 +133,7 @@ public partial class CampaignView
             if (action == "summary") { _fieldMenuMode = "summary"; _fieldSummaryPage = 0; ResetOwnedSummarySelection(); }
             else if (action == "switch")
             {
-                if (!_session.CanReorderFieldParty) _fieldMenuNotice = "At least two POKéMON are\nneeded to SWITCH positions.";
+                if (!_session.CanReorderFieldParty) _fieldMenuNotice = FieldMenuText.Get("notice.switch-needs-party");
                 else { _fieldMenuMode = "switch"; _fieldSwapSource = _fieldPartyCursor; }
             }
             else if(action is "item" or "mail") OpenPartyHeldItems();
@@ -159,7 +162,7 @@ public partial class CampaignView
             if (source != _fieldPartyCursor)
             {
                        bool accepted = Apply(new("party_swap", Choice: source, PartyIndex: _fieldPartyCursor));
-                if (!accepted) _fieldMenuNotice = "The party order could not\nbe changed here.";
+                if (!accepted) _fieldMenuNotice = FieldMenuText.Get("notice.switch-failed");
             }
         }
         else { _fieldMenuMode = "actions"; _fieldPartyAction = 0; }
@@ -186,9 +189,9 @@ public partial class CampaignView
         if(accepted){ResetFieldMenu();return;}
         _fieldMenuMode="party";
         _fieldMenuNotice=_status=="field_cut_badge_required"
-            ? "This can't be used until a new\nBADGE is obtained."
-            : _status=="field_cut_nothing_to_cut" ? "There's nothing to CUT."
-            : usable ? "CUT could not be used here." : "Can't use that here.";
+            ? FieldMenuText.Get("notice.cut-badge-required")
+            : _status=="field_cut_nothing_to_cut" ? FieldMenuText.Get("notice.cut-nothing")
+            : usable ? FieldMenuText.Get("notice.cut-failed") : FieldMenuText.Get("notice.cannot-use-here");
     }
 
     private static void FieldMenuMoveCursor(InputEventKey key, ref int cursor, int count)
@@ -203,12 +206,12 @@ public partial class CampaignView
         {
             case "safari-retire": ResetFieldMenu(); Apply(new("safari_retire")); break;
             case "pokemon":
-                if (_session.State.Party.IsEmpty) _fieldMenuNotice = "You have no POKéMON\nin your party.";
+                if (_session.State.Party.IsEmpty) _fieldMenuNotice = FieldMenuText.Get("notice.party-empty");
                 else { _fieldMenuMode = "party"; _fieldPartyCursor = 0; _partyLastRightSlot = 1; }
                 break;
             case "bag":
                 Apply(new("bag_open")); ResetFieldMenu();
-                if (_session.State.ItemMenu is null) { _fieldMenuMode = "start"; _fieldMenuNotice = "The BAG cannot be opened\nhere."; }
+                if (_session.State.ItemMenu is null) { _fieldMenuMode = "start"; _fieldMenuNotice = FieldMenuText.Get("notice.bag-unavailable"); }
                 break;
             case "save":
                 _fieldMenuMode = "save-confirm"; _fieldSaveChoice = 0;
@@ -262,9 +265,9 @@ public partial class CampaignView
             SourceText(font, new(176, 8 + _fieldMenuCursor * 15), "▶");
             if (_fieldMenuMode is "save-confirm" or "save-overwrite")
             {
-                ItemMessageBox(_fieldMenuMode=="save-overwrite"?"A save already exists.\nReplace it with this game?":"Would you like to\nsave the game?");
+                ItemMessageBox(_fieldMenuMode=="save-overwrite"?FieldMenuText.Get("prompt.save-overwrite"):FieldMenuText.Get("prompt.save"));
                 _battleSkin.DrawUserFrame(this, new(176, 64, 64, 48));
-                SourceText(font, new(192, 73), "YES"); SourceText(font, new(192, 89), "NO");
+                SourceText(font, new(192, 73), FieldMenuText.Get("choice.yes")); SourceText(font, new(192, 89), FieldMenuText.Get("choice.no"));
                 SourceText(font, new(182, 73 + 16 * _fieldSaveChoice), "▶");
             }
         }
@@ -279,7 +282,7 @@ public partial class CampaignView
     private void DrawFieldParty()
     {
         DrawNativeParty(_session.State.Party, _fieldPartyCursor,
-            _fieldMenuMode is "field-heal" or "field-heal-animation" ? "Use on which POKéMON?" : _fieldMenuMode == "switch" ? "Move to which position?" : _fieldMenuMode == "actions" ? "Do what with this POKéMON?" : "Choose a POKéMON.",
+            _fieldMenuMode is "field-heal" or "field-heal-animation" ? FieldMenuText.Get("prompt.party-heal") : _fieldMenuMode == "switch" ? FieldMenuText.Get("prompt.party-switch") : _fieldMenuMode == "actions" ? FieldMenuText.Get("prompt.party-action") : FieldMenuText.Get("prompt.party-choose"),
             _fieldMenuMode == "switch" ? _fieldSwapSource : _fieldHealingSource, displayed: DisplayedFieldHealingMember);
         DrawNoncombatPartyPrompt();
         if (_fieldMenuMode == "actions")
@@ -291,25 +294,6 @@ public partial class CampaignView
         }
     }
 
-    // These are live values from the owned instance/catalog, never reconstructed
-    // from level or starter choice. Exact original summary/party artwork is pending.
-    private string[] PartySummaryLines(int partyIndex, int page) => OwnedSummaryLines(_session.State.Party[partyIndex], page);
-    private string[] OwnedSummaryLines(PartyPokemon owned, int page)
-    {
-        var mon = owned.Pokemon;
-        if (owned.IsEgg) return EggSummaryLines(owned);
-        var species = _catalog.PokemonContent!.Catalog.Species[mon.Species];
-        return page switch
-        {
-            0 => [_catalog.PokemonContent.SpeciesNames[mon.SourceSpeciesId],
-                "TYPE " + FieldSymbol(species.Type1, "TYPE_") + (species.Type1 == species.Type2 ? "" : "/" + FieldSymbol(species.Type2, "TYPE_")),
-                "OT/" + owned.OriginalTrainerName, "ID No." + (mon.OriginalTrainerId & 0xffff).ToString("D5"),
-                "ABILITY/" + FieldSymbol(mon.AbilityId, "ABILITY_"), mon.Nature.ToString().ToUpperInvariant() + " nature"],
-            1 => [$"HP {mon.CurrentHp}/{mon.Stats.MaxHp}", "ATTACK " + mon.Stats.Attack, "DEFENSE " + mon.Stats.Defense,
-                "SP. ATK " + mon.Stats.SpecialAttack, "SP. DEF " + mon.Stats.SpecialDefense, "SPEED " + mon.Stats.Speed, "EXP. POINTS " + mon.Experience],
-            _ => mon.Moves.Select(m => MoveName(m.Move) + $"  PP {m.CurrentPp}/{m.MaximumPp}").ToArray()
-        };
-    }
     private static string FieldSymbol(string value, string prefix) => value.StartsWith(prefix, StringComparison.Ordinal) ? value[prefix.Length..].Replace('_', ' ') : value;
 
     private void DrawFieldSummary() => DrawOwnedSummary(_session.State.Party[_fieldPartyCursor], _fieldSummaryPage, true);

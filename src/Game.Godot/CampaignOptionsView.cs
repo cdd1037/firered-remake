@@ -52,24 +52,19 @@ public partial class CampaignView
     private SourceGameOptions _optionsDraft=SourceGameOptions.Defaults;
     private int _optionsCursor;
     private readonly Dictionary<(int Frame,string Kind),Texture2D> _optionFrameTextures=[];
-    private static readonly string[] OptionLabels=["TEXT SPEED","BATTLE SCENE","BATTLE STYLE","SOUND","BUTTON MODE","FRAME","CANCEL"];
+    private static readonly PresentationTextCatalog OptionsText = PresentationTextCatalog.English("options");
+    private static readonly string[] OptionLabels = Enumerable.Range(0, 7).Select(row => CampaignOptionPresentation.Label(row, OptionsText)).ToArray();
     private void OpenOptionsMenu()
     {
-        if(!_session.CanEditOptions){_fieldMenuNotice="Options cannot be changed\nhere.";return;}
+        if(!_session.CanEditOptions){_fieldMenuNotice=OptionsText.Get("notice.unavailable");return;}
         _optionsDraft=_session.EffectiveOptions;_optionsCursor=0;_fieldMenuMode="options";
     }
     private bool OptionEditable(int row)=>(row != 4 || _helpCatalog is not null) && CampaignOptionEditing.IsEditable(row,_optionFrameTextures.Count==40);
-    private string OptionValue(int row)=>row switch
-    {
-        0=>_optionsDraft.TextSpeed.ToString().ToUpperInvariant(),1=>_optionsDraft.BattleScene.ToString().ToUpperInvariant(),
-        2=>_optionsDraft.BattleStyle.ToString().ToUpperInvariant(),3=>_optionsDraft.Sound.ToString().ToUpperInvariant(),
-        4=>_optionsDraft.ButtonMode switch{SourceButtonMode.Help=>"HELP",SourceButtonMode.Lr=>"LR",_=>"L=A"},
-        5=>"TYPE "+(_optionsDraft.Frame+1),_=>""
-    };
+    private string OptionValue(int row) => CampaignOptionPresentation.Value(_optionsDraft, row, OptionsText);
     private void ChangeOption(int direction)
     {
         if(_optionsCursor==6)return;
-        if(!OptionEditable(_optionsCursor)){_fieldMenuNotice="This option's presentation\nis not available yet.";return;}
+        if(!OptionEditable(_optionsCursor)){_fieldMenuNotice=OptionsText.Get("notice.presentation-unavailable");return;}
         _optionsDraft=CampaignOptionEditing.Change(_optionsDraft,_optionsCursor,direction,_optionFrameTextures.Count==40);
     }
     private bool OptionsInput(InputEventKey key)
@@ -85,7 +80,7 @@ public partial class CampaignView
         {
            bool accepted = Apply(new CampaignCommand("options_save"){Options=_optionsDraft});
             if(accepted)_fieldMenuMode="start";
-            else _fieldMenuNotice="Options could not be applied.\nReturn to a stable field.";
+            else _fieldMenuNotice=OptionsText.Get("notice.apply-failed");
         }
         return true;
     }
@@ -107,7 +102,7 @@ public partial class CampaignView
         DrawOptionsPreview();
         DrawRect(new(16,56,208,96),new Color("dedede"));
         DrawRect(new(16,58+_optionsCursor*13,208,14),Colors.White);
-        SourceText(_sourceNormal,new(24,25),"OPTION");
+        SourceText(_sourceNormal,new(24,25),OptionsText.Get("title"));
         for(int i=0;i<OptionLabels.Length;i++)
         {
             int y=58+i*13;
@@ -119,7 +114,7 @@ public partial class CampaignView
                 if(OptionEditable(i)){DrawTextureRect(_storageAssets["box-arrow-left"],new(132,y+1,8,12),false);DrawTextureRect(_storageAssets["box-arrow-right"],new(216,y+1,8,12),false);}
             }
         }
-        SourceText(_sourceSmallWhite,new(8,1),"UP/DOWN PICK  LEFT/RIGHT SWITCH  A/B BACK");
+        SourceText(_sourceSmallWhite,new(8,1),OptionsText.Get("input.help"));
     }
     private void DrawOptionsPreview()
     {

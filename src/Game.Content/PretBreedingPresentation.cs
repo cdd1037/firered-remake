@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+
 namespace Game.Content;
 
 public sealed record BreedingDexDocument(int SchemaVersion, ImmutableArray<PokedexMenuEntry> Entries);
@@ -19,8 +22,9 @@ public static class PretBreedingPresentation
     public static readonly ImmutableArray<string> EggAssetIds = ["egg-front", "egg-icon-0", "egg-icon-1",
         "egg-hatch-0", "egg-hatch-1", "egg-hatch-2", "egg-hatch-3", "egg-shard-0", "egg-shard-1", "egg-shard-2", "egg-shard-3"];
 
-    public static BreedingPresentationData Load(string root, string? inheritedRoot = null)
+    public static BreedingPresentationData Load(string root, PokemonCatalog speciesCatalog, string? inheritedRoot = null)
     {
+        ArgumentNullException.ThrowIfNull(speciesCatalog);
         byte[] Read(string path)
         {
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
@@ -72,6 +76,8 @@ public static class PretBreedingPresentation
             manifest.GetProperty("sprites").GetArrayLength() != 32 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 8 ||
             manifest.GetProperty("footprints").GetArrayLength() != 8 )
             throw new InvalidDataException("Breeding presentation inventory differs.");
+        if (dex.Entries.Any(entry => string.IsNullOrWhiteSpace(entry.Name)))
+            throw new InvalidDataException("Breeding display name is missing.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!,e.Footprint! }))
             if (!files.TryGetValue(texture.TexturePath, out var png))
                 throw new InvalidDataException("Breeding dex texture differs.");
@@ -87,8 +93,9 @@ public static class PretBreedingPresentation
             foreach (var asset in rows)
             {
                 int species = asset.GetProperty("sourceSpeciesId").GetInt32();
-                var entry = dex.Entries.Single(e => e.SourceSpeciesId == species);
-                if (asset.GetProperty("speciesId").GetString() != "pret:SPECIES_" + entry.Name)
+                string? id = asset.GetProperty("speciesId").GetString();
+                if (!StableId.IsValid(id) || !speciesCatalog.Species.TryGetValue(new(id!), out var definition) ||
+                    definition.SourceSpeciesId != species)
                     throw new InvalidDataException("Breeding asset species differs.");
             }
         }

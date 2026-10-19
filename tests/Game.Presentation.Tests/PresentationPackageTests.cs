@@ -132,6 +132,7 @@ public sealed class PresentationPackageTests
     public void SupplementalDexPacksMatchReversePriorityPagesAndExactPngBytes()
     {
         string root = TestAssets.Root;
+        var speciesCatalog = TestAssets.Cached(() => PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root)).Catalog;
         var menu = TestAssets.Cached(() => PretPokedexMenu.Load(TestAssets.Root));
         var packs = new List<(Dictionary<int, PokedexMenuEntry> Entries, Dictionary<string, byte[]> Files)>();
         void Add(Dictionary<int, PokedexMenuEntry> entries, Dictionary<string, byte[]> files) => packs.Add((entries, files));
@@ -157,10 +158,10 @@ public sealed class PresentationPackageTests
         var fossils = PretFossilLabPresentation.Load(root); Add(fossils.DexEntries, fossils.Files);
         var seafoam = PretSeafoamPresentation.Load(root); Add(seafoam.DexEntries, seafoam.Files);
         var qwilfish = PretQwilfishPresentation.Load(root); Add(qwilfish.DexEntries, qwilfish.Files);
-        var stone = PretStoneEvolutionPresentation.Load(root); Add(stone.DexEntries, stone.Files);
-        var prizes = PretGameCornerPresentation.Load(root); Add(prizes.DexEntries, prizes.Files);
-        var breeding = PretBreedingPresentation.Load(root); Add(breeding.DexEntries, breeding.Files);
-        var evolution = PretOrdinaryEvolutionPresentation.Load(root); Add(evolution.DexEntries, evolution.Files);
+        var stone = PretStoneEvolutionPresentation.Load(root, speciesCatalog); Add(stone.DexEntries, stone.Files);
+        var prizes = PretGameCornerPresentation.Load(root, speciesCatalog); Add(prizes.DexEntries, prizes.Files);
+        var breeding = PretBreedingPresentation.Load(root, speciesCatalog); Add(breeding.DexEntries, breeding.Files);
+        var evolution = PretOrdinaryEvolutionPresentation.Load(root, speciesCatalog); Add(evolution.DexEntries, evolution.Files);
         var index = new PresentationDexIndex();
         foreach (var pack in packs) index.AddEntries(pack.Entries.Values, pack.Files);
         var speciesIds = packs.SelectMany(pack => pack.Entries.Keys).Distinct().ToArray();
