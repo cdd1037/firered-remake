@@ -15,6 +15,7 @@ internal sealed class CampaignQuestLogTimeline
     private readonly int _end;
     private int _move;
     private double _frame;
+    private double _mapLoadFrame;
     private CampaignQuestLogAction? _transition;
     private bool _transitionSwitched;
     public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_transition?.TransitionTiming is {} timing&&_frame<_transition.StartFrame+timing.EndFrame?timing:null;
@@ -22,6 +23,10 @@ internal sealed class CampaignQuestLogTimeline
     public IEnumerable<CampaignQuestLogActor> Actors=>_actors.Values;
     public int ArtRevision{get;private set;}
     public double Frame=>_frame;
+    // Transient reconstruction clock, including same-map warps. It is derived
+    // from this playback's accepted map markers, never today's saved state.
+    public double MapFrames=>Math.Max(0,_frame-_mapLoadFrame);
+    public CampaignQuestLogActor MapOriginPlayer=>_segmentActors.Single(a=>a.Id==CampaignQuestLogRecorder.PlayerId);
     public string? Layout{get;private set;}
     public int? FlashLevel{get;private set;}
     public ImmutableArray<FieldMetatileEdit> Tiles{get;private set;}
@@ -122,6 +127,7 @@ internal sealed class CampaignQuestLogTimeline
         if(_transition is not {Transition:{} transition} action||_transitionSwitched||
             _frame<action.StartFrame+(action.TransitionTiming?.SwitchFrame??0))return;
         _transitionSwitched=true;
+        _mapLoadFrame=action.StartFrame+(action.TransitionTiming?.SwitchFrame??0);
         Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;FlashLevel=transition.FlashLevel;
         _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
         _moving.Clear();ArtRevision++;

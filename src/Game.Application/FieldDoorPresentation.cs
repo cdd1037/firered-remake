@@ -110,7 +110,7 @@ public static partial class FieldDoorPresentation
         if(palette==FieldArrivalPalette.Normal)return ArrivalFrames(arrival);
         return arrival switch
         {
-            FieldTransitionArrival.Plain=>18,
+            FieldTransitionArrival.Plain=>new FieldArrivalPalettePresentation(palette).BaseArrivalFrames,
             FieldTransitionArrival.Stair=>FieldStairPresentation.ArrivalDuration(palette),
             _=>throw new ArgumentOutOfRangeException(nameof(arrival))
         };

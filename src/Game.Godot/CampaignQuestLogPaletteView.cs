@@ -37,6 +37,7 @@ public partial class CampaignView
 
     private void ClearQuestLogPaletteTextures()
     {
+        ResetFieldFogCanvas(); // Retire submitted RID references before their palette owner.
         _questPaletteTextures.Clear();_questPaletteOwner?.Dispose();_questPaletteOwner=null;_questPaletteState=null;
     }
 }

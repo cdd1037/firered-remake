@@ -61,7 +61,11 @@ public partial class CampaignView
             else pose=new(){Position=new(actor.X*16,actor.Y*16),Facing=actor.Facing,Visible=actor.Visible};
             poses.Add(actor.Id,pose);
         }
-        return new(owner,0,revision,false,new(scene.Map,actors,scene.Layout,scene.Tiles){FlashLevel=scene.FlashLevel},poses,keepPresentedPoses?_fieldSurfBlobFrames:0,state.PlayerGender);
+        return new(owner,0,revision,false,new(scene.Map,actors,scene.Layout,scene.Tiles){FlashLevel=scene.FlashLevel},poses,keepPresentedPoses?_fieldSurfBlobFrames:0,state.PlayerGender)
+        {
+            Fog=HasFieldFog(scene.Map,state.FieldWeather)?keepPresentedPoses&&_fieldFogScene is {} fog?fog:
+                FreshFieldFog(FieldCameraAt(new(state.World.Player.X*16,state.World.Player.Y*16))):null
+        };
     }
 
     // The authoritative movement command has already committed. This owns only
@@ -130,6 +134,15 @@ public partial class CampaignView
         int frame=(int)Math.Floor(animation.Frames+1e-7);
         while(animation.ProcessedFrames<frame)
         {
+            var fieldView=animation.Arriving?animation.DestinationView:animation.OriginView;
+            if(fieldView.Fog is {} fog&&(animation.Arriving||animation.Preview is null&&animation.CaveEnter is null&&animation.CaveExit is null))
+            {
+                var visible=FieldWarpVisibleSnapshot(animation);
+                var camera=FieldCameraAt(visible.Poses[CampaignQuestLogRecorder.PlayerId].Position);
+                var advanced=fog.Advance(1,(int)camera.X,(int)camera.Y);
+                if(animation.Arriving)animation.DestinationView=animation.DestinationView with{Fog=advanced};
+                else animation.OriginView=animation.OriginView with{Fog=advanced};
+            }
             animation.ProcessedFrames++;
             if(!animation.Arriving)
             {
@@ -185,12 +198,12 @@ public partial class CampaignView
                 animation.SwitchFrame=animation.ProcessedFrames;
                 animation.Arriving=true;
                 if(animation.Interlude==FieldTransitionInterlude.ForestPreview)animation.Forest=new(animation.PreviewDuration,
-                    _catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
+                    FieldArrivalPalettePresentation.ForWeather(_catalog.MapDefinition(animation.Receipt.To.MapId).Weather));
                 else if(animation.Receipt.Arrival==FieldTransitionArrival.Stair)animation.StairArrival=new(animation.Receipt.ArrivalStairBehavior!.Value,
-                    _catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
+                    FieldArrivalPalettePresentation.ForWeather(_catalog.MapDefinition(animation.Receipt.To.MapId).Weather));
                 else if(animation.ArrivalArt is not null)animation.DoorArrival=new();
                 else if(animation.Receipt.Arrival==FieldTransitionArrival.NonAnimatedDoor)animation.StepArrival=new();
-                else animation.Arrival=new(_catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
+                else animation.Arrival=new(FieldArrivalPalettePresentation.ForWeather(_catalog.MapDefinition(animation.Receipt.To.MapId).Weather));
                 // Synchronize presentation at the source map-load callback. No
                 // command, State replacement, RNG change or event is generated.
                 // A requested source fade stopped the backend, even when the
@@ -224,6 +237,7 @@ public partial class CampaignView
                 else{animation.Arrival!.Advance();if(!animation.Arrival.Complete)continue;}
                 bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames,animation.Forest?.ExtraWaitFrames??animation.Preview?.PreviewFrames??0);
                 Write("fieldWarpPresentation",new{phase="complete",animation.SwitchFrame,endFrame=animation.ProcessedFrames,recorded});
+                _fieldFogScene=animation.DestinationView.Fog;
                 _fieldWarp=null;_fieldSnapshotReleasePending=true;
                 _fieldWarpSynchronizing=true;
                 try{Synchronize(animation.Origin,_session.State,animation.ArrivalState);}
@@ -245,6 +259,18 @@ public partial class CampaignView
             if(animation.CaveExit is {} cave){DrawCaveExit(cave.Sample);return true;}
         }
         var sample=animation.Sample;
+        var snapshot=FieldWarpVisibleSnapshot(animation);
+        DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend,
+            (animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveExit||!animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveEnter)?(ushort)0x7fff:(ushort)0);
+        DrawFieldDoorWipe(sample);
+        if(animation.Arriving&&animation.Forest is {} forest)
+            DrawForestPreview(animation.PreviewArt!,sample.BackgroundBlend,forest.Preview.Sample.AlphaA,forest.Preview.Sample.AlphaB,forest.Preview.Sample.TaskPhase>0);
+        return true;
+    }
+
+    private FieldSnapshot FieldWarpVisibleSnapshot(FieldWarpAnimation animation)
+    {
+        var sample=animation.Sample;
         var snapshot=animation.Arriving?animation.DestinationView:animation.OriginView;
         if(animation.Arriving&&animation.StairArrival is {} sa)snapshot=WithFieldStairPose(snapshot,sa.Sample);
         else if(!animation.Arriving&&animation.StairDeparture is {} sd)snapshot=WithFieldStairPose(snapshot,sd.Sample);
@@ -256,12 +282,7 @@ public partial class CampaignView
             snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.ArrivalAnchor.X,animation.Receipt.ArrivalAnchor.Y,Direction.South);
         else if(!animation.Arriving&&animation.Receipt.DepartureStep is {} step)
             snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.From.X,animation.Receipt.From.Y,step.Facing);
-        DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend,
-            (animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveExit||!animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveEnter)?(ushort)0x7fff:(ushort)0);
-        DrawFieldDoorWipe(sample);
-        if(animation.Arriving&&animation.Forest is {} forest)
-            DrawForestPreview(animation.PreviewArt!,sample.BackgroundBlend,forest.Preview.Sample.AlphaA,forest.Preview.Sample.AlphaB,forest.Preview.Sample.TaskPhase>0);
-        return true;
+        return snapshot;
     }
 
     private static FieldDoorPresentation.PhaseSample QuestLogFieldWarpSample(CampaignQuestLogPlayback playback)=>

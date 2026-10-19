@@ -7,11 +7,11 @@ using Godot;
 
 public partial class CampaignView
 {
-    private Texture2D? _towerTerrain, _towerFog, _towerGhost;
+    private Texture2D? _towerTerrain, _towerGhost;
     private readonly Dictionary<int,PokedexMenuEntry> _towerDexEntries = [];
     private readonly Dictionary<string,byte[]> _towerDexTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<(bool Ghost,bool Shiny,int Block),Texture2D> _towerMosaic = [];
-    private double _towerFogTicks, _towerWhiteTicks, _towerRevealTicks;
+    private double _towerWhiteTicks, _towerRevealTicks;
     private int _towerWhiteDuration;
     private float _towerWhiteFrom, _towerWhiteTo;
     private long _towerWhiteEffect;
@@ -62,7 +62,7 @@ public partial class CampaignView
             if(image.LoadPngFromBuffer(presentation.Files[key])!=Error.Ok)throw new InvalidDataException("Invalid authenticated Tower PNG.");
             return ImageTexture.CreateFromImage(image);
         }
-        _towerTerrain=Png("indoor1-scene.png");_towerFog=Png("fog-horizontal.png");_towerGhost=Png(PokemonTowerPresentationModel.GhostTexture);
+        _towerTerrain=Png("indoor1-scene.png");_towerGhost=Png(PokemonTowerPresentationModel.GhostTexture);
         var items=PretPokemonTowerItems.LoadProject(_root);
         foreach(var icon in items.Icons)
         {
@@ -82,7 +82,6 @@ public partial class CampaignView
         foreach(var texture in _towerMosaic.Values)texture.Dispose();
         _towerMosaic.Clear();
         _towerTerrain?.Dispose(); _towerTerrain=null;
-        _towerFog?.Dispose(); _towerFog=null;
         _towerGhost?.Dispose(); _towerGhost=null;
         // Other Tower sprites live in mixed-ownership presentation dictionaries;
         // do not dispose those dictionaries as if every entry belonged to Tower.
@@ -95,7 +94,6 @@ public partial class CampaignView
     }
     private void SynchronizePokemonTowerPresentation(CampaignState? before,CampaignState after)
     {
-        if(before is null||before.World.Player.MapId!=after.World.Player.MapId)_towerFogTicks=0;
         if(before is null)
         { _towerWhiteFrom=_towerWhiteTo=after.ScreenIsWhite?1:0;_towerWhiteDuration=0;_towerWhiteTicks=0;_towerWhiteEffect=after.Script.EffectSequence; }
         foreach(var effect in after.PresentationEffects.Where(e=>e.Sequence>_towerWhiteEffect&&e.Opcode=="fadescreen"&&e.Args.Length==1&&e.Args[0] is "FADE_TO_WHITE" or "FADE_FROM_WHITE"))
@@ -110,22 +108,13 @@ public partial class CampaignView
     private void ProcessPokemonTowerPresentation(double delta)
     {
         ProcessPokemonTowerFlute(delta);
-        _towerFogTicks+=delta*60;_towerWhiteTicks=Math.Min(_towerWhiteDuration,_towerWhiteTicks+delta*60);
+        _towerWhiteTicks=Math.Min(_towerWhiteDuration,_towerWhiteTicks+delta*60);
         if(PresentedWildBattle is {} b&&TowerRevealing(b))
         {
             if(!_towerRevealStartSound){_towerRevealStartSound=true;SourceSound("SE_M_TELEPORT");}
             _towerRevealTicks=Math.Min(94,_towerRevealTicks+delta*60);
             if(!_towerRevealEndSound&&_towerRevealTicks>=48){_towerRevealEndSound=true;SourceSound("SE_M_MINIMIZE");}
         }
-    }
-    private void DrawPokemonTowerFog(Vector2 camera)
-    {
-        if(!PokemonTowerPresentationModel.HasFog(_session.State.World.Player.MapId.Value))return;
-        long ticks=(long)_towerFogTicks+1;var blend=PokemonTowerPresentationModel.FogEntryBlend(ticks);
-        // Source texture, scroll, grid and EVA progression; Godot alpha approximates the
-        // two independent GBA blend coefficients. OBJ priority/palette weather is not emulated here.
-        foreach(var tile in PokemonTowerPresentationModel.FogSprites(ticks,-(int)camera.X,-(int)camera.Y))
-            DrawTexture(_towerFog!,new(tile.X,tile.Y),new Color(1,1,1,blend.Eva/16f));
     }
     private void DrawPokemonTowerWhiteFade()
     {

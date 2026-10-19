@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "cases": [
+    {"name":"freshInitMain","behavior":0,"endFrame":93,"checks":[{"frame":1,"initStep":1,"eva":0,"evb":16},{"frame":5,"eva":1,"evb":16},{"frame":9,"eva":1,"evb":15},{"frame":92,"gfxLoaded":0,"eva":11,"evb":8},{"frame":93,"mainCalls":93,"initStep":2,"gfxLoaded":1,"scrollOffset":23,"scrollCounter":1,"scrollPosX":233,"eva":12,"evb":8}]},
+    {"name":"freshInitAll","behavior":0,"endFrame":0},
+    {"name":"repeatInitAll","behavior":0,"endFrame":1,"checks":[{"frame":1,"mainCalls":95,"scrollOffset":23,"scrollCounter":3,"scrollPosX":233,"eva":12,"evb":8,"blendUpdateCounter":0}]},
+    {"name":"stableScroll","behavior":0,"endFrame":1040,"checks":[{"frame":3,"scrollOffset":24,"scrollCounter":0,"scrollPosX":233},{"frame":4,"scrollOffset":24,"scrollPosX":232},{"frame":931,"scrollOffset":256,"scrollPosX":1},{"frame":932,"scrollOffset":256,"scrollPosX":0}]},
+    {"name":"u16ScrollWrap","behavior":0,"endFrame":5,"checks":[{"frame":1,"scrollOffset":0,"scrollCounter":0,"scrollPosX":1},{"frame":2,"scrollOffset":0,"scrollPosX":0}]},
+    {"name":"signedCameraScroll","behavior":0,"endFrame":8,"checks":[{"frame":1,"scrollPosX":216},{"frame":4,"scrollPosX":215}]},
+    {"name":"directFogFade","behavior":0,"endFrame":18,"checks":[{"frame":1,"fadeCounter":1,"backgroundBlend":15,"objectBlend":15,"palState":1,"fadeInActive":1},{"frame":2,"fadeInActive":0},{"frame":16,"fadeCounter":16,"backgroundBlend":0,"objectBlend":0,"palState":1},{"frame":17,"palState":3}]},
+    {"name":"repeatFogFade","behavior":0,"endFrame":25,"checks":[{"frame":7,"fadeCounter":7,"backgroundBlend":9,"fadeCalls":1},{"frame":8,"fadeCounter":1,"backgroundBlend":15,"eva":12,"evb":8,"scrollOffset":25,"scrollPosX":231,"fadeCalls":2},{"frame":23,"backgroundBlend":0,"palState":1},{"frame":24,"palState":3}]},
+    {"name":"plainArrival","behavior":0,"endFrame":19,"checks":[{"frame":0,"eva":16,"evb":0,"fadeCalls":1},{"frame":1,"mainCalls":93,"fadeCounter":0,"backgroundBlend":16,"palState":1},{"frame":2,"backgroundBlend":15},{"frame":17,"backgroundBlend":0,"palState":1,"complete":0},{"frame":18,"palState":3,"complete":0},{"frame":19,"complete":1,"fadeCalls":1}]},
+    {"name":"stairArrival","behavior":108,"endFrame":19,"checks":[{"frame":1,"offsetX":8,"offsetY":-5,"fadeCalls":2},{"frame":17,"offsetX":0,"offsetY":0,"taskPhase":1,"palState":1},{"frame":18,"taskPhase":2,"palState":3,"complete":0},{"frame":19,"complete":1}]},
+    {"name":"stairArrival","behavior":109,"endFrame":19,"checks":[{"frame":1,"offsetX":-9,"offsetY":-5,"fadeCalls":2}]},
+    {"name":"stairArrival","behavior":110,"endFrame":19,"checks":[{"frame":1,"offsetX":8,"offsetY":1,"fadeCalls":2}]},
+    {"name":"stairArrival","behavior":111,"endFrame":19,"checks":[{"frame":1,"offsetX":-9,"offsetY":1,"fadeCalls":2}]},
+    {"name":"plainDeparture","behavior":0,"endFrame":24,"checks":[{"frame":0,"paletteCopies":1},{"frame":2,"backgroundBlend":2,"objectBlend":0},{"frame":3,"backgroundBlend":2,"objectBlend":2},{"frame":16,"backgroundBlend":16,"objectBlend":14},{"frame":17,"backgroundBlend":16,"objectBlend":16,"paletteActive":1},{"frame":22,"paletteActive":0,"complete":0},{"frame":23,"taskPhase":2,"complete":0},{"frame":24,"complete":1}]},
+    {"name":"plainDepartureDelayed","behavior":0,"endFrame":66,"checks":[{"frame":65,"taskPhase":2,"complete":0},{"frame":66,"complete":1}]},
+    {"name":"stairDeparture","behavior":108,"endFrame":36,"checks":[{"frame":12,"paletteCopies":0},{"frame":13,"paletteCopies":1,"paletteActive":1},{"frame":36,"complete":1}]},
+    {"name":"stairDeparture","behavior":109,"endFrame":36},
+    {"name":"stairDeparture","behavior":110,"endFrame":36},
+    {"name":"stairDeparture","behavior":111,"endFrame":36}
+  ]
+}

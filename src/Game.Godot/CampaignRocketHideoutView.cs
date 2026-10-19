@@ -139,7 +139,7 @@ public partial class CampaignView
         _rocketElevatorTicks=Math.Min(RocketElevatorDuration,_rocketElevatorTicks+delta*60);
         if(!_rocketElevatorDing&&_rocketElevatorTicks+1e-8>=RocketElevatorDuration){_rocketElevatorDing=true;SourceSound("SE_DING_DONG");}
     }
-    private bool DrawRocketElevatorLayer(Texture2D original,Vector2 camera,int layer)
+    private bool DrawRocketElevatorLayer(Texture2D original,Vector2 camera,int layer, Rid? target = null)
     {
         if(_session.State.World.Player.MapId!=PretRocketHideoutRegion.ElevatorMapId||_rocketElevatorDistance==0)return false;
         // The source animation changes the nine window cells, preserving all other layers.
@@ -151,9 +151,9 @@ public partial class CampaignView
             {
                 string symbol="METATILE_SilphCo_ElevatorWindow_"+(y==0?"Top":y==1?"Mid":"Bottom")+phase;
                 var tile=_rocketTiles[("silph_co",_rocketTileSymbols[symbol])];
-                DrawTextureRectRegion(_rocketTileLayers[tile.Tileset][layer],destination,new(tile.Region.Position,tile.Region.Size));
+                DrawMapTextureRegion(_rocketTileLayers[tile.Tileset][layer],destination,new(tile.Region.Position,tile.Region.Size), target);
             }
-            else DrawTextureRectRegion(original,destination,new(x*16,y*16,16,16));
+            else DrawMapTextureRegion(original,destination,new(x*16,y*16,16,16), target);
         }
         return true;
     }

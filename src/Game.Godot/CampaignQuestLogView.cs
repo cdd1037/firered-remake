@@ -36,10 +36,11 @@ public partial class CampaignView
     }
     private void ResetQuestLogPlayback()
     {
-        _questLogPlayback=null;ClearCaveTransitionTexture();ClearQuestLogUiPalette();ClearQuestLogPaletteTextures();ResetQuestLogArt();ResetPlayTimeHost();
+        _questLogPlayback=null;_questFogScene=null;_questFogKey=null;ClearCaveTransitionTexture();ClearQuestLogUiPalette();ClearQuestLogPaletteTextures();ResetQuestLogArt();ResetPlayTimeHost();
     }
     private void FinishQuestLogPlayback()
     {
+        if(_questLogPlayback?.SavedGameVisible==true)_fieldFogScene=_questFogScene;
         ResetQuestLogPlayback();_held=null;_repeat=0;ResetCampaignButtonInput();QueueRedraw();
         // Map/session/poses were never replaced, so Continue resumes the exact saved field.
     }
@@ -66,7 +67,10 @@ public partial class CampaignView
         {
             double step=Math.Min(remaining,1d/60);
             int previousScene=playback.SceneIndex;double previousFrame=playback.Frame;
-            playback.Tick(step);
+            EnsureQuestFog(playback);var fogKey=_questFogKey;var camera=QuestFogCamera(playback);
+            playback.Tick(step);EnsureQuestFog(playback);
+            if(fogKey==_questFogKey&&_questFogScene is {} fog)
+                _questFogScene=fog.Advance(step*60,(int)camera.X,(int)camera.Y);
             PlayQuestLogTransitionSounds(playback,previousScene,previousFrame);
             remaining-=step;
         }
@@ -84,7 +88,7 @@ public partial class CampaignView
     private bool DrawQuestLogPlayback()
     {
         if(_questLogPlayback is not {} playback)return false;
-        EnsureQuestLogArt();
+        EnsureQuestLogArt();EnsureQuestFog(playback);
         var actors=playback.Actors.ToImmutableArray();
         var poses=new Dictionary<string,Pose>(StringComparer.Ordinal);
         foreach(var actor in actors)
@@ -96,7 +100,7 @@ public partial class CampaignView
                 DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0});
         }
         var snapshot=new FieldSnapshot(playback,playback.SceneIndex,playback.ArtRevision,playback.SavedGameVisible,
-            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender);
+            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender){Fog=_questFogScene};
         var warp=QuestLogFieldWarpSample(playback);
         if(playback.ActiveTransitionTiming is {} timing)
         {
@@ -164,8 +168,11 @@ public partial class CampaignView
         var art=GetFieldSnapshotMapArt(snapshot,neighbors);
         int backdrop=fadeColor==0x7fff?(31*backgroundBlend)>>4:0;
         byte background=(byte)((backdrop<<3)|(backdrop>>2));
-        DrawRect(new(0,0,240,160),Color.Color8(background,background,background));
-        DrawFieldSnapshotLayer(snapshot,art,camera,0,neighbors);DrawFieldSnapshotLayer(snapshot,art,camera,1,neighbors);
+        var backdropColor=Color.Color8(background,background,background);
+        Rid? lowerTarget=snapshot.Fog is null?null:BeginFieldFog(backdropColor);
+        if(lowerTarget is null)DrawRect(new(0,0,240,160),backdropColor);
+        DrawFieldSnapshotLayer(snapshot,art,camera,0,neighbors,lowerTarget);DrawFieldSnapshotLayer(snapshot,art,camera,1,neighbors,lowerTarget);
+        if(snapshot.Fog is {} fog)DrawFieldFogSample(fog,FieldSnapshotPaletteTexture(_fieldFogTexture!,false));
         foreach(var actor in projection.Actors.Where(a=>a.Visible&&snapshot.Poses[a.Id].Visible)
             .OrderBy(a=>snapshot.Poses[a.Id].Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
         {

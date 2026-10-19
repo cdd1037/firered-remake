@@ -119,7 +119,7 @@ public partial class CampaignView:Node2D
             _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
             LoadHelpPresentation();
-            LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadMuseumPicturesPresentation();LoadBattlePresentation();LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
+            LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadMuseumPicturesPresentation();LoadBattlePresentation();LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadFieldFogPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             _mapTileArt=CreateMapTileArt();
             InitializeNamingEditor();
             var checkpoint=_startupCheckpoint;
@@ -252,7 +252,7 @@ public partial class CampaignView:Node2D
         foreach(var effect in after.PresentationEffects.Where(e=>e.Opcode=="playfanfare"&&e.Sequence>_lastFanfareSequence))
         {_fanfareRemaining=(_cues.CounterFor(effect.Args[0])+1)/60.0;_lastFanfareSequence=effect.Sequence;}
         SynchronizeNamingScreen(before,after);
-        SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeEasyChatEditor();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
+        SynchronizeFieldFog(before,after);SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeEasyChatEditor();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
         SynchronizeNoncombatFieldPresentation(after);SynchronizeEvolutionView(before);SynchronizeItemfinderPresentation();SynchronizeSavedOptions();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSourceGridMenu();SynchronizeSourceMenu();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeDaisyGroomingPresentation(before,after);SynchronizeSizeRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);SynchronizeSlotMachine();SynchronizeFameChecker();SynchronizeVsSeekerPresentation(before,after);SynchronizeTeachyTvPresentation();SynchronizeTeachyTvFieldPresentation();SynchronizeTeachyTvBattle();
         SynchronizeTrainerCardPhoto(before,after);
         SynchronizeDiplomaPresentation(before,after);
@@ -302,7 +302,7 @@ public partial class CampaignView:Node2D
         if(ProcessCinnabarPresentation(delta))return;
         if(ProcessSilphPresentation(delta))return;
         if(ProcessCommittedMoveAnimation(delta))return;
-        ProcessPokemonTowerPresentation(delta);ProcessSourceBattleAudio();ProcessBillPresentation(delta);ProcessSsAnnePresentation(delta);
+        ProcessFieldFog(delta);ProcessPokemonTowerPresentation(delta);ProcessSourceBattleAudio();ProcessBillPresentation(delta);ProcessSsAnnePresentation(delta);
         if(ProcessTownMapPresentation(delta)){QueueRedraw();return;}
         if(_session.State.TrainerTowerRecordsVisible){_held=null;QueueRedraw();return;}
         if(_session.State.Itemfinder is not null){_held=null;ProcessItemfinderPresentation(delta);QueueRedraw();return;}
@@ -557,6 +557,7 @@ public partial class CampaignView:Node2D
         (_session.State.ForestTrainerBattle?.Stage!=CampaignForestTrainerStage.Intro||_tracks.All(t=>t.Time>=t.Duration));
     public override void _Draw()
     {
+        ResetFieldFogCanvas();
         if(_quitRequested||_startupExited)return;
         if(!_startupReady)
         {
@@ -597,14 +598,16 @@ public partial class CampaignView:Node2D
         if(DrawDaisyGroomingParty())return;
         if(DrawSizeRecordParty())return;
         if(DrawNameRaterParty())return;
-        DrawRect(new(0,0,240,160),Colors.Black);
+        Rid? lowerTarget=_fieldFogScene is null?null:BeginFieldFog(Colors.Black);
+        if(lowerTarget is null)DrawRect(new(0,0,240,160),Colors.Black);
         var hero=_poses["LOCALID_PLAYER"];
         // Source camera follows the player even in rooms smaller than the viewport. Border
         // blocks fill outside the layout; centering/clamping the whole map shifts the player.
-        var camera=(BillCameraFocus(EventIslandCameraFocus(hero.Position))+new Vector2(8,8)-new Vector2(120,80)).Floor()+RocketCameraOffset+DepartmentCameraOffset+SilphCameraOffset+CinnabarCameraOffset+SixIslandCameraOffset+SevenIslandCameraOffset+EventIslandCameraOffset;
+        var camera=OrdinaryFieldCamera(hero.Position);
         PrepareVisibleMapResources(camera);
-        if(_art.Border is {} borderBottom)DrawMapBorder(borderBottom.Bottom,camera);DrawConnectedNeighbors(camera,0);DrawBillMapLayer(_art.Bottom,camera,0);
-        if(_art.Border is {} borderMiddle)DrawMapBorder(borderMiddle.Middle,camera);DrawConnectedNeighbors(camera,1);DrawBillMapLayer(_art.Middle,camera,1);
+        if(_art.Border is {} borderBottom)DrawMapBorder(borderBottom.Bottom,camera,lowerTarget);DrawConnectedNeighbors(camera,0,lowerTarget);DrawBillMapLayer(_art.Bottom,camera,0,lowerTarget);
+        if(_art.Border is {} borderMiddle)DrawMapBorder(borderMiddle.Middle,camera,lowerTarget);DrawConnectedNeighbors(camera,1,lowerTarget);DrawBillMapLayer(_art.Middle,camera,1,lowerTarget);
+        if(_fieldFogScene is {} fog)DrawFieldFogSample(fog,_fieldFogTexture!);
         // Source invisible script objects (including the Warden journal graphics 0) have no sprite.
         // Visible unknown graphics still fail the normal resource lookup.
         var entries=_session.State.Actors.Values.Where(a=>a.MovementType!="MOVEMENT_TYPE_INVISIBLE"&&RegionalServicesActorHasPixels(a)&&_poses.TryGetValue(a.LocalId,out var pose)&&pose.Visible).Select(a=>(Id:a.LocalId,Asset:_art.Npcs[ResolveRegionGraphics(a.GraphicsId)])).ToList();
@@ -613,7 +616,7 @@ public partial class CampaignView:Node2D
         foreach(var (id,asset) in entries.OrderBy(e=>_poses[e.Id].Position.Y).ThenBy(e=>e.Id,StringComparer.Ordinal))DrawCityServicesActor(id,asset,_poses[id],camera);
         if(_art.Border is {} borderTop)DrawMapBorder(borderTop.Top,camera);DrawConnectedNeighbors(camera,2);DrawBillMapLayer(_art.Top,camera,2);
         if(hero.Visible&&(CinnabarLanding&&CinnabarFallPose.FixedPriority||SixIslandLandingFixedPriority))DrawCityServicesActor("LOCALID_PLAYER",CurrentPlayerSprite,hero,camera);
-        DrawVsSeekerIcons(camera);DrawCutGrassParticles(camera);DrawEventIslandFragments(camera);DrawPokemonTowerFog(camera);DrawSsAnneSmoke();DrawFieldFlashMask();DrawFieldMoveBanner();DrawFieldFlashBanner();DrawFieldStrengthBanner();DrawFourIslandBanner();DrawFishingDots();
+        DrawVsSeekerIcons(camera);DrawCutGrassParticles(camera);DrawEventIslandFragments(camera);DrawSsAnneSmoke();DrawFieldFlashMask();DrawFieldMoveBanner();DrawFieldFlashBanner();DrawFieldStrengthBanner();DrawFourIslandBanner();DrawFishingDots();
         DrawCenterHealing();DrawPokemonLeagueRecording();
         DrawMagikarpMoneyBox();DrawGameCornerCoinsBox();DrawBerryPowderAmount();
         if(_session.State.MonPicture is {} picture&&!DrawBillPcPicture()&&!DrawNamedPokemonPicture(picture))
@@ -670,7 +673,7 @@ public partial class CampaignView:Node2D
         if(lines.Length==0)return;var last=lines[^1];float width=font.Font.GetStringSize(font.PrepareText(last),fontSize:font.Size).X;
         _textCursor.Draw(this,(origin+new Vector2(width,(lines.Length-1)*lineStep)).Floor(),(long)Math.Max(0,elapsed*60),alternate);
     }
-    private void DrawMapBorder(Texture2D texture,Vector2 camera)
+    private void DrawMapBorder(Texture2D texture,Vector2 camera, Rid? target = null)
     {
         texture=SixIslandPaletteTexture(texture,true);
         int left=(int)Math.Floor(camera.X/16),top=(int)Math.Floor(camera.Y/16);
@@ -678,7 +681,7 @@ public partial class CampaignView:Node2D
         {
             if((x>=0&&y>=0&&x<_art.Source.Width&&y<_art.Source.Height)||IsConnectedNeighborCell(x,y))continue;
             var border=_art.Border!;
-            DrawTextureRectRegion(texture,new(new Vector2(x*16,y*16)-camera,new Vector2(16,16)),new(MapBorderPattern.Coordinate(x,border.Width)*16,MapBorderPattern.Coordinate(y,border.Height)*16,16,16));
+            DrawMapTextureRegion(texture,new(new Vector2(x*16,y*16)-camera,new Vector2(16,16)),new(MapBorderPattern.Coordinate(x,border.Width)*16,MapBorderPattern.Coordinate(y,border.Height)*16,16,16), target);
         }
     }
     private void DrawActor(SpriteAsset asset,Pose pose,Vector2 camera,Texture2D? textureOverride=null)

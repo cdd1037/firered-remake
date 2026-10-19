@@ -15,7 +15,7 @@ public static class FieldStairPresentation
         FieldArrivalPalette.Normal=>ArrivalFrames,
         // SHADE is ready after callback17, but the stair movement task reaches
         // its final readiness phase only at callback19.
-        FieldArrivalPalette.Shade=>19,
+        FieldArrivalPalette.Shade or FieldArrivalPalette.FogHorizontal=>19,
         _=>throw new ArgumentOutOfRangeException(nameof(paletteKind))
     };
 

@@ -156,15 +156,15 @@ public partial class CampaignView
         _session.State.Actors.TryGetValue(BillSourcePresentation.CameraActor, out var actor) && actor.Active && actor.Invisible &&
         _poses.TryGetValue(BillSourcePresentation.CameraActor, out var pose) ? pose.Position : playerPosition;
 
-    private void DrawBillMapLayer(Texture2D original, Vector2 camera, int layer)
+    private void DrawBillMapLayer(Texture2D original, Vector2 camera, int layer, Rid? target = null)
     {
         original=SixIslandPaletteTexture(original,true);
         if (layer is < 0 or > 2) throw new ArgumentOutOfRangeException(nameof(layer));
-        if (DrawSilphElevatorLayer(original,camera,layer)) return;
-        if (DrawDepartmentElevatorLayer(original,camera,layer)) return;
-        if (DrawRocketElevatorLayer(original,camera,layer)) return;
+        if (DrawSilphElevatorLayer(original,camera,layer, target)) return;
+        if (DrawDepartmentElevatorLayer(original,camera,layer, target)) return;
+        if (DrawRocketElevatorLayer(original,camera,layer, target)) return;
         if (_session.State.World.Player.MapId.Value != BillSourcePresentation.Cottage || _billTimeline.Cells.Count == 0)
-        { DrawTexture(original, -camera); return; }
+        { DrawMapTexture(original, -camera, target); return; }
         // Replace all three cell layers, including transparent pixels. Alpha-overpainting
         // the original map would leave its old light/door pixels above the new frame.
         int left = Math.Max(0, (int)Math.Floor(camera.X / 16)), top = Math.Max(0, (int)Math.Floor(camera.Y / 16));
@@ -174,13 +174,13 @@ public partial class CampaignView
         {
             var destination = new Rect2(new Vector2(x * 16, y * 16) - camera, new(16, 16));
             if (!_billTimeline.Cells.TryGetValue((x, y), out var cell))
-                DrawTextureRectRegion(original, destination, new(x * 16, y * 16, 16, 16));
+                DrawMapTextureRegion(original, destination, new(x * 16, y * 16, 16, 16), target);
             else if (cell.Kind != "door")
-                DrawTextureRectRegion(_billAnimationLayers[layer]!, destination, _billMetatileRegions[cell.Kind]);
+                DrawMapTextureRegion(_billAnimationLayers[layer]!, destination, _billMetatileRegions[cell.Kind], target);
             // Source DrawDoorMetatileAt uses COVERED: door pixels on bottom,
             // transparent middle/top. Door atlas rows are three vertical 16x32 frames.
             else if (layer == 0)
-                DrawTextureRectRegion(_billDoor!, destination, new(0, cell.Value * 32 + cell.DoorPart * 16, 16, 16));
+                DrawMapTextureRegion(_billDoor!, destination, new(0, cell.Value * 32 + cell.DoorPart * 16, 16, 16), target);
         }
     }
 

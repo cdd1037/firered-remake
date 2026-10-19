@@ -1,9 +1,9 @@
 namespace Game.Application;
 
-public enum FieldArrivalPalette { Normal,Shade }
+public enum FieldArrivalPalette { Normal,Shade,FogHorizontal }
 
 /// <summary>
-/// Source NONE/SUNNY and SHADE arrival fades. One Advance runs priority-80
+/// Source NONE/SUNNY, SHADE and horizontal-fog arrival fades. One Advance runs priority-80
 /// weather, then the frame's global palette callback. No loading delay is
 /// invented. SHADE transforms both banks together; normal fades split them.
 /// </summary>
@@ -11,17 +11,31 @@ public sealed class FieldArrivalPalettePresentation
 {
     private FieldWarpPresentation.NormalPalette? _normal;
     private bool _weatherInitialized;
-    private int _shadeCounter,_shadeBackground=16,_shadeObjects=16;
+    private int _weatherCounter,_weatherBackground=16,_weatherObjects=16;
     public FieldArrivalPalette Kind {get;}
     public bool Active=>_normal?.Active??false;
     public bool WeatherReady {get;private set;}
-    public int BackgroundBlend=>_normal?.BackgroundBlend??_shadeBackground;
-    public int ObjectBlend=>_normal?.ObjectBlend??_shadeObjects;
-    public int BaseArrivalFrames=>Kind==FieldArrivalPalette.Shade?18:FieldWarpPresentation.PlainArrivalFrames;
+    public int BackgroundBlend=>_normal?.BackgroundBlend??_weatherBackground;
+    public int ObjectBlend=>_normal?.ObjectBlend??_weatherObjects;
+    public int BaseArrivalFrames=>Kind switch
+    {
+        FieldArrivalPalette.Normal=>FieldWarpPresentation.PlainArrivalFrames,
+        FieldArrivalPalette.Shade=>18,
+        FieldArrivalPalette.FogHorizontal=>19,
+        _=>throw new InvalidOperationException()
+    };
+
+    public static FieldArrivalPalette ForWeather(string? weather)=>weather switch
+    {
+        "WEATHER_NONE" or "WEATHER_SUNNY"=>FieldArrivalPalette.Normal,
+        "WEATHER_SHADE"=>FieldArrivalPalette.Shade,
+        "WEATHER_FOG_HORIZONTAL"=>FieldArrivalPalette.FogHorizontal,
+        _=>throw new ArgumentException("Unsupported field arrival weather.",nameof(weather))
+    };
 
     public FieldArrivalPalettePresentation(FieldArrivalPalette kind=FieldArrivalPalette.Normal)
     {
-        if(kind is not (FieldArrivalPalette.Normal or FieldArrivalPalette.Shade))
+        if(!Enum.IsDefined(kind))
             throw new ArgumentOutOfRangeException(nameof(kind));
         Kind=kind;
         FadeFromBlack();
@@ -41,8 +55,8 @@ public sealed class FieldArrivalPalettePresentation
         }
         else
         {
-            _shadeCounter=0;
-            _shadeBackground=_shadeObjects=16;
+            _weatherCounter=0;
+            _weatherBackground=_weatherObjects=16;
         }
         WeatherReady=false;
     }
@@ -60,9 +74,11 @@ public sealed class FieldArrivalPalettePresentation
             }
             else
             {
-                _shadeCounter++;
-                _shadeBackground=_shadeObjects=Math.Max(0,16-_shadeCounter);
-                if(_shadeCounter>=16)WeatherReady=true;
+                _weatherCounter++;
+                _weatherBackground=_weatherObjects=Math.Max(0,16-_weatherCounter);
+                // Fog returns TRUE on the callback that writes zero, unlike
+                // SHADE. Readiness becomes observable one callback later.
+                if(_weatherCounter>=(Kind==FieldArrivalPalette.FogHorizontal?17:16))WeatherReady=true;
             }
         }
         _normal?.Advance();

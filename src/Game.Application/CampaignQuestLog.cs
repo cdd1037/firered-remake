@@ -401,6 +401,8 @@ public sealed class CampaignQuestLogPlayback
     public string Map=>_timeline.Map;
     public int ArtRevision=>_timeline.ArtRevision;
     public double Frame=>_timeline.Frame;
+    public double MapFrames=>_timeline.MapFrames;
+    public CampaignQuestLogActor MapOriginPlayer=>_timeline.MapOriginPlayer;
     public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_timeline.ActiveTransitionTiming;
     public double TransitionElapsedFrames=>_timeline.TransitionElapsedFrames;
     public string? Layout=>_timeline.Layout;

@@ -144,7 +144,7 @@ public sealed partial class CampaignSession
         var from=_content.MapDefinition(receipt.From.MapId);
         var to=_content.MapDefinition(receipt.To.MapId);
         if((from.RequiresFlash||to.RequiresFlash)&&(state.IsCycling||state.IsSurfing))return false;
-        if(to.Weather=="WEATHER_SHADE"&&receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.Stair))return false;
+        if(to.Weather is "WEATHER_SHADE" or "WEATHER_FOG_HORIZONTAL"&&receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.Stair))return false;
         if((receipt.Cause==FieldTransitionCause.StairWarp||receipt.Arrival==FieldTransitionArrival.Stair)&&
             (from.MapType!="MAP_TYPE_INDOOR"||to.MapType!="MAP_TYPE_INDOOR"))return false;
         // Source previews are skipped within the same named section. Cross-section
@@ -158,13 +158,13 @@ public sealed partial class CampaignSession
             (string.IsNullOrEmpty(from.RegionMapSection)||from.RegionMapSection!=to.RegionMapSection))return false;
         static bool OrdinaryMap(FieldMapDefinition map)=>
             (map.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR")&&
-            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY"||map.Weather=="WEATHER_SHADE"&&map.MapPreview?.Type==MapPreviewType.Forest)&&!map.RequiresFlash;
+            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY" or "WEATHER_FOG_HORIZONTAL"||map.Weather=="WEATHER_SHADE"&&map.MapPreview?.Type==MapPreviewType.Forest)&&!map.RequiresFlash;
         bool ladder=receipt.Cause==FieldTransitionCause.PlainWarp&&receipt.Departure==FieldTransitionDeparture.StepOntoWarp&&
             receipt.Arrival==FieldTransitionArrival.Plain&&receipt.ArrivalAnchor==receipt.To&&receipt.DepartureStep is {} ladderStep&&
             _content.Maps[receipt.From.MapId].SourceBehaviorAt(ladderStep.X,ladderStep.Y)==0x61&&
             _content.Maps[receipt.To.MapId].SourceBehaviorAt(receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y)==0x61;
         static bool OrdinaryCave(FieldMapDefinition map)=>map.MapType=="MAP_TYPE_UNDERGROUND"&&
-            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY");
+            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY" or "WEATHER_FOG_HORIZONTAL");
         // Same-section underground -> underground has no flash-transition table row.
         // Its ladder step, black fade and stationary arrival use the existing controllers.
         if(forest)return to.MapPreview?.VisitFlag is not null&&!state.IsCycling&&!state.IsSurfing&&receipt.Arrival==FieldTransitionArrival.Plain&&OrdinaryMap(from)&&OrdinaryMap(to);
@@ -172,6 +172,12 @@ public sealed partial class CampaignSession
         if(caveEnter)return !state.IsCycling&&!state.IsSurfing&&OrdinaryMap(from)&&
             (OrdinaryCave(to)||interlude==FieldTransitionInterlude.RegionPreview&&OrdinaryMap(to));
         if(ladder)return OrdinaryCave(from)&&OrdinaryCave(to);
+        // Arrow and wrong-turn warps use a stationary plain departure, including
+        // same-map reconstruction. Their producer-owned destination still resets
+        // field presentation; map identity is not an initialization signal.
+        if(receipt.Cause==FieldTransitionCause.PlainWarp&&receipt.Departure==FieldTransitionDeparture.Immediate&&
+            receipt.Arrival==FieldTransitionArrival.Plain&&OrdinaryCave(from)&&OrdinaryCave(to))
+            return !state.IsCycling&&!state.IsSurfing;
         return (receipt.Departure==FieldTransitionDeparture.Immediate||receipt.Cause==FieldTransitionCause.NonAnimatedDoor)&&
             OrdinaryMap(from)&&OrdinaryMap(to);
     }
@@ -214,7 +220,7 @@ public sealed partial class CampaignSession
         var timing=new CampaignQuestLogTransitionTiming(receipt.Cause,switchFrame,endFrame)
         {
             Interlude=FieldTransitionInterludeFor(receipt),PreviewFrames=previewFrames,
-            ArrivalPalette=_content.MapDefinition(receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal,
+            ArrivalPalette=FieldArrivalPalettePresentation.ForWeather(_content.MapDefinition(receipt.To.MapId).Weather),
             Departure=receipt.Cause==FieldTransitionCause.PlainWarp?receipt.Departure:FieldTransitionDeparture.Immediate,
             Arrival=receipt.Arrival,DepartureStairBehavior=receipt.DepartureStairBehavior,ArrivalStairBehavior=receipt.ArrivalStairBehavior,
             DepartureDoor=receipt.Cause==FieldTransitionCause.AnimatedDoor?new(receipt.From.X,receipt.From.Y-1):

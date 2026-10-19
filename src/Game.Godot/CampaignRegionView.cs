@@ -114,11 +114,11 @@ public partial class CampaignView
         foreach(var neighbor in VisibleMapNeighbors(camera))_drawMapPins.Add(PresentationMapKey(neighbor.Id));
         MapCache.SetPins(_drawMapPins);
     }
-    private void DrawConnectedNeighbors(Vector2 camera,int layer)
+    private void DrawConnectedNeighbors(Vector2 camera,int layer, Rid? target = null)
     {
         foreach(var neighbor in VisibleMapNeighbors(camera))
         {
-            var art=_borderEditArt.TryGetValue(neighbor.Id,out var patched)?patched:GetMapArt(neighbor.Id);DrawTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,neighbor.Origin-camera);
+            var art=_borderEditArt.TryGetValue(neighbor.Id,out var patched)?patched:GetMapArt(neighbor.Id);DrawMapTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,neighbor.Origin-camera, target);
         }
     }
 }

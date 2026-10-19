@@ -63,7 +63,7 @@ public partial class CampaignView
         if(!_departmentElevatorDing&&_departmentElevatorTicks+1e-8>=_departmentElevatorDuration)
         {_departmentElevatorDing=true;SourceSound("SE_DING_DONG");}
     }
-    private bool DrawDepartmentElevatorLayer(Texture2D original,Vector2 camera,int layer)
+    private bool DrawDepartmentElevatorLayer(Texture2D original,Vector2 camera,int layer, Rid? target = null)
     {
         if(_session.State.World.Player.MapId.Value!=DepartmentElevatorMapId||_departmentElevatorDistance==0)return false;
         // Both source elevators use the same SilphCo window cells and authenticated atlas.
@@ -75,9 +75,9 @@ public partial class CampaignView
             {
                 string symbol="METATILE_SilphCo_ElevatorWindow_"+(y==0?"Top":y==1?"Mid":"Bottom")+phase;
                 var tile=_rocketTiles[("silph_co",_rocketTileSymbols[symbol])];
-                DrawTextureRectRegion(_rocketTileLayers[tile.Tileset][layer],destination,new(tile.Region.Position,tile.Region.Size));
+                DrawMapTextureRegion(_rocketTileLayers[tile.Tileset][layer],destination,new(tile.Region.Position,tile.Region.Size), target);
             }
-            else DrawTextureRectRegion(original,destination,new(x*16,y*16,16,16));
+            else DrawMapTextureRegion(original,destination,new(x*16,y*16,16,16), target);
         }
         return true;
     }

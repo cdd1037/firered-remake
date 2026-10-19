@@ -146,7 +146,7 @@ public partial class CampaignView
         if (_silphMenuScroll > 0) DrawTexture(_silphScrollUp!, new(SilphMenuWidth / 2, _silphInterface!.BounceOffset(false, tick)));
         if (_silphMenuScroll < 5) DrawTexture(_silphScrollDown!, new(SilphMenuWidth / 2, 98 + _silphInterface!.BounceOffset(true, tick)));
     }
-    private bool DrawSilphElevatorLayer(Texture2D original, Vector2 camera, int layer)
+    private bool DrawSilphElevatorLayer(Texture2D original, Vector2 camera, int layer, Rid? target = null)
     {
         if (_session.State.World.Player.MapId != SilphElevatorId || _silphElevatorDistance == 0) return false;
         int count = Math.Min(SilphSourcePresentation.ElevatorWindowCycles(_silphElevatorDistance), Math.Max(0, ((int)Math.Floor(_silphElevatorTicks) - 1) / 6));
@@ -158,9 +158,9 @@ public partial class CampaignView
             {
                 string symbol = "METATILE_SilphCo_ElevatorWindow_" + (y == 0 ? "Top" : y == 1 ? "Mid" : "Bottom") + phase;
                 var tile = _rocketTiles[("silph_co", _rocketTileSymbols[symbol])];
-                DrawTextureRectRegion(_rocketTileLayers[tile.Tileset][layer], destination, new(tile.Region.Position, tile.Region.Size));
+                DrawMapTextureRegion(_rocketTileLayers[tile.Tileset][layer], destination, new(tile.Region.Position, tile.Region.Size), target);
             }
-            else DrawTextureRectRegion(original, destination, new(x * 16, y * 16, 16, 16));
+            else DrawMapTextureRegion(original, destination, new(x * 16, y * 16, 16, 16), target);
         }
         return true;
     }

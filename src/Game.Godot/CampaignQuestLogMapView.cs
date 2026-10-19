@@ -10,7 +10,7 @@ public partial class CampaignView
     // belong to the visible snapshot, never to the already-committed destination.
     private sealed record FieldSnapshot(object Owner,int Scene,int Revision,bool SavedGameVisible,
         CampaignQuestLogMapProjection Projection,IReadOnlyDictionary<string,Pose> Poses,double Frame,int PlayerGender)
-    { public FieldDoorPaint? Door {get;init;} }
+    { public FieldDoorPaint? Door {get;init;} public FieldHorizontalFogPresentation.Scene? Fog {get;init;} }
     private (object Owner,int Scene,int Revision,bool Saved,FieldDoorPaint? Door)? _fieldSnapshotArtState;
     private int _fieldSnapshotArtSerial;
     private string? _fieldSnapshotArtKey;
@@ -71,7 +71,7 @@ public partial class CampaignView
             yield return(destination.Id,origin);
         }
     }
-    private void DrawFieldSnapshotLayer(FieldSnapshot snapshot,MapArt art,Vector2 camera,int layer,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors)
+    private void DrawFieldSnapshotLayer(FieldSnapshot snapshot,MapArt art,Vector2 camera,int layer,IReadOnlyList<(MapId Map,Vector2 Origin)> neighbors, Rid? target = null)
     {
         if(art.Border is {} border)
         {
@@ -80,7 +80,7 @@ public partial class CampaignView
             {
                 if(x>=0&&y>=0&&x<art.Source.Width&&y<art.Source.Height)continue;
                 if(neighbors.Any(n=>new Rect2(n.Origin,new(_catalog.Maps[n.Map].Width*16,_catalog.Maps[n.Map].Height*16)).HasPoint(new(x*16,y*16))))continue;
-                DrawTextureRectRegion(texture,new(new Vector2(x*16,y*16)-camera,new(16,16)),new(MapBorderPattern.Coordinate(x,border.Width)*16,MapBorderPattern.Coordinate(y,border.Height)*16,16,16));
+                DrawMapTextureRegion(texture,new(new Vector2(x*16,y*16)-camera,new(16,16)),new(MapBorderPattern.Coordinate(x,border.Width)*16,MapBorderPattern.Coordinate(y,border.Height)*16,16,16), target);
             }
         }
         foreach(var neighbor in neighbors)
@@ -101,8 +101,8 @@ public partial class CampaignView
                 }
                 return new MapArt(source,Layer(source.BottomTexturePath,0),Layer(source.MiddleTexturePath,1),Layer(source.TopTexturePath,2),art.Player,[],null);
             });
-            DrawTexture(FieldSnapshotPaletteTexture(layer==0?texture.Bottom:layer==1?texture.Middle:texture.Top,true),neighbor.Origin-camera);
+            DrawMapTexture(FieldSnapshotPaletteTexture(layer==0?texture.Bottom:layer==1?texture.Middle:texture.Top,true),neighbor.Origin-camera, target);
         }
-        DrawTexture(FieldSnapshotPaletteTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,true),-camera);
+        DrawMapTexture(FieldSnapshotPaletteTexture(layer==0?art.Bottom:layer==1?art.Middle:art.Top,true),-camera, target);
     }
 }
