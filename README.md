@@ -54,7 +54,7 @@ dotnet build FireRed.Current.slnx --no-restore
 
 先执行 `python dev build`，再执行 `python dev run [current-checkpoint.json]`。也可直接在 Godot 打开并运行工程；正常入口不再强制要求 FIRERED 环境变量，默认启用玩家入口和音频。Linux 已做无 FIRERED 变量、隔离用户目录的启动检查；Windows 尚未实测。Bash 旧入口 `scripts/dev/launch-current.sh` 仍可用于显式开发参数。
 
-Linux 私有成品包入口为 `python dev export linux`，需要在开发工具的 XDG 模板目录安装匹配的官方 Godot 4.7.2 .NET Linux 导出模板。模板缺失时明确失败，不产生冒充完成的包。成品包含可执行文件、PCK、Godot 导出的 .NET 数据目录和旁置 `content/generated`，应整体分发。当前已完成真实 Linux 导出及清空开发环境、隔离 HOME/XDG 的启动检查；实测 .NET 10.0.12，libcoreclr 来自成品目录。窗口完整操作、新游戏/存档/继续及真实音频仍需单独验收。用户存档继续位于原有 user:// 应用目录。
+Linux 私有成品包入口为 `python dev export linux`，需要在开发工具的 XDG 模板目录安装匹配的官方 Godot 4.7.2 .NET Linux 导出模板。模板缺失时明确失败，不产生冒充完成的包。成品包含可执行文件、PCK、Godot 导出的 .NET 数据目录和旁置 `content/generated`，应整体分发。当前已完成真实 Linux 导出及清空开发环境、隔离 HOME/XDG 的启动检查；实测 .NET 10.0.12，libcoreclr 来自成品目录。另已完成隔离云窗口中的公开移动、SAVE、退出和无检查点重启Continue，实际CLR来自包内；这不代表全流程新游戏或真实音频已验收。开发侧 `scripts/dev/launch-export.sh` 直接启动当前成品入口，不再依赖旧probe文件或开发资源路径。用户存档继续位于原有 user:// 应用目录。详见[导出验收](docs/linux-export-acceptance.md)。
 
 参数与存档边界见 [当前组合](docs/current-game-composition.md)。
 

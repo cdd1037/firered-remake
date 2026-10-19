@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/../env.sh"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT/exports/linux"
-export FIRERED_EVIDENCE="$ROOT/evidence/p0-export-window-runtime.json"
-# Deliberately remove installed runtime discovery: this tests the bundled runtime.
-unset DOTNET_ROOT
-exec ./firered-probe.x86_64 "$@" -- --probe > "$ROOT/evidence/p0-export-window.log" 2>&1
+mkdir -p "$ROOT/evidence"
+export FIRERED_EVIDENCE="${FIRERED_EVIDENCE:-$ROOT/evidence/current-export-window-runtime.json}"
+# The package discovers its resources and self-contained runtime beside itself.
+unset DOTNET_ROOT DOTNET_ROOT_X64 DOTNET_HOST_PATH FIRERED_PROJECT_ROOT
+exec ./firered.x86_64 "$@" > "$ROOT/evidence/current-export-window.log" 2>&1
