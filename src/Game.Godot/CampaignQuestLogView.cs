@@ -121,10 +121,18 @@ public partial class CampaignView
                 }
             }
         }
-        ushort fadeColor=playback.ActiveTransitionTiming is {Interlude:FieldTransitionInterlude.CaveExit} caveTiming&&playback.TransitionElapsedFrames>=caveTiming.SwitchFrame?(ushort)0x7fff:(ushort)0;
-        if(playback.ActiveTransitionTiming is {Interlude:FieldTransitionInterlude.CaveExit} interlude&&
+        var currentTiming=playback.ActiveTransitionTiming;
+        bool arriving=currentTiming is not null&&playback.TransitionElapsedFrames>=currentTiming.SwitchFrame;
+        ushort fadeColor=(arriving&&currentTiming?.Interlude==FieldTransitionInterlude.CaveExit||
+            !arriving&&currentTiming?.Interlude==FieldTransitionInterlude.CaveEnter)?(ushort)0x7fff:(ushort)0;
+        if(currentTiming is {Interlude:not FieldTransitionInterlude.None} interlude&&
             playback.TransitionElapsedFrames>=interlude.DepartureEndFrame&&playback.TransitionElapsedFrames<interlude.SwitchFrame)
-        { DrawCaveExitFrame((int)Math.Floor(playback.TransitionElapsedFrames)-interlude.DepartureEndFrame);return true; }
+        {
+            int elapsed=(int)Math.Floor(playback.TransitionElapsedFrames)-interlude.DepartureEndFrame;
+            if(interlude.Interlude==FieldTransitionInterlude.CaveExit)DrawCaveExitFrame(elapsed);
+            else DrawCaveEnterFrame(elapsed,interlude.Interlude==FieldTransitionInterlude.CavePreviewEnter);
+            return true;
+        }
         DrawFieldSnapshot(snapshot,playback.GrayscaleCoefficient,warp.BackgroundBlend,warp.ObjectBlend,fadeColor);
         int barHeight=playback.BarHeight;
         if(barHeight>0)

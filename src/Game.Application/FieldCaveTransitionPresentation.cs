@@ -2,14 +2,14 @@ using System.Collections.ObjectModel;
 
 namespace Game.Application;
 
-public enum FieldTransitionInterlude { None,CaveExit }
+public enum FieldTransitionInterlude { None,CaveExit,CaveEnter,CavePreviewEnter,RegionPreview }
 
 /// <summary>
 /// The generic cave EXIT interlude, between the field's black departure and
 /// white arrival fades. Owns presentation callbacks only, never map/game state.
 /// Palette input is generated RGB555 data and pixel input uses 4-bit indices.
 /// </summary>
-public static class FieldCaveTransitionPresentation
+public static partial class FieldCaveTransitionPresentation
 {
     public const int ExitFrames=38;
 

@@ -79,7 +79,7 @@ public sealed class GeneratedCaveTransitionArtTests
         var entry = manifest["maps"]!.AsArray().First(row => row!["sourceMapSymbol"]!.GetValue<string>() == "MAP_MT_MOON_1F")!;
         var map = JsonNode.Parse(File.ReadAllBytes(Path.Combine(Generated, entry["path"]!.GetValue<string>())))!.AsObject();
         string stableId = map["stableId"]!.GetValue<string>();
-        Assert.IsTrue(map.Remove("hasCavePreview"));
+        Assert.IsTrue(map.Remove("cavePreviewVisitFlag"));
         Assert.ThrowsExactly<InvalidDataException>(() =>
             PretRuntimeMapData.Decode(Encoding.UTF8.GetBytes(map.ToJsonString()), stableId));
     }

@@ -143,8 +143,8 @@ private void ProcessCampaignButtonRepeats(double delta)
         // A held shoulder becomes held A, but a commit never invents a new press.
         if ((edge.Released & CampaignButton.A) != 0) ReleaseNormalizedConfirm();
     }
-    private void ResetCampaignButtonInput()
-    { _buttons.Reset(); _buttonObservedEvent = 0; ReleaseNormalizedConfirm(); _helpHeld = CampaignButton.None; }
+    private void ResetCampaignButtonInput(bool preserveHeld=false)
+    { if(!preserveHeld)_buttons.Reset(); _buttonObservedEvent = 0; ReleaseNormalizedConfirm(); _helpHeld = CampaignButton.None; }
     private void OnCampaignJoyConnectionChanged(long device, bool connected)
     {
         if (connected) return;

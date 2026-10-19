@@ -169,7 +169,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         return new(map.Id, map.SourceMapSymbol, actors, coords, signs, new(Target("MAP_SCRIPT_ON_TRANSITION"), Target("MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE"), Target("MAP_SCRIPT_ON_FRAME_TABLE"), Target("MAP_SCRIPT_ON_LOAD"), Target("MAP_SCRIPT_ON_RESUME"), Target("MAP_SCRIPT_ON_RETURN_TO_FIELD")), e.GetProperty("music").GetString()!, e.GetProperty("region_map_section").GetString()!)
         {
             MapType = e.GetProperty("map_type").GetString()!,Weather = e.GetProperty("weather").GetString(),RequiresFlash = e.GetProperty("requires_flash").GetBoolean(),
-            HasCavePreview = map.HasCavePreview
+            CavePreviewVisitFlag = map.CavePreviewVisitFlag
         };
     }
 

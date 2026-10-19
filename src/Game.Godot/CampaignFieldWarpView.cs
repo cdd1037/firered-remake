@@ -24,6 +24,10 @@ public partial class CampaignView
         public FieldDoorArtEntry? DepartureArt,ArrivalArt;
         public FieldTransitionInterlude Interlude;
         public FieldCaveTransitionPresentation.Exit? CaveExit;
+        public FieldCaveTransitionPresentation.Enter? CaveEnter;
+        public FieldCaveTransitionPresentation.CavePreview? Preview;
+        public Game.Content.MapPreviewEntry? PreviewArt;
+        public int PreviewDuration;
         public bool Arriving;
         public FieldDoorPresentation.PhaseSample Sample=>Arriving
             ?StairArrival is {} sa?FieldDoorPresentation.FromPlain(sa.Sample.Phase):DoorArrival?.Sample??StepArrival?.Sample??FieldDoorPresentation.FromPlain(Arrival!.Sample)
@@ -73,6 +77,13 @@ public partial class CampaignView
             OriginView=CaptureFieldSnapshot(before,owner,0,true),
             DestinationView=CaptureFieldSnapshot(arrivalState,owner,1,false)
         };
+        if(animation.Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview)
+        {
+            animation.PreviewDuration=_session.FieldTransitionPreviewDuration(before,receipt);
+            animation.PreviewArt=MapPreviewCatalog.Find(_catalog.MapDefinition(receipt.To.MapId).RegionMapSection)
+                ??throw new InvalidDataException("Missing admitted cave preview art.");
+            if(animation.PreviewDuration is not (40 or 120))return false;
+        }
         if(receipt.Cause==FieldTransitionCause.StairWarp)animation.StairDeparture=new(receipt.DepartureStairBehavior!.Value);
         if(receipt.Cause==FieldTransitionCause.AnimatedDoor)
         {
@@ -87,7 +98,7 @@ public partial class CampaignView
             if(animation.ArrivalArt is null)return false;
         }
         _fieldWarp=animation;
-        _held=null;_repeat=0;_tracks.Clear();_fade=0;ResetCampaignButtonInput();
+        _held=null;_repeat=0;_tracks.Clear();_fade=0;ResetCampaignButtonInput(preserveHeld:animation.Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview);
         if(animation.DoorDeparture is null&&animation.StepDeparture is null&&animation.StairDeparture is null){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
         Write("fieldWarpPresentation",new{phase="departure",cause=receipt.Cause.ToString(),from=receipt.From,to=receipt.To,animation.WaitForMusic});
         return true;
@@ -122,7 +133,19 @@ public partial class CampaignView
             if(!animation.Arriving)
             {
                 bool musicReady=!animation.WaitForMusic||_sourceAudio is null||_audioFaulted||_sourceAudio.Snapshot().Music?.Playing!=true;
-                if(animation.CaveExit is {} cave)
+                if(animation.Preview is {} preview)
+                {
+                    // Generated art is fully loaded before construction. Each host
+                    // callback still passes through both source readiness phases.
+                    preview.Advance(graphicsReady:true,windowCopyReady:true,
+                        cancelHeld:(_buttons.Held&CampaignButton.B)!=0);
+                    if(!preview.Complete)continue;
+                }
+                else if(animation.CaveEnter is {} enter)
+                {
+                    enter.Advance();if(!enter.Complete)continue;
+                }
+                else if(animation.CaveExit is {} cave)
                 {
                     cave.Advance();if(!cave.Complete)continue;
                 }
@@ -149,10 +172,12 @@ public partial class CampaignView
                         if(!step.Complete)continue;
                     }
                     else{animation.Departure.Advance(musicReady);if(!animation.Departure.Complete)continue;}
-                    if(animation.Interlude==FieldTransitionInterlude.CaveExit)
+                    if(animation.Interlude!=FieldTransitionInterlude.None)
                     {
                         var art=CaveTransitionArt;
-                        animation.CaveExit=new(art.TransitionPalette,art.WhitePalette);
+                        if(animation.Interlude==FieldTransitionInterlude.CaveExit)animation.CaveExit=new(art.TransitionPalette,art.WhitePalette);
+                        else if(animation.Interlude==FieldTransitionInterlude.CaveEnter)animation.CaveEnter=new(art.TransitionPalette,art.WhitePalette,art.BlackPalette);
+                        else animation.Preview=new(art.TransitionPalette,art.WhitePalette,art.BlackPalette,animation.PreviewDuration==40);
                         continue;
                     }
                 }
@@ -187,7 +212,7 @@ public partial class CampaignView
                 }
                 else if(animation.StepArrival is {} step){step.Advance();if(!step.Complete)continue;}
                 else{animation.Arrival!.Advance();if(!animation.Arrival.Complete)continue;}
-                bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames);
+                bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames,animation.Preview?.PreviewFrames??0);
                 Write("fieldWarpPresentation",new{phase="complete",animation.SwitchFrame,endFrame=animation.ProcessedFrames,recorded});
                 _fieldWarp=null;_fieldSnapshotReleasePending=true;
                 _fieldWarpSynchronizing=true;
@@ -203,7 +228,12 @@ public partial class CampaignView
     private bool DrawFieldWarpPresentation()
     {
         if(_fieldWarp is not {} animation)return false;
-        if(!animation.Arriving&&animation.CaveExit is {} cave){DrawCaveExit(cave.Sample);return true;}
+        if(!animation.Arriving)
+        {
+            if(animation.Preview is {} preview){DrawMapPreview(animation.PreviewArt!,preview.Sample);return true;}
+            if(animation.CaveEnter is {} enter){DrawCaveExit(enter.Sample);return true;}
+            if(animation.CaveExit is {} cave){DrawCaveExit(cave.Sample);return true;}
+        }
         var sample=animation.Sample;
         var snapshot=animation.Arriving?animation.DestinationView:animation.OriginView;
         if(animation.Arriving&&animation.StairArrival is {} sa)snapshot=WithFieldStairPose(snapshot,sa.Sample);
@@ -217,7 +247,7 @@ public partial class CampaignView
         else if(!animation.Arriving&&animation.Receipt.DepartureStep is {} step)
             snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.From.X,animation.Receipt.From.Y,step.Facing);
         DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend,
-            animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveExit?(ushort)0x7fff:(ushort)0);
+            (animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveExit||!animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveEnter)?(ushort)0x7fff:(ushort)0);
         DrawFieldDoorWipe(sample);
         return true;
     }

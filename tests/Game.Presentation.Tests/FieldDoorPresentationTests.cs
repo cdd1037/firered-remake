@@ -171,7 +171,7 @@ public sealed class FieldDoorPresentationTests
             Assert.AreEqual(row[3].GetInt32(),palette.ObjectBlend,$"OBJ {row[0]}");
             Assert.AreEqual(row[4].GetInt32()!=0,palette.Active,$"active {row[0]}");
         }
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>new FieldWarpPresentation.NormalPalette(true,-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>new FieldWarpPresentation.NormalPalette(true,-3));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>new FieldWarpPresentation.NormalPalette(true,128));
     }
 

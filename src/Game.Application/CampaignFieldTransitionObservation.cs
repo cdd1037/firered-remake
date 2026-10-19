@@ -22,7 +22,19 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
     [JsonIgnore] public FieldTransitionDeparture EffectiveDeparture=>Cause==FieldTransitionCause.NonAnimatedDoor?FieldTransitionDeparture.StepOntoWarp:Departure;
 
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public FieldTransitionInterlude Interlude{get;init;}
-    [JsonIgnore] public int InterludeFrames=>Interlude==FieldTransitionInterlude.CaveExit?FieldCaveTransitionPresentation.ExitFrames:0;
+    // Actual live preview wrapper duration; Quest playback omits it and restores
+    // the one Enter_0 callback skipped by the live preview's direct handoff.
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int PreviewFrames{get;init;}
+    [JsonIgnore] public int PreviewOmittedFrames=>PreviewFrames>0?
+        Interlude==FieldTransitionInterlude.RegionPreview?PreviewFrames+FieldCaveTransitionPresentation.PreviewEnterFrames:PreviewFrames-1:0;
+    [JsonIgnore] public int InterludeFrames=>Interlude switch
+    {
+        FieldTransitionInterlude.CaveExit=>FieldCaveTransitionPresentation.ExitFrames,
+        FieldTransitionInterlude.CaveEnter=>FieldCaveTransitionPresentation.EnterFrames,
+        FieldTransitionInterlude.RegionPreview=>PreviewFrames+FieldCaveTransitionPresentation.PreviewEnterFrames,
+        FieldTransitionInterlude.CavePreviewEnter=>PreviewFrames>0?PreviewFrames+FieldCaveTransitionPresentation.EnterFrames-1:FieldCaveTransitionPresentation.EnterFrames,
+        _=>0
+    };
     [JsonIgnore] public int DepartureEndFrame=>SwitchFrame-InterludeFrames;
 
     internal bool HasValidPhases()
@@ -32,6 +44,9 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
         if(!Enum.IsDefined(Departure)||Departure!=FieldTransitionDeparture.Immediate&&(Cause!=FieldTransitionCause.PlainWarp||Arrival!=FieldTransitionArrival.Plain))return false;
         if(!Enum.IsDefined(Interlude)||Interlude!=FieldTransitionInterlude.None&&
             (Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor)||Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)))return false;
+        if(Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview?
+            PreviewFrames<FieldCaveTransitionPresentation.MinimumPreviewFrames||PreviewFrames>int.MaxValue-FieldCaveTransitionPresentation.EnterFrames:
+            PreviewFrames!=0)return false;
         if(SwitchFrame<0||EndFrame<=SwitchFrame)return false;
         if(Cause==FieldTransitionCause.ConnectedEdge)
             return Arrival==FieldTransitionArrival.Plain&&SwitchFrame==0&&EndFrame==1;
@@ -46,7 +61,7 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
 public static partial class CampaignQuestLogRecorder
 {
     private static int TransitionTimingBytes(CampaignQuestLogTransitionTiming? timing)=>timing is null?0:
-        8+(timing.Interlude==FieldTransitionInterlude.None?0:1)+(timing.Departure==FieldTransitionDeparture.StepOntoWarp?1:0)+(timing.Arrival==FieldTransitionArrival.Plain?0:1)+(timing.DepartureDoor is null?0:4)+(timing.ArrivalDoor is null?0:4)+(timing.DepartureStairBehavior is null?0:1)+(timing.ArrivalStairBehavior is null?0:1);
+        8+(timing.PreviewFrames==0?0:1)+(timing.Interlude==FieldTransitionInterlude.None?0:1)+(timing.Departure==FieldTransitionDeparture.StepOntoWarp?1:0)+(timing.Arrival==FieldTransitionArrival.Plain?0:1)+(timing.DepartureDoor is null?0:4)+(timing.ArrivalDoor is null?0:4)+(timing.DepartureStairBehavior is null?0:1)+(timing.ArrivalStairBehavior is null?0:1);
 
     private static string? ValidateTransitionTiming(CampaignQuestLogAction action,CampaignQuestLogActor player)
     {
@@ -126,10 +141,12 @@ public sealed partial class CampaignSession
         var to=_content.MapDefinition(receipt.To.MapId);
         if((receipt.Cause==FieldTransitionCause.StairWarp||receipt.Arrival==FieldTransitionArrival.Stair)&&
             (from.MapType!="MAP_TYPE_INDOOR"||to.MapType!="MAP_TYPE_INDOOR"))return false;
-        // Both source preview paths are skipped within the same named section.
-        // Cross-section preview behavior needs its own presentation contract.
-        bool caveExit=FieldTransitionInterludeFor(receipt)==FieldTransitionInterlude.CaveExit;
-        if(!caveExit&&receipt.Cause!=FieldTransitionCause.ConnectedEdge&&
+        // Source previews are skipped within the same named section. Cross-section
+        // transitions require one of the authenticated interludes below.
+        var interlude=FieldTransitionInterludeFor(receipt);
+        bool caveExit=interlude==FieldTransitionInterlude.CaveExit;
+        bool caveEnter=interlude is FieldTransitionInterlude.CaveEnter or FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview;
+        if(!caveExit&&!caveEnter&&receipt.Cause!=FieldTransitionCause.ConnectedEdge&&
             (string.IsNullOrEmpty(from.RegionMapSection)||from.RegionMapSection!=to.RegionMapSection))return false;
         static bool OrdinaryMap(FieldMapDefinition map)=>
             (map.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR")&&
@@ -143,6 +160,8 @@ public sealed partial class CampaignSession
         // Same-section underground -> underground has no flash-transition table row.
         // Its ladder step, black fade and stationary arrival use the existing controllers.
         if(caveExit)return NormalCave(from)&&OrdinaryMap(to);
+        if(caveEnter)return !state.IsCycling&&!state.IsSurfing&&OrdinaryMap(from)&&
+            (NormalCave(to)||interlude==FieldTransitionInterlude.RegionPreview&&OrdinaryMap(to));
         if(ladder)return NormalCave(from)&&NormalCave(to);
         return (receipt.Departure==FieldTransitionDeparture.Immediate||receipt.Cause==FieldTransitionCause.NonAnimatedDoor)&&
             OrdinaryMap(from)&&OrdinaryMap(to);
@@ -151,26 +170,39 @@ public sealed partial class CampaignSession
     public FieldTransitionInterlude FieldTransitionInterludeFor(FieldTransitionReceipt receipt)
     {
         var from=_content.MapDefinition(receipt.From.MapId);var to=_content.MapDefinition(receipt.To.MapId);
-        // The source preview selector precedes the map-type interlude selector.
+        if(receipt.Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor)||
+            receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)||
+            receipt.DepartureStairBehavior is not null||receipt.ArrivalStairBehavior is not null)return FieldTransitionInterlude.None;
+        static bool Ordinary(FieldMapDefinition map)=>map.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR";
+        // The destination preview selector precedes the map-type interlude table.
         bool preview=from.RegionMapSection!=to.RegionMapSection&&to.HasCavePreview;
-        return !preview&&from.MapType=="MAP_TYPE_UNDERGROUND"&&
-            to.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR"&&
-            receipt.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor&&
-            receipt.Arrival is FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor&&
-            receipt.DepartureStairBehavior is null&&receipt.ArrivalStairBehavior is null
-            ?FieldTransitionInterlude.CaveExit:FieldTransitionInterlude.None;
+        if(preview&&Ordinary(from))
+        {
+            if(to.MapType=="MAP_TYPE_UNDERGROUND")return FieldTransitionInterlude.CavePreviewEnter;
+            if(Ordinary(to))return FieldTransitionInterlude.RegionPreview;
+        }
+        if(to.MapType=="MAP_TYPE_UNDERGROUND"&&Ordinary(from))return FieldTransitionInterlude.CaveEnter;
+        return !preview&&from.MapType=="MAP_TYPE_UNDERGROUND"&&Ordinary(to)?FieldTransitionInterlude.CaveExit:FieldTransitionInterlude.None;
+    }
+
+    public int FieldTransitionPreviewDuration(CampaignState origin,FieldTransitionReceipt receipt)
+    {
+        if(FieldTransitionInterludeFor(receipt) is not (FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview)||
+            !TryGetFieldTransitionArrival(origin,receipt,out _))return 0;
+        var flag=_content.MapDefinition(receipt.To.MapId).CavePreviewVisitFlag;
+        return flag is null?0:origin.Script.Flags.GetValueOrDefault(flag)?40:120;
     }
 
     // Called once by the owner of a completed live transition. The receipt instance
     // and provisional marker/caption suffix authenticate this observation across harmless time
     // commits. No campaign snapshot, generation, RNG or gameplay state is changed.
-    public bool CompleteFieldTransitionPresentation(FieldTransitionReceipt receipt,int switchFrame,int endFrame)
+    public bool CompleteFieldTransitionPresentation(FieldTransitionReceipt receipt,int switchFrame,int endFrame,int previewFrames=0)
     {
         if(_fieldTransitionObservation is not {} pending||!ReferenceEquals(receipt,pending.Receipt)||
             !ObservationMatches(State,pending))return false;
         var timing=new CampaignQuestLogTransitionTiming(receipt.Cause,switchFrame,endFrame)
         {
-            Interlude=FieldTransitionInterludeFor(receipt),
+            Interlude=FieldTransitionInterludeFor(receipt),PreviewFrames=previewFrames,
             Departure=receipt.Cause==FieldTransitionCause.PlainWarp?receipt.Departure:FieldTransitionDeparture.Immediate,
             Arrival=receipt.Arrival,DepartureStairBehavior=receipt.DepartureStairBehavior,ArrivalStairBehavior=receipt.ArrivalStairBehavior,
             DepartureDoor=receipt.Cause==FieldTransitionCause.AnimatedDoor?new(receipt.From.X,receipt.From.Y-1):

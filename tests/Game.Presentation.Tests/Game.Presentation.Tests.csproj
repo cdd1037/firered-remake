@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation.cs" Link="FieldCaveTransitionPresentation.cs" />
+    <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Application/FieldWarpPresentation.cs" Link="FieldWarpPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldStairPresentation.cs" Link="FieldStairPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldDoorPresentation.cs" Link="FieldDoorPresentation.cs" />

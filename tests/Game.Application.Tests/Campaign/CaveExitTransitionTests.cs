@@ -150,9 +150,10 @@ public sealed class CaveExitTransitionTests : WildBattleFixture
         Assert.IsTrue(inside.Script.Flags.GetValueOrDefault(Visited));
         Assert.IsTrue(inside.Script.Flags.GetValueOrDefault(CampaignQuestLogDepartureCapture.PendingFlag));
         Assert.AreEqual(9, inside.Script.Variables.GetValueOrDefault(CampaignQuestLogDepartureCapture.EntranceVariable));
-        Assert.IsFalse(session.CanPresentFieldTransition(outside, enter),
+        Assert.IsTrue(session.CanPresentFieldTransition(outside, enter),
             "The already-visited Mt. Moon destination still qualifies for its source cave preview.");
-        Assert.AreEqual(FieldTransitionInterlude.None, session.FieldTransitionInterludeFor(enter));
+        Assert.AreEqual(FieldTransitionInterlude.CavePreviewEnter, session.FieldTransitionInterludeFor(enter));
+        Assert.AreEqual(40, session.FieldTransitionPreviewDuration(outside, enter));
         Assert.IsFalse(session.CompleteFieldTransitionPresentation(enter,
             FieldDoorPresentation.MinimumStepDepartureFrames,
             FieldDoorPresentation.MinimumStepDepartureFrames + FieldWarpPresentation.PlainArrivalFrames));

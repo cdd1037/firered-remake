@@ -23,7 +23,8 @@ public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,Immutabl
     public string MapType { get; init; } = "MAP_TYPE_NONE";
     public string? Weather { get; init; }
     public bool RequiresFlash { get; init; }
-    public bool HasCavePreview { get; init; }
+    public string? CavePreviewVisitFlag { get; init; }
+    public bool HasCavePreview => CavePreviewVisitFlag is not null;
 }
 public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames);
 public sealed record CampaignOakRatingProjection(int Seen,int Caught,string RatingTextSymbol,bool KantoComplete);

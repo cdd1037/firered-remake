@@ -33,7 +33,12 @@ public static partial class FieldDoorPresentation
     /// <summary>Replays the exact observed transfer; no current audio readiness is consulted.</summary>
     public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null,FieldTransitionDeparture departureKind=FieldTransitionDeparture.Immediate,FieldTransitionInterlude interludeKind=FieldTransitionInterlude.None)
     {
-        int interludeFrames=interludeKind==FieldTransitionInterlude.CaveExit?FieldCaveTransitionPresentation.ExitFrames:0;
+        int interludeFrames=interludeKind switch
+        {
+            FieldTransitionInterlude.CaveExit=>FieldCaveTransitionPresentation.ExitFrames,
+            FieldTransitionInterlude.CaveEnter or FieldTransitionInterlude.CavePreviewEnter=>FieldCaveTransitionPresentation.EnterFrames,
+            _=>0
+        };
         int departureEnd=switchFrame-interludeFrames;
         int minimum=DepartureFrames(cause,departureKind);
         _=ArrivalFrames(arrivalKind);

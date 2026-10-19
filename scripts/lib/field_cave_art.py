@@ -14,8 +14,8 @@ def uncomment(text):
     return re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S)
 
 
-def preview_types(src):
-    """Compile the complete source registry once; map metadata retains one bit."""
+def preview_registry(src):
+    """Read the complete source registry; all projections share this authority."""
     text = uncomment(src.text('src/map_preview_screen.c'))
     header = uncomment(src.text('include/map_preview_screen.h'))
     table = re.search(r'static const struct MapPreviewScreen sMapPreviewScreenData\[MPS_COUNT\] = \{(.*?)\n\};', text, re.S)
@@ -45,8 +45,19 @@ def preview_types(src):
         section, kind = fields['mapsec'], fields['type']
         if not re.fullmatch(r'MAPSEC_[A-Z0-9_]+', section) or section in result or kind not in ('MPS_TYPE_CAVE', 'MPS_TYPE_FOREST'):
             raise ValueError('Invalid source preview section/type: ' + identity)
-        result[section] = kind
+        if not re.fullmatch(r'FLAG_[A-Z0-9_]+', fields['flagId']):
+            raise ValueError('Invalid source preview visit flag: ' + identity)
+        result[section] = fields
     return result
+
+
+def preview_types(src):
+    return {section: row['type'] for section, row in preview_registry(src).items()}
+
+
+def cave_preview_flags(src):
+    return {section: row['flagId'] for section, row in preview_registry(src).items()
+            if row['type'] == 'MPS_TYPE_CAVE'}
 
 
 def rgb555(rgb):

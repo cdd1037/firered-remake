@@ -36,16 +36,20 @@ public static class FieldWarpPresentation
     public sealed class NormalPalette
     {
         private int _y,_target,_finishingCounter,_delayCounter;
-        private readonly int _delay;
+        private readonly int _delay,_delta;
         private bool _object,_finishing;
         public bool Active {get;private set;}=true;
+        /// <summary>Source selected-palettes mask remains nonzero until both target banks are written.</summary>
+        public bool HasSelectedPalettes=>Active&&!_finishing;
         public int BackgroundBlend {get;private set;}
         public int ObjectBlend {get;private set;}
 
         public NormalPalette(bool fromBlack,int delay=0)
         {
-            if(delay is <0 or >127)throw new ArgumentOutOfRangeException(nameof(delay));
-            _delay=_delayCounter=delay;
+            if(delay is <-2 or >127)throw new ArgumentOutOfRangeException(nameof(delay));
+            // The cave preview uses source delays -1/-2: no waiting, increments 3/4.
+            _delta=delay<0?2-delay:2;
+            _delay=_delayCounter=Math.Max(0,delay);
             _y=fromBlack?16:0;_target=fromBlack?0:16;
             BackgroundBlend=ObjectBlend=_y;
             Advance(); // BeginNormalPaletteFade immediately updates the BG half.
@@ -71,7 +75,7 @@ public static class FieldWarpPresentation
             _object=!_object;
             if(_object)return;
             if(_y==_target)_finishing=true;
-            else _y+=_target>_y?2:-2;
+            else _y=_target>_y?Math.Min(_target,_y+_delta):Math.Max(_target,_y-_delta);
         }
     }
 

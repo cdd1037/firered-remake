@@ -36,7 +36,10 @@ internal sealed class CampaignQuestLogTimeline
     {
         Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;
         Map=scene.Map;_segmentActors=scene.Actors;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
-        _moves=scene.Actions.Where(a=>a.Event==CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame).ToImmutableArray();
+        // The source recorder clock is stopped while CB2 owns the preview. Keep
+        // stored live observations intact, projecting their omitted span once.
+        var actions=WithoutRegionPreviewWaits(scene.Actions);
+        _moves=actions.Where(a=>a.Event==CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame).ToImmutableArray();
         // Ordinary warp tasks lock field controls until their recorded release.
         // The source skips the Quest callback during that lock, but actor/map tasks
         // continue. Only authenticated observed intervals provide this evidence;
@@ -44,7 +47,7 @@ internal sealed class CampaignQuestLogTimeline
         var locks=_moves.Where(a=>a.TransitionTiming?.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp)
             .Select(a=>(Start:a.StartFrame+(a.TransitionTiming!.EffectiveDeparture==FieldTransitionDeparture.StepOntoWarp?FieldDoorPresentation.NormalWalkPixels:0),Switch:a.StartFrame+a.TransitionTiming!.SwitchFrame,End:a.StartFrame+a.TransitionTiming.EndFrame)).ToArray();
         var captions=ImmutableArray.CreateBuilder<(int Start,int VisibleEnd,string Text)>();int captionEnd=0;
-        foreach(var action in scene.Actions.Where(a=>CampaignQuestLogRecorder.IsCaption(a)).OrderBy(a=>a.StartFrame))
+        foreach(var action in actions.Where(a=>CampaignQuestLogRecorder.IsCaption(a)).OrderBy(a=>a.StartFrame))
         {
             string text=source is not null&&action.TextKey is {} key?source.Expand(key,player,action.Arguments):action.Event switch{CampaignQuestLogEvent.Arrived=>$"{player} arrived at {CampaignQuestLogRecorder.Location(scene.Map)}.",CampaignQuestLogEvent.PokemonCenter=>$"{player} restored the POKEMON at a POKEMON CENTER.",CampaignQuestLogEvent.TrainerWon=>$"{player} defeated a TRAINER in battle.",CampaignQuestLogEvent.WildWon=>$"{player} defeated a wild POKEMON.",_=>player+" continued the adventure."};
             Add(text,action);
@@ -54,7 +57,7 @@ internal sealed class CampaignQuestLogTimeline
                 Add(source.Expand("WonTheMatchAsAResult",player,[action.Arguments[4]]),action);
             }
         }
-        _captions=captions.ToImmutable();_end=Math.Max(captionEnd,scene.Actions.Where(a=>!CampaignQuestLogRecorder.IsCaption(a)).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max());
+        _captions=captions.ToImmutable();_end=Math.Max(captionEnd,actions.Where(a=>!CampaignQuestLogRecorder.IsCaption(a)).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max());
         Tick(0);
         void Add(string text,CampaignQuestLogAction action)
         {
@@ -76,6 +79,22 @@ internal sealed class CampaignQuestLogTimeline
             captionEnd=end;captions.Add((start,visibleEnd,text));
         }
     }
+    private static ImmutableArray<CampaignQuestLogAction> WithoutRegionPreviewWaits(ImmutableArray<CampaignQuestLogAction> actions)
+    {
+        var spans=actions.Where(a=>a.TransitionTiming is {PreviewFrames:>0})
+            .Select(a=>(Start:a.StartFrame+a.TransitionTiming!.DepartureEndFrame,Length:a.TransitionTiming!.PreviewOmittedFrames)).ToArray();
+        if(spans.Length==0)return actions;
+        int Frame(int frame)=>frame-spans.Sum(span=>Math.Clamp(frame-span.Start,0,span.Length));
+        return actions.Select(action=>
+        {
+            if(action.TransitionTiming is not {PreviewFrames:>0} timing)
+                return action with{StartFrame=Frame(action.StartFrame)};
+            int omitted=timing.PreviewOmittedFrames;
+            return action with{StartFrame=Frame(action.StartFrame),Frames=action.Frames-omitted,
+                TransitionTiming=timing with{Interlude=timing.Interlude==FieldTransitionInterlude.RegionPreview?FieldTransitionInterlude.None:timing.Interlude,PreviewFrames=0,SwitchFrame=timing.SwitchFrame-omitted,EndFrame=timing.EndFrame-omitted}};
+        }).ToImmutableArray();
+    }
+
     public void Tick(double seconds)
     {
         _frame+=seconds*60;
