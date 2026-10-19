@@ -155,8 +155,11 @@ public partial class CampaignView
         string context=AudioContext(after);
         if(_audioMap!=after.World.Player.MapId.Value)
         {
-            _audioMap=after.World.Player.MapId.Value;_audioFieldMusic=_catalog.MapDefinition(after.World.Player.MapId).Music;
-            _audioSavedMusic="MUS_DUMMY";
+            _audioMap=after.World.Player.MapId.Value;
+            // Overworld_PlaySpecialMapMusic honors entry scripts' saved music.
+            // The captured arrival precedes OnFrame's later explicit music changes.
+            _audioSavedMusic=after.SavedMusic;
+            _audioFieldMusic=_audioSavedMusic=="MUS_DUMMY"?_catalog.MapDefinition(after.World.Player.MapId).Music:_audioSavedMusic;
         }
         if(_audioContext!=context)
         {

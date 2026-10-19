@@ -93,7 +93,7 @@ public partial class CampaignView
         // Source FadeOutMapMusic skips an unchanged song and the script flag.
         // Read the actual backend's stop condition; no guessed fade duration gates
         // the map transfer. An absent/faulted backend is immediately ready.
-        if(!animation.Origin.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC")&&
+        if(!(animation.Receipt.SuppressMusicFade??animation.Origin.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC"))&&
             _audioMusic!=_catalog.MapDefinition(animation.Receipt.To.MapId).Music&&!_audioFaulted&&
             _sourceAudio is SynthSourceAudioPlayer synth&&synth.Snapshot().Music?.Playing==true)
         {

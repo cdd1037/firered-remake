@@ -86,3 +86,8 @@ The four ordinary manual elevator exits now publish their resolved movement thro
 ## Ordinary scripted map-load boundary
 
 The Trainer Tower scripted lobby ride now reaches the same ordinary transition controller as manual exits. Generic `warp` and its facility-authenticated handler share source-context reset and immutable receipt production. The shared entry queue is corrected to OnTransition before OnLoad, which opens Tower's barrier through its real script. One accepted-command-owned arrival snapshot lets presentation defer already-committed OnFrame motion/effects until the door releases, preserving the public ACK sequence and gameplay counters. The existing Tower timer accumulates through that visual lock. See [ordinary field transitions](plain-field-transition-presentation.md) for source paths, route checks and the consolidated finite remaining transition boundaries. This supersedes the preceding exclusion of the Tower scripted lobby ride only.
+
+
+## Fresh-game scripted escort verification
+
+Public left/right Oak escort routes now cover the initial grass intervention, shared script warp, lab introduction and strict save/Continue before starter selection. They exposed shared initial-facing ordering and hidden-departure admission errors, plus the final-ACK music-flag boundary. The common entry/receipt/audio owners now preserve source OnWarp facing, actual hidden origin and captured entry saved music. See [ordinary field transitions](plain-field-transition-presentation.md#fresh-game-oak-escort-acceptance) for source evidence, validation and remaining public-route/native limits.

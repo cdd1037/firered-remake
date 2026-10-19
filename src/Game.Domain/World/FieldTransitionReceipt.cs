@@ -16,6 +16,10 @@ public sealed record FieldTransitionReceipt(FieldTransitionCause Cause, FieldTra
         _=>FieldTransitionArrival.Plain
     };
 
+    // Script warp captures this flag after its final source commands, before
+    // map entry can change it. Null retains ordinary movement's origin policy.
+    public bool? SuppressMusicFade { get; init; }
+
     // The accepted source step can differ from the old or arrival facing.
     public TilePosition? DepartureStep { get; init; }
 }

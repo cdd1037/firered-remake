@@ -32,7 +32,8 @@ public sealed partial class CampaignSession
         var cell=map.GetTile(x,y)??throw new InvalidDataException("Script door exit missing.");
         var landing=new TilePosition(destination,x,y,cell.Elevation,facing);
         var receipt=new FieldTransitionReceipt(FieldTransitionCause.PlainWarp,FieldTransitionDeparture.Immediate,
-            FieldTransitionReceipt.ArrivalAt(behavior),state.World.Player,landing,anchor);
+            FieldTransitionReceipt.ArrivalAt(behavior),state.World.Player,landing,anchor)
+        {SuppressMusicFade=state.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC")};
         _scriptWarpReceipt=receipt;_scriptWarpArrival=null;
         // ScrCmd_warp -> CB2_LoadMap replaces the old context. As before, script
         // warps do not increment walking steps or World.Revision.
@@ -42,11 +43,22 @@ public sealed partial class CampaignSession
         },facing);
     }
 
-    private void CaptureScriptWarpArrival(CampaignState state)
+    private CampaignState CaptureScriptWarpArrival(CampaignState state)
     {
         if(_scriptWarpArrival is null&&_scriptWarpReceipt is {} receipt&&
-            ReferenceEquals(state.FieldTransition,receipt)&&state.World.Player==receipt.To)
+            ReferenceEquals(state.FieldTransition,receipt)&&
+            state.World.Player with{Facing=receipt.To.Facing}==receipt.To)
+        {
+            // OnWarp can turn the initialized player before the first OnFrame.
+            // Keep that committed pose in the producer-owned arrival receipt.
+            if(state.World.Player!=receipt.To)
+            {
+                receipt=receipt with{To=state.World.Player};
+                _scriptWarpReceipt=receipt;state=state with{FieldTransition=receipt};
+            }
             _scriptWarpArrival=state;
+        }
+        return state;
     }
 
     /// <summary>Actual arrival before destination OnFrame scripts, or the ordinary stable destination.</summary>
@@ -58,9 +70,12 @@ public sealed partial class CampaignSession
         {
             // A structurally identical caller-supplied origin is not the accepted
             // command that completed the source script/movement boundary.
+            // Scripted entrance movement can hide the player before warp. That
+            // visibility remains in the real origin snapshot; it is not a modal
+            // restriction on this authenticated, already-committed departure.
             if(!ReferenceEquals(script.Origin,origin)||receipt.From!=origin.World.Player||
                 origin.FieldWeather is not null||origin.IsCycling||origin.IsSurfing||
-                !IsStableFieldForParty(ResetMapScriptContext(origin))||
+                !IsStableFieldForParty(ResetMapScriptContext(origin) with{PlayerVisible=true})||
                 !SupportsFieldTransition(script.Arrival,receipt))return false;
             arrival=script.Arrival;return true;
         }

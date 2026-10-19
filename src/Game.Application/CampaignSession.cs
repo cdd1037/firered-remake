@@ -776,13 +776,20 @@ public sealed partial class CampaignSession
                     if(coord is not null){onCameraStepPreempted?.Invoke();state=StartStory(state,coord.ScriptId);}
                     continue;
                 }
-                if(next=="@spawn"){state=RefreshActors(state);continue;}
+                if(next=="@spawn")
+                {
+                    // The source initializes the player before running OnWarp.
+                    // A destination script may then deliberately turn the player.
+                    if(state.ArrivalFacing is {} initialFacing)
+                        state=state with{World=state.World with{Player=state.World.Player with{Facing=initialFacing}},ArrivalFacing=null};
+                    state=RefreshActors(state);continue;
+                }
                 if(next.StartsWith("@table:",StringComparison.Ordinal))
                 {var condition=_content.Conditions(next[7..]).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);if(condition is null)continue;next=condition.ScriptId;}
                 state=StartStory(state,next);continue;
             }
             if(state.ArrivalFacing is {} facing){state=state with{World=state.World with{Player=state.World.Player with{Facing=facing}},ArrivalFacing=null};}
-            CaptureScriptWarpArrival(state);
+            state=CaptureScriptWarpArrival(state);
             var table=_content.MapDefinition(state.World.Player.MapId).Programs.OnFrameTable;
             if(table is null)return state;
             var trigger=_content.Conditions(table).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);
