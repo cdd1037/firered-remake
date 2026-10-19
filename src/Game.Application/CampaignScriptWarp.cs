@@ -6,10 +6,10 @@ public sealed partial class CampaignSession
 {
     // One transient view of the actual map-load boundary. Application movement
     // remains precommitted; presenting this snapshot never resumes a script.
-    private sealed record ScriptWarpPresentation(CampaignState Origin,FieldTransitionReceipt Receipt,CampaignState Arrival);
-    private ScriptWarpPresentation? _scriptWarpPresentation;
-    private FieldTransitionReceipt? _scriptWarpReceipt;
-    private CampaignState? _scriptWarpArrival;
+    private sealed record FieldWarpEntryPresentation(CampaignState Origin,FieldTransitionReceipt Receipt,CampaignState Arrival);
+    private FieldWarpEntryPresentation? _fieldWarpEntryPresentation;
+    private FieldTransitionReceipt? _fieldWarpEntryReceipt;
+    private CampaignState? _fieldWarpEntryArrival;
 
     private static CampaignState ResetMapScriptContext(CampaignState state)=>state with
     {
@@ -34,7 +34,6 @@ public sealed partial class CampaignSession
         var receipt=new FieldTransitionReceipt(FieldTransitionCause.PlainWarp,FieldTransitionDeparture.Immediate,
             FieldTransitionReceipt.ArrivalAt(behavior),state.World.Player,landing,anchor)
         {SuppressMusicFade=state.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC")};
-        _scriptWarpReceipt=receipt;_scriptWarpArrival=null;
         // ScrCmd_warp -> CB2_LoadMap replaces the old context. As before, script
         // warps do not increment walking steps or World.Revision.
         return EnterMap(ResetMapScriptContext(state) with
@@ -43,9 +42,10 @@ public sealed partial class CampaignSession
         },facing);
     }
 
-    private CampaignState CaptureScriptWarpArrival(CampaignState state)
+    private CampaignState CaptureFieldWarpArrival(CampaignState state)
     {
-        if(_scriptWarpArrival is null&&_scriptWarpReceipt is {} receipt&&
+        // Throwaway script preflight must never replace an accepted entry view.
+        if(!_preflightingStory&&_fieldWarpEntryArrival is null&&_fieldWarpEntryReceipt is {} receipt&&
             ReferenceEquals(state.FieldTransition,receipt)&&
             state.World.Player with{Facing=receipt.To.Facing}==receipt.To)
         {
@@ -54,9 +54,9 @@ public sealed partial class CampaignSession
             if(state.World.Player!=receipt.To)
             {
                 receipt=receipt with{To=state.World.Player};
-                _scriptWarpReceipt=receipt;state=state with{FieldTransition=receipt};
+                _fieldWarpEntryReceipt=receipt;state=state with{FieldTransition=receipt};
             }
-            _scriptWarpArrival=state;
+            _fieldWarpEntryArrival=state;
         }
         return state;
     }
@@ -66,18 +66,18 @@ public sealed partial class CampaignSession
     {
         arrival=State;
         if(!ReferenceEquals(State.FieldTransition,receipt))return false;
-        if(_scriptWarpPresentation is {} script&&ReferenceEquals(script.Receipt,receipt))
+        if(_fieldWarpEntryPresentation is {} entry&&ReferenceEquals(entry.Receipt,receipt))
         {
             // A structurally identical caller-supplied origin is not the accepted
             // command that completed the source script/movement boundary.
             // Scripted entrance movement can hide the player before warp. That
             // visibility remains in the real origin snapshot; it is not a modal
             // restriction on this authenticated, already-committed departure.
-            if(!ReferenceEquals(script.Origin,origin)||receipt.From!=origin.World.Player||
-                origin.FieldWeather is not null||origin.IsCycling||origin.IsSurfing||
-                !IsStableFieldForParty(ResetMapScriptContext(origin) with{PlayerVisible=true})||
-                !SupportsFieldTransition(script.Arrival,receipt))return false;
-            arrival=script.Arrival;return true;
+            var departure=ResetMapScriptContext(origin) with{PlayerVisible=true};
+            if(!ReferenceEquals(entry.Origin,origin)||!SupportsFieldTransitionOrigin(departure,receipt)||
+                !IsStableFieldForParty(departure)||
+                !SupportsFieldTransition(entry.Arrival,receipt))return false;
+            arrival=entry.Arrival;return true;
         }
         return SupportsFieldTransitionOrigin(origin,receipt)&&SupportsFieldTransition(State,receipt);
     }

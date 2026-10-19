@@ -717,6 +717,12 @@ public sealed partial class CampaignSession
     private CampaignState EnterMap(CampaignState state,Direction? arrival,Game.Domain.Roaming.RoamerTransition roamerTransition=Game.Domain.Roaming.RoamerTransition.Warp)
     {
         if(state.SurfEffect is not null)throw new InvalidDataException("field_surf_map_entry_while_active");
+        // Every authenticated warp enters here, including ordinary doors whose
+        // destination immediately starts an OnFrame scene. Capture the same real
+        // arrival boundary before that scene precommits movement or effects.
+        if(!_preflightingStory&&state.FieldTransition is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor} entry&&
+            entry.To==state.World.Player)
+        {_fieldWarpEntryReceipt=entry;_fieldWarpEntryArrival=null;}
         if(arrival is not null)state=ApplyCelioRoamerTransition(state,roamerTransition);
         state=ResetVsSeekerForMapEntry(state);
         state=FourIslandMapEntry(state);
@@ -765,6 +771,7 @@ public sealed partial class CampaignSession
                 if(next=="@renewable-hidden-items"){state=ApplyRenewableHiddenItemMapEntry(state);continue;}
                 if(next=="@renewable-camera-step")
                 {
+                    state=CaptureFieldWarpArrival(state);
                     state=CheckForestTrainerSight(state);
                     if(state.ForestTrainerBattle is not null||state.DoubleBattle is not null){onCameraStepPreempted?.Invoke();return state;}
                     var frameTable=_content.MapDefinition(state.World.Player.MapId).Programs.OnFrameTable;
@@ -789,7 +796,7 @@ public sealed partial class CampaignSession
                 state=StartStory(state,next);continue;
             }
             if(state.ArrivalFacing is {} facing){state=state with{World=state.World with{Player=state.World.Player with{Facing=facing}},ArrivalFacing=null};}
-            state=CaptureScriptWarpArrival(state);
+            state=CaptureFieldWarpArrival(state);
             var table=_content.MapDefinition(state.World.Player.MapId).Programs.OnFrameTable;
             if(table is null)return state;
             var trigger=_content.Conditions(table).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);

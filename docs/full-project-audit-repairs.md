@@ -91,3 +91,8 @@ The Trainer Tower scripted lobby ride now reaches the same ordinary transition c
 ## Fresh-game scripted escort verification
 
 Public left/right Oak escort routes now cover the initial grass intervention, shared script warp, lab introduction and strict save/Continue before starter selection. They exposed shared initial-facing ordering and hidden-departure admission errors, plus the final-ACK music-flag boundary. The common entry/receipt/audio owners now preserve source OnWarp facing, actual hidden origin and captured entry saved music. See [ordinary field transitions](plain-field-transition-presentation.md#fresh-game-oak-escort-acceptance) for source evidence, validation and remaining public-route/native limits.
+
+
+## Ordinary arrival before a destination scene
+
+A public S.S. Anne departure route passed its existing progression/save behavior but exposed ordinary door entry losing its arrival presentation when destination OnFrame started immediately. Ordinary and scripted receipts now use one actual map-entry snapshot; throwaway script preflight cannot overwrite it with a future warp. The route also verifies source departure duration, final city movement, one-time completion, strict Continue and the retained Rainbow Pass menu. See [ordinary field transitions](plain-field-transition-presentation.md#public-ss-anne-departure-and-ordinary-onframe-entry) for controlled-fixture and cross-section/native limits.

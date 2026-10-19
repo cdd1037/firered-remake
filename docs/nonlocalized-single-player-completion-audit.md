@@ -179,3 +179,6 @@ Ordinary stable plain/animated/nonanimated warps, normal 1×2 S.S. Anne doors, f
 
 
 Fresh-game Oak escort acceptance now covers both source coordinate triggers through starter-choice readiness and strict save/Continue. This closed shared facing/hidden-origin/music-boundary defects; it does not establish Fuji/Selphy/ship/Champion public-route acceptance or native escort/audio parity. Source evidence and the bounded tests are maintained in the [transition document](plain-field-transition-presentation.md#fresh-game-oak-escort-acceptance).
+
+
+S.S. Anne now has bounded public-command departure acceptance from a strict pre-departure entrance fixture through boat departure, Vermilion scene completion, save/Continue and subsequent ferry-menu cancellation. This complements the existing ordinary room-door and NPC tests. The resulting shared fix preserves real map entry before destination OnFrame and excludes speculative preflight from presentation capture. Fuji, Selphy and Champion public-route acceptance remain unverified; that absence alone does not establish broken progression. Cross-section preview and native ship/audio acceptance remain open as documented above.
