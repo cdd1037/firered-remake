@@ -58,7 +58,10 @@ public partial class CampaignView
         if(item is CeruleanTrainerItemUsedEvent medicine)
         {
             string medicineName=medicine.Item switch
-            {"ITEM_SUPER_POTION"=>"SUPER POTION","ITEM_HYPER_POTION" when true=>"HYPER POTION","ITEM_FULL_HEAL"=>"FULL HEAL","ITEM_FULL_RESTORE" when true=>"FULL RESTORE",_=>throw new InvalidDataException("Unsupported visible trainer medicine: "+medicine.Item)};
+            {
+                "ITEM_SUPER_POTION" or "ITEM_HYPER_POTION" or "ITEM_FULL_HEAL" or "ITEM_FULL_RESTORE" => _catalog.DisplayNames.ItemName(medicine.Item),
+                _ => throw new InvalidDataException("Unsupported visible trainer medicine: " + medicine.Item)
+            };
             source("sText_Trainer1UsedItem",[("B_LAST_ITEM",medicineName)]);return true;
         }
         if (item is not ForestTrainerOpponentReplacedEvent replacement)

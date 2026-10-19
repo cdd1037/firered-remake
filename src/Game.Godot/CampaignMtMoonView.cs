@@ -182,25 +182,19 @@ public partial class CampaignView
         WildBattleDrainEvent drain => new("sText_PkmnEnergyDrained", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(drain.Target))),
         WildBattleMagnitudeEvent magnitude => new("sText_MagnitudeStrength", ("B_BUFF1", magnitude.Magnitude.ToString())),
         WildBattleHeldItemStolenEvent stolen => new("sText_PkmnStoleItem", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(stolen.Actor)),
-            ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stolen.Target)), ("B_LAST_ITEM", MtMoonHeldItemName(stolen.Item))),
+            ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stolen.Target)), ("B_LAST_ITEM", _catalog.DisplayNames.ItemName(stolen.Item))),
         WildBattleMoveFailedEvent { Reason: "no-encore-target" or "no-ally-in-single-battle" or "already-mud-sport" } => new("sText_ButItFailed"),
         WildBattleConfusionChangedEvent { Reason: "rampage-ended" } confusion => new("sText_PkmnWasConfused", ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(confusion.Side))),
         WildBattleLeechSeedChangedEvent { Reason: "rapid-spin" } seed => new("sText_PkmnShedLeechSeed", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(seed.Side))),
         WildBattleBindingChangedEvent { Reason: "rapid-spin" } bind => new("sText_PkmnFreedFrom", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(bind.Side)), ("B_BUFF1", MoveName(bind.Move ?? new("pret:MOVE_BIND")))),
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" } ability => new("sText_PkmnMakesGroundMiss", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", "LEVITATE")),
+        WildBattleAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" } ability => new("sText_PkmnMakesGroundMiss", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
         WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } effect when battle.Events.Any(e => e.Sequence == effect.Sequence - 1 && e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" }) => new(""),
         WildBattleAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_STICKY_HOLD" } ability => new("sText_PkmnsXBlocksY", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)),
-            ("B_DEF_ABILITY", ability.Ability == "ABILITY_SOUNDPROOF" ? "SOUNDPROOF" : "STICKY HOLD"), ("B_CURRENT_MOVE", MoveName(ability.Move))),
+            ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability)), ("B_CURRENT_MOVE", MoveName(ability.Move))),
         WildBattleStatusChangedEvent { Reason: "effect-spore", Before: 0 } change => new(change.After switch
             { >= 1 and <= 5 => "sText_PkmnMadeSleep", WildBattleStatus.Poison => "sText_PkmnPoisonedBy", WildBattleStatus.Paralysis => "sText_PkmnWasParalyzedBy", _ => throw new InvalidDataException("Unsupported Effect Spore status.") },
-            ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(Opposite(change.Side))), ("B_SCR_ACTIVE_ABILITY", "EFFECT SPORE"), ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(change.Side))),
+            ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(Opposite(change.Side))), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName("ABILITY_EFFECT_SPORE")), ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(change.Side))),
         _ => null
-    };
-
-    private string MtMoonHeldItemName(string symbol) => symbol switch
-    {
-        "ITEM_ORAN_BERRY" => "ORAN BERRY", "ITEM_TINY_MUSHROOM" => "TINYMUSHROOM", "ITEM_BIG_MUSHROOM" => "BIG MUSHROOM",
-        "ITEM_MOON_STONE" => "MOON STONE", _ => throw new InvalidDataException("Unadmitted stolen item name: " + symbol)
     };
 
 }

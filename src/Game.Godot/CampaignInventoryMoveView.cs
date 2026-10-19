@@ -37,7 +37,7 @@ public partial class CampaignView
             ResetInventoryMove();
             if (Apply(new("item_move", Text: item, Choice: source, Quantity: destination)))
                 cursor = source < destination ? destination - 1 : destination;
-            else _itemNotice = "The item order couldn't be changed.";
+            else _itemNotice = _inventoryText.Get("notice.order-failed");
         }
         return true;
     }
@@ -46,6 +46,6 @@ public partial class CampaignView
     {
         if (_inventoryMoveSource < 0 || _inventoryMoveItem is null) return;
         // item_pc.c and item_menu.c share gOtherText_WhereShouldTheStrVar1BePlaced.
-        ItemMessageBox("Where should the " + InventoryName(new(_inventoryMoveItem)) + "\nbe placed?");
+        ItemMessageBox(InventoryMenuPresentation.BindSource(InventorySourceText("gOtherText_WhereShouldTheStrVar1BePlaced"), InventoryName(new(_inventoryMoveItem))));
     }
 }

@@ -74,12 +74,13 @@ public partial class CampaignView
     private QuestItemUiEntry QuestPocketItem(InventoryStack stack)
         => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value);
 
-    private string[] QuestPocketActions() => _questPocket == 1
-        ? _questPocketCursor<QuestPocketStacks.Length&&_session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value)
-            ? [_itemSkin.Text("gOtherText_Use"), _session.State.RegisteredItem==QuestPocketStacks[_questPocketCursor].Item.Value?"DESELECT":"REGISTER",_itemSkin.Text("gFameCheckerText_Cancel")]
-            : [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")]
-        : _session.State.ItemMenu?.TargetInstanceId is not null ? [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gFameCheckerText_Cancel")]
-        : [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gOtherText_Toss"), _itemSkin.Text("gFameCheckerText_Cancel")];
+    private InventoryMenuEntry[] QuestPocketActions()
+    {
+        bool selected = _questPocketCursor < QuestPocketStacks.Length;
+        string? item = selected ? QuestPocketStacks[_questPocketCursor].Item.Value : null;
+        return InventoryMenuPresentation.QuestActions(_questPocket == 1, _session.State.ItemMenu?.TargetInstanceId is not null,
+            selected && _session.SupportsRegisteredKeyItem(item!), selected && _session.State.RegisteredItem == item, InventoryActionLabel);
+    }
 
     private bool TryQuestPocketInput(InputEventKey key)
     {
@@ -123,37 +124,38 @@ public partial class CampaignView
             if (key.Keycode == Key.Enter)
             {
                 _questPocketPopup = false;
-                if (_questPocket == 1 && _questPocketAction == 0 && _session.State.ItemMenu?.TargetInstanceId is not null &&
+                var action = actions[_questPocketAction].Id;
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && _session.State.ItemMenu?.TargetInstanceId is not null &&
                     QuestPocketStacks[_questPocketCursor].Item.Value is not ("pret:ITEM_BERRY_POUCH" or "pret:ITEM_TM_CASE"))
-                { _questPocketNotice = "This item can't be held."; return true; }
-                if (_questPocket == 2 && _questPocketAction == 0)
+                { _questPocketNotice = _inventoryText.Get("notice.not-holdable"); return true; }
+                if (_questPocket == 2 && action == InventoryMenuAction.Give)
                 { StartGiveItem(QuestPocketStacks[_questPocketCursor].Item); return true; }
-                if (_questPocket == 2 && actions[_questPocketAction] == _itemSkin.Text("gOtherText_Toss"))
+                if (_questPocket == 2 && action == InventoryMenuAction.Toss)
                 { OpenBagToss(QuestPocketStacks[_questPocketCursor].Item); return true; }
-                if (_questPocket == 1 && _session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value) && _questPocketAction < 2)
+                if (_questPocket == 1 && _session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value) && action is (InventoryMenuAction.Use or InventoryMenuAction.Register or InventoryMenuAction.Deselect))
                 {
                     string registeredId = QuestPocketStacks[_questPocketCursor].Item.Value;
-                    Apply(new(_questPocketAction == 0 ? _session.RegisteredKeyItemUseCommand(registeredId) : "item_register", Text: registeredId));
-                    if (_questPocketAction == 1 && _session.State.RegisteredItem is not null) _questPocketNotice = "Registered. Press R in the field.";
+                    Apply(new(action == InventoryMenuAction.Use ? _session.RegisteredKeyItemUseCommand(registeredId) : "item_register", Text: registeredId));
+                    if (action == InventoryMenuAction.Register && _session.State.RegisteredItem is not null) _questPocketNotice = _inventoryText.Get("notice.registered");
                     return true;
                 }
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POWDER_JAR")
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POWDER_JAR")
                 { Apply(new("field_powder_jar",Text:"pret:ITEM_POWDER_JAR")); return true; }
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_COIN_CASE")
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_COIN_CASE")
                 { Apply(new("field_coin_case",Text:"pret:ITEM_COIN_CASE")); return true; }
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
                 { Apply(new("field_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
-                if (_questPocket == 1 && _questPocketAction == 0 && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == QuestItemRules.TownMapId)
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && QuestPocketStacks[_questPocketCursor].Item == QuestItemRules.TownMapId)
                 { Apply(new("town_map_open",Text:QuestItemRules.TownMapId.Value)); return true; }
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_BERRY_POUCH")
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_BERRY_POUCH")
                 { Apply(new("berry_open")); return true; }
-                if (_questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == MachineRules.TmCaseId)
+                if (_questPocket == 1 && action == InventoryMenuAction.Use && QuestPocketStacks[_questPocketCursor].Item == MachineRules.TmCaseId)
                 { Apply(new("machine_open")); return true; }
-                if (_questPocketAction != actions.Length - 1)
+                if (action != InventoryMenuAction.Cancel)
                     _questPocketNotice = _questPocket == 1
-                        ? QuestPocketStacks[_questPocketCursor].Item==BillItemRules.FameCheckerId?"FAME CHECKER viewing is not\nimplemented yet.":QuestPocketStacks[_questPocketCursor].Item==QuestItemRules.TeachyTvId?"TEACHY TV playback is not\nimplemented yet.":_questPocketUi!.Texts["gText_OakForbidsUseOfItemHere"].Replace("{PLAYER}", _session.State.PlayerName, StringComparison.Ordinal)
-                        : "This action isn't available.";
+                        ? QuestPocketStacks[_questPocketCursor].Item==BillItemRules.FameCheckerId?_inventoryText.Get("notice.fame-checker-unavailable"):QuestPocketStacks[_questPocketCursor].Item==QuestItemRules.TeachyTvId?_inventoryText.Get("notice.teachy-tv-unavailable"):_questPocketUi!.Texts["gText_OakForbidsUseOfItemHere"].Replace("{PLAYER}", _session.State.PlayerName, StringComparison.Ordinal)
+                        : _inventoryText.Get("notice.action-unavailable");
             }
             return true;
         }
@@ -222,7 +224,7 @@ public partial class CampaignView
             // bag.c sWindowTemplates[10 + count - 1], including its 8px outer frame.
             int y = 144 - actions.Length * 16;
             _battleSkin.DrawStandardFrame(this, new(168, y, 72, actions.Length * 16 + 16));
-            for (var i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(184, y + 10 + i * 16), actions[i]);
+            for (var i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(184, y + 10 + i * 16), actions[i].Label);
             SourceText(_sourceNormal, new(176, y + 10 + _questPocketAction * 16), _itemSkin.Text("gText_SelectorArrow2"));
             _itemSkin.DrawStandardFrame(this, OpeningItemUiSkin.BagSelectedFrame);
             ItemLines(_sourceNormal, OpeningItemUiSkin.BagSelectedText,

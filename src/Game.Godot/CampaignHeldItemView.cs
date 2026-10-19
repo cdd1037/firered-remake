@@ -9,21 +9,15 @@ public partial class CampaignView
     private int _heldTarget, _heldChoice;
     private long[] _heldTargetIds = [];
     private bool HeldItemScreen => _session.State.ItemMenu is { Origin: "party", View: "held" } || _heldGiveItem is not null;
-    private int ItemActionCount => ItemActionLabels().Length;
+    private int ItemActionCount => ItemActions().Length;
     private int ItemActionY => _session.State.ItemMenu?.Origin == "bag" ? 154 - ItemActionCount * 16 : ItemActionCount == 3 ? 106 : 130;
-    private string[] ItemActionLabels()
+    private InventoryMenuEntry[] ItemActions()
     {
         var menu = _session.State.ItemMenu!;
-        if (menu.View == "withdraw") return ["WITHDRAW", "GIVE", "CANCEL"];
-        if (menu.View == "deposit") return ["DEPOSIT", "CANCEL"];
-        bool holdable = _itemCursor < FieldItemStacks.Length && _session.CanGiveHeldItem(FieldItemStacks[_itemCursor].Item);
-        if (menu.TargetInstanceId is not null) return holdable ? ["GIVE", "CANCEL"] : ["CANCEL"];
-        // Field action tables belong to the pocket, not an item's CanToss flag.
-        // Key Items and TM CASE use their own menus and never enter this branch.
-        if (menu.Origin == "bag" && menu.View is "bag" or "berries")
-            return [menu.View == "bag" && _itemCursor < FieldItemStacks.Length && _session.CanGiveMail(FieldItemStacks[_itemCursor].Item) ? "CHECK" : "USE",
-                "GIVE", "TOSS", menu.View == "berries" ? "EXIT" : "CANCEL"];
-        return holdable ? ["USE", "GIVE", "CANCEL"] : ["USE", "CANCEL"];
+        bool selected = menu.View is not ("withdraw" or "deposit") && _itemCursor < FieldItemStacks.Length;
+        return InventoryMenuPresentation.ItemActions(menu.View, menu.Origin == "bag", menu.TargetInstanceId is not null,
+            selected && _session.CanGiveHeldItem(FieldItemStacks[_itemCursor].Item),
+            menu.View == "bag" && selected && _session.CanGiveMail(FieldItemStacks[_itemCursor].Item), InventoryActionLabel);
     }
     private void OpenPartyHeldItems()
     {
@@ -36,8 +30,8 @@ public partial class CampaignView
     private void StartGiveItem(ItemId item, bool pc = false)
     {
         _itemPopup = false; _questPocketPopup = false;
-        if (!_session.CanGiveHeldItem(item)) { _itemNotice = "This item can't be held."; return; }
-        if (_session.State.Party.IsEmpty) { _itemNotice = "There is no POKéMON."; return; }
+        if (!_session.CanGiveHeldItem(item)) { _itemNotice = _inventoryText.Get("notice.not-holdable"); return; }
+        if (_session.State.Party.IsEmpty) { _itemNotice = _itemSkin.Text("gText_ThereIsNoPokemon"); return; }
         _heldGiveItem = item; _heldGivePc = pc; _heldExchange = false; _heldChoice = 0; _heldTarget = 0;
         _heldTargetIds = _session.State.Party.Select(p => p.InstanceId).ToArray();
         if (_session.State.ItemMenu?.TargetPartyIndex is {} target)
@@ -71,13 +65,13 @@ public partial class CampaignView
         string previous = _session.State.Party[target].HeldItem;
         bool accepted = Apply(new(_heldChoice == 0 ? "held_bag_open" : "field_take", PartyIndex: target) { TargetInstanceId = menu.TargetInstanceId });
         if (!accepted) _itemNotice = HeldItemNotice(_status);
-        else if (_heldChoice == 1) _itemNotice = "Received " + InventoryName(new("pret:" + previous)) + ".";
+        else if (_heldChoice == 1) _itemNotice = _inventoryText.Get("notice.received", ("item", InventoryName(new("pret:" + previous))));
         return true;
     }
     private void ConfirmHeldTarget()
     {
         if (_heldTarget >= _session.State.Party.Length || _session.State.Party[_heldTarget].InstanceId != _heldTargetIds[_heldTarget])
-        { _heldGiveItem = null; _itemNotice = "The selected POKéMON changed."; return; }
+        { _heldGiveItem = null; _itemNotice = _inventoryText.Get("notice.target-changed"); return; }
         if (_session.State.Party[_heldTarget].HeldItem != "ITEM_NONE") { _heldExchange = true; _heldChoice = 0; }
         else CompleteGiveItem(false);
     }
@@ -92,33 +86,34 @@ public partial class CampaignView
         _itemCursor = Math.Min(_itemCursor, (_heldGivePc ? _session.State.Inventory!.PcItems : FieldItemStacks).Length);
         _questPocketCursor = Math.Min(_questPocketCursor, QuestPocketStacks.Length);
         if (_session.State.MailComposer is not null) { _itemNotice = null; return; }
-        _itemNotice = !accepted ? HeldItemNotice(_status) : "Gave " + InventoryName(item) + "\nto " + _session.State.Party[_heldTarget].Nickname + ".";
+        _itemNotice = !accepted ? HeldItemNotice(_status) : _inventoryText.Get("notice.gave", ("item", InventoryName(item)), ("pokemon", _session.State.Party[_heldTarget].Nickname));
     }
-    private static string HeldItemNotice(string status) => status switch {
-        "held_item_none" => "It isn't holding anything.",
-        "inventory_destination_full" or "inventory_stack_full" or "inventory_key_items_full" => "The BAG is full. The item\ncouldn't be taken.",
-        "held_item_target_stale" or "item_party_index_invalid" => "The selected POKéMON changed.",
-        "held_item_not_holdable" => "This item can't be held.",
-        "held_item_mail_or_egg_unsupported" => "Mail and Eggs aren't supported\nfor item transfers here.",
-        _ => "The item couldn't be transferred." };
+    private string HeldItemNotice(string status) => _inventoryText.Get(status switch {
+        "held_item_none" => "notice.nothing-held",
+        "inventory_destination_full" or "inventory_stack_full" or "inventory_key_items_full" => "notice.take-bag-full",
+        "held_item_target_stale" or "item_party_index_invalid" => "notice.target-changed",
+        "held_item_not_holdable" => "notice.not-holdable",
+        "held_item_mail_or_egg_unsupported" => "notice.mail-egg-transfer-unavailable",
+        _ => "notice.transfer-failed" });
     private bool DrawHeldItemScreen()
     {
         if (!HeldItemScreen) return false;
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         if (_heldGiveItem is not null && !_heldExchange)
         {
-            DrawNativeParty(_session.State.Party,_heldTarget,"Give to which POKéMON?");
+            DrawNativeParty(_session.State.Party,_heldTarget,InventorySourceText("gText_GiveToWhichPokemon"));
         }
         else
         {
             int index = _heldGiveItem is not null ? _heldTarget : _session.State.ItemMenu!.TargetPartyIndex!.Value;
             var owned = _session.State.Party[index];
             SourceText(_sourceNormal, new(12, 10), owned.Nickname);
-            SourceText(_sourceSmall, new(12, 32), "HELD ITEM / " + (owned.HeldItem == "ITEM_NONE" ? "NONE" : InventoryName(new("pret:" + owned.HeldItem))));
-            string[] options = _heldExchange ? ["YES", "NO"] : ["GIVE", "TAKE", "CANCEL"];
+            SourceText(_sourceSmall, new(12, 32), _inventoryText.Get("held.header", ("item", _catalog.DisplayNames.HeldItemName(owned.HeldItem))));
+            string[] options = _heldExchange ? [InventorySourceText("gText_Yes"), InventorySourceText("gText_No")]
+                : [InventoryActionLabel(InventoryMenuAction.Give), InventoryActionLabel(InventoryMenuAction.Take), InventoryActionLabel(InventoryMenuAction.Cancel)];
             for (int i = 0; i < options.Length; i++) SourceText(_sourceNormal, new(176, 58 + i * 17), options[i]);
             SourceText(_sourceNormal, new(164, 58 + _heldChoice * 17), "▶");
-            if (_heldExchange) ItemMessageBox("Switch its held item for\n" + InventoryName(_heldGiveItem!.Value) + "?");
+            if (_heldExchange) ItemMessageBox(_inventoryText.Get("prompt.exchange", ("item", InventoryName(_heldGiveItem!.Value))));
         }
         if (_itemNotice is not null) ItemMessageBox(_itemNotice);
         return true;

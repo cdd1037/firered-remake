@@ -56,8 +56,8 @@ public sealed class PretEeveeArt
             icon.PaletteIndex==2&&icon.TransparentIndex==0&&icon.PaletteVariant=="shared-normal-shiny"&&icon.PaletteRgb555.Length==16,"Eevee icon differs.");
         Pixels(icon.TexturePath,32,32);        var foot=doc.Footprints.Single();Require(foot.SourceSpeciesId==133&&foot.Width==16&&foot.Height==16,"Eevee footprint differs.");
         Pixels(foot.TexturePath,16,16);        pokedexMenu?.ForProjectRoot(dependency);var dex=pokedexMenu??PretPokedexMenu.Load(dependency);var original=dex.Entries[133];var d=doc.Dex;
-        Require(d.SourceSpeciesId==133&&d.Name==original.Name&&d.Category==original.Category&&d.HeightDecimeters==original.HeightDecimeters&&d.WeightHectograms==65&&
-            d.WeightHectograms==original.WeightHectograms&&d.Description==original.Description,
+        Require(d.SourceSpeciesId==133&&d.HeightDecimeters==original.HeightDecimeters&&d.WeightHectograms==65&&
+            d.WeightHectograms==original.WeightHectograms,
             "Eevee Dex differs from authenticated full catalog.");
         return new(doc,json.RootElement.Clone(),files.ToImmutable(),dex);
     }

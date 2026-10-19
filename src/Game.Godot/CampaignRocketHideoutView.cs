@@ -192,7 +192,7 @@ public partial class CampaignView
     {
         WildBattleMoveFailedEvent {Reason:"not-first-turn"}=>new("sText_ButItFailed"),
         WildBattleAbilityPreventedEvent {Ability:"ABILITY_INNER_FOCUS"} ability=>new("sText_PkmnsXPreventsFlinching",
-            ("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(ability.Target)),("B_EFF_ABILITY","INNER FOCUS")),
+            ("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(ability.Target)),("B_EFF_ABILITY",_catalog.DisplayNames.AbilityName(ability.Ability))),
         _=>null
     };
     private bool TryRocketInput(InputEventKey key)

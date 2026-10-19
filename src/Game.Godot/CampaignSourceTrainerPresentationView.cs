@@ -90,7 +90,8 @@ public partial class CampaignView
         }
         string? PrefixedPartyName(WildBattleSide side,int index)=>CampaignWishResolutionPresentation.CasterAvailable(battle.Frame,new((int)side),index)
             ?(side==WildBattleSide.Opponent?battle.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?"Foe ":"Wild ":"")+PartyName(side,index):null;
-        return SourceTrainerPresentationModel.Describe(battle.Events, battle.EventIndex, WildPrefixedName, MoveName, PartyName, RockTunnelHeldItemName, PrefixedPartyName);
+        return SourceTrainerPresentationModel.Describe(battle.Events, battle.EventIndex, WildPrefixedName, MoveName, PartyName, _catalog.DisplayNames.ItemName, PrefixedPartyName,
+            _catalog.DisplayNames.AbilityName, _catalog.DisplayNames.TypeName);
     }
 
     private bool SourceTrainerEventPages(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source,

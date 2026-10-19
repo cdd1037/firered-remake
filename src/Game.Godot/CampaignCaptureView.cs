@@ -24,7 +24,7 @@ public partial class CampaignView
     private void LoadCapturePresentation()
     {
         var folder = System.IO.Path.Combine(_root, "content/generated/sprites/pokemon/capture-dex");
-        var document = PretForestCaptureDex.Load(_root);
+        var document = PretForestCaptureDex.Load(_root, _catalog.PokedexMenu, _catalog.ForestPokemon);
         foreach (var texture in _captureTextures.Values) texture.Dispose();
         _captureTextures.Clear();
         LoadCaptureBallPresentation();

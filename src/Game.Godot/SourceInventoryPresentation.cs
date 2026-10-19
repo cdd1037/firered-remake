@@ -82,3 +82,60 @@ internal sealed class StorageHandPresentation
             grabbing ? contact ? offset - 8 : 0 : contact ? 0 : offset - 8, 0, 0, 0, contact, false);
     }
 }
+
+
+internal enum InventoryMenuAction { Use, Check, Give, Take, Toss, Withdraw, Deposit, Register, Deselect, Exit, Cancel }
+internal readonly record struct InventoryMenuEntry(InventoryMenuAction Id, string Label);
+
+/// <summary>Labels are presentation data; pocket/origin gates and stable actions own selection.</summary>
+internal static class InventoryMenuPresentation
+{
+    internal static InventoryMenuEntry[] ItemActions(string view, bool fieldBag, bool targetSelected,
+        bool holdable, bool mail, Func<InventoryMenuAction, string> label)
+    {
+        InventoryMenuAction[] actions;
+        if (view == "withdraw") actions = [InventoryMenuAction.Withdraw, InventoryMenuAction.Give, InventoryMenuAction.Cancel];
+        else if (view == "deposit") actions = [InventoryMenuAction.Deposit, InventoryMenuAction.Cancel];
+        else if (targetSelected) actions = holdable ? [InventoryMenuAction.Give, InventoryMenuAction.Cancel] : [InventoryMenuAction.Cancel];
+        else if (fieldBag && view is "bag" or "berries")
+            actions = [view == "bag" && mail ? InventoryMenuAction.Check : InventoryMenuAction.Use,
+                InventoryMenuAction.Give, InventoryMenuAction.Toss, view == "berries" ? InventoryMenuAction.Exit : InventoryMenuAction.Cancel];
+        else actions = holdable ? [InventoryMenuAction.Use, InventoryMenuAction.Give, InventoryMenuAction.Cancel]
+            : [InventoryMenuAction.Use, InventoryMenuAction.Cancel];
+        return actions.Select(id => new InventoryMenuEntry(id, label(id))).ToArray();
+    }
+
+    internal static InventoryMenuEntry[] QuestActions(bool keyItems, bool targetSelected, bool canRegister,
+        bool registered, Func<InventoryMenuAction, string> label)
+    {
+        InventoryMenuAction[] actions = keyItems
+            ? canRegister ? [InventoryMenuAction.Use, registered ? InventoryMenuAction.Deselect : InventoryMenuAction.Register, InventoryMenuAction.Cancel]
+                : [InventoryMenuAction.Use, InventoryMenuAction.Cancel]
+            : targetSelected ? [InventoryMenuAction.Give, InventoryMenuAction.Cancel]
+                : [InventoryMenuAction.Give, InventoryMenuAction.Toss, InventoryMenuAction.Cancel];
+        return actions.Select(id => new InventoryMenuEntry(id, label(id))).ToArray();
+    }
+
+    internal static string SourceSymbol(InventoryMenuAction action) => action switch
+    {
+        InventoryMenuAction.Use => "gOtherText_Use", InventoryMenuAction.Check => "gOtherText_Check",
+        InventoryMenuAction.Give => "gOtherText_Give", InventoryMenuAction.Take => "gPCText_Take",
+        InventoryMenuAction.Toss => "gOtherText_Toss", InventoryMenuAction.Withdraw => "gText_Withdraw",
+        InventoryMenuAction.Register => "gOtherText_Register", InventoryMenuAction.Deselect => "gOtherText_Deselect",
+        InventoryMenuAction.Exit => "gOtherText_Exit", InventoryMenuAction.Cancel => "gFameCheckerText_Cancel",
+        // The remake's short DEPOSIT popup label has no matching source string.
+        _ => throw new ArgumentOutOfRangeException(nameof(action))
+    };
+
+    // TextPages owns source page/line controls before this bounded STR_VAR binder runs.
+    // Replace only source tokens once: item/player names are literal inserted data.
+    internal static string BindSource(string template, string? strVar1 = null, string? strVar2 = null)
+    {
+        string withoutTokens = System.Text.RegularExpressions.Regex.Replace(template, @"\{STR_VAR_[12]\}", "");
+        if (withoutTokens.Contains('{') || withoutTokens.Contains('}'))
+            throw new InvalidDataException("Unsupported inventory text control.");
+        return System.Text.RegularExpressions.Regex.Replace(template, @"\{STR_VAR_([12])\}", match =>
+            (match.Groups[1].Value == "1" ? strVar1 : strVar2)
+            ?? throw new ArgumentException("Missing inventory source text parameter: " + match.Value));
+    }
+}

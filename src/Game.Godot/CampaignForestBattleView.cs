@@ -85,11 +85,11 @@ public partial class CampaignView
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(stat.Target)), ("B_BUFF1", WildStatName(stat.Stat))),
         WildBattleStatusChangedEvent { Reason: "faint", After: 0 } => new(""),
         WildBattleStatusChangedEvent { Reason: "shed-skin", After: 0 } change => new("sText_PkmnsXCuredYProblem",
-            ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(change.Side)), ("B_SCR_ACTIVE_ABILITY", "SHED SKIN"),
+            ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(change.Side)), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName("ABILITY_SHED_SKIN")),
             ("B_BUFF1", ForestStatusName(change.Before))),
         WildBattleStatusChangedEvent { Reason: "static", Before: 0, After: WildBattleStatus.Paralysis } change =>
             new("sText_PkmnWasParalyzedBy", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(Opposite(change.Side))),
-                ("B_SCR_ACTIVE_ABILITY", "STATIC"), ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(change.Side))),
+                ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName("ABILITY_STATIC")), ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(change.Side))),
         WildBattleStatusChangedEvent { Reason: "move", Before: 0 } change => new(change.After switch
         {
             >=1 and <=5 => "sText_PkmnFellAsleep",

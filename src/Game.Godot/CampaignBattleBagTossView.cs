@@ -13,7 +13,7 @@ public partial class CampaignView
             return;
         }
         _battleSkin.DrawStandardFrame(this, new(168,96,72,64));
-        var actions = new[] { "USE", "TOSS", "EXIT" };
+        var actions = new[] { InventoryActionLabel(InventoryMenuAction.Use), InventoryActionLabel(InventoryMenuAction.Toss), InventoryActionLabel(InventoryMenuAction.Exit) };
         for (int i=0;i<actions.Length;i++) SourceText(_sourceNormal,new(184,106+16*i),actions[i]);
         SourceText(_sourceNormal,new(176,106+16*selected),_itemSkin.Text("gText_SelectorArrow2"));
     }

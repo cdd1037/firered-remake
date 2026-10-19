@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-/// <summary>Authenticated forest first-capture pages composed over the unchanged Route 1 document.</summary>
+/// <summary>Forest and Route 1 capture art composed with the shared Pokédex display text.</summary>
 public static class PretForestCaptureDex
 {
     public const string SourceCommit = PretCaptureDex.SourceCommit;
@@ -15,14 +15,17 @@ public static class PretForestCaptureDex
     private static readonly int[] SpeciesIds = [10, 11, 13, 14, 25];
 
     /// <summary>
-    /// Authenticates legacy and extension documents, all new source bytes and pixels, and existing
-    /// forest catalog/art, then returns seven entries and eight page assets. The legacy layout and
-    /// two entries are retained verbatim. All asset readers take the project root, not an art folder.
+    /// Validates both page artifacts and existing forest art, then returns seven entries and eight
+    /// page assets with canonical display text. Legacy layout, identities and art paths are retained.
+    /// All asset readers take the project root, not an art folder.
     /// </summary>
-    public static CaptureDexDocument Load(string projectRoot)
+    public static CaptureDexDocument Load(string projectRoot, PretPokedexMenu? pokedexMenu = null,
+        PretForestPokemon? forestPokemon = null)
     {
-        var original = LoadLegacy(projectRoot);
-        var extension = LoadExtension(projectRoot);
+        var project = Path.GetFullPath(projectRoot);
+        var dex = pokedexMenu?.ForProjectRoot(project) ?? PretPokedexMenu.Load(project);
+        var original = LoadLegacy(project, dex);
+        var extension = LoadExtension(project, original, dex, forestPokemon);
         var entries = original.Entries.ToBuilder();
         foreach (var entry in extension.Entries) entries.Add(entry.Key, entry.Value);
         var assets = original.Assets.AddRange(extension.Assets);
@@ -36,10 +39,18 @@ public static class PretForestCaptureDex
         };
     }
 
-    /// <summary>Authenticates the five new entries and all dependencies without merging the old entries.</summary>
-    public static CaptureDexDocument LoadExtension(string projectRoot)
+    /// <summary>Loads five art-bound entries with canonical text without merging the Route 1 entries.</summary>
+    public static CaptureDexDocument LoadExtension(string projectRoot, PretPokedexMenu? pokedexMenu = null,
+        PretForestPokemon? forestPokemon = null)
     {
         var project = Path.GetFullPath(projectRoot);
+        var dex = pokedexMenu?.ForProjectRoot(project) ?? PretPokedexMenu.Load(project);
+        return LoadExtension(project, LoadLegacy(project, dex), dex, forestPokemon);
+    }
+
+    private static CaptureDexDocument LoadExtension(string project, CaptureDexDocument original,
+        PretPokedexMenu dex, PretForestPokemon? forestPokemon)
+    {
         var directory = Path.Combine(project, DirectoryName);
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m = manifest.RootElement;
@@ -51,16 +62,17 @@ public static class PretForestCaptureDex
             var path = output.GetProperty("path").GetString()!;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate forest capture dex output.");
         }
-        var document = Parse(Utf8.GetString(outputs["capture-dex.json"]));
-        var original = LoadLegacy(project);
+        var document = PretCaptureDex.WithCanonicalText(Parse(Utf8.GetString(outputs["capture-dex.json"])),
+            dex, DirectoryName + "/");
         Require(JsonSerializer.Serialize(document.Layout) == JsonSerializer.Serialize(original.Layout),
             "Forest capture dex changed the legacy layout.");
-        var family = PretForestPokemon.Load(PretCanonicalPokemonCatalog.Load(project, project), project);
-        var dex = PretPokedexMenu.Load(project);
+        var family = forestPokemon ?? PretForestPokemon.Load(PretCanonicalPokemonCatalog.Load(project, project), project);
+        Require(string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(family.GeneratedDirectory)),
+            Path.GetFullPath(Path.Combine(project, "content/generated/sprites/pokemon/forest")),
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal),
+            "Forest Pokémon art belongs to a different project root.");
         foreach (var entry in document.Entries.Values)
         {
-            Require(dex.Entries[entry.SourceSpeciesId].Name == entry.Name && entry.NationalNumber == entry.SourceSpeciesId,
-                "Forest capture dex species identity differs from the existing catalog.");
             var sprite = family.Sprites.Single(s => s.SourceSpeciesId == entry.SourceSpeciesId && s.Side == "front" && s.PaletteVariant == "normal");
             Require(entry.FrontSpritePath == "sprites/pokemon/forest/" + sprite.TexturePath,
                 "Forest capture dex must reuse existing normal front art.");
@@ -80,14 +92,14 @@ public static class PretForestCaptureDex
             Require(asset == expected, "Forest capture dex texture metadata differs.");
             return ReadPinned(Path.Combine(project, DirectoryName),asset.TexturePath);
         }
-        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(project,"content/generated/sprites/pokemon/capture-dex/capture-dex.json")));
+        var original = PretCaptureDex.Parse(Utf8.GetString(ReadPinned(project,"content/generated/sprites/pokemon/capture-dex/capture-dex.json")));
         Require(original.Assets.Any(a => a == asset), "Unknown or altered legacy capture dex texture.");
         return PretCaptureDex.ReadTexture(Path.Combine(project, "content/generated/sprites/pokemon/capture-dex"), asset);
     }
 
-    private static CaptureDexDocument LoadLegacy(string projectRoot)
+    private static CaptureDexDocument LoadLegacy(string projectRoot, PretPokedexMenu dex)
     {
-        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(projectRoot,"content/generated/sprites/pokemon/capture-dex/capture-dex.json")));
+        var original = PretCaptureDex.Load(Utf8.GetString(ReadPinned(projectRoot,"content/generated/sprites/pokemon/capture-dex/capture-dex.json")), dex);
         foreach (var asset in original.Assets) _ = PretCaptureDex.ReadTexture(Path.Combine(projectRoot, "content/generated/sprites/pokemon/capture-dex"), asset);
         return original;
     }

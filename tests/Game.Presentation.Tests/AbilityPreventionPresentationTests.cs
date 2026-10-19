@@ -1,9 +1,13 @@
+using Game.Content;
 using Game.Domain.Ids;
 using Game.Domain.WildBattle;
 namespace FireRed.Tests.Presentation;
 [TestClass,TestCategory("Game")]
 public sealed class AbilityPreventionPresentationTests
 {
+    private static SourceDisplayNames Names => TestAssets.Cached(() => SourceDisplayNames.LoadProject(TestAssets.Root,
+        SharedItemCatalog.LoadProject(TestAssets.Root), PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root).Catalog));
+
     [TestMethod]
     [DataRow("ABILITY_OWN_TEMPO","sText_PkmnPreventsConfusionWith")]
     [DataRow("ABILITY_HYPER_CUTTER","sText_PkmnsXPreventsYLoss")]
@@ -16,14 +20,14 @@ public sealed class AbilityPreventionPresentationTests
         {
             var actor=target==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player;
             WildBattleEvent[] events=[new WildBattleAbilityPreventedEvent(1,1,actor,target,new MoveId("pret:MOVE_SWAGGER"),ability)];
-            var display=SourceTrainerPresentationModel.Describe(events,0,s=>s.ToString(),m=>m.Value,(_,_)=>"party");
+            var display=SourceTrainerPresentationModel.Describe(events,0,s=>s.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName);
             Assert.IsNotNull(display);Assert.IsFalse(display.Unsupported);Assert.IsFalse(display.Silent);
             var text=display.Texts.Single();Assert.AreEqual(symbol,text.Symbol);
             Assert.AreEqual(symbol,SourceTrainerPresentationModel.AbilityPreventionSymbol(ability));
             var fields=text.Values.ToDictionary(x=>x.Key,x=>x.Value);
             Assert.AreEqual(target.ToString(),fields["B_DEF_NAME_WITH_PREFIX"]);
             Assert.AreEqual(target.ToString(),fields["B_SCR_ACTIVE_NAME_WITH_PREFIX"]);
-            Assert.AreEqual(ability[8..].Replace('_',' '),fields["B_SCR_ACTIVE_ABILITY"]);
+            Assert.AreEqual(Names.AbilityName(ability),fields["B_SCR_ACTIVE_ABILITY"]);
             Assert.AreEqual(actor.ToString(),fields["B_ATK_NAME_WITH_PREFIX"]);
             Assert.AreEqual(ability=="ABILITY_HYPER_CUTTER"?"ATTACK":ability=="ABILITY_KEEN_EYE"?"accuracy":"",fields["B_BUFF1"]);
         }
@@ -33,10 +37,57 @@ public sealed class AbilityPreventionPresentationTests
     {
         var move=new MoveId("pret:MOVE_THUNDERBOLT");
         WildBattleEvent[] events=[new WildBattleAbilityPreventedEvent(1,1,WildBattleSide.Player,WildBattleSide.Opponent,move,ability),new WildBattleRecoveredEvent(2,1,WildBattleSide.Opponent,move,5,10,5)];
-        var before=SourceTrainerPresentationModel.Describe(events,0,s=>s.ToString(),m=>m.Value,(_,_)=>"party");
+        var before=SourceTrainerPresentationModel.Describe(events,0,s=>s.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName);
         Assert.IsTrue(before!.Silent);
-        var recovered=SourceTrainerPresentationModel.Describe(events,1,s=>s.ToString(),m=>m.Value,(_,_)=>"party")!.Texts.Single();
+        var recovered=SourceTrainerPresentationModel.Describe(events,1,s=>s.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName)!.Texts.Single();
         Assert.AreEqual("sText_PkmnRestoredHPUsing",recovered.Symbol);
-        Assert.AreEqual(ability[8..].Replace('_',' '),recovered.Values.Single(x=>x.Key=="B_DEF_ABILITY").Value);
+        Assert.AreEqual(Names.AbilityName(ability),recovered.Values.Single(x=>x.Key=="B_DEF_ABILITY").Value);
+    }
+
+    [TestMethod]
+    [DataRow("TYPE_FIGHTING", "FIGHT")]
+    [DataRow("TYPE_ELECTRIC", "ELECTR")]
+    [DataRow("TYPE_PSYCHIC", "PSYCHC")]
+    [DataRow("TYPE_MYSTERY", "???")]
+    public void ChangedTypeMessagesUseImportedDisplayName(string type, string expected)
+    {
+        WildBattleEvent[] events = [new WildBattleCalledOverlayChangedEvent(1, 1, WildBattleSide.Player,
+            new("pret:MOVE_CONVERSION"), null, new() { Type1 = type, Type2 = type })];
+        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+            (_, _) => "party", abilityName: Names.AbilityName, typeName: Names.TypeName)!;
+        Assert.AreEqual("sText_PkmnChangedType", display.Texts.Single().Symbol);
+        Assert.AreEqual(expected, display.Texts.Single().Values.Single(v => v.Key == "B_BUFF1").Value);
+    }
+
+    [TestMethod]
+    [DataRow("ABILITY_NONE", "-------")]
+    [DataRow("ABILITY_COMPOUND_EYES", "COMPOUNDEYES")]
+    [DataRow("ABILITY_LIGHTNING_ROD", "LIGHTNINGROD")]
+    public void CopiedAbilityMessagesUseImportedDisplayName(string ability, string expected)
+    {
+        WildBattleEvent[] events = [new WildBattleCalledOverlayChangedEvent(1, 1, WildBattleSide.Player,
+            new("pret:MOVE_ROLE_PLAY"), null, new() { Ability = ability })];
+        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+            (_, _) => "party", abilityName: Names.AbilityName, typeName: Names.TypeName)!;
+        Assert.AreEqual(expected, display.Texts.Single().Values.Single(v => v.Key == "B_DEF_ABILITY").Value);
+    }
+
+    [TestMethod]
+    public void InjectedNamesAreLiteralAndDoNotChangeEventIdentities()
+    {
+        WildBattleEvent[] events = [new WildBattleAbilityActivatedEvent(1, 1, WildBattleSide.Player, "ABILITY_COLOR_CHANGE"),
+            new WildBattleCalledOverlayChangedEvent(2, 1, WildBattleSide.Player, new("pret:MOVE_TACKLE"), null,
+                new() { Type1 = "TYPE_FIRE", Type2 = "TYPE_FIRE" })];
+        var before = System.Text.Json.JsonSerializer.Serialize(events);
+        string Ability(string id) { Assert.AreEqual("ABILITY_COLOR_CHANGE", id); return "ability {literal}"; }
+        string Type(string id) { Assert.AreEqual("TYPE_FIRE", id); return "type {literal}"; }
+        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+            (_, _) => "party", abilityName: Ability, typeName: Type)!;
+        var values = display.Texts.Single().Values.ToDictionary(v => v.Key, v => v.Value);
+        Assert.AreEqual("ability {literal}", values["B_DEF_ABILITY"]);
+        Assert.AreEqual("type {literal}", values["B_BUFF1"]);
+        Assert.AreEqual(before, System.Text.Json.JsonSerializer.Serialize(events));
+        Assert.IsTrue(SourceTrainerPresentationModel.Describe(events, 1, s => s.ToString(), m => m.Value,
+            (_, _) => "party", abilityName: Ability, typeName: Type)!.Silent);
     }
 }

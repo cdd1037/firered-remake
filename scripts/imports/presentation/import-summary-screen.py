@@ -18,6 +18,29 @@ from project_paths import PROJECT_ROOT
 
 PAGES = ('info', 'skills', 'moves', 'moves_info', 'egg')
 
+def source_name_table(text, table, prefix):
+    """Read one named source table; never derive labels from identifiers."""
+    tables = re.findall(r'\b' + table + r'\[[^;=]+\]\s*=\s*\{(.*?)^\};', text, re.M | re.S)
+    if len(tables) != 1:
+        raise ValueError('Missing or ambiguous display-name table: ' + table)
+    row = re.compile(r'\[(' + prefix + r'\w+)\]\s*=\s*_\("((?:[^"\\]|\\.)*)"\),')
+    pairs = [(symbol, ast.literal_eval('"' + value + '"')) for symbol, value in row.findall(tables[0])]
+    names = dict(pairs)
+    if not names or len(names) != len(pairs) or row.sub('', tables[0]).strip() or any(not name.strip() for name in names.values()):
+        raise ValueError('Invalid display-name rows: ' + table)
+    return names
+
+
+def display_names(raw):
+    abilities = source_name_table((raw / 'src/data/text/abilities.h').read_text(), 'gAbilityNames', 'ABILITY_')
+    types = source_name_table((raw / 'src/battle_main.c').read_text(), 'gTypeNames', 'TYPE_')
+    none = re.findall(r'\bgText_PokeSum_Item_None\[\] = _\("((?:[^"\\]|\\.)*)"\);',
+                      (raw / 'src/strings.c').read_text())
+    if len(none) != 1 or not none[0].strip():
+        raise ValueError('Missing or ambiguous Summary no-item text')
+    return dict(schemaVersion=1, types=types, abilities=abilities, noHeldItem=ast.literal_eval('"' + none[0] + '"'))
+
+
 def convert(raw):
     root = raw / 'graphics/summary_screen'
     data = (root / 'bg.png').read_bytes()
@@ -111,6 +134,7 @@ def convert(raw):
     facing={symbol:flag=='FALSE' for symbol,body in re.findall(r'\[(SPECIES_\w+)\]\s*=\s*\{[ \t]*\n(.*?)\n    \}',species,re.S) for flag in re.findall(r'\.noFlip\s*=\s*(TRUE|FALSE)',body)}
     if len(facing)<386 or 'SPECIES_NONE' in facing or 'SPECIES_BULBASAUR' not in facing:raise ValueError('Missing Summary species facing data')
     outputs['text.json']=(json.dumps(dict(moves=moves,abilities=abilities,memos=memos,locations=locations,motions=motions,facing=facing),ensure_ascii=False,sort_keys=True)+'\n').encode()
+    outputs['display-names.json']=(json.dumps(display_names(raw),ensure_ascii=False,sort_keys=True)+'\n').encode()
     return outputs
 
 if __name__=='__main__':

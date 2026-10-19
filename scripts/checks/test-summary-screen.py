@@ -39,6 +39,20 @@ class SummaryScreenTests(unittest.TestCase):
         self.assertEqual(text['abilities']['ABILITY_OVERGROW'],'Ups GRASS moves in a pinch.')
         self.assertIn('cut down thin trees',text['moves']['MOVE_CUT'])
         self.assertGreater(len(text['moves']),300);self.assertGreater(len(text['abilities']),70)
+    def test_display_names_preserve_source_abbreviations_and_empty_values(self):
+        names=json.loads(self.outputs['display-names.json'])
+        for group,symbol,value in [('types','TYPE_FIGHTING','FIGHT'),('types','TYPE_ELECTRIC','ELECTR'),
+                                   ('types','TYPE_PSYCHIC','PSYCHC'),('types','TYPE_MYSTERY','???'),
+                                   ('abilities','ABILITY_NONE','-------'),('abilities','ABILITY_COMPOUND_EYES','COMPOUNDEYES'),
+                                   ('abilities','ABILITY_LIGHTNING_ROD','LIGHTNINGROD')]:
+            with self.subTest(symbol=symbol):self.assertEqual(names[group][symbol],value)
+        self.assertEqual(names['noHeldItem'],'NONE')
+        self.assertNotIn('items',names)
+    def test_name_tables_reject_missing_duplicate_and_unparsed_rows(self):
+        for body in ['', '[TYPE_FIRE] = _("FIRE"), [TYPE_FIRE] = _("FIRE"),',
+                     '[TYPE_FIRE] = _(" "),', '[TYPE_FIRE] = UNREVIEWED_MACRO,']:
+            with self.subTest(body=body),self.assertRaises(ValueError):
+                module.source_name_table('const u8 gTypeNames[1][8] = {\n'+body+'\n};','gTypeNames','TYPE_')
     def test_species_facing_does_not_merge_inline_none_into_bulbasaur(self):
         facing=json.loads(self.outputs['text.json'])['facing']
         self.assertNotIn('SPECIES_NONE',facing)

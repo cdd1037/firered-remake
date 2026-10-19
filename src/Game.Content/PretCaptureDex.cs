@@ -25,14 +25,18 @@ public sealed record CaptureDexLayout(int Width, int Height, int FrontX, int Fro
 public sealed record CaptureDexDocument(int SchemaVersion, ImmutableDictionary<int, CaptureDexEntry> Entries, ImmutableArray<CaptureDexAsset> Assets,
     CaptureDexLayout Layout);
 
-/// <summary>Authenticated local-only English revision-0 first-capture data and static art.</summary>
+/// <summary>Local first-capture art and layout with display text supplied by the shared Pokédex.</summary>
 public static class PretCaptureDex
 {
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string Profile = "firered-route1-capture-dex-v1";
     public const string BackProfile = "firered-route1-captured-back-static-v1";
 
-    public static CaptureDexDocument Load(string json)
+    public static CaptureDexDocument Load(string json, PretPokedexMenu pokedexMenu)
+        => WithCanonicalText(Parse(json), pokedexMenu, "content/generated/sprites/pokemon/capture-dex/");
+
+    // Texture readers need only the artifact contract, never its duplicate display strings.
+    internal static CaptureDexDocument Parse(string json)
     {
         VerifyJson(json,"Capture dex");
         var doc = ContentJson.ParseStrict<CaptureDexDocument>(json, ContentJson.CreateOptions());
@@ -40,6 +44,36 @@ public static class PretCaptureDex
             || doc.Assets.Length != 3)
             throw new InvalidDataException("Capture dex profile is incomplete.");
         return doc;
+    }
+
+    internal static CaptureDexDocument WithCanonicalText(CaptureDexDocument document, PretPokedexMenu pokedexMenu,
+        string footprintDirectory)
+    {
+        var entries = document.Entries.ToBuilder();
+        foreach (var (id, entry) in document.Entries)
+        {
+            if (entry.SourceSpeciesId != id || !pokedexMenu.Entries.TryGetValue(id, out var canonical) ||
+                entry.NationalNumber != canonical.NationalNumber)
+                throw new InvalidDataException("Capture dex species identity differs from the shared Pokédex.");
+            if (entry.HeightDecimeters != canonical.HeightDecimeters || entry.WeightHectograms != canonical.WeightHectograms)
+                throw new InvalidDataException("Capture dex measures differ from the shared Pokédex.");
+            if (canonical.Portrait is not { Width: 64, Height: 64 } portrait ||
+                portrait.TexturePath != "content/generated/" + entry.FrontSpritePath ||
+                canonical.Footprint is not { Width: 16, Height: 16 } footprint ||
+                footprint.TexturePath != footprintDirectory + entry.FootprintPath)
+                throw new InvalidDataException("Capture dex art references differ from the shared Pokédex.");
+            entries[id] = entry with
+            {
+                Name = canonical.Name,
+                Category = canonical.Category,
+                DisplayCategory = canonical.DisplayCategory,
+                HeightDisplay = canonical.HeightDisplay,
+                WeightDisplay = canonical.WeightDisplay,
+                Description = canonical.Description,
+                HabitatTitle = canonical.HabitatTitle
+            };
+        }
+        return document with { Entries = entries.ToImmutable() };
     }
 
     /// <summary>Authenticates the independent battle-back JSON before an existing sprite loader reads it.</summary>

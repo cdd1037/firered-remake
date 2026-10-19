@@ -5,8 +5,7 @@ using System.Text.Json;
 using Game.Domain.Ids;
 namespace Game.Content;
 
-public sealed record SnorlaxArtDex(int SourceSpeciesId,string Name,string Category,int HeightDecimeters,int WeightHectograms,
-    string Description);
+public sealed record SnorlaxArtDex(int SourceSpeciesId,int HeightDecimeters,int WeightHectograms);
 public sealed record SnorlaxArtOutput(string Path);
 public sealed record SnorlaxArtDocument(int SchemaVersion, ImmutableArray<ForestPokemonSprite> Sprites,
     ImmutableArray<StorageArtIcon> Icons, ImmutableArray<Route3PokemonFootprint> Footprints,
@@ -60,8 +59,8 @@ public sealed class PretSnorlaxArt
             icon.PaletteIndex==1&&icon.TransparentIndex==0&&icon.PaletteVariant=="shared-normal-shiny"&&icon.PaletteRgb555.Length==16,"Snorlax icon differs.");
         Pixels(icon.TexturePath,32,32);        var foot=doc.Footprints.Single();Require(foot.SourceSpeciesId==143&&foot.Width==16&&foot.Height==16,"Snorlax footprint differs.");
         Pixels(foot.TexturePath,16,16);        pokedexMenu?.ForProjectRoot(dependency);var dex=pokedexMenu??PretPokedexMenu.Load(dependency);var original=dex.Entries[143];var d=doc.Dex;
-        Require(d.SourceSpeciesId==143&&d.Name==original.Name&&d.Category==original.Category&&d.HeightDecimeters==original.HeightDecimeters&&d.WeightHectograms==4600&&
-            d.WeightHectograms==original.WeightHectograms&&d.Description==original.Description,
+        Require(d.SourceSpeciesId==143&&d.HeightDecimeters==original.HeightDecimeters&&d.WeightHectograms==4600&&
+            d.WeightHectograms==original.WeightHectograms,
             "Snorlax Dex differs from authenticated full catalog.");
         return new(doc,json.RootElement.Clone(),files.ToImmutable(),dex);
     }

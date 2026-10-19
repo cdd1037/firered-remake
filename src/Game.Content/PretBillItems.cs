@@ -52,7 +52,7 @@ public static class PretBillItems
         for (int n = 0; n < document.DexViews.Length; n++)
         {
             var view = document.DexViews[n];
-            Require(view.Species.Value == "pret:SPECIES_" + species[n] && view.Name == species[n] &&
+            Require(view.Species.Value == "pret:SPECIES_" + species[n] && !string.IsNullOrWhiteSpace(view.Name) &&
                 view.SourceSpeciesId == national[n] && view.NationalDex == national[n] &&
                 view.X == 10 && view.Y == 3 && view.MarksSeen && !view.MarksOwned,
                 "Bill seen-only species view differs.");

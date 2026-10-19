@@ -161,7 +161,7 @@ public partial class CampaignView
             if (species.Type2 != species.Type1) DrawPokedexVisual(species.Type2, 203, 51);
             SourceText(_sourceNormal, new(167, 65), owned.OriginalTrainerName);
             SourceText(_sourceNormal, new(167, 80), (mon.OriginalTrainerId & 0xffff).ToString("D5"));
-            SourceText(_sourceSmall, new(167, 95), FieldSymbol(owned.HeldItem, "ITEM_"));
+            SourceText(_sourceSmall, new(167, 95), _catalog.DisplayNames.HeldItemName(owned.HeldItem));
             bool sameOwner = (mon.OriginalTrainerId & 0xffff) == (_session.State.TrainerId & 0xffff) &&
                 string.Equals(owned.OriginalTrainerName, _session.State.PlayerName, StringComparison.Ordinal);
             string[] memo = _summaryPresentation.TrainerMemo(new(mon.Nature.ToString().ToUpperInvariant(), owned.MetLocation,
@@ -183,7 +183,7 @@ public partial class CampaignView
             uint baseExp = GrowthRules.ExperienceAtLevel(species.GrowthRate, mon.Level);
             DrawSummaryBar("exp", 152, 128, 8, mon.Level == 100 ? 0 : mon.Experience - baseExp,
                 mon.Level == 100 ? 1 : GrowthRules.ExperienceAtLevel(species.GrowthRate, mon.Level + 1) - baseExp, false);
-            SourceText(_sourceNormal, new(74, 129), FieldSymbol(mon.AbilityId, "ABILITY_"));
+            SourceText(_sourceNormal, new(74, 129), _catalog.DisplayNames.AbilityName(mon.AbilityId));
             SourceText(_sourceNormal, new(10, 143), _summaryPresentation.Abilities.GetValueOrDefault(mon.AbilityId, ""));
         }
         else

@@ -21,10 +21,13 @@ public sealed partial class PretCampaignCatalog
 
 
 
-    private static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
+    internal static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
     {
-        if (pokemon.SpeciesNames[78] != "RAPIDASH" || pokemon.SpeciesNames[218] != "SLUGMA" || pokemon.SpeciesNames[219] != "MAGCARGO")
-            throw new InvalidDataException("sevii_ruby_composition_scope");
+        foreach (var id in SeviiRubyOwnedPokemonCatalog.AdditionalSpecies)
+            if (!owned.Catalog.Species.TryGetValue(id, out var species) ||
+                !pokemon.SpeciesNames.TryGetValue(species.SourceSpeciesId, out var name) ||
+                string.IsNullOrWhiteSpace(name))
+                throw new InvalidDataException("sevii_ruby_composition_scope");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
         foreach (var battle in trainers.BattlesByScript.Values)
             if (scripts.FindProgram(battle.ScriptEntry) is not {} program ||

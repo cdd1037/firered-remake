@@ -72,6 +72,9 @@ public sealed partial class PretPokedexMenu
         Document = document;
         Entries = document.Entries.ToImmutableDictionary(e => e.SourceSpeciesId);
         NationalEntries = document.Entries.ToImmutableSortedDictionary(e => e.NationalNumber, e => e);
+        Require(Entries.Values.All(entry => !string.IsNullOrWhiteSpace(entry.Name) &&
+            !string.IsNullOrWhiteSpace(entry.Category) && !string.IsNullOrWhiteSpace(entry.Description)),
+            "Pokédex display text is missing.");
         Require(document.Rules.RegionalCount > 0 && document.Rules.RegionalCount <= document.Rules.NationalCount &&
             document.Rules.NationalCount == Entries.Count &&
             NationalEntries.Keys.SequenceEqual(Enumerable.Range(1, document.Rules.NationalCount)),

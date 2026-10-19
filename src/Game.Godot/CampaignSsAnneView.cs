@@ -143,11 +143,11 @@ public partial class CampaignView
     private ForestMessage? SsAnneWildMessage(WildBattleEvent current) => current switch
     {
         WildBattleAbilityPreventedEvent { Ability: "ABILITY_FLASH_FIRE" } ability => new("sText_PkmnRaisedFirePowerWith",
-            ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", "FLASH FIRE")),
+            ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
         WildBattleAbilityPreventedEvent { Ability: "ABILITY_CLEAR_BODY" } ability => new("sText_PkmnPreventsStatLossWith",
-            ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_SCR_ACTIVE_ABILITY", "CLEAR BODY")),
+            ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
         WildBattleAbilityPreventedEvent { Ability: "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" } ability => new("sText_PkmnStayedAwakeUsing",
-            ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", ability.Ability == "ABILITY_INSOMNIA" ? "INSOMNIA" : "VITAL SPIRIT")),
+            ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
         WildBattleStatusChangedEvent { Reason: "rest" } rest => new(rest.Before == 0 ? "sText_PkmnWentToSleep" : "sText_PkmnSleptHealthy",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(rest.Side))),
         WildBattleMoveFailedEvent { Move.Value: "pret:MOVE_REST", Reason: "already-asleep" } failed => new("sText_PkmnAlreadyAsleep2",

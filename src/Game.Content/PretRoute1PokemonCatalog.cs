@@ -16,7 +16,7 @@ public sealed record PretRoute1PokemonContent(PokemonCatalog Catalog,
 
 /// <summary>
 /// Authenticates the separate fourteen-species Route 1 artifact. No IO, instance creation, battle
-/// implementation, or change to the reviewed nine-starter artifact. Names remain canonical English.
+/// implementation, or change to the reviewed nine-starter artifact. Display names do not determine identity.
 /// </summary>
 public static class PretRoute1PokemonCatalog
 {
@@ -73,8 +73,8 @@ public static class PretRoute1PokemonCatalog
         foreach (var name in doc.SpeciesNames)
         {
             if (name is null || !ExpectedSpecies.TryGetValue(name.Id, out int sourceId) ||
-                speciesNames.ContainsKey(sourceId) || !CanonicalName(name.Name, 10))
-                throw Error("species_name", "Invalid or duplicate canonical English species name.");
+                speciesNames.ContainsKey(sourceId) || string.IsNullOrWhiteSpace(name.Name))
+                throw Error("species_name", "Invalid or duplicate species display name.");
             if (name.Id.Value != "pret:" + name.Source.Symbol)
                 throw Error("species_name_symbol", "Name provenance must match its species.");
             speciesNames.Add(sourceId, name.Name);
@@ -82,20 +82,18 @@ public static class PretRoute1PokemonCatalog
         var moveNames = ImmutableDictionary.CreateBuilder<MoveId, string>();
         foreach (var name in doc.MoveNames)
         {
-            if (name is null || !moveIds.Contains(name.Id) || moveNames.ContainsKey(name.Id) || !CanonicalName(name.Name, 12))
-                throw Error("move_name", "Invalid or duplicate canonical English move name.");
+            if (name is null || !moveIds.Contains(name.Id) || moveNames.ContainsKey(name.Id) || string.IsNullOrWhiteSpace(name.Name))
+                throw Error("move_name", "Invalid or duplicate move display name.");
             moveNames.Add(name.Id, name.Name);
         }
         if (speciesNames.Count != speciesIds.Count || moveNames.Count != moveIds.Count)
-            throw Error("names_missing", "Every imported species and move requires its canonical English name.");
+            throw Error("names_missing", "Every imported species and move requires a nonblank display name.");
         var catalog = new PokemonCatalog(canonical.Catalog.SourceCommit, doc.Species.ToImmutableDictionary(x => x.Id),
             doc.Moves.ToImmutableDictionary(x => x.Id));
         PokemonFactory.ValidateDefinitions(catalog);
         return new(catalog, speciesNames.ToImmutable(), moveNames.ToImmutable());
     }
 
-    private static bool CanonicalName(string name, int limit) => !string.IsNullOrEmpty(name) && name.Length <= limit &&
-        name.Any(char.IsAsciiLetterUpper) && name.All(c => char.IsAsciiLetterUpper(c) || c is ' ' or '-');
     private static ContentValidationException Error(string code, string message) =>
         ContentJson.Error("route1_pokemon_" + code, "$", message);
 

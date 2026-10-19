@@ -96,6 +96,9 @@ class PresentationPixelsTests(unittest.TestCase):
                 with self.subTest(profile=profile):
                     outputs=build(PROJECT_ROOT,profile)
                     self.assertGreater(len(outputs),1)
+                    dex=json.loads(outputs['manifest.json'])['dex']
+                    for entry in dex if isinstance(dex,list) else [dex]:
+                        self.assertEqual(set(entry), {'sourceSpeciesId','heightDecimeters','weightHectograms'})
                     for relative,data in outputs.items():
                         temporary=Path(directory)/profile/relative
                         temporary.parent.mkdir(parents=True,exist_ok=True);temporary.write_bytes(data)

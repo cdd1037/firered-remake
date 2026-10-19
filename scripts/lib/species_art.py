@@ -1,7 +1,7 @@
 """Source-driven legacy species-art manifests; region recipes only select species.
 
-Source IDs, image symbols, icon palettes, coordinates and dex text come from raw
-C tables. No metadata importer or historical stage inventory is executed.
+Source IDs, image symbols, icon palettes, coordinates and Dex measures come from raw
+C tables. Display text belongs to the shared Pokédex catalog. No metadata importer or historical stage inventory is executed.
 """
 import io
 import json
@@ -104,11 +104,8 @@ def build(root, profile, raw_root=None):
         footprints.append(dict(sourceSpeciesId=number, **asset))
         declaration = match(r'\[NATIONAL_DEX_' + selected + r'\]\s*=\s*\{(.*?)\n    \}', text('src/data/pokemon/pokedex_entries.h'))[1]
         fields = dict(re.findall(r'\.(\w+) = (.*?),\n', declaration))
-        description = match(r'const u8 '+re.escape(fields['description'])+r'\[\] = _\(\n(.*?)\);', text('src/data/pokemon/pokedex_text_fr.h'))[1]
-        name = match(r'\['+symbol+r'\] = _\("([^"]+)"\)', text('src/data/text/species_names.h'))[1]
-        dex.append(dict(sourceSpeciesId=number, name=name, category=match(r'_\("([^"]+)"\)', fields['categoryName'])[1],
-            heightDecimeters=int(fields['height']), weightHectograms=int(fields['weight']),
-            description=''.join(json.loads(x) for x in re.findall(r'"(?:[^"\\]|\\.)*"', description))))
+        dex.append(dict(sourceSpeciesId=number,
+            heightDecimeters=int(fields['height']), weightHectograms=int(fields['weight'])))
     manifest = dict(schemaVersion=1, sprites=sprites, icons=icons, footprints=footprints,
         dex=dex[0] if recipe.get('singleDex') else dex, outputs=[dict(path=p) for p in sorted(output)])
     output['manifest.json'] = (json.dumps(manifest, sort_keys=True, separators=(',', ':'), ensure_ascii=False)+'\n').encode()

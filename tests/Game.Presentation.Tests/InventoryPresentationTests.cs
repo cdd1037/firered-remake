@@ -136,4 +136,133 @@ public sealed class InventoryPresentationTests
         foreach(string id in new[]{"case-male","case-female","case-male-front","case-female-front","hand-single","hand-multi","hand-shadow","discs","hm","number","move-labels","scroll-up","scroll-down"})
             Assert.IsTrue(assets.Assets.Any(a=>a.Id==id));
     }
+
+    private static string InventoryLabel(InventoryMenuAction action)
+    {
+        if (action == InventoryMenuAction.Deposit)
+            return Game.Content.PresentationTextCatalog.English("inventory").Get("action.deposit");
+        string symbol = InventoryMenuPresentation.SourceSymbol(action);
+        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/ui/item-ui/item-ui.json")));
+        if (document.RootElement.GetProperty("texts").TryGetProperty(symbol, out var text)) return text.GetString()!;
+        return InventoryStory()[symbol].TrimEnd('$');
+    }
+
+    private static IReadOnlyDictionary<string, string> InventoryStory() =>
+        TestAssets.Cached(() => Game.Content.PretStoryRuntime.Load(TestAssets.Root)).TextBank;
+
+    [TestMethod]
+    [DataRow("withdraw", false, false, false, false, "Withdraw,Give,Cancel", "WITHDRAW|GIVE|CANCEL")]
+    [DataRow("deposit", false, false, false, false, "Deposit,Cancel", "DEPOSIT|CANCEL")]
+    [DataRow("bag", true, false, false, false, "Use,Give,Toss,Cancel", "USE|GIVE|TOSS|CANCEL")]
+    [DataRow("bag", true, false, true, true, "Check,Give,Toss,Cancel", "CHECK|GIVE|TOSS|CANCEL")]
+    [DataRow("berries", true, false, true, false, "Use,Give,Toss,Exit", "USE|GIVE|TOSS|EXIT")]
+    [DataRow("bag", true, true, true, false, "Give,Cancel", "GIVE|CANCEL")]
+    [DataRow("bag", true, true, false, false, "Cancel", "CANCEL")]
+    [DataRow("other", false, false, true, false, "Use,Give,Cancel", "USE|GIVE|CANCEL")]
+    [DataRow("other", false, false, false, false, "Use,Cancel", "USE|CANCEL")]
+    public void InventoryActionsPreserveOriginGatesOrderAndSourceEnglish(string view, bool field, bool target,
+        bool holdable, bool mail, string expectedIds, string expectedLabels)
+    {
+        var actions = InventoryMenuPresentation.ItemActions(view, field, target, holdable, mail, InventoryLabel);
+        Assert.AreEqual(expectedIds, string.Join(",", actions.Select(action => action.Id)));
+        Assert.AreEqual(expectedLabels, string.Join('|', actions.Select(action => action.Label)));
+    }
+
+    [TestMethod]
+    public void InventoryDisplayCollisionsCannotIdentifyGiveTossOrCancel()
+    {
+        foreach (string view in new[] { "withdraw", "deposit", "bag", "berries", "other" })
+        foreach (bool field in new[] { false, true })
+        foreach (bool target in new[] { false, true })
+        foreach (bool holdable in new[] { false, true })
+        foreach (bool mail in new[] { false, true })
+        {
+            var original = InventoryMenuPresentation.ItemActions(view, field, target, holdable, mail, id => id.ToString());
+            var changed = InventoryMenuPresentation.ItemActions(view, field, target, holdable, mail, _ => "TOSS");
+            CollectionAssert.AreEqual(original.Select(action => action.Id).ToArray(), changed.Select(action => action.Id).ToArray());
+            Assert.IsTrue(changed.All(action => action.Label == "TOSS"));
+        }
+    }
+
+    [TestMethod]
+    [DataRow(true, false, true, false, "Use,Register,Cancel", "USE|REGISTER|CANCEL")]
+    [DataRow(true, false, true, true, "Use,Deselect,Cancel", "USE|DESELECT|CANCEL")]
+    [DataRow(true, false, false, false, "Use,Cancel", "USE|CANCEL")]
+    [DataRow(true, true, true, false, "Use,Register,Cancel", "USE|REGISTER|CANCEL")]
+    [DataRow(false, false, false, false, "Give,Toss,Cancel", "GIVE|TOSS|CANCEL")]
+    [DataRow(false, true, false, false, "Give,Cancel", "GIVE|CANCEL")]
+    public void QuestActionsPreserveRegistrationAndHeldTargetGates(bool keys, bool target, bool canRegister,
+        bool registered, string expectedIds, string expectedLabels)
+    {
+        var actions = InventoryMenuPresentation.QuestActions(keys, target, canRegister, registered, InventoryLabel);
+        Assert.AreEqual(expectedIds, string.Join(",", actions.Select(action => action.Id)));
+        Assert.AreEqual(expectedLabels, string.Join('|', actions.Select(action => action.Label)));
+        var collision = InventoryMenuPresentation.QuestActions(keys, target, canRegister, registered, _ => "TOSS");
+        CollectionAssert.AreEqual(actions.Select(action => action.Id).ToArray(), collision.Select(action => action.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void InventorySourcePromptsKeepTheirSymbolsNewlinesAndPlaceholders()
+    {
+        var source = InventoryStory();
+        (string Symbol, string Expected)[] prompts =
+        [
+            ("gOtherText_WhereShouldTheStrVar1BePlaced", "Where should the {STR_VAR_1}\\nbe placed?$"),
+            ("gText_TossOutHowManyStrVar1s", "Toss out how many\\n{STR_VAR_1}(s)?$"),
+            ("gText_ThrowAwayStrVar2OfThisItemQM", "Throw away {STR_VAR_2} of\\nthis item?$"),
+            ("gText_ThrewAwayStrVar2StrVar1s", "Threw away {STR_VAR_2}\\n{STR_VAR_1}(s).$"),
+            ("gText_GiveToWhichPokemon", "Give to which POKéMON?$")
+        ];
+        foreach (var (symbol, expected) in prompts) Assert.AreEqual(expected, source[symbol], symbol);
+        Assert.AreEqual("Toss out how many\nPOTION(s)?", InventoryMenuPresentation.BindSource(
+            source["gText_TossOutHowManyStrVar1s"].TrimEnd('$').Replace("\\n", "\n", StringComparison.Ordinal), "POTION"));
+        Assert.AreEqual("Throw away 3 of\nthis item?", InventoryMenuPresentation.BindSource(
+            source["gText_ThrowAwayStrVar2OfThisItemQM"].TrimEnd('$').Replace("\\n", "\n", StringComparison.Ordinal), strVar2: "3"));
+        Assert.AreEqual("Threw away 3\nPOTION(s).", InventoryMenuPresentation.BindSource(
+            source["gText_ThrewAwayStrVar2StrVar1s"].TrimEnd('$').Replace("\\n", "\n", StringComparison.Ordinal), "POTION", "3"));
+    }
+
+    [TestMethod]
+    public void InventorySourceBindingTreatsInsertedTokensAsLiteralAndRejectsUnknownControls()
+    {
+        Assert.AreEqual("{STR_VAR_2}\\p 3 {STR_VAR_2}\\p", InventoryMenuPresentation.BindSource(
+            "{STR_VAR_1} {STR_VAR_2} {STR_VAR_1}", "{STR_VAR_2}\\p", "3"));
+        Assert.ThrowsExactly<ArgumentException>(() => InventoryMenuPresentation.BindSource("{STR_VAR_1}"));
+        foreach (string bad in new[] { "{PLAYER}", "{PAUSE 60}", "{STR_VAR_3}", "{", "}" })
+            Assert.ThrowsExactly<InvalidDataException>(() => InventoryMenuPresentation.BindSource(bad, "POTION", "3"));
+    }
+
+    [TestMethod]
+    public void InventoryAuthoredMessagesKeepEnglishAndAcceptPartialOverrides()
+    {
+        var english = Game.Content.PresentationTextCatalog.English("inventory");
+        (string Id, string Expected)[] notices =
+        [
+            ("notice.use-unavailable", "This item's use is not\nimplemented yet."),
+            ("notice.not-holdable", "This item can't be held."),
+            ("notice.target-changed", "The selected POKéMON changed."),
+            ("notice.nothing-held", "It isn't holding anything."),
+            ("notice.take-bag-full", "The BAG is full. The item\ncouldn't be taken."),
+            ("notice.mail-egg-transfer-unavailable", "Mail and Eggs aren't supported\nfor item transfers here."),
+            ("notice.transfer-failed", "The item couldn't be transferred."),
+            ("notice.registered", "Registered. Press R in the field."),
+            ("notice.fame-checker-unavailable", "FAME CHECKER viewing is not\nimplemented yet."),
+            ("notice.teachy-tv-unavailable", "TEACHY TV playback is not\nimplemented yet."),
+            ("notice.action-unavailable", "This action isn't available."),
+            ("notice.order-failed", "The item order couldn't be changed."),
+            ("notice.not-tossable", "That item can't be tossed.")
+        ];
+        foreach (var (id, expected) in notices) Assert.AreEqual(expected, english.Get(id), id);
+        Assert.AreEqual("Received POTION.", english.Get("notice.received", ("item", "POTION")));
+        Assert.AreEqual("Gave POTION\nto RED.", english.Get("notice.gave", ("item", "POTION"), ("pokemon", "RED")));
+        Assert.AreEqual("HELD ITEM / NONE", english.Get("held.header", ("item", "NONE")));
+        Assert.AreEqual("Switch its held item for\nPOTION?", english.Get("prompt.exchange", ("item", "POTION")));
+        using var directory = TestAssets.TemporaryOutput();
+        File.WriteAllText(Path.Combine(directory.Path, "inventory.json"), """{"notice.gave":"{pokemon}: {item}; {item}","action.deposit":"STORE"}""");
+        var translated = Game.Content.PresentationTextCatalog.Load("inventory", directory.Path);
+        Assert.AreEqual("STORE", translated.Get("action.deposit"));
+        Assert.AreEqual("{item}: {pokemon}; {pokemon}", translated.Get("notice.gave", ("pokemon", "{item}"), ("item", "{pokemon}")));
+        Assert.AreEqual(english.Get("notice.not-holdable"), translated.Get("notice.not-holdable"));
+    }
+
 }

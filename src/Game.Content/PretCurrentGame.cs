@@ -23,6 +23,7 @@ public sealed partial class PretCampaignCatalog
         QuestLogSource = PretQuestLogSource.Load(projectRoot);
         var canonicalPokemon = PretCanonicalPokemonCatalog.Load(projectRoot, projectRoot);
         var sharedItems = SharedItemCatalog.LoadProject(projectRoot);
+        DisplayNames = SourceDisplayNames.LoadProject(projectRoot, sharedItems, canonicalPokemon.Catalog);
         var sharedMachines = SharedMachineCatalog.LoadProject(projectRoot, sharedItems);
         // Resource readers validate their formats; no original-file identity pass is required.
         var mapNumbers = PretCelioMapNumbers.LoadSourceTable(projectRoot);

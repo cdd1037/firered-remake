@@ -8,8 +8,8 @@ public partial class CampaignView
 {
     private static readonly SourceTrainerEventDisplay DoubleSilent = new([]);
     private static SourceTrainerEventDisplay DoubleText(string symbol,params (string Key,string Value)[] values)=>new([new(symbol,values)]);
-    private static string DoubleAbility(string symbol)=>SourceTrainerPresentationModel.AbilityName(symbol);
-    private string DoubleItem(string symbol)=>symbol.StartsWith("ITEM_",StringComparison.Ordinal)?symbol[5..].Replace('_',' '):throw new InvalidDataException("Doubles item symbol differs.");
+    private string DoubleAbility(string symbol)=>_catalog.DisplayNames.AbilityName(symbol);
+    private string DoubleItem(string symbol)=>_catalog.DisplayNames.ItemName(symbol);
     private string DoublePartyName(CampaignDoubleBattle b,BattleSide side,int member)=>side==BattleSide.Player
         ?_session.State.Party[member].Nickname:_catalog.PokemonContent!.SpeciesNames[b.Frame.Party(side).Members[member].Pokemon.SourceSpeciesId];
     private static SourceMoveUsedEvent? DoubleInvocation(CampaignDoubleBattle b,SourceBattleEvent current)=>
@@ -124,13 +124,13 @@ public partial class CampaignView
                 return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility(cure.Ability)),("B_BUFF1",DoubleStatusProblem(x.Before)));
             case SourceStatusChangedEvent {Reason:"synchronize",Before:0} x when DoublePriorAbility(b,x) is {} synchronize:
                 return DoubleText(SourceTrainerPresentationModel.DisplayStatus(x.After) switch {WildBattleStatus.Poison=>"sText_PkmnPoisonedBy",WildBattleStatus.Burn=>"sText_PkmnBurnedBy",WildBattleStatus.Paralysis=>"sText_PkmnWasParalyzedBy",_=>throw new InvalidDataException("Synchronize status differs.")},
-                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(synchronize.Side)),("B_SCR_ACTIVE_ABILITY","SYNCHRONIZE"),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
+                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(synchronize.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_SYNCHRONIZE")),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
             case SourceStatusChangedEvent x when x.Before==WildBattleStatus.Freeze&&x.After==0&&x.Reason!="held-berry":return Atk("sText_PkmnWasDefrosted2",x.Side);
             case SourceStatusChangedEvent x when x.After==0&&x.Reason is "shed-skin" or "immunity" or "limber" or "water-veil" or "magma-armor" or "insomnia" or "vital-spirit":
                 return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_"+x.Reason.ToUpperInvariant().Replace('-','_'))),("B_BUFF1",DoubleStatusProblem(x.Before)));
-            case SourceConfusionChangedEvent {After:0,Reason:"own-tempo"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY","OWN TEMPO"),("B_BUFF1","confusion"));
+            case SourceConfusionChangedEvent {After:0,Reason:"own-tempo"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_OWN_TEMPO")),("B_BUFF1","confusion"));
             case SourceConfusionChangedEvent x when x.Reason is "rampage-ended" or "fatigue":return Atk("sText_PkmnFatigueConfusion",x.Side);
-            case SourceInfatuationChangedEvent {After:null,Reason:"oblivious"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY","OBLIVIOUS"),("B_BUFF1","love"));
+            case SourceInfatuationChangedEvent {After:null,Reason:"oblivious"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_OBLIVIOUS")),("B_BUFF1","love"));
             case SourceInfatuationChangedEvent {After:null}:return DoubleSilent;
             case SourceMoveFailedEvent x:return DoubleFailureMessage(x);
             case SourcePokeFluteEvent x:return x.Phase switch {
@@ -171,11 +171,11 @@ public partial class CampaignView
     private SourceTrainerEventDisplay? DoubleOverlayMessage(CampaignDoubleBattle b,SourceCalledOverlayChangedEvent x)
     {
         var ability=DoublePriorAbility(b,x);var invocation=DoubleInvocation(b,x);
-        if(ability?.Ability=="ABILITY_COLOR_CHANGE"&&x.After?.Type1 is {} color)return DoubleText("sText_PkmnChangedTypeWith",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_DEF_ABILITY","COLOR CHANGE"),("B_BUFF1",color[5..]));
+        if(ability?.Ability=="ABILITY_COLOR_CHANGE"&&x.After?.Type1 is {} color)return DoubleText("sText_PkmnChangedTypeWith",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_DEF_ABILITY",DoubleAbility(ability.Ability)),("B_BUFF1",_catalog.DisplayNames.TypeName(color)));
         if(ability?.Ability=="ABILITY_TRACE"&&x.Source is {} donor&&x.After?.Ability is {} traced)return DoubleText("sText_PkmnTraced",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_BUFF1",DoublePrefixed(donor)),("B_BUFF2",DoubleAbility(traced)));
         if(ability?.Ability=="ABILITY_FORECAST")return DoubleText("sText_PkmnTransformed",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
         if(x.Move.Value is "pret:MOVE_CONVERSION" or "pret:MOVE_CONVERSION_2" or "pret:MOVE_CAMOUFLAGE"&&x.After?.Type1 is {} type)
-            return DoubleText("sText_PkmnChangedType",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_BUFF1",type[5..]));
+            return DoubleText("sText_PkmnChangedType",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_BUFF1",_catalog.DisplayNames.TypeName(type)));
         if(x.Move.Value=="pret:MOVE_ROLE_PLAY"&&invocation is {}&&x.After?.Ability is {} copied)
             return DoubleText("sText_PkmnCopiedFoe",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(invocation.Target)),("B_DEF_ABILITY",DoubleAbility(copied)));
         if(x.Move.Value=="pret:MOVE_SKILL_SWAP")return DoublePrior(b,x,e=>e is SourceCalledOverlayChangedEvent prior&&prior.Move==x.Move)?DoubleSilent:

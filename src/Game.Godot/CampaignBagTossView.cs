@@ -26,8 +26,8 @@ public partial class CampaignView
         int member = state.DoubleBattle is {} battle ? battle.Frame.Get(new(actor)).Member!.Value.Index : (state.ForestTrainerBattle?.Presentation ?? state.WildBattle!).ActivePartyIndex;
         if (!Apply(new("battle_toss_open", Text:item.Value, PartyIndex:actor) { TargetInstanceId=state.Party[member].InstanceId }))
         {
-            if (state.DoubleBattle is not null) _doubleNotice="That item can't be tossed.";
-            else _wildNotice="That item can't be tossed.";
+            if (state.DoubleBattle is not null) _doubleNotice=_inventoryText.Get("notice.not-tossable");
+            else _wildNotice=_inventoryText.Get("notice.not-tossable");
         }
         SynchronizeBagToss();
     }
@@ -36,7 +36,7 @@ public partial class CampaignView
     {
         bool accepted = Apply(new("bag_toss_open",Text:item.Value));
         _itemPopup=false;_questPocketPopup=false;
-        if(!accepted)_itemNotice="That item can't be tossed.";
+        if(!accepted)_itemNotice=_inventoryText.Get("notice.not-tossable");
     }
 
     private void SynchronizeBagToss()
@@ -110,7 +110,13 @@ public partial class CampaignView
             CampaignBagTossPhase.Confirm=>BagTossConfirmMessage,
             _=>OpeningItemUiSkin.PcResultFrame};
         _itemSkin.DrawStandardFrame(this,frame);
-        ItemLines(_sourceNormal,OpeningItemUiSkin.PcResultText,toss.Message);
+        string symbol = toss.Phase switch {
+            CampaignBagTossPhase.Quantity => "gText_TossOutHowManyStrVar1s",
+            CampaignBagTossPhase.Confirm => "gText_ThrowAwayStrVar2OfThisItemQM",
+            CampaignBagTossPhase.Result => "gText_ThrewAwayStrVar2StrVar1s",
+            _ => throw new InvalidDataException("bag_toss_phase_invalid") };
+        ItemLines(_sourceNormal,OpeningItemUiSkin.PcResultText,InventoryMenuPresentation.BindSource(
+            InventorySourceText(symbol), toss.Name, toss.Quantity.ToString(CultureInfo.InvariantCulture)));
         if(toss.Phase==CampaignBagTossPhase.Quantity)
         {
             _battleSkin.DrawStandardFrame(this,BagTossQuantityFrame);
@@ -126,7 +132,7 @@ public partial class CampaignView
         else if(toss.Phase==CampaignBagTossPhase.Confirm)
         {
             _battleSkin.DrawStandardFrame(this,BagTossConfirmFrame);
-            SourceText(_sourceNormal,new(192,122),"YES");SourceText(_sourceNormal,new(192,138),"NO");
+            SourceText(_sourceNormal,new(192,122),InventorySourceText("gText_Yes"));SourceText(_sourceNormal,new(192,138),InventorySourceText("gText_No"));
             SourceText(_sourceNormal,new(184,122+_bagTossChoice*16),_itemSkin.Text("gText_SelectorArrow2"));
         }
         return true;

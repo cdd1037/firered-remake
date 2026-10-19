@@ -10,12 +10,6 @@ public sealed record CampaignBagToss(string Ticket, long Revision, CampaignBagTo
 {
     [System.Text.Json.Serialization.JsonIgnore] public CampaignBattleTossOwner? BattleOwner { get; init; }
     public string WaitId => Ticket + ":" + Revision.ToString(CultureInfo.InvariantCulture);
-    // pret 037335f, src/strings.c:185-187. Preserve source line breaks and plurals.
-    public string Message => Phase switch {
-        CampaignBagTossPhase.Quantity => "Toss out how many\n" + Name + "(s)?",
-        CampaignBagTossPhase.Confirm => "Throw away " + Quantity.ToString(CultureInfo.InvariantCulture) + " of\nthis item?",
-        CampaignBagTossPhase.Result => "Threw away " + Quantity.ToString(CultureInfo.InvariantCulture) + "\n" + Name + "(s).",
-        _ => throw new InvalidDataException("bag_toss_phase_invalid") };
 }
 
 public sealed partial class CampaignSession

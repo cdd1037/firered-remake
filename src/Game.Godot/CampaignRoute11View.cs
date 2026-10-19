@@ -56,11 +56,11 @@ public partial class CampaignView
             bool recovers = battle.EventIndex + 1 < battle.Events.Length && battle.Events[battle.EventIndex + 1] is
                 WildBattleRecoveredEvent heal && heal.Side == absorb.Target && heal.Move == absorb.Move;
             return recovers ? new("") : new("sText_PkmnsXMadeYUseless", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(absorb.Target)),
-                ("B_DEF_ABILITY", "WATER ABSORB"), ("B_CURRENT_MOVE", MoveName(absorb.Move)));
+                ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(absorb.Ability)), ("B_CURRENT_MOVE", MoveName(absorb.Move)));
         }
         if (current is WildBattleRecoveredEvent recovered && battle.EventIndex > 0 && battle.Events[battle.EventIndex - 1] is
             WildBattleAbilityPreventedEvent { Ability: "ABILITY_WATER_ABSORB" } previous && previous.Target == recovered.Side && previous.Move == recovered.Move)
-            return new("sText_PkmnRestoredHPUsing", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(recovered.Side)), ("B_DEF_ABILITY", "WATER ABSORB"));
+            return new("sText_PkmnRestoredHPUsing", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(recovered.Side)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(previous.Ability)));
         return current switch
         {
             WildBattleStatusChangedEvent { Reason: "move", Before: 0, After: WildBattleStatus.Freeze } change =>
@@ -80,12 +80,12 @@ public partial class CampaignView
             WildBattleMoveFailedEvent { Reason: "already-burned" } failed => new("sText_PkmnAlreadyHasBurn", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(failed.Target))),
             WildBattleMoveFailedEvent { Reason: "fire-type-immunity" } failed => new("sText_ItDoesntAffect", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(failed.Target))),
             WildBattleAbilityPreventedEvent { Ability: "ABILITY_DAMP" } ability => new("sText_PkmnPreventsUsage",
-                ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", "DAMP"),
+                ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability)),
                 ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(ability.Actor)), ("B_CURRENT_MOVE", MoveName(ability.Move))),
             WildBattleAbilityPreventedEvent { Ability: "ABILITY_WATER_VEIL" } ability => new("sText_PkmnsXPreventsBurns",
-                ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_EFF_ABILITY", "WATER VEIL")),
+                ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_EFF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
             WildBattleHeldItemConsumedEvent { Item: "ITEM_ASPEAR_BERRY" } item => new("sText_PkmnsItemDefrostedIt",
-                ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(item.Side)), ("B_LAST_ITEM", "ASPEAR BERRY")),
+                ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(item.Side)), ("B_LAST_ITEM", _catalog.DisplayNames.ItemName(item.Item))),
             _ => null
         };
     }

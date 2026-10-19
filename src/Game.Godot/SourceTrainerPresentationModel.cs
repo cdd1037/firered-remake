@@ -20,11 +20,6 @@ internal static class SourceTrainerPresentationModel
     internal static bool IsSilentDelayedReceipt(MoveId move, string reason) =>
         reason == "countdown" || move.Value == "pret:MOVE_WISH" && reason == "scheduled";
     internal static uint DisplayStatus(uint status) => WildBattleSourceFieldEffects.IsValidToxic(status) ? WildBattleStatus.Poison : status;
-    internal static string AbilityName(string source) => source switch {
-        "ABILITY_NONE" => "-------", "ABILITY_COMPOUND_EYES" => "COMPOUNDEYES", "ABILITY_LIGHTNING_ROD" => "LIGHTNINGROD",
-        _ when source.StartsWith("ABILITY_", StringComparison.Ordinal) => source[8..].Replace('_', ' '),
-        _ => throw new InvalidDataException("Unknown source ability symbol.")
-    };
     internal static string? AbilityPreventionSymbol(string ability)=>ability switch {
             "ABILITY_LEVITATE"=>"sText_PkmnMakesGroundMiss","ABILITY_WONDER_GUARD"=>"sText_AvoidedDamage",
             "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB"=>"sText_PkmnsXMadeYUseless","ABILITY_FLASH_FIRE"=>"sText_PkmnRaisedFirePowerWith",
@@ -91,9 +86,12 @@ internal static class SourceTrainerPresentationModel
 
     internal static SourceTrainerEventDisplay? Describe(IReadOnlyList<WildBattleEvent> events, int index,
         Func<WildBattleSide, string> name, Func<MoveId, string> moveName, Func<WildBattleSide, int, string> partyName,
-        Func<string, string>? itemName = null, Func<WildBattleSide, int, string?>? prefixedPartyName = null)
+        Func<string, string>? itemName = null, Func<WildBattleSide, int, string?>? prefixedPartyName = null,
+        Func<string, string>? abilityName = null, Func<string, string>? typeName = null)
     {
         if (index < 0 || index >= events.Count) throw new ArgumentOutOfRangeException(nameof(index));
+        string AbilityName(string id) => abilityName?.Invoke(id) ?? throw new InvalidDataException("Ability name lookup is required.");
+        string TypeName(string id) => typeName?.Invoke(id) ?? throw new InvalidDataException("Type name lookup is required.");
         SourceTrainerEventDisplay Atk(string symbol, WildBattleSide side) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(side)));
         switch (events[index])
         {
@@ -106,7 +104,7 @@ internal static class SourceTrainerPresentationModel
                     nextColorOverlay.Side == color.Side && nextColorOverlay.After?.Type1 is { } nextColorType && nextColorType == nextColorOverlay.After.Type2 &&
                     nextColorType.StartsWith("TYPE_", StringComparison.Ordinal)
                     ? Text("sText_PkmnChangedTypeWith", ("B_DEF_NAME_WITH_PREFIX", name(color.Side)),
-                        ("B_DEF_ABILITY", "COLOR CHANGE"), ("B_BUFF1", nextColorType[5..])) : Unsupported;
+                        ("B_DEF_ABILITY", AbilityName(color.Ability)), ("B_BUFF1", TypeName(nextColorType))) : Unsupported;
             case WildBattleCalledOverlayChangedEvent changed when index > 0 &&
                 events[index - 1] is WildBattleAbilityActivatedEvent { Ability: "ABILITY_COLOR_CHANGE" } color && color.Side == changed.Side:
                 return changed.After?.Type1 is { } colorType && colorType == changed.After.Type2 &&
@@ -118,7 +116,7 @@ internal static class SourceTrainerPresentationModel
                     ("B_DEF_ABILITY", AbilityName(ability.Ability)), ("B_ATK_NAME_WITH_PREFIX", name(ability.Target)));
             case WildBattleStatusChangedEvent { Reason: "flame-body", After: WildBattleStatus.Burn } burned:
                 return Text("sText_PkmnBurnedBy", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(Other(burned.Side))),
-                    ("B_SCR_ACTIVE_ABILITY", "FLAME BODY"), ("B_EFF_NAME_WITH_PREFIX", name(burned.Side)));
+                    ("B_SCR_ACTIVE_ABILITY", AbilityName("ABILITY_FLAME_BODY")), ("B_EFF_NAME_WITH_PREFIX", name(burned.Side)));
             case WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB" } absorb:
                 return index + 1 < events.Count && events[index + 1] is WildBattleRecoveredEvent nextRecovery &&
                     nextRecovery.Side == absorb.Target && nextRecovery.Move == absorb.Move ? Silent :
@@ -181,7 +179,7 @@ internal static class SourceTrainerPresentationModel
             case WildBattleCalledOverlayChangedEvent overlay:
                 if (overlay.Move.Value is "pret:MOVE_CONVERSION" or "pret:MOVE_CONVERSION_2" or "pret:MOVE_CAMOUFLAGE")
                     return overlay.After?.Type1 is { } type && type.StartsWith("TYPE_", StringComparison.Ordinal)
-                        ? Text("sText_PkmnChangedType", ("B_ATK_NAME_WITH_PREFIX", name(overlay.Side)), ("B_BUFF1", type[5..])) : Unsupported;
+                        ? Text("sText_PkmnChangedType", ("B_ATK_NAME_WITH_PREFIX", name(overlay.Side)), ("B_BUFF1", TypeName(type))) : Unsupported;
                 if (overlay.Move.Value == "pret:MOVE_ROLE_PLAY")
                     return overlay.After?.Ability is { } ability ? Text("sText_PkmnCopiedFoe", ("B_ATK_NAME_WITH_PREFIX", name(overlay.Side)),
                         ("B_DEF_NAME_WITH_PREFIX", name(Other(overlay.Side))), ("B_DEF_ABILITY", AbilityName(ability))) : Unsupported;

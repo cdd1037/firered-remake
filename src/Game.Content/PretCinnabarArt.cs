@@ -51,7 +51,7 @@ public sealed class PretCinnabarArt
         Require(doc.Dex.Select(d=>d.SourceSpeciesId).ToHashSet().SetEquals(expected.Keys),"Cinnabar Dex identity differs.");
         foreach(var d in doc.Dex)
         {
-            var original=dex.Entries[d.SourceSpeciesId];Require(d.Name==original.Name&&d.Category==original.Category&&d.HeightDecimeters==original.HeightDecimeters&&d.WeightHectograms==original.WeightHectograms&&d.Description==original.Description,"Cinnabar Dex differs from full authenticated source.");        }
+            var original=dex.Entries[d.SourceSpeciesId];Require(d.HeightDecimeters==original.HeightDecimeters&&d.WeightHectograms==original.WeightHectograms,"Cinnabar Dex differs from full authenticated source.");        }
         return new(doc,json.RootElement.Clone(),files.ToImmutable(),dex);
     }
     public byte[] ReadTexture(string projectRelativePath)

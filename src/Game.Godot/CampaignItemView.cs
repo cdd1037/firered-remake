@@ -6,6 +6,10 @@ using Godot;
 public partial class CampaignView
 {
     private int _itemCursor,_itemAction,_itemQuantity=1;
+    private string InventorySourceText(string symbol) => symbol is "gOtherText_Use" or "gOtherText_Give" or "gOtherText_Toss"
+        or "gFameCheckerText_Cancel" or "gText_Withdraw" ? _itemSkin.Text(symbol) : string.Join('\n', _catalog.TextPages(symbol));
+    private string InventoryActionLabel(InventoryMenuAction action) => action == InventoryMenuAction.Deposit
+        ? _inventoryText.Get("action.deposit") : InventorySourceText(InventoryMenuPresentation.SourceSymbol(action));
     private bool _itemPopup,_itemQuantityOpen;
     private string? _itemNotice;
     private string? _itemMenuKey;
@@ -60,12 +64,13 @@ public partial class CampaignView
             if(key.Keycode==Key.Backspace){_itemPopup=false;return true;}
             if(key.Keycode==Key.Enter)
             {
-                if(_itemAction==count-1){_itemPopup=false;return true;}
-                if(ItemActionLabels()[_itemAction]=="GIVE")
+                var action = ItemActions()[_itemAction].Id;
+                if(action is InventoryMenuAction.Cancel or InventoryMenuAction.Exit){_itemPopup=false;return true;}
+                if(action == InventoryMenuAction.Give)
                 {StartGiveItem((menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item,menu.View=="withdraw");return true;}
-                if(ItemActionLabels()[_itemAction]=="TOSS")
+                if(action == InventoryMenuAction.Toss)
                 {OpenBagToss(FieldItemStacks[_itemCursor].Item);return true;}
-                if(menu.Origin=="bag"){_itemPopup=false;if(_catalog.EarlyShop is not null){var item=FieldItemStacks[_itemCursor].Item;if(item.Value=="pret:ITEM_SACRED_ASH"&&_session.SacredAshEnabled){Apply(new("field_sacred_ash",Text:item.Value));return true;}if(_session.CanGiveMail(item)){Apply(new("mail_preview_open",Text:item.Value));return true;}if(TryOpenMtMoonItem(item))return true;if(item==EscapeRopeRules.Item){bool accepted = Apply(new("field_escape_rope",Text:item.Value));if(!accepted)_itemNotice=FieldConsumableNotice(_status);return true;}if((item==EarlyRepelRules.Item||item==LavenderItemRules.SuperRepelId||item==PretSaffronGymItems.MaxRepelId)){bool accepted = Apply(new("field_repel",Text:item.Value));if(!accepted)_itemNotice=_status;return true;}if(!CanSelectFieldMedicine(item)){_itemNotice="This item's use is not\nimplemented yet.";return true;}_fieldMedicineTarget=0;_fieldMedicineTargetOpen=true;return true;}Apply(new("field_potion"));if(_session.State.ItemMenu?.View!="message")_itemNotice=_status;return true;}
+                if(menu.Origin=="bag"){_itemPopup=false;if(_catalog.EarlyShop is not null){var item=FieldItemStacks[_itemCursor].Item;if(item.Value=="pret:ITEM_SACRED_ASH"&&_session.SacredAshEnabled){Apply(new("field_sacred_ash",Text:item.Value));return true;}if(_session.CanGiveMail(item)){Apply(new("mail_preview_open",Text:item.Value));return true;}if(TryOpenMtMoonItem(item))return true;if(item==EscapeRopeRules.Item){bool accepted = Apply(new("field_escape_rope",Text:item.Value));if(!accepted)_itemNotice=FieldConsumableNotice(_status);return true;}if((item==EarlyRepelRules.Item||item==LavenderItemRules.SuperRepelId||item==PretSaffronGymItems.MaxRepelId)){bool accepted = Apply(new("field_repel",Text:item.Value));if(!accepted)_itemNotice=_status;return true;}if(!CanSelectFieldMedicine(item)){_itemNotice=_inventoryText.Get("notice.use-unavailable");return true;}_fieldMedicineTarget=0;_fieldMedicineTargetOpen=true;return true;}Apply(new("field_potion"));if(_session.State.ItemMenu?.View!="message")_itemNotice=_status;return true;}
                 var stacks=menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks;
                 if(stacks[_itemCursor].Quantity>1){_itemQuantity=1;_itemQuantityOpen=true;_itemPopup=false;}else TransferItem(menu.View);
             }
@@ -112,7 +117,7 @@ public partial class CampaignView
         else DrawItemList(menu.DisplayInventory??_session.State.Inventory!,view,_itemCursor,menu.View=="message"?_session.VisibleItemMessage:null,_itemPopup||_itemQuantityOpen);
         if(_itemPopup)
         {
-            var labels=ItemActionLabels();
+            var labels=ItemActions().Select(action => action.Label).ToArray();
             DrawItemActionPopup(labels.Length==3,labels,_itemAction,InventoryName((view=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item),menu.Origin=="bag");
         }
         if(_itemQuantityOpen)ItemMessageBox(ItemText(view=="withdraw"?"gText_WithdrawHowMany":"gText_DepositHowManyStrVars1")+"   × "+_itemQuantity);

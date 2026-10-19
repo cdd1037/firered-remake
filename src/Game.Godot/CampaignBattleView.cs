@@ -294,7 +294,7 @@ public partial class CampaignView
                 SourceText(_battleMoveFont,new(168,138),_battleSelectionText.TypeLabel);
                 // MoveSelectionDisplayMoveType switches to FONT_NORMAL after the small TYPE/ prefix.
                 float typePrefixWidth=_battleMoveFont.Font.GetStringSize(_battleMoveFont.PrepareText(_battleSelectionText.TypeLabel),fontSize:_battleMoveFont.Size).X;
-                SourceText(_battleMenuFont,new(168+typePrefixWidth,138),_catalog.PokemonContent!.Catalog.Moves[move.Move].Type.Replace("TYPE_","",StringComparison.Ordinal));
+                SourceText(_battleMenuFont,new(168+typePrefixWidth,138),_catalog.DisplayNames.TypeName(_catalog.PokemonContent!.Catalog.Moves[move.Move].Type));
             }
         }
     }

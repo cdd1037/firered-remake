@@ -1,0 +1,20 @@
+{
+  "action.deposit": "DEPOSIT",
+  "notice.use-unavailable": "This item's use is not\nimplemented yet.",
+  "notice.not-holdable": "This item can't be held.",
+  "notice.received": "Received {item}.",
+  "notice.target-changed": "The selected POKéMON changed.",
+  "notice.gave": "Gave {item}\nto {pokemon}.",
+  "notice.nothing-held": "It isn't holding anything.",
+  "notice.take-bag-full": "The BAG is full. The item\ncouldn't be taken.",
+  "notice.mail-egg-transfer-unavailable": "Mail and Eggs aren't supported\nfor item transfers here.",
+  "notice.transfer-failed": "The item couldn't be transferred.",
+  "held.header": "HELD ITEM / {item}",
+  "prompt.exchange": "Switch its held item for\n{item}?",
+  "notice.registered": "Registered. Press R in the field.",
+  "notice.fame-checker-unavailable": "FAME CHECKER viewing is not\nimplemented yet.",
+  "notice.teachy-tv-unavailable": "TEACHY TV playback is not\nimplemented yet.",
+  "notice.action-unavailable": "This action isn't available.",
+  "notice.order-failed": "The item order couldn't be changed.",
+  "notice.not-tossable": "That item can't be tossed."
+}

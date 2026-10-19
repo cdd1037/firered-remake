@@ -152,7 +152,7 @@ public partial class CampaignView
             case SourceEffectivenessEvent x when x.Effectiveness==WildBattleEffectiveness.NoEffect:Def("sText_ItDoesntAffect",x.Target);break;
             case SourceFaintedEvent faint:Atk("sText_AttackerFainted",faint.Side);break;
             case SourceStatChangedEvent stat when DoubleIntimidateActive(b,stat.Actor,stat.Sequence):
-                Source("sText_PkmnCutsAttackWith",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(stat.Actor)),("B_SCR_ACTIVE_ABILITY","INTIMIDATE"),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)));break;
+                Source("sText_PkmnCutsAttackWith",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(stat.Actor)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_INTIMIDATE")),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)));break;
             case SourceStatChangedEvent stat:
                 Source(stat.After>stat.Before?"sText_AttackersStatRose":"sText_DefendersStatFell",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)),
                     ("B_BUFF1",WildStatName(stat.Stat)),("B_BUFF2",stat.After>stat.Before?(stat.After-stat.Before>1?"rose sharply!":"rose!"):(stat.Before-stat.After>1?"harshly fell!":"fell!")));break;
@@ -169,7 +169,7 @@ public partial class CampaignView
                 Source(WildBattleStatus.IsSleeping(x.After)?"sText_PkmnMadeSleep":x.After switch {
                     WildBattleStatus.Poison=>"sText_PkmnPoisonedBy",WildBattleStatus.Burn=>"sText_PkmnBurnedBy",
                     WildBattleStatus.Paralysis=>"sText_PkmnWasParalyzedBy",_=>throw new InvalidDataException("Contact status differs.")},
-                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(holder.Side)),("B_SCR_ACTIVE_ABILITY",holder.Ability.Replace("ABILITY_","",StringComparison.Ordinal).Replace('_',' ')),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;
+                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(holder.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility(holder.Ability)),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;
             case SourceStatusChangedEvent x when x.Before==0&&x.After!=0:
                 Source(WildBattleStatus.IsSleeping(x.After)?"sText_PkmnFellAsleep":ForestPresentationStatus(x.After) switch {
                     WildBattleStatus.Poison=>WildBattleSourceFieldEffects.IsValidToxic(x.After)?"sText_PkmnBadlyPoisoned":"sText_PkmnWasPoisoned",
@@ -178,17 +178,17 @@ public partial class CampaignView
             case SourceActionBlockedEvent x:Atk(WildBattleStatus.IsSleeping(x.Status)?"sText_PkmnFastAsleep":x.Status==WildBattleStatus.Freeze?"sText_PkmnIsFrozen":"sText_PkmnIsParalyzed",x.Side);break;
             case SourceFlinchEvent {Applied:false} x:Atk("sText_PkmnFlinched",x.Side);break;
             case SourceInfatuationChangedEvent x when x.After is {} lover:
-                if(x.Reason=="cute-charm")Source("sText_PkmnsXInfatuatedY",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(lover)),("B_DEF_ABILITY","CUTE CHARM"),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
+                if(x.Reason=="cute-charm")Source("sText_PkmnsXInfatuatedY",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(lover)),("B_DEF_ABILITY",DoubleAbility("ABILITY_CUTE_CHARM")),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
                 else Def("sText_PkmnFellInLove",x.Side);break;
             case SourceInfatuationBlockedEvent x:Atk("sText_PkmnImmobilizedByLove",x.Side);break;
             case SourceAbilityActivatedEvent {Ability:"ABILITY_CUTE_CHARM" or "ABILITY_INTIMIDATE" or "ABILITY_STATIC" or "ABILITY_POISON_POINT" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE" or "ABILITY_ROUGH_SKIN"}:break;
             case SourceAbilityDamageEvent {Ability:"ABILITY_ROUGH_SKIN"} x:
-                Source("sText_PkmnHurtsWith",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Holder)),("B_DEF_ABILITY","ROUGH SKIN"),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Target)));break;
+                Source("sText_PkmnHurtsWith",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Holder)),("B_DEF_ABILITY",DoubleAbility("ABILITY_ROUGH_SKIN")),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Target)));break;
             case SourceAbilityPreventedEvent x when x.Move.Value=="pret:MOVE_NONE"&&DoubleIntimidateActive(b,x.Actor,x.Sequence):
-                Source("sText_PreventedFromWorking",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_DEF_ABILITY",x.Ability.Replace("ABILITY_","",StringComparison.Ordinal).Replace('_',' ')),("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_BUFF1","INTIMIDATE"));break;
+                Source("sText_PreventedFromWorking",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_DEF_ABILITY",DoubleAbility(x.Ability)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_BUFF1",DoubleAbility("ABILITY_INTIMIDATE")));break;
             case SourceHeldItemSurvivalEvent item:
                 Source("sText_PkmnHungOnWithX",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(item.Target)),
-                    ("B_LAST_ITEM",item.Item.Replace("ITEM_","",StringComparison.Ordinal).Replace('_',' ')));break;
+                    ("B_LAST_ITEM",DoubleItem(item.Item)));break;
             case SourceFocusEnergyEvent x:Atk("gBattleText_GetPumped",x.Side);break;
             case SourceDisableChangedEvent x when x.Reason=="move"&&x.Move is {} move:Source("sText_PkmnMoveWasDisabled",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_BUFF1",MoveName(move)));break;
             case SourceDisableChangedEvent x when x.After==0:Atk("sText_PkmnMoveDisabledNoMore",x.Side);break;
@@ -442,7 +442,7 @@ public partial class CampaignView
             if (DrawBattleMoveOrder(_doubleCursor)) return;
             var move=moves[_doubleCursor];int pp=SourceUiCorrections.PpPaletteState(move.CurrentPp,move.MaximumPp);
             SourceText(_battlePpSmallFont[pp],new(168,122),_battleSelectionText.PpLabel);SourceText(_battlePpFont[pp],new(202,122),$"{move.CurrentPp,2}/{move.MaximumPp,2}");
-            SourceText(_battleMoveFont,new(168,138),_battleSelectionText.TypeLabel+_catalog.PresetDoublePokemon!.Moves[move.Move].Type.Replace("TYPE_","",StringComparison.Ordinal));
+            SourceText(_battleMoveFont,new(168,138),_battleSelectionText.TypeLabel+_catalog.DisplayNames.TypeName(_catalog.PresetDoublePokemon!.Moves[move.Move].Type));
         }
     }
     private void DrawDoubleHealth(int slot,WildBattleCombatant body)

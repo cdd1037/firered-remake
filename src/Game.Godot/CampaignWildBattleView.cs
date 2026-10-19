@@ -236,13 +236,13 @@ public partial class CampaignView
                 case WildBattleStatAtMinimumEvent stat:
                     Source("sText_StatsWontDecrease", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stat.Target)), ("B_BUFF1", WildStatName(stat.Stat))); break;
                 case WildBattleAbilityPreventedEvent ability when ability.Ability == "ABILITY_KEEN_EYE":
-                    Source("sText_PkmnsXPreventsYLoss", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_SCR_ACTIVE_ABILITY", "KEEN EYE"), ("B_BUFF1", "accuracy")); break;
+                    Source("sText_PkmnsXPreventsYLoss", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability)), ("B_BUFF1", "accuracy")); break;
                 case WildBattleFaintedEvent fainted:
                     Source("sText_TargetFainted", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(fainted.Side))); break;
                 case WildBattleRunAttemptEvent run:
                     if (run.Escaped && run.EscapingItem is { } escapingItem)
                         Source("sText_PkmnFledUsingIts", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(WildBattleSide.Player)),
-                            ("B_LAST_ITEM", escapingItem == "ITEM_SMOKE_BALL" ? "SMOKE BALL" : throw new InvalidDataException("Unadmitted escape item: " + escapingItem)));
+                            ("B_LAST_ITEM", escapingItem == "ITEM_SMOKE_BALL" ? _catalog.DisplayNames.ItemName(escapingItem) : throw new InvalidDataException("Unadmitted escape item: " + escapingItem)));
                     else Source(run.Escaped ? "sText_GotAwaySafely" : "sText_CantEscape");
                     break;
                 case WildBattleBallThrownEvent thrown:
@@ -314,8 +314,8 @@ public partial class CampaignView
         "hm_move_cannot_be_forgotten" => HmCannotForgetText,
         "pokemon_learning_effect_unsupported" => UnsupportedLearningText,
         "wild_battle_switch_rooted" or "wild_battle_switch_mean_look" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
-        "wild_battle_switch_arena_trap" or "route11_trainer_switch_arena_trap" => string.Join('\n',WildSourcePages("gText_PkmnsXPreventsSwitching",("B_BUFF1",WildName(WildBattleSide.Opponent)),("B_LAST_ABILITY","ARENA TRAP"))),
-        "wild_battle_run_arena_trap" => string.Join('\n',WildSourcePages("sText_PreventsEscape",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(WildBattleSide.Opponent)),("B_SCR_ACTIVE_ABILITY","ARENA TRAP"))),
+        "wild_battle_switch_arena_trap" or "route11_trainer_switch_arena_trap" => string.Join('\n',WildSourcePages("gText_PkmnsXPreventsSwitching",("B_BUFF1",WildName(WildBattleSide.Opponent)),("B_LAST_ABILITY",_catalog.DisplayNames.AbilityName("ABILITY_ARENA_TRAP")))),
+        "wild_battle_run_arena_trap" => string.Join('\n',WildSourcePages("sText_PreventsEscape",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(WildBattleSide.Opponent)),("B_SCR_ACTIVE_ABILITY",_catalog.DisplayNames.AbilityName("ABILITY_ARENA_TRAP")))),
         "wild_battle_run_rooted" or "wild_battle_run_binding" or "wild_battle_run_mean_look" => string.Join('\n',WildSourcePages("sText_CantEscape2")),
         "trainer_battle_cannot_run" => string.Join('\n', WildSourcePages("sText_NoRunningFromTrainers")),
         "trainer_battle_cannot_capture" => string.Join('\n', WildSourcePages("sText_DontBeAThief")),
@@ -571,7 +571,7 @@ public partial class CampaignView
             SourceText(_battlePpSmallFont[ppState], new(168, 122), _battleSelectionText.PpLabel); SourceText(_battlePpFont[ppState], new(202, 122), $"{move.CurrentPp,2}/{move.MaximumPp,2}");
             SourceText(_battleMoveFont, new(168, 138), _battleSelectionText.TypeLabel);
             float width = _battleMoveFont.Font.GetStringSize(_battleMoveFont.PrepareText(_battleSelectionText.TypeLabel), fontSize: _battleMoveFont.Size).X;
-            SourceText(_battleMenuFont, new(168 + width, 138), _catalog.PokemonContent!.Catalog.Moves[move.Move].Type.Replace("TYPE_", "", StringComparison.Ordinal));
+            SourceText(_battleMenuFont, new(168 + width, 138), _catalog.DisplayNames.TypeName(_catalog.PokemonContent!.Catalog.Moves[move.Move].Type));
         }
     }
     private void DrawWildParty(CampaignWildBattle b) => DrawCaptureParty(b, true, true);
