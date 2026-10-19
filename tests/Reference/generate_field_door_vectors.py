@@ -1,4 +1,4 @@
-"""Run pinned ordinary animated-door callbacks in an authored portable C host.
+"""Run pinned ordinary animated/nonanimated-door callbacks in an authored portable C host.
 
 The host extracts the original task scheduler, door-frame timer, warp/exit tasks,
 normal walking pixel callbacks, avatar standing-state update, palette callbacks,
@@ -29,12 +29,13 @@ HASHES = {**WARP_HASHES,
     'src/event_object_movement.c': '920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254',
     'src/event_object_lock.c': 'e18c4cdf700e7d20a71b2faaedae6dd2f7f33ebbff40562a333668587d95c516',
     'src/field_player_avatar.c': 'd36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e',
+    'src/field_control_avatar.c': '305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d',
     'src/task.c': '8bdd5205ec396be7b66d6e384a82309b3cab59783d46fb8c4c991b2172d4868b',
 }
 
 
 def extract_function(source, name):
-    match = re.search(r'^(?:static )?(?:bool32|bool8|u8|s8|u16|void) ' + re.escape(name)
+    match = re.search(r'^(?:static )?(?:bool32|bool8|u8|s8|u16|int|void) ' + re.escape(name)
                       + r'\([^;]*?\)\n\{', source, re.M)
     if match is None:
         raise ValueError('Missing extracted function: ' + name)
@@ -78,6 +79,7 @@ typedef int bool8; typedef int bool32;
 #define TILE_SIZE_4BPP 32
 #define CLOSED_DOOR_TILES_OFFSET 0xffff
 #define LOCALID_PLAYER 0
+#define SE_EXIT 1
 #define DISPLAY_WIDTH 240
 #define WIN_RANGE(a,b) (((a)<<8)|(b))
 #define DISPCNT_WIN0_ON 0x2000
@@ -94,7 +96,8 @@ enum { WEATHER_PAL_STATE_IDLE, WEATHER_PAL_STATE_SCREEN_FADING_IN };
 enum { DIR_NONE,DIR_SOUTH,DIR_NORTH,DIR_WEST,DIR_EAST,DIR_SOUTHWEST,DIR_SOUTHEAST,DIR_NORTHWEST,DIR_NORTHEAST };
 enum { MOVE_SPEED_NORMAL,MOVE_SPEED_FAST_1,MOVE_SPEED_FAST_2,MOVE_SPEED_FASTER,MOVE_SPEED_FASTEST };
 enum { T_NOT_MOVING,T_TILE_TRANSITION,T_TILE_CENTER };
-enum { MOVEMENT_ACTION_WALK_NORMAL_DOWN,MOVEMENT_ACTION_WALK_NORMAL_UP };
+enum { MOVEMENT_ACTION_WALK_NORMAL_DOWN,MOVEMENT_ACTION_WALK_NORMAL_UP,
+    MOVEMENT_ACTION_WALK_NORMAL_LEFT,MOVEMENT_ACTION_WALK_NORMAL_RIGHT };
 typedef void (*TaskFunc)(u8);
 struct Task { TaskFunc func; bool8 isActive; u8 prev,next,priority; s16 data[16]; } gTasks[NUM_TASKS];
 struct Palette { int active,deltaY,delayCounter,delay,y,targetY,blendColor,mode,yDec,
@@ -108,7 +111,7 @@ struct Weather *gWeatherPtr=&weatherState;
 struct Coords16 { s16 x,y; };
 struct Sprite { s16 x,y,data[8]; int animPaused; } gSprites[1];
 struct ObjectEvent { int singleMovementActive,heldMovementActive,heldMovementFinished,movementActionId;
-    int triggerGroundEffectsOnStop; } gObjectEvents[1];
+    int triggerGroundEffectsOnStop,facingDirection; } gObjectEvents[1];
 struct { int tileTransitionState,objectEventId; } gPlayerAvatar;
 struct DoorAnimFrame { u8 duration; u16 tileOffset; };
 struct DoorGraphics { int unused; } doorGfx;
@@ -120,6 +123,7 @@ void UpdateBlendRegisters(void){}
 void FreezeObjectEvents(void){} void UnfreezeObjectEvents(void){}
 void LockPlayerFieldControls(void){} void UnlockPlayerFieldControls(void){}
 void WarpIntoMap(void){} void CB2_LoadMap(void){}
+void FieldCB_DefaultWarpExit(void){} void (*gFieldCallback)(void);
 void SetMainCallback2(void(*fn)(void)){(void)fn;}
 int BGMusicStopped(void){return musicReady;}
 bool8 ForestMapPreviewScreenIsRunning(void){return TRUE;}
@@ -127,7 +131,7 @@ bool8 FadeInScreen_RainShowShade(void){return FALSE;}
 bool8 FadeInScreen_Drought(void){return FALSE;}
 bool8 FadeInScreen_FogHorizontal(void){return FALSE;}
 void PlayerGetDestCoords(s16*x,s16*y){*x=0;*y=0;}
-void PlaySE(int sound){(void)sound;openDoorSound=1;} int GetDoorSoundEffect(int x,int y){return 0;}
+void PlaySE(int sound){if(sound!=SE_EXIT)openDoorSound=1;} int GetDoorSoundEffect(int x,int y){return 0;}
 void SetPlayerVisibility(int visible){playerVisible=visible;}
 void FieldSetDoorOpened(int x,int y){doorFrame=2;}
 void TryFadeOutOldMapMusic(void){musicStopRequested=1;}
@@ -153,6 +157,8 @@ bool8 PlayerAnimIsMultiFrameStationaryAndStateNotTurning(void){return FALSE;}
 SHIMS = r'''
 u8 UpdatePaletteFade(void){return UpdateNormalPaletteFade();}
 void WarpFadeOutScreen(void){BeginNormalPaletteFade(0xffffffff,0,0,16,0);}
+void WarpFadeInScreen(void)
+{weatherState.palProcessingState=WEATHER_PAL_STATE_SCREEN_FADING_IN;BeginNormalPaletteFade(0xffffffff,0,16,0,0);}
 void WarpFadeInScreenWithDelay(void)
 {weatherState.palProcessingState=WEATHER_PAL_STATE_SCREEN_FADING_IN;BeginNormalPaletteFade(0xffffffff,3,16,0,0);}
 static void Task_AnimateDoor(u8 taskId)
@@ -182,37 +188,49 @@ MAIN = r'''
 void row(int frame,int mainTask)
 {
     int wipe=FuncIsActiveTask(Task_BarnDoorWipe);
+    int phase=mainTask<0?0:gTasks[mainTask].data[0];
+    int complete=mainTask<0?0:!gTasks[mainTask].isActive;
     printf("[%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d]",
-        frame,gTasks[mainTask].data[0],bgBlend,objBlend,gPaletteFade.active,!gTasks[mainTask].isActive,
+        frame,phase,bgBlend,objBlend,gPaletteFade.active,complete,
         doorFrame,FieldIsDoorAnimationRunning(),playerVisible,
         gSprites[0].y<0?-gSprites[0].y:gSprites[0].y,wipe,
         wipe?gpu[REG_OFFSET_WIN0H]&255:0,wipe?gpu[REG_OFFSET_WIN1H]>>8:240,
         gpu[REG_OFFSET_WIN0H],gpu[REG_OFFSET_WIN1H],musicStopRequested,
-        gTasks[mainTask].func==Task_Teleport2Warp,openDoorSound);
+        mainTask>=0&&gTasks[mainTask].func==Task_Teleport2Warp,openDoorSound);
 }
 int main(void)
 {
-    const char *names[]={"doorDepartureReady","doorDepartureDelayed","animatedArrival"};
+    const char *names[]={"doorDepartureReady","doorDepartureDelayed","animatedArrival",
+        "stepDepartureReady","stepDepartureDelayed","nonAnimatedArrival"};
     printf("{\"traces\":[");
-    for(int trace=0;trace<3;trace++)
+    for(int trace=0;trace<NELEMS(names);trace++)
     {
         ResetTasks();memset(&gPaletteFade,0,sizeof(gPaletteFade));memset(gpu,0,sizeof(gpu));
         memset(&weatherState,0,sizeof(weatherState));memset(gSprites,0,sizeof(gSprites));
         memset(gObjectEvents,0,sizeof(gObjectEvents));memset(&gPlayerAvatar,0,sizeof(gPlayerAvatar));
-        weatherInitialized=0;musicReady=trace!=1;playerVisible=1;doorFrame=-1;musicStopRequested=0;openDoorSound=0;
-        bgBlend=objBlend=trace==2?16:0;
-        if(trace==2)CreateTask(WeatherHost,80);
-        int taskId=CreateTask(trace==2?Task_ExitDoor:Task_DoorWarp,10);
+        int isArrival=trace==2||trace==5,isStep=trace==3||trace==4;
+        weatherInitialized=0;musicReady=trace!=1&&trace!=4;playerVisible=1;doorFrame=-1;musicStopRequested=0;openDoorSound=0;
+        bgBlend=objBlend=isArrival?16:0;
+        gObjectEvents[0].facingDirection=isArrival?DIR_SOUTH:DIR_NORTH;
+        if(isArrival)CreateTask(WeatherHost,80);
+        if(trace==5)WarpFadeInScreen();
+        int taskId=isStep?-1:CreateTask(trace==2?Task_ExitDoor:trace==5?Task_ExitNonAnimDoor:Task_DoorWarp,10);
+        if(isStep)ObjectEventSetHeldMovement(&gObjectEvents[0],MOVEMENT_ACTION_WALK_NORMAL_UP);
         if(trace)printf(",");printf("{\"name\":\"%s\",\"frames\":[",names[trace]);row(0,taskId);
         for(int frame=1;frame<=240;frame++)
         {
-            if(trace==1)musicReady=frame>=100;
+            if(trace==1||trace==4)musicReady=frame>=100;
             openDoorSound=0;UpdatePlayerAvatarTransitionState();
+            // FieldGetPlayerInput only raises tookStep at T_TILE_CENTER. Its
+            // step-script chain invokes DoWarp before this frame's RunTasks.
+            // The held movement is observed, never a guessed frame counter.
+            if(isStep&&taskId<0&&gPlayerAvatar.tileTransitionState==T_TILE_CENTER)
+            {DoWarp();taskId=FindTaskIdByFunc(Task_Teleport2Warp);}
             RunTasks();AnimateSpritesHost();UpdatePaletteFade();
             printf(",");row(frame,taskId);
-            if(!gTasks[taskId].isActive)break;
+            if(taskId>=0&&!gTasks[taskId].isActive)break;
         }
-        if(gTasks[taskId].isActive)return 2;
+        if(taskId<0||gTasks[taskId].isActive)return 2;
         printf("]}");
     }
     printf("]}\n");return 0;
@@ -242,6 +260,29 @@ def generate(reference):
     door_entry = extract_function(sources['src/field_fadetransition.c'], 'DoDoorWarp')
     if 'CreateTask(Task_DoorWarp, 10);' not in door_entry:
         raise ValueError('Source door-warp entry changed')
+    arrival_setup = extract_function(sources['src/field_fadetransition.c'], 'SetUpWarpExitTask')
+    if not arrival_setup.index('ExitWarpFadeInScreen(playerNotMoving);') < arrival_setup.index('func = Task_ExitNonAnimDoor;') < arrival_setup.index('CreateTask(func, 10);'):
+        raise ValueError('Source nonanimated arrival palette/task setup changed')
+    arrival_entry = extract_function(sources['src/field_fadetransition.c'], 'FieldCB_DefaultWarpExit')
+    if 'SetUpWarpExitTask(FALSE);' not in arrival_entry:
+        raise ValueError('Source ordinary arrival setup changed')
+    field_input = extract_function(sources['src/field_control_avatar.c'], 'FieldGetPlayerInput')
+    normalized_input = re.sub(r'\s+', ' ', field_input)
+    if 'if (tileTransitionState == T_TILE_CENTER && runningState == MOVING) input->tookStep = TRUE;' not in normalized_input:
+        raise ValueError('Source normal-step input boundary changed')
+    process_input = extract_function(sources['src/field_control_avatar.c'], 'ProcessPlayerFieldInput')
+    took_step = process_input[process_input.index('if (input->tookStep)'):process_input.index('if (input->checkStandardWildEncounter)')]
+    if 'TryStartStepBasedScript(&position, metatileBehavior, playerDirection)' not in took_step:
+        raise ValueError('Source tile-center input dispatch changed')
+    step_script = extract_function(sources['src/field_control_avatar.c'], 'TryStartStepBasedScript')
+    warp_script = extract_function(sources['src/field_control_avatar.c'], 'TryStartWarpEventScript')
+    warp_behavior = extract_function(sources['src/field_control_avatar.c'], 'IsWarpMetatileBehavior')
+    if ('TryStartWarpEventScript(position, metatileBehavior)' not in step_script
+            or 'DoWarp();\n        return TRUE;' not in warp_script
+            or 'MetatileBehavior_IsNonAnimDoor(metatileBehavior)' not in warp_behavior):
+        raise ValueError('Source ordinary step-door warp dispatch changed')
+    if not cb1.index('UpdatePlayerAvatarTransitionState();') < cb1.index('FieldGetPlayerInput(') < cb1.index('ProcessPlayerFieldInput('):
+        raise ValueError('Source pre-task normal-step dispatch order changed')
     selections = {
         'src/task.c': ('ResetTasks','CreateTask','InsertTask','DestroyTask','RunTasks','FindFirstActiveTask','TaskDummy','FuncIsActiveTask','FindTaskIdByFunc'),
         'src/palette.c': ('IsSoftwarePaletteFadeFinishing','UpdateNormalPaletteFade','BeginNormalPaletteFade'),
@@ -249,16 +290,17 @@ def generate(reference):
         'src/field_door.c': ('AnimateDoorFrame',),
         'src/field_screen_effect.c': ('DoOutwardBarnDoorWipe','BarnDoorWipeSaveGpuRegs','BarnDoorWipeLoadGpuRegs','Task_BarnDoorWipe','Task_BarnDoorWipeChild'),
         'src/event_object_movement.c': ('ObjectEventIsMovementOverridden','ObjectEventCheckHeldMovementStatus','Step1','Step2','Step3','Step4','Step8','SetSpriteDataForNormalStep','NpcTakeStep','UpdateMovementNormal','MovementAction_WalkNormalDown_Step0','MovementAction_WalkNormalDown_Step1','MovementAction_WalkNormalUp_Step0','MovementAction_WalkNormalUp_Step1'),
-        'src/field_player_avatar.c': ('PlayerIsAnimActive','PlayerCheckIfAnimFinishedOrInactive','UpdatePlayerAvatarTransitionState'),
+        'src/field_player_avatar.c': ('PlayerIsAnimActive','PlayerCheckIfAnimFinishedOrInactive','UpdatePlayerAvatarTransitionState','GetPlayerFacingDirection'),
         'src/event_object_lock.c': ('walkrun_is_standing_still',),
-        'src/field_fadetransition.c': ('WaitWarpFadeOutScreen','FieldFadeTransitionBackgroundEffectIsFinished','Task_DoorWarp','Task_ExitDoor','Task_Teleport2Warp'),
+        'src/field_fadetransition.c': ('WaitWarpFadeOutScreen','FieldFadeTransitionBackgroundEffectIsFinished','Task_DoorWarp','Task_ExitDoor','Task_ExitNonAnimDoor','Task_Teleport2Warp','DoWarp'),
     }
     bodies = {path: [extract_function(sources[path],name) for name in names] for path,names in selections.items()}
     declarations = '\n'.join(body.partition('\n{')[0]+';' for group in bodies.values() for body in group)
     code = HEADER + declarations + '''
 static void Task_AnimateDoor(u8 taskId);
 s8 FieldAnimateDoorOpen(int,int); s8 FieldAnimateDoorClose(int,int); bool8 FieldIsDoorAnimationRunning(void);
-void WarpFadeOutScreen(void);void WarpFadeInScreenWithDelay(void);u8 UpdatePaletteFade(void);
+void WarpFadeOutScreen(void);void WarpFadeInScreen(void);void WarpFadeInScreenWithDelay(void);u8 UpdatePaletteFade(void);
+u8 GetWalkNormalMovementAction(u32);
 void InitMovementNormal(struct ObjectEvent*,struct Sprite*,u8,u8);
 '''
     for path in ('src/task.c','src/palette.c','src/field_weather.c'):
@@ -275,6 +317,15 @@ void InitMovementNormal(struct ObjectEvent*,struct Sprite*,u8,u8);
     for name in ('sDirectionToVectors','sSpeedNormalStepFuncs','sSpeedFast1StepFuncs','sSpeedFast2StepFuncs','sSpeedFasterStepFuncs','sSpeedFastestStepFuncs','sNpcStepFuncTables','sStepTimes'):
         code += extract_array(sources['src/event_object_movement.c'],name)
     code += ''.join(bodies['src/event_object_movement.c'])
+    # The arrival callback uses the source direction mapping; retain its macro
+    # definition and invocation rather than substituting a guessed action ID.
+    movement_source = sources['src/event_object_movement.c']
+    code += extract_array(movement_source,'sWalkNormalMovementActions')
+    direction_macro = re.search(r'^#define dirn_to_anim\(name, table\).*?^}', movement_source, re.M | re.S)
+    if direction_macro is None:
+        raise ValueError('Missing source direction-to-action macro')
+    code += direction_macro.group()+'\n'
+    code += 'dirn_to_anim(GetWalkNormalMovementAction, sWalkNormalMovementActions);\n'
     code += '#undef tDirection\n#undef tSpeed\n#undef tStepNo\n'
     for path in ('src/field_player_avatar.c','src/event_object_lock.c','src/field_fadetransition.c'):
         code += ''.join(bodies[path])
@@ -285,7 +336,7 @@ void InitMovementNormal(struct ObjectEvent*,struct Sprite*,u8,u8);
         source.write_text(code)
         compile_c(['cc','-std=c11','-O0',str(source),'-o',str(executable)])
         result = json.loads(subprocess.check_output([str(executable)],text=True))
-    if [trace['frames'][-1][0] for trace in result['traces']] != [81,101,81]:
+    if [trace['frames'][-1][0] for trace in result['traces']] != [81,101,81,40,101,41]:
         raise ValueError('Unexpected source door boundaries: '+str([trace['frames'][-1][0] for trace in result['traces']]))
     return {'sourceCommit':COMMIT,'columns':['frame','taskPhase','backgroundBlend','objectBlend','paletteActive','complete','doorFrame','doorAnimationActive','playerVisible','walkPixels','wipeActive','wipeLeft','wipeRight','win0h','win1h','musicStopRequested','teleportTask','openDoorSoundRequested'],**result}
 

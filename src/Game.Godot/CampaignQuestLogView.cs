@@ -67,7 +67,7 @@ public partial class CampaignView
             double step=Math.Min(remaining,1d/60);
             int previousScene=playback.SceneIndex;double previousFrame=playback.Frame;
             playback.Tick(step);
-            PlayQuestLogDoorSounds(playback,previousScene,previousFrame);
+            PlayQuestLogTransitionSounds(playback,previousScene,previousFrame);
             remaining-=step;
         }
         if(playback.Finished)FinishQuestLogPlayback();QueueRedraw();return true;
@@ -103,7 +103,18 @@ public partial class CampaignView
             bool arrival=playback.TransitionElapsedFrames>=timing.SwitchFrame;
             var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;
             if(anchor is not null)
-                snapshot=WithFieldDoorPose(snapshot,warp,FindFieldDoor(snapshot.Projection,anchor.X,anchor.Y),anchor.X,anchor.Y,arrival);
+            {
+                bool animated=arrival?timing.Arrival==Game.Domain.World.FieldTransitionArrival.AnimatedDoor:
+                    timing.Cause==Game.Domain.World.FieldTransitionCause.AnimatedDoor;
+                if(animated)snapshot=WithFieldDoorPose(snapshot,warp,FindFieldDoor(snapshot.Projection,anchor.X,anchor.Y),anchor.X,anchor.Y,arrival);
+                else
+                {
+                    var player=actors.Single(a=>a.Id==CampaignQuestLogRecorder.PlayerId);
+                    var facing=arrival?Game.Domain.World.Direction.South:anchor.X<player.X?Game.Domain.World.Direction.West:
+                        anchor.X>player.X?Game.Domain.World.Direction.East:anchor.Y<player.Y?Game.Domain.World.Direction.North:Game.Domain.World.Direction.South;
+                    snapshot=WithFieldWalkPose(snapshot,warp,arrival?anchor.X:player.X,arrival?anchor.Y:player.Y,facing);
+                }
+            }
         }
         DrawFieldSnapshot(snapshot,playback.GrayscaleCoefficient,warp.BackgroundBlend,warp.ObjectBlend);
         int barHeight=playback.BarHeight;

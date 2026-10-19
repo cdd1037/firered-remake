@@ -2,6 +2,7 @@
   <ItemGroup>
     <Compile Include="../../src/Game.Application/FieldWarpPresentation.cs" Link="FieldWarpPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldDoorPresentation.cs" Link="FieldDoorPresentation.cs" />
+    <Compile Include="../../src/Game.Application/FieldDoorPresentation.Steps.cs" Link="FieldDoorPresentation.Steps.cs" />
     <Compile Include="../../src/Game.Godot/SourceMusicFade.cs" Link="SourceMusicFade.cs" />
     <Compile Include="../../src/Game.Godot/QuestLogPalettePresentation.cs" Link="QuestLogPalettePresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />

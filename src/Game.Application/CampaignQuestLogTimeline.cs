@@ -41,8 +41,8 @@ internal sealed class CampaignQuestLogTimeline
         // The source skips the Quest callback during that lock, but actor/map tasks
         // continue. Only authenticated observed intervals provide this evidence;
         // seamless edges and older unknown map markers do not imply a pause.
-        var locks=_moves.Where(a=>a.TransitionTiming?.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor)
-            .Select(a=>(Start:a.StartFrame,Switch:a.StartFrame+a.TransitionTiming!.SwitchFrame,End:a.StartFrame+a.TransitionTiming.EndFrame)).ToArray();
+        var locks=_moves.Where(a=>a.TransitionTiming?.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor)
+            .Select(a=>(Start:a.StartFrame+(a.TransitionTiming!.Cause==FieldTransitionCause.NonAnimatedDoor?FieldDoorPresentation.NormalWalkPixels:0),Switch:a.StartFrame+a.TransitionTiming!.SwitchFrame,End:a.StartFrame+a.TransitionTiming.EndFrame)).ToArray();
         var captions=ImmutableArray.CreateBuilder<(int Start,int VisibleEnd,string Text)>();int captionEnd=0;
         foreach(var action in scene.Actions.Where(a=>CampaignQuestLogRecorder.IsCaption(a)).OrderBy(a=>a.StartFrame))
         {

@@ -135,8 +135,8 @@ public sealed class CampaignQuestLogDoorTransitionTests
             var sample=frame<change
                 ?outside?doorDeparture.Sample:FieldDoorPresentation.FromPlain(plainDeparture.Sample)
                 :outside?FieldDoorPresentation.FromPlain(plainArrival.Sample):doorArrival.Sample;
-            var replay=FieldDoorPresentation.SampleRecorded(timing.Cause==FieldTransitionCause.AnimatedDoor,
-                timing.Arrival==FieldTransitionArrival.AnimatedDoor,timing.SwitchFrame,(int)playback.TransitionElapsedFrames);
+            var replay=FieldDoorPresentation.SampleRecorded(timing.Cause,
+                timing.Arrival,timing.SwitchFrame,(int)playback.TransitionElapsedFrames);
             Assert.AreEqual(sample,replay);
             if(frame<change)
             {

@@ -35,34 +35,54 @@ public partial class CampaignView
     private static FieldSnapshot WithFieldDoorPose(FieldSnapshot snapshot,FieldDoorPresentation.PhaseSample sample,
         FieldDoorArtEntry? art,int doorX,int doorY,bool arrival)
     {
-        var poses=snapshot.Poses.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal);
-        var old=poses[CampaignQuestLogRecorder.PlayerId];
-        poses[CampaignQuestLogRecorder.PlayerId]=new Pose
-        {
-            Position=new(doorX*16,(arrival?doorY*16:(doorY+1)*16)+(arrival?sample.WalkPixels:-sample.WalkPixels)),
-            Facing=arrival?Game.Domain.World.Direction.South:Game.Domain.World.Direction.North,
-            Visible=sample.PlayerVisible,Frame=FieldDoorPresentation.NormalWalkPoseFrame(sample.WalkPixels),
-            DrawYOffset=old.DrawYOffset,IsJump=false
-        };
-        return snapshot with{Poses=poses,Door=art is not null&&sample.DoorFrame>=0?new(art,doorX,doorY,sample.DoorFrame):null};
+        snapshot=WithFieldWalkPose(snapshot,sample,doorX,arrival?doorY:doorY+1,
+            arrival?Game.Domain.World.Direction.South:Game.Domain.World.Direction.North);
+        return snapshot with{Door=art is not null&&sample.DoorFrame>=0?new(art,doorX,doorY,sample.DoorFrame):null};
     }
 
-    private void PlayQuestLogDoorSounds(CampaignQuestLogPlayback playback,int previousScene,double previousFrame)
+    private static FieldSnapshot WithFieldWalkPose(FieldSnapshot snapshot,FieldDoorPresentation.PhaseSample sample,
+        int startX,int startY,Game.Domain.World.Direction facing)
     {
-        if(playback.ActiveTransitionTiming is not {} timing||previousScene!=playback.SceneIndex)return;
+        var poses=snapshot.Poses.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal);
+        var old=poses[CampaignQuestLogRecorder.PlayerId];
+        var delta=facing switch
+        {
+            Game.Domain.World.Direction.North=>new Vector2(0,-1),Game.Domain.World.Direction.South=>new Vector2(0,1),
+            Game.Domain.World.Direction.West=>new Vector2(-1,0),Game.Domain.World.Direction.East=>new Vector2(1,0),
+            _=>throw new InvalidDataException("field_walk_facing_invalid")
+        };
+        poses[CampaignQuestLogRecorder.PlayerId]=new Pose
+        {
+            Position=new Vector2(startX*16,startY*16)+delta*sample.WalkPixels,
+            Facing=facing,Visible=sample.PlayerVisible,Frame=FieldDoorPresentation.NormalWalkPoseFrame(sample.WalkPixels),
+            DrawYOffset=old.DrawYOffset,IsJump=false
+        };
+        return snapshot with{Poses=poses};
+    }
+
+    private void PlayQuestLogTransitionSounds(CampaignQuestLogPlayback playback,int previousScene,double previousFrame)
+    {
+        if(playback.ActiveTransitionTiming is not {Cause:Game.Domain.World.FieldTransitionCause.PlainWarp or Game.Domain.World.FieldTransitionCause.AnimatedDoor or Game.Domain.World.FieldTransitionCause.NonAnimatedDoor} timing||previousScene!=playback.SceneIndex)return;
         double elapsed=playback.TransitionElapsedFrames;
         double prior=elapsed-(playback.Frame-previousFrame);
         // Audio cues follow crossed source callback boundaries, never redraws.
         bool arrival=elapsed>=timing.SwitchFrame;
-        var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;
-        if(anchor is null)return;
-        int first=Math.Max(arrival?timing.SwitchFrame:0,(int)Math.Floor(prior+1e-7)+1);
+        // A scene can begin on a warp marker at frame0; its immediate cue
+        // belongs to the first positive tick, before any later crossed callbacks.
+        int first=prior==0?0:Math.Max(0,(int)Math.Floor(prior+1e-7)+1);
         int last=(int)Math.Floor(elapsed+1e-7);
-        bool cue=false;
+        bool doorCue=false;
         for(int frame=first;frame<=last;frame++)
-            cue|=FieldDoorPresentation.SampleRecorded(timing.DepartureDoor is not null,timing.ArrivalDoor is not null,
-                timing.SwitchFrame,frame).OpenDoorSoundRequested;
-        if(!cue)return;
+        {
+            var sample=FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame);
+            doorCue|=sample.OpenDoorSoundRequested;
+            bool exit=timing.Cause==Game.Domain.World.FieldTransitionCause.PlainWarp&&frame==0;
+            if(timing.Cause==Game.Domain.World.FieldTransitionCause.NonAnimatedDoor&&frame<timing.SwitchFrame&&sample.MusicFadeRequested)
+                exit=frame==0||!FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame-1).MusicFadeRequested;
+            if(exit)SourceSound("SE_EXIT");
+        }
+        var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;
+        if(!doorCue||anchor is null)return;
         var projection=new CampaignQuestLogMapProjection(playback.Map,playback.Actors.ToImmutableArray(),playback.Layout,playback.Tiles);
         if(FindFieldDoor(projection,anchor.X,anchor.Y) is {} art)SourceSound(art.SoundEffect);
     }

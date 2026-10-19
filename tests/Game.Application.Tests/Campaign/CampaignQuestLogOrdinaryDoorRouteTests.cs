@@ -129,7 +129,7 @@ public sealed class CampaignQuestLogOrdinaryDoorRouteTests
             var live = frame < change
                 ? animatedDeparture ? doorDeparture.Sample : FieldDoorPresentation.FromPlain(plainDeparture.Sample)
                 : animatedArrival ? doorArrival.Sample : FieldDoorPresentation.FromPlain(plainArrival.Sample);
-            Assert.AreEqual(live, FieldDoorPresentation.SampleRecorded(animatedDeparture, animatedArrival,
+            Assert.AreEqual(live, FieldDoorPresentation.SampleRecorded(receipt.Cause, receipt.Arrival,
                 timing.SwitchFrame, (int)playback.TransitionElapsedFrames));
             if (frame < change)
             {

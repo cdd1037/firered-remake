@@ -72,3 +72,8 @@ The adjacent shared recap-clock repair uses those same observed intervals to pau
 ## Ordinary large-door material closure
 
 The same door renderer now consumes source-sized 16×32 replacement frames for the normal S.S. Anne style. Source-derived upper/lower tile placement and independent departure/arrival selection reuse the existing ordinary controller and authenticated recorder. The importer explicitly bounds the source lower blank-layer palette overread using a verified transparent tile0 precondition. See [ordinary field transitions](plain-field-transition-presentation.md) for the public round-trip route, pixel checks and remaining special-program/native limits.
+
+
+## Ordinary nonanimated door traversal
+
+The previously rejected nonanimated-door branch now uses authenticated accepted-step metadata and the shared live/recap palette/pose controller. The Cinnabar laboratory public round trip exercises normal movement before warp, delayed music, hidden arrival and automatic exit step without changing authoritative positions, counters or RNG. Caption timers continue through the initial normal walk and pause only after the source warp lock. Exact callback and verification boundaries are recorded in [ordinary field transitions](plain-field-transition-presentation.md).

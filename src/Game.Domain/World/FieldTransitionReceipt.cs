@@ -5,4 +5,8 @@ public enum FieldTransitionCause { Unknown, ConnectedEdge, PlainWarp, AnimatedDo
 public enum FieldTransitionDeparture { Immediate, StepOntoWarp }
 public enum FieldTransitionArrival { Plain, AnimatedDoor, NonAnimatedDoor, Stair }
 public sealed record FieldTransitionReceipt(FieldTransitionCause Cause, FieldTransitionDeparture Departure,
-    FieldTransitionArrival Arrival, TilePosition From, TilePosition To, TilePosition ArrivalAnchor);
+    FieldTransitionArrival Arrival, TilePosition From, TilePosition To, TilePosition ArrivalAnchor)
+{
+    // The accepted source step can differ from the old or arrival facing.
+    public TilePosition? DepartureStep { get; init; }
+}

@@ -19,10 +19,10 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
         if(SwitchFrame<0||EndFrame<=SwitchFrame)return false;
         if(Cause==FieldTransitionCause.ConnectedEdge)
             return Arrival==FieldTransitionArrival.Plain&&SwitchFrame==0&&EndFrame==1;
-        if(Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor)||
-            Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor))return false;
-        int minimum=Cause==FieldTransitionCause.AnimatedDoor?FieldDoorPresentation.MinimumDepartureFrames:FieldWarpPresentation.MinimumDepartureFrames;
-        int arrival=Arrival==FieldTransitionArrival.AnimatedDoor?FieldDoorPresentation.AnimatedArrivalFrames:FieldWarpPresentation.PlainArrivalFrames;
+        if(Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor)||
+            Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor))return false;
+        int minimum=FieldDoorPresentation.DepartureFrames(Cause);
+        int arrival=FieldDoorPresentation.ArrivalFrames(Arrival);
         return SwitchFrame>=minimum&&EndFrame-SwitchFrame==arrival;
     }
 }
@@ -39,9 +39,15 @@ public static partial class CampaignQuestLogRecorder
             action.StartFrame>ushort.MaxValue-timing.EndFrame)return "save_quest_log_transition_timing_invalid";
         static bool Anchor(CampaignQuestLogDoorAnchor? door,CampaignQuestLogActor actor,Direction facing)=>
             door is {X:>=0 and <1024,Y:>=0 and <1024}&&door.X==actor.X&&door.Y==actor.Y-1&&actor.Facing==facing;
-        if(timing.Cause==FieldTransitionCause.AnimatedDoor?!Anchor(timing.DepartureDoor,player,Direction.North):timing.DepartureDoor is not null)
-            return "save_quest_log_transition_timing_invalid";
-        if(timing.Arrival==FieldTransitionArrival.AnimatedDoor)
+        bool validDeparture=timing.Cause switch
+        {
+            FieldTransitionCause.AnimatedDoor=>Anchor(timing.DepartureDoor,player,Direction.North),
+            FieldTransitionCause.NonAnimatedDoor=>timing.DepartureDoor is {X:>=0 and <1024,Y:>=0 and <1024} step&&
+                Math.Abs(step.X-player.X)+Math.Abs(step.Y-player.Y)==1,
+            _=>timing.DepartureDoor is null
+        };
+        if(!validDeparture)return "save_quest_log_transition_timing_invalid";
+        if(timing.Arrival is FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor)
         {
             if(action.Transition is not {} projection||projection.Actors.IsDefault||
                 projection.Actors.FirstOrDefault(a=>a?.Id==PlayerId) is not {} destination||
@@ -60,28 +66,36 @@ public sealed partial class CampaignSession
 
     /// <summary>The admitted shared presentation capability, never movement legality.</summary>
     public bool CanPresentFieldTransition(FieldTransitionReceipt receipt)=>
-        ReferenceEquals(State.FieldTransition,receipt)&&!AnimatedFieldTransition(receipt)&&SupportsFieldTransition(State,receipt);
+        ReferenceEquals(State.FieldTransition,receipt)&&!WalkingFieldTransition(receipt)&&SupportsFieldTransition(State,receipt);
 
     public bool CanPresentFieldTransition(CampaignState origin,FieldTransitionReceipt receipt)=>
         ReferenceEquals(State.FieldTransition,receipt)&&SupportsFieldTransitionOrigin(origin,receipt)&&SupportsFieldTransition(State,receipt);
 
-    private static bool AnimatedFieldTransition(FieldTransitionReceipt receipt)=>
-        receipt.Cause==FieldTransitionCause.AnimatedDoor||receipt.Arrival==FieldTransitionArrival.AnimatedDoor;
+    private static bool WalkingFieldTransition(FieldTransitionReceipt receipt)=>
+        receipt.Cause is FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor||
+        receipt.Arrival is FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor;
 
     private static bool SupportsFieldTransitionOrigin(CampaignState origin,FieldTransitionReceipt receipt)=>
         receipt.From==origin.World.Player&&origin.FieldWeather is null&&
-        (!AnimatedFieldTransition(receipt)||!origin.IsCycling&&!origin.IsSurfing&&IsStableFieldForParty(origin));
+        (!WalkingFieldTransition(receipt)||!origin.IsCycling&&!origin.IsSurfing&&IsStableFieldForParty(origin));
 
     private bool SupportsFieldTransition(CampaignState state,FieldTransitionReceipt receipt)
     {
         if(receipt.To!=state.World.Player||!IsStableFieldForParty(state)||state.FieldWeather is not null||
-            receipt.Departure!=FieldTransitionDeparture.Immediate||
-            receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor)||
-            receipt.Cause is not (FieldTransitionCause.ConnectedEdge or FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor))return false;
-        if(AnimatedFieldTransition(receipt)&&(state.IsCycling||state.IsSurfing))return false;
+            receipt.Departure!=(receipt.Cause==FieldTransitionCause.NonAnimatedDoor?FieldTransitionDeparture.StepOntoWarp:FieldTransitionDeparture.Immediate)||
+            receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor)||
+            receipt.Cause is not (FieldTransitionCause.ConnectedEdge or FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor))return false;
+        if(WalkingFieldTransition(receipt)&&(state.IsCycling||state.IsSurfing))return false;
+        if(receipt.Cause==FieldTransitionCause.NonAnimatedDoor)
+        {
+            if(receipt.DepartureStep is not {X:>=0 and <1024,Y:>=0 and <1024} step||step.MapId!=receipt.From.MapId)return false;
+            var delta=step.Facing switch{Direction.North=>(0,-1),Direction.South=>(0,1),Direction.West=>(-1,0),Direction.East=>(1,0),_=>(0,0)};
+            if(delta==(0,0)||step.X!=receipt.From.X+delta.Item1||step.Y!=receipt.From.Y+delta.Item2)return false;
+        }
+        else if(receipt.DepartureStep is not null)return false;
         if(receipt.Cause==FieldTransitionCause.ConnectedEdge&&receipt.Arrival!=FieldTransitionArrival.Plain||
             receipt.Cause==FieldTransitionCause.AnimatedDoor&&(receipt.From.Facing!=Direction.North||receipt.From.Y<1)||
-            receipt.Arrival==FieldTransitionArrival.AnimatedDoor&&
+            receipt.Arrival is (FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor)&&
                 (receipt.ArrivalAnchor.MapId!=receipt.To.MapId||receipt.ArrivalAnchor.X!=receipt.To.X||
                  receipt.ArrivalAnchor.Y+1!=receipt.To.Y||receipt.To.Facing!=Direction.South))return false;
         var from=_content.MapDefinition(receipt.From.MapId);
@@ -106,8 +120,9 @@ public sealed partial class CampaignSession
         var timing=new CampaignQuestLogTransitionTiming(receipt.Cause,switchFrame,endFrame)
         {
             Arrival=receipt.Arrival,
-            DepartureDoor=receipt.Cause==FieldTransitionCause.AnimatedDoor?new(receipt.From.X,receipt.From.Y-1):null,
-            ArrivalDoor=receipt.Arrival==FieldTransitionArrival.AnimatedDoor?new(receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y):null
+            DepartureDoor=receipt.Cause==FieldTransitionCause.AnimatedDoor?new(receipt.From.X,receipt.From.Y-1):
+                receipt.DepartureStep is {} step?new(step.X,step.Y):null,
+            ArrivalDoor=receipt.Arrival is FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor?new(receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y):null
         };
         if(!timing.HasValidPhases())return false;
         if(pending.Timing is not null)return pending.Timing==timing;

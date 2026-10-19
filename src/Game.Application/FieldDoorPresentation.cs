@@ -1,3 +1,5 @@
+using Game.Domain.World;
+
 namespace Game.Application;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Game.Application;
 /// it never moves an authoritative actor, advances scripts or draws gameplay RNG.
 /// NONE/SUNNY black fades without map previews are the bounded admission surface.
 /// </summary>
-public static class FieldDoorPresentation
+public static partial class FieldDoorPresentation
 {
     public const int MinimumDepartureFrames=81;
     public const int AnimatedArrivalFrames=81;
@@ -29,35 +31,63 @@ public static class FieldDoorPresentation
         bool MusicFadeRequested,bool TeleportTask,bool OpenDoorSoundRequested);
 
     /// <summary>Replays the exact observed transfer; no current audio readiness is consulted.</summary>
-    public static PhaseSample SampleRecorded(bool animatedDeparture,bool animatedArrival,int switchFrame,int elapsedFrames)
+    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames)
     {
-        int minimum=animatedDeparture?MinimumDepartureFrames:FieldWarpPresentation.MinimumDepartureFrames;
+        int minimum=DepartureFrames(cause);
+        _=ArrivalFrames(arrivalKind);
         if(switchFrame<minimum)throw new ArgumentOutOfRangeException(nameof(switchFrame));
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
         if(elapsedFrames<switchFrame)
         {
-            if(animatedDeparture)
+            if(cause==FieldTransitionCause.AnimatedDoor)
             {
                 var departure=new Departure();
                 for(int frame=1;frame<=elapsedFrames;frame++)departure.Advance(frame>=switchFrame-1);
                 return departure.Sample;
             }
+            if(cause==FieldTransitionCause.NonAnimatedDoor)
+            {
+                var step=new StepDeparture();
+                for(int frame=1;frame<=elapsedFrames;frame++)step.Advance(frame>=switchFrame-1);
+                return step.Sample;
+            }
             var plain=new FieldWarpPresentation.Departure();
             for(int frame=1;frame<=elapsedFrames;frame++)plain.Advance(frame>=switchFrame-1);
             return FromPlain(plain.Sample);
         }
-        if(animatedArrival)
+        if(arrivalKind==FieldTransitionArrival.AnimatedDoor)
         {
             var arrival=new AnimatedArrival();
             int frames=Math.Min(AnimatedArrivalFrames,elapsedFrames-switchFrame);
             for(int frame=0;frame<frames;frame++)arrival.Advance();
             return arrival.Sample;
         }
+        if(arrivalKind==FieldTransitionArrival.NonAnimatedDoor)
+        {
+            var step=new NonAnimatedArrival();
+            for(int frame=0;frame<Math.Min(NonAnimatedArrivalFrames,elapsedFrames-switchFrame);frame++)step.Advance();
+            return step.Sample;
+        }
         var plainArrival=new FieldWarpPresentation.PlainArrival();
         int plainFrames=Math.Min(FieldWarpPresentation.PlainArrivalFrames,elapsedFrames-switchFrame);
         for(int frame=0;frame<plainFrames;frame++)plainArrival.Advance();
         return FromPlain(plainArrival.Sample);
     }
+
+    public static int DepartureFrames(FieldTransitionCause cause)=>cause switch
+    {
+        FieldTransitionCause.PlainWarp=>FieldWarpPresentation.MinimumDepartureFrames,
+        FieldTransitionCause.AnimatedDoor=>MinimumDepartureFrames,
+        FieldTransitionCause.NonAnimatedDoor=>MinimumStepDepartureFrames,
+        _=>throw new ArgumentOutOfRangeException(nameof(cause))
+    };
+    public static int ArrivalFrames(FieldTransitionArrival arrival)=>arrival switch
+    {
+        FieldTransitionArrival.Plain=>FieldWarpPresentation.PlainArrivalFrames,
+        FieldTransitionArrival.AnimatedDoor=>AnimatedArrivalFrames,
+        FieldTransitionArrival.NonAnimatedDoor=>NonAnimatedArrivalFrames,
+        _=>throw new ArgumentOutOfRangeException(nameof(arrival))
+    };
 
     public static PhaseSample FromPlain(FieldWarpPresentation.PhaseSample sample)=>new(
         sample.Frames,sample.TaskPhase,sample.BackgroundBlend,sample.ObjectBlend,sample.PaletteActive,

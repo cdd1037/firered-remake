@@ -177,7 +177,7 @@ public sealed class CampaignQuestLogLargeDoorRouteTests
             var live = frame < change
                 ? animatedDeparture ? doorDeparture.Sample : FieldDoorPresentation.FromPlain(plainDeparture.Sample)
                 : animatedArrival ? doorArrival.Sample : FieldDoorPresentation.FromPlain(plainArrival.Sample);
-            Assert.AreEqual(live, FieldDoorPresentation.SampleRecorded(animatedDeparture, animatedArrival, change, frame));
+            Assert.AreEqual(live, FieldDoorPresentation.SampleRecorded(receipt.Cause, receipt.Arrival, change, frame));
             if (live.OpenDoorSoundRequested) soundPulses++;
             // Size changes the BG replacement footprint, not the source player
             // walk or task callback schedule. Logical tile positions stay committed.

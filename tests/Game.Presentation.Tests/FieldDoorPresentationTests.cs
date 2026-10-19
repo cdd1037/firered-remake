@@ -1,4 +1,5 @@
 using Game.Application;
+using Game.Domain.World;
 using System.Text.Json;
 
 namespace FireRed.Tests.Presentation;
@@ -31,9 +32,12 @@ public sealed class FieldDoorPresentationTests
         foreach(var trace in document.RootElement.GetProperty("traces").EnumerateArray())
         {
             traces++;string name=trace.GetProperty("name").GetString()!;
-            Assert.IsTrue(name is "doorDepartureReady" or "doorDepartureDelayed" or "animatedArrival");
+            Assert.IsTrue(name is "doorDepartureReady" or "doorDepartureDelayed" or "animatedArrival"
+                or "stepDepartureReady" or "stepDepartureDelayed" or "nonAnimatedArrival");
             var departure=new FieldDoorPresentation.Departure();
             var arrival=new FieldDoorPresentation.AnimatedArrival();
+            var stepDeparture=new FieldDoorPresentation.StepDeparture();
+            var nonAnimatedArrival=new FieldDoorPresentation.NonAnimatedArrival();
             foreach(var row in trace.GetProperty("frames").EnumerateArray())
             {
                 rows++;var v=row.EnumerateArray().Select(value=>value.GetInt32()).ToArray();
@@ -41,11 +45,17 @@ public sealed class FieldDoorPresentationTests
                 if(frame>0)
                 {
                     if(name=="animatedArrival")arrival.Advance();
+                    else if(name=="nonAnimatedArrival")nonAnimatedArrival.Advance();
+                    else if(name.StartsWith("stepDeparture",StringComparison.Ordinal))stepDeparture.Advance(name=="stepDepartureReady"||frame>=100);
                     else departure.Advance(name=="doorDepartureReady"||frame>=100);
                 }
                 var expected=new FieldDoorPresentation.PhaseSample(frame,v[1],v[2],v[3],v[4]!=0,v[5]!=0,
                     v[6],v[7]!=0,v[8]!=0,v[9],v[10]!=0,v[11],v[12],v[15]!=0,v[16]!=0,v[17]!=0);
-                var actual=name=="animatedArrival"?arrival.Sample:departure.Sample;
+                var actual=name switch
+                {
+                    "animatedArrival"=>arrival.Sample,"nonAnimatedArrival"=>nonAnimatedArrival.Sample,
+                    "stepDepartureReady" or "stepDepartureDelayed"=>stepDeparture.Sample,_=>departure.Sample
+                };
                 Assert.AreEqual(expected,actual,$"{name} callback {frame}");
                 // Host begins with zero saved registers. On the setup callback
                 // WIN1 extends to255; child callbacks use240; restore returns0.
@@ -54,9 +64,13 @@ public sealed class FieldDoorPresentationTests
                 Assert.AreEqual(v[13],win0,$"{name} WIN0H callback {frame}");
                 Assert.AreEqual(v[14],win1,$"{name} WIN1H callback {frame}");
             }
-            Assert.IsTrue(name=="animatedArrival"?arrival.Complete:departure.Complete);
+            Assert.IsTrue(name switch
+            {
+                "animatedArrival"=>arrival.Complete,"nonAnimatedArrival"=>nonAnimatedArrival.Complete,
+                "stepDepartureReady" or "stepDepartureDelayed"=>stepDeparture.Complete,_=>departure.Complete
+            });
         }
-        Assert.AreEqual(3,traces);Assert.AreEqual(266,rows);
+        Assert.AreEqual(6,traces);Assert.AreEqual(451,rows);
     }
 
     [TestMethod]
@@ -132,37 +146,132 @@ public sealed class FieldDoorPresentationTests
     }
 
     [TestMethod]
-    [DataRow(false,false,0)]
-    [DataRow(false,true,0)]
-    [DataRow(true,false,0)]
-    [DataRow(true,true,0)]
-    [DataRow(true,false,45)]
-    [DataRow(false,true,45)]
-    [DataRow(true,true,45)]
-    public void RecordedDepartureAndArrivalBranchesShareEveryLiveSample(bool animatedDeparture,bool animatedArrival,int musicDelay)
+    public void NonAnimatedDepartureFinishesNormalStepBeforeRequestingMusicAndPalette()
     {
-        int switchFrame=(animatedDeparture?FieldDoorPresentation.MinimumDepartureFrames:FieldWarpPresentation.MinimumDepartureFrames)+musicDelay;
+        var departure=new FieldDoorPresentation.StepDeparture();
+        for(int frame=0;frame<=FieldDoorPresentation.MinimumStepDepartureFrames;frame++)
+        {
+            if(frame>0)departure.Advance(true);
+            var sample=departure.Sample;
+            Assert.AreEqual(Math.Min(frame,16),sample.WalkPixels,$"walk {frame}");
+            Assert.IsTrue(sample.PlayerVisible);
+            Assert.AreEqual(frame>=17,sample.MusicFadeRequested,$"music {frame}");
+            Assert.AreEqual(frame>=17,sample.TeleportTask,$"warp task {frame}");
+            Assert.AreEqual(frame is >=17 and <38,sample.PaletteActive,$"palette {frame}");
+            Assert.AreEqual(frame==40,sample.Complete,$"complete {frame}");
+            Assert.AreEqual(-1,sample.DoorFrame);Assert.IsFalse(sample.DoorAnimationActive);
+            Assert.IsFalse(sample.WipeActive);Assert.IsFalse(sample.OpenDoorSoundRequested);
+        }
+        var final=departure.Sample;departure.Advance(false);Assert.AreEqual(final,departure.Sample);
+    }
+
+    [TestMethod]
+    public void NonAnimatedDepartureKeepsTheCompletedStepWhileWaitingForMusic()
+    {
+        var departure=new FieldDoorPresentation.StepDeparture();
+        for(int frame=1;frame<=120;frame++)departure.Advance(false);
+        Assert.IsFalse(departure.Complete);Assert.AreEqual(1,departure.Sample.TaskPhase);
+        Assert.AreEqual(16,departure.Sample.WalkPixels);Assert.IsTrue(departure.Sample.PlayerVisible);
+        Assert.AreEqual(16,departure.Sample.BackgroundBlend);Assert.AreEqual(16,departure.Sample.ObjectBlend);
+        departure.Advance(true);Assert.AreEqual(2,departure.Sample.TaskPhase);Assert.IsFalse(departure.Complete);
+        departure.Advance(false);Assert.IsTrue(departure.Complete);Assert.AreEqual(122,departure.Frames);
+    }
+
+    [TestMethod]
+    public void NonAnimatedArrivalHidesUntilThePaletteWeatherAndTaskGatesAllowTheFullStep()
+    {
+        var arrival=new FieldDoorPresentation.NonAnimatedArrival();
+        for(int frame=0;frame<=FieldDoorPresentation.NonAnimatedArrivalFrames;frame++)
+        {
+            if(frame>0)arrival.Advance();
+            var sample=arrival.Sample;
+            Assert.AreEqual(Math.Clamp(frame-23,0,16),sample.WalkPixels,$"walk {frame}");
+            Assert.AreEqual(frame==0||frame>=24,sample.PlayerVisible,$"visibility {frame}");
+            Assert.AreEqual(frame<22,sample.PaletteActive,$"palette {frame}");
+            Assert.AreEqual(frame==41,sample.Complete,$"complete {frame}");
+            Assert.AreEqual(frame switch {0=>0,<24=>1,<40=>2,_=>3},sample.TaskPhase,$"phase {frame}");
+            Assert.IsFalse(sample.MusicFadeRequested);Assert.IsFalse(sample.TeleportTask);
+            Assert.AreEqual(-1,sample.DoorFrame);Assert.IsFalse(sample.DoorAnimationActive);
+            Assert.IsFalse(sample.WipeActive);Assert.IsFalse(sample.OpenDoorSoundRequested);
+        }
+        var final=arrival.Sample;arrival.Advance();Assert.AreEqual(final,arrival.Sample);
+    }
+
+    [TestMethod]
+    [DataRow(FieldTransitionCause.PlainWarp,FieldTransitionArrival.Plain,0)]
+    [DataRow(FieldTransitionCause.PlainWarp,FieldTransitionArrival.Plain,45)]
+    [DataRow(FieldTransitionCause.PlainWarp,FieldTransitionArrival.AnimatedDoor,0)]
+    [DataRow(FieldTransitionCause.PlainWarp,FieldTransitionArrival.AnimatedDoor,45)]
+    [DataRow(FieldTransitionCause.PlainWarp,FieldTransitionArrival.NonAnimatedDoor,0)]
+    [DataRow(FieldTransitionCause.PlainWarp,FieldTransitionArrival.NonAnimatedDoor,45)]
+    [DataRow(FieldTransitionCause.AnimatedDoor,FieldTransitionArrival.Plain,0)]
+    [DataRow(FieldTransitionCause.AnimatedDoor,FieldTransitionArrival.Plain,45)]
+    [DataRow(FieldTransitionCause.AnimatedDoor,FieldTransitionArrival.AnimatedDoor,0)]
+    [DataRow(FieldTransitionCause.AnimatedDoor,FieldTransitionArrival.AnimatedDoor,45)]
+    [DataRow(FieldTransitionCause.AnimatedDoor,FieldTransitionArrival.NonAnimatedDoor,0)]
+    [DataRow(FieldTransitionCause.AnimatedDoor,FieldTransitionArrival.NonAnimatedDoor,45)]
+    [DataRow(FieldTransitionCause.NonAnimatedDoor,FieldTransitionArrival.Plain,0)]
+    [DataRow(FieldTransitionCause.NonAnimatedDoor,FieldTransitionArrival.Plain,45)]
+    [DataRow(FieldTransitionCause.NonAnimatedDoor,FieldTransitionArrival.AnimatedDoor,0)]
+    [DataRow(FieldTransitionCause.NonAnimatedDoor,FieldTransitionArrival.AnimatedDoor,45)]
+    [DataRow(FieldTransitionCause.NonAnimatedDoor,FieldTransitionArrival.NonAnimatedDoor,0)]
+    [DataRow(FieldTransitionCause.NonAnimatedDoor,FieldTransitionArrival.NonAnimatedDoor,45)]
+    public void RecordedDepartureAndArrivalBranchesShareEveryLiveSample(FieldTransitionCause cause,FieldTransitionArrival kind,int musicDelay)
+    {
+        int minimum=cause switch
+        {
+            FieldTransitionCause.AnimatedDoor=>FieldDoorPresentation.MinimumDepartureFrames,
+            FieldTransitionCause.NonAnimatedDoor=>FieldDoorPresentation.MinimumStepDepartureFrames,
+            _=>FieldWarpPresentation.MinimumDepartureFrames
+        };
+        int switchFrame=minimum+musicDelay;
         var doorDeparture=new FieldDoorPresentation.Departure();var plainDeparture=new FieldWarpPresentation.Departure();
+        var stepDeparture=new FieldDoorPresentation.StepDeparture();
         for(int frame=0;frame<switchFrame;frame++)
         {
-            var sample=animatedDeparture?doorDeparture.Sample:FieldDoorPresentation.FromPlain(plainDeparture.Sample);
-            Assert.AreEqual(sample,FieldDoorPresentation.SampleRecorded(animatedDeparture,animatedArrival,switchFrame,frame),$"departure {frame}");
+            var sample=cause switch
+            {
+                FieldTransitionCause.AnimatedDoor=>doorDeparture.Sample,FieldTransitionCause.NonAnimatedDoor=>stepDeparture.Sample,
+                _=>FieldDoorPresentation.FromPlain(plainDeparture.Sample)
+            };
+            Assert.AreEqual(sample,FieldDoorPresentation.SampleRecorded(cause,kind,switchFrame,frame),$"departure {frame}");
             bool ready=frame+1>=switchFrame-1;
-            if(animatedDeparture)doorDeparture.Advance(ready);else plainDeparture.Advance(ready);
+            if(cause==FieldTransitionCause.AnimatedDoor)doorDeparture.Advance(ready);
+            else if(cause==FieldTransitionCause.NonAnimatedDoor)stepDeparture.Advance(ready);
+            else plainDeparture.Advance(ready);
         }
-        Assert.IsTrue(animatedDeparture?doorDeparture.Complete:plainDeparture.Complete);
+        Assert.IsTrue(cause switch
+        {
+            FieldTransitionCause.AnimatedDoor=>doorDeparture.Complete,FieldTransitionCause.NonAnimatedDoor=>stepDeparture.Complete,
+            _=>plainDeparture.Complete
+        });
         var doorArrival=new FieldDoorPresentation.AnimatedArrival();var plainArrival=new FieldWarpPresentation.PlainArrival();
-        int end=animatedArrival?FieldDoorPresentation.AnimatedArrivalFrames:FieldWarpPresentation.PlainArrivalFrames;
+        var nonAnimatedArrival=new FieldDoorPresentation.NonAnimatedArrival();
+        int end=kind switch
+        {
+            FieldTransitionArrival.AnimatedDoor=>FieldDoorPresentation.AnimatedArrivalFrames,
+            FieldTransitionArrival.NonAnimatedDoor=>FieldDoorPresentation.NonAnimatedArrivalFrames,
+            _=>FieldWarpPresentation.PlainArrivalFrames
+        };
         for(int frame=0;frame<=end+3;frame++)
         {
-            var sample=animatedArrival?doorArrival.Sample:FieldDoorPresentation.FromPlain(plainArrival.Sample);
-            Assert.AreEqual(sample,FieldDoorPresentation.SampleRecorded(animatedDeparture,animatedArrival,switchFrame,switchFrame+frame),$"arrival {frame}");
-            if(animatedArrival)doorArrival.Advance();else plainArrival.Advance();
+            var sample=kind switch
+            {
+                FieldTransitionArrival.AnimatedDoor=>doorArrival.Sample,FieldTransitionArrival.NonAnimatedDoor=>nonAnimatedArrival.Sample,
+                _=>FieldDoorPresentation.FromPlain(plainArrival.Sample)
+            };
+            Assert.AreEqual(sample,FieldDoorPresentation.SampleRecorded(cause,kind,switchFrame,switchFrame+frame),$"arrival {frame}");
+            if(kind==FieldTransitionArrival.AnimatedDoor)doorArrival.Advance();
+            else if(kind==FieldTransitionArrival.NonAnimatedDoor)nonAnimatedArrival.Advance();
+            else plainArrival.Advance();
         }
-        Assert.IsTrue(animatedArrival?doorArrival.Complete:plainArrival.Complete);
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldDoorPresentation.SampleRecorded(animatedDeparture,animatedArrival,
-            (animatedDeparture?FieldDoorPresentation.MinimumDepartureFrames:FieldWarpPresentation.MinimumDepartureFrames)-1,0));
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldDoorPresentation.SampleRecorded(animatedDeparture,animatedArrival,switchFrame,-1));
+        Assert.IsTrue(kind switch
+        {
+            FieldTransitionArrival.AnimatedDoor=>doorArrival.Complete,FieldTransitionArrival.NonAnimatedDoor=>nonAnimatedArrival.Complete,
+            _=>plainArrival.Complete
+        });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldDoorPresentation.SampleRecorded(cause,kind,minimum-1,0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldDoorPresentation.SampleRecorded(cause,kind,switchFrame,-1));
     }
 
     [TestMethod]
@@ -172,13 +281,17 @@ public sealed class FieldDoorPresentationTests
     public void HostCadenceCannotChangeDoorCallbackPhases(int hz)
     {
         var departure=new FieldDoorPresentation.Departure();var arrival=new FieldDoorPresentation.AnimatedArrival();
+        var stepDeparture=new FieldDoorPresentation.StepDeparture();var nonAnimatedArrival=new FieldDoorPresentation.NonAnimatedArrival();
         double elapsed=0;int processed=0;
         for(int hostFrame=0;hostFrame<hz*2;hostFrame++)
         {
             elapsed+=60d/hz;
-            while(processed<(int)Math.Floor(elapsed+1e-7)){processed++;departure.Advance(true);arrival.Advance();}
+            while(processed<(int)Math.Floor(elapsed+1e-7))
+            {processed++;departure.Advance(true);arrival.Advance();stepDeparture.Advance(true);nonAnimatedArrival.Advance();}
         }
         Assert.AreEqual(81,departure.Frames);Assert.IsTrue(departure.Complete);
         Assert.AreEqual(81,arrival.Frames);Assert.IsTrue(arrival.Complete);
+        Assert.AreEqual(40,stepDeparture.Frames);Assert.IsTrue(stepDeparture.Complete);
+        Assert.AreEqual(41,nonAnimatedArrival.Frames);Assert.IsTrue(nonAnimatedArrival.Complete);
     }
 }

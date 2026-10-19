@@ -49,6 +49,24 @@ public sealed class FieldTransitionReceiptTests
     }
 
     [TestMethod]
+    public void StepWarpRetainsAcceptedDirectionWhenPriorFacingAndArrivalDiffer()
+    {
+        MapId from=new("map.from"),to=new("map.to");
+        var source=new FieldMap(from,[new(0,1,0,3,to,0)],new(){[(1,0)]=0x60});
+        var destination=new FieldMap(to,[new(0,2,2,3,from,0)],[]);
+        var before=new WorldSnapshot(RuleVersions.GridWorldV0,0,0,new(from,1,1,3,Direction.East),new(42));
+        var result=FieldMovementRules.Move(before,new(new("test:step-direction"),0,Direction.North),
+            new Dictionary<MapId,IFieldMap>{{from,source},{to,destination}},true,true);
+        Assert.AreEqual(TransitionStatus.Accepted,result.Status,result.Diagnostic?.Code);
+        Assert.IsNotNull(result.Presentation);
+        Assert.AreEqual(new TilePosition(from,1,0,3,Direction.North),result.Presentation.DepartureStep);
+        Assert.AreEqual(Direction.East,result.Presentation.From.Facing);
+        Assert.AreEqual(Direction.South,result.Presentation.To.Facing);
+        Assert.AreEqual(1L,result.State.StepCount);
+        Assert.AreEqual(before.Rng,result.State.Rng);
+    }
+
+    [TestMethod]
     public void ConnectedProducerDistinguishesCrossingFromBlockedBoundary()
     {
         MapId from=new("map.from"),to=new("map.to");

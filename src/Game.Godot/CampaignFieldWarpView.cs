@@ -15,12 +15,14 @@ public partial class CampaignView
         public readonly FieldWarpPresentation.Departure Departure=new();
         public FieldWarpPresentation.PlainArrival? Arrival;
         public FieldDoorPresentation.Departure? DoorDeparture;
+        public FieldDoorPresentation.StepDeparture? StepDeparture;
+        public FieldDoorPresentation.NonAnimatedArrival? StepArrival;
         public FieldDoorPresentation.AnimatedArrival? DoorArrival;
         public FieldDoorArtEntry? DepartureArt,ArrivalArt;
         public bool Arriving;
         public FieldDoorPresentation.PhaseSample Sample=>Arriving
-            ?DoorArrival?.Sample??FieldDoorPresentation.FromPlain(Arrival!.Sample)
-            :DoorDeparture?.Sample??FieldDoorPresentation.FromPlain(Departure.Sample);
+            ?DoorArrival?.Sample??StepArrival?.Sample??FieldDoorPresentation.FromPlain(Arrival!.Sample)
+            :DoorDeparture?.Sample??StepDeparture?.Sample??FieldDoorPresentation.FromPlain(Departure.Sample);
         public double Frames;
         public int ProcessedFrames,SwitchFrame;
         public bool WaitForMusic;
@@ -57,7 +59,7 @@ public partial class CampaignView
     private bool BeginFieldWarpPresentation(CampaignState? before,CampaignState after)
     {
         if(_fieldWarpSynchronizing||before is null||before.FieldWeather is not null||
-            after.FieldTransition is not {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor} receipt||
+            after.FieldTransition is not {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor} receipt||
             receipt.From!=before.World.Player||!_session.CanPresentFieldTransition(before,receipt))return false;
         var owner=new object();
         var animation=new FieldWarpAnimation
@@ -72,6 +74,7 @@ public partial class CampaignView
             if(animation.DepartureArt is null)return false;
             animation.DoorDeparture=new();
         }
+        if(receipt.Cause==FieldTransitionCause.NonAnimatedDoor)animation.StepDeparture=new();
         if(receipt.Arrival==FieldTransitionArrival.AnimatedDoor)
         {
             animation.ArrivalArt=FindFieldDoor(animation.DestinationView.Projection,receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y);
@@ -79,7 +82,7 @@ public partial class CampaignView
         }
         _fieldWarp=animation;
         _held=null;_repeat=0;_tracks.Clear();_fade=0;ResetCampaignButtonInput();
-        if(animation.DoorDeparture is null)BeginFieldWarpMusicFade(animation);
+        if(animation.DoorDeparture is null&&animation.StepDeparture is null){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
         Write("fieldWarpPresentation",new{phase="departure",cause=receipt.Cause.ToString(),from=receipt.From,to=receipt.To,animation.WaitForMusic});
         return true;
     }
@@ -118,10 +121,18 @@ public partial class CampaignView
                     if(door.Sample.OpenDoorSoundRequested)SourceSound(animation.DepartureArt!.SoundEffect);
                     if(!door.Complete)continue;
                 }
+                else if(animation.StepDeparture is {} step)
+                {
+                    bool requested=step.MusicFadeRequested;step.Advance(musicReady);
+                    if(!requested&&step.MusicFadeRequested){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
+                    if(!step.Complete)continue;
+                }
                 else{animation.Departure.Advance(musicReady);if(!animation.Departure.Complete)continue;}
                 animation.SwitchFrame=animation.ProcessedFrames;
                 animation.Arriving=true;
-                if(animation.ArrivalArt is not null)animation.DoorArrival=new();else animation.Arrival=new();
+                if(animation.ArrivalArt is not null)animation.DoorArrival=new();
+                else if(animation.Receipt.Arrival==FieldTransitionArrival.NonAnimatedDoor)animation.StepArrival=new();
+                else animation.Arrival=new();
                 // Synchronize presentation at the source map-load callback. No
                 // command, State replacement, RNG change or event is generated.
                 // A requested source fade stopped the backend, even when the
@@ -142,6 +153,7 @@ public partial class CampaignView
                     if(door.Sample.OpenDoorSoundRequested)SourceSound(animation.ArrivalArt!.SoundEffect);
                     if(!door.Complete)continue;
                 }
+                else if(animation.StepArrival is {} step){step.Advance();if(!step.Complete)continue;}
                 else{animation.Arrival!.Advance();if(!animation.Arrival.Complete)continue;}
                 bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames);
                 Write("fieldWarpPresentation",new{phase="complete",animation.SwitchFrame,endFrame=animation.ProcessedFrames,recorded});
@@ -162,15 +174,19 @@ public partial class CampaignView
             snapshot=WithFieldDoorPose(snapshot,sample,arrival,animation.Receipt.ArrivalAnchor.X,animation.Receipt.ArrivalAnchor.Y,true);
         else if(!animation.Arriving&&animation.DepartureArt is {} departure)
             snapshot=WithFieldDoorPose(snapshot,sample,departure,animation.Receipt.From.X,animation.Receipt.From.Y-1,false);
+        else if(animation.Arriving&&animation.StepArrival is not null)
+            snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.ArrivalAnchor.X,animation.Receipt.ArrivalAnchor.Y,Direction.South);
+        else if(!animation.Arriving&&animation.Receipt.DepartureStep is {} step)
+            snapshot=WithFieldWalkPose(snapshot,sample,animation.Receipt.From.X,animation.Receipt.From.Y,step.Facing);
         DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend);
         DrawFieldDoorWipe(sample);
         return true;
     }
 
     private static FieldDoorPresentation.PhaseSample QuestLogFieldWarpSample(CampaignQuestLogPlayback playback)=>
-        playback.ActiveTransitionTiming is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor} timing
-            ?FieldDoorPresentation.SampleRecorded(timing.Cause==FieldTransitionCause.AnimatedDoor,
-                timing.Arrival==FieldTransitionArrival.AnimatedDoor,timing.SwitchFrame,
+        playback.ActiveTransitionTiming is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor} timing
+            ?FieldDoorPresentation.SampleRecorded(timing.Cause,
+                timing.Arrival,timing.SwitchFrame,
                 (int)Math.Floor(playback.TransitionElapsedFrames+1e-7))
             :default;
 
