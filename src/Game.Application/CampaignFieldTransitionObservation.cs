@@ -45,7 +45,7 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
         if(!Enum.IsDefined(Departure)||Departure!=FieldTransitionDeparture.Immediate&&(Cause!=FieldTransitionCause.PlainWarp||Arrival!=FieldTransitionArrival.Plain))return false;
         if(!Enum.IsDefined(Interlude)||Interlude!=FieldTransitionInterlude.None&&
             (Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor)||Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)))return false;
-        if(!Enum.IsDefined(ArrivalPalette)||ArrivalPalette!=FieldArrivalPalette.Normal&&Arrival!=FieldTransitionArrival.Plain)return false;
+        if(!Enum.IsDefined(ArrivalPalette)||ArrivalPalette!=FieldArrivalPalette.Normal&&Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.Stair))return false;
         if(Interlude==FieldTransitionInterlude.ForestPreview?PreviewFrames<=0||PreviewFrames>int.MaxValue-FieldWarpPresentation.PlainArrivalFrames||Arrival!=FieldTransitionArrival.Plain:
             Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview?
             PreviewFrames<FieldCaveTransitionPresentation.MinimumPreviewFrames||PreviewFrames>int.MaxValue-FieldCaveTransitionPresentation.EnterFrames:
@@ -56,7 +56,7 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
         if(Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp)||
             Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor or FieldTransitionArrival.Stair))return false;
         int minimum=FieldDoorPresentation.DepartureFrames(Cause,EffectiveDeparture);
-        int arrival=ArrivalPalette==FieldArrivalPalette.Shade?18:FieldDoorPresentation.ArrivalFrames(Arrival);
+        int arrival=FieldDoorPresentation.ArrivalFrames(Arrival,ArrivalPalette);
         if(Interlude==FieldTransitionInterlude.ForestPreview)arrival+=PreviewFrames;
         return DepartureEndFrame>=minimum&&EndFrame-SwitchFrame==arrival;
     }
@@ -143,6 +143,7 @@ public sealed partial class CampaignSession
                  receipt.ArrivalAnchor.Y+1!=receipt.To.Y||receipt.To.Facing!=Direction.South))return false;
         var from=_content.MapDefinition(receipt.From.MapId);
         var to=_content.MapDefinition(receipt.To.MapId);
+        if(to.Weather=="WEATHER_SHADE"&&receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.Stair))return false;
         if((receipt.Cause==FieldTransitionCause.StairWarp||receipt.Arrival==FieldTransitionArrival.Stair)&&
             (from.MapType!="MAP_TYPE_INDOOR"||to.MapType!="MAP_TYPE_INDOOR"))return false;
         // Source previews are skipped within the same named section. Cross-section

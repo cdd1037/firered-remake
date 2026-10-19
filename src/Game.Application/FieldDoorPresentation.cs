@@ -41,7 +41,7 @@ public static partial class FieldDoorPresentation
         };
         int departureEnd=switchFrame-interludeFrames;
         int minimum=DepartureFrames(cause,departureKind);
-        _=ArrivalFrames(arrivalKind);
+        _=ArrivalFrames(arrivalKind,arrivalPalette);
         if(departureEnd<minimum)throw new ArgumentOutOfRangeException(nameof(switchFrame));
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
         if(elapsedFrames<switchFrame)
@@ -66,7 +66,7 @@ public static partial class FieldDoorPresentation
             return FromPlain(plain.Sample);
         }
         if(arrivalKind==FieldTransitionArrival.Stair)return FromPlain(FieldStairPresentation.SampleArrival(
-            arrivalStairBehavior??throw new ArgumentException("stair_arrival_behavior_missing"),elapsedFrames-switchFrame).Phase);
+            arrivalStairBehavior??throw new ArgumentException("stair_arrival_behavior_missing"),elapsedFrames-switchFrame,arrivalPalette).Phase);
         if(arrivalKind==FieldTransitionArrival.AnimatedDoor)
         {
             var arrival=new AnimatedArrival();
@@ -81,7 +81,7 @@ public static partial class FieldDoorPresentation
             return step.Sample;
         }
         var plainArrival=new FieldWarpPresentation.PlainArrival(arrivalPalette);
-        int plainFrames=Math.Min(arrivalPalette==FieldArrivalPalette.Shade?18:FieldWarpPresentation.PlainArrivalFrames,elapsedFrames-switchFrame);
+        int plainFrames=Math.Min(ArrivalFrames(arrivalKind,arrivalPalette),elapsedFrames-switchFrame);
         for(int frame=0;frame<plainFrames;frame++)plainArrival.Advance();
         return FromPlain(plainArrival.Sample);
     }
@@ -103,6 +103,18 @@ public static partial class FieldDoorPresentation
         FieldTransitionArrival.NonAnimatedDoor=>NonAnimatedArrivalFrames,
         _=>throw new ArgumentOutOfRangeException(nameof(arrival))
     };
+
+    public static int ArrivalFrames(FieldTransitionArrival arrival,FieldArrivalPalette palette)
+    {
+        if(!Enum.IsDefined(palette))throw new ArgumentOutOfRangeException(nameof(palette));
+        if(palette==FieldArrivalPalette.Normal)return ArrivalFrames(arrival);
+        return arrival switch
+        {
+            FieldTransitionArrival.Plain=>18,
+            FieldTransitionArrival.Stair=>FieldStairPresentation.ArrivalDuration(palette),
+            _=>throw new ArgumentOutOfRangeException(nameof(arrival))
+        };
+    }
 
     public static PhaseSample FromPlain(FieldWarpPresentation.PhaseSample sample)=>new(
         sample.Frames,sample.TaskPhase,sample.BackgroundBlend,sample.ObjectBlend,sample.PaletteActive,

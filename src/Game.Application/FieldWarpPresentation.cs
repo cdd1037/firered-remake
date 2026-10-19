@@ -4,8 +4,8 @@ namespace Game.Application;
 /// Shared delay-zero normal-palette and ordinary warp callbacks from the pinned
 /// palette.c, field_fadetransition.c and field_weather.c. This owns presentation
 /// time only. The caller supplies music readiness and owns the actual map swap.
-/// Animated doors, directional stairs, weather-specific fades and previews are
-/// separate source paths and are deliberately not represented here.
+/// Doors, stairs and previews own their separate callbacks and share these
+/// palette phases through FieldArrivalPalettePresentation.
 /// </summary>
 public static class FieldWarpPresentation
 {

@@ -2,7 +2,7 @@
 
 The local host extracts the original task callbacks, movement actions, sprite
 animation callbacks and palettes. It stubs hardware/audio and selects a fresh
-standard-player animation seed, NONE/SUNNY weather and no map preview. No
+standard-player animation seed, normal or SHADE weather and no map preview. No
 upstream script runs. Output belongs in the already ignored presentation fixture
 directory. Task callbacks precede weather, sprites and palette updates.
 """
@@ -40,7 +40,17 @@ def extract_function(source, name):
 
 
 HEADER = r'''
+#include <stdlib.h>
 typedef int32_t s32;
+#undef PLTT_SIZE
+#define PLTT_SIZE 1024
+#define PALETTES_ALL 0xffffffffu
+#define RGB_BLACK 0
+#define RGB_WHITE 0x7fff
+#define RGB_WHITEALPHA 0xffff
+#define CpuFastCopy(a,b,c) ((void)0)
+enum { FADE_FROM_BLACK,FADE_FROM_WHITE,FADE_TO_BLACK,FADE_TO_WHITE };
+u16 gPlttBufferUnfaded[512];
 #define MB_UP_RIGHT_STAIR_WARP 0x6c
 #define MB_UP_LEFT_STAIR_WARP 0x6d
 #define MB_DOWN_RIGHT_STAIR_WARP 0x6e
@@ -58,7 +68,7 @@ struct Sprite { s16 data[8],x2,y2; int animPaused,animNum,animCmdIndex,animDelay
 struct ObjectEvent { int heldMovementFinished,heldMovementActive,movementActionId,inanimate,facingDirection; } gObjectEvents[1];
 struct { int objectEventId,spriteId; } gPlayerAvatar;
 struct StepAnimTable { const union AnimCmd *const *anims; int animPos[4]; };
-int sourceBehavior,musicStopRequested,displayedFrame;
+int sourceBehavior,musicStopRequested,displayedFrame,fadeCalls;
 void CameraObjectReset1(void){} void CameraObjectReset2(void){}
 void Overworld_PlaySpecialMapMusic(void){}
 void FieldCB_DefaultWarpExit(void){} void (*gFieldCallback)(void);
@@ -82,12 +92,20 @@ void SetSpriteOamFlipBits(struct Sprite*s,int h,int v){(void)s;(void)h;(void)v;}
 void RequestSpriteFrameImageCopy(int image,int tile,const void*images)
 {(void)tile;(void)images;displayedFrame=image==7?1:image==8?3:0;}
 void WarpFadeInScreen(void); void WarpFadeOutScreen(void);
+int GetLastUsedWarpMapType(void){return 0;} int GetCurrentMapType(void){return 0;}
+int MapTransitionIsExit(int previous,int current){(void)previous;(void)current;return FALSE;}
+void Weather_SetBlendCoeffs(u8 eva,u8 evb){weatherState.currBlendEVA=eva;weatherState.currBlendEVB=evb;}
+void CpuFastFill16(int color,void *destination,int bytes)
+{if(color||destination!=gPlttBufferFaded||bytes!=1024)exit(10);bgBlend=objBlend=16;}
+static void ApplyGammaShift(int start,int count,int gamma)
+{if(start||count!=32||gamma!=3)exit(11);bgBlend=objBlend=0;}
+static void ApplyGammaShiftWithBlend(int start,int count,int gamma,int coefficient,int color)
+{if(start||count!=32||gamma!=3||color)exit(12);bgBlend=objBlend=coefficient;}
 '''
 
 SHIMS = r'''
-void WarpFadeOutScreen(void){BeginNormalPaletteFade(0xffffffff,0,0,16,0);}
-void WarpFadeInScreen(void)
-{weatherState.palProcessingState=WEATHER_PAL_STATE_SCREEN_FADING_IN;BeginNormalPaletteFade(0xffffffff,0,16,0,0);}
+void WarpFadeOutScreen(void){FadeScreen(FADE_TO_BLACK,0);}
+void WarpFadeInScreen(void){fadeCalls++;SourceWarpFadeInScreen();}
 void AnimateSpritesHost(void)
 {
     struct ObjectEvent *o=&gObjectEvents[0];struct Sprite *s=&gSprites[0];
@@ -107,14 +125,17 @@ int main(void)
 {
     const char* names[]={"departureReady","departureDelayed","arrival"};
     printf("{\"traces\":[");int trace=0;
-    for(sourceBehavior=0x6c;sourceBehavior<=0x6f;sourceBehavior++)for(int kind=0;kind<3;kind++)
+    // Preserve the original twelve normal traces in their original order.
+    for(int shade=0;shade<2;shade++)for(sourceBehavior=0x6c;sourceBehavior<=0x6f;sourceBehavior++)for(int kind=shade?2:0;kind<3;kind++)
     {
         memset(gTasks,0,sizeof(gTasks));memset(&gPaletteFade,0,sizeof(gPaletteFade));
         memset(&weatherState,0,sizeof(weatherState));memset(gSprites,0,sizeof(gSprites));memset(gObjectEvents,0,sizeof(gObjectEvents));
-        gSprites[0].anims=hostAnims;complete=musicStopRequested=displayedFrame=0;
+        gSprites[0].anims=hostAnims;complete=musicStopRequested=displayedFrame=fadeCalls=0;
+        weatherState.currWeather=shade?WEATHER_SHADE:WEATHER_NONE;
+        weatherState.gammaTargetIndex=shade?3:0;
         bgBlend=objBlend=kind==2?16:0;
         if(kind==2)WarpFadeInScreen();else DoStairWarp(sourceBehavior,0);
-        if(trace++)printf(",");printf("{\"name\":\"%s\",\"behavior\":%d,\"frames\":[",names[kind],sourceBehavior);row(0);
+        if(trace++)printf(",");printf("{\"name\":\"%s\",\"behavior\":%d,\"frames\":[",shade?"arrivalShade":names[kind],sourceBehavior);row(0);
         for(int frame=1;frame<=100;frame++)
         {
             musicReady=kind==0||frame>=65;
@@ -123,7 +144,9 @@ int main(void)
             AnimateSpritesHost();UpdatePaletteFade();printf(",");row(frame);
             if(complete)break;
         }
-        if(!complete)return 2;printf("]}");
+        if(!complete)return 2;
+        if(kind==2&&fadeCalls!=2)return 3;
+        printf("]");if(shade)printf(",\"fadeCalls\":%d",fadeCalls);printf("}");
     }
     printf("]}\n");return 0;
 }
@@ -146,20 +169,31 @@ def generate(reference):
     anims = sources['src/data/object_events/object_event_anims.h']
     if not re.search(r'\.anims = sAnimTable_RedGreenNormal,\s*\.animPos = \{1, 3, 0, 2\}', anims):
         raise ValueError('Player step alternation table changed')
-    code = WARP_HEADER + HEADER
+    # Reuse the normal host, replacing only its unsupported SHADE stub and
+    # expanding the state required by the original FadeScreen callbacks.
+    weather_header = WARP_HEADER.replace(
+        'enum { WEATHER_PAL_STATE_IDLE, WEATHER_PAL_STATE_SCREEN_FADING_IN };',
+        'enum { WEATHER_PAL_STATE_IDLE, WEATHER_PAL_STATE_SCREEN_FADING_IN, WEATHER_PAL_STATE_SCREEN_FADING_OUT };').replace(
+        'int fadeInCounter,fadeInActive,currWeather,gammaIndex,gammaTargetIndex,palProcessingState;',
+        'int fadeInCounter,fadeInActive,currWeather,gammaIndex,gammaTargetIndex,palProcessingState,fadeDestColor,fadeScreenCounter,currBlendEVA,currBlendEVB,readyForInit;').replace(
+        'bool8 FadeInScreen_RainShowShade(void){return FALSE;}', '')
+    if weather_header == WARP_HEADER or 'bool8 FadeInScreen_RainShowShade(void){return FALSE;}' in weather_header:
+        raise ValueError('Shared weather host no longer matches the bounded extension')
+    code = weather_header + HEADER
     for name in ('sAnim_GoWest', 'sAnim_GoFastWest'):
         code += extract_array(anims, name)
     code += 'static const union AnimCmd *const hostAnims[]={sAnim_GoWest,sAnim_GoFastWest};\n'
     code += 'static const struct StepAnimTable sStepAnimTables[]={{hostAnims,{1,3,0,2}},{NULL,{0}}};\n'
     groups = {
         'src/palette.c': ('IsSoftwarePaletteFadeFinishing','UpdateNormalPaletteFade','BeginNormalPaletteFade'),
-        'src/field_weather.c': ('FadeInScreenWithWeather',),
+        'src/field_weather.c': ('FadeInScreen_RainShowShade','FadeInScreenWithWeather','FadeScreen'),
         'src/metatile_behavior.c': ('MetatileBehavior_IsDirectionalUpRightStairWarp','MetatileBehavior_IsDirectionalUpLeftStairWarp','MetatileBehavior_IsDirectionalDownRightStairWarp','MetatileBehavior_IsDirectionalDownLeftStairWarp'),
         'src/sprite.c': ('DecrementAnimDelayCounter','ContinueAnim','AnimCmd_frame','AnimCmd_jump','SeekSpriteAnim'),
         'src/event_object_movement.c': ('GetStepAnimTable','SetStepAnimHandleAlternation','InitMoveInPlace','MovementAction_WalkInPlace_Step1','MovementAction_WalkInPlaceNormalLeft_Step0','MovementAction_WalkInPlaceFastLeft_Step0'),
-        'src/field_fadetransition.c': ('DoStairWarp','Task_StairWarp','UpdateStairsMovement','ForceStairsMovement','GetStairsMovementDirection','Task_ExitStairs','ExitStairsMovement','WaitStairExitMovementFinished'),
+        'src/field_fadetransition.c': ('palette_bg_faded_fill_black','palette_bg_faded_fill_white','WarpFadeInScreen','DoStairWarp','Task_StairWarp','UpdateStairsMovement','ForceStairsMovement','GetStairsMovementDirection','Task_ExitStairs','ExitStairsMovement','WaitStairExitMovementFinished'),
     }
-    bodies = [extract_function(sources[path],name) for path,names in groups.items() for name in names]
+    bodies = [extract_function(sources[path],name).replace('void WarpFadeInScreen(void)', 'void SourceWarpFadeInScreen(void)')
+              for path,names in groups.items() for name in names]
     code += ''.join(body.split('\n{',1)[0]+';\n' for body in bodies)
     code += 'static void(*const sAnimCmdFuncs[])(struct Sprite*)={NULL,AnimCmd_jump,NULL,AnimCmd_frame};\n'
     code += ''.join(bodies) + SHIMS
@@ -170,7 +204,7 @@ def generate(reference):
         compile_c(['cc','-std=c11','-O0',str(path),'-o',str(binary)])
         result = json.loads(subprocess.check_output([str(binary)],text=True))
     ends = [trace['frames'][-1][0] for trace in result['traces']]
-    if ends != [36,66,24]*4:
+    if ends != [36,66,24]*4+[19]*4:
         raise ValueError('Unexpected stair phase boundaries: '+str(ends))
     return {'sourceCommit':COMMIT,'columns':['frame','taskPhase','backgroundBlend','objectBlend','paletteActive','complete','offsetX','offsetY','walkFrame','musicFadeRequested'],**result}
 

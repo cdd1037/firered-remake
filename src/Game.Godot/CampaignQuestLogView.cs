@@ -104,7 +104,7 @@ public partial class CampaignView
             var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;
             int stairFrame=(int)Math.Floor(playback.TransitionElapsedFrames+1e-7);
             if(arrival&&timing.ArrivalStairBehavior is {} arrivalStair)
-                snapshot=WithFieldStairPose(snapshot,FieldStairPresentation.SampleArrival(arrivalStair,stairFrame-timing.SwitchFrame));
+                snapshot=WithFieldStairPose(snapshot,FieldStairPresentation.SampleArrival(arrivalStair,stairFrame-timing.SwitchFrame,timing.ArrivalPalette));
             else if(!arrival&&timing.DepartureStairBehavior is {} departureStair)
                 snapshot=WithFieldStairPose(snapshot,FieldStairPresentation.SampleDeparture(departureStair,timing.SwitchFrame,stairFrame));
             else if(anchor is not null)

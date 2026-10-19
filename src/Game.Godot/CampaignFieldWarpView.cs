@@ -186,7 +186,8 @@ public partial class CampaignView
                 animation.Arriving=true;
                 if(animation.Interlude==FieldTransitionInterlude.ForestPreview)animation.Forest=new(animation.PreviewDuration,
                     _catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
-                else if(animation.Receipt.Arrival==FieldTransitionArrival.Stair)animation.StairArrival=new(animation.Receipt.ArrivalStairBehavior!.Value);
+                else if(animation.Receipt.Arrival==FieldTransitionArrival.Stair)animation.StairArrival=new(animation.Receipt.ArrivalStairBehavior!.Value,
+                    _catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
                 else if(animation.ArrivalArt is not null)animation.DoorArrival=new();
                 else if(animation.Receipt.Arrival==FieldTransitionArrival.NonAnimatedDoor)animation.StepArrival=new();
                 else animation.Arrival=new(_catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);

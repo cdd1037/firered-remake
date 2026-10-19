@@ -18,25 +18,28 @@ public sealed class FieldStairPresentationTests
         {
             traces++;int behavior=trace.GetProperty("behavior").GetInt32();
             string name=trace.GetProperty("name").GetString()!;
-            Assert.IsTrue(name is "departureReady" or "departureDelayed" or "arrival");
+            Assert.IsTrue(name is "departureReady" or "departureDelayed" or "arrival" or "arrivalShade");
+            bool arriving=name is "arrival" or "arrivalShade";
+            var palette=name=="arrivalShade"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal;
+            if(palette==FieldArrivalPalette.Shade)Assert.AreEqual(2,trace.GetProperty("fadeCalls").GetInt32());
             var departure=new FieldStairPresentation.Departure(behavior);
-            var arrival=new FieldStairPresentation.Arrival(behavior);
+            var arrival=new FieldStairPresentation.Arrival(behavior,palette);
             foreach(var row in trace.GetProperty("frames").EnumerateArray())
             {
                 rows++;var v=row.EnumerateArray().Select(value=>value.GetInt32()).ToArray();
                 Assert.AreEqual(10,v.Length);int frame=v[0];
                 if(frame>0)
                 {
-                    if(name=="arrival")arrival.Advance();
+                    if(arriving)arrival.Advance();
                     else departure.Advance(name=="departureReady"||frame>=65);
                 }
                 var expected=new FieldStairPresentation.PhaseSample(new(frame,v[1],v[2],v[3],v[4]!=0,v[5]!=0),
                     v[6],v[7],v[8],v[9]!=0);
-                Assert.AreEqual(expected,name=="arrival"?arrival.Sample:departure.Sample,$"{behavior:x} {name} callback {frame}");
+                Assert.AreEqual(expected,arriving?arrival.Sample:departure.Sample,$"{behavior:x} {name} callback {frame}");
             }
-            Assert.IsTrue(name=="arrival"?arrival.Complete:departure.Complete);
+            Assert.IsTrue(arriving?arrival.Complete:departure.Complete);
         }
-        Assert.AreEqual(12,traces);Assert.AreEqual(516,rows);
+        Assert.AreEqual(16,traces);Assert.AreEqual(596,rows);
     }
 
     [TestMethod]
@@ -46,26 +49,27 @@ public sealed class FieldStairPresentationTests
     [DataRow(0x6f,0x6c)]
     public void RecordedBoundariesReuseEveryLiveStairCallback(int from,int to)
     {
+        foreach(var palette in new[]{FieldArrivalPalette.Normal,FieldArrivalPalette.Shade})
         foreach(int change in new[]{36,66})
         {
             var departure=new FieldStairPresentation.Departure(from);
             for(int frame=0;frame<change;frame++)
             {
-                Assert.AreEqual(departure.Sample,FieldStairPresentation.SampleRecorded(from,to,change,frame));
+                Assert.AreEqual(departure.Sample,FieldStairPresentation.SampleRecorded(from,to,change,frame,palette));
                 Assert.AreEqual(departure.Sample,FieldStairPresentation.SampleDeparture(from,change,frame));
                 Assert.AreEqual(FieldDoorPresentation.FromPlain(departure.Sample.Phase),
-                    FieldDoorPresentation.SampleRecorded(FieldTransitionCause.StairWarp,FieldTransitionArrival.Stair,change,frame,from,to));
+                    FieldDoorPresentation.SampleRecorded(FieldTransitionCause.StairWarp,FieldTransitionArrival.Stair,change,frame,from,to,arrivalPalette:palette));
                 departure.Advance(frame+1>=change-1);
             }
             Assert.IsTrue(departure.Complete);
             var final=departure.Sample;departure.Advance(false);Assert.AreEqual(final,departure.Sample);
-            var arrival=new FieldStairPresentation.Arrival(to);
+            var arrival=new FieldStairPresentation.Arrival(to,palette);
             for(int frame=0;frame<=27;frame++)
             {
-                Assert.AreEqual(arrival.Sample,FieldStairPresentation.SampleRecorded(from,to,change,change+frame));
-                Assert.AreEqual(arrival.Sample,FieldStairPresentation.SampleArrival(to,frame));
+                Assert.AreEqual(arrival.Sample,FieldStairPresentation.SampleRecorded(from,to,change,change+frame,palette));
+                Assert.AreEqual(arrival.Sample,FieldStairPresentation.SampleArrival(to,frame,palette));
                 Assert.AreEqual(FieldDoorPresentation.FromPlain(arrival.Sample.Phase),
-                    FieldDoorPresentation.SampleRecorded(FieldTransitionCause.StairWarp,FieldTransitionArrival.Stair,change,change+frame,from,to));
+                    FieldDoorPresentation.SampleRecorded(FieldTransitionCause.StairWarp,FieldTransitionArrival.Stair,change,change+frame,from,to,arrivalPalette:palette));
                 arrival.Advance();
             }
             Assert.IsTrue(arrival.Complete);
@@ -100,19 +104,44 @@ public sealed class FieldStairPresentationTests
     [DataRow(0x6f,-9,1)]
     public void ArrivalKeepsSignedOffsetsAndWaitsForWeatherAfterItsSixteenDrifts(int behavior,int firstX,int firstY)
     {
-        var arrival=new FieldStairPresentation.Arrival(behavior);
-        Assert.AreEqual(0,arrival.Sample.OffsetX);Assert.AreEqual(0,arrival.Sample.OffsetY);
-        for(int frame=1;frame<=24;frame++)
+        foreach(var palette in new[]{FieldArrivalPalette.Normal,FieldArrivalPalette.Shade})
         {
-            arrival.Advance();var sample=arrival.Sample;
-            if(frame==1){Assert.AreEqual(firstX,sample.OffsetX);Assert.AreEqual(firstY,sample.OffsetY);}
-            if(frame>=17){Assert.AreEqual(0,sample.OffsetX);Assert.AreEqual(0,sample.OffsetY);}
-            Assert.AreEqual(frame<=4?1:0,sample.WalkFrame);
-            Assert.AreEqual(frame<18?1:2,sample.Phase.TaskPhase);
-            Assert.AreEqual(frame<22,sample.Phase.PaletteActive);
-            Assert.AreEqual(frame==24,sample.Phase.Complete);
+            var arrival=new FieldStairPresentation.Arrival(behavior,palette);
+            int duration=FieldStairPresentation.ArrivalDuration(palette);
+            Assert.AreEqual(palette==FieldArrivalPalette.Shade?19:24,duration);
+            Assert.AreEqual(0,arrival.Sample.OffsetX);Assert.AreEqual(0,arrival.Sample.OffsetY);
+            for(int frame=1;frame<=duration;frame++)
+            {
+                arrival.Advance();var sample=arrival.Sample;
+                if(frame==1){Assert.AreEqual(firstX,sample.OffsetX);Assert.AreEqual(firstY,sample.OffsetY);}
+                if(frame>=17){Assert.AreEqual(0,sample.OffsetX);Assert.AreEqual(0,sample.OffsetY);}
+                Assert.AreEqual(frame<=4?1:0,sample.WalkFrame);
+                Assert.AreEqual(frame<18?1:2,sample.Phase.TaskPhase);
+                Assert.AreEqual(palette==FieldArrivalPalette.Normal&&frame<22,sample.Phase.PaletteActive);
+                Assert.AreEqual(frame==duration,sample.Phase.Complete);
+                if(palette==FieldArrivalPalette.Shade)
+                {
+                    Assert.AreEqual(Math.Max(0,17-frame),sample.Phase.BackgroundBlend);
+                    Assert.AreEqual(sample.Phase.BackgroundBlend,sample.Phase.ObjectBlend);
+                    Assert.AreEqual(frame>=17,arrival.Palette.WeatherReady);
+                }
+            }
+            var final=arrival.Sample;arrival.Advance();Assert.AreEqual(final,arrival.Sample);
         }
-        var final=arrival.Sample;arrival.Advance();Assert.AreEqual(final,arrival.Sample);
+    }
+
+    [TestMethod]
+    public void FirstStairCallbackResetsAnAlreadyInitializedShadeFade()
+    {
+        var arrival=new FieldStairPresentation.Arrival(0x6c,FieldArrivalPalette.Shade);
+        for(int i=0;i<4;i++)arrival.Palette.Advance();
+        Assert.AreEqual(13,arrival.Palette.BackgroundBlend);
+        // The source task repeats WarpFadeInScreen after setup. Its reset
+        // starts at16; the already initialized weather task then writes15.
+        arrival.Advance();
+        Assert.AreEqual(15,arrival.Palette.BackgroundBlend);
+        Assert.AreEqual(15,arrival.Palette.ObjectBlend);
+        Assert.IsFalse(arrival.Palette.WeatherReady);
     }
 
     [TestMethod]
@@ -128,6 +157,10 @@ public sealed class FieldStairPresentationTests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldStairPresentation.SampleArrival(0x6f,-1));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldStairPresentation.SampleRecorded(0x6c,0x6f,35,100));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldStairPresentation.SampleRecorded(0x6c,0x6f,36,-1));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldStairPresentation.ArrivalDuration((FieldArrivalPalette)99));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>new FieldStairPresentation.Arrival(0x6c,(FieldArrivalPalette)99));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldStairPresentation.SampleArrival(0x6c,0,(FieldArrivalPalette)99));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>FieldStairPresentation.SampleRecorded(0x6c,0x6f,36,0,(FieldArrivalPalette)99));
         Assert.ThrowsExactly<ArgumentException>(()=>FieldDoorPresentation.SampleRecorded(FieldTransitionCause.StairWarp,FieldTransitionArrival.Stair,36,0));
         Assert.ThrowsExactly<ArgumentException>(()=>FieldDoorPresentation.SampleRecorded(FieldTransitionCause.StairWarp,FieldTransitionArrival.Stair,36,36,0x6c));
     }
@@ -139,13 +172,15 @@ public sealed class FieldStairPresentationTests
     public void HostCadencePreservesDiscreteSourceBoundaries(int hz)
     {
         var departure=new FieldStairPresentation.Departure(0x6c);var arrival=new FieldStairPresentation.Arrival(0x6f);
+        var shadeArrival=new FieldStairPresentation.Arrival(0x6f,FieldArrivalPalette.Shade);
         double elapsed=0;int processed=0;
         for(int host=0;host<hz;host++)
         {
             elapsed+=60d/hz;
-            while(processed<(int)Math.Floor(elapsed+1e-7)){processed++;departure.Advance(true);arrival.Advance();}
+            while(processed<(int)Math.Floor(elapsed+1e-7)){processed++;departure.Advance(true);arrival.Advance();shadeArrival.Advance();}
         }
         Assert.IsTrue(departure.Complete);Assert.AreEqual(36,departure.Frames);
         Assert.IsTrue(arrival.Complete);Assert.AreEqual(24,arrival.Frames);
+        Assert.IsTrue(shadeArrival.Complete);Assert.AreEqual(19,shadeArrival.Frames);
     }
 }

@@ -2,7 +2,7 @@ namespace Game.Application;
 
 /// <summary>
 /// Pinned Task_StairWarp/Task_ExitStairs callbacks for an on-foot directional
-/// stair, no inherited held movement, NONE/SUNNY weather and a black fade.
+/// stair, no inherited held movement, normal or static SHADE black arrival.
 /// Offsets are signed source sprite x2/y2 pixels, never authoritative movement.
 /// Sprite animation starts at the same fresh command-index-zero seed as doors.
 /// </summary>
@@ -10,6 +10,14 @@ public static class FieldStairPresentation
 {
     public const int MinimumDepartureFrames=36;
     public const int ArrivalFrames=24;
+    public static int ArrivalDuration(FieldArrivalPalette paletteKind)=>paletteKind switch
+    {
+        FieldArrivalPalette.Normal=>ArrivalFrames,
+        // SHADE is ready after callback17, but the stair movement task reaches
+        // its final readiness phase only at callback19.
+        FieldArrivalPalette.Shade=>19,
+        _=>throw new ArgumentOutOfRangeException(nameof(paletteKind))
+    };
 
     public readonly record struct PhaseSample(FieldWarpPresentation.PhaseSample Phase,
         int OffsetX,int OffsetY,int WalkFrame,bool MusicFadeRequested);
@@ -24,21 +32,22 @@ public static class FieldStairPresentation
         return departure.Sample;
     }
 
-    public static PhaseSample SampleArrival(int behavior,int elapsedFrames)
+    public static PhaseSample SampleArrival(int behavior,int elapsedFrames,FieldArrivalPalette paletteKind=FieldArrivalPalette.Normal)
     {
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
-        var arrival=new Arrival(behavior);
-        for(int frame=0;frame<Math.Min(ArrivalFrames,elapsedFrames);frame++)arrival.Advance();
+        var arrival=new Arrival(behavior,paletteKind);
+        for(int frame=0;frame<Math.Min(ArrivalDuration(paletteKind),elapsedFrames);frame++)arrival.Advance();
         return arrival.Sample;
     }
 
-    public static PhaseSample SampleRecorded(int departureBehavior,int arrivalBehavior,int switchFrame,int elapsedFrames)
+    public static PhaseSample SampleRecorded(int departureBehavior,int arrivalBehavior,int switchFrame,int elapsedFrames,FieldArrivalPalette paletteKind=FieldArrivalPalette.Normal)
     {
         _=Speeds(departureBehavior);_=Speeds(arrivalBehavior);
+        _=ArrivalDuration(paletteKind);
         if(switchFrame<MinimumDepartureFrames)throw new ArgumentOutOfRangeException(nameof(switchFrame));
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
         return elapsedFrames<switchFrame?SampleDeparture(departureBehavior,switchFrame,elapsedFrames)
-            :SampleArrival(arrivalBehavior,elapsedFrames-switchFrame);
+            :SampleArrival(arrivalBehavior,elapsedFrames-switchFrame,paletteKind);
     }
 
     private static (int X,int Y) Speeds(int behavior)=>behavior switch
@@ -103,14 +112,17 @@ public static class FieldStairPresentation
     {
         private readonly int _speedX,_speedY;
         private int _phase,_offsetX,_offsetY,_timer;
-        private bool _weatherInitialized,_weatherReady;
-        public FieldWarpPresentation.NormalPalette Palette {get;}=new(true);
+        public FieldArrivalPalettePresentation Palette {get;}
         public int Frames {get;private set;}
         public bool Complete {get;private set;}
         public PhaseSample Sample=>new(new(Frames,_phase,Palette.BackgroundBlend,Palette.ObjectBlend,
             Palette.Active,Complete),_offsetX>>5,_offsetY>>5,Frames is >=1 and <=4?1:0,false);
 
-        public Arrival(int behavior)=>(_speedX,_speedY)=Speeds(behavior);
+        public Arrival(int behavior,FieldArrivalPalette paletteKind=FieldArrivalPalette.Normal)
+        {
+            (_speedX,_speedY)=Speeds(behavior);
+            Palette=new(paletteKind);
+        }
 
         public void Advance()
         {
@@ -119,18 +131,18 @@ public static class FieldStairPresentation
             switch(_phase)
             {
                 case 0:
-                    // Setup already began the fade. The source's duplicate
-                    // phase0 BeginNormalPaletteFade returns false while active.
+                    // Setup already began the fade. WarpFadeInScreen repeats
+                    // its full bank fill and weather reset; an active normal
+                    // palette keeps its cursor, while SHADE resets its counter.
+                    Palette.FadeFromBlack();
                     _offsetX=_speedX*16;_offsetY=_speedY*16;_timer=16;_phase=1;
                     break;
                 case 1:
                     if(_timer!=0){_offsetX-=_speedX;_offsetY-=_speedY;_timer--;}
                     else{_offsetX=_offsetY=0;_phase=2;}
                     break;
-                default:if(_weatherReady)Complete=true;break;
+                default:if(Palette.WeatherReady)Complete=true;break;
             }
-            if(!_weatherInitialized)_weatherInitialized=true;
-            else if(!Palette.Active)_weatherReady=true;
             Palette.Advance();
         }
     }
