@@ -3,6 +3,7 @@
 import argparse,hashlib,importlib.util,json,re,struct,sys,unittest
 from pathlib import Path
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);a,rest=p.parse_known_args();sys.argv=[sys.argv[0],*rest]
 ROOT=a.root;REFERENCE=a.reference or ROOT/'content/raw/pokefirered/037335f4';GENERATED=a.generated or ROOT/'content/generated/battle/animations'
@@ -44,11 +45,11 @@ class PetalIceImportTests(unittest.TestCase):
    source=(REFERENCE/('src/'+file)).read_text();self.assertEqual(self.importer.recipe(source,name,callback),self.recipes[name]);self.assertNotIn(name,{r['template'] for r in self.physical['spriteRecipes']})
    with self.assertRaises(ValueError):self.importer.recipe(source.replace('.callback = '+callback+',','.callback = UnreviewedCallback,'),name,callback)
   chunk=self.recipes['gIceBallChunkSpriteTemplate'];self.assertEqual([224,280,336,384,448],[p[0]['x'] for p in chunk['affineAnimations']]);self.assertEqual([16,32,48,64],[f['tile'] for f in chunk['animations'][1]])
- def test_every_ice_chunk_index_palette_color_and_rgb_pixel(self):
+ def test_every_ice_chunk_index_palette_color_and_visible_pixel(self):
   row=next(r for r in self.elemental['indexedAssets'] if r['id']=='ice-chunk')
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/ice_chunk.png') as im:
    self.assertEqual(('P',(32,160)),(im.mode,im.size));indices=list(im.tobytes());palette=im.getpalette()[:48];tiled=[im.getpixel((x+dx,y+dy)) for y in range(0,160,8) for x in range(0,32,8) for dy in range(8) for dx in range(8)]
-  colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual('ANIM_TAG_ICE_CHUNK',row['paletteTag']);self.assertEqual((32,160),(row['width'],row['height']));self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(struct.pack('<HH',32,160)+struct.pack('<5120H',*[colors[i]|(0x8000 if i else 0) for i in indices]),(GENERATED/'elemental-ice-chunk.rgb555').read_bytes())
+  colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual('ANIM_TAG_ICE_CHUNK',row['paletteTag']);self.assertEqual((32,160),(row['width'],row['height']));self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(tuple(colors[i]|0x8000 if i else 0 for i in indices),decode_indexed(32,160,(GENERATED/row['indicesPath']).read_bytes(),(GENERATED/row['palettePath']).read_bytes()))
  def test_registered_source_ice_chunk_and_shared_flower_authority(self):
   source=(REFERENCE/'src/data/battle_anim.h').read_text();graphics=(REFERENCE/'src/graphics.c').read_text();self.assertRegex(source,r'\{gBattleAnimSpriteGfx_IceChunk, 0x0A00, ANIM_TAG_ICE_CHUNK\}');self.assertRegex(source,r'\{gBattleAnimSpritePal_IceChunk, ANIM_TAG_ICE_CHUNK\}')
   for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:self.assertIn('gBattleAnimSprite'+kind+'_IceChunk[] = INCBIN_U32("graphics/battle_anims/sprites/ice_chunk.'+suffix+'.lz")',graphics)

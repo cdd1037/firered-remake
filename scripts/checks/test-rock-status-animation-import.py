@@ -4,6 +4,7 @@ import importlib.util,io,json,re,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('rock_status_physical',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
@@ -30,11 +31,11 @@ class RockStatusAnimationImportTests(unittest.TestCase):
   self.assertEqual('walls-sparkle-4.rgb555',next(r['path'] for r in self.pack['assets'] if r['id']=='sparkle-4'))
   self.assertNotIn('sparkle-4',{r['id'] for r in self.pack['indexedAssets']})
  def test_indexed_art_uses_registered_palette_aliases(self):
-  metadata,pixels=imp.build_indexed_assets(REFERENCE);rgb=imp.build_assets(REFERENCE)
+  metadata,pixels=imp.build_indexed_assets(REFERENCE)
   for stem,symbol,size,shape,pal_symbol,pal_stem in imp.ROCK_STATUS_MATERIALS:
    name=stem.replace('_','-');im=Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+stem+'.png']));pal=Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+pal_stem+'.png'])).getpalette();ordered=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
    self.assertEqual(shape,im.size);self.assertEqual(size,len(pixels[name+'.4bpp']));self.assertEqual(bytes(ordered[i]|ordered[i+1]<<4 for i in range(0,len(ordered),2)),pixels[name+'.4bpp'])
-   colors=[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(colors,list(struct.unpack('<16H',pixels[name+'.pal16'])));self.assertEqual([colors[i]+(32768 if i else 0) for i in im.tobytes()],list(struct.unpack_from('<'+str(im.width*im.height)+'H',rgb[name],4)))
+   colors=[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(colors,list(struct.unpack('<16H',pixels[name+'.pal16'])));self.assertEqual([(colors[i]|32768) if i else 0 for i in im.tobytes()],list(decode_indexed(im.width,im.height,pixels[name+'.4bpp'],pixels[name+'.pal16'])))
   walls=imp.module('rock_status_walls',ROOT/'scripts/imports/battle/import-source-wall-animations.py');_,shared=walls.build(REFERENCE)
   source=imp.hit.rgb555(self.raw['graphics/battle_anims/sprites/sparkle_4.png'],(32,160),imp.reaction_palette(self.raw,'sparkle_3'))
   self.assertEqual(source,shared['walls-sparkle-4.rgb555'])
@@ -49,5 +50,6 @@ class RockStatusAnimationImportTests(unittest.TestCase):
   for path,old,new in mutations:
    raw=dict(self.raw);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)
    with patch.object(imp,'read_sources',return_value=raw):
-    with self.assertRaises(ValueError):imp.build(REFERENCE)
+    with self.assertRaises(ValueError):
+     imp.build(REFERENCE) if path.startswith('src/battle_anim_') else imp.build_indexed_assets(REFERENCE)
 if __name__=='__main__':unittest.main()

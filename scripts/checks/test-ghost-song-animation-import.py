@@ -1,6 +1,7 @@
 """Focused literal ghost/song recipes and partial-palette material contracts."""
 import argparse,importlib.util,io,json,re,struct,sys,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from PIL import Image
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--candidate',type=Path);p.add_argument('--raw-overlay',type=Path);a,rest=p.parse_known_args();sys.argv=[sys.argv[0],*rest];ROOT=a.repo;RAW=ROOT/'content/raw/pokefirered/037335f4'
@@ -28,9 +29,9 @@ class GhostSongImportTests(unittest.TestCase):
  def test_new_assets_match_every_source_index_color_and_unchanged_shared_note_owner(self):
   for stem,symbol,size,shape in physical.GHOST_SONG_MATERIALS:
    png=self.raw['graphics/battle_anims/sprites/'+stem+'.png'];name=stem.replace('_','-')
-   with Image.open(io.BytesIO(png)) as im:indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];pal=im.getpalette()[:48]
-   self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.assets[2][name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[3*i+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),self.assets[2][name+'.pal16']);self.assertEqual(physical.hit.rgb555(png,shape),self.assets[0][name]);self.assertEqual(size,len(self.assets[2][name+'.4bpp']))
-  self.assertNotIn('music-notes-2',self.assets[0]);self.assertNotIn('gDestinyBondWhiteShadowSpriteTemplate',physical.SPRITES)
+   with Image.open(io.BytesIO(png)) as im:indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];pal=im.getpalette()[:48];raster=list(im.tobytes())
+   self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.assets[1][name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[3*i+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),self.assets[1][name+'.pal16']);self.assertEqual(tuple((sum((pal[3*i+c]//8)<<(5*c) for c in range(3))|32768) if i else 0 for i in raster),decode_indexed(*shape,self.assets[1][name+'.4bpp'],self.assets[1][name+'.pal16']));self.assertEqual(size,len(self.assets[1][name+'.4bpp']))
+  self.assertNotIn('music-notes-2',{r['id'] for r in self.assets[0]});self.assertNotIn('gDestinyBondWhiteShadowSpriteTemplate',physical.SPRITES)
  def test_bad_registration_pixels_palette_link_and_shape_fail(self):
   for file,old,new in [('src/data/battle_anim.h','gBattleAnimSpriteGfx_Nail, 0x0400','gBattleAnimSpriteGfx_Nail, 0x0200'),('src/graphics.c','white_shadow.gbapal.lz','nail.gbapal.lz')]:
    raw=dict(self.raw);self.assertIn(old,raw[file].decode());raw[file]=raw[file].decode().replace(old,new).encode()

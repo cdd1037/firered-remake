@@ -178,7 +178,7 @@ def validate_weather_ball_sources(raw):
  return constants
 
 def damage_family_materials(raw):
- assets={};indexed=[];files={};registrations=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+ indexed=[];files={};registrations=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
  for stem,gfx,size,shape,pal,palstem in DAMAGE_FAMILY_MATERIALS:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+gfx+r',\s*0x0*'+format(size,'x')+r',\s*'+tag+r'\}',registrations,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal+r',\s*'+tag+r'\}',registrations):raise ValueError('Damage source material registration differs: '+stem)
@@ -189,10 +189,10 @@ def damage_family_materials(raw):
    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
   palette=reaction_palette(raw,palstem)
   if len(indices)!=size*2 or max(indices)>15 or len(palette)!=48:raise ValueError('Damage source loaded sheet size differs: '+stem)
-  name=stem.replace('_','-');assets[name]=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_'+gfx,stem,palette)
+  name=stem.replace('_','-')
   files[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));files[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
   indexed.append(dict(id=name,width=shape[0],height=shape[1],indicesPath='physical-'+name+'.4bpp',palettePath='physical-'+name+'.pal16',paletteTag=tag))
- return assets,indexed,files
+ return indexed,files
 
 def frozen_cube_recipe(raw):
  source=raw['src/battle_anim_status_effects.c'].decode();recipe=elemental.recipe(source,'sFrozenIceCubeSpriteTemplate','SpriteCallbackDummy')
@@ -226,13 +226,8 @@ def frozen_cube_materials(raw):
    if image.mode!='P' or image.size!=shape:raise ValueError('Frozen cube indexed part shape differs')
    indices.extend(v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes())
  if len(indices)!=0x2400 or max(indices)>15:raise ValueError('Frozen cube indexed concatenation size differs')
- raster=bytearray(len(indices))
- for tile in range(144):
-  for y in range(8):
-   start=(tile//8*8+y)*64+tile%8*8;raster[start:start+8]=bytes(indices[tile*64+y*8:tile*64+y*8+8])
- pixels=struct.pack('<HH',64,144)+struct.pack('<9216H',*[palette[i]|(0x8000 if i else 0) for i in raster])
  files={'ice-cube.4bpp':bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),'ice-cube.pal16':struct.pack('<16H',*palette)}
- return {'ice-cube':pixels},[dict(id='ice-cube',width=64,height=144,indicesPath='physical-ice-cube.4bpp',palettePath='physical-ice-cube.pal16',paletteTag='ANIM_TAG_ICE_CUBE')],files
+ return [dict(id='ice-cube',width=64,height=144,indicesPath='physical-ice-cube.4bpp',palettePath='physical-ice-cube.pal16',paletteTag='ANIM_TAG_ICE_CUBE')],files
 
 def ghost_song_recipes(raw):
  # The shared music-note table is defined in effects_1; do not synthesize it.
@@ -292,7 +287,7 @@ NEW|={'gYawnCloudSpriteTemplate','gSpikesSpriteTemplate'}|UTILITY_TASKS
 UTILITY_MATERIALS=[('pink_cloud','PinkCloud',0x0200,(32,32)),('bluegreen_orb','BluegreenOrb',0x0080,(16,16)),('spikes','Spikes',0x0080,(16,16)),('purple_flame','PurpleFlame',0x0400,(16,128))]
 
 def utility_materials(raw,materials=UTILITY_MATERIALS):
- registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode();assets={};indexed=[];files={}
+ registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode();indexed=[];files={}
  for stem,symbol,size,shape in materials:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x0*'+format(size,'x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registration):raise ValueError('Utility source registration differs: '+stem)
@@ -303,10 +298,10 @@ def utility_materials(raw,materials=UTILITY_MATERIALS):
    if image.mode!='P' or image.size!=shape:raise ValueError('Utility indexed source shape differs: '+stem)
    indices=[b for y in range(0,image.height,8) for x in range(0,image.width,8) for b in image.crop((x,y,x+8,y+8)).tobytes()];palette=image.getpalette()[:48]
   if max(indices)>15 or len(indices)<size*2 or size*2%shape[0] or (size*2//shape[0])%8 or len(palette)!=48:raise ValueError('Utility indexed sheet size/palette differs: '+stem)
-  indices=indices[:size*2];name=stem.replace('_','-');base='physical-'+name;assets[name]=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_'+symbol,stem,palette)
+  indices=indices[:size*2];name=stem.replace('_','-');base='physical-'+name
   files[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));files[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
   indexed.append(dict(id=name,width=shape[0],height=size*2//shape[0],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag=tag))
- return assets,indexed,files
+ return indexed,files
 
 def validate_solar_pincer_callbacks(raw):
  def body(file,name):
@@ -327,7 +322,7 @@ def cure_materials(raw):
  registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode();rules=raw['graphics_file_rules.mk'].decode()
  if not all(name in rules for name in ['$(BTLANMSPRGFXDIR)/flower.4bpp: $(BTLANMSPRGFXDIR)/flower_0.4bpp','$(BTLANMSPRGFXDIR)/flower_1.4bpp']):raise ValueError('Flower concatenation rule differs')
  sources=[('bell','Bell',0x600,[(32,96)],None),('music_notes_2','MusicNotes2',0x800,[(16,256)],80),('flower','Flower',0xa0,[(16,16),(8,8)],16)]
- assets={};indexed=[];files={}
+ indexed=[];files={}
  for stem,symbol,size,shapes,colors in sources:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x0*'+format(size,'x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registration):raise ValueError('Cure sheet/palette registration differs: '+stem)
@@ -352,13 +347,9 @@ def cure_materials(raw):
   packed=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));files[identity+'.4bpp']=packed;files[identity+'.pal16']=pal[:32]
   # A vertical tile strip preserves original linear tile numbers for concatenated flowers.
   shape=shapes[0] if len(shapes)==1 else (8,len(indices)//8)
-  image=Image.new('P',shape);image.putpalette(palette[:48]);n=0
-  for y in range(0,shape[1],8):
-   for x in range(0,shape[0],8):image.paste(Image.frombytes('P',(8,8),tiles[n]),(x,y));n+=1
-  png=io.BytesIO();image.save(png,format='PNG');assets[identity]=hit.rgb555(png.getvalue(),shape,palette[:48])
   indexed.append(dict(id=identity,width=shape[0],height=shape[1],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag=tag))
   if colors==80:files[identity+'.pal48']=pal[:96]
- return assets,indexed,files
+ return indexed,files
 
 def focus_punch_recipe(source):
  body=re.search(r'static void AnimFocusPunchFist\(struct Sprite \*sprite\)\s*\{(.*?)^\}',source,re.M|re.S)
@@ -497,7 +488,7 @@ def validate_charged_root_callbacks(raw):
 def orb_defense_materials(raw):
  # BlueOrb shares GrayOrb's three source tiles but has its own palette bank.
  registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
- rgb={};indexed=[];pixels={}
+ indexed=[];pixels={}
  for stem,gfx,pal,size,shape,png in [('protect','Protect','Protect',0x0800,(64,64),'protect'),('shadow_ball','ShadowBall','ShadowBall',0x0200,(32,32),'shadow_ball'),('gray_orb','GrayOrb','GrayOrb',0x0060,(8,24),'gray_orb'),('blue_orb','GrayOrb','BlueOrb',0x0060,(8,24),'gray_orb'),('red_orb_2','GrayOrb','RedOrb2',0x0060,(8,24),'gray_orb')]:
   tag='ANIM_TAG_'+stem.upper()
   if not re.search(r'\{gBattleAnimSpriteGfx_'+gfx+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+pal+r',\s*'+tag+r'\}',registration):raise ValueError('Orb/defense source material registration differs: '+stem)
@@ -513,14 +504,13 @@ def orb_defense_materials(raw):
    palette=[int(c) for row in rows[3:] for c in row.split()]
   if max(indices)>15 or len(palette)!=48:raise ValueError('Orb/defense indexed palette differs: '+stem)
   name=stem.replace('_','-');base='physical-'+name
-  rgb[name]=hit.rgb555(source,shape,palette)
   pixels[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2))
   pixels[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
   indexed.append(dict(id=name,width=shape[0],height=shape[1],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag=tag))
- return rgb,indexed,pixels
+ return indexed,pixels
 
 def build_assets(reference):
- raw=read_sources(reference);validate_present_predicate(raw);validate_reaction_sources(raw);png=raw['graphics/battle_anims/sprites/slam_hit.png']
+ raw=read_sources(reference);validate_present_predicate(raw);png=raw['graphics/battle_anims/sprites/slam_hit.png']
  lines=raw['graphics/battle_anims/sprites/whip_hit.pal'].decode().splitlines()
  if lines[:3]!=['JASC-PAL','0100','16']:raise ValueError('Whip source palette differs')
  palette=[int(c) for line in lines[3:] for c in line.split()]
@@ -533,23 +523,7 @@ def build_assets(reference):
  if not re.search(r'\{gBattleAnimSpriteGfx_IcicleSpear,\s*0x0200,\s*ANIM_TAG_ICICLE_SPEAR\}',raw['src/data/battle_anim.h'].decode()) or not re.search(r'\{gBattleAnimSpritePal_IcicleSpear,\s*ANIM_TAG_ICICLE_SPEAR\}',raw['src/data/battle_anim.h'].decode()):raise ValueError('Icicle source sheet or palette registration differs')
  if not re.search(r'\{gBattleAnimSpriteGfx_FangAttack,\s*0x0800,\s*ANIM_TAG_FANG_ATTACK\}',raw['src/data/battle_anim.h'].decode()) or not re.search(r'\{gBattleAnimSpritePal_FangAttack,\s*ANIM_TAG_FANG_ATTACK\}',raw['src/data/battle_anim.h'].decode()):raise ValueError('Fang source registration differs')
  if not re.search(r'\{gBattleAnimSpriteGfx_Swipe,\s*0x0a00,\s*ANIM_TAG_SWIPE\}',raw['src/data/battle_anim.h'].decode()) or not re.search(r'\{gBattleAnimSpritePal_Swipe,\s*ANIM_TAG_SWIPE\}',raw['src/data/battle_anim.h'].decode()):raise ValueError('Swipe source registration differs')
- assets={'gold-stars':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_GoldStars','gold_stars'),'swipe':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Swipe','swipe'),'fang-attack':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_FangAttack','fang_attack'),'seed':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Seed','seed'),'icicle-spear':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_IcicleSpear','icicle_spear'),'claw-slash':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_ClawSlash','claw_slash'),'torn-metal':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_TornMetal','torn_metal',blue_palette),'bone':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Bone','bone'),'eye-sparkle':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_EyeSparkle','eye_sparkle'),'anger':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Anger','anger'),'eclipsing-orb':hit.rgb555(raw['graphics/battle_anims/sprites/eclipsing_orb.png'],(32,128)),'breath':hit.rgb555(raw['graphics/battle_anims/sprites/breath.png'],(16,64)),'slam-hit':hit.rgb555(png,(32,256)),'whip-hit':hit.rgb555(png,(32,256),palette)}
- # Match source tile/palette registration and graphic linkage, including the
- # loaded-but-unused Whirlwind Lines material in Drill Peck's original script.
- for stem,symbol,size in [('bird','Bird',0x0800),('round_shadow','RoundShadow',0x0800),('splash','Splash',0x0800),('red_orb','RedOrb',0x0080),('coin','Coin',0x0200),('cross_impact','CrossImpact',0x0200),('red_ball','RedBall',0x0200),('whirlwind_lines','WhirlwindLines',0x0300)]:
-  tag='ANIM_TAG_'+stem.upper();registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
-  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registration):raise ValueError('Impact emission source registration differs: '+stem)
-  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
-   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Impact emission source material differs: '+stem)
-  assets[stem.replace('_','-')]=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_'+symbol,stem)
- registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
- if not re.search(r'\{gBattleAnimSpriteGfx_SweatBead,\s*0x0020,\s*ANIM_TAG_SWEAT_BEAD\}',registration) or not re.search(r'\{gBattleAnimSpritePal_Splash,\s*ANIM_TAG_SWEAT_BEAD\}',registration):raise ValueError('Water droplet source palette alias differs')
- for kind,symbol,stem,suffix in [('Gfx','SweatBead','sweat_bead','4bpp'),('Pal','Splash','splash','gbapal')]:
-  if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Water droplet source material differs')
- with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/splash.png'])) as image:shared_palette=image.getpalette()[:48]
- for stem,symbol,size,shape,pal_symbol,pal_stem in REACTION_MATERIALS+FRIENDSHIP_CONTACT_MATERIALS+ROCK_STATUS_MATERIALS:
-  assets[stem.replace('_','-')]=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_'+symbol,stem,reaction_palette(raw,pal_stem))
- assets['sweat-bead']=registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_SweatBead','sweat_bead',shared_palette)
+ assets={'gold-stars':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_GoldStars','gold_stars'),'swipe':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Swipe','swipe'),'fang-attack':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_FangAttack','fang_attack'),'seed':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Seed','seed'),'icicle-spear':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_IcicleSpear','icicle_spear'),'claw-slash':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_ClawSlash','claw_slash'),'torn-metal':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_TornMetal','torn_metal',blue_palette),'bone':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_Bone','bone'),'eye-sparkle':registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_EyeSparkle','eye_sparkle'),'eclipsing-orb':hit.rgb555(raw['graphics/battle_anims/sprites/eclipsing_orb.png'],(32,128)),'breath':hit.rgb555(raw['graphics/battle_anims/sprites/breath.png'],(16,64)),'slam-hit':hit.rgb555(png,(32,256)),'whip-hit':hit.rgb555(png,(32,256),palette)}
  powder=raw['graphics/battle_anims/sprites/poison_powder.png']
  assets['poison-powder']=hit.rgb555(powder,(8,128))
  for name in ['sleep-powder','stun-spore']:
@@ -569,11 +543,21 @@ def build_assets(reference):
  image=Image.new('P',(8,len(tiles)*8));image.putpalette(colors)
  for i,tile in enumerate(tiles):image.paste(tile,(0,i*8))
  buffer=io.BytesIO();image.save(buffer,format='PNG');assets['mud-sand']=hit.rgb555(buffer.getvalue(),image.size)
- assets.update(utility_materials(raw,WEATHER_BALL_MATERIALS)[0]);assets.update(utility_materials(raw,SUPERPOWER_MATERIALS)[0]);assets.update(utility_materials(raw,PAIN_SPLIT_MATERIALS)[0]);assets.update(damage_family_materials(raw)[0]);assets.update(frozen_cube_materials(raw)[0]);assets.update(orb_defense_materials(raw)[0]);assets.update(cure_materials(raw)[0]);assets.update(utility_materials(raw)[0]);assets.update(utility_materials(raw,FOCUS_SOUND_MATERIALS)[0]);assets.update(utility_materials(raw,GHOST_SONG_MATERIALS)[0]);assets.update(utility_materials(raw,ITEM_WIND_MATERIALS)[0]);assets.update(utility_materials(raw,SCANLINE_BATTLER_MATERIALS)[0])
  return assets
 
 def build_indexed_assets(reference):
- raw=read_sources(reference);indexed=[];pixels={}
+ raw=read_sources(reference);validate_reaction_sources(raw);indexed=[];pixels={}
+ # Match source tile/palette registration and graphic linkage, including the
+ # loaded-but-unused Whirlwind Lines material in Drill Peck's original script.
+ for stem,symbol,size in [('bird','Bird',0x0800),('round_shadow','RoundShadow',0x0800),('splash','Splash',0x0800),('red_orb','RedOrb',0x0080),('coin','Coin',0x0200),('cross_impact','CrossImpact',0x0200),('red_ball','RedBall',0x0200),('whirlwind_lines','WhirlwindLines',0x0300)]:
+  tag='ANIM_TAG_'+stem.upper();registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+  if not re.search(r'\{gBattleAnimSpriteGfx_'+symbol+r',\s*0x'+format(size,'04x')+r',\s*'+tag+r'\}',registration,re.I) or not re.search(r'\{gBattleAnimSpritePal_'+symbol+r',\s*'+tag+r'\}',registration):raise ValueError('Impact emission source registration differs: '+stem)
+  for kind,suffix in [('Gfx','4bpp'),('Pal','gbapal')]:
+   if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Impact emission source material differs: '+stem)
+ registration=raw['src/data/battle_anim.h'].decode();graphics=raw['src/graphics.c'].decode()
+ if not re.search(r'\{gBattleAnimSpriteGfx_SweatBead,\s*0x0020,\s*ANIM_TAG_SWEAT_BEAD\}',registration) or not re.search(r'\{gBattleAnimSpritePal_Splash,\s*ANIM_TAG_SWEAT_BEAD\}',registration):raise ValueError('Water droplet source palette alias differs')
+ for kind,symbol,stem,suffix in [('Gfx','SweatBead','sweat_bead','4bpp'),('Pal','Splash','splash','gbapal')]:
+  if not re.search(r'gBattleAnimSprite'+kind+'_'+symbol+r'\[\] = INCBIN_[US]\d+\("graphics/battle_anims/sprites/'+stem+r'\.'+suffix+r'\.lz"\)',graphics):raise ValueError('Water droplet source material differs')
  for stem,size in [('bird',(64,64)),('round_shadow',(64,64)),('splash',(64,64)),('red_orb',(16,16)),('sweat_bead',(8,8)),('coin',(16,64)),('cross_impact',(32,32)),('red_ball',(32,32)),('whirlwind_lines',(32,48))]+[(r[0],r[3]) for r in REACTION_MATERIALS+FRIENDSHIP_CONTACT_MATERIALS+ROCK_STATUS_MATERIALS]:
   with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/'+stem+'.png'])) as image:
    if image.mode!='P' or image.size!=size:raise ValueError('Impact emission indexed source shape differs: '+stem)
@@ -587,18 +571,18 @@ def build_indexed_assets(reference):
   pixels[name+'.4bpp']=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2))
   pixels[name+'.pal16']=struct.pack('<16H',*[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)])
   indexed.append(dict(id=name,width=size[0],height=size[1],indicesPath=base+'.4bpp',palettePath=base+'.pal16',paletteTag='ANIM_TAG_'+stem.upper()))
- _,orb_indexed,orb_pixels=orb_defense_materials(raw);indexed.extend(orb_indexed);pixels.update(orb_pixels)
- _,cure_indexed,cure_pixels=cure_materials(raw);indexed.extend(cure_indexed);pixels.update(cure_pixels)
- _,utility_indexed,utility_pixels=utility_materials(raw);indexed.extend(utility_indexed);pixels.update(utility_pixels)
- _,ghost_indexed,ghost_pixels=utility_materials(raw,GHOST_SONG_MATERIALS);indexed.extend(ghost_indexed);pixels.update(ghost_pixels)
- _,focus_indexed,focus_pixels=utility_materials(raw,FOCUS_SOUND_MATERIALS);indexed.extend(focus_indexed);pixels.update(focus_pixels)
- _,item_indexed,item_pixels=utility_materials(raw,ITEM_WIND_MATERIALS);indexed.extend(item_indexed);pixels.update(item_pixels)
- _,scanline_indexed,scanline_pixels=utility_materials(raw,SCANLINE_BATTLER_MATERIALS);indexed.extend(scanline_indexed);pixels.update(scanline_pixels)
- _,super_indexed,super_pixels=utility_materials(raw,SUPERPOWER_MATERIALS);indexed.extend(super_indexed);pixels.update(super_pixels)
- _,pain_indexed,pain_pixels=utility_materials(raw,PAIN_SPLIT_MATERIALS);indexed.extend(pain_indexed);pixels.update(pain_pixels)
- _,damage_indexed,damage_pixels=damage_family_materials(raw);indexed.extend(damage_indexed);pixels.update(damage_pixels)
- _,frozen_indexed,frozen_pixels=frozen_cube_materials(raw);indexed.extend(frozen_indexed);pixels.update(frozen_pixels)
- _,weather_indexed,weather_pixels=utility_materials(raw,WEATHER_BALL_MATERIALS);indexed.extend(weather_indexed);pixels.update(weather_pixels)
+ orb_indexed,orb_pixels=orb_defense_materials(raw);indexed.extend(orb_indexed);pixels.update(orb_pixels)
+ cure_indexed,cure_pixels=cure_materials(raw);indexed.extend(cure_indexed);pixels.update(cure_pixels)
+ utility_indexed,utility_pixels=utility_materials(raw);indexed.extend(utility_indexed);pixels.update(utility_pixels)
+ ghost_indexed,ghost_pixels=utility_materials(raw,GHOST_SONG_MATERIALS);indexed.extend(ghost_indexed);pixels.update(ghost_pixels)
+ focus_indexed,focus_pixels=utility_materials(raw,FOCUS_SOUND_MATERIALS);indexed.extend(focus_indexed);pixels.update(focus_pixels)
+ item_indexed,item_pixels=utility_materials(raw,ITEM_WIND_MATERIALS);indexed.extend(item_indexed);pixels.update(item_pixels)
+ scanline_indexed,scanline_pixels=utility_materials(raw,SCANLINE_BATTLER_MATERIALS);indexed.extend(scanline_indexed);pixels.update(scanline_pixels)
+ super_indexed,super_pixels=utility_materials(raw,SUPERPOWER_MATERIALS);indexed.extend(super_indexed);pixels.update(super_pixels)
+ pain_indexed,pain_pixels=utility_materials(raw,PAIN_SPLIT_MATERIALS);indexed.extend(pain_indexed);pixels.update(pain_pixels)
+ damage_indexed,damage_pixels=damage_family_materials(raw);indexed.extend(damage_indexed);pixels.update(damage_pixels)
+ frozen_indexed,frozen_pixels=frozen_cube_materials(raw);indexed.extend(frozen_indexed);pixels.update(frozen_pixels)
+ weather_indexed,weather_pixels=utility_materials(raw,WEATHER_BALL_MATERIALS);indexed.extend(weather_indexed);pixels.update(weather_pixels)
  return indexed,pixels
 
 def physical_sound_effects(reference,commands,source,focus_source=None):

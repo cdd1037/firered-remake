@@ -4,6 +4,7 @@ import sys
 sys.dont_write_bytecode=True
 import argparse,io,json,struct,types,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 parser=argparse.ArgumentParser(add_help=False)
@@ -33,13 +34,13 @@ class SuperpowerImportTests(unittest.TestCase):
    r=self.recipes['gSuperpower'+name+'SpriteTemplate'];self.assertEqual((asset,callback,size,size,orb,orb),(r['asset'],r['callback'],r['width'],r['height'],r['blend'],r.get('affineDoubleSize',False)));self.assertEqual([0],r['loopStarts']);self.assertEqual([[dict(tile=0,duration=1,hFlip=False,vFlip=False)]],r['animations']);self.assertFalse(any(r.get('frameLoops',[])))
    if orb:self.assertEqual([[dict(op='frame',x=32,y=32,rotation=0,duration=0,target=0),dict(op='frame',x=4,y=4,rotation=0,duration=64,target=0),dict(op='frame',x=-6,y=-6,rotation=0,duration=8,target=0),dict(op='frame',x=6,y=6,rotation=0,duration=8,target=0),dict(op='jump',x=0,y=0,rotation=0,duration=0,target=2)]],r['affineAnimations'])
    else:self.assertEqual([],r.get('affineAnimations',[]))
- def test_rgb_indices_and_palette_match_all_pinned_meteor_and_rock_pixels(self):
+ def test_visible_pixels_indices_and_palette_match_all_pinned_meteor_and_rock_pixels(self):
   raw=imp.read_sources(REFERENCE)
   for stem,w,h,size in [('meteor',64,64,0x800),('flat_rock',16,80,0x280)]:
    name=stem.replace('_','-')
    with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/'+stem+'.png'])) as im:
     self.assertEqual(('P',(w,h)),(im.mode,im.size));palette=im.getpalette()[:48];colors=[sum((palette[i*3+c]//8)<<(c*5) for c in range(3)) for i in range(16)]
-    self.assertEqual((w,h),struct.unpack_from('<HH',self.pixels[name]));self.assertEqual([colors[i]|(32768 if i else 0) for i in im.tobytes()],list(struct.unpack_from('<'+str(w*h)+'H',self.pixels[name],4)))
+    row=next(r for r in self.pack['indexedAssets'] if r['id']==name);self.assertEqual((w,h),(row['width'],row['height']));self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in im.tobytes()),decode_indexed(w,h,self.pixels[name+'.4bpp'],self.pixels[name+'.pal16']))
     tiled=[im.getpixel((tx+x,ty+y)) for ty in range(0,h,8) for tx in range(0,w,8) for y in range(8) for x in range(8)];self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),self.pixels[name+'.4bpp']);self.assertEqual(struct.pack('<16H',*colors),self.pixels[name+'.pal16']);self.assertEqual(size,len(self.pixels[name+'.4bpp']))
  def test_source_callback_material_and_operand_mutations_fail_closed(self):
   original=imp.read_sources
@@ -49,7 +50,7 @@ class SuperpowerImportTests(unittest.TestCase):
     data=original(ref);data[path]=data[path].replace(old,new);return data
    with self.subTest(path=path),patch.object(imp,'read_sources',side_effect=changed),self.assertRaises(ValueError):
     if path.endswith('fight.c'):imp.build(REFERENCE)
-    else:imp.build_assets(REFERENCE)
+    else:imp.build_indexed_assets(REFERENCE)
   old=b'createsprite gSuperpowerRockSpriteTemplate, ANIM_ATTACKER, 41, 200, 96, 1, 120';self.assertIn(old,original(REFERENCE)['data/battle_anim_scripts.s'])
   def short(ref):
    data=original(ref);data['data/battle_anim_scripts.s']=data['data/battle_anim_scripts.s'].replace(old,old.rsplit(b',',1)[0]);return data
@@ -60,9 +61,12 @@ class SuperpowerImportTests(unittest.TestCase):
   for row in previous['scripts']:self.assertEqual(row,self.roots[row['moveId']])
   for row in previous['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
   for name,value in previous['subroutines'].items():self.assertEqual(value,self.pack['subroutines'][name])
+  indexed_ids={r['id'] for r in self.pack['indexedAssets']};prior_indexed_ids={r['id'] for r in previous['indexedAssets']}
   for group in ['assets','indexedAssets']:
    current={r['id']:r for r in self.pack[group]}
    for row in previous[group]:
+    if group=='assets' and row['id'] in indexed_ids:
+     self.assertIn(row['id'],prior_indexed_ids,'A retired RGB shadow must already have had an indexed owner');self.assertNotIn(row['id'],current);continue
     self.assertEqual(row,current[row['id']])
     for field in ['path','indicesPath','palettePath']:
      if field in row and row[field].startswith('physical-'):self.assertEqual((PREVIOUS/row[field]).read_bytes(),self.pixels[row[field].removeprefix('physical-').removesuffix('.rgb555')])

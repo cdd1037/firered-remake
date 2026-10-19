@@ -35,8 +35,11 @@ public sealed class OverheatAnimationTests
         using var physical=JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Folder,"physical.json")));
         Assert.AreEqual(1,elemental.RootElement.GetProperty("indexedAssets").EnumerateArray().Count(a=>a.GetProperty("id").GetString()=="small-ember"));
         foreach(string key in new[]{"assets","indexedAssets"})Assert.IsFalse(physical.RootElement.GetProperty(key).EnumerateArray().Any(a=>a.GetProperty("id").GetString()=="small-ember"));
-        using var resources=new SourceAnimationResources(Folder);var shared=resources.Asset("small-ember");var original=SourceHitAnimationCatalog.Asset(elemental,Folder,"small-ember");
-        Assert.AreEqual(original.Width,shared.Width);Assert.AreEqual(original.Height,shared.Height);CollectionAssert.AreEqual(original.Pixels,shared.Pixels);Assert.AreEqual(shared.Width*shared.Height,shared.PaletteIndices.Length);Assert.AreEqual(16,shared.Palette.Length);
+        using var resources=new SourceAnimationResources(Folder);var shared=resources.Asset("small-ember");
+        var row=elemental.RootElement.GetProperty("indexedAssets").EnumerateArray().Single(a=>a.GetProperty("id").GetString()=="small-ember");
+        Assert.IsFalse(elemental.RootElement.GetProperty("assets").EnumerateArray().Any(a=>a.GetProperty("id").GetString()=="small-ember"));
+        IndexedSpriteExpectations.AssertMatches(row,Folder,shared);
+        Assert.AreEqual(shared.Width*shared.Height,shared.PaletteIndices.Length);Assert.AreEqual(16,shared.Palette.Length);
         var physicalIds=physical.RootElement.GetProperty("scripts").EnumerateArray().Select(s=>s.GetProperty("moveId").GetInt32()).ToHashSet();int physicalConsumers=0,elementalConsumers=0;
         foreach(var script in resources.Scripts.Values)
         {

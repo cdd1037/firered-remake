@@ -12,6 +12,7 @@ import io
 import re
 import struct
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 from pathlib import Path
 import subprocess
 import sys
@@ -42,7 +43,8 @@ for name,asset in [('hit','graphics/battle_anims/sprites/impact.png'),('explosio
         colors=[(palette[i]>>3)|((palette[i+1]>>3)<<5)|((palette[i+2]>>3)<<10) for i in range(0,48,3)]
         check(decoded==indices and len(packed)==512,'impact every native 4bpp index retained')
         check(files[row['palettePath']]==struct.pack('<16H',*colors),'impact all sixteen source palette entries retained')
-        check(files['impact.rgb555']==struct.pack('<HH',32,32)+struct.pack('<1024H',*[colors[i]|(0x8000 if i else 0) for i in indices]),'impact existing RGB555 bytes preserved')
+        check(decode_indexed(32,32,packed,files[row['palettePath']])==tuple(colors[i]|32768 if i else 0 for i in indices),'impact indexed output preserves every visible source RGB555 pixel')
+        check('impact.rgb555' not in files and all(r['id']!='impact' for r in manifest['assets']),'impact has one canonical indexed output')
         constants=raw['include/constants/battle_anim.h'].decode();tag_base=int(re.search(r'^#define ANIM_SPRITES_START\s+(\d+)',constants,re.M)[1]);tags={symbol:tag_base+int(offset) for symbol,offset in re.findall(r'^#define (ANIM_TAG_\w+)\s+\(ANIM_SPRITES_START\s*\+\s*(\d+)\)',constants,re.M)}
         check(all(r['spriteTags']=={c['args'][0]:tags[c['args'][0]] for c in r['commands'] if c['op']=='loadspritegfx'} for r in manifest['scripts']),'basic hit roots bind only their actual source load tags')
         for path,old,new in [('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Impact, 0x0200, ANIM_TAG_IMPACT}',b'{gBattleAnimSpriteGfx_Impact, 0x0400, ANIM_TAG_IMPACT}'),('src/data/battle_anim.h',b'{gBattleAnimSpritePal_Impact, ANIM_TAG_IMPACT}',b'{gBattleAnimSpritePal_Impact2, ANIM_TAG_IMPACT}'),('src/graphics.c',b'graphics/battle_anims/sprites/impact.gbapal.lz',b'graphics/battle_anims/sprites/impact_2.gbapal.lz')]:

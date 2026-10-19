@@ -2,6 +2,7 @@
 """Four native scanline consumers: authored graph, ABI and shared material ownership."""
 import argparse,importlib.util,json,re,struct,sys,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from PIL import Image
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);a,rest=p.parse_known_args();sys.argv=[sys.argv[0],*rest]
@@ -32,7 +33,7 @@ class ScanlineBattlerImportTests(unittest.TestCase):
    with Image.open(REFERENCE/'graphics/battle_anims/sprites'/f'{stem}.png') as image:
     self.assertEqual(('P',shape),(image.mode,image.size));palette=image.getpalette()[:48];indices=list(image.tobytes());tiles=[image.getpixel((x+dx,y+dy)) for y in range(0,shape[1],8) for x in range(0,shape[0],8) for dy in range(8) for dx in range(8)]
    colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
-   self.assertEqual(size,len(tiles)//2);self.assertEqual(bytes(tiles[i]|tiles[i+1]<<4 for i in range(0,len(tiles),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(struct.pack('<HH',*shape)+struct.pack('<'+str(len(indices))+'H',*[colors[i]|(0x8000 if i else 0) for i in indices]),(GENERATED/('physical-'+stem.replace('_','-')+'.rgb555')).read_bytes())
+   self.assertEqual(size,len(tiles)//2);self.assertEqual(bytes(tiles[i]|tiles[i+1]<<4 for i in range(0,len(tiles),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in indices),decode_indexed(*shape,(GENERATED/row['indicesPath']).read_bytes(),(GENERATED/row['palettePath']).read_bytes()))
  def test_changed_palette_or_sheet_registration_is_rejected(self):
   raw=self.importer.read_sources(REFERENCE);registration=raw['src/data/battle_anim.h']
   for stem,symbol,size,shape in self.importer.SCANLINE_BATTLER_MATERIALS:

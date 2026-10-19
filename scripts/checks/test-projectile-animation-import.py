@@ -4,6 +4,7 @@ import importlib.util,json,re,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('projectile_elemental',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
@@ -29,13 +30,13 @@ class ProjectileImportTests(unittest.TestCase):
   image=Image.open(REFERENCE/'graphics/battle_anims/sprites/air_wave.png');self.assertEqual(('P',(32,16)),(image.mode,image.size));palette=image.getpalette();expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))|(32768 if i else 0) for i in image.tobytes()]
   self.assertEqual((32,16),struct.unpack_from('<HH',self.pixels['air-wave']));self.assertEqual(expected,list(struct.unpack_from('<512H',self.pixels['air-wave'],4)))
   self.assertNotEqual('air-wave-2',self.recipes['gSonicBoomSpriteTemplate']['asset'])
- def test_indexed_orbs_preserve_existing_fallback_and_palette_colors(self):
+ def test_indexed_orbs_preserve_native_tiles_and_palette_colors(self):
   row=next(r for r in self.pack['indexedAssets'] if r['id']=='orbs');self.assertEqual(('ANIM_TAG_ORBS',16,48),(row['paletteTag'],row['width'],row['height']))
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/orbs.png') as image:
    palette=image.getpalette();indices=list(image.tobytes());tiled=[v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
   packed=bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2));self.assertEqual(packed,self.pixels['orbs.4bpp'])
   expected_colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(expected_colors,list(struct.unpack('<16H',self.pixels['orbs.pal16'])))
-  self.assertEqual([expected_colors[i]|(32768 if i else 0) for i in indices],list(struct.unpack_from('<768H',self.pixels['orbs'],4)))
+  self.assertEqual(tuple(expected_colors[i]|32768 if i else 0 for i in indices),decode_indexed(16,48,self.pixels['orbs.4bpp'],self.pixels['orbs.pal16']))
  def test_loop_panning_resolves_any_declared_song_and_rejects_invalid_abi(self):
   songs=set(re.findall(r'^#define (SE_\w+)\s+\d+\b',imp.read(REFERENCE,'include/constants/songs.h').decode(),re.M));valid=['SoundTask_LoopSEAdjustPanning','SE_M_HYPER_BEAM2','SOUND_PAN_ATTACKER','SOUND_PAN_TARGET','1','15','0','5']
   self.assertTrue(imp.supported_sound_task(valid,songs))
@@ -47,7 +48,7 @@ class ProjectileImportTests(unittest.TestCase):
  def test_existing_bubble_beam_song_and_loop_panning_dependency_are_preserved(self):
   # Ice Beam owns the old loop-panning call using the Bubble Beam2 song.
   rows=[c for c in self.flat(58) if c['op']=='createsoundtask'];self.assertEqual(1,len(rows));self.assertEqual(['SoundTask_LoopSEAdjustPanning','SE_M_BUBBLE_BEAM2','SOUND_PAN_ATTACKER','SOUND_PAN_TARGET','4','4','0','10'],rows[0]['args'])
-  self.assertIn('SE_M_BUBBLE_BEAM2',self.roots[58]['soundEffects']);self.assertEqual({'SE_M_BUBBLE':117,'SE_M_BUBBLE3':119},self.roots[61]['soundEffects']);self.assertEqual((16,40),struct.unpack_from('<HH',self.pixels['small-bubbles']))
+  self.assertIn('SE_M_BUBBLE_BEAM2',self.roots[58]['soundEffects']);self.assertEqual({'SE_M_BUBBLE':117,'SE_M_BUBBLE3':119},self.roots[61]['soundEffects']);row=next(r for r in self.pack['indexedAssets'] if r['id']=='small-bubbles');self.assertEqual((16,40,'ANIM_TAG_SMALL_BUBBLES'),(row['width'],row['height'],row['paletteTag']))
  def test_missing_dependency_or_changed_callback_fails_closed(self):
   original=imp.read
   def read(reference,path):

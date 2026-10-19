@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util,json,struct,unittest
+from PIL import Image
+from indexed_material_expectations import decode_indexed
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('general_import',ROOT/'scripts/imports/battle/import-source-general-animations.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
@@ -18,7 +20,14 @@ class GeneralImportTests(unittest.TestCase):
  def test_exact_star_script_operands(self):
   rows=self.pack['subroutines']['GrantingStarsEffect'];self.assertEqual([r['args'][3:] for r in rows if r['op']=='createsprite'],[['-15','0','0','0','32','60'],['12','-5','0','0','32','60']])
  def test_native_sheet_shapes(self):
-  self.assertEqual(struct.unpack('<HH',self.blobs['general-sparkle-2.rgb555'][:4]),(32,256));self.assertEqual(struct.unpack('<HH',self.blobs['general-thin-ring.rgb555'][:4]),(64,64))
+  self.assertEqual(struct.unpack('<HH',self.blobs['general-sparkle-2.rgb555'][:4]),(32,256))
+  row=next(r for r in self.pack['indexedAssets'] if r['id']=='thin-ring');self.assertEqual((64,64),(row['width'],row['height']))
+  with Image.open(ROOT/'content/raw/pokefirered/037335f4/graphics/battle_anims/sprites/thin_ring.png') as image:
+   indices=image.tobytes();palette=image.getpalette()[:48]
+  colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+  self.assertEqual(struct.pack('<16H',*colors),self.blobs[row['palettePath']])
+  self.assertEqual(tuple(colors[i]|32768 if i else 0 for i in indices),decode_indexed(64,64,self.blobs[row['indicesPath']],self.blobs[row['palettePath']]))
+  self.assertFalse(any(r['id']=='thin-ring' for r in self.pack['assets']))
  def test_shared_recipe_programs(self):
   star,ring=self.pack['spriteRecipes'];self.assertEqual(star['loopStarts'],[0]);self.assertEqual([f['tile'] for f in star['animations'][0]],list(range(0,128,16)));self.assertTrue(ring['affineDoubleSize']);self.assertEqual(ring['affineAnimations'][0][-1]['op'],'end');self.assertEqual(ring['affineAnimations'][0][1]['duration'],30)
  def test_only_actual_sound_constants(self):
@@ -33,7 +42,7 @@ class GeneralImportTests(unittest.TestCase):
   self.assertEqual([c['args'][3:] for c in healing if c['op']=='createsprite'],[['0','-5','0','0'],['-15','10','0','0'],['-15','-15','0','0'],['10','-5','0','0']])
   self.assertEqual([c['args'] for c in healing if c['op']=='delay'],[['7']]*4)
  def test_general_wish_has_no_move_root_or_new_material_copy(self):
-  self.assertEqual(set(self.blobs),{'general-sparkle-2.rgb555','general-thin-ring.rgb555','general-thin-ring.4bpp','general-thin-ring.pal16'})
+  self.assertEqual(set(self.blobs),{'general-sparkle-2.rgb555','general-thin-ring.4bpp','general-thin-ring.pal16'})
   self.assertNotIn('moveId',self.pack['generalScripts'][1])
  def test_castform_branch_preserves_true_operand_labels_and_both_source_paths(self):
   root=self.pack['generalScripts'][2];rows=root['commands']

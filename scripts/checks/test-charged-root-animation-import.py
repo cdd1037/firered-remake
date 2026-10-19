@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Source closure, shared ownership and material/ABI boundaries for Sky Attack/Spit Up."""
-import importlib.util,json,re,struct,unittest
+import importlib.util,io,json,re,struct,unittest
+from PIL import Image
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 s=importlib.util.spec_from_file_location('charged_root_physical',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(s);s.loader.exec_module(imp)
@@ -25,9 +27,14 @@ class ChargedRootAnimationImportTests(unittest.TestCase):
   orbs=[c for c in self.rows[255]['commands'] if c['op']=='createsprite' and c['args'][0]=='gSpitUpOrbSpriteTemplate']
   self.assertEqual(20,len(orbs));self.assertEqual(8,sum(len(c['args'])==5 for c in orbs));self.assertEqual(12,sum(len(c['args'])==4 for c in orbs));self.assertEqual({'12'},{c['args'][4] for c in orbs if len(c['args'])==5})
  def test_materials_preserve_gray_orb_alias_and_original_bird_shape(self):
-  assets=imp.build_assets(REFERENCE);indexed,pixels=imp.build_indexed_assets(REFERENCE)
+  indexed,pixels=imp.build_indexed_assets(REFERENCE)
   for name,size,tilebytes in [('bird',(64,64),2048),('red-orb-2',(8,24),96)]:
-   self.assertEqual(size,struct.unpack_from('<HH',assets[name]));self.assertEqual(4+size[0]*size[1]*2,len(assets[name]));self.assertEqual(tilebytes,len(pixels[name+'.4bpp']));self.assertEqual(32,len(pixels[name+'.pal16']));self.assertEqual(1,sum(r['id']==name for r in indexed))
+   row=next(r for r in indexed if r['id']==name);self.assertEqual(size,(row['width'],row['height']));self.assertEqual(tilebytes,len(pixels[name+'.4bpp']));self.assertEqual(32,len(pixels[name+'.pal16']));self.assertEqual(1,sum(r['id']==name for r in indexed))
+   stem='gray_orb' if name=='red-orb-2' else name
+   with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+stem+'.png'])) as image:palette=image.getpalette()[:48];raster=list(image.tobytes())
+   if name=='red-orb-2':palette=[int(c) for line in self.raw['graphics/battle_anims/sprites/red_orb_2.pal'].decode().splitlines()[3:] for c in line.split()]
+   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+   self.assertEqual(struct.pack('<16H',*colors),pixels[name+'.pal16']);self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in raster),decode_indexed(*size,pixels[name+'.4bpp'],pixels[name+'.pal16']))
   self.assertEqual(pixels['gray-orb.4bpp'],pixels['red-orb-2.4bpp']);self.assertNotEqual(pixels['gray-orb.pal16'],pixels['red-orb-2.pal16'])
   recipes={r['template']:r for r in self.pack['spriteRecipes']};bird=recipes['gSkyAttackBirdSpriteTemplate'];orb=recipes['gSpitUpOrbSpriteTemplate']
   self.assertEqual(('bird','AnimSkyAttackBird',64,64,True,[]),(bird['asset'],bird['callback'],bird['width'],bird['height'],bird['affineDoubleSize'],bird['affineAnimations']))

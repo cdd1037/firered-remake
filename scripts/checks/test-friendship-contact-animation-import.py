@@ -4,6 +4,7 @@ import importlib.util,io,json,re,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('friendship_physical',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
@@ -30,10 +31,10 @@ class FriendshipContactAnimationImportTests(unittest.TestCase):
   waves=recipes['gMovementWavesSpriteTemplate'];self.assertTrue(all(f['hFlip'] for f in waves['animations'][1]));self.assertFalse(any(f['hFlip'] for f in waves['animations'][0]));self.assertEqual([-1,-1],waves['loopStarts'])
   affine=self.pack['taskAffinePrograms']['sStrongFrustrationAffineAnimCmds'];self.assertEqual([('frame',0,-15,7,0),('frame',0,15,7,0),('loop',0,0,0,2),('end',0,0,0,0)],[(c['op'],c['x'],c['y'],c['duration'],c['count']) for c in affine])
  def test_registered_indexed_art_and_source_palette_are_exact(self):
-  metadata,pixels=imp.build_indexed_assets(REFERENCE);rgb=imp.build_assets(REFERENCE);rows={r['id']:r for r in metadata}
+  metadata,pixels=imp.build_indexed_assets(REFERENCE);rows={r['id']:r for r in metadata}
   for stem,symbol,size,shape,pal_symbol,pal_stem in imp.FRIENDSHIP_CONTACT_MATERIALS:
    name=stem.replace('_','-');image=Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+stem+'.png']));palette=image.getpalette();ordered=[v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()];self.assertEqual(shape,image.size)
-   self.assertEqual(size,len(pixels[name+'.4bpp']));self.assertEqual(bytes(ordered[i]|ordered[i+1]<<4 for i in range(0,len(ordered),2)),pixels[name+'.4bpp']);self.assertEqual([sum((palette[i*3+c]//8)<<(c*5) for c in range(3)) for i in range(16)],list(struct.unpack('<16H',pixels[name+'.pal16'])));self.assertEqual('ANIM_TAG_'+stem.upper(),rows[name]['paletteTag']);self.assertEqual([sum((palette[i*3+c]//8)<<(c*5) for c in range(3))+(32768 if i else 0) for i in image.tobytes()],list(struct.unpack_from('<'+str(image.width*image.height)+'H',rgb[name],4)))
+   self.assertEqual(size,len(pixels[name+'.4bpp']));self.assertEqual(bytes(ordered[i]|ordered[i+1]<<4 for i in range(0,len(ordered),2)),pixels[name+'.4bpp']);self.assertEqual([sum((palette[i*3+c]//8)<<(c*5) for c in range(3)) for i in range(16)],list(struct.unpack('<16H',pixels[name+'.pal16'])));self.assertEqual('ANIM_TAG_'+stem.upper(),rows[name]['paletteTag']);self.assertEqual([(sum((palette[i*3+c]//8)<<(c*5) for c in range(3))|32768) if i else 0 for i in image.tobytes()],list(decode_indexed(image.width,image.height,pixels[name+'.4bpp'],pixels[name+'.pal16'])))
  def test_source_predicate_thresholds_result_and_macro_fail_closed(self):
   mutations=[('src/battle_anim_effects_3.c',b'if (gAnimFriendship > 60 && gAnimFriendship < 92)',b'if (gAnimFriendship >= 60 && gAnimFriendship < 92)'),('src/battle_anim_mons.c',b'if (gAnimFriendship <= 30)',b'if (gAnimFriendship < 30)'),('src/battle_anim_effects_3.c',b'gBattleAnimArgs[ARG_RET_ID] = 3;',b'gBattleAnimArgs[ARG_RET_ID] = 2;'),('src/battle_anim_mons.c',b'powerLevel = 3;',b'powerLevel = 2;'),('asm/macros/battle_anim_script.inc',b'jumpargeq ARG_RET_ID, \\value, \\ptr',b'jumpargeq 6, \\value, \\ptr')]
   for path,old,new in mutations:
@@ -50,5 +51,6 @@ class FriendshipContactAnimationImportTests(unittest.TestCase):
   for path,old,new in [('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Lick, 0x0500, ANIM_TAG_LICK}',b'{gBattleAnimSpriteGfx_Lick, 0x0400, ANIM_TAG_LICK}'),('src/battle_anim_ghost.c',b'.callback = AnimLick,',b'.callback = AnimLick_Step,')]:
    raw=dict(self.raw);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)
    with patch.object(imp,'read_sources',return_value=raw):
-    with self.assertRaises(ValueError):imp.build(REFERENCE)
+    with self.assertRaises(ValueError):
+     imp.build(REFERENCE) if path.startswith('src/battle_anim_') else imp.build_indexed_assets(REFERENCE)
 if __name__=='__main__':unittest.main()

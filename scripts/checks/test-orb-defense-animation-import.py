@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Five source roots, exact palette aliasing, and unchanged pre-existing programs."""
-import argparse,importlib.util,json,re,sys,unittest
+import argparse,importlib.util,io,json,re,struct,sys,unittest
+from PIL import Image
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--candidate',type=Path);p.add_argument('--generated',type=Path);a,rest=p.parse_known_args();sys.argv=[sys.argv[0],*rest];ROOT=a.repo;RAW=ROOT/'content/raw/pokefirered/037335f4'
@@ -12,10 +14,19 @@ class OrbDefenseImportTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):cls.raw=physical.read_sources(RAW)
  def test_source_material_registration_and_gray_blue_alias(self):
-  rgb,indexed,pixels=physical.orb_defense_materials(self.raw)
-  self.assertEqual({'protect','shadow-ball','gray-orb','blue-orb','red-orb-2'},rgb.keys());self.assertEqual(5,len(indexed))
+  indexed,pixels=physical.orb_defense_materials(self.raw)
+  self.assertEqual({'protect','shadow-ball','gray-orb','blue-orb','red-orb-2'},{r['id'] for r in indexed});self.assertEqual(5,len(indexed))
+  visible={}
+  for row in indexed:
+   name=row['id'];stem=name.replace('-','_');png='gray_orb' if name in {'blue-orb','red-orb-2'} else stem
+   with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+png+'.png'])) as image:
+    self.assertEqual((row['width'],row['height']),image.size);raster=list(image.tobytes());palette=image.getpalette()[:48];tiles=[v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
+   if name in {'blue-orb','red-orb-2'}:palette=[int(c) for line in self.raw['graphics/battle_anims/sprites/'+stem+'.pal'].decode().splitlines()[3:] for c in line.split()]
+   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+   self.assertEqual(bytes(tiles[i]|tiles[i+1]<<4 for i in range(0,len(tiles),2)),pixels[name+'.4bpp']);self.assertEqual(struct.pack('<16H',*colors),pixels[name+'.pal16'])
+   visible[name]=decode_indexed(row['width'],row['height'],pixels[name+'.4bpp'],pixels[name+'.pal16']);self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in raster),visible[name])
   for alias in ['blue-orb','red-orb-2']:
-   self.assertEqual(pixels['gray-orb.4bpp'],pixels[alias+'.4bpp']);self.assertEqual(96,len(pixels[alias+'.4bpp']));self.assertEqual(32,len(pixels[alias+'.pal16']));self.assertNotEqual(pixels['gray-orb.pal16'],pixels[alias+'.pal16']);self.assertNotEqual(rgb['gray-orb'],rgb[alias])
+   self.assertEqual(pixels['gray-orb.4bpp'],pixels[alias+'.4bpp']);self.assertEqual(96,len(pixels[alias+'.4bpp']));self.assertEqual(32,len(pixels[alias+'.pal16']));self.assertNotEqual(pixels['gray-orb.pal16'],pixels[alias+'.pal16']);self.assertNotEqual(visible['gray-orb'],visible[alias])
   self.assertNotEqual(pixels['blue-orb.pal16'],pixels['red-orb-2.pal16'])
   self.assertEqual(96,len(pixels['gray-orb.4bpp']));self.assertEqual(2048,len(pixels['protect.4bpp']));self.assertEqual(512,len(pixels['shadow-ball.4bpp']))
   self.assertEqual({'ANIM_TAG_PROTECT','ANIM_TAG_SHADOW_BALL','ANIM_TAG_GRAY_ORB','ANIM_TAG_BLUE_ORB','ANIM_TAG_RED_ORB_2'},{r['paletteTag'] for r in indexed})

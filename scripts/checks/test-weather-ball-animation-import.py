@@ -2,6 +2,7 @@
 """Weather Ball closes five native branches with one new canonical material."""
 import importlib.util,io,json,re,struct,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
@@ -27,7 +28,7 @@ class WeatherBallImportTests(unittest.TestCase):
   before={r['moveId']:r for r in old['scripts']};after={r['moveId']:r for r in self.pack['scripts']};self.assertEqual({311},set(after)-set(before));self.assertEqual(before,{k:v for k,v in after.items() if k!=311})
   assets=imp.build_assets(REFERENCE);indexed,files=imp.build_indexed_assets(REFERENCE)
   with patch.object(imp,'WEATHER_BALL_MATERIALS',[]):old_assets=imp.build_assets(REFERENCE);old_indexed,old_files=imp.build_indexed_assets(REFERENCE)
-  self.assertEqual({'weather-ball'},set(assets)-set(old_assets));self.assertEqual(old_assets,{k:v for k,v in assets.items() if k!='weather-ball'});self.assertEqual(old_indexed,[r for r in indexed if r['id']!='weather-ball']);self.assertEqual(old_files,{k:v for k,v in files.items() if not k.startswith('weather-ball.')})
+  self.assertNotIn('weather-ball',assets);self.assertEqual(old_assets,assets);self.assertEqual({'weather-ball'},{r['id'] for r in indexed}-{r['id'] for r in old_indexed});self.assertEqual(old_indexed,[r for r in indexed if r['id']!='weather-ball']);self.assertEqual(old_files,{k:v for k,v in files.items() if not k.startswith('weather-ball.')})
  def test_six_source_recipes_keep_pointer_slice_and_shared_material_owners(self):
   recipes={r['template']:r for r in imp.weather_ball_recipes(self.raw)};self.assertEqual(6,len(recipes))
   for kind,asset,size in [('Up','weather-ball',32),('NormalDown','weather-ball',32),('FireDown','small-ember',32),('WaterDown','small-bubbles',16),('RockDown','rocks',32),('IceDown','hail',16)]:
@@ -36,14 +37,14 @@ class WeatherBallImportTests(unittest.TestCase):
   water=recipes['gWeatherBallWaterDownSpriteTemplate'];self.assertEqual(4,water['animations'][0][0]['tile']);self.assertEqual(336,water['affineAnimations'][0][0]['x']);self.assertEqual(15,water['affineAnimations'][0][1]['duration'])
   indexed={r['id']:r for r in self.pack['indexedAssets']};self.assertIn('weather-ball',indexed)
   for name in ['small-ember','small-bubbles','rocks','hail']:self.assertNotIn(name,indexed)
-  elemental=json.loads((ROOT/'content/generated/battle/animations/elemental.json').read_text());owners={r['id'] for r in elemental['assets']}
+  elemental=json.loads((ROOT/'content/generated/battle/animations/elemental.json').read_text());owners={r['id'] for r in elemental['assets']+elemental.get('indexedAssets',[])}
   self.assertTrue({'small-ember','small-bubbles','rocks','hail'}<=owners)
  def test_new_indexed_material_is_exact_registered_png_palette_and_tile_order(self):
-  assets,indexed,files=imp.utility_materials(self.raw,imp.WEATHER_BALL_MATERIALS);self.assertEqual(['weather-ball'],list(assets));self.assertEqual(1,len(indexed));row=indexed[0];self.assertEqual(('ANIM_TAG_WEATHER_BALL',32,32),(row['paletteTag'],row['width'],row['height']))
+  indexed,files=imp.utility_materials(self.raw,imp.WEATHER_BALL_MATERIALS);self.assertEqual(['weather-ball'],[r['id'] for r in indexed]);self.assertEqual(1,len(indexed));row=indexed[0];self.assertEqual(('ANIM_TAG_WEATHER_BALL',32,32),(row['paletteTag'],row['width'],row['height']))
   with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/weather_ball.png'])) as image:
-   self.assertEqual('P',image.mode);self.assertEqual((32,32),image.size);colors=image.getpalette()[:48];indices=[v for y in range(0,32,8) for x in range(0,32,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
+   self.assertEqual('P',image.mode);self.assertEqual((32,32),image.size);colors=image.getpalette()[:48];raster=list(image.tobytes());indices=[v for y in range(0,32,8) for x in range(0,32,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
   self.assertEqual(512,len(files['weather-ball.4bpp']));self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,1024,2)),files['weather-ball.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((colors[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),files['weather-ball.pal16'])
-  self.assertEqual(imp.registered_sprite_pixels(self.raw,'gBattleAnimSpriteGfx_WeatherBall','weather_ball'),assets['weather-ball'])
+  palette=[sum((colors[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(tuple((palette[i]|32768) if i else 0 for i in raster),decode_indexed(32,32,files['weather-ball.4bpp'],files['weather-ball.pal16']))
  def test_source_callback_controller_mask_precedence_and_enum_mutations_fail_closed(self):
   imp.validate_weather_ball_sources(self.raw)
   cases=[('src/battle_anim_mons.c',b'sprite->data[1] = -40;',b'sprite->data[1] = -39;'),('src/battle_anim_mons.c',b'x = (u16)gBattleAnimArgs[4] + 30;',b'x = (u16)gBattleAnimArgs[4] + 31;'),('src/battle_anim_effects_3.c',b'if (gWeatherMoveAnim & B_WEATHER_SUN)',b'if (gWeatherMoveAnim & B_WEATHER_RAIN)'),('include/constants/battle_anim.h',b'#define ANIM_WEATHER_SUN 1',b'#define ANIM_WEATHER_SUN 5'),('include/constants/battle.h',b'#define B_WEATHER_SUN_TEMPORARY       (1 << 5)',b'#define B_WEATHER_SUN_TEMPORARY       (1 << 4)')]

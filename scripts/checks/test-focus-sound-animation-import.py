@@ -1,6 +1,7 @@
 """Focused source recipes/materials and callback-sound contracts; no full producer."""
 import argparse,importlib.util,io,json,re,struct,sys,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -19,11 +20,18 @@ class FocusSoundImportTests(unittest.TestCase):
  def test_all_new_indexed_source_pixels_and_palettes_match(self):
   for stem,symbol,size,shape in physical.FOCUS_SOUND_MATERIALS:
    png=self.raw['graphics/battle_anims/sprites/'+stem+'.png']
-   with Image.open(io.BytesIO(png)) as im:indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];pal=im.getpalette()[:48]
-   name=stem.replace('_','-');self.assertEqual(size,len(self.assets[2][name+'.4bpp']));self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.assets[2][name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),self.assets[2][name+'.pal16']);self.assertEqual(physical.hit.rgb555(png,shape),self.assets[0][name])
- def test_thin_ring_adds_indices_without_changing_its_existing_rgb_owner(self):
-  read=lambda p:(RAW/p).read_bytes();rgb=read('graphics/battle_anims/sprites/thin_ring.png');expected=physical.hit.rgb555(rgb,(64,64));self.assertEqual(expected,(ROOT/'content/generated/battle/animations/general-thin-ring.rgb555').read_bytes());rows,blobs=general.thin_ring_indexed(read,expected);self.assertEqual(['thin-ring'],[x['id'] for x in rows]);self.assertEqual(2048,len(blobs['general-thin-ring.4bpp']));self.assertEqual(32,len(blobs['general-thin-ring.pal16']))
-  with self.assertRaises(ValueError):general.thin_ring_indexed(read,expected[:-1]+bytes([expected[-1]^1]))
+   with Image.open(io.BytesIO(png)) as im:indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];pal=im.getpalette()[:48];raster=list(im.tobytes())
+   name=stem.replace('_','-');self.assertEqual(size,len(self.assets[1][name+'.4bpp']));self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.assets[1][name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),self.assets[1][name+'.pal16']);self.assertEqual(tuple((sum((pal[3*i+c]//8)<<(5*c) for c in range(3))|32768) if i else 0 for i in raster),decode_indexed(*shape,self.assets[1][name+'.4bpp'],self.assets[1][name+'.pal16']))
+ def test_thin_ring_canonical_indices_and_palette_match_every_source_pixel(self):
+  read=lambda p:(RAW/p).read_bytes();rows,blobs=general.thin_ring_indexed(read);self.assertEqual(['thin-ring'],[x['id'] for x in rows]);self.assertEqual((64,64),(rows[0]['width'],rows[0]['height']));self.assertEqual(2048,len(blobs['general-thin-ring.4bpp']));self.assertEqual(32,len(blobs['general-thin-ring.pal16']))
+  with Image.open(io.BytesIO(read('graphics/battle_anims/sprites/thin_ring.png'))) as image:
+   palette=image.getpalette()[:48];raster=list(image.tobytes());tiles=[v for y in range(0,64,8) for x in range(0,64,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
+  colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+  self.assertEqual(bytes(tiles[i]|tiles[i+1]<<4 for i in range(0,len(tiles),2)),blobs['general-thin-ring.4bpp']);self.assertEqual(struct.pack('<16H',*colors),blobs['general-thin-ring.pal16']);self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in raster),decode_indexed(64,64,blobs['general-thin-ring.4bpp'],blobs['general-thin-ring.pal16']))
+  for name,data in blobs.items():self.assertEqual(data,(ROOT/'content/generated/battle/animations'/name).read_bytes())
+  for path,old,new in [('src/data/battle_anim.h',b'gBattleAnimSpriteGfx_ThinRing, 0x0800',b'gBattleAnimSpriteGfx_ThinRing, 0x0400'),('src/graphics.c',b'thin_ring.gbapal.lz',b'opening_eye.gbapal.lz')]:
+   source=read(path);self.assertIn(old,source)
+   with self.assertRaises(ValueError):general.thin_ring_indexed(lambda p:source.replace(old,new) if p==path else read(p))
  def test_callback_sounds_are_source_dependencies_and_mutations_fail(self):
   commands=[dict(op='createsprite',args=['gLockOnTargetSpriteTemplate','ANIM_ATTACKER','40'])];one=self.raw['src/battle_anim_effects_1.c'].decode();two=self.raw['src/battle_anim_effects_2.c'].decode();result=physical.physical_sound_effects(RAW,commands,two,one);self.assertEqual({'SE_M_LOCK_ON','SE_M_LEER'},result.keys())
   for sound in ['SE_M_LOCK_ON','SE_M_LEER']:

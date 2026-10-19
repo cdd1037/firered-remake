@@ -2,6 +2,8 @@
 """Source closure for Fly/Bounce/Dive, with shared water-helper ownership."""
 import importlib.util,json,re,struct,unittest
 from pathlib import Path
+from PIL import Image
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 s=importlib.util.spec_from_file_location('round_shadow_physical',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(s);s.loader.exec_module(imp)
@@ -29,9 +31,12 @@ class RoundShadowChargeAnimationImportTests(unittest.TestCase):
   self.assertFalse({'gWaterHitSplatSpriteTemplate','gSmallDriftingBubblesSpriteTemplate'}&recipes.keys());self.assertFalse({'water-impact','small-bubbles'}&{r['id'] for r in self.pack['assets']+self.pack['indexedAssets']})
   self.assertEqual({'ANIM_TAG_ROUND_SHADOW','ANIM_TAG_IMPACT'},set(self.rows[19]['spriteTags']));self.assertEqual({'ANIM_TAG_ROUND_SHADOW','ANIM_TAG_IMPACT'},set(self.rows[340]['spriteTags']));self.assertEqual({'ANIM_TAG_ROUND_SHADOW','ANIM_TAG_SPLASH','ANIM_TAG_SWEAT_BEAD','ANIM_TAG_WATER_IMPACT','ANIM_TAG_SMALL_BUBBLES'},set(self.rows[291]['spriteTags']))
  def test_materials_are_exact_source_size_and_indexed_palette(self):
-  assets=imp.build_assets(REFERENCE);indexed,pixels=imp.build_indexed_assets(REFERENCE)
+  indexed,pixels=imp.build_indexed_assets(REFERENCE)
   for name in ['round-shadow','splash']:
-   self.assertEqual((64,64),struct.unpack_from('<HH',assets[name]));self.assertEqual(8196,len(assets[name]));self.assertEqual(2048,len(pixels[name+'.4bpp']));self.assertEqual(32,len(pixels[name+'.pal16']));self.assertEqual(1,sum(r['id']==name for r in indexed))
+   row=next(r for r in indexed if r['id']==name);self.assertEqual((64,64),(row['width'],row['height']));self.assertEqual(2048,len(pixels[name+'.4bpp']));self.assertEqual(32,len(pixels[name+'.pal16']));self.assertEqual(1,sum(r['id']==name for r in indexed))
+   with Image.open(REFERENCE/('graphics/battle_anims/sprites/'+name.replace('-','_')+'.png')) as image:
+    palette=image.getpalette();expected=tuple((sum((palette[i*3+c]//8)<<(5*c) for c in range(3))|32768) if i else 0 for i in image.tobytes())
+   self.assertEqual(expected,decode_indexed(64,64,pixels[name+'.4bpp'],pixels[name+'.pal16']))
  def test_missing_callback_or_helper_blocks_entire_root(self):
   for move,name in [(19,'gFlyBallUpSpriteTemplate'),(19,'gFlyBallAttackSpriteTemplate'),(340,'gBounceBallShrinkSpriteTemplate'),(340,'gBounceBallLandSpriteTemplate'),(291,'gDiveBallSpriteTemplate'),(291,'gDiveWaterSplashSpriteTemplate'),(291,'gWaterHitSplatSpriteTemplate'),(291,'gSmallDriftingBubblesSpriteTemplate')]:
    with patch.object(imp,'SPRITES',imp.SPRITES-{name}):
@@ -48,6 +53,6 @@ class RoundShadowChargeAnimationImportTests(unittest.TestCase):
   for name in ['RoundShadow','Splash']:
    raw=dict(self.raw);old=('{gBattleAnimSpriteGfx_'+name+', 0x0800,').encode();self.assertIn(old,raw['src/data/battle_anim.h']);raw['src/data/battle_anim.h']=raw['src/data/battle_anim.h'].replace(old,old.replace(b'0x0800',b'0x0400'))
    with patch.object(imp,'read_sources',return_value=raw):
-    with self.assertRaises(ValueError):imp.build(REFERENCE)
+    with self.assertRaises(ValueError):imp.build_indexed_assets(REFERENCE)
  def test_regeneration_is_exact(self):self.assertEqual(self.data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
 if __name__=='__main__':unittest.main()

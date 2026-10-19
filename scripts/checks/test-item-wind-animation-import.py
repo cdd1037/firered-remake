@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Focused source graphs, shared callback ABI, registered prefix pixels and BG bindings."""
-import argparse,importlib.util,json,re,struct,sys,unittest
+import argparse,importlib.util,io,json,re,struct,sys,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from PIL import Image
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);a,rest=p.parse_known_args();sys.argv=[sys.argv[0],*rest]
@@ -42,16 +43,21 @@ class ItemWindImportTests(unittest.TestCase):
    row=next(r for r in self.pack['indexedAssets'] if r['id']==stem.replace('_','-'));size=(shape[0],count*2//shape[0])
    with Image.open(REFERENCE/'graphics/battle_anims/sprites'/f'{stem}.png') as im:
     self.assertEqual(('P',shape),(im.mode,im.size));palette=im.getpalette()[:48];indices=list(im.crop((0,0,*size)).tobytes());tiled=[im.getpixel((x+dx,y+dy)) for y in range(0,size[1],8) for x in range(0,size[0],8) for dy in range(8) for dx in range(8)]
-   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual(size,(row['width'],row['height']));self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(struct.pack('<HH',*size)+struct.pack('<'+str(len(indices))+'H',*[colors[i]|(0x8000 if i else 0) for i in indices]),(GENERATED/('physical-'+stem.replace('_','-')+'.rgb555')).read_bytes())
+   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual(size,(row['width'],row['height']));self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in indices),decode_indexed(*size,(GENERATED/row['indicesPath']).read_bytes(),(GENERATED/row['palettePath']).read_bytes()))
  def test_source_registration_rejects_changed_sheet_size_and_preserves_full_sheets(self):
-  raw=self.importer.read_sources(REFERENCE);assets,metadata,files=self.importer.utility_materials(raw,self.importer.ITEM_WIND_MATERIALS);registration=raw['src/data/battle_anim.h']
+  raw=self.importer.read_sources(REFERENCE);metadata,files=self.importer.utility_materials(raw,self.importer.ITEM_WIND_MATERIALS);registration=raw['src/data/battle_anim.h']
+  def assert_full_sheet(stem,shape,rows,blobs):
+   name=stem.replace('_','-');row=next(r for r in rows if r['id']==name);self.assertEqual(shape,(row['width'],row['height']))
+   with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/'+stem+'.png'])) as image:palette=image.getpalette()[:48];raster=list(image.tobytes())
+   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+   self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in raster),decode_indexed(*shape,blobs[name+'.4bpp'],blobs[name+'.pal16']))
   for stem,symbol,size,shape in self.importer.ITEM_WIND_MATERIALS:
    pattern=rb'(\{gBattleAnimSpriteGfx_'+symbol.encode()+rb',\s*)0x[0-9a-fA-F]+';bad={**raw,'src/data/battle_anim.h':re.sub(pattern,rb'\g<1>0x0010',registration)}
    with self.assertRaises(ValueError):self.importer.utility_materials(bad,self.importer.ITEM_WIND_MATERIALS)
-   if stem!='sparkle_6':self.assertEqual(self.importer.hit.rgb555(raw['graphics/battle_anims/sprites/'+stem+'.png'],shape),assets[stem.replace('_','-')])
+   if stem!='sparkle_6':assert_full_sheet(stem,shape,metadata,files)
   for group in [self.importer.UTILITY_MATERIALS,self.importer.FOCUS_SOUND_MATERIALS]:
-   old_assets,_,_=self.importer.utility_materials(raw,group)
-   for stem,symbol,size,shape in group:self.assertEqual(self.importer.hit.rgb555(raw['graphics/battle_anims/sprites/'+stem+'.png'],shape),old_assets[stem.replace('_','-')])
+   old_rows,old_files=self.importer.utility_materials(raw,group)
+   for stem,symbol,size,shape in group:assert_full_sheet(stem,shape,old_rows,old_files)
  def test_bug_background_reuses_highspeed_tiles_and_opposite_maps_with_only_its_palette(self):
   source=(REFERENCE/'src/data/battle_anim.h').read_text();constants=(REFERENCE/'include/constants/battle_anim.h').read_text();graphics=(REFERENCE/'src/graphics.c').read_text()
   for side in ['Opponent','Player']:

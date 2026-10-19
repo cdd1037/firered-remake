@@ -1,13 +1,68 @@
 #!/usr/bin/env python3
-"""Source-backed elemental import and RGB555 checks; no reference code execution."""
+"""Source-backed elemental scripts and canonical material checks; no reference execution."""
 import importlib.util,io,json,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class ElementalImportTests(unittest.TestCase):
+ def test_indexed_materials_match_pinned_raw_tiles_alias_palettes_and_visible_pixels(self):
+  data,blobs=imp.build(REFERENCE);pack=json.loads(data);indexed={r['id']:r for r in pack['indexedAssets']}
+  self.assertFalse({r['id'] for r in pack['assets']}&indexed.keys(),'Indexed materials own their tiles and palette without a duplicate RGB output.')
+  # These expectations come from the pinned PNG sheets and registered palette
+  # sources, independently of the producer's conversion tuple list.
+  materials=[
+   ('pokeball','pokeball',(16,16),None),
+   ('warm-rock','warm_rock',(32,168),None),
+   ('glowy-blue-orb','glowy_red_orb',(8,8),'glowy_blue_orb.pal'),
+   ('spotlight','spotlight',(64,64),'pokeball.png'),
+   ('confetti','confetti',(8,96),None),
+   ('paw-print','paw_print',(32,32),None),
+   ('pink-petal','pink_petal',(8,32),None),
+   ('electric-orbs','electric_orbs',(8,32),None),
+   ('electricity','electricity',(32,128),'electric_orbs.png'),
+   ('wisp-orb','wisp_orb',(16,112),None),
+   ('wisp-fire','wisp_fire',(32,128),'wisp_orb.png'),
+   ('ice-chunk','ice_chunk',(32,160),None),
+   ('alert','alert',(32,112),None),
+   ('bent-spoon','bent_spoon',(16,192),None),
+   ('spiral','spiral',(64,64),None),
+   ('white-circle-of-light','circle_of_light',(64,64),'white_circle_of_light.pal'),
+   ('tag-hand','tag_hand',(32,64),'finger.png'),
+   ('hollow-orb','hollow_orb',(16,16),None),
+   ('yellow-ball','yellow_ball',(16,16),None),
+   ('leer','leer',(32,160),None),
+   ('circle-of-light','circle_of_light',(64,64),'electric_orbs.png'),
+   ('thought-bubble','thought_bubble',(32,128),None),
+   ('leaf','leaf',(16,144),None),
+   ('razor-leaf','razor_leaf',(32,16),None),
+   ('orbs','orbs',(16,48),None),
+   ('small-ember','small_ember',(32,160),None),
+   ('small-bubbles','small_bubbles',(16,40),None),
+  ]
+  source=REFERENCE/'graphics/battle_anims/sprites'
+  for asset,png,size,palette_source in materials:
+   with self.subTest(asset=asset):
+    row=indexed[asset];self.assertEqual((*size,'ANIM_TAG_'+asset.replace('-','_').upper()),(row['width'],row['height'],row['paletteTag']))
+    self.assertEqual(('elemental-'+asset+'.4bpp','elemental-'+asset+'.pal16'),(row['indicesPath'],row['palettePath']))
+    self.assertNotIn(asset,blobs)
+    with Image.open(source/(png+'.png')) as image:
+     self.assertEqual(('P',size),(image.mode,image.size));linear=list(image.tobytes());palette=image.getpalette()[:48]
+     tiled=[image.getpixel((x+dx,y+dy)) for y in range(0,size[1],8) for x in range(0,size[0],8) for dy in range(8) for dx in range(8)]
+    if palette_source and palette_source.endswith('.pal'):
+     rows=(source/palette_source).read_text().splitlines();self.assertEqual(['JASC-PAL','0100','16'],rows[:3]);palette=[int(c) for line in rows[3:] for c in line.split()]
+    elif palette_source:
+     with Image.open(source/palette_source) as image:palette=image.getpalette()[:48]
+    self.assertEqual(48,len(palette));colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+    packed=blobs[asset+'.4bpp'];pal=blobs[asset+'.pal16'];generated=ROOT/'content/generated/battle/animations'
+    self.assertEqual(packed,(generated/row['indicesPath']).read_bytes());self.assertEqual(pal,(generated/row['palettePath']).read_bytes())
+    self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),packed)
+    self.assertEqual(struct.pack('<16H',*colors),pal)
+    self.assertEqual(tuple(colors[i]|32768 if i else 0 for i in linear),decode_indexed(*size,packed,pal))
+
  def test_primary_stat_roots_keep_authored_particles_tasks_sounds_and_unused_loads(self):
   data,_=imp.build(REFERENCE);rows={r['moveId']:r for r in json.loads(data)['scripts']}
   for move,label,template,count,sound in [(43,'LEER','gLeerSpriteTemplate',1,'SE_M_LEER'),(294,'TAIL_GLOW','gTailGlowOrbSpriteTemplate',1,'SE_M_MORNING_SUN'),(313,'FAKE_TEARS','gTearDropSpriteTemplate',8,'SE_M_TAIL_WHIP')]:
@@ -37,7 +92,7 @@ class ElementalImportTests(unittest.TestCase):
    if stem=='circle_of_light':
     with Image.open(io.BytesIO(imp.read(REFERENCE,'graphics/battle_anims/sprites/electric_orbs.png'))) as shared:palette=shared.getpalette()[:48]
    packed=blobs[asset+'.4bpp'];self.assertEqual(indices,[(packed[i//2]>>((i&1)*4))&15 for i in range(len(indices))]);colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(colors,list(struct.unpack('<16H',blobs[asset+'.pal16'])))
-   self.assertEqual(size,struct.unpack_from('<HH',blobs[asset]));self.assertEqual([colors[i]|(32768 if i else 0) for i in linear],list(struct.unpack_from('<'+'H'*len(linear),blobs[asset],4)))
+   self.assertEqual(tuple(colors[i]|32768 if i else 0 for i in linear),decode_indexed(*size,packed,blobs[asset+'.pal16']))
 
  def test_primary_stat_source_registration_palette_paths_and_callbacks_fail_closed(self):
   original=imp.read
@@ -172,13 +227,14 @@ class ElementalImportTests(unittest.TestCase):
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/clamp.png') as image:indices=image.tobytes()
   expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
   self.assertEqual(expected,list(struct.unpack_from('<4096H',assets['clamp'],4)))
- def test_small_ember_pixels_match_palette_and_transparency(self):
+ def test_small_ember_indexed_pixels_match_palette_and_transparency(self):
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/small_ember.png') as image:
-   palette=image.getpalette();indices=image.tobytes()
-  blob=(ROOT/'content/generated/battle/animations/elemental-small-ember.rgb555').read_bytes()
-  self.assertEqual((32,160),struct.unpack_from('<HH',blob))
-  expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices]
-  self.assertEqual(expected,list(struct.unpack_from('<5120H',blob,4)))
+   self.assertEqual(('P',(32,160)),(image.mode,image.size));palette=image.getpalette();indices=image.tobytes()
+   tiled=[v for y in range(0,160,8) for x in range(0,32,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
+  generated=ROOT/'content/generated/battle/animations';packed=(generated/'elemental-small-ember.4bpp').read_bytes();pal=(generated/'elemental-small-ember.pal16').read_bytes()
+  colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+  self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),packed);self.assertEqual(struct.pack('<16H',*colors),pal)
+  self.assertEqual(tuple(colors[i]|32768 if i else 0 for i in indices),decode_indexed(32,160,packed,pal))
  def test_source_frames_preserve_loops_and_subroutine_timing(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data)
   recipes={r['template']:r for r in pack['spriteRecipes']}

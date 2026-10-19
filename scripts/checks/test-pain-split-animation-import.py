@@ -4,6 +4,7 @@ import sys
 sys.dont_write_bytecode=True
 import argparse,io,json,struct,types,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 parser=argparse.ArgumentParser(add_help=False)
@@ -26,11 +27,11 @@ class PainSplitImportTests(unittest.TestCase):
  def test_finite_source_frame_program_and_geometry_are_exact(self):
   r=self.recipes['gPainSplitProjectileSpriteTemplate'];self.assertEqual(('pain-split','AnimPainSplitProjectile',16,16),(r['asset'],r['callback'],r['width'],r['height']));self.assertFalse(r['blend']);self.assertEqual([],r.get('affineAnimations',[]));self.assertEqual([-1],r['loopStarts']);self.assertFalse(any(r.get('frameLoops',[])))
   self.assertEqual([[dict(tile=t,duration=d,hFlip=False,vFlip=False) for t,d in [(0,5),(4,9),(8,5)]]],r['animations'])
- def test_rgb_indices_and_palette_match_every_pinned_pixel(self):
+ def test_visible_pixels_indices_and_palette_match_every_pinned_pixel(self):
   raw=imp.read_sources(REFERENCE)
   with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/pain_split.png'])) as image:
    self.assertEqual(('P',(16,48)),(image.mode,image.size));palette=image.getpalette()[:48];colors=[sum((palette[i*3+c]//8)<<(c*5) for c in range(3)) for i in range(16)]
-   expected=[colors[i]|(32768 if i else 0) for i in image.tobytes()];self.assertEqual((16,48),struct.unpack_from('<HH',self.pixels['pain-split']));self.assertEqual(expected,list(struct.unpack_from('<768H',self.pixels['pain-split'],4)))
+   expected=tuple((colors[i]|32768) if i else 0 for i in image.tobytes());row=next(r for r in self.pack['indexedAssets'] if r['id']=='pain-split');self.assertEqual((16,48),(row['width'],row['height']));self.assertEqual(expected,decode_indexed(16,48,self.pixels['pain-split.4bpp'],self.pixels['pain-split.pal16']))
    tiled=[image.getpixel((tx+x,ty+y)) for ty in range(0,48,8) for tx in range(0,16,8) for y in range(8) for x in range(8)]
    self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),self.pixels['pain-split.4bpp']);self.assertEqual(struct.pack('<16H',*colors),self.pixels['pain-split.pal16']);self.assertEqual(384,len(self.pixels['pain-split.4bpp']))
  def test_source_material_and_callback_corruption_fail_closed(self):
@@ -41,15 +42,18 @@ class PainSplitImportTests(unittest.TestCase):
     data=original(ref);data[path]=data[path].replace(old,new);return data
    with self.subTest(path=path),patch.object(imp,'read_sources',side_effect=changed),self.assertRaises(ValueError):
     if path.endswith('effects_3.c'):imp.build(REFERENCE)
-    else:imp.build_assets(REFERENCE)
+    else:imp.build_indexed_assets(REFERENCE)
  def test_prior_rows_materials_and_generated_results_are_exact(self):
   previous=json.loads((PREVIOUS/'physical.json').read_bytes())
   for row in previous['scripts']:self.assertEqual(row,self.roots[row['moveId']])
   for row in previous['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
   for name,value in previous['subroutines'].items():self.assertEqual(value,self.pack['subroutines'][name])
+  indexed_ids={r['id'] for r in self.pack['indexedAssets']};prior_indexed_ids={r['id'] for r in previous['indexedAssets']}
   for group in ['assets','indexedAssets']:
    current={r['id']:r for r in self.pack[group]}
    for row in previous[group]:
+    if group=='assets' and row['id'] in indexed_ids:
+     self.assertIn(row['id'],prior_indexed_ids,'A retired RGB shadow must already have had an indexed owner');self.assertNotIn(row['id'],current);continue
     self.assertEqual(row,current[row['id']])
     for field in ['path','indicesPath','palettePath']:
      if field in row and row[field].startswith('physical-'):self.assertEqual((PREVIOUS/row[field]).read_bytes(),self.pixels[row[field].removeprefix('physical-').removesuffix('.rgb555')])

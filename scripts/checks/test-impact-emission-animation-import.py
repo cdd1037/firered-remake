@@ -4,6 +4,7 @@ import importlib.util,io,json,re,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('impact_emission_import',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
@@ -28,13 +29,13 @@ class ImpactEmissionImportTests(unittest.TestCase):
   for name in ['gCoinThrowSpriteTemplate','gFallingCoinSpriteTemplate']:
    self.assertEqual([[dict(tile=8,duration=1,hFlip=False,vFlip=False)]],recipes[name]['animations']);self.assertEqual((16,16),(recipes[name]['width'],recipes[name]['height']))
  def test_indexed_materials_preserve_tile_order_all_palette_entries_and_rgb555(self):
-  metadata,pixels=imp.build_indexed_assets(REFERENCE);rgb=imp.build_assets(REFERENCE);metadata=[r for r in metadata if r['id'] in {'coin','cross-impact','red-ball','whirlwind-lines'}]
+  metadata,pixels=imp.build_indexed_assets(REFERENCE);metadata=[r for r in metadata if r['id'] in {'coin','cross-impact','red-ball','whirlwind-lines'}]
   self.assertEqual({'coin','cross-impact','red-ball','whirlwind-lines'},{r['id'] for r in metadata})
   for row in metadata:
    name=row['id'];stem=name.replace('-','_');image=Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+stem+'.png']));palette=image.getpalette();indices=list(image.tobytes());ordered=[v for y in range(0,image.height,8) for x in range(0,image.width,8) for v in image.crop((x,y,x+8,y+8)).tobytes()]
    self.assertEqual(bytes(ordered[i]|ordered[i+1]<<4 for i in range(0,len(ordered),2)),pixels[name+'.4bpp'])
    self.assertEqual([sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)],list(struct.unpack('<16H',pixels[name+'.pal16'])))
-   self.assertEqual(image.size,struct.unpack_from('<HH',rgb[name]));self.assertEqual([sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices],list(struct.unpack_from('<'+str(len(indices))+'H',rgb[name],4)))
+   self.assertEqual(image.size,(row['width'],row['height']));self.assertEqual([(sum((palette[i*3+c]//8)<<(5*c) for c in range(3))|32768) if i else 0 for i in indices],list(decode_indexed(image.width,image.height,pixels[name+'.4bpp'],pixels[name+'.pal16'])))
    self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual('physical-'+name+'.4bpp',row['indicesPath']);self.assertEqual('physical-'+name+'.pal16',row['palettePath'])
  def test_unknown_callback_or_graphics_dependency_keeps_entire_root_out(self):
   for move,old,new in [(65,b'createvisualtask AnimTask_DrillPeckHitSplats,',b'createvisualtask UnknownDrillTask,'),(140,b'createvisualtask AnimTask_BarrageBall,',b'createvisualtask UnknownBarrageTask,'),(6,b'createsprite gCoinThrowSpriteTemplate,',b'createsprite UnknownCoin,'),(238,b'createsprite gCrossImpactSpriteTemplate,',b'createsprite UnknownCross,'),(65,b'loadspritegfx ANIM_TAG_WHIRLWIND_LINES',b'loadspritegfx ANIM_TAG_UNKNOWN_WHIRLWIND')]:
@@ -47,7 +48,8 @@ class ImpactEmissionImportTests(unittest.TestCase):
   for path,old,new in [('src/battle_anim_fight.c',b'.anims = &sAnims_HandsAndFeet[3],',b'.anims = &sAnims_HandsAndFeet[2],'),('src/data/battle_anim.h',b'{gBattleAnimSpriteGfx_Coin, 0x0200, ANIM_TAG_COIN}',b'{gBattleAnimSpriteGfx_Coin, 0x0100, ANIM_TAG_COIN}'),('src/data/battle_anim.h',b'{gBattleAnimSpritePal_WhirlwindLines, ANIM_TAG_WHIRLWIND_LINES}',b'{gBattleAnimSpritePal_Coin, ANIM_TAG_WHIRLWIND_LINES}'),('src/graphics.c',b'"graphics/battle_anims/sprites/red_ball.gbapal.lz"',b'"graphics/battle_anims/sprites/coin.gbapal.lz"')]:
    raw=dict(self.raw);self.assertIn(old,raw[path]);raw[path]=raw[path].replace(old,new)
    with patch.object(imp,'read_sources',return_value=raw):
-    with self.assertRaises(ValueError):imp.build(REFERENCE)
+    with self.assertRaises(ValueError):
+     imp.build(REFERENCE) if path.startswith('src/battle_anim_') else imp.build_indexed_assets(REFERENCE)
  def test_generated_metadata_has_no_root_allowlist_or_raw_callback_runtime_dependency(self):
   self.assertNotIn('Move_DRILL_PECK',imp.SPRITES);self.assertNotIn(65,imp.NEW)
   for row in self.pack['indexedAssets']:

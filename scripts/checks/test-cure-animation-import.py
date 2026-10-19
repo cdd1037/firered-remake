@@ -1,6 +1,7 @@
 """Exact cure roots, source frames, palette-bank selection and indexed OBJ-window input."""
 import argparse,importlib.util,io,json,re,struct,sys,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -29,16 +30,21 @@ class CureImportTests(unittest.TestCase):
  def test_original_palette_eighty_colors_selects_only_three_native_banks(self):
   lines=self.raw['graphics/battle_anims/sprites/music_notes_2.pal'].decode().splitlines();self.assertEqual(['JASC-PAL','0100','80'],lines[:3]);rgb=[list(map(int,line.split())) for line in lines[3:]]
   expected=struct.pack('<48H',*[sum((c//8)<<(5*i) for i,c in enumerate(row)) for row in rgb[:48]])
-  files=self.assets[2];self.assertEqual(expected,files['music-notes-2.pal48']);self.assertEqual(expected[:32],files['music-notes-2.pal16']);self.assertEqual([dict(tag=10206,path='physical-music-notes-2.pal48',banks=3)],self.pack['paletteGroups'])
+  files=self.assets[1];self.assertEqual(expected,files['music-notes-2.pal48']);self.assertEqual(expected[:32],files['music-notes-2.pal16']);self.assertEqual([dict(tag=10206,path='physical-music-notes-2.pal48',banks=3)],self.pack['paletteGroups'])
   source=self.raw['src/battle_anim_effects_2.c'].decode();self.assertRegex(source,r'#define NUM_MUSIC_NOTE_PAL_TAGS\s+3');self.assertRegex(source,r'gMusicNotePaletteTagsTable\[NUM_MUSIC_NOTE_PAL_TAGS\] =\s*\{\s*ANIM_TAG_MUSIC_NOTES_2,\s*ANIM_SPRITES_START - 1,\s*ANIM_SPRITES_START - 2,\s*\}')
   self.assertIn('LoadPalette(&gMonSpritesGfxPtr->multiUseBuffer[i * 32], OBJ_PLTT_ID(paletteNums[i]), PLTT_SIZE_4BPP);',source)
  def test_indexed_sheets_preserve_all_source_tiles_and_concatenation(self):
-  for stem,parts in [('bell',['bell']),('music-notes-2',['music_notes_2']),('flower',['flower_0','flower_1'])]:
-   indices=[]
+  for stem,parts,shape in [('bell',['bell'],(32,96)),('music-notes-2',['music_notes_2'],(16,256)),('flower',['flower_0','flower_1'],(8,40))]:
+   tiles=[]
    for part in parts:
-    with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+part+'.png'])) as im:indices += [b for y in range(0,im.height,8) for x in range(0,im.width,8) for b in im.crop((x,y,x+8,y+8)).tobytes()]
-   expected=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));self.assertEqual(expected,self.assets[2][stem+'.4bpp'])
-  self.assertEqual(160,len(self.assets[2]['flower.4bpp']));self.assertEqual(2048,len(self.assets[2]['music-notes-2.4bpp']));self.assertEqual(1536,len(self.assets[2]['bell.4bpp']))
+    with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+part+'.png'])) as im:tiles.extend(list(im.crop((x,y,x+8,y+8)).tobytes()) for y in range(0,im.height,8) for x in range(0,im.width,8));palette=im.getpalette()[:48]
+   if stem!='bell':palette=[int(c) for line in self.raw['graphics/battle_anims/sprites/'+stem.replace('-','_')+'.pal'].decode().splitlines()[3:19] for c in line.split()]
+   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
+   indices=[i for tile in tiles for i in tile];expected=bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2));self.assertEqual(expected,self.assets[1][stem+'.4bpp']);self.assertEqual(struct.pack('<16H',*colors),self.assets[1][stem+'.pal16'])
+   row=next(r for r in self.assets[0] if r['id']==stem);self.assertEqual(shape,(row['width'],row['height']))
+   raster=[tiles[(y//8)*(shape[0]//8)+x//8][(y%8)*8+x%8] for y in range(shape[1]) for x in range(shape[0])]
+   self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in raster),decode_indexed(*shape,self.assets[1][stem+'.4bpp'],self.assets[1][stem+'.pal16']))
+  self.assertEqual(160,len(self.assets[1]['flower.4bpp']));self.assertEqual(2048,len(self.assets[1]['music-notes-2.4bpp']));self.assertEqual(1536,len(self.assets[1]['bell.4bpp']))
  def test_frame_and_affine_recipes_keep_original_termination_and_loops(self):
   recipes={r['template']:r for r in self.pack['spriteRecipes']};bell=recipes['gBellSpriteTemplate'];self.assertEqual([0,16,32,16,0,16,32,16,0,16,32,16,0],[f['tile'] for f in bell['animations'][0]]);self.assertEqual([6,6,15,6,6,6,15,6,6,6,15,6,6],[f['duration'] for f in bell['animations'][0]]);self.assertEqual([-1],bell['loopStarts'])
   flower=recipes['gAromatherapyBigFlowerSpriteTemplate'];self.assertEqual(['frame','frame','jump'],[f['op'] for f in flower['affineAnimations'][0]]);self.assertEqual(1,flower['affineAnimations'][0][-1]['target']);self.assertEqual(4,recipes['gAromatherapySmallFlowerSpriteTemplate']['animations'][0][0]['tile'])

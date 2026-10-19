@@ -133,7 +133,7 @@ public sealed class SourceAnimationResourceTests
         {
             CopyManifestMetadata(folder);
             string path=Path.Combine(folder,"hit/manifest.json");var json=JsonNode.Parse(File.ReadAllText(path))!;
-            json["assets"]!.AsArray().Single(row=>row!["id"]!.GetValue<string>()=="impact")!["path"]="absent-fallback.rgb555";
+            json["assets"]!.AsArray().Add(new JsonObject{["id"]="impact",["path"]="absent-fallback.rgb555"});
             var indexed=json["indexedAssets"]!.AsArray().Single(row=>row!["id"]!.GetValue<string>()=="impact")!;
             File.WriteAllText(path,json.ToJsonString());
             using var resources=new SourceAnimationResources(folder);Assert.AreEqual(0,resources.CachedAssetCount);

@@ -2,12 +2,20 @@
 """Source-backed physical-family import checks; no compiler or third-party execution."""
 import importlib.util,json,unittest,struct
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('physical_import',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class PhysicalImportTests(unittest.TestCase):
+ def test_indexed_owner_does_not_construct_rgb_shadows(self):
+  with patch.object(imp.hit,'rgb555',side_effect=AssertionError('Indexed materials must not construct RGB shadows')):
+   indexed,pixels=imp.build_indexed_assets(REFERENCE)
+  pack=json.loads((ROOT/'content/generated/battle/animations/physical.json').read_bytes())
+  self.assertEqual(pack['indexedAssets'],indexed)
+  self.assertFalse({r['id'] for r in indexed}&{r['id'] for r in pack['assets']})
+  for name,blob in pixels.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/physical-'+name)).read_bytes())
  def test_random_fist_names_raw_impact_for_double_kick_and_thrash(self):
   data,blocked=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==24)
   self.assertEqual(['gBasicHitSplatSpriteTemplate'],script['spriteDependencies'])
@@ -247,12 +255,18 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertEqual([(11,11,8),(-11,-11,8),(0,0,0)],[(c['x'],c['y'],c['duration']) for c in anger['affineAnimations'][0]])
  def test_sprite_sheet_registration_limits_loaded_tiles_instead_of_loading_unused_png_art(self):
   assets=imp.build_assets(REFERENCE)
-  self.assertEqual((16,48),struct.unpack_from('<HH',assets['eye-sparkle']));self.assertEqual((16,16),struct.unpack_from('<HH',assets['anger']))
+  self.assertEqual((16,48),struct.unpack_from('<HH',assets['eye-sparkle']))
   with Image.open(REFERENCE/'graphics/battle_anims/sprites/eye_sparkle.png') as image:
    indices=list(image.tobytes());palette=image.getpalette();self.assertEqual((16,64),image.size);self.assertTrue(any(indices[16*48:]))
   expected=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3))+(32768 if i else 0) for i in indices[:16*48]]
   self.assertEqual(expected,list(struct.unpack_from('<768H',assets['eye-sparkle'],4)))
-  for name in ['eye-sparkle','anger']:self.assertEqual(assets[name],(ROOT/('content/generated/battle/animations/physical-'+name+'.rgb555')).read_bytes())
+  self.assertEqual(assets['eye-sparkle'],(ROOT/'content/generated/battle/animations/physical-eye-sparkle.rgb555').read_bytes())
+  indexed,pixels=imp.build_indexed_assets(REFERENCE);anger=next(r for r in indexed if r['id']=='anger')
+  self.assertEqual((16,16),(anger['width'],anger['height']))
+  with Image.open(REFERENCE/'graphics/battle_anims/sprites/anger.png') as image:
+   palette=image.getpalette();expected=tuple((sum((palette[i*3+c]//8)<<(5*c) for c in range(3))|32768) if i else 0 for i in image.tobytes())
+  self.assertEqual(expected,decode_indexed(16,16,pixels['anger.4bpp'],pixels['anger.pal16']))
+  for suffix in ['.4bpp','.pal16']:self.assertEqual(pixels['anger'+suffix],(ROOT/('content/generated/battle/animations/physical-anger'+suffix)).read_bytes())
   raw=imp.read_sources(REFERENCE);raw['src/data/battle_anim.h']=raw['src/data/battle_anim.h'].replace(b'gBattleAnimSpriteGfx_EyeSparkle, 0x0180',b'gBattleAnimSpriteGfx_EyeSparkle, 0x0190')
   with self.assertRaises(ValueError):imp.registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_EyeSparkle','eye_sparkle')
  def test_attached_move_closures_are_rejected_when_other_required_callbacks_are_missing(self):

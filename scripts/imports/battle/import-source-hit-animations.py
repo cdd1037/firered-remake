@@ -146,7 +146,6 @@ def build(reference):
  slash2_pal=[int(c) for line in pal_text[3:] for c in line.split()]
  if len(slash2_pal)!=48 or any(c<0 or c>255 for c in slash2_pal):raise ValueError('Slash2 palette shape differs')
  images={'hands-and-feet':rgb555(raw['graphics/battle_anims/sprites/hands_and_feet.png'],(32,128)),
-  'impact':rgb555(raw['graphics/battle_anims/sprites/impact.png'],(32,32)),
   'scratch':rgb555(raw['graphics/battle_anims/sprites/scratch.png'],(32,160),impact_pal),
   'cut':rgb555(raw['graphics/battle_anims/sprites/cut.png'],(32,128),impact_pal),
   'slash':rgb555(raw['graphics/battle_anims/sprites/slash.png'],(32,128)),

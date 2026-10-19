@@ -2,6 +2,7 @@
 """Pinned source closure, raw materials and fail-closed producer checks."""
 import argparse,io,json,re,struct,sys,types,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 
@@ -53,7 +54,7 @@ class DamageFamilyImportTests(unittest.TestCase):
   ring=self.recipes['gRapidSpinSpriteTemplate'];self.assertEqual([0],ring['loopStarts']);self.assertEqual([0,8,16],[f['tile'] for f in ring['animations'][0]])
 
  def test_three_materials_match_registered_4bpp_tiles_and_source_palette_alias(self):
-  assets,indexed,files=imp.damage_family_materials(self.raw)
+  indexed,files=imp.damage_family_materials(self.raw)
   for stem,gfx,size,shape,palette_name,palette_stem in imp.DAMAGE_FAMILY_MATERIALS:
    name=stem.replace('_','-')
    with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+stem+'.png'])) as image:
@@ -62,8 +63,7 @@ class DamageFamilyImportTests(unittest.TestCase):
    colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
    self.assertEqual(size,len(files[name+'.4bpp']));self.assertEqual(bytes(tiles[i]|tiles[i+1]<<4 for i in range(0,len(tiles),2)),files[name+'.4bpp'])
    self.assertEqual(struct.pack('<16H',*colors),files[name+'.pal16'])
-   self.assertEqual(shape,struct.unpack_from('<HH',assets[name]));self.assertEqual([colors[i]|(32768 if i else 0) for i in raster],list(struct.unpack_from('<'+str(len(raster))+'H',assets[name],4)))
-   self.assertEqual(assets[name],(GENERATED/('physical-'+name+'.rgb555')).read_bytes())
+   row=next(r for r in indexed if r['id']==name);self.assertEqual(shape,(row['width'],row['height']));self.assertEqual(tuple((colors[i]|32768) if i else 0 for i in raster),decode_indexed(*shape,files[name+'.4bpp'],files[name+'.pal16']))
    self.assertEqual(files[name+'.4bpp'],(GENERATED/('physical-'+name+'.4bpp')).read_bytes())
    self.assertEqual(files[name+'.pal16'],(GENERATED/('physical-'+name+'.pal16')).read_bytes())
   self.assertEqual(files['purple-scratch.pal16'],files['purple-swipe.pal16'])

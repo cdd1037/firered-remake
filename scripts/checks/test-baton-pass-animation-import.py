@@ -4,6 +4,7 @@ import argparse,io,json,re,struct,sys,types,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import decode_indexed
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);p.add_argument('--importer',type=Path);a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
 ROOT=a.root;REFERENCE=a.reference or ROOT/'content/raw/pokefirered/037335f4';canonical=ROOT/'scripts/imports/battle/import-source-elemental-animations.py'
@@ -20,7 +21,7 @@ class BatonPassAnimationImportTests(unittest.TestCase):
   for c in row['commands']:
    op,*tail=lines[c['line']-1].strip().split(None,1);args=[v.strip() for v in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else [];self.assertEqual((op,args),(c['op'],c['args']))
   source=imp.read(REFERENCE,'data/battle_scripts_1.s').decode();body=source.split('BattleScript_EffectBatonPass::',1)[1].split('\n\n',1)[0];self.assertLess(body.index('attackanimation'),body.index('openpartyscreen'))
- def test_recipe_and_both_pixel_forms_match_original_palette_indices(self):
+ def test_recipe_and_indexed_pixels_match_original_palette_indices(self):
   r=next(r for r in self.pack['spriteRecipes'] if r['template']==TEMPLATE)
   self.assertEqual(('pokeball','AnimBatonPassPokeball',16,16,False,False),(r['asset'],r['callback'],r['width'],r['height'],r['blend'],r['affineDoubleSize']));self.assertEqual([[dict(tile=0,duration=1,hFlip=False,vFlip=False)]],r['animations']);self.assertEqual([0],r['loopStarts']);self.assertEqual([],r['affineAnimations'])
   index=next(r for r in self.pack['indexedAssets'] if r['id']=='pokeball');self.assertEqual((16,16,'ANIM_TAG_POKEBALL'),(index['width'],index['height'],index['paletteTag']))
@@ -28,7 +29,7 @@ class BatonPassAnimationImportTests(unittest.TestCase):
    tiled=[v for y in range(0,16,8) for x in range(0,16,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];linear=list(im.tobytes());palette=im.getpalette()[:48]
   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];packed=self.blobs['pokeball.4bpp'];self.assertEqual(tiled,[(packed[i//2]>>((i&1)*4))&15 for i in range(256)])
   self.assertEqual(colors,list(struct.unpack('<16H',self.blobs['pokeball.pal16'])));self.assertEqual(self.blobs['spotlight.pal16'],self.blobs['pokeball.pal16'])
-  self.assertEqual((16,16),struct.unpack_from('<HH',self.blobs['pokeball']));self.assertEqual([colors[i]|(32768 if i else 0) for i in linear],list(struct.unpack_from('<256H',self.blobs['pokeball'],4)))
+  self.assertEqual(tuple(colors[i]|32768 if i else 0 for i in linear),decode_indexed(16,16,packed,self.blobs['pokeball.pal16']))
  def test_missing_callback_graphics_or_sound_omits_only_baton_pass(self):
   for key,value in [('TEMPLATES',{k:v for k,v in imp.TEMPLATES.items() if k!=TEMPLATE}),('GFX',imp.GFX-{'ANIM_TAG_POKEBALL'}),('SOUNDS',imp.SOUNDS-{'SE_M_BATON_PASS'})]:
    with patch.object(imp,key,value):rows,_=imp.discover_scripts(REFERENCE)

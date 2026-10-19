@@ -1,6 +1,7 @@
 """Complete utility source roots, raw-child dependencies and indexed material authority."""
 import argparse,importlib.util,io,json,re,struct,sys,unittest
 from pathlib import Path
+from indexed_material_expectations import decode_indexed
 from unittest.mock import patch
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -27,9 +28,9 @@ class UtilityImportTests(unittest.TestCase):
  def test_indexed_material_preserves_every_source_pixel_palette_and_tile(self):
   for stem,symbol,size,shape in physical.UTILITY_MATERIALS:
    with Image.open(io.BytesIO(self.raw['graphics/battle_anims/sprites/'+stem+'.png'])) as im:
-    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];pal=im.getpalette()[:48]
-   name=stem.replace('_','-');self.assertEqual(size,len(self.assets[2][name+'.4bpp']));self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.assets[2][name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),self.assets[2][name+'.pal16'])
-   row=next(x for x in self.assets[1] if x['id']==name);self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual(shape,(row['width'],row['height']))
+    indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()];pal=im.getpalette()[:48];raster=list(im.tobytes())
+   name=stem.replace('_','-');self.assertEqual(size,len(self.assets[1][name+'.4bpp']));self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.assets[1][name+'.4bpp']);self.assertEqual(struct.pack('<16H',*[sum((pal[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)]),self.assets[1][name+'.pal16'])
+   row=next(x for x in self.assets[0] if x['id']==name);self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual(shape,(row['width'],row['height']));self.assertEqual(tuple((sum((pal[3*i+c]//8)<<(5*c) for c in range(3))|32768) if i else 0 for i in raster),decode_indexed(*shape,self.assets[1][name+'.4bpp'],self.assets[1][name+'.pal16']))
  def test_all_child_and_cloud_frame_affine_programs_match_source_parser(self):
   recipes={r['template']:r for r in self.pack['spriteRecipes']}
   for name,file,callback in physical.UTILITY_RECIPES:self.assertEqual(physical.elemental.recipe(self.raw['src/'+file].decode(),name,callback),recipes[name])
@@ -45,6 +46,5 @@ class UtilityImportTests(unittest.TestCase):
   with self.assertRaises(ValueError):physical.utility_materials(raw)
  def test_generated_bytes_equal_the_maintained_producer(self):
   folder=a.generated or ROOT/'content/generated/battle/animations';self.assertEqual(self.data,(folder/'physical.json').read_bytes())
-  for name,blob in {**self.assets[0],**self.assets[2]}.items():
-   path='physical-'+name if name.endswith(('.4bpp','.pal16')) else 'physical-'+name+'.rgb555';self.assertEqual(blob,(folder/path).read_bytes())
+  for name,blob in self.assets[1].items():self.assertEqual(blob,(folder/('physical-'+name)).read_bytes())
 if __name__=='__main__':unittest.main()
