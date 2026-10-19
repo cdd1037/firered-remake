@@ -8,12 +8,9 @@ internal readonly record struct FieldPartyActionEntry(string Id, string Label);
 /// <summary>Display labels do not identify actions. Known moves retain their existing stable IDs and slot order.</summary>
 internal static class CampaignFieldPartyActions
 {
-    private static readonly PresentationTextCatalog Text = PresentationTextCatalog.English("field-menu");
-
-    public static FieldPartyActionEntry[] Build(PartyPokemon? member, Func<MoveId, string> moveName,
-        bool flyAvailable, bool rockSmashAvailable, bool heldItemsAvailable, PresentationTextCatalog? text = null)
+    public static FieldPartyActionEntry[] Build(PresentationTextCatalog text, PartyPokemon? member, Func<MoveId, string> moveName,
+        bool flyAvailable, bool rockSmashAvailable, bool heldItemsAvailable)
     {
-        text ??= Text;
         FieldPartyActionEntry Menu(string id) => new(id, text.Get("party." + id));
         if (member is { IsEgg: true }) return [Menu("summary"), Menu("switch"), Menu("cancel")];
 

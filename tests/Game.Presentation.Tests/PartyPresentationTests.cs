@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class PartyPresentationTests
 {
+    private static readonly Game.Content.PresentationTextCatalog Text = Game.Content.PresentationTextCatalog.English("field-menu");
     [TestMethod]
     public void SourceSingleLayoutHasNonoverlappingOccupiedHitRegions()
     {
@@ -88,7 +89,7 @@ public sealed class PartyPresentationTests
         ];
         foreach (var slots in expected.Chunk(4))
         {
-            var actions = CampaignFieldPartyActions.Build(FieldMember(slots.Select(x => x.Id).ToArray()), id => names[id], true, true, true);
+            var actions = CampaignFieldPartyActions.Build(Text, FieldMember(slots.Select(x => x.Id).ToArray()), id => names[id], true, true, true);
             CollectionAssert.AreEqual(new[] { "summary" }.Concat(slots.Select(x => x.Id)).Concat(["switch", "item", "cancel"]).ToArray(),
                 actions.Select(x => x.Id).ToArray());
             CollectionAssert.AreEqual(new[] { "SUMMARY" }.Concat(slots.Select(x => x.Label)).Concat(["SWITCH", "ITEM", "CANCEL"]).ToArray(),
@@ -108,7 +109,7 @@ public sealed class PartyPresentationTests
             {"party.summary":"CANCEL","party.switch":"CANCEL","party.item":"CANCEL","party.mail":"CANCEL","party.cancel":"CANCEL"}
             """);
         var member = FieldMember(move, "pret:MOVE_CUT", move);
-        var actions = CampaignFieldPartyActions.Build(member, _ => "CANCEL", true, true, true, text);
+        var actions = CampaignFieldPartyActions.Build(text, member, _ => "CANCEL", true, true, true);
         CollectionAssert.AreEqual(new[] { "summary", move, "pret:MOVE_CUT", move, "switch", "item", "cancel" },
             actions.Select(x => x.Id).ToArray());
         Assert.IsTrue(actions.All(x => x.Label == "CANCEL"));
@@ -132,7 +133,7 @@ public sealed class PartyPresentationTests
             expected.AddRange(["pret:MOVE_SURF", "pret:MOVE_DIG", "switch"]);
             if (heldItems) expected.Add("mail");
             expected.Add("cancel");
-            var actions = CampaignFieldPartyActions.Build(member, id => id.Value, fly, rockSmash, heldItems);
+            var actions = CampaignFieldPartyActions.Build(Text, member, id => id.Value, fly, rockSmash, heldItems);
             CollectionAssert.AreEqual(expected.ToArray(), actions.Select(x => x.Id).ToArray());
             if (heldItems) Assert.AreEqual("MAIL", actions[^2].Label);
         }
@@ -143,12 +144,12 @@ public sealed class PartyPresentationTests
     {
         var member = FieldMember("pret:MOVE_TACKLE", "pret:MOVE_DIG");
         member = member with { Pokemon = member.Pokemon with { CurrentHp = 0 } };
-        var actions = CampaignFieldPartyActions.Build(member, id => id.Value, true, true, true);
+        var actions = CampaignFieldPartyActions.Build(Text, member, id => id.Value, true, true, true);
         CollectionAssert.AreEqual(new[] { "summary", "pret:MOVE_DIG", "switch", "item", "cancel" }, actions.Select(x => x.Id).ToArray());
-        var egg = CampaignFieldPartyActions.Build(member with { IsEgg = true }, _ => throw new InvalidOperationException("Egg move label lookup"), true, true, true);
+        var egg = CampaignFieldPartyActions.Build(Text, member with { IsEgg = true }, _ => throw new InvalidOperationException("Egg move label lookup"), true, true, true);
         CollectionAssert.AreEqual(new[] { "summary", "switch", "cancel" }, egg.Select(x => x.Id).ToArray());
         CollectionAssert.AreEqual(new[] { "SUMMARY", "SWITCH", "CANCEL" }, egg.Select(x => x.Label).ToArray());
-        var missing = CampaignFieldPartyActions.Build(null, _ => throw new InvalidOperationException("Missing member move label lookup"), true, true, true);
+        var missing = CampaignFieldPartyActions.Build(Text, null, _ => throw new InvalidOperationException("Missing member move label lookup"), true, true, true);
         CollectionAssert.AreEqual(new[] { "summary", "switch", "item", "cancel" }, missing.Select(x => x.Id).ToArray());
     }
 

@@ -34,6 +34,36 @@ public sealed class PresentationTextCatalog
         return Parse(reader.ReadToEnd());
     }
 
+    /// <summary>Optional local overrides are partial; English remains the authority for IDs and parameter names.</summary>
+    public static PresentationTextCatalog Load(string group, string? overridesDirectory = null)
+    {
+        var english = English(group);
+        if (overridesDirectory is null) return english;
+        if (!Directory.Exists(overridesDirectory))
+            throw new DirectoryNotFoundException("Presentation text pack does not exist: " + overridesDirectory);
+        foreach (string file in Directory.EnumerateFiles(overridesDirectory, "*.json"))
+            if (typeof(PresentationTextCatalog).Assembly.GetManifestResourceInfo(
+                "Game.Content.Text.en." + Path.GetFileNameWithoutExtension(file) + ".json") is null)
+                throw new InvalidDataException("Unknown presentation text group: " + Path.GetFileName(file));
+        string path = Path.Combine(overridesDirectory, group + ".json");
+        if (!File.Exists(path)) return english;
+        var replacements = ContentJson.ParseStrict<ImmutableDictionary<string, string>>(
+            File.ReadAllText(path), ContentJson.CreateOptions());
+        if (replacements.IsEmpty) return english;
+        var overrides = new PresentationTextCatalog(replacements);
+        foreach (var (id, text) in overrides._messages)
+        {
+            if (!english._messages.TryGetValue(id, out var original))
+                throw new InvalidDataException("Unknown presentation text ID: " + group + "/" + id);
+            if (!ParameterNames(original).SetEquals(ParameterNames(text)))
+                throw new InvalidDataException("Presentation text parameters differ: " + group + "/" + id);
+        }
+        return new(english._messages.SetItems(overrides._messages));
+    }
+
+    private static HashSet<string> ParameterNames(string text) =>
+        Parameter.Matches(text).Select(match => match.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+
     public string Get(string id, params (string Name, string Value)[] arguments)
     {
         if (!_messages.TryGetValue(id, out var template))
@@ -44,7 +74,7 @@ public sealed class PresentationTextCatalog
         foreach (var (name, value) in arguments)
             if (value is null || !values.TryAdd(name, value))
                 throw new ArgumentException("Duplicate or null presentation text argument: " + name, nameof(arguments));
-        var expected = Parameter.Matches(template).Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+        var expected = ParameterNames(template);
         if (!expected.SetEquals(values.Keys))
             throw new ArgumentException("Presentation text arguments differ: " + id, nameof(arguments));
         // Replace only template tokens; player-entered braces are literal data, never another template.

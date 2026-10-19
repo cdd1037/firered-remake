@@ -84,6 +84,7 @@ public partial class CampaignView:Node2D
             var startup=Startup??throw new InvalidOperationException("current_startup_selection_missing");
             if(startup.Mode!=GameStartupMode.Current)throw new InvalidOperationException("current_startup_mode_invalid");
             _root=startup.ProjectRoot;_evidence=OS.GetEnvironment("FIRERED_EVIDENCE");
+            LoadPresentationTexts();
             _diagnostics=new(_evidence,OS.GetEnvironment("FIRERED_VERBOSE"));
             _font=GD.Load<FontFile>("res://Assets/ProbeFont.ttc");
             if(_font is null)throw new InvalidDataException("startup_font_missing");

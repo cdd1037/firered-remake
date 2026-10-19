@@ -52,8 +52,8 @@ public partial class CampaignView
     private SourceGameOptions _optionsDraft=SourceGameOptions.Defaults;
     private int _optionsCursor;
     private readonly Dictionary<(int Frame,string Kind),Texture2D> _optionFrameTextures=[];
-    private static readonly PresentationTextCatalog OptionsText = PresentationTextCatalog.English("options");
-    private static readonly string[] OptionLabels = Enumerable.Range(0, 7).Select(row => CampaignOptionPresentation.Label(row, OptionsText)).ToArray();
+    private PresentationTextCatalog OptionsText = null!;
+    private string[] OptionLabels = [];
     private void OpenOptionsMenu()
     {
         if(!_session.CanEditOptions){_fieldMenuNotice=OptionsText.Get("notice.unavailable");return;}

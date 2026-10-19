@@ -7,7 +7,7 @@ using Godot;
 public partial class CampaignView
 {
     private readonly record struct FieldMenuEntry(string Id, string Label);
-    private static readonly PresentationTextCatalog FieldMenuText = PresentationTextCatalog.English("field-menu");
+    private PresentationTextCatalog FieldMenuText = null!;
     private string _fieldMenuMode = "closed";
     private int _fieldMenuCursor, _fieldPartyCursor, _fieldPartyAction, _fieldSummaryPage, _fieldSaveChoice;
     private int _fieldSwapSource = -1;
@@ -174,7 +174,7 @@ public partial class CampaignView
     {
         var member = _fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length
             ? _session.State.Party[_fieldPartyCursor] : null;
-        return CampaignFieldPartyActions.Build(member, MoveName,
+        return CampaignFieldPartyActions.Build(FieldMenuText, member, MoveName,
             flyAvailable: _catalog.FieldFly is not null,
             rockSmashAvailable: _catalog.FieldRockSmash is not null,
             heldItemsAvailable: _catalog.EarlyShop is not null);

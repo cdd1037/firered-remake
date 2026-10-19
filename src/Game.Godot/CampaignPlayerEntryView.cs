@@ -117,7 +117,7 @@ public partial class CampaignView
     }
     private void SetEntryLoadFailure(SaveOperationResult result)
     {
-        _entryLoadCanRetry=true;_entryNotice=CampaignSaveFeedback.Message(result);
+        _entryLoadCanRetry=true;_entryNotice=CampaignSaveFeedback.Message(_saveText, result);
         Write("playerEntryLoadRefused",new{result.Status,result.Files,error=result.DiagnosticDetail});
     }
     private void EnterPlayerSession(CampaignSession session)

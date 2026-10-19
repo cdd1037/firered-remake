@@ -95,4 +95,52 @@ public sealed class PresentationTextCatalogTests
         foreach (var (id, expected) in messages) Assert.AreEqual(expected, text.Get(id), id);
     }
 
+    [TestMethod]
+    public void PartialPackOverridesOnlyRequestedEntriesAndRetainsEnglishFallback()
+    {
+        using var pack = TestAssets.TemporaryOutput();
+        File.WriteAllText(Path.Combine(pack.Path, "save.json"),
+            """{"success.save":"Saved by {PlayerName}: {PlayerName}."}""");
+        var text = PresentationTextCatalog.Load("save", pack.Path);
+        Assert.AreEqual("Saved by {Action}: {Action}.", text.Get("success.save", ("PlayerName", "{Action}")));
+        Assert.AreEqual(PresentationTextCatalog.English("save").Get("success.load"), text.Get("success.load"));
+        Assert.AreEqual("OPTION", PresentationTextCatalog.Load("options", pack.Path).Get("title"));
+        File.WriteAllText(Path.Combine(pack.Path, "save.json"), "{}");
+        Assert.AreEqual("RED saved the game.", PresentationTextCatalog.Load("save", pack.Path).Get("success.save", ("PlayerName", "RED")));
+        Assert.AreEqual("RED saved the game.", PresentationTextCatalog.Load("save").Get("success.save", ("PlayerName", "RED")));
+    }
+
+    [TestMethod]
+    [DataRow("save", "{\"unknown\":\"No such message\"}")]
+    [DataRow("save", "{\"success.save\":\"Saved.\"}")]
+    [DataRow("save", "{\"success.save\":\"{PlayerName} {Extra}\"}")]
+    [DataRow("save", "{\"success.save\":\"{PLAYERNAME}\"}")]
+    [DataRow("save", "{\"success.load\":\" \"}")]
+    [DataRow("save", "{\"success.load\":\"{PAUSE 60}\"}")]
+    [DataRow("unknown-group", "{}")]
+    public void InvalidOverridesFailInsteadOfSilentlyFallingBack(string group, string json)
+    {
+        using var pack = TestAssets.TemporaryOutput();
+        File.WriteAllText(Path.Combine(pack.Path, group + ".json"), json);
+        Assert.ThrowsExactly<InvalidDataException>(() => PresentationTextCatalog.Load("save", pack.Path));
+    }
+
+    [TestMethod]
+    public void DuplicateOverrideIdsKeepTheSharedStrictJsonError()
+    {
+        using var pack = TestAssets.TemporaryOutput();
+        File.WriteAllText(Path.Combine(pack.Path, "save.json"), """{"success.load":"a","success.load":"b"}""");
+        var error = Assert.ThrowsExactly<ContentValidationException>(() => PresentationTextCatalog.Load("save", pack.Path));
+        StringAssert.Contains(error.Message, "duplicate_property");
+    }
+
+    [TestMethod]
+    public void ExplicitMissingPackFailsWithoutCreatingFiles()
+    {
+        using var root = TestAssets.TemporaryOutput();
+        string missing = Path.Combine(root.Path, "missing");
+        Assert.ThrowsExactly<DirectoryNotFoundException>(() => PresentationTextCatalog.Load("options", missing));
+        Assert.IsFalse(Directory.Exists(missing));
+    }
+
 }
