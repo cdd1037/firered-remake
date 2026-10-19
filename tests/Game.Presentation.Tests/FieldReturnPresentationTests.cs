@@ -6,15 +6,19 @@ namespace FireRed.Tests.Presentation;
 public sealed class FieldReturnPresentationTests
 {
     [TestMethod]
-    [DataRow(true,"menuReturn")]
-    [DataRow(false,"scriptReturn")]
-    public void EverySourceCallbackMatchesWeatherReadinessInputAndFogPhase(bool menu,string traceName)
+    [DataRow(true,"menuReturn",FieldArrivalPalette.FogHorizontal,20)]
+    [DataRow(true,"normalMenuReturn",FieldArrivalPalette.Normal,25)]
+    [DataRow(true,"shadeMenuReturn",FieldArrivalPalette.Shade,19)]
+    [DataRow(false,"scriptReturn",FieldArrivalPalette.FogHorizontal,19)]
+    [DataRow(false,"normalScriptReturn",FieldArrivalPalette.Normal,24)]
+    [DataRow(false,"shadeScriptReturn",FieldArrivalPalette.Shade,18)]
+    public void EverySourceCallbackMatchesWeatherReadinessInputAndFogPhase(bool menu,string traceName,FieldArrivalPalette palette,int completion)
     {
         const string fixture="tests/Game.Presentation.Tests/Fixtures/field-return-source-vectors.json";
         using var source=JsonDocument.Parse(File.ReadAllText(TestAssets.GeneratedFile(fixture,
             "python tests/Reference/generate_field_return_vectors.py --reference content/raw/pokefirered/037335f4 --output "+fixture)));
         var trace=source.RootElement.GetProperty("traces").EnumerateArray().Single(t=>t.GetProperty("name").GetString()==traceName);
-        var controller=new FieldReturnPresentation.Controller(menu);
+        var controller=new FieldReturnPresentation.Controller(menu,palette);
         var fog=new FieldHorizontalFogPresentation.Scene(0,0);
         int compared=0;
         foreach(var item in trace.GetProperty("frames").EnumerateArray())
@@ -22,9 +26,10 @@ public sealed class FieldReturnPresentationTests
             int[] row=item.EnumerateArray().Select(v=>v.GetInt32()).ToArray();
             if(row[0]>0){controller.Advance();fog=fog.Advance(1,0,0);}
             Assert.AreEqual(row[3],controller.Palette.BackgroundBlend);
+            Assert.AreEqual(row[12],controller.Palette.ObjectBlend);
             Assert.AreEqual(row[2]==3,controller.Palette.WeatherReady);
             Assert.AreEqual(menu?row[7]!=0:row[8]!=0,controller.Complete);
-            if(row[0]>0)
+            if(row[0]>0&&palette==FieldArrivalPalette.FogHorizontal)
             {
                 Assert.AreEqual(row[9],fog.Sample.ScrollOffset);
                 Assert.AreEqual(row[10],fog.Sample.ScrollCounter);
@@ -33,7 +38,7 @@ public sealed class FieldReturnPresentationTests
             compared++;
             if(controller.Complete)break;
         }
-        Assert.AreEqual(menu?21:20,compared);
+        Assert.AreEqual(completion+1,compared);
     }
 
     [TestMethod]
@@ -68,17 +73,20 @@ public sealed class FieldReturnPresentationTests
     }
 
     [TestMethod]
-    public void BattleMenusRemainOneAbsenceAndReturnToFieldUsesScriptPriority()
+    [DataRow(FieldArrivalPalette.Normal,24)]
+    [DataRow(FieldArrivalPalette.Shade,18)]
+    [DataRow(FieldArrivalPalette.FogHorizontal,19)]
+    public void BattleMenusRemainOneAbsenceAndReturnToFieldUsesScriptPriority(FieldArrivalPalette palette,int ready)
     {
         var lifecycle=new FieldReturnPresentation();
-        lifecycle.Observe(FieldReturnPresentation.Owner.Battle,FieldArrivalPalette.FogHorizontal);
-        lifecycle.Observe(FieldReturnPresentation.Owner.Battle,FieldArrivalPalette.FogHorizontal);
-        Assert.IsTrue(lifecycle.Observe(FieldReturnPresentation.Owner.Field,FieldArrivalPalette.FogHorizontal));
+        lifecycle.Observe(FieldReturnPresentation.Owner.Battle,palette);
+        lifecycle.Observe(FieldReturnPresentation.Owner.Battle,palette);
+        Assert.IsTrue(lifecycle.Observe(FieldReturnPresentation.Owner.Field,palette));
         Assert.IsFalse(lifecycle.Arrival!.StartMenu);
-        for(int frame=1;frame<=19;frame++)
+        for(int frame=1;frame<=ready;frame++)
         {
             lifecycle.Arrival.Advance();
-            Assert.AreEqual(frame==19,lifecycle.Arrival.Complete);
+            Assert.AreEqual(frame==ready,lifecycle.Arrival.Complete);
         }
         lifecycle.Reset();Assert.IsNull(lifecycle.Arrival);Assert.IsFalse(lifecycle.Suspended);
     }

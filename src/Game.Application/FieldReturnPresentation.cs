@@ -16,10 +16,7 @@ public sealed class FieldReturnPresentation
         if(Suspended){_away=true;Arrival=null;return false;}
         if(!_away)return false;
         _away=false;
-        // Other weather return programs retain their existing presentation until
-        // their complete palette/UI branch is admitted independently.
-        if(palette!=FieldArrivalPalette.FogHorizontal)return false;
-        Arrival=new(owner==Owner.StartMenu);return true;
+        Arrival=new(owner==Owner.StartMenu,palette);return true;
     }
     public void Reset(){_away=false;Suspended=false;Arrival=null;}
 
@@ -38,9 +35,9 @@ public sealed class FieldReturnPresentation
         public void Reset()=>_fromStart=false;
     }
 
-    public sealed class Controller(bool startMenu)
+    public sealed class Controller(bool startMenu,FieldArrivalPalette palette=FieldArrivalPalette.FogHorizontal)
     {
-        public FieldArrivalPalettePresentation Palette {get;}=new(FieldArrivalPalette.FogHorizontal);
+        public FieldArrivalPalettePresentation Palette {get;}=new(palette);
         public int Frames {get;private set;}
         public bool Complete {get;private set;}
         public int MenuPhase {get;private set;}

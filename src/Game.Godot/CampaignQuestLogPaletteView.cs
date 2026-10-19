@@ -20,11 +20,11 @@ public partial class CampaignView
         ClearQuestLogPaletteTextures();_questPaletteState=state;
     }
 
-    private Texture2D FieldSnapshotPaletteTexture(Texture2D original,bool background)
+    private Texture2D FieldSnapshotPaletteTexture(Texture2D original,bool background,bool applyShade=true)
     {
         int coefficient=_questPaletteState?.Gray??0;
         int blend=background?_questPaletteState?.Background??0:_questPaletteState?.Object??0;
-        bool shade=background&&_questPaletteState?.Shade==true;
+        bool shade=applyShade&&background&&_questPaletteState?.Shade==true;
         if(coefficient==0&&blend==0&&!shade)return original;
         if(_questPaletteTextures.TryGetValue((original,blend,shade),out var cached))return cached;
         using var image=original.GetImage();image.Convert(Image.Format.Rgba8);

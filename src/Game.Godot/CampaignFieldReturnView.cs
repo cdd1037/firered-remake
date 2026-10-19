@@ -47,10 +47,11 @@ public partial class CampaignView
         if(state.NoncombatFieldEffect is not null||state.CutEffect is not null||state.RockSmashEffect is not null||
             state.FlashEffect is not null||state.StrengthEffect is not null||state.SurfEffect is not null||state.FlyEffect is not null)
         { _fieldDisplayReturn.Reset();_fieldReturnSnapshot=null;return; }
-        var palette=_fieldFogScene is null?FieldArrivalPalette.Normal:FieldArrivalPalette.FogHorizontal;
+        var palette=FieldArrivalPalettePresentation.ForWeather(
+            state.FieldWeather??_catalog.MapDefinition(state.World.Player.MapId).Weather);
         if(!_fieldDisplayReturn.Observe(FieldDisplayOwner(),palette))return;
-        var old=_fieldFogScene!;
-        _fieldFogScene=new(old.AnchorCameraX,old.AnchorCameraY);
+        if(_fieldFogScene is {} old)
+            _fieldFogScene=new(old.AnchorCameraX,old.AnchorCameraY);
         _fieldReturnSnapshot=CaptureFieldSnapshot(_session.State,new object(),0,true);
         _fieldReturnFrames=0;_fieldReturnProcessed=0;_held=null;_repeat=0;
     }
@@ -63,7 +64,8 @@ public partial class CampaignView
         while(_fieldReturnProcessed<(int)Math.Floor(_fieldReturnFrames+1e-7)&&!arrival.Complete)
         {
             var camera=OrdinaryFieldCamera(_poses[CampaignQuestLogRecorder.PlayerId].Position);
-            _fieldFogScene=_fieldFogScene!.Advance(1,(int)camera.X,(int)camera.Y);
+            if(_fieldFogScene is {} fog)
+                _fieldFogScene=fog.Advance(1,(int)camera.X,(int)camera.Y);
             arrival.Advance();_fieldReturnProcessed++;
         }
         _fieldReturnSnapshot=_fieldReturnSnapshot! with{Fog=_fieldFogScene};
