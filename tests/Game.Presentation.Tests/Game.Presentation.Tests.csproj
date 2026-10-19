@@ -17,6 +17,7 @@
     <Compile Include="../../src/Game.Application/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
     <Compile Include="../../src/Game.Application/CampaignWeatherContinuationPresentation.cs" Link="CampaignWeatherContinuationPresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/StorageMoveHelpPresentation.cs" Link="StorageMoveHelpPresentation.cs" />
     <Compile Include="../../src/Game.Godot/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
     <Compile Include="../../src/Game.Godot/OpeningNidoranPresentation.cs" Link="OpeningNidoranPresentation.cs" />
     <Compile Include="../../src/Game.Godot/OpeningTitlePresentation.cs" Link="OpeningTitlePresentation.cs" />

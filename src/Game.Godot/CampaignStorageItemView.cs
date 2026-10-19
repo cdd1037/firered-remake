@@ -60,11 +60,11 @@ public partial class CampaignView
         if (accepted) { if (success is not null) _pcNotice = success; return true; }
         _pcNotice = _status.Contains("full", StringComparison.Ordinal) ? PcText("gText_BagIsFull2")
             : _status.Contains("identity", StringComparison.Ordinal) || _status.Contains("stale", StringComparison.Ordinal)
-                ? "The selected POKéMON or item changed.\nPlease choose again."
+                ? _storageText.Get("notice.item-selection-changed")
             : _status.Contains("mail", StringComparison.Ordinal) ? PcText("gText_MailCantBeStored")
-            : _status.Contains("egg", StringComparison.Ordinal) ? "An EGG can't hold an item."
-            : _status.Contains("not_holdable", StringComparison.Ordinal) ? "This item can't be held."
-            : "The item couldn't be transferred.\nPlease choose again.";
+            : _status.Contains("egg", StringComparison.Ordinal) ? _storageText.Get("notice.egg-item")
+            : _status.Contains("not_holdable", StringComparison.Ordinal) ? _inventoryText.Get("notice.not-holdable")
+            : _storageText.Get("notice.item-transfer-failed");
         return false;
     }
 
@@ -98,7 +98,7 @@ public partial class CampaignView
         if (_storageItemLocation == StorageItemLocation && target?.InstanceId == _storageItemTargetId &&
             target?.HeldItem == _storageItemTargetHeld && _session.State.Pc!.ItemCursor?.Item.Value == _storageItemExpectedCursor) return true;
         _storageItemActions = [];
-        _pcNotice = "The selected POKéMON or item changed.\nPlease choose again."; return false;
+        _pcNotice = _storageText.Get("notice.item-selection-changed"); return false;
     }
 
     private CampaignCommand StorageItemCommand(string kind, string? text = null) => new(kind, Text: text)
@@ -221,7 +221,7 @@ public partial class CampaignView
         (_catalog.Machines is { } machines ? MachineRules.Definition(machines, item)?.Machine.Description : null)
         ?? EarlyItem(item)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$')
         ?? _questPocketUi?.Items.SingleOrDefault(i => i.Id == item.Value)?.Description
-        ?? "No item information is available.";
+        ?? _storageText.Get("notice.item-description-unavailable");
 
     private void DrawStorageItems()
     {
@@ -235,15 +235,15 @@ public partial class CampaignView
             DrawRect(marker, new Color("f4db88")); DrawStorageItemIcon(item, marker);
         }
         DrawRect(new(4, 1, 72, 13), new Color("b8b8c0"));
-        SourceText(_sourceSmall, new(6, 2), held is null ? PcText("gText_MoveItems") : "HOLDING ITEM");
+        SourceText(_sourceSmall, new(6, 2), held is null ? PcText("gText_MoveItems") : _storageText.Get("label.holding-item"));
         DrawStorageSelectedPokemon(target);
         string selected = held is { } heldItem ? StorageItemName(heldItem)
-            : target is { HeldItem: not "ITEM_NONE" } ? StorageItemName(new("pret:" + target.HeldItem)) : "NO ITEM";
+            : target is { HeldItem: not "ITEM_NONE" } ? StorageItemName(new("pret:" + target.HeldItem)) : _storageText.Get("label.no-item");
         SourceText(_sourceSmall, new(6, 132), selected);
         if (StorageItemBagOpen)
         {
             _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-            SourceText(_sourceNormal, new(12, 8), "BAG / GIVE ITEM");
+            SourceText(_sourceNormal, new(12, 8), _storageText.Get("heading.give-item"));
             int start = StorageItemBagStart;
             for (int i = start; i < Math.Min(start + 5, _storageItemBagStacks.Length + 1); i++)
             {
@@ -264,7 +264,7 @@ public partial class CampaignView
             _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
             DrawStorageItemIcon(info, new(12, 12, 24, 24)); SourceText(_sourceNormal, new(44, 16), StorageItemName(info));
             ItemLines(_sourceNormal, new(12, 48), StorageItemDescription(info), 16);
-            SourceText(_sourceSmall, new(12, 140), "ENTER / B: BACK");
+            SourceText(_sourceSmall, new(12, 140), _storageText.Get("help.item-back"));
         }
         if (_storageItemActions.Length != 0)
         {
@@ -277,7 +277,7 @@ public partial class CampaignView
             ItemMessageBox(PcText(prompt switch { CampaignStorageItemPrompt.PutInBag => "gText_PutItemInBag",
                 CampaignStorageItemPrompt.ContinueOperations => "gText_ContinueBoxOperations", _ => "gText_ExitFromBox" }));
             _battleSkin.DrawUserFrame(this, new(176, 64, 64, 48));
-            SourceText(_sourceNormal, new(192, 72), "YES"); SourceText(_sourceNormal, new(192, 88), "NO");
+            SourceText(_sourceNormal, new(192, 72), PcText("gText_Yes")); SourceText(_sourceNormal, new(192, 88), PcText("gText_No"));
             SourceText(_sourceNormal, new(180, 72 + _storageItemPromptChoice * 16), "▶");
         }
         DrawStorageCustomizationOverlay();

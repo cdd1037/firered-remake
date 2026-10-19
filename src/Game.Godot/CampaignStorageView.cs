@@ -62,9 +62,9 @@ public partial class CampaignView
         if(error.Contains("storage_box_full",StringComparison.Ordinal))return PcText("gText_BoxIsFull2");
         if(error.Contains("storage_last_usable",StringComparison.Ordinal))return PcText("gText_ThatsYourLastPkmn");
         if(error.Contains("mail",StringComparison.Ordinal))return PcText("gText_PleaseRemoveTheMail");
-        if(error.Contains("not_implemented",StringComparison.Ordinal))return "This PC option is not available yet.\nChoose another option or go back.";
-        if(error.Contains("storage_slot_empty",StringComparison.Ordinal))return "There is no POKéMON in this slot.";
-        return "This action could not be completed.\nChoose another option or go back.";
+        if(error.Contains("not_implemented",StringComparison.Ordinal))return _storageText.Get("notice.option-unavailable");
+        if(error.Contains("storage_slot_empty",StringComparison.Ordinal))return _storageText.Get("notice.empty-slot");
+        return _storageText.Get("notice.action-failed");
     }
     private bool StorageInput(InputEventKey key)
     {
@@ -166,7 +166,7 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this,new(0,0,240,160));
         var storage=_session.State.Storage!;var slots=storage.Boxes[storage.CurrentBox].Slots;
         if(pc.View==CampaignPcView.Deposit)
-        {DrawTexture(_storageAssets["box-arrow-left"],new(8,4));SourceText(_sourceNormal,new(92,5),StorageBoxName(storage.CurrentBox));DrawTexture(_storageAssets["box-arrow-right"],new(220,4));SourceText(_sourceSmall,new(80,144),"Home: BOX");SourceText(_sourceNormal,new(184,142),"CANCEL");if(_storageTitleSelected)DrawRect(StorageBoxTitleRect,new Color("fff4b8"),filled:false);}
+        {DrawTexture(_storageAssets["box-arrow-left"],new(8,4));SourceText(_sourceNormal,new(92,5),StorageBoxName(storage.CurrentBox));DrawTexture(_storageAssets["box-arrow-right"],new(220,4));SourceText(_sourceSmall,new(80,144),_storageText.Get("help.home-box"));SourceText(_sourceNormal,new(184,142),PcText("gPCText_Cancel"));if(_storageTitleSelected)DrawRect(StorageBoxTitleRect,new Color("fff4b8"),filled:false);}
         if(pc.View==CampaignPcView.Deposit)
         {
             for(int i=0;i<_session.State.Party.Length;i++)
@@ -176,7 +176,7 @@ public partial class CampaignView
                 SourceText(_sourceNormal,new(36,24+i*16),PresentedOwnedName(owned));
                 if(!owned.IsEgg){SourceText(_sourceSmall,new(114,26+i*16),$"Lv{owned.Pokemon.Level}   {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(owned,new(208,26+i*16));}
             }
-            SourceText(_sourceNormal,new(18,24+_session.State.Party.Length*16),"CANCEL");SourceText(_sourceNormal,new(6,24+_pcCursor*16),"▶");
+            SourceText(_sourceNormal,new(18,24+_session.State.Party.Length*16),PcText("gPCText_Cancel"));SourceText(_sourceNormal,new(6,24+_pcCursor*16),"▶");
             DrawStorageMarkings(_pcCursor<_session.State.Party.Length?_session.State.Party[_pcCursor]:null);
         }
         else
@@ -210,7 +210,7 @@ public partial class CampaignView
                 SourceText(_sourceNormal,new(30,10+i*20),PresentedOwnedName(mon));
                 if(!mon.IsEgg){SourceText(_sourceSmall,new(110,12+i*20),$"Lv{mon.Pokemon.Level}  {mon.Pokemon.CurrentHp}/{mon.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(mon,new(210,12+i*20));}
             }
-            SourceText(_sourceNormal,new(8,142),"CANCEL");
+            SourceText(_sourceNormal,new(8,142),PcText("gPCText_Cancel"));
         }
         DrawStorageCreatureOverlay();
         DrawStorageCustomizationOverlay();

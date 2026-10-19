@@ -89,7 +89,7 @@ public partial class CampaignView
     {
         if (_session.Revision == _storageBoxOptionsRevision && _session.State.Storage!.CurrentBox == _storageBoundBox) return true;
         _storageBoxOptionsOpen = _storageJumpOpen = false;
-        _pcNotice = "The selected BOX has changed.\nPlease choose it again."; return false;
+        _pcNotice = _storageText.Get("notice.box-changed"); return false;
     }
 
     private bool StorageCustomizationAction(CampaignCommand command)
@@ -98,16 +98,16 @@ public partial class CampaignView
         bool accepted = Apply(command);
         if (accepted) { _storageCustomizationRevision = _session.Revision; return true; }
         _pcNotice = _status.Contains("name", StringComparison.Ordinal)
-            ? "Use up to 8 source keyboard characters."
+            ? _storageText.Get("notice.name-characters")
             : _status.Contains("identity", StringComparison.Ordinal) || _status.Contains("stale", StringComparison.Ordinal)
-                ? "The selection has changed.\nPlease choose it again." : StorageError(_status);
+                ? _storageText.Get("notice.selection-changed") : StorageError(_status);
         return false;
     }
 
     private bool StorageCustomizationIsCurrent()
     {
         if (_session.Revision == _storageCustomizationRevision) return true;
-        _pcNotice = "The selection has changed.\nPlease choose it again."; return false;
+        _pcNotice = _storageText.Get("notice.selection-changed"); return false;
     }
 
     private void ConfirmStorageBoxOption()

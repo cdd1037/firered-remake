@@ -70,7 +70,7 @@ public partial class CampaignView
         if (_session.Revision == _storageCreatureRevision && StorageCreatureLocation == _storageCreatureLocation &&
             StorageCreatureAt(_storageCreatureLocation)?.InstanceId == _storageCreatureTargetId &&
             _session.State.Pc?.MoveCursor?.Pokemon.InstanceId == _storageCreatureHeldId) return true;
-        _pcNotice = "The selected POKéMON has changed.\nPlease choose its current slot."; return false;
+        _pcNotice = _storageText.Get("notice.pokemon-changed"); return false;
     }
 
     private void ConfirmStorageCreatureAction()
@@ -100,7 +100,7 @@ public partial class CampaignView
         }
         if (_session.State.Pc!.View == CampaignPcView.Move && action is "Store" or "Withdraw")
         {
-            _pcNotice = "Use DEPOSIT or WITHDRAW from\nthe storage menu for this option.";
+            _pcNotice = _storageText.Get("notice.deposit-withdraw-menu");
             return;
         }
         if (action == "Release")
@@ -126,7 +126,7 @@ public partial class CampaignView
         if (accepted) return true;
         _pcNotice = _status.Contains("storage_release_egg", StringComparison.Ordinal) ? PcText("gText_YouCantReleaseAnEgg")
             : _status.Contains("identity", StringComparison.Ordinal) || _status.Contains("stale", StringComparison.Ordinal)
-                ? "The selected POKéMON has changed.\nPlease choose its current slot." : StorageError(_status);
+                ? _storageText.Get("notice.pokemon-changed") : StorageError(_status);
         return false;
     }
 
@@ -137,7 +137,7 @@ public partial class CampaignView
         if (target != _storageReleaseTarget || _session.Revision != _storageReleaseRevision)
         {
             StorageReleaseAction(new("pc_back"));
-            _pcNotice = "The selected POKéMON has changed.\nPlease choose its current slot."; return;
+            _pcNotice = _storageText.Get("notice.pokemon-changed"); return;
         }
         string name = _storageReleaseName;
         if (StorageReleaseAction(new("storage_release_prompt", Choice: 0)
@@ -203,7 +203,7 @@ public partial class CampaignView
         {
             ItemMessageBox(PcText("gText_ReleaseThisPokemon"));
             _battleSkin.DrawUserFrame(this, new(176, 64, 64, 48));
-            SourceText(_sourceNormal, new(192, 72), "YES"); SourceText(_sourceNormal, new(192, 88), "NO");
+            SourceText(_sourceNormal, new(192, 72), PcText("gText_Yes")); SourceText(_sourceNormal, new(192, 88), PcText("gText_No"));
             SourceText(_sourceNormal, new(180, 72 + _storageReleaseChoice * 16), "▶");
         }
         if (_storageReleasePages.Length != 0) ItemMessageBox(_storageReleasePages[_storageReleasePage]);

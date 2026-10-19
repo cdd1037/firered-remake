@@ -12,7 +12,7 @@ public partial class CampaignView
     private int? _storageRectangleAnchor;
     private bool StorageRectangleActive => _storageRectangleAnchor is not null || _session.State.Pc?.GroupCursor is not null;
     private int _storageMovePartyCursor, _storageMovePreviousPartyCursor = 1;
-    private const string StorageMoveBusyNotice = "The PC is busy.\nPlease try again.";
+    private string StorageMoveBusyNotice => _storageText.Get("notice.busy");
     private static readonly Rect2 StorageMovePartyButton = new(80, 0, 88, 16);
     private static readonly Rect2 StorageMoveCloseButton = new(176, 0, 64, 16);
     private static readonly Rect2 StorageMovePartyCancel = new(128, 136, 48, 24);
@@ -52,11 +52,11 @@ public partial class CampaignView
         if (error.Contains("storage_move_held_identity", StringComparison.Ordinal) ||
             error.Contains("storage_move_target_identity", StringComparison.Ordinal) ||
             error.Contains("storage_move_box_not_selected", StringComparison.Ordinal))
-            return "The selected POKéMON has changed.\nPlease choose its current slot.";
+            return _storageText.Get("notice.pokemon-changed");
         if (error.Contains("storage_move_slot_occupied", StringComparison.Ordinal))
             return _session.State.Pc?.GroupCursor is not null
-                ? "That space is occupied.\nChoose empty slots for the group."
-                : "That slot is occupied.\nChoose the POKéMON to shift.";
+                ? _storageText.Get("notice.group-occupied")
+                : _storageText.Get("notice.slot-occupied");
         return StorageError(error);
     }
 
@@ -221,13 +221,14 @@ public partial class CampaignView
         // Replace the embedded PKMN DATA caption before drawing this thin view's
         // held-state label; never overlay two different words on the same pixels.
         DrawRect(new(4, 1, 72, 13), new Color("b8b8c0"));
-        SourceText(_sourceSmall, new(6, 2), held is null ? "MOVE" : "HOLDING");
+        SourceText(_sourceSmall, new(6, 2), held is null ? PcText("gPCText_Move") : _storageText.Get("label.holding"));
         DrawStorageSelectedPokemon(displayed);
-        string action = _storageMovePartyOpen && _storageMovePartyCursor == 6 ? "CANCEL"
-            : held is null ? target is null ? "EMPTY" : PcText("gPCText_Move")
-            : target is null ? PcText("gPCText_Place") : PcText("gPCText_Shift");
-        SourceText(_sourceSmall, new(6, 132), _storageRectangleAnchor is not null ? "RELEASE ENTER" : StorageRectangleActive ? "ENTER: PLACE" : _storageMultiMode ? "HOLD ENTER" : "ENTER: " + (action is "EMPTY" or "CANCEL" ? action : "MENU"));
-        if (!_storageMovePartyOpen) SourceText(_sourceSmall, new(6, 145), "SPACE: " + (_storageMultiMode ? "MULTI" : "SINGLE"));
+        var hint = StorageMoveHelpPresentation.SelectSlot(_storageMovePartyOpen, _storageMovePartyCursor,
+            held is not null, target is not null);
+        SourceText(_sourceSmall, new(6, 132), _storageRectangleAnchor is not null ? _storageText.Get("help.release-enter")
+            : StorageRectangleActive ? _storageText.Get("help.enter-place") : _storageMultiMode ? _storageText.Get("help.hold-enter")
+            : StorageMoveHelpPresentation.Text(hint, _storageText, PcText("gPCText_Cancel")));
+        if (!_storageMovePartyOpen) SourceText(_sourceSmall, new(6, 145), _storageText.Get(_storageMultiMode ? "help.space-multi" : "help.space-single"));
         DrawStorageCreatureOverlay();
         DrawStorageCustomizationOverlay();
         if (_pcNotice is not null) ItemMessageBox(_pcNotice);
