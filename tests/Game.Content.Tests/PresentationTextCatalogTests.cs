@@ -23,6 +23,14 @@ public sealed class PresentationTextCatalogTests
     }
 
     [TestMethod]
+    public void LiteralLabelsReturnTheirTextButStillRejectUnexpectedParameters()
+    {
+        var text = PresentationTextCatalog.Parse("""{"label":"CANCEL"}""");
+        Assert.AreEqual("CANCEL", text.Get("label"));
+        Assert.ThrowsExactly<ArgumentException>(() => text.Get("label", ("Extra", "ignored")));
+    }
+
+    [TestMethod]
     public void EmptyAndMalformedCatalogsAreRejected()
     {
         Assert.ThrowsExactly<InvalidDataException>(() => PresentationTextCatalog.Parse("{}"));

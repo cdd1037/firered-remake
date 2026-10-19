@@ -25,8 +25,8 @@ public sealed class RegionalItemDisplayTextTests
         ];
         foreach (var edit in edits)
         {
-            Edit(output.Path, ItemsPath, data => SharedItem(data, edit.Id)["name"] = edit.Name);
-            Edit(output.Path, RegionalPath(edit.Id), data => RegionalItem(data, edit.Id)["metadata"]!["description"] = edit.Description);
+            TestAssets.EditJson(output.Path, ItemsPath, data => SharedItem(data, edit.Id)["name"] = edit.Name);
+            TestAssets.EditJson(output.Path, RegionalPath(edit.Id), data => RegionalItem(data, edit.Id)["metadata"]!["description"] = edit.Description);
         }
 
         var shared = SharedMachineCatalog.LoadProject(output.Path);
@@ -62,9 +62,9 @@ public sealed class RegionalItemDisplayTextTests
             using var output = TestAssets.TemporaryOutput();
             Prepare(output.Path);
             if (field == "name")
-                Edit(output.Path, ItemsPath, data => SharedItem(data, id)["name"] = value);
+                TestAssets.EditJson(output.Path, ItemsPath, data => SharedItem(data, id)["name"] = value);
             else
-                Edit(output.Path, RegionalPath(id), data => RegionalItem(data, id)["metadata"]!["description"] = value);
+                TestAssets.EditJson(output.Path, RegionalPath(id), data => RegionalItem(data, id)["metadata"]!["description"] = value);
             var error = Assert.ThrowsExactly<InvalidDataException>(() => Load(output.Path, id));
             Assert.AreEqual(field == "name" ? "item_catalog_definition" : id == "pret:ITEM_TM06"
                 ? "TM06 display text is missing." : "Saffron Gym item display text is missing.", error.Message);
@@ -92,7 +92,7 @@ public sealed class RegionalItemDisplayTextTests
     {
         using var output = TestAssets.TemporaryOutput();
         Prepare(output.Path);
-        Edit(output.Path, ItemsPath, data =>
+        TestAssets.EditJson(output.Path, ItemsPath, data =>
         {
             var item = SharedItem(data, id);
             item["name"] = "Edited display name";
@@ -100,7 +100,7 @@ public sealed class RegionalItemDisplayTextTests
                 ? JsonValue.Create(int.Parse(value, System.Globalization.CultureInfo.InvariantCulture))
                 : JsonValue.Create(value);
         });
-        Edit(output.Path, RegionalPath(id), data => RegionalItem(data, id)["metadata"]!["description"] = "Edited item description.");
+        TestAssets.EditJson(output.Path, RegionalPath(id), data => RegionalItem(data, id)["metadata"]!["description"] = "Edited item description.");
         var error = Assert.ThrowsExactly<InvalidDataException>(() => Load(output.Path, id));
         Assert.AreEqual(id == "pret:ITEM_TM06" ? "TM06 source item differs." :
             "Saffron Gym TM04/Max Repel source values differ.", error.Message);
@@ -117,7 +117,7 @@ public sealed class RegionalItemDisplayTextTests
     {
         using var output = TestAssets.TemporaryOutput();
         Prepare(output.Path);
-        Edit(output.Path, RegionalPath(id), data =>
+        TestAssets.EditJson(output.Path, RegionalPath(id), data =>
         {
             var item = RegionalItem(data, id);
             if (change == "identity") item["metadata"]!["item"] = "pret:ITEM_POTION";
@@ -130,25 +130,13 @@ public sealed class RegionalItemDisplayTextTests
 
     private static void Prepare(string root)
     {
-        foreach (var relative in new[]
+        TestAssets.CopyFiles(root, new[]
         {
             ItemsPath, "content/generated/data/machines.json", SaffronPath, FuchsiaPath,
             "content/generated/data/items/fuchsia-gym/manifest.json", "content/generated/sprites/items.png"
-        })
-        {
-            var target = Path.Combine(root, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(Path.Combine(TestAssets.Root, relative), target);
-        }
+        });
     }
 
-    private static void Edit(string root, string relative, Action<JsonNode> edit)
-    {
-        var path = Path.Combine(root, relative);
-        var data = JsonNode.Parse(File.ReadAllText(path))!;
-        edit(data);
-        File.WriteAllText(path, data.ToJsonString());
-    }
 
     private static JsonNode SharedItem(JsonNode data, string id) =>
         data["items"]!.AsArray().Single(item => item!["id"]!["value"]!.GetValue<string>() == id)!;

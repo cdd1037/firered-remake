@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 
 [assembly: Microsoft.VisualStudio.TestTools.UnitTesting.DoNotParallelize]
 namespace FireRed.Tests;
@@ -26,6 +27,25 @@ internal static class TestAssets
     }
 
     public static TemporaryDirectory TemporaryOutput() => new(Output());
+
+    public static void CopyFiles(string destination, IEnumerable<string> relativePaths)
+    {
+        foreach (var relative in relativePaths)
+        {
+            var target = Path.Combine(destination, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(Path.Combine(Root, relative), target);
+        }
+    }
+
+    public static void EditJson(string root, string relative, Action<JsonNode> edit)
+    {
+        var path = Path.Combine(root, relative);
+        var data = JsonNode.Parse(File.ReadAllText(path))!;
+        edit(data);
+        File.WriteAllText(path, data.ToJsonString());
+    }
+
 
     internal sealed class TemporaryDirectory(string path) : IDisposable
     {

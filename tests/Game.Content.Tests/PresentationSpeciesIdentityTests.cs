@@ -70,7 +70,7 @@ public sealed class PresentationSpeciesIdentityTests
             var original = Prepare(output.Path, package);
             int species = original.DexEntries.Keys.First();
             EditName(output.Path, package, species, "Edited species " + species);
-            Edit(output.Path, Prefix(package) + "manifest.json", document =>
+            TestAssets.EditJson(output.Path, Prefix(package) + "manifest.json", document =>
             {
                 var asset = document[kind]!.AsArray()[0]!;
                 int sourceId = asset["sourceSpeciesId"]!.GetValue<int>();
@@ -96,7 +96,7 @@ public sealed class PresentationSpeciesIdentityTests
             var original = Prepare(output.Path, package);
             int species = original.DexEntries.Keys.First();
             EditName(output.Path, package, species, "Edited species " + species);
-            Edit(output.Path, Prefix(package) + "manifest.json", document =>
+            TestAssets.EditJson(output.Path, Prefix(package) + "manifest.json", document =>
                 document[AssetKinds(package)[0]]!.AsArray()[0]![field] = 9999);
             Assert.ThrowsExactly<InvalidDataException>(() => Load(output.Path, package));
         }
@@ -109,7 +109,7 @@ public sealed class PresentationSpeciesIdentityTests
     {
         using var output = TestAssets.TemporaryOutput();
         Prepare(output.Path, package);
-        Edit(output.Path, Prefix(package) + "dex-entries.json", document =>
+        TestAssets.EditJson(output.Path, Prefix(package) + "dex-entries.json", document =>
             document["entries"]!.AsArray()[0]!["name"] = "Unmatched display name");
         var error = Assert.ThrowsExactly<InvalidDataException>(() => Load(output.Path, package));
         StringAssert.Contains(error.Message, "source dex metadata differs.");
@@ -164,18 +164,11 @@ public sealed class PresentationSpeciesIdentityTests
     {
         void Rename(JsonNode document) => document["entries"]!.AsArray()
             .Single(entry => entry!["sourceSpeciesId"]!.GetValue<int>() == species)!["name"] = name;
-        Edit(root, Prefix(package) + "dex-entries.json", Rename);
+        TestAssets.EditJson(root, Prefix(package) + "dex-entries.json", Rename);
         // The two evolution packs must continue agreeing with their inherited display authority.
-        if (package is "stone-evolution" or "ordinary-evolution") Edit(root, PokedexPath, Rename);
+        if (package is "stone-evolution" or "ordinary-evolution") TestAssets.EditJson(root, PokedexPath, Rename);
     }
 
-    private static void Edit(string root, string relative, Action<JsonNode> change)
-    {
-        string path = Path.Combine(root, relative);
-        var document = JsonNode.Parse(File.ReadAllText(path))!;
-        change(document);
-        File.WriteAllText(path, document.ToJsonString());
-    }
 
     private static string Prefix(string package) => "content/generated/sprites/pokemon/" + package + "/";
     private static string[] AssetKinds(string package) =>

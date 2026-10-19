@@ -19,6 +19,7 @@ public partial class CampaignView
     private int _lastMoveCursor;
     private bool _oakNotice,_battleStatsTotals;
     private ImmutableSortedDictionary<string,string> _battleText=null!;
+    private SourceBattleSelectionText _battleSelectionText=null!;
     private string? _battlePresentationKey;
     private ImmutableArray<string> _battlePages=[];
     private int _battlePage,_battleCursor;
@@ -29,6 +30,7 @@ public partial class CampaignView
     private void LoadBattlePresentation()
     {
         _battleText=PretBattleText.Load(_root);
+        _battleSelectionText=new(_battleText);
         var ui=System.IO.Path.Combine(_root,"content/generated/ui/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
         var fonts=System.IO.Path.Combine(_root,"content/generated/ui/font");
         SourceGameFont Font(Color fore,Color shadow,bool small=false)=>SourceGameFont.Load(fonts,small?"small":"normal",fore,shadow);
@@ -81,7 +83,7 @@ public partial class CampaignView
         foreach(var (key,value) in extra)values[key]=value;
         return PretBattleText.Pages(_battleText,symbol,values);
     }
-    private string PrefixedName(FirstBattleSide side)=>(side==FirstBattleSide.Opponent?"Foe ":"")+BattleName(side);
+    private string PrefixedName(FirstBattleSide side)=>(side==FirstBattleSide.Opponent?_battleSelectionText.FoePrefix:"")+BattleName(side);
     private string MoveName(Game.Domain.Ids.MoveId move)=>_catalog.BattleContent!.MoveNames[move.Value];
     private void SynchronizeBattle()
     {
@@ -277,8 +279,8 @@ public partial class CampaignView
             else if(_battleMenu=="party")Lines("Choose a POKéMON.");
             else if(_battleMenu=="actions")
             {
-                _battleSkin.DrawActionMenu(this);Lines("What will\n"+b.OwnedBefore.Nickname+" do?");
-                var labels=new[]{"FIGHT","BAG","POKéMON","RUN"};for(int i=0;i<4;i++)SourceText(_battleMenuFont,LabBattleUiSkin.ActionText(i),labels[i]);
+                _battleSkin.DrawActionMenu(this);Lines(_battleSelectionText.ActionPrompt(b.OwnedBefore.Nickname,_session.State.PlayerName));
+                var labels=_battleSelectionText.ActionLabels;for(int i=0;i<4;i++)SourceText(_battleMenuFont,LabBattleUiSkin.ActionText(i),labels[i]);
                 _uiCorrections.DrawSelectionCursor(this,false,_battleCursor);
             }
             else if(FirstBattleRules.RequiresStruggle(b.State.Player)){_battleSkin.DrawMoveMenu(this);SourceText(_battleMoveFont,LabBattleUiSkin.MoveText(0),"STRUGGLE");_uiCorrections.DrawSelectionCursor(this,true,0);}
@@ -288,10 +290,10 @@ public partial class CampaignView
                 for(int i=0;i<4;i++)SourceText(_battleMoveFont,LabBattleUiSkin.MoveText(i),i<moves.Length?MoveName(moves[i].Move):"-");
                 _uiCorrections.DrawSelectionCursor(this,true,_battleCursor);
                 if (DrawBattleMoveOrder(_battleCursor)) return;
-                var move=moves[_battleCursor];int ppState=SourceUiCorrections.PpPaletteState(move.CurrentPp,move.MaximumPp);SourceText(_battlePpSmallFont[ppState],new(168,122),"PP");SourceText(_battlePpFont[ppState],new(202,122),$"{move.CurrentPp,2}/{move.MaximumPp,2}");
-                SourceText(_battleMoveFont,new(168,138),"TYPE/");
+                var move=moves[_battleCursor];int ppState=SourceUiCorrections.PpPaletteState(move.CurrentPp,move.MaximumPp);SourceText(_battlePpSmallFont[ppState],new(168,122),_battleSelectionText.PpLabel);SourceText(_battlePpFont[ppState],new(202,122),$"{move.CurrentPp,2}/{move.MaximumPp,2}");
+                SourceText(_battleMoveFont,new(168,138),_battleSelectionText.TypeLabel);
                 // MoveSelectionDisplayMoveType switches to FONT_NORMAL after the small TYPE/ prefix.
-                float typePrefixWidth=_battleMoveFont.Font.GetStringSize(_battleMoveFont.PrepareText("TYPE/"),fontSize:_battleMoveFont.Size).X;
+                float typePrefixWidth=_battleMoveFont.Font.GetStringSize(_battleMoveFont.PrepareText(_battleSelectionText.TypeLabel),fontSize:_battleMoveFont.Size).X;
                 SourceText(_battleMenuFont,new(168+typePrefixWidth,138),_catalog.PokemonContent!.Catalog.Moves[move.Move].Type.Replace("TYPE_","",StringComparison.Ordinal));
             }
         }

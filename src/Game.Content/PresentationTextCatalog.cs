@@ -38,6 +38,8 @@ public sealed class PresentationTextCatalog
     {
         if (!_messages.TryGetValue(id, out var template))
             throw new InvalidDataException("Missing presentation text: " + id);
+        // Most menu labels have no parameters and are read every draw; no binding objects are needed.
+        if (arguments.Length == 0 && !template.Contains('{')) return template;
         var values = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (name, value) in arguments)
             if (value is null || !values.TryAdd(name, value))

@@ -17,11 +17,11 @@ public sealed class QuestAndGymItemDisplayTextTests
         using var output = TestAssets.TemporaryOutput();
         Prepare(output.Path);
         var ids = new[] { QuestItemRules.ParcelId, QuestItemRules.PokeBallId, QuestItemRules.TeachyTvId, QuestItemRules.TownMapId };
-        Edit(output.Path, ItemsPath, data =>
+        TestAssets.EditJson(output.Path, ItemsPath, data =>
         {
             foreach (var id in ids) SharedItem(data, id.Value)["name"] = "Same display name";
         });
-        Edit(output.Path, QuestPath, data =>
+        TestAssets.EditJson(output.Path, QuestPath, data =>
         {
             data["catalog"]!["items"]!.AsArray().Add(QuestItemRules.TeachyTvId.Value);
             data["catalog"]!["items"]!.AsArray().Add(QuestItemRules.TownMapId.Value);
@@ -50,7 +50,7 @@ public sealed class QuestAndGymItemDisplayTextTests
     {
         using var output = TestAssets.TemporaryOutput();
         Prepare(output.Path);
-        Edit(output.Path, ItemsPath, data => SharedItem(data, CeladonGymItemRules.Tm19Id.Value)["name"] = "Draining Training Disc");
+        TestAssets.EditJson(output.Path, ItemsPath, data => SharedItem(data, CeladonGymItemRules.Tm19Id.Value)["name"] = "Draining Training Disc");
         var shared = SharedMachineCatalog.LoadProject(output.Path);
         var document = PretCeladonGymItems.LoadProject(output.Path, shared);
         var item = document.Items.Single();
@@ -72,7 +72,7 @@ public sealed class QuestAndGymItemDisplayTextTests
         {
             using var output = TestAssets.TemporaryOutput();
             Prepare(output.Path);
-            Edit(output.Path, ItemsPath, data => SharedItem(data, id)["name"] = name);
+            TestAssets.EditJson(output.Path, ItemsPath, data => SharedItem(data, id)["name"] = name);
             Action load = id == QuestItemRules.TownMapId.Value
                 ? () => PretTownMap.Load(output.Path)
                 : () => PretCeladonGymItems.LoadProject(output.Path);
@@ -93,7 +93,7 @@ public sealed class QuestAndGymItemDisplayTextTests
     {
         using var output = TestAssets.TemporaryOutput();
         Prepare(output.Path);
-        Edit(output.Path, ItemsPath, data =>
+        TestAssets.EditJson(output.Path, ItemsPath, data =>
         {
             var item = SharedItem(data, QuestItemRules.TownMapId.Value);
             item["name"] = "Region Atlas";
@@ -105,7 +105,7 @@ public sealed class QuestAndGymItemDisplayTextTests
                 case "fieldUseFunction": item[change] = "NULL"; break;
             }
         });
-        Edit(output.Path, TownMapPath, data =>
+        TestAssets.EditJson(output.Path, TownMapPath, data =>
         {
             switch (change)
             {
@@ -125,25 +125,13 @@ public sealed class QuestAndGymItemDisplayTextTests
 
     private static void Prepare(string root)
     {
-        foreach (var relative in new[] { ItemsPath, QuestPath, "content/generated/data/machines.json",
+        TestAssets.CopyFiles(root, new[] { ItemsPath, QuestPath, "content/generated/data/machines.json",
             "content/generated/data/items/celadon-gym/manifest.json",
             "content/generated/data/items/celadon-gym/celadon-gym-items.json", "content/generated/sprites/items.png" }
             .Concat(Directory.EnumerateFiles(Path.Combine(TestAssets.Root, "content/generated/ui/town-map"))
-                .Select(path => Path.GetRelativePath(TestAssets.Root, path))))
-        {
-            var target = Path.Combine(root, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(Path.Combine(TestAssets.Root, relative), target);
-        }
+                .Select(path => Path.GetRelativePath(TestAssets.Root, path))));
     }
 
-    private static void Edit(string root, string relative, Action<JsonNode> edit)
-    {
-        var path = Path.Combine(root, relative);
-        var data = JsonNode.Parse(File.ReadAllText(path))!;
-        edit(data);
-        File.WriteAllText(path, data.ToJsonString());
-    }
 
     private static JsonNode SharedItem(JsonNode data, string id) =>
         data["items"]!.AsArray().Single(item => item!["id"]!["value"]!.GetValue<string>() == id)!;

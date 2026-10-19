@@ -40,6 +40,7 @@
     <Compile Include="../../src/Game.Godot/PresentationPackage.cs" Link="PresentationPackage.cs" />
     <Compile Include="../../src/Game.Godot/PresentationDexIndex.cs" Link="PresentationDexIndex.cs" />
     <Compile Include="../../src/Game.Godot/SourceMenuLabelPresentation.cs" Link="SourceMenuLabelPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/SourceBattleSelectionText.cs" Link="SourceBattleSelectionText.cs" />
     <Compile Include="../../src/Game.Godot/SourceVerticalMenuPresentation.cs" Link="SourceVerticalMenuPresentation.cs" />
     <Compile Include="../../src/Game.Godot/TrainerTowerPresentationModel.cs" Link="TrainerTowerPresentationModel.cs" />
     <Compile Include="../../src/Game.Godot/PokedexDetailPresentation.cs" Link="PokedexDetailPresentation.cs" />

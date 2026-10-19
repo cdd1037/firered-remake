@@ -144,7 +144,7 @@ public partial class CampaignView
     private string WildName(WildBattleSide side) => side == WildBattleSide.Player
         ? WildWithdrawing(PresentedWildBattle!) ? PresentedWildBattle!.LastSwitch!.Outgoing.Nickname : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _session.State.Party[forced.PreviousIndex].Nickname : PresentedWildBattle!.OwnedBefore.Nickname
         : TowerOpponentAppearance()?.Name ?? PresentedBattleSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
-    private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? "Foe " : "Wild " : "") + WildName(side);
+    private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? _battleSelectionText.FoePrefix : _battleSelectionText.WildPrefix : "") + WildName(side);
     private static string WildStatName(WildBattleStat stat) => stat switch
     {
         WildBattleStat.Attack => "ATTACK", WildBattleStat.Defense => "DEFENSE", WildBattleStat.Accuracy => "accuracy",
@@ -553,8 +553,8 @@ public partial class CampaignView
         else if (_wildMenu == "party") WildLines("Choose a POKéMON.");
         else if (_wildMenu == "actions")
         {
-            _battleSkin.DrawActionMenu(this); WildLines("What will\n" + b.OwnedBefore.Nickname + " do?");
-            var labels = new[] { "FIGHT", "BAG", "POKéMON", "RUN" };
+            _battleSkin.DrawActionMenu(this); WildLines(_battleSelectionText.ActionPrompt(b.OwnedBefore.Nickname, _session.State.PlayerName));
+            var labels = _battleSelectionText.ActionLabels;
             for (int i = 0; i < labels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), labels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, _wildCursor);
         }
@@ -568,9 +568,9 @@ public partial class CampaignView
             _uiCorrections.DrawSelectionCursor(this, true, _wildCursor);
             if (DrawBattleMoveOrder(_wildCursor)) return;
             var move = moves[_wildCursor]; int ppState = SourceUiCorrections.PpPaletteState(move.CurrentPp, move.MaximumPp);
-            SourceText(_battlePpSmallFont[ppState], new(168, 122), "PP"); SourceText(_battlePpFont[ppState], new(202, 122), $"{move.CurrentPp,2}/{move.MaximumPp,2}");
-            SourceText(_battleMoveFont, new(168, 138), "TYPE/");
-            float width = _battleMoveFont.Font.GetStringSize(_battleMoveFont.PrepareText("TYPE/"), fontSize: _battleMoveFont.Size).X;
+            SourceText(_battlePpSmallFont[ppState], new(168, 122), _battleSelectionText.PpLabel); SourceText(_battlePpFont[ppState], new(202, 122), $"{move.CurrentPp,2}/{move.MaximumPp,2}");
+            SourceText(_battleMoveFont, new(168, 138), _battleSelectionText.TypeLabel);
+            float width = _battleMoveFont.Font.GetStringSize(_battleMoveFont.PrepareText(_battleSelectionText.TypeLabel), fontSize: _battleMoveFont.Size).X;
             SourceText(_battleMenuFont, new(168 + width, 138), _catalog.PokemonContent!.Catalog.Moves[move.Move].Type.Replace("TYPE_", "", StringComparison.Ordinal));
         }
     }

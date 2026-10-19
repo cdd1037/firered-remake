@@ -80,7 +80,7 @@ public partial class CampaignView
     }
     private string DoubleBodyName(WildBattleCombatant body)
     {var p=WildBattleTransformationRules.PersistentPokemon(body);return _session.State.Party.First(m=>m.Pokemon.Personality==p.Personality&&m.Pokemon.OriginalTrainerId==p.OriginalTrainerId).Nickname;}
-    private string DoublePrefixed(BattlerSlot slot) => (slot.Side == BattleSide.Opponent ? "Foe " : "") + DoubleName(slot.Value);
+    private string DoublePrefixed(BattlerSlot slot) => (slot.Side == BattleSide.Opponent ? _battleSelectionText.FoePrefix : "") + DoubleName(slot.Value);
     private ImmutableArray<string> DoubleSource(string symbol, params (string Key,string Value)[] extra)
     {
         var values = new Dictionary<string,string>(StringComparer.Ordinal) {
@@ -423,8 +423,8 @@ public partial class CampaignView
         if(b.SelectingSlot is not {} actor)return;
         if(_doubleMenu=="actions")
         {
-            _battleSkin.DrawActionMenu(this);DoubleLines("What will\n"+DoubleName(actor)+" do?");
-            string[] labels=["FIGHT","BAG","POKéMON","RUN"];
+            _battleSkin.DrawActionMenu(this);DoubleLines(_battleSelectionText.ActionPrompt(DoubleName(actor),_session.State.PlayerName));
+            var labels=_battleSelectionText.ActionLabels;
             for(int i=0;i<4;i++)SourceText(_battleMenuFont,LabBattleUiSkin.ActionText(i),labels[i]);
             _uiCorrections.DrawSelectionCursor(this,false,_doubleCursor);
         }
@@ -441,8 +441,8 @@ public partial class CampaignView
             _uiCorrections.DrawSelectionCursor(this,true,_doubleCursor);
             if (DrawBattleMoveOrder(_doubleCursor)) return;
             var move=moves[_doubleCursor];int pp=SourceUiCorrections.PpPaletteState(move.CurrentPp,move.MaximumPp);
-            SourceText(_battlePpSmallFont[pp],new(168,122),"PP");SourceText(_battlePpFont[pp],new(202,122),$"{move.CurrentPp,2}/{move.MaximumPp,2}");
-            SourceText(_battleMoveFont,new(168,138),"TYPE/"+_catalog.PresetDoublePokemon!.Moves[move.Move].Type.Replace("TYPE_","",StringComparison.Ordinal));
+            SourceText(_battlePpSmallFont[pp],new(168,122),_battleSelectionText.PpLabel);SourceText(_battlePpFont[pp],new(202,122),$"{move.CurrentPp,2}/{move.MaximumPp,2}");
+            SourceText(_battleMoveFont,new(168,138),_battleSelectionText.TypeLabel+_catalog.PresetDoublePokemon!.Moves[move.Move].Type.Replace("TYPE_","",StringComparison.Ordinal));
         }
     }
     private void DrawDoubleHealth(int slot,WildBattleCombatant body)
