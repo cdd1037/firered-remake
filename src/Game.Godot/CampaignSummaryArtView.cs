@@ -164,7 +164,7 @@ public partial class CampaignView
             SourceText(_sourceSmall, new(167, 95), _catalog.DisplayNames.HeldItemName(owned.HeldItem));
             bool sameOwner = (mon.OriginalTrainerId & 0xffff) == (_session.State.TrainerId & 0xffff) &&
                 string.Equals(owned.OriginalTrainerName, _session.State.PlayerName, StringComparison.Ordinal);
-            string[] memo = _summaryPresentation.TrainerMemo(new(mon.Nature.ToString().ToUpperInvariant(), owned.MetLocation,
+            string[] memo = _summaryPresentation.TrainerMemo(new(_catalog.DisplayNames.NatureName(mon.Nature), owned.MetLocation,
                 owned.MetLevel, owned.MetGame, owned.ModernFatefulEncounter, sameOwner)).Split('\n');
             for (int i = 0; i < memo.Length; i++) SourceText(_sourceNormal, new(8, 115 + i * 14), memo[i]);
         }

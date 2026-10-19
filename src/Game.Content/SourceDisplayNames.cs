@@ -1,26 +1,34 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Game.Domain.Pokemon;
+using Game.Domain.Rules;
 
 namespace Game.Content;
 
 internal sealed record SourceDisplayNameDocument(int SchemaVersion,
     ImmutableDictionary<string, string> Types, ImmutableDictionary<string, string> Abilities,
-    string NoHeldItem);
+    ImmutableDictionary<string, string> Natures, string NoHeldItem);
 
 /// <summary>Source display names keyed by gameplay identity; item definitions remain in SharedItemCatalog.</summary>
 public sealed class SourceDisplayNames
 {
     public const string RelativePath = "content/generated/ui/summary-screen/display-names.json";
     private readonly ImmutableDictionary<string, string> types, abilities;
+    private readonly ImmutableDictionary<Nature, string> natures;
     private readonly SharedItemCatalog items;
     private readonly string noHeldItem;
 
     private SourceDisplayNames(SourceDisplayNameDocument document, SharedItemCatalog items, PokemonCatalog pokemon)
     {
         if (document.SchemaVersion != 1 || !ValidNames(document.Types, "TYPE_") ||
-            !ValidNames(document.Abilities, "ABILITY_") || string.IsNullOrWhiteSpace(document.NoHeldItem))
+            !ValidNames(document.Abilities, "ABILITY_") || string.IsNullOrWhiteSpace(document.NoHeldItem) ||
+            document.Natures.Count != Enum.GetValues<Nature>().Length || Enum.GetValues<Nature>().Any(nature =>
+                !document.Natures.TryGetValue(((int)nature).ToString(CultureInfo.InvariantCulture), out var name) ||
+                string.IsNullOrWhiteSpace(name)))
             throw new InvalidDataException("display_name_catalog_shape");
         types = document.Types; abilities = document.Abilities; noHeldItem = document.NoHeldItem;
+        natures = document.Natures.ToImmutableDictionary(
+            pair => (Nature)int.Parse(pair.Key, CultureInfo.InvariantCulture), pair => pair.Value);
         this.items = items;
         if (pokemon.Species.Values.SelectMany(s => new[] { s.Type1, s.Type2 })
                 .Concat(pokemon.Moves.Values.Select(m => m.Type)).Any(id => !types.ContainsKey(id)) ||
@@ -42,6 +50,8 @@ public sealed class SourceDisplayNames
         ? name : throw new InvalidDataException("type_display_name_missing: " + id);
     public string AbilityName(string id) => abilities.TryGetValue(id, out var name)
         ? name : throw new InvalidDataException("ability_display_name_missing: " + id);
+    public string NatureName(Nature nature) => natures.TryGetValue(nature, out var name)
+        ? name : throw new InvalidDataException("nature_display_name_missing: " + (int)nature);
     public string ItemName(string symbol) => items.Definition(new("pret:" + symbol)).Name;
     public string HeldItemName(string symbol) => symbol == "ITEM_NONE" ? noHeldItem : ItemName(symbol);
 }

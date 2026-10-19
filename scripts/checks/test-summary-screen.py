@@ -44,9 +44,11 @@ class SummaryScreenTests(unittest.TestCase):
         for group,symbol,value in [('types','TYPE_FIGHTING','FIGHT'),('types','TYPE_ELECTRIC','ELECTR'),
                                    ('types','TYPE_PSYCHIC','PSYCHC'),('types','TYPE_MYSTERY','???'),
                                    ('abilities','ABILITY_NONE','-------'),('abilities','ABILITY_COMPOUND_EYES','COMPOUNDEYES'),
-                                   ('abilities','ABILITY_LIGHTNING_ROD','LIGHTNINGROD')]:
+                                   ('abilities','ABILITY_LIGHTNING_ROD','LIGHTNINGROD'),
+                                   ('natures','0','HARDY'),('natures','3','ADAMANT'),('natures','24','QUIRKY')]:
             with self.subTest(symbol=symbol):self.assertEqual(names[group][symbol],value)
         self.assertEqual(names['noHeldItem'],'NONE')
+        self.assertEqual(json.loads(self.outputs['text.json'])['memos']['ATrade'],'a trade')
         self.assertNotIn('items',names)
     def test_name_tables_reject_missing_duplicate_and_unparsed_rows(self):
         for body in ['', '[TYPE_FIRE] = _("FIRE"), [TYPE_FIRE] = _("FIRE"),',
@@ -67,5 +69,43 @@ class SummaryScreenTests(unittest.TestCase):
     def test_missing_inputs_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(FileNotFoundError):module.convert(Path(directory))
+
+
+class NatureNameImportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.source=(RAW/'src/data/text/nature_names.h').read_text()
+        cls.constants=(RAW/'include/constants/pokemon.h').read_text()
+    def test_numeric_identity_follows_source_pointer_and_literal(self):
+        names=module.source_nature_names(self.source,self.constants)
+        self.assertEqual(set(names),{str(i) for i in range(25)})
+        changed=self.source.replace('[NATURE_HARDY] = sHardyNatureName,','[NATURE_HARDY] = sQuirkyNatureName,')
+        self.assertEqual(module.source_nature_names(changed,self.constants),{**names,'0':names['24']})
+        literal='source {DYNAMIC 0x01} {LV_2}'
+        changed=self.source.replace('_("HARDY")','_("'+literal+'")')
+        self.assertEqual(module.source_nature_names(changed,self.constants),{**names,'0':literal})
+    def test_missing_duplicate_invalid_and_blank_nature_inputs_fail(self):
+        row='    [NATURE_HARDY] = sHardyNatureName,\n'
+        definition='#define NATURE_HARDY    0'
+        cases=[
+            (self.source.replace('gNatureNamePointers','missing'),self.constants),
+            (self.source+self.source,self.constants),
+            (self.source.replace(row,''),self.constants),
+            (self.source.replace(row,row+row),self.constants),
+            (self.source.replace('[NATURE_HARDY]','[NATURE_UNKNOWN]'),self.constants),
+            (self.source.replace('= sHardyNatureName,','= missing,'),self.constants),
+            (self.source.replace('_("HARDY")','_(" ")'),self.constants),
+            (self.source+'\n'+self.source.splitlines()[0],self.constants),
+            (self.source.replace('= sHardyNatureName,','= UNREVIEWED(sHardyNatureName),'),self.constants),
+            (self.source,self.constants.replace(definition,'')),
+            (self.source,self.constants+'\n'+definition),
+            (self.source,self.constants.replace(definition,definition[:-1]+'-1')),
+            (self.source,self.constants.replace(definition,definition[:-1]+'1')),
+            (self.source,self.constants.replace(definition,definition[:-1]+'25')),
+            (self.source,self.constants.replace('NUM_NATURES','MISSING_COUNT')),
+        ]
+        for index,(source,constants) in enumerate(cases):
+            with self.subTest(case=index),self.assertRaises(ValueError):
+                module.source_nature_names(source,constants)
 
 if __name__=='__main__':unittest.main()

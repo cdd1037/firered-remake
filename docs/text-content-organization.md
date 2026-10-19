@@ -163,3 +163,12 @@ EXP/NEXT LV、EGG 和控制标签使用，PP 复用已有战斗标签。只解�
 其余源标题、招式、PP 回落英文；进入 Details 后选第一槽、移到第二槽，再取消草稿，
 招式顺序及 PP 不变，显示恢复 SWITCH/CANCEL。两张截图人工检查通过，正常退出 0，
 世界／RNG／队伍／背包及原检查点不变，仅 PlayTime 推进；无保存、无实音或 IME 验收。
+
+性格显示现在从固定源 `gNatureNamePointers` 的数字身份和实际字符串导入既有
+`display-names.json`，不再由 C# enum 拼写生成英文。Summary memo 使用一次模板绑定，
+名称中恰好出现 `{DYNAMIC 0x01}` 或 `{LV_2}` 时保留字面值，不会再次展开；未知地点的
+“a trade”也来自已有源文本。此片没有改变昵称、性格规则或存档。
+
+验证：Summary 导入 13 项、Content 名称／memo 48 项通过；Content 测试项目和 Godot
+串行编译零警告错误。生成差异仅为性格目录与 memo 的 ATrade，所有既有 PNG 不变。
+英文行为由源文本和 memo 分支测试核对；本片未新增原生窗口、实音或 IME 验收。

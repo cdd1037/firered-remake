@@ -31,6 +31,41 @@ public sealed class SummaryPresentationTests
         StringAssert.Contains(Art.Value.TrainerMemo(Facts(false,0,fateful:true)), "Apparently met in\na fateful encounter");
     }
     [TestMethod]
+    [DataRow("nature")]
+    [DataRow("location")]
+    [DataRow("trade")]
+    public void InsertedMemoNamesRemainLiteral(string insertion)
+    {
+        using var temp = TestAssets.TemporaryOutput();
+        const string path = "content/generated/ui/summary-screen/text.json";
+        const string literal = "literal {DYNAMIC 0x01} {LV_2} {DYNAMIC 0x02} {DYNAMIC 0x00}";
+        TestAssets.CopyFiles(temp.Path, [path]);
+        TestAssets.EditJson(temp.Path, path, json =>
+        {
+            if (insertion == "location") json["locations"]!["MAPSEC_PALLET_TOWN"] = literal;
+            if (insertion == "trade") json["memos"]!["ATrade"] = literal;
+        });
+        string nature = insertion == "nature" ? literal : "HARDY";
+        string location = insertion == "nature" ? "PALLET TOWN" : literal;
+        var facts = Facts(location: insertion == "trade" ? "MAPSEC_LITTLEROOT_TOWN" : "MAPSEC_PALLET_TOWN") with { Nature = nature };
+        Assert.AreEqual($"{nature} nature.\nMet in {location} at Lv 5.", SummaryPresentation.Load(temp.Path).TrainerMemo(facts));
+    }
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void TradeFallbackRequiresNonblankSourceText(bool blank)
+    {
+        using var temp = TestAssets.TemporaryOutput();
+        const string path = "content/generated/ui/summary-screen/text.json";
+        TestAssets.CopyFiles(temp.Path, [path]);
+        TestAssets.EditJson(temp.Path, path, json =>
+        {
+            if (blank) json["memos"]!["ATrade"] = " ";
+            else json["memos"]!.AsObject().Remove("ATrade");
+        });
+        Assert.ThrowsExactly<InvalidDataException>(() => SummaryPresentation.Load(temp.Path));
+    }
+    [TestMethod]
     public void BounceUsesSourceThreeFrameStepsAndStopsAfterTwoCycles()
     {
         Assert.AreEqual(0, Art.Value.PortraitOffset(1,100,100,false,0,false));

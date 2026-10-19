@@ -31,14 +31,39 @@ def source_name_table(text, table, prefix):
     return names
 
 
+def source_nature_names(text, constants):
+    """Bind numeric Nature identities through the source pointer table and literals."""
+    definitions = re.findall(r'^#define\s+(NATURE_\w+)\s+(\S+)\s*$', constants, re.M)
+    counts = re.findall(r'^#define\s+NUM_NATURES\s+(\d+)\s*$', constants, re.M)
+    if len(counts) != 1 or not definitions or any(not value.isdecimal() for _, value in definitions):
+        raise ValueError('Missing or invalid Nature identities')
+    identities = {symbol: int(value) for symbol, value in definitions}
+    if len(identities) != len(definitions) or sorted(identities.values()) != list(range(int(counts[0]))):
+        raise ValueError('Missing or duplicate Nature identities')
+    tables = re.findall(r'\bgNatureNamePointers\[NUM_NATURES\]\s*=\s*\{(.*?)^\};', text, re.M | re.S)
+    if len(tables) != 1:
+        raise ValueError('Missing or ambiguous Nature pointer table')
+    row = re.compile(r'\[(NATURE_\w+)\]\s*=\s*(\w+)\s*,')
+    pairs = row.findall(tables[0])
+    pointers = dict(pairs)
+    literals = re.findall(r'\b(\w+)\[\] = _\("((?:[^"\\]|\\.)*)"\);', text)
+    values = {symbol: ast.literal_eval('"' + value + '"') for symbol, value in literals}
+    if (len(pointers) != len(pairs) or set(pointers) != set(identities) or row.sub('', tables[0]).strip() or
+            len(values) != len(literals) or any(not values.get(pointer, '').strip() for pointer in pointers.values())):
+        raise ValueError('Missing, duplicate, or invalid Nature display names')
+    return {str(identities[symbol]): values[pointer] for symbol, pointer in pointers.items()}
+
+
 def display_names(raw):
     abilities = source_name_table((raw / 'src/data/text/abilities.h').read_text(), 'gAbilityNames', 'ABILITY_')
     types = source_name_table((raw / 'src/battle_main.c').read_text(), 'gTypeNames', 'TYPE_')
+    natures = source_nature_names((raw / 'src/data/text/nature_names.h').read_text(),
+                                 (raw / 'include/constants/pokemon.h').read_text())
     none = re.findall(r'\bgText_PokeSum_Item_None\[\] = _\("((?:[^"\\]|\\.)*)"\);',
                       (raw / 'src/strings.c').read_text())
     if len(none) != 1 or not none[0].strip():
         raise ValueError('Missing or ambiguous Summary no-item text')
-    return dict(schemaVersion=1, types=types, abilities=abilities, noHeldItem=ast.literal_eval('"' + none[0] + '"'))
+    return dict(schemaVersion=1, types=types, abilities=abilities, natures=natures, noHeldItem=ast.literal_eval('"' + none[0] + '"'))
 
 
 def convert(raw):
@@ -123,7 +148,7 @@ def convert(raw):
     abilities={symbol:ability_values[name] for symbol,name in re.findall(r'\[(ABILITY_\w+)\] = (\w+)',ability_text) if name in ability_values}
     if not moves or not abilities:raise ValueError('Missing Summary descriptions')
     _,all_strings=strings('src/strings.c','gText_PokeSum_')
-    memo_keys=('MetInATrade','FatefulEncounterMet','Met','ApparentlyMet','Hatched','FatefulEncounterHatched','ApparentlyFatefulEncounterHatched')
+    memo_keys=('ATrade','MetInATrade','FatefulEncounterMet','Met','ApparentlyMet','Hatched','FatefulEncounterHatched','ApparentlyFatefulEncounterHatched')
     memos={key:all_strings['gText_PokeSum_'+key] for key in memo_keys}
     sections=json.loads((raw/'src/data/region_map/region_map_sections.json').read_text())['map_sections']
     first=next(i for i,x in enumerate(sections) if x['id']=='MAPSEC_PALLET_TOWN')

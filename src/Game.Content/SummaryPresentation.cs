@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 namespace Game.Content;
 
 public sealed record SummarySpritePlacement(int X, int Y, int Width, int Height, bool FlipHorizontal);
@@ -10,6 +11,7 @@ public sealed record SummaryMemoFacts(string Nature, string MetLocation, int Met
 /// <summary>Generated single-player Summary prose and portrait motion, without source-file access.</summary>
 public sealed class SummaryPresentation
 {
+    private static readonly Regex MemoParameter = new(@"\{(?:DYNAMIC 0x0[012]|LV_2)\}", RegexOptions.CultureInvariant);
     public ImmutableDictionary<string, string> Moves { get; }
     public ImmutableDictionary<string, string> Abilities { get; }
     private readonly ImmutableDictionary<string, string> memos, locations;
@@ -24,7 +26,7 @@ public sealed class SummaryPresentation
         motions = root.GetProperty("motions").EnumerateObject().ToImmutableDictionary(p => p.Name,
             p => p.Value.EnumerateArray().Select(v => v.GetInt32()).ToImmutableArray());
         if (Moves.Count == 0 || Abilities.Count == 0 || locations.Count == 0 ||
-            new[] { "MetInATrade", "FatefulEncounterMet", "Met", "ApparentlyMet", "Hatched", "FatefulEncounterHatched", "ApparentlyFatefulEncounterHatched" }.Any(k => !memos.ContainsKey(k)) ||
+            new[] { "ATrade", "MetInATrade", "FatefulEncounterMet", "Met", "ApparentlyMet", "Hatched", "FatefulEncounterHatched", "ApparentlyFatefulEncounterHatched" }.Any(k => !memos.TryGetValue(k, out var text) || string.IsNullOrWhiteSpace(text)) ||
             motions.Count != 7 || motions.Values.Any(v => v.IsDefaultOrEmpty || v.Sum() != 0))
             throw new InvalidDataException("Incomplete Summary presentation.");
     }
@@ -50,9 +52,14 @@ public sealed class SummaryPresentation
                 ? facts.HeldByOriginalTrainer ? "FatefulEncounterHatched" : "ApparentlyFatefulEncounterHatched"
                 : facts.HeldByOriginalTrainer ? "Hatched" : "ApparentlyMet";
         else key = fateful ? "FatefulEncounterMet" : facts.HeldByOriginalTrainer ? "Met" : "ApparentlyMet";
-        return memos[key].Replace("{DYNAMIC 0x00}", facts.Nature)
-            .Replace("{DYNAMIC 0x01}", (facts.MetLevel == 0 ? 5 : facts.MetLevel).ToString())
-            .Replace("{DYNAMIC 0x02}", place ?? "a trade").Replace("{LV_2}", "Lv");
+        // Bind only source-template tokens. Inserted display names stay literal.
+        return MemoParameter.Replace(memos[key], match => match.Value switch
+        {
+            "{DYNAMIC 0x00}" => facts.Nature,
+            "{DYNAMIC 0x01}" => (facts.MetLevel == 0 ? 5 : facts.MetLevel).ToString(),
+            "{DYNAMIC 0x02}" => place ?? memos["ATrade"],
+            _ => "Lv"
+        });
     }
     public int PortraitOffset(int frame, int hp, int maxHp, bool egg, int eggCycles, bool status)
     {
