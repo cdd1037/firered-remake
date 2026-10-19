@@ -162,12 +162,13 @@ public partial class CampaignView
             2 => "gText_XSentOverY", _ => "gText_TakeGoodCareOfX"
         };
         // trade_scene.c TradeBufferOTnameAndNicknames uses these exact bindings.
-        string text = NpcTradeSourceText(symbol)
-            .Replace("{STR_VAR_1}", incoming.OriginalTrainerName, StringComparison.Ordinal)
-            .Replace("{STR_VAR_2}", _catalog.PokemonDisplayName(outgoing), StringComparison.Ordinal)
-            .Replace("{STR_VAR_3}", _catalog.PokemonDisplayName(incoming), StringComparison.Ordinal);
-        if (text.Contains('{') || text.Contains('}')) throw new InvalidDataException("Unrendered NPC trade source control token.");
-        return text;
+        return CampaignSourceText.Bind(NpcTradeSourceText(symbol), token => token switch
+        {
+            "STR_VAR_1" => incoming.OriginalTrainerName,
+            "STR_VAR_2" => _catalog.PokemonDisplayName(outgoing),
+            "STR_VAR_3" => _catalog.PokemonDisplayName(incoming),
+            _ => throw new InvalidDataException("Unrendered NPC trade source control token: " + token)
+        });
     }
 
     private bool DrawNpcTrade()

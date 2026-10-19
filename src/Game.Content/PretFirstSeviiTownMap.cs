@@ -19,11 +19,12 @@ public sealed class PretFirstSeviiTownMap
     public ImmutableArray<FirstSeviiTownMapPosition> Positions { get; }
     public FirstSeviiTownMapSwitchMenu SwitchMenu { get; }
 
-    private PretFirstSeviiTownMap(JsonElement d, ImmutableDictionary<string, byte[]> payloads)
+    private PretFirstSeviiTownMap(JsonElement d, ImmutableDictionary<string, byte[]> payloads, IReadOnlyDictionary<string, string>? mapNames)
     {
         T Parse<T>(string property) => ContentJson.ParseStrict<T>(d.GetProperty(property).GetRawText(), ContentJson.CreateOptions());
         outputs = payloads;
         Assets = Parse<ImmutableArray<TownMapAsset>>("assets"); Cells = Parse<ImmutableArray<TownMapCell>>("cells");
+        if (mapNames is not null) Cells = Cells.Select(cell => PretFlyMap.ProjectNames(cell, mapNames)).ToImmutableArray();
         Icons = Parse<ImmutableArray<TownMapIcon>>("icons"); Positions = Parse<ImmutableArray<FirstSeviiTownMapPosition>>("positions");
         SwitchMenu = Parse<FirstSeviiTownMapSwitchMenu>("switchMenu");
         positionsByMap = Positions.ToImmutableDictionary(p => p.StableMapId, StringComparer.Ordinal);
@@ -40,7 +41,7 @@ public sealed class PretFirstSeviiTownMap
 
     }
 
-    public static PretFirstSeviiTownMap Load(string projectRoot)
+    public static PretFirstSeviiTownMap Load(string projectRoot, IReadOnlyDictionary<string, string>? mapNames = null)
     {
         var root = Path.GetFullPath(projectRoot);         var generated = Path.Combine(root, "content/generated/ui/first-sevii-town-map");
         byte[] Pinned(string directory,string relative)
@@ -62,7 +63,7 @@ return bytes;
         }
         Need(payloads.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds.Select(id => id + ".png").Append("town-map.json")) , "First-Sevii atlas output inventory differs.");
         using var document = JsonDocument.Parse(payloads["town-map.json"]);
-        return new(document.RootElement, payloads.ToImmutable());
+        return new(document.RootElement, payloads.ToImmutable(), mapNames);
     }
 
     public TownMapAsset Asset(string id) => Assets.Single(a => a.Id == id);

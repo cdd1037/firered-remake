@@ -30,6 +30,7 @@ public sealed class QuestItemDescriptionProjectionTests
         using var temp = TestAssets.TemporaryOutput();
         if (useOverrides)
         {
+            Write(temp.Path, "battle", new Dictionary<string, string> { ["gText_Items2"] = "TOOLS" });
             Write(temp.Path, "item-names", source.Items.ToDictionary(row => row.Id, row => "Edited " + row.SourceSymbol));
             Write(temp.Path, "item-descriptions", source.Items.ToDictionary(row => row.Id,
                 row => "Shared " + row.SourceSymbol + @"; literal \n and trailing$"));
@@ -38,8 +39,11 @@ public sealed class QuestItemDescriptionProjectionTests
         }
         var items = SharedItemCatalog.LoadProject(TestAssets.Root, useOverrides ? SourceTextPack.Load(temp.Path) : English);
         var tmCase = TmCase(items);
-        var projected = PretQuestItemUi.WithDisplayText(source, items, tmCase);
-        Assert.AreEqual(source with { Items = projected.Items }, projected);
+        var bank = PretBattleText.Load(TestAssets.Root, useOverrides ? SourceTextPack.Load(temp.Path) : English);
+        var projected = PretQuestItemUi.WithDisplayText(source, items, tmCase, bank);
+        Assert.AreEqual(source with { Items = projected.Items, Texts = projected.Texts }, projected);
+        foreach (var (id, text) in source.Texts)
+            Assert.AreEqual(useOverrides && id == "gText_Items2" ? "TOOLS" : text, projected.Texts[id]);
         Assert.AreEqual(before, JsonSerializer.Serialize(source));
         for (var index = 0; index < source.Items.Length; index++)
         {

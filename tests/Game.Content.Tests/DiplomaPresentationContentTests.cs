@@ -30,16 +30,17 @@ public sealed class DiplomaPresentationContentTests
     {
         string root = Path.Combine(Path.GetTempPath(), "firered-diploma-content-" + Guid.NewGuid().ToString("N"));
         string directory = Path.Combine(root, PretDiplomaPresentation.Base);
+        var sourceTexts = PretBattleText.Load(TestAssets.Root, SourceTextPack.Load(null));
         try {
             Directory.CreateDirectory(directory);
             foreach (string path in Directory.GetFiles(Path.Combine(TestAssets.Root, PretDiplomaPresentation.Base)))
                 File.Copy(path, Path.Combine(directory, Path.GetFileName(path)));
-            Assert.IsNotNull(PretDiplomaPresentation.Load(root));
+            Assert.IsNotNull(PretDiplomaPresentation.Load(root, sourceTexts));
             string documentPath = Path.Combine(directory, "diploma.json");
             string original = File.ReadAllText(documentPath);
             void Reject(Action<JsonNode> change) {
                 var node = JsonNode.Parse(original)!; change(node); File.WriteAllText(documentPath, node.ToJsonString());
-                Assert.ThrowsExactly<InvalidDataException>(() => PretDiplomaPresentation.Load(root));
+                Assert.ThrowsExactly<InvalidDataException>(() => PretDiplomaPresentation.Load(root, sourceTexts));
                 File.WriteAllText(documentPath, original);
             }
             Reject(n => n["assets"]![0]!["texturePath"] = "../kanto.png");
@@ -48,9 +49,9 @@ public sealed class DiplomaPresentationContentTests
             Reject(n => n["playerTemplate"] = "PLAYER: {UNRECOGNIZED}");
             Reject(n => n["fanfareCounterFrames"] = 0);
             File.WriteAllBytes(Path.Combine(directory, "kanto.png"), [1, 2, 3]);
-            Assert.ThrowsExactly<InvalidDataException>(() => PretDiplomaPresentation.Load(root));
+            Assert.ThrowsExactly<InvalidDataException>(() => PretDiplomaPresentation.Load(root, sourceTexts));
             File.Delete(Path.Combine(directory, "kanto.png"));
-            Assert.ThrowsExactly<FileNotFoundException>(() => PretDiplomaPresentation.Load(root));
+            Assert.ThrowsExactly<FileNotFoundException>(() => PretDiplomaPresentation.Load(root, sourceTexts));
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }

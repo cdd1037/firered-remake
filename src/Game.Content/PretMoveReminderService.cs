@@ -15,12 +15,14 @@ public sealed class PretMoveReminderService
 
     private PretMoveReminderService(MoveReminderCatalog catalog) { Catalog = catalog; }
 
-    public static PretMoveReminderService Load(string root, PokemonCatalog owned)
+    public static PretMoveReminderService Load(string root, PokemonCatalog owned, IReadOnlyDictionary<string, string>? sourceTexts = null)
     {
         var document = ContentJson.ParseStrict<MoveReminderDocument>(
             File.ReadAllText(Path.Combine(root, RelativePath)), ContentJson.CreateOptions());
         if (document.SchemaVersion != 1)
             throw new InvalidDataException("move_reminder_catalog_scope");
-        return new(MoveReminderCatalog.Authenticate(owned, document.Texts));
+        sourceTexts ??= PretBattleText.Load(root);
+        var texts = document.Texts.Keys.ToImmutableDictionary(symbol => symbol, symbol => sourceTexts[symbol], StringComparer.Ordinal);
+        return new(MoveReminderCatalog.Authenticate(owned, texts));
     }
 }

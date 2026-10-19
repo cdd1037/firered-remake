@@ -92,12 +92,15 @@ public partial class CampaignView
     private Texture2D? _billDoor;
     private string? _billMenuWait;
     private int _billPcCursor;
-    private static readonly string[] BillPcRows = ["EEVEE", "FLAREON", "JOLTEON", "VAPOREON", "Quit looking."];
+    private string[] BillPcRows = [];
     private const string BillPcProgram = "Route25_SeaCottage_EventScript_BillsMonList";
 
     private void LoadBillPresentation()
     {
         if (_catalog.BillRegion is not { } source) return;
+        BillPcRows = new[] { 133, 136, 135, 134 }.Select(id =>
+            _catalog.SourceSpeciesName(id) ?? throw new InvalidDataException("Bill PC species display name missing."))
+            .Append(SourceMenuLabelPresentation.Plain(_battleText, "gText_QuitLooking")).ToArray();
         var metadata = source.Animations;
         Texture2D Asset(string path)
         {

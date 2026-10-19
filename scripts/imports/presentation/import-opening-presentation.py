@@ -82,7 +82,7 @@ def naming_metadata(raw, naming):
         if not 1 <= max_chars <= 10: raise ValueError('Naming character limit invalid: ' + name)
         templates[name] = dict(copyExistingString=fields['copyExistingString'] == 'TRUE', maxChars=max_chars,
             iconFunction=icon, addGenderIcon=fields['addGenderIcon'] == '1', initialPage=pages[fields['initialPage']],
-            title=ast.literal_eval('"' + title + '"'), prefixSpeciesName=box_functions[name] == 'DrawMonTextEntryBox',
+            title=ast.literal_eval('"' + title + '"'), titleSymbol=fields['title'], prefixSpeciesName=box_functions[name] == 'DrawMonTextEntryBox',
             iconX=int(icon_pos[1]), iconY=int(icon_pos[2]))
     return templates, layout
 
@@ -113,8 +113,8 @@ def generate(raw=RAW):
         if not tracks[key]: raise ValueError('Empty animation: ' + key)
     rival_block = re.search(r'sRivalNameChoices\[\] =\s*\{(.*?)\};', oak, re.S)[1]
     rival_block = rival_block.split('#elif')[0]
-    rival_names = [texts[name] for name in re.findall(r'gNameChoice_\w+', rival_block)]
-    if len(rival_names) != 4: raise ValueError('Rival suggestions incomplete')
+    rival_name_symbols = re.findall(r'gNameChoice_\w+', rival_block)
+    if len(rival_name_symbols) != 4 or len(set(rival_name_symbols)) != 4 or any(symbol not in texts for symbol in rival_name_symbols): raise ValueError('Rival suggestions incomplete')
     # The source cursor uses deliberately uneven letter groups and wider symbols.
     offsets_body = re.search(r'sPageColumnXPos\[KBPAGE_COUNT\]\[KBCOL_COUNT\] =\s*\{(.*?)\};', naming, re.S)[1]
     column_offsets = []
@@ -130,7 +130,7 @@ def generate(raw=RAW):
     if not tracks['naming-pc'] or any(f['frame'] not in (0, 1) or not 1 <= f['duration'] <= 60 for f in tracks['naming-pc']):
         raise ValueError('Naming PC animation invalid')
     templates, layout = naming_metadata(raw, naming)
-    value = dict(schemaVersion=1, texts=texts, keyboard=keyboard, animations=tracks, rivalNames=rival_names,
+    value = dict(schemaVersion=1, texts=texts, keyboard=keyboard, animations=tracks, rivalNameSymbols=rival_name_symbols,
                  namingColumnOffsets=column_offsets, namingTemplates=templates, namingLayout=layout)
     files = {'opening.json': (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()}
     def png(name, image):

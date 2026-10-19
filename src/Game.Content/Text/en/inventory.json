@@ -18,5 +18,15 @@
   "notice.teachy-tv-unavailable": "TEACHY TV playback is not\nimplemented yet.",
   "notice.action-unavailable": "This action isn't available.",
   "notice.order-failed": "The item order couldn't be changed.",
-  "notice.not-tossable": "That item can't be tossed."
+  "notice.not-tossable": "That item can't be tossed.",
+  "notice.teachy-tv-demo-failed": "This source demo cannot continue.\nPress B to return to TEACHY TV.",
+  "notice.used": "{item} was used.",
+  "notice.berry-data-unavailable": "This BERRY's effect data\nis not available.",
+  "notice.battle-use-unavailable": "This item can't be used\nin battle.",
+  "notice.none-left": "There are none left\nin the BAG.",
+  "notice.trainer-escape": "You can't flee from a\nTRAINER battle!",
+  "notice.choose-target-again": "Choose the target again.",
+  "notice.double-use-unavailable": "This item's double-battle\nuse is not available yet.",
+  "notice.item-unavailable": "That item can't be used\nright now.",
+  "notice.battle-use-not-implemented": "This item's battle use is\nnot implemented yet."
 }

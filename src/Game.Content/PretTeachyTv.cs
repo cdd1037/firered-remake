@@ -14,7 +14,7 @@ public static class PretTeachyTv
     public const string Profile = "firered-teachy-tv-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
-    public static TeachyTvCatalog Load(string json)
+    public static TeachyTvCatalog Load(string json, SourceTextPack? pack = null)
     {
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
@@ -42,6 +42,11 @@ public static class PretTeachyTv
                 (lesson.Battle is not null) != (lesson.SourceIndex < 4))
                 throw new InvalidDataException("teachy_tv_lesson_contract");
         }
+        var translated = (pack ?? SourceTextPack.Current).Apply("teachy-tv",
+            texts.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.EncodedText, StringComparer.Ordinal),
+            preserveControls: true);
+        texts = texts.ToImmutableDictionary(pair => pair.Key,
+            pair => pair.Value with { EncodedText = translated[pair.Key] }, StringComparer.Ordinal);
         return new(lessons, full, limited, texts, root.GetProperty("helloText").GetString()!);
     }
 }

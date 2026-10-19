@@ -5,33 +5,42 @@ using System.Text;
 /// event dialogue continues to use its separate battle page adapter.</summary>
 internal sealed class SourceBattleSelectionText
 {
+    private const string SelectionHeader = "{PALETTE 5}{COLOR_HIGHLIGHT_SHADOW 13 14 15}";
     private enum Parameter { Literal, ActiveName, PlayerName }
     private readonly record struct Part(string Text, Parameter Kind = Parameter.Literal);
-    private readonly ImmutableArray<Part> _prompt;
+    private readonly ImmutableArray<Part> _prompt, _safariPrompt;
 
     internal ImmutableArray<string> ActionLabels { get; }
+    internal ImmutableArray<string> SafariActionLabels { get; }
     internal string FoePrefix { get; }
     internal string WildPrefix { get; }
+    internal string SwitchPrompt { get; }
     internal string PpLabel { get; }
     internal string TypeLabel { get; }
 
     internal SourceBattleSelectionText(IReadOnlyDictionary<string, string> source)
     {
-        _prompt = ParsePrompt(Read(source, "gText_WhatWillPkmnDo"));
-        ActionLabels = ParseMenu(Read(source, "gText_BattleMenu"));
+        _prompt = ParsePrompt(Read(source, "gText_WhatWillPkmnDo"), "gText_WhatWillPkmnDo");
+        _safariPrompt = ParsePrompt(Read(source, "gText_WhatWillPlayerThrow"), "gText_WhatWillPlayerThrow");
+        ActionLabels = ParseMenu(Read(source, "gText_BattleMenu"), "gText_BattleMenu");
+        SafariActionLabels = ParseMenu(Read(source, "gText_SafariZoneMenu"), "gText_SafariZoneMenu");
+        SwitchPrompt = ParseTwoLinePrompt(Read(source, "gText_BattleSwitchWhich"), "gText_BattleSwitchWhich");
         FoePrefix = Plain(source, "sText_FoePkmnPrefix");
         WildPrefix = Plain(source, "sText_WildPkmnPrefix");
         PpLabel = Plain(source, "gText_MoveInterfacePP");
         TypeLabel = Plain(source, "gText_MoveInterfaceType");
     }
 
-    internal string ActionPrompt(string activeName, string playerName)
+    internal string ActionPrompt(string activeName, string playerName) => BindPrompt(_prompt, activeName, playerName);
+    internal string SafariPrompt(string playerName) => BindPrompt(_safariPrompt, "", playerName);
+
+    private static string BindPrompt(ImmutableArray<Part> prompt, string activeName, string playerName)
     {
         ArgumentNullException.ThrowIfNull(activeName);
         ArgumentNullException.ThrowIfNull(playerName);
         var text = new StringBuilder();
         // Parse only the source. Inserted names may contain braces or source-looking escapes.
-        foreach (var part in _prompt)
+        foreach (var part in prompt)
             text.Append(part.Kind switch
             {
                 Parameter.ActiveName => activeName,
@@ -51,14 +60,12 @@ internal sealed class SourceBattleSelectionText
         return ReadCell(Read(source, symbol), symbol, ref offset, null);
     }
 
-    private static ImmutableArray<string> ParseMenu(string source)
+    private static ImmutableArray<string> ParseMenu(string source, string symbol)
     {
-        const string symbol = "gText_BattleMenu";
         // These are the known source menu colors and two-column layout, already drawn by
         // the battle skin. Require the exact structure rather than stripping arbitrary braces.
-        const string header = "{PALETTE 5}{COLOR_HIGHLIGHT_SHADOW 13 14 15}";
-        if (!source.StartsWith(header, StringComparison.Ordinal)) throw Invalid(symbol);
-        int offset = header.Length;
+        if (!source.StartsWith(SelectionHeader, StringComparison.Ordinal)) throw Invalid(symbol);
+        int offset = SelectionHeader.Length;
         ImmutableArray<string> cells =
         [
             ReadCell(source, symbol, ref offset, "{CLEAR_TO 56}"),
@@ -68,6 +75,16 @@ internal sealed class SourceBattleSelectionText
         ];
         if (cells.Any(string.IsNullOrWhiteSpace)) throw Invalid(symbol);
         return cells;
+    }
+
+    private static string ParseTwoLinePrompt(string source, string symbol)
+    {
+        if (!source.StartsWith(SelectionHeader, StringComparison.Ordinal)) throw Invalid(symbol);
+        int offset = SelectionHeader.Length;
+        string first = ReadCell(source, symbol, ref offset, "\\n");
+        string second = ReadCell(source, symbol, ref offset, null);
+        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second)) throw Invalid(symbol);
+        return first + "\n" + second;
     }
 
     private static string ReadCell(string source, string symbol, ref int offset, string? end)
@@ -93,9 +110,8 @@ internal sealed class SourceBattleSelectionText
         return text.ToString();
     }
 
-    private static ImmutableArray<Part> ParsePrompt(string source)
+    private static ImmutableArray<Part> ParsePrompt(string source, string symbol)
     {
-        const string symbol = "gText_WhatWillPkmnDo";
         var parts = ImmutableArray.CreateBuilder<Part>();
         var literal = new StringBuilder();
         for (int offset = 0; offset < source.Length; offset++)

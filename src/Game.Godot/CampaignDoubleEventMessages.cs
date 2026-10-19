@@ -69,7 +69,7 @@ public partial class CampaignView
                     "ABILITY_RAIN_DISH" or "ABILITY_VOLT_ABSORB" or "ABILITY_WATER_ABSORB" or "ABILITY_FLASH_FIRE" or "ABILITY_LIQUID_OOZE" or
                     "ABILITY_SYNCHRONIZE" or "ABILITY_IMMUNITY" or "ABILITY_LIMBER" or "ABILITY_WATER_VEIL" or "ABILITY_MAGMA_ARMOR" or
                     "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" or "ABILITY_OWN_TEMPO" or "ABILITY_OBLIVIOUS")return DoubleSilent;
-                if(x.Ability=="ABILITY_SOUNDPROOF")return DoubleText("sText_PkmnsXBlocksY",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_DEF_ABILITY",DoubleAbility(x.Ability)),("B_CURRENT_MOVE","PERISH SONG"));
+                if(x.Ability=="ABILITY_SOUNDPROOF")return DoubleText("sText_PkmnsXBlocksY",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_DEF_ABILITY",DoubleAbility(x.Ability)),("B_CURRENT_MOVE",MoveName(new("pret:MOVE_PERISH_SONG"))));
                 return null;
             case SourceAbilityPreventedEvent x when !DoubleIntimidateActive(b,x.Actor,x.Sequence):return DoubleAbilityPrevention(b,x);
             case SourceAbilityRecoveredEvent x:return DoubleText("sText_PkmnsXRestoredHPALittle2",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_ATK_ABILITY",DoubleAbility(x.Ability)));
@@ -129,9 +129,9 @@ public partial class CampaignView
             case SourceStatusChangedEvent x when x.Before==WildBattleStatus.Freeze&&x.After==0&&x.Reason!="held-berry":return Atk("sText_PkmnWasDefrosted2",x.Side);
             case SourceStatusChangedEvent x when x.After==0&&x.Reason is "shed-skin" or "immunity" or "limber" or "water-veil" or "magma-armor" or "insomnia" or "vital-spirit":
                 return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_"+x.Reason.ToUpperInvariant().Replace('-','_'))),("B_BUFF1",DoubleStatusProblem(x.Before)));
-            case SourceConfusionChangedEvent {After:0,Reason:"own-tempo"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_OWN_TEMPO")),("B_BUFF1","confusion"));
+            case SourceConfusionChangedEvent {After:0,Reason:"own-tempo"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_OWN_TEMPO")),("B_BUFF1",SourceMenuLabelPresentation.Plain(_battleText,"gText_Confusion")));
             case SourceConfusionChangedEvent x when x.Reason is "rampage-ended" or "fatigue":return Atk("sText_PkmnFatigueConfusion",x.Side);
-            case SourceInfatuationChangedEvent {After:null,Reason:"oblivious"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_OBLIVIOUS")),("B_BUFF1","love"));
+            case SourceInfatuationChangedEvent {After:null,Reason:"oblivious"} x:return DoubleText("sText_PkmnsXCuredYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_OBLIVIOUS")),("B_BUFF1",SourceMenuLabelPresentation.Plain(_battleText,"gText_Love")));
             case SourceInfatuationChangedEvent {After:null}:return DoubleSilent;
             case SourceMoveFailedEvent x:return DoubleFailureMessage(x);
             case SourcePokeFluteEvent x:return x.Phase switch {
@@ -142,8 +142,9 @@ public partial class CampaignView
             default:return null;
         }
     }
-    private static string DoubleStatusProblem(uint status)=>WildBattleStatus.IsSleeping(status)?"sleep":SourceTrainerPresentationModel.DisplayStatus(status) switch {
-        WildBattleStatus.Poison=>"poison",WildBattleStatus.Burn=>"burn",WildBattleStatus.Paralysis=>"paralysis",WildBattleStatus.Freeze=>"ice",_=>throw new InvalidDataException("Unknown cured status.")};
+    private string DoubleStatusProblem(uint status)=>SourceMenuLabelPresentation.Plain(_battleText,
+        WildBattleStatus.IsSleeping(status)?"gText_Sleep":SourceTrainerPresentationModel.DisplayStatus(status) switch {
+        WildBattleStatus.Poison=>"gText_Poison",WildBattleStatus.Burn=>"gText_Burn",WildBattleStatus.Paralysis=>"gText_Paralysis",WildBattleStatus.Freeze=>"gText_Ice",_=>throw new InvalidDataException("Unknown cured status.")});
     private SourceTrainerEventDisplay? DoubleFailureMessage(SourceMoveFailedEvent x)
     {
         string? symbol=x.Reason switch {
@@ -167,7 +168,7 @@ public partial class CampaignView
         string ability=DoubleAbility(x.Ability);
         return DoubleText(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_DEF_ABILITY",ability),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),
             ("B_EFF_ABILITY",ability),("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_SCR_ACTIVE_ABILITY",ability),
-            ("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_CURRENT_MOVE",MoveName(x.Move)),("B_BUFF1",SourceTrainerPresentationModel.AbilityPreventionStat(x.Ability)));
+            ("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_CURRENT_MOVE",MoveName(x.Move)),("B_BUFF1",SourceTrainerPresentationModel.AbilityPreventionStat(x.Ability,_battleText)));
     }
     private SourceTrainerEventDisplay? DoubleOverlayMessage(CampaignDoubleBattle b,SourceCalledOverlayChangedEvent x)
     {
@@ -195,7 +196,7 @@ public partial class CampaignView
         var statChange=b.Events.Where(e=>e.Sequence<x.Sequence).Reverse().TakeWhile(e=>e is not (SourceAttackStringEvent or SourceMoveUsedEvent)).OfType<SourceStatChangedEvent>().FirstOrDefault(s=>s.Target==x.Side&&s.After>s.Before);
         WildBattleStat? stat=x.Item switch {"ITEM_LIECHI_BERRY"=>WildBattleStat.Attack,"ITEM_GANLON_BERRY"=>WildBattleStat.Defense,"ITEM_SALAC_BERRY"=>WildBattleStat.Speed,
             "ITEM_PETAYA_BERRY"=>WildBattleStat.SpecialAttack,"ITEM_APICOT_BERRY"=>WildBattleStat.SpecialDefense,"ITEM_STARF_BERRY"=>statChange?.Stat,_=>null};
-        if(stat is {} raised)return DoubleText("sText_UsingItemTheStatOfPkmnRose",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_LAST_ITEM",DoubleItem(x.Item)),("B_BUFF1",WildStatName(raised)),("B_BUFF2",x.Item=="ITEM_STARF_BERRY"?"rose sharply!":"rose!"));
+        if(stat is {} raised)return DoubleText("sText_UsingItemTheStatOfPkmnRose",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_LAST_ITEM",DoubleItem(x.Item)),("B_BUFF1",WildStatName(raised)),("B_BUFF2",SourceTrainerPresentationModel.StatChangeText(_battleText,true,x.Item=="ITEM_STARF_BERRY")));
         if(x.Item=="ITEM_LEPPA_BERRY"&&b.Events.Where(e=>e.Sequence<x.Sequence).Reverse().TakeWhile(e=>e is not (SourceAttackStringEvent or SourceMoveUsedEvent)).OfType<SourcePpCommandEvent>().FirstOrDefault(p=>p.PpOwner==x.Side&&p.After>p.Before) is {} pp)
             return DoubleText("sText_PkmnsItemRestoredPP",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_LAST_ITEM",DoubleItem(x.Item)),("B_BUFF1",MoveName(pp.CurrentMove)));
         return new([],true);
@@ -219,7 +220,8 @@ public partial class CampaignView
     {
         SourceTrainerEventDisplay Atk(string symbol)=>DoubleText(symbol,("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
         SourceTrainerEventDisplay Def(string symbol)=>DoubleText(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
-        string team=x.Side.Side==BattleSide.Player?"Ally":"Foe";var invocation=DoubleInvocation(b,x);
+        string Team(int prefix)=>SourceTrainerPresentationModel.SidePrefix(_battleText,x.Side.Side==BattleSide.Player,prefix);
+        var invocation=DoubleInvocation(b,x);
         if(x.Volatile is "rain" or "sun" or "sandstorm" or "hail")
         {
             string[] symbols=x.Volatile switch {
@@ -231,14 +233,16 @@ public partial class CampaignView
         }
         if(x.Volatile is "reflect" or "light-screen" or "mist" or "safeguard")
         {
-            string move=x.Volatile.Replace('-',' ').ToUpperInvariant();
+            string move=MoveName(new(x.Volatile switch {
+                "reflect"=>"pret:MOVE_REFLECT","light-screen"=>"pret:MOVE_LIGHT_SCREEN",
+                "mist"=>"pret:MOVE_MIST",_=>"pret:MOVE_SAFEGUARD"}));
             if(x.Reason=="countdown")return DoubleSilent;
             if(x.Reason=="brick-break")return DoublePrior(b,x,e=>e is SourceMtMoonVolatileEvent {Reason:"brick-break"})?DoubleSilent:DoubleText("sText_TheWallShattered");
-            if(x.Reason=="expired")return DoubleText(x.Volatile=="safeguard"?"sText_PkmnSafeguardExpired":"sText_PkmnsXWoreOff",("B_ATK_PREFIX1",team),("B_ATK_PREFIX3",team),("B_BUFF1",move));
+            if(x.Reason=="expired")return DoubleText(x.Volatile=="safeguard"?"sText_PkmnSafeguardExpired":"sText_PkmnsXWoreOff",("B_ATK_PREFIX1",Team(1)),("B_ATK_PREFIX3",Team(3)),("B_BUFF1",move));
             if(x.Reason=="move")
             {
                 bool twoPresent=Enumerable.Range(0,b.DisplayedSlots.Length).Count(i=>(i&1)==(int)x.Side.Side&&b.DisplayedSlots[i].Pokemon.CurrentHp>0)>1;
-                return DoubleText(x.Volatile switch {"reflect"=>twoPresent?"sText_PkmnRaisedDefALittle":"sText_PkmnRaisedDef","light-screen"=>twoPresent?"sText_PkmnRaisedSpDefALittle":"sText_PkmnRaisedSpDef","mist"=>"gBattleText_MistShroud",_=>"sText_PkmnCoveredByVeil"},("B_ATK_PREFIX2",team),("B_CURRENT_MOVE",move));
+                return DoubleText(x.Volatile switch {"reflect"=>twoPresent?"sText_PkmnRaisedDefALittle":"sText_PkmnRaisedDef","light-screen"=>twoPresent?"sText_PkmnRaisedSpDefALittle":"sText_PkmnRaisedSpDef","mist"=>"gBattleText_MistShroud",_=>"sText_PkmnCoveredByVeil"},("B_ATK_PREFIX2",Team(2)),("B_CURRENT_MOVE",move));
             }
             return null;
         }

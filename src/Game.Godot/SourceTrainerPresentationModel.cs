@@ -20,7 +20,6 @@ internal static class SourceTrainerPresentationModel
         // scrolling one line at a time in the two-line battle message window.
         for (int i = 0; i + 1 < lines.Length; i++) yield return lines[i] + "\n" + lines[i + 1];
     }
-    internal const string UnsupportedNotice = "This battle event is not\nsupported yet.";
     private static readonly SourceTrainerEventDisplay Silent = new([]);
     private static readonly SourceTrainerEventDisplay Unsupported = new([], true);
     // EffectWish schedules, animates and returns to MoveEnd without a setup text.
@@ -39,7 +38,40 @@ internal static class SourceTrainerPresentationModel
             "ABILITY_HYPER_CUTTER" or "ABILITY_KEEN_EYE"=>"sText_PkmnsXPreventsYLoss",
             "ABILITY_INNER_FOCUS"=>"sText_PkmnsXPreventsFlinching",_=>null};
 
-    internal static string AbilityPreventionStat(string ability)=>ability switch{"ABILITY_HYPER_CUTTER"=>"ATTACK","ABILITY_KEEN_EYE"=>"accuracy",_=>""};
+    internal static string StatName(IReadOnlyDictionary<string, string> source, WildBattleStat stat) =>
+        SourceMenuLabelPresentation.Plain(source, stat switch
+        {
+            WildBattleStat.Attack => "sText_Attack2", WildBattleStat.Defense => "sText_Defense2",
+            WildBattleStat.Speed => "sText_Speed", WildBattleStat.SpecialAttack => "sText_SpAtk2",
+            WildBattleStat.SpecialDefense => "sText_SpDef2", WildBattleStat.Accuracy => "sText_Accuracy",
+            WildBattleStat.Evasion => "sText_Evasiveness",
+            _ => throw new InvalidDataException("Unsupported battle stat presentation.")
+        });
+
+    internal static string StatChangeText(IReadOnlyDictionary<string, string> source, bool raised, bool sharply) =>
+        (sharply ? SourceMenuLabelPresentation.Plain(source, raised ? "sText_StatSharply" : "sText_StatHarshly") : "") +
+        SourceMenuLabelPresentation.Plain(source, raised ? "gBattleText_Rose" : "sText_StatFell");
+
+    internal static string SidePrefix(IReadOnlyDictionary<string, string> source, bool player, int prefix) =>
+        SourceMenuLabelPresentation.Plain(source, (player, prefix) switch
+        {
+            (true, 1) => "sText_AllyPkmnPrefix", (false, 1) => "sText_FoePkmnPrefix2",
+            (true, 2) => "sText_AllyPkmnPrefix2", (false, 2) => "sText_FoePkmnPrefix3",
+            (true, 3) => "sText_AllyPkmnPrefix3", (false, 3) => "sText_FoePkmnPrefix4",
+            _ => throw new InvalidDataException("Unsupported battle side prefix.")
+        });
+
+    internal static string AbilityPreventionStat(string ability, IReadOnlyDictionary<string, string>? source)
+    {
+        string RequiredStatName(WildBattleStat stat) =>
+            StatName(source ?? throw new InvalidDataException("Battle text lookup is required."), stat);
+        return ability switch
+        {
+            "ABILITY_HYPER_CUTTER" => RequiredStatName(WildBattleStat.Attack),
+            "ABILITY_KEEN_EYE" => RequiredStatName(WildBattleStat.Accuracy),
+            _ => ""
+        };
+    }
 
     private static WildBattleSide Other(WildBattleSide side) => side == WildBattleSide.Player ? WildBattleSide.Opponent : WildBattleSide.Player;
     private static SourceTrainerEventDisplay Text(string symbol, params (string Key, string Value)[] fields) => new([new(symbol, fields)]);
@@ -95,7 +127,8 @@ internal static class SourceTrainerPresentationModel
     internal static SourceTrainerEventDisplay? Describe(IReadOnlyList<WildBattleEvent> events, int index,
         Func<WildBattleSide, string> name, Func<MoveId, string> moveName, Func<WildBattleSide, int, string> partyName,
         Func<string, string>? itemName = null, Func<WildBattleSide, int, string?>? prefixedPartyName = null,
-        Func<string, string>? abilityName = null, Func<string, string>? typeName = null)
+        Func<string, string>? abilityName = null, Func<string, string>? typeName = null,
+        IReadOnlyDictionary<string, string>? battleText = null)
     {
         if (index < 0 || index >= events.Count) throw new ArgumentOutOfRangeException(nameof(index));
         string AbilityName(string id) => abilityName?.Invoke(id) ?? throw new InvalidDataException("Ability name lookup is required.");
@@ -140,7 +173,7 @@ internal static class SourceTrainerPresentationModel
                 return Text(symbol,("B_DEF_NAME_WITH_PREFIX",name(prevented.Target)),("B_DEF_ABILITY",preventionAbility),
                     ("B_EFF_NAME_WITH_PREFIX",name(prevented.Target)),("B_EFF_ABILITY",preventionAbility),
                     ("B_SCR_ACTIVE_NAME_WITH_PREFIX",name(prevented.Target)),("B_SCR_ACTIVE_ABILITY",preventionAbility),
-                    ("B_ATK_NAME_WITH_PREFIX",name(prevented.Actor)),("B_CURRENT_MOVE",moveName(prevented.Move)),("B_BUFF1",AbilityPreventionStat(prevented.Ability)));
+                    ("B_ATK_NAME_WITH_PREFIX",name(prevented.Actor)),("B_CURRENT_MOVE",moveName(prevented.Move)),("B_BUFF1",AbilityPreventionStat(prevented.Ability,battleText)));
             case WildBattleAttackStringEvent attack:
                 return PairedMoveUsed(events, index, attack) ? Silent : Text("sText_AttackerUsedX",
                     ("B_ATK_NAME_WITH_PREFIX", name(attack.Actor)), ("B_BUFF2", moveName(attack.CurrentMove) + "!"));
@@ -238,7 +271,7 @@ internal static class SourceTrainerPresentationModel
             case WildBattleHpChangedEvent { Move.Value: "pret:MOVE_SPIKES" } spikes:
                 return Text("sText_PkmnHurtBySpikes", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(spikes.Target)));
             case WildBattleMtMoonVolatileEvent v:
-                return Volatile(events, index, v, name, moveName);
+                return Volatile(events, index, v, name, moveName, battleText);
             case WildBattleMoveFailedEvent failed:
                 return Failure(failed, name, moveName);
             default: return null;
@@ -270,11 +303,13 @@ internal static class SourceTrainerPresentationModel
     }
 
     private static SourceTrainerEventDisplay? Volatile(IReadOnlyList<WildBattleEvent> events, int index,
-        WildBattleMtMoonVolatileEvent v, Func<WildBattleSide, string> name, Func<MoveId, string> moveName)
+        WildBattleMtMoonVolatileEvent v, Func<WildBattleSide, string> name, Func<MoveId, string> moveName,
+        IReadOnlyDictionary<string, string>? battleText)
     {
         SourceTrainerEventDisplay Atk(string symbol) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(v.Side)));
         SourceTrainerEventDisplay Def(string symbol) => Text(symbol, ("B_DEF_NAME_WITH_PREFIX", name(v.Side)));
-        string team = v.Side == WildBattleSide.Player ? "Ally" : "Foe";
+        string Team(int prefix) => SidePrefix(battleText ?? throw new InvalidDataException("Battle text lookup is required."),
+            v.Side == WildBattleSide.Player, prefix);
         switch (v.Volatile)
         {
             case "substitute": return v.Reason == "move" ? Atk("sText_PkmnMadeSubstitute") : Unsupported;
@@ -303,11 +338,11 @@ internal static class SourceTrainerPresentationModel
             case "called-recharge" or "called-rampage" or "called-rollout": return Silent;
             case "sun": return v.Reason switch { "move" => Text("sText_SunlightGotBright"), "countdown" => Text("sText_SunlightStrong"), "expired" => Text("sText_SunlightFaded"), _ => Unsupported };
             case "hail": return v.Reason switch { "move" => Text("sText_StartedHail"), "countdown" => Text("sText_HailContinues"), "expired" => Text("sText_HailStopped"), _ => Unsupported };
-            case "mist": return v.Reason == "move" ? Text("gBattleText_MistShroud", ("B_ATK_PREFIX2", team)) : v.Reason == "expired" ? Text("sText_PkmnsXWoreOff", ("B_ATK_PREFIX1", team), ("B_BUFF1", "MIST")) : v.Reason == "countdown" ? Silent : Unsupported;
+            case "mist": return v.Reason == "move" ? Text("gBattleText_MistShroud", ("B_ATK_PREFIX2", Team(2))) : v.Reason == "expired" ? Text("sText_PkmnsXWoreOff", ("B_ATK_PREFIX1", Team(1)), ("B_BUFF1", moveName(new("pret:MOVE_MIST")))) : v.Reason == "countdown" ? Silent : Unsupported;
             case "light-screen" when v.Reason == "brick-break":
                 return PriorMatching(events, index, e => e is WildBattleMtMoonVolatileEvent { Reason: "brick-break" }) ? Silent : Text("sText_TheWallShattered");
-            case "light-screen": return v.Reason == "move" ? Text("sText_PkmnRaisedSpDef", ("B_ATK_PREFIX2", team), ("B_CURRENT_MOVE", "LIGHT SCREEN")) : v.Reason == "expired" ? Text("sText_PkmnsXWoreOff", ("B_ATK_PREFIX1", team), ("B_BUFF1", "LIGHT SCREEN")) : v.Reason is "countdown" or "brick-break" ? Silent : Unsupported;
-            case "safeguard": return v.Reason == "move" ? Text("sText_PkmnCoveredByVeil", ("B_ATK_PREFIX2", team)) : v.Reason == "expired" ? Text("sText_PkmnSafeguardExpired", ("B_ATK_PREFIX3", team)) : v.Reason == "countdown" ? Silent : Unsupported;
+            case "light-screen": return v.Reason == "move" ? Text("sText_PkmnRaisedSpDef", ("B_ATK_PREFIX2", Team(2)), ("B_CURRENT_MOVE", moveName(new("pret:MOVE_LIGHT_SCREEN")))) : v.Reason == "expired" ? Text("sText_PkmnsXWoreOff", ("B_ATK_PREFIX1", Team(1)), ("B_BUFF1", moveName(new("pret:MOVE_LIGHT_SCREEN")))) : v.Reason is "countdown" or "brick-break" ? Silent : Unsupported;
+            case "safeguard": return v.Reason == "move" ? Text("sText_PkmnCoveredByVeil", ("B_ATK_PREFIX2", Team(2))) : v.Reason == "expired" ? Text("sText_PkmnSafeguardExpired", ("B_ATK_PREFIX3", Team(3))) : v.Reason == "countdown" ? Silent : Unsupported;
             case "reflect" when v.Reason == "brick-break":
                 return PriorMatching(events, index, e => e is WildBattleMtMoonVolatileEvent { Reason: "brick-break" }) ? Silent : Text("sText_TheWallShattered");
             case "haze": return Text("sText_StatChangesGone");

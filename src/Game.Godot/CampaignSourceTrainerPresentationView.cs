@@ -90,9 +90,9 @@ public partial class CampaignView
                 : throw new InvalidDataException("Source wild opponent party display index differs.");
         }
         string? PrefixedPartyName(WildBattleSide side,int index)=>CampaignWishResolutionPresentation.CasterAvailable(battle.Frame,new((int)side),index)
-            ?(side==WildBattleSide.Opponent?battle.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?"Foe ":"Wild ":"")+PartyName(side,index):null;
+            ?(side==WildBattleSide.Opponent?battle.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?_battleSelectionText.FoePrefix:_battleSelectionText.WildPrefix:"")+PartyName(side,index):null;
         return SourceTrainerPresentationModel.Describe(battle.Events, battle.EventIndex, WildPrefixedName, MoveName, PartyName, _catalog.DisplayNames.ItemName, PrefixedPartyName,
-            _catalog.DisplayNames.AbilityName, _catalog.DisplayNames.TypeName);
+            _catalog.DisplayNames.AbilityName, _catalog.DisplayNames.TypeName, _battleText);
     }
 
     private bool SourceTrainerEventPages(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source,
@@ -101,7 +101,7 @@ public partial class CampaignView
         if (SourceTrainerEventDisplay(battle) is not { } display) return false;
         if (display.Unsupported)
         {
-            pages.Add(SourceTrainerPresentationModel.UnsupportedNotice);
+            pages.Add(_summaryText.Get("notice.battle-event-unsupported"));
             var current = WildCurrentEvent(battle)!;
             Write("unsupportedBattlePresentation", new { type = current.GetType().Name, current.Sequence });
         }

@@ -25,7 +25,7 @@ public partial class CampaignView
 
     private void LoadStorageCustomizationPresentation()
     {
-        _storageCustomizationArt = PretStorageCustomization.Load(_root);
+        _storageCustomizationArt = PretStorageCustomization.Load(_root, _catalog.BattleContent!.Texts);
         foreach (var asset in _storageCustomizationArt.Assets)
         {
             using var image = new Image();

@@ -112,17 +112,18 @@ public partial class CampaignView:Node2D
         try
         {
             // Godot resource creation and all session/presentation work stay on this thread.
+            _battleText=(_catalog.BattleContent??throw new InvalidDataException("Battle content is unavailable.")).Texts;
             var fontDirectory=System.IO.Path.Combine(_root,"content/generated/ui/font");
             _sourceNormal=SourceGameFont.Load(fontDirectory,colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);_sourceSmall=SourceGameFont.Load(fontDirectory,"small",colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);
             _sourceWhite=SourceGameFont.Load(fontDirectory,foreground:Colors.White,shadow:new Color("636363"));_sourceSmallWhite=SourceGameFont.Load(fontDirectory,"small",Colors.White,new Color("636363"));
             _sourceInactiveCursor=SourceGameFont.Load(fontDirectory,foreground:OpeningItemUiSkin.MenuTextShadow,shadow:OpeningItemUiSkin.MenuTextColor);
             _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui/ui-corrections"));
-            _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
+            _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"), _battleText);_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
             LoadHelpPresentation();
             LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadMuseumPicturesPresentation();LoadBattlePresentation();LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadFieldFogPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadPokemonCollectionPresentation();LoadSharedTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             if (_questPocketUi is { } questItems)
-                _questPocketUi=PretQuestItemUi.WithDisplayText(questItems,_catalog.Items,_catalog.Machines.TmCase);
+                _questPocketUi=PretQuestItemUi.WithDisplayText(questItems,_catalog.Items,_catalog.Machines.TmCase, _battleText);
             _mapTileArt=CreateMapTileArt();
             InitializeNamingEditor();
             var checkpoint=_startupCheckpoint;
@@ -551,11 +552,11 @@ public partial class CampaignView:Node2D
         else Write("command",_diagnostics.Payload(new{command,status=result.Status.ToString(),result.Error,result.Revision},()=>new{command,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),state=result.State}));
         if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);if(ConnectedFieldTransition(before,result.State))_session.CompleteFieldTransitionPresentation(result.State.FieldTransition!,0,1);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
         else if(result.Error=="sevii_first_visit_not_yet_available")
-        {_regionalServiceNotice="The trip to ONE ISLAND is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
+        {_regionalServiceNotice=FieldMenuText.Get("notice.one-island-unavailable");_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
         else if(result.Error=="seagallop_destination_not_yet_available")
-        {_regionalServiceNotice="Travel to this island is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
+        {_regionalServiceNotice=FieldMenuText.Get("notice.island-travel-unavailable");_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
         else if(result.Error=="npc_trade_access_boundary_not_open")
-        {_regionalServiceNotice="This passage is not available yet.";_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
+        {_regionalServiceNotice=FieldMenuText.Get("notice.passage-unavailable");_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
         else if(result.Error?.StartsWith("regional_service_unavailable: ",StringComparison.Ordinal)==true){_regionalServiceNotice=result.Error[30..];_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
         else if(result.Status==CommandStatus.Fault){_lastCommandFault=true;_blockedAutomaticWait=before.Script.Wait?.CorrelationId;_status="未接入或故障："+result.Error;_held=null;/* authoritative state is unchanged; let the player choose a different valid action */}
         else _status=result.Error??"操作被拒绝";
@@ -573,7 +574,7 @@ public partial class CampaignView:Node2D
         if(!_startupReady)
         {
             DrawRect(new(0,0,240,160),new Color("101820"));
-            if(_font is not null)DrawString(_font,new(58,83),"Loading game...",fontSize:14,modulate:Colors.White);
+            if(_font is not null)DrawString(_font,new(58,83),FieldMenuText.Get("status.loading"),fontSize:14,modulate:Colors.White);
             _loadingDrawn=true;return;
         }
         BeginMapFrame();ReleaseFinishedFieldSnapshot();
@@ -652,20 +653,20 @@ public partial class CampaignView:Node2D
             {
                 int x=FieldChoiceFrameX,y=FieldChoiceTextY,step=FieldChoiceRowHeight;
                 _battleSkin.DrawUserFrame(this,new(x,64,64,48));
-                SourceText(_sourceNormal,new(x+16,y),"YES");SourceText(_sourceNormal,new(x+16,y+step),"NO");
+                SourceText(_sourceNormal,new(x+16,y),InventorySourceText("gText_Yes"));SourceText(_sourceNormal,new(x+16,y+step),InventorySourceText("gText_No"));
                 SourceText(_sourceNormal,new(x+(FieldCutChoice?8:6),y+(_choiceYes?0:step)),"▶");
             }
             else if(!SourceMenuActive&&!SourceGridMenuActive&&!FossilLabMenuActive&&!TrainerTowerMenuActive&&!SeagallopMenuActive&&!BikeShopMenuActive&&!BillPcMenuActive&&!RocketElevatorMenuActive&&!DepartmentElevatorMenuActive&&!RooftopMenuActive&&!GameCornerCoinMenuActive&&!GameCornerPrizeMenuActive&&!SilphElevatorMenuActive&&FieldTextComplete&&_session.State.Script.Wait?.Kind==StoryWaitKind.MenuChoice&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length)
             {
-                int width=((int)Math.Max(_sourceNormal.Font.GetStringSize("YES",fontSize:_sourceNormal.Size).X,_sourceNormal.Font.GetStringSize("NO",fontSize:_sourceNormal.Size).X)+9)/8+1;
-                _battleSkin.DrawUserFrame(this,new(144,56,width*8+16,48));SourceText(_sourceNormal,new(160,66),"YES");SourceText(_sourceNormal,new(160,80),"NO");SourceText(_sourceNormal,new(152,_choiceYes?66:80),"▶");
+                int width=((int)Math.Max(_sourceNormal.Font.GetStringSize(InventorySourceText("gText_Yes"),fontSize:_sourceNormal.Size).X,_sourceNormal.Font.GetStringSize(InventorySourceText("gText_No"),fontSize:_sourceNormal.Size).X)+9)/8+1;
+                _battleSkin.DrawUserFrame(this,new(144,56,width*8+16,48));SourceText(_sourceNormal,new(160,66),InventorySourceText("gText_Yes"));SourceText(_sourceNormal,new(160,80),InventorySourceText("gText_No"));SourceText(_sourceNormal,new(152,_choiceYes?66:80),"▶");
             }
             else if(FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawTextCursor(FieldDialogueFont,LabBattleUiSkin.DialogueText,lines,15,_waitElapsed);
         }
         DrawDayCareResidents();DrawSourceGridMenu();DrawSourceMenu();DrawFossilLabMenu();DrawBillPcMenu();DrawBikeShopMenu();DrawRocketElevatorMenu();DrawDepartmentElevatorMenu();DrawRooftopMenu();DrawGameCornerCoinMenu();DrawGameCornerPrizeMenu();DrawSilphElevatorMenu();DrawSeagallopMenu();DrawTrainerTowerMenu();
         if(_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro&&_wildNotice is not null)ItemMessageBox(_wildNotice);
         if(_lastCommandFault||_status.StartsWith("starter_",StringComparison.Ordinal))
-        {DrawRect(new(2,137,236,21),new Color("741e2b"));DrawString(_font,new(6,147),"事件暂未接入，当前步骤未提交",fontSize:8,modulate:Colors.White);DrawString(_font,new(6,156),"详细错误已写本地日志；Esc退出",fontSize:7,modulate:Colors.White);}
+        {DrawRect(new(2,137,236,21),new Color("741e2b"));DrawString(_font,new(6,147),FieldMenuText.Get("diagnostic.event-not-committed"),fontSize:8,modulate:Colors.White);DrawString(_font,new(6,156),FieldMenuText.Get("diagnostic.error-log"),fontSize:7,modulate:Colors.White);}
         if(_session.State.ScreenIsBlack)DrawRect(new(0,0,240,160),SourceScreenFadeColor);
         if(_regionalServiceNotice is not null)ItemMessageBox(_regionalServiceNotice);
         if(_session.State.Pc is not null)DrawStorage();

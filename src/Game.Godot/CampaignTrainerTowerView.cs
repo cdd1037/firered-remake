@@ -230,9 +230,9 @@ public partial class CampaignView
             _session.State.TrainerTowerElevator is { FloorWindowVisible: true } elevator)
         {
             _battleSkin.DrawUserFrame(this, new(168, 0, 72, 48));
-            SourceText(_sourceNormal, new(176, 10), "Now on:");
+            SourceText(_sourceNormal, new(176, 10), SourceMenuLabelPresentation.Plain(_battleText, "gText_NowOn"));
             int floor = _session.State.Script.Variables.GetValueOrDefault("VAR_0x8005", elevator.Floor);
-            string label = TrainerTowerMenuPresentation.ElevatorFloorLabel(floor);
+            string label = SourceMenuLabelPresentation.Plain(_battleText, TrainerTowerMenuPresentation.ElevatorFloorTextSymbol(floor));
             float width = _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(label), fontSize: _sourceNormal.Size).X;
             SourceText(_sourceNormal, new(232 - width, 24), label);
         }
@@ -245,14 +245,14 @@ public partial class CampaignView
     {
         if (!_session.State.TrainerTowerRecordsVisible) return false;
         DrawRect(new(0, 0, 240, 160), new Color("f8f8e8")); _battleSkin.DrawUserFrame(this, new(8, 8, 224, 144));
-        SourceText(_sourceNormal, new(24, 19), "TRAINER TOWER RECORDS");
+        SourceText(_sourceNormal, new(24, 19), FieldMenuText.Get("tower.records-title"));
         var records = (_session.State.TrainerTower ?? TrainerTowerProgressRules.Create()).Records;
-        string[] names = ["SINGLE", "DOUBLE", "KNOCKOUT", "MIXED"];
+        string[] names = ["gOtherText_Single", "gOtherText_Double", "gOtherText_Knockout", "gOtherText_Mixed"];
         for (int i = 0; i < names.Length; i++)
         {
-            SourceText(_sourceNormal, new(24, 43 + i * 20), names[i]);
+            SourceText(_sourceNormal, new(24, 43 + i * 20), SourceMenuLabelPresentation.Plain(_battleText, names[i]));
             SourceText(_sourceNormal, new(140, 43 + i * 20), TrainerTowerProgressRules.FormatTime(records[i].BestTimeFrames).ToString());
         }
-        SourceText(_sourceSmall, new(24, 132), "Enter / Back: CLOSE"); return true;
+        SourceText(_sourceSmall, new(24, 132), FieldMenuText.Get("tower.records-controls")); return true;
     }
 }

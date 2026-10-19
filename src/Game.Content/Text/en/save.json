@@ -21,5 +21,10 @@
   "recovery.migration": "Files kept. Convert explicitly.",
   "recovery.version": "Files kept. Use matching build.",
   "recovery.changed": "Files kept. Check before retry.",
-  "recovery.backup": "Files kept. Check a backup."
+  "recovery.backup": "Files kept. Check a backup.",
+  "entry.backup-available": "The primary save could not be read.\nA verified backup is available.",
+  "entry.control.retry": "Enter: retry reading save",
+  "entry.control.new-game": "Backspace: NEW GAME",
+  "league.error-save": "Save failed. Your progress has not\nbeen confirmed. Enter: retry.",
+  "league.overwrite": "A different save already exists.\nOverwrite this save?"
 }

@@ -19,6 +19,7 @@ public sealed class HelpCatalogTests
         try
         {
             File.Copy(Path.Combine(TestAssets.Root, HelpCatalog.ResourcePath), target);
+            TestAssets.CopyFiles(root, ["content/generated/battle/text.json"]);
             var catalog = HelpCatalog.Load(root);
             Assert.IsTrue(catalog.Greeting.StartsWith("Greetings!", StringComparison.Ordinal));
             Assert.AreEqual(36, catalog.Contexts.Count());

@@ -15,7 +15,6 @@ public partial class CampaignView
     private ulong _safariActionFrame = ulong.MaxValue;
     private ImmutableArray<string> _safariPages = [];
     private static readonly string[] SafariActions = ["ball", "bait", "rock", "run"];
-    private static readonly string[] SafariLabels = ["BALL", "BAIT", "ROCK", "RUN"];
 
     private void LoadSafariPresentation()
     {
@@ -74,8 +73,9 @@ public partial class CampaignView
     {
         if (_session.State.SafariVisit is not { Active: true } visit) return;
         _battleSkin.DrawUserFrame(this, new(0, 0, 96, 48),palette);
-        SourceText(font??_sourceNormal, new(12, 11), visit.Steps.ToString().PadLeft(3) + "/600");
-        SourceText(font??_sourceNormal, new(12, 27), "BALLS  " + visit.Balls.ToString().PadLeft(2));
+        var lines = SourceBattleText.Pages(_battleText, "gText_MenuSafariStats", new Dictionary<string, string>(StringComparer.Ordinal)
+        { ["STR_VAR_1"] = visit.Steps.ToString().PadLeft(3), ["STR_VAR_2"] = "600", ["STR_VAR_3"] = visit.Balls.ToString().PadLeft(2) })[0].Split('\n');
+        for (int i = 0; i < lines.Length; i++) SourceText(font??_sourceNormal, new(12, 11 + i * 16), lines[i]);
     }
 
     private void SynchronizeSafariBattle()
@@ -116,7 +116,7 @@ public partial class CampaignView
         _held = null; _repeat = 0;
         if (!key.Pressed || key.Echo || _busy) return true;
         if (key.Keycode is Key.F5 or Key.F9)
-        { _safariNotice = "You can't save or load\nduring a SAFARI GAME."; return true; }
+        { _safariNotice = FieldMenuText.Get("safari.notice.save-load"); return true; }
         var battle = _session.State.SafariBattle!;
         if (battle.Capture?.Stage == CampaignCaptureStage.Naming) return true;
         if (_safariNotice is not null)
@@ -146,7 +146,7 @@ public partial class CampaignView
         {
             _safariActionFrame = Engine.GetProcessFrames();
                bool accepted = Apply(new("safari_action", Text: SafariActions[_safariCursor]));
-            if (!accepted) _safariNotice = "That action is not available\nright now.";
+            if (!accepted) _safariNotice = FieldMenuText.Get("safari.notice.action-unavailable");
         }
         return true;
     }
@@ -203,13 +203,14 @@ public partial class CampaignView
         if(SafariCaptureBallPlayback() is {} ballPlayback)DrawCapturePlayback(ballPlayback,SafariCaptureBallTick);
         // Source wording/counter, using the shared source frame until the dedicated Safari healthbox is imported.
         _battleSkin.DrawStandardFrame(this, new(128, 72, 112, 40));
-        SourceText(_sourceSmall, new(140, 79), "SAFARI BALLS");
-        SourceText(_sourceSmall, new(157, 94), "Left: " + battle.State.BallsRemaining.ToString().PadLeft(2));
+        SourceText(_sourceSmall, new(140, 79), SourceMenuLabelPresentation.Plain(_battleText, "gText_SafariBalls", new Dictionary<string, string> { ["HIGHLIGHT 2"] = "" }));
+        SourceText(_sourceSmall, new(157, 94), SourceMenuLabelPresentation.Plain(_battleText, "gText_HighlightRed_Left", new Dictionary<string, string> { ["HIGHLIGHT 2"] = "" }) + battle.State.BallsRemaining.ToString().PadLeft(2));
         _battleSkin.DrawBattleMessage(this);
         if (battle.Capture is null && battle.Phase == CampaignBattlePhase.ChooseMove)
         {
-            _battleSkin.DrawActionMenu(this); WildLines("What will\n" + _session.State.PlayerName + " do?");
-            for (int i = 0; i < SafariLabels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), SafariLabels[i]);
+            _battleSkin.DrawActionMenu(this); WildLines(_battleSelectionText.SafariPrompt(_session.State.PlayerName));
+            var labels = _battleSelectionText.SafariActionLabels;
+            for (int i = 0; i < labels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), labels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, _safariCursor);
         }
         else if (!_safariPages.IsEmpty && !SafariCaptureBallBlocking)
@@ -218,7 +219,7 @@ public partial class CampaignView
             if (battle.Capture?.Stage == CampaignCaptureStage.NicknameChoice && _safariTextPage + 1 >= _safariPages.Length)
             {
                 _battleSkin.DrawStandardFrame(this, new(184, 64, 56, 48));
-                SourceText(_sourceNormal, new(200, 72), "YES"); SourceText(_sourceNormal, new(200, 88), "NO");
+                SourceText(_sourceNormal, new(200, 72), InventorySourceText("gText_Yes")); SourceText(_sourceNormal, new(200, 88), InventorySourceText("gText_No"));
                 SourceText(_sourceNormal, new(188, 72 + _safariCursor * 16), "▶");
             }
             else DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, text.Split('\n'), 16, _safariElapsed, true);

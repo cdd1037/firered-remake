@@ -11,7 +11,7 @@ public partial class CampaignView
     private double _helpRepeat;
     private Control? _helpReturnFocus;
     private ulong _helpClosedFrame = ulong.MaxValue;
-    private void LoadHelpPresentation() => _helpCatalog = HelpCatalog.Load(_root);
+    private void LoadHelpPresentation() => _helpCatalog = HelpCatalog.Load(_root, battleText: _battleText);
 
     private HelpProgress HelpProgressSnapshot()
     {
@@ -140,8 +140,10 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 160), Color.Color8(232, 232, 216));
         DrawRect(new(0, 0, 240, 20), Color.Color8(120, 160, 152));
         DrawRect(new(0, 142, 240, 18), Color.Color8(120, 160, 152));
-        SourceText(_sourceNormal, new(8, 2), "HELP");
-        string controls = _help.Level == SourceHelpLevel.Greeting ? "A: NEXT" : _help.Level == SourceHelpLevel.Answer ? "A/B: BACK" : "A: SELECT  B: BACK";
+        SourceText(_sourceNormal, new(8, 2), SourceMenuLabelPresentation.Plain(_battleText, "gString_Help"));
+        string controls = _help.Level == SourceHelpLevel.Greeting
+            ? SourceMenuLabelPresentation.Plain(_battleText, "gText_HelpSystemControls_A_Next", new Dictionary<string, string> { ["A_BUTTON"] = "A: " })
+            : FieldMenuText.Get(_help.Level == SourceHelpLevel.Answer ? "help.control.back" : "help.control.select");
         SourceText(_sourceSmall, new(112, 146), controls);
         if (_help.Level == SourceHelpLevel.Greeting) DrawHelpText(_helpCatalog.Greeting, 8, 28, 224);
         else if (_help.Level == SourceHelpLevel.Answer)

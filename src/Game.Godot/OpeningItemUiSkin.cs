@@ -10,6 +10,7 @@ public sealed class OpeningItemUiSkin : IDisposable
     private readonly Dictionary<string, ImageTexture> _textures = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Rect2> _rects = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _texts = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, string> _sourceTexts = null!;
 
     public static readonly Rect2 LogicalRect = new(0, 0, 240, 160);
     public static readonly Rect2 PcListWindow = new(56, 8, 152, 96);
@@ -57,16 +58,10 @@ public sealed class OpeningItemUiSkin : IDisposable
     public Rect2 Rect(string id) => _rects[id];
     /// <summary>Verified source display text. STR_VAR placeholders remain; terminal wait controls are metadata only.</summary>
     public string Text(string symbol) => _texts[symbol];
-    public string FormatText(string symbol, string? strVar1 = null, string? strVar2 = null)
-    {
-        var text = Text(symbol);
-        if (strVar1 is not null) text = text.Replace("{STR_VAR_1}", strVar1, StringComparison.Ordinal);
-        if (strVar2 is not null) text = text.Replace("{STR_VAR_2}", strVar2, StringComparison.Ordinal);
-        if (text.Contains("{STR_VAR_", StringComparison.Ordinal)) throw new ArgumentException("Source text requires its placeholder values.");
-        return text;
-    }
+    public string FormatText(string symbol, string? strVar1 = null, string? strVar2 = null) =>
+        SourceInventoryText.Format(_sourceTexts, symbol, strVar1, strVar2);
 
-    public static OpeningItemUiSkin Load(string directory)
+    public static OpeningItemUiSkin Load(string directory, IReadOnlyDictionary<string, string> sourceTexts)
     {
         var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(directory, "item-ui.json"));
         using var document = JsonDocument.Parse(bytes);
@@ -74,11 +69,15 @@ public sealed class OpeningItemUiSkin : IDisposable
         if (root.GetProperty("schemaVersion").GetInt32() != 1
 )
             throw new InvalidDataException("Opening item UI source identity differs.");
-        var result = new OpeningItemUiSkin();
+        var result = new OpeningItemUiSkin { _sourceTexts = sourceTexts };
         try
         {
-            foreach (var entry in root.GetProperty("texts").EnumerateObject()) result._texts.Add(entry.Name, entry.Value.GetString()!);
-            if (result._texts.Count != 33) throw new InvalidDataException("Incomplete opening item UI text set.");
+            foreach (var entry in root.GetProperty("texts").EnumerateObject())
+            {
+                // Item names/descriptions come from the canonical item catalog, never this skin.
+                if (entry.Name is "ITEM_POTION_NAME" or "ITEM_POTION_DESCRIPTION") continue;
+                result._texts.Add(entry.Name, SourceInventoryText.Format(sourceTexts, entry.Name, "{STR_VAR_1}", "{STR_VAR_2}"));
+            }
             foreach (var entry in root.GetProperty("assets").EnumerateArray())
             {
                 var id = entry.GetProperty("id").GetString()!;

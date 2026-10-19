@@ -102,6 +102,26 @@ public sealed class SourceTextPackWiringTests
     }
 
     [TestMethod]
+    [DataRow("opening", "First\fSecond", "One\fTwo", true)]
+    [DataRow("opening", "First\fSecond", "One\nTwo", false)]
+    [DataRow("opening", "First\fSecond", "OneTwo", false)]
+    [DataRow("opening", "First\fSecond", "\fOneTwo", false)]
+    [DataRow("help", "First\fSecond", "One\fTwo", false)]
+    [DataRow("battle", "First\fSecond", "One\fTwo", false)]
+    public void OpeningPageBreakIsPreservedAndNotAdmittedInOtherSourceGroups(
+        string group, string original, string replacement, bool allowed)
+    {
+        using var output = TestAssets.TemporaryOutput();
+        WriteGroup(output.Path, group, new Dictionary<string, string> { ["page"] = replacement });
+        var pack = SourceTextPack.Load(output.Path);
+        var source = new Dictionary<string, string> { ["page"] = original };
+        if (allowed)
+            Assert.AreEqual(replacement, pack.Apply(group, source, preserveControls: true)["page"]);
+        else
+            Assert.ThrowsExactly<InvalidDataException>(() => pack.Apply(group, source, preserveControls: true));
+    }
+
+    [TestMethod]
     public void UnselectedPackAndExistingDirectoryWithoutSourceKeepEnglishFallback()
     {
         using var output = TestAssets.TemporaryOutput();

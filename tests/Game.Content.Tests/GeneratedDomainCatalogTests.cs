@@ -57,7 +57,7 @@ public sealed class GeneratedDomainCatalogTests
         string[] trainerFamilies = ["rocktunnel", "route11", "vermilion", "ssanne", "vermilion-gym", "celadon-gym", "fuchsia-gym"];
         var paths = encounterFamilies.Select(f => $"content/generated/data/encounters/{f}.json")
             .Concat(trainerFamilies.Select(f => $"content/generated/data/trainer-battles/{f}.json"))
-            .Concat([SharedTrainerCatalog.RelativePath, "content/generated/data/services/old-rod.json", PretSurfEncounters.CatalogRelativePath, PretNameRaterContract.RelativePath, PretCeruleanTrainers.RelativePath]).ToArray();
+            .Concat([SharedTrainerCatalog.RelativePath, "content/generated/data/services/old-rod.json", PretSurfEncounters.CatalogRelativePath, PretNameRaterContract.RelativePath, PretCeruleanTrainers.RelativePath, "content/generated/battle/text.json"]).ToArray();
         var root = GeneratedRoot(paths);
         var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);
         try
@@ -126,7 +126,7 @@ public sealed class GeneratedDomainCatalogTests
     public void TeachingCatalogsLoadGeneratedDefinitionsAndTextsOnly()
     {
         var owned = OwnedCatalog();
-        var root = GeneratedRoot(PretMoveTutors.RelativePath, PretMoveReminderService.RelativePath, PretMoveDeleterTexts.RelativePath);
+        var root = GeneratedRoot(PretMoveTutors.RelativePath, PretMoveReminderService.RelativePath, PretMoveDeleterTexts.RelativePath, "content/generated/battle/text.json");
         try
         {
             var tutors = PretMoveTutors.Load(root, owned).Catalog;
@@ -154,7 +154,7 @@ public sealed class GeneratedDomainCatalogTests
     public void TeachingCatalogRejectsInvalidGeneratedCompatibility()
     {
         var owned = OwnedCatalog();
-        var root = GeneratedRoot(PretMoveTutors.RelativePath);
+        var root = GeneratedRoot(PretMoveTutors.RelativePath, "content/generated/battle/text.json");
         try
         {
             var path = Path.Combine(root, PretMoveTutors.RelativePath);

@@ -5,7 +5,7 @@ using Godot;
 public partial class CampaignView
 {
     private const string DepartmentElevatorMapId="map.celadon-city-department-store-elevator";
-    private static readonly string[] DepartmentElevatorRows=["5F","4F","3F","2F","1F","EXIT"];
+    private static readonly string[] DepartmentElevatorRows=["gText_5F_2","gText_4F_2","gText_3F_2","gText_2F_2","gText_1F_2","gOtherText_Exit"];
     private string? _departmentMenuWait;
     private int _departmentElevatorCursor;
     private long _departmentElevatorEffect;
@@ -17,7 +17,7 @@ public partial class CampaignView
     private bool DepartmentElevatorMenuVisible=>DepartmentElevatorMenuActive&&FieldTextComplete&&
         _session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length;
     private int DepartmentElevatorMenuWidth=>(((int)DepartmentElevatorRows.Max(row=>
-        _sourceNormal.Font.GetStringSize(row,fontSize:_sourceNormal.Size).X)+9)/8+1)*8;
+        _sourceNormal.Font.GetStringSize(SourceMenuLabelPresentation.Plain(_battleText,row),fontSize:_sourceNormal.Size).X)+9)/8+1)*8;
     private bool DepartmentElevatorAnimating=>_departmentElevatorDistance>0&&
         _session?.State.World.Player.MapId.Value==DepartmentElevatorMapId&&_departmentElevatorTicks<_departmentElevatorDuration;
     private int DepartmentElevatorWindowPhase
@@ -103,16 +103,17 @@ public partial class CampaignView
         if(_session.State.DepartmentElevator?.FloorWindowVisible==true)
         {
             _battleSkin.DrawUserFrame(this,new(168,0,72,48));
-            SourceText(_sourceNormal,new(176,10),"Now on:");
+            SourceText(_sourceNormal,new(176,10),SourceMenuLabelPresentation.Plain(_battleText,"gText_NowOn"));
             int sourceFloor=_session.State.Script.Variables.GetValueOrDefault("VAR_0x8005");
-            string floor=_catalog.DepartmentStoreElevatorFloors.Single(f=>f.SourceFloorValue==sourceFloor).Label;
+            var floorDefinition=_catalog.DepartmentStoreElevatorFloors.Single(f=>f.SourceFloorValue==sourceFloor);
+            string floor=SourceMenuLabelPresentation.Plain(_battleText,"gText_"+(5-floorDefinition.MenuIndex)+"F");
             float width=_sourceNormal.Font.GetStringSize(floor,fontSize:_sourceNormal.Size).X;
             SourceText(_sourceNormal,new(232-width,24),floor);
         }
         if(!DepartmentElevatorMenuVisible)return;
         int frameHeight=((DepartmentElevatorRows.Length*14+16+7)/8)*8;
         _battleSkin.DrawUserFrame(this,new(0,0,DepartmentElevatorMenuWidth+16,frameHeight));
-        for(int row=0;row<DepartmentElevatorRows.Length;row++)SourceText(_sourceNormal,new(16,10+row*14),DepartmentElevatorRows[row]);
+        for(int row=0;row<DepartmentElevatorRows.Length;row++)SourceText(_sourceNormal,new(16,10+row*14),SourceMenuLabelPresentation.Plain(_battleText,DepartmentElevatorRows[row]));
         SourceText(_sourceNormal,new(8,10+_departmentElevatorCursor*14),"▶");
     }
 }

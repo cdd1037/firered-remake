@@ -71,7 +71,7 @@ public sealed class PretMainMenuSource
     public PretMainMenuRules Rules { get; }
     public string GeneratedDirectory { get; }
 
-    private PretMainMenuSource(string directory, JsonElement root)
+    private PretMainMenuSource(string directory, JsonElement root, IReadOnlyDictionary<string, string> battleText)
     {
         GeneratedDirectory = directory;
         var options = ContentJson.CreateOptions();
@@ -83,7 +83,9 @@ public sealed class PretMainMenuSource
         Palettes = Decode<ImmutableArray<PretMainMenuPalette>>("palettes").ToImmutableDictionary(x => x.Symbol, StringComparer.Ordinal);
         GenderColors = Decode<ImmutableArray<PretMainMenuGenderColor>>("genderColors").ToImmutableDictionary(x => x.Gender);
         TextPlacements = Decode<ImmutableArray<PretMainMenuTextPlacement>>("textPlacements");
-        Texts = Decode<ImmutableDictionary<string, PretMainMenuText>>("texts");
+        Texts = Decode<ImmutableDictionary<string, PretMainMenuText>>("texts").ToImmutableDictionary(
+            pair => pair.Key, pair => battleText.TryGetValue(pair.Key, out var text)
+                ? pair.Value with { Text = text } : pair.Value, StringComparer.Ordinal);
         SelectionRegions = Decode<ImmutableArray<PretMainMenuSelectionRegion>>("selectionRegions").ToImmutableDictionary(x => x.WindowSymbol, StringComparer.Ordinal);
         SaveStatuses = Decode<ImmutableArray<PretMainMenuSaveStatus>>("saveStatuses").ToImmutableDictionary(x => x.Symbol, StringComparer.Ordinal);
         ConstantSources = Decode<ImmutableDictionary<string, PretMainMenuConstant>>("constants");
@@ -91,7 +93,7 @@ public sealed class PretMainMenuSource
         Rules = Decode<PretMainMenuRules>("rules");
     }
 
-    public static PretMainMenuSource Load(string projectRoot)
+    public static PretMainMenuSource Load(string projectRoot, IReadOnlyDictionary<string, string>? battleText = null)
     {
         var project = Path.GetFullPath(projectRoot);
         var generatedDirectory = Path.Combine(project, "content/generated/ui/main-menu");
@@ -104,7 +106,7 @@ return bytes;
         var root = document.RootElement;
         Require(root.GetProperty("schemaVersion").GetInt32() == 1 ,
             "Main-menu identity differs.");
-        var result = new PretMainMenuSource(generatedDirectory, root);
+        var result = new PretMainMenuSource(generatedDirectory, root, battleText ?? PretBattleText.Load(projectRoot));
         Require(result.Windows.Count == 5 && result.TextPlacements.Length == 15 && result.Palettes.Count == 2 &&
             result.SaveStatuses.Count == 5 && result.SelectionRegions.Count == 5 && result.GenderColors.Count == 2 &&
             result.Rules.FrameDrawCalls.Length == 8, "Main-menu metadata incomplete.");

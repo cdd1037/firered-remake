@@ -125,8 +125,8 @@ public partial class CampaignView
             if (slot.Phase == CampaignSlotPhase.Quit && slot.MainStep <= 2)
             {
                 _battleSkin.DrawUserFrame(this, new(144, 64, 64, 48));
-                SourceText(_sourceNormal, new(160, 74), "YES");
-                SourceText(_sourceNormal, new(160, 88), "NO");
+                SourceText(_sourceNormal, new(160, 74), InventorySourceText("gText_Yes"));
+                SourceText(_sourceNormal, new(160, 88), InventorySourceText("gText_No"));
                 SourceText(_sourceNormal, new(152, 74 + slot.QuitChoice * 14), "▶");
             }
         }

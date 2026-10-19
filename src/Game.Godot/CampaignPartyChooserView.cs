@@ -24,7 +24,7 @@ public partial class CampaignView
         return -1;
     }
 
-    private void DrawServicePartyChooser(int cursor, string prompt, string cancelText = "CANCEL")
+    private void DrawServicePartyChooser(int cursor, string prompt, string? cancelText = null)
     {
         DrawNativeParty(_session.State.Party, cursor, prompt, cancelText: cancelText);
         if (_fade > 0) DrawRect(new(0, 0, 240, 160), new Color(0, 0, 0, (float)Math.Clamp(_fade / (16.0 / 60), 0, 1)));

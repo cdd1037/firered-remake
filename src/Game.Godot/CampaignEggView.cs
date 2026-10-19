@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Game.Application;
 using Game.Domain.Pokemon;
 using Game.Domain.World;
@@ -12,42 +13,17 @@ public partial class CampaignView
 
     // pokemon_summary_screen.c PrintInfoPage: <=5, <=10, <=40, then >40.
     // Eggs cannot flip to skills/moves, and none of the hidden Pokemon fields is displayed.
-    private static string[] EggSummaryLines(PartyPokemon owned) => owned.Pokemon.Friendship switch
-    {
-        <= 5 => ["It's making sounds.", "It's almost ready", "to hatch!"],
-        <= 10 => ["It occasionally", "moves. It should", "hatch soon."],
-        <= 40 => ["What will hatch", "from this? It will", "take some time."],
-        _ => ["It looks like this", "EGG will take a", "long time to hatch."]
-    };
+    private ImmutableArray<string> EggSummaryLines(PartyPokemon owned) =>
+        _summaryPartyText.EggHatchLines(owned.Pokemon.Friendship);
 
-    // pret 037335f pokemon_summary_screen.c:2789-2839,3243-3269;
-    // strings.c:820-824. This is the owned-party/box branch, not the link
-    // opponent's party. Validated current names contain no extended controls.
-    private string[] EggOriginLines(PartyPokemon owned)
+    // Retain the source owned-party/box origin precedence and low trainer-ID comparison.
+    private ImmutableArray<string> EggOriginLines(PartyPokemon owned)
     {
-        if (owned.MetLocation == "METLOC_FATEFUL_ENCOUNTER" || owned.ModernFatefulEncounter)
-            return ["A wondrously peculiar POKéMON EGG", "obtained at a nice place."];
         bool currentOwner = (owned.Pokemon.OriginalTrainerId & 0xffff) == (_session.State.TrainerId & 0xffff) &&
             string.Equals(owned.OriginalTrainerName, _session.State.PlayerName, StringComparison.Ordinal);
-        if (owned.MetGame is not (4 or 5) || !currentOwner)
-            return ["A peculiar POKéMON EGG obtained", "in a trade."];
-        return owned.MetLocation == SourceGiftEggRules.MetLocation
-            ? ["An odd POKéMON EGG obtained from", "the traveling man."]
-            : ["An odd POKéMON EGG found by the", "DAY-CARE couple."];
-    }
-
-    private void DrawEggSummary(PartyPokemon owned)
-    {
-        _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-        SourceText(_sourceNormal, new(8, 8), "POKéMON INFO");
-        SourceText(_sourceNormal, new(82, 30), _catalog.PokemonDisplayName(owned));
-        DrawTexture(BreedingEggShell(), new(8, 38));
-        var lines = EggSummaryLines(owned);
-        for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(82, 51 + 15 * i), lines[i]);
-        var origin = EggOriginLines(owned);
-        SourceText(_sourceSmall, new(8, 111), origin[0]);
-        SourceText(_sourceSmall, new(8, 125), origin[1]);
-        SourceText(_sourceSmall, new(172, 143), "BACK");
+        return _summaryPartyText.EggOriginLines(
+            owned.MetLocation == "METLOC_FATEFUL_ENCOUNTER" || owned.ModernFatefulEncounter,
+            currentOwner, owned.MetGame, owned.MetLocation == SourceGiftEggRules.MetLocation);
     }
 
     private double _eggHatchElapsed;
@@ -201,7 +177,7 @@ public partial class CampaignView
             if(FieldTextComplete && hatch.Stage==CampaignEggHatchStage.NicknameChoice)
             {
                 _battleSkin.DrawUserFrame(this,new(160,64,64,48));
-                SourceText(_sourceNormal,new(176,74),"YES"); SourceText(_sourceNormal,new(176,88),"NO");
+                SourceText(_sourceNormal,new(176,74),InventorySourceText("gText_Yes")); SourceText(_sourceNormal,new(176,88),InventorySourceText("gText_No"));
                 SourceText(_sourceNormal,new(168,_choiceYes?74:88),"▶");
             }
             else if(FieldTextComplete) DrawTextCursor(_sourceNormal,LabBattleUiSkin.DialogueText,text.Split('\n'),15,_waitElapsed);

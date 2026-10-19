@@ -4,6 +4,8 @@ using Godot;
 public partial class CampaignView
 {
     private PokedexHabitat[] _pokedexHabitats=[];
+    private string PokedexCryLabel => SourceMenuLabelPresentation.Plain(_pokedexMenu!.UiTexts, "gText_Cry",
+        new Dictionary<string, string> { ["START_BUTTON"] = "" });
     private int _pokedexContentsCursor,_pokedexHabitatIndex,_pokedexHabitatPage,_pokedexHabitatSlot;
     private string _pokedexDetailReturn="pokedex",_pokedexHabitatReturn="pokedex-contents";
     private PokedexMenuList? _pokedexBeforeHabitatList;
@@ -113,15 +115,15 @@ public partial class CampaignView
         {
             SourceText(_sourceSmall,new(12,2),_pokedexMenu!.UiTexts["gText_PokedexTableOfContents"]);
             for(int i=0;i<_pokedexHabitats.Length;i++)SourceText(_sourceSmall,new(24,20+i*12),
-                _pokedexHabitats[i].Pages.IsEmpty?"-----":_pokedexHabitats[i].Title);
-            SourceText(_sourceSmall,new(24,20+_pokedexHabitats.Length*12),"SEARCH / NUMERICAL");
+                _pokedexHabitats[i].Pages.IsEmpty?_pokedexMenu.UiTexts["gText_5Dashes"]:_pokedexHabitats[i].Title);
+            SourceText(_sourceSmall,new(24,20+_pokedexHabitats.Length*12),FieldMenuText.Get("pokedex.control.search-numerical"));
             SourceText(_sourceSmall,new(16,20+_pokedexContentsCursor*12),"▶");
             string category=_pokedexContentsCursor==_pokedexHabitats.Length?"numerical":
                 _pokedexHabitats[_pokedexContentsCursor].Pages.IsEmpty?"unknown":_pokedexHabitats[_pokedexContentsCursor].Id;
             DrawPokedexVisual("category/"+category,168,88);
-            SourceText(_sourceSmall,new(168,26),"SEEN "+_pokedexList!.SeenCount);
-            SourceText(_sourceSmall,new(168,52),"OWNED "+_pokedexList.CaughtCount);
-            DrawPokedexKey("A_BUTTON",8,"SELECT");DrawPokedexKey("B_BUTTON",184,"BACK");return true;
+            SourceText(_sourceSmall,new(168,26),_pokedexMenu.UiTexts["gText_Seen"]+" "+_pokedexList!.SeenCount);
+            SourceText(_sourceSmall,new(168,52),_pokedexMenu.UiTexts["gText_Owned"]+" "+_pokedexList.CaughtCount);
+            DrawPokedexKey("A_BUTTON",8,FieldMenuText.Get("pokedex.control.select"));DrawPokedexKey("B_BUTTON",184,_summaryText.Get("control.back"));return true;
         }
         var habitat=_pokedexHabitats[_pokedexHabitatIndex];
         SourceText(_sourceSmall,new(12,2),habitat.Title);
@@ -139,7 +141,7 @@ public partial class CampaignView
             if(row.Caught)DrawPokedexVisual(PokedexPalette+"/caught",slot.InfoX+2,slot.InfoY+3);
 
         }
-        DrawPokedexKey("DPAD_LEFTRIGHT",8,"PICK / PAGE");DrawPokedexKey("A_BUTTON",112,"CHECK");DrawPokedexKey("B_BUTTON",184,"BACK");return true;
+        DrawPokedexKey("DPAD_LEFTRIGHT",8,FieldMenuText.Get("pokedex.control.pick-page"));DrawPokedexKey("A_BUTTON",112,InventoryActionLabel(InventoryMenuAction.Check));DrawPokedexKey("B_BUTTON",184,_summaryText.Get("control.back"));return true;
     }
     private void DrawPokedexAreaPage()
     {
@@ -149,7 +151,7 @@ public partial class CampaignView
         SourceText(_sourceSmall,new(44,60),_pokedexMenu!.UiTexts["gText_Size"]);
         DrawPokedexSize(row.SourceSpeciesId);
         DrawPokedexArea();
-        DrawPokedexKey("START_BUTTON",8,"CRY");DrawPokedexKey("A_BUTTON",88,"EXIT");DrawPokedexKey("B_BUTTON",184,"DATA");
+        DrawPokedexKey("START_BUTTON",8,PokedexCryLabel);DrawPokedexKey("A_BUTTON",88,InventoryActionLabel(InventoryMenuAction.Exit));DrawPokedexKey("B_BUTTON",184,FieldMenuText.Get("pokedex.control.data"));
     }
     private readonly Dictionary<int,PokedexMenuPage> _pokedexPresentedPages=[];
     private PokedexSizeTransform? _pokedexSizeComparison;

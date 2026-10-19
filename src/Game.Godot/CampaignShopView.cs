@@ -152,7 +152,8 @@ public partial class CampaignView
         if (selected < items.Length)
         {
             var definition = _session.ShopItem(items[selected]);
-            ItemLabel(new(7, 43), "IN BAG: " + definition.Quantity, 8);
+            ItemLabel(new(7, 43), SourceMenuLabelPresentation.Plain(_battleText, "gText_InBagVar1",
+                new Dictionary<string, string> { ["FONT_SMALL"] = "", ["STR_VAR_1"] = definition.Quantity.ToString() }), 8);
             if (definition.Move is { } move) ItemLabel(new(7, 65), MoveName(move), 8);
             else if (_earlyItemIcons.TryGetValue(definition.Id, out var icon)) DrawTexture(icon, new(24, 65));
         }
@@ -167,7 +168,7 @@ public partial class CampaignView
         {
             ItemMessageBox(_session.ShopText(shop.Mode == "buy" ? "gText_Var1AndYouWantedVar2" : "gText_ICanPayThisMuch_WouldThatBeOkay"));
             _battleSkin.DrawStandardFrame(this, new(0, 64, 64, 48));
-            ItemLabel(new(20, 73), "YES"); ItemLabel(new(20, 89), "NO"); ItemLabel(new(8, 73 + _shopConfirm * 16), "▶");
+            ItemLabel(new(20, 73), InventorySourceText("gText_Yes")); ItemLabel(new(20, 89), InventorySourceText("gText_No")); ItemLabel(new(8, 73 + _shopConfirm * 16), "▶");
         }
         else ItemMessageBox(selected < items.Length ? _session.ShopItem(items[selected]).Description : _session.ShopText("gText_QuitShopping"));
     }
@@ -181,17 +182,17 @@ public partial class CampaignView
             var item = FieldItemStacks[_itemCursor].Item;
                bool accepted = Apply(new("field_medicine", Text: item.Value, PartyIndex: _fieldMedicineTarget));
             _fieldMedicineTargetOpen = false;
-            if (!accepted) _itemNotice = _status == "medicine_effect_unsupported" ? "This item's use is not\nimplemented yet." : _status;
-            else if (_session.State.ItemMenu?.View != "message") _itemNotice = InventoryName(item) + " was used.";
+            if (!accepted) _itemNotice = _status == "medicine_effect_unsupported" ? _inventoryText.Get("notice.use-unavailable") : _status;
+            else if (_session.State.ItemMenu?.View != "message") _itemNotice = _inventoryText.Get("notice.used", ("item", InventoryName(item)));
             _itemCursor = Math.Min(_itemCursor, FieldItemStacks.Length);
         }
         return true;
     }
     private void DrawFieldMedicineTargets()
     {
-        DrawNativeParty(_session.State.Party,_fieldMedicineTarget,"Use on which POKéMON?",
+        DrawNativeParty(_session.State.Party,_fieldMedicineTarget,SourceMenuLabelPresentation.Plain(_battleText, "gText_UseOnWhichPokemon"),
             description: MtMoonTargetActive && IsFieldEvolution(_mtMoonTargetItem)
-                ? i => _session.FieldEvolutionPartyTarget(_session.State.Party[i],_mtMoonTargetItem) is null ? "NO USE" : null
+                ? i => _session.FieldEvolutionPartyTarget(_session.State.Party[i],_mtMoonTargetItem) is null ? SourceMenuLabelPresentation.Plain(_battleText, "gText_NoUse") : null
                 : null);
     }
 }

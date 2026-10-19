@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Import FireRed's complete 15-row prize shelf, five items and 50-machine/174-owner teaching delta.
-REFERENCE DEPENDENCY OUTPUT [--check]. Only pinned Git blobs and existing dependencies are read.
+[REFERENCE] DEPENDENCY OUTPUT [--raw-root RAW] [--check].
+Reads retained raw sources by default, or pinned Git blobs from an explicit REFERENCE.
 No upstream code is run; source art is local-only and only six new icon variants are generated.
 """
 import sys as _bootstrap_sys
@@ -9,8 +10,9 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from item_source import ItemSource
+from pokemon_import_io import SourceReader
 from item_catalog import inventory_item, item_json
-import argparse,  io, json, re, subprocess
+import argparse, io, json, re
 from pathlib import Path
 from PIL import Image
 from machine_catalog import compatibility_additions, load_catalog, machine_definitions
@@ -51,11 +53,12 @@ def need(value, message):
     if not value: raise ValueError(message)
 def encoded(value): return (json.dumps(value,indent=2,ensure_ascii=False, default=item_json)+'\n').encode()
 
-def generate(reference, dependency):
+def generate(reference, dependency, raw_root=None):
+    source_reader = SourceReader(raw_root or dependency / RAW, commit=COMMIT, repository=reference)
     inputs,raw,cache,dependencies={}, {}, {}, []
     def read(path):
         if path in cache:return cache[path]
-        data=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference)
+        data=source_reader.read(path)
         local=SHARED.get(path,RAW+path)
         if path in SHARED:need((dependency/local).read_bytes()==data,'Shared source bytes: '+path)
         else:raw[local]=data
@@ -146,11 +149,10 @@ def generate(reference, dependency):
         if kind=='pokemon':menu_body=re.sub(r'#if defined\(FIRERED\)\n(.*?)#elif defined\(LEAFGREEN\)\n.*?#endif\n',lambda m:m[1],menu_body,flags=re.S)
         labels=re.findall(r'\{ (\w+) \}',menu_body);need(len(labels)==6 and labels[-1]=='gText_NoThanks_2','Six original menu entries')
         one(mp,r'^    \['+menu_symbol+r'\]\s*= MULTICHOICE\('+ms+r'\),$')
-        menu_text=[]
         for label in labels:
-            line=one('src/strings.c',r'^const u8 '+label+r'\[\] = _\("(.*?)"\);');menu_text.append(json.loads('"'+line[1]+'"'))
+            one('src/strings.c',r'^const u8 '+label+r'\[\] = _\("(.*?)"\);')
         counters.append(dict(kind=kind,actorLocalId=actor[0],x=actor[1]['x'],y=actor[1]['y'],elevation=actor[1]['elevation'],
-            clerkScript=clerk_label,menuSymbol=menu_symbol,menuId=menu_id,menuLabels=menu_text,prizes=prizes,source=source(path,clerk_label,body),menuSource=source(mp,ms,block)))
+            clerkScript=clerk_label,menuSymbol=menu_symbol,menuId=menu_id,menuTextSymbols=labels,prizes=prizes,source=source(path,clerk_label,body),menuSource=source(mp,ms,block)))
     one('asm/macros/event.inc',r'^\t\.macro giveitem item:req, amount=1\n.*?\t\.endm')
     received=script('CheckReceivedMon')[0]
     for value,label in [(0,'ReceivedMonParty'),(1,'ReceivedMonPC'),(2,'PartyFull')]:
@@ -183,9 +185,11 @@ def generate(reference, dependency):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    for arg in ['reference','dependency','output']:parser.add_argument(arg,type=Path)
+    parser.add_argument('reference', type=Path, nargs='?', help='Optional pinned Git reference repository')
+    for arg in ['dependency','output']:parser.add_argument(arg,type=Path)
+    parser.add_argument('--raw-root', type=Path, help='Retained raw source root; defaults below DEPENDENCY')
     parser.add_argument('--check',action='store_true');args=parser.parse_args()
-    files,items,machines,facts=generate(args.reference,args.dependency)
+    files,items,machines,facts=generate(args.reference,args.dependency,args.raw_root)
     for path,data in files.items():
         target=args.output/path
         if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)

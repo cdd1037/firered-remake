@@ -42,8 +42,12 @@ public static class PretQuestItemUi
     }
 
     /// <summary>Project every assembled pocket row once, after regional art has been loaded.</summary>
-    public static QuestItemUiDocument WithDisplayText(QuestItemUiDocument document, SharedItemCatalog items, MachineItem tmCase) =>
-        document with { Items = document.Items.Select(row =>
+    public static QuestItemUiDocument WithDisplayText(QuestItemUiDocument document, SharedItemCatalog items, MachineItem tmCase,
+        IReadOnlyDictionary<string, string>? sourceTexts = null) =>
+        document with { Texts = sourceTexts is null ? document.Texts : document.Texts.ToImmutableDictionary(
+            pair => pair.Key, pair => string.Join("\n", Game.Domain.Events.SourceBattleText.Pages(sourceTexts, pair.Key,
+                new Dictionary<string, string> { ["PLAYER"] = "{PLAYER}" })), StringComparer.Ordinal),
+            Items = document.Items.Select(row =>
         {
             var id = new Game.Domain.Ids.ItemId(row.Id);
             return row with { Name = items.Definition(id).Name,

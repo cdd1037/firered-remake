@@ -11,7 +11,7 @@ public partial class CampaignView
 {
     private PretMainMenuSource? _entrySource;
     private LoadedSave<CampaignState>? _entrySave;
-    private string _entryMode="closed",_entryPlayerName="RED",_entryRivalName="BLUE";
+    private string _entryMode="closed",_entryPlayerName="",_entryRivalName="";
     private string? _entryNotice;
     private bool _entryLoadCanRetry;
     private int _entryCursor,_entryGender;
@@ -41,8 +41,10 @@ public partial class CampaignView
     private bool InitializePlayerEntry(string checkpoint,bool force=false)
     {
         if(!force&&(OS.GetEnvironment("FIRERED_PLAYER_ENTRY")=="0"||checkpoint.Length!=0))return false;
-        _entrySource=PretMainMenuSource.Load(_root);
+        _entrySource=PretMainMenuSource.Load(_root, _battleText);
         InitializeOpeningPresentation();
+        _entryPlayerName=_opening!.Texts["gNameChoice_Red"];
+        _entryRivalName=FieldMenuText.Get("opening.rival-initial-name");
         static Color Rgb(System.Collections.Immutable.ImmutableArray<int> c)=>Color.Color8((byte)c[0],(byte)c[1],(byte)c[2]);
         var palette=_entrySource.Palettes["sTextbox_Pal"].Rgb8;var colors=_entrySource.TextColors["sTextColor1"];
         string fontDirectory=Path.Combine(_root,"content/generated/ui/font");
@@ -64,7 +66,7 @@ public partial class CampaignView
         _entryHasExistingFiles=attempt.Result.Status!=SaveOperationStatus.Missing;
         if(!_entryHasExistingFiles)_entryObservedSlot="missing|missing";
         else if(!attempt.Result.Succeeded)SetEntryLoadFailure(attempt.Result);
-        else if(attempt.Result.FromBackup)_entryNotice="The primary save could not be read.\nA verified backup is available.";
+        else if(attempt.Result.FromBackup)_entryNotice=_saveText.Get("entry.backup-available");
         _entryMode=_entryNotice is not null?"notice":"menu";
         if(_entryNotice is null&&_entrySave is null)BeginNewGameGuide();
         ApplySavedOptions(_entrySave?.State.Options??Game.Domain.Options.SourceGameOptions.Defaults);
@@ -86,7 +88,7 @@ public partial class CampaignView
         _entrySubmitFrame=Engine.GetProcessFrames();
         _entryActionFrame=_entrySubmitFrame;
         if(text.Length is <1 or >7||!text.Any(c=>c!=' ')||text.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))
-        {_entryNotice="Use 1-7 supported letters or symbols.";QueueRedraw();return;}
+        {_entryNotice=FieldMenuText.Get("opening.notice.name-encoding");QueueRedraw();return;}
         bool player=_entryMode=="player-name";CloseNamingScreen();_entryNotice=null;
         if(player){_entryPlayerName=text;_entryMode="player-confirm";}
         else{_entryRivalName=text;_entryMode="rival-confirm";}
@@ -182,7 +184,7 @@ public partial class CampaignView
         if(_entryActionFrame==Engine.GetProcessFrames())return;_entryActionFrame=Engine.GetProcessFrames();
         if(_entryMode=="menu")
         {if(_entryCursor==0)ContinueChosenGame();else BeginNewGameGuide();}
-        else if(_entryMode=="gender"){_entryGender=_entryCursor;_entryPlayerName=_entryGender==0?"RED":"LEAF";BeginOpeningSpeech("player-name",("YourNameWhatIsIt",OpeningPlayerPortrait));}
+        else if(_entryMode=="gender"){_entryGender=_entryCursor;_entryPlayerName=_opening!.Texts[_entryGender==0?"gNameChoice_Red":"gNameChoice_Leaf"];BeginOpeningSpeech("player-name",("YourNameWhatIsIt",OpeningPlayerPortrait));}
         else if(_entryMode=="player-confirm")
         {if(_entryCursor==0)BeginOpeningSpeech("rival-name",("WhatWasHisName","rival"));else ShowEntryName("player-name");}
         else if(_entryMode=="rival-confirm")
@@ -289,15 +291,10 @@ public partial class CampaignView
         else
         {
             _battleSkin.DrawStandardFrame(this,new(8,8,224,136));SourceText(_sourceNormal,new(24,20),EntryText("gText_NewGame"));
-            if(_entryMode=="gender")
-            {SourceText(_sourceNormal,new(24,44),"Are you a boy? Or are you a girl?");SourceText(_sourceNormal,new(40,88),"BOY");SourceText(_sourceNormal,new(40,104),"GIRL");SourceText(_sourceNormal,new(26,88+_entryCursor*16),"▶");}
-            else if(_entryMode is "player-name" or "rival-name")
-            {SourceText(_sourceNormal,new(24,42),_entryMode=="player-name"?"YOUR NAME":"RIVAL'S NAME");SourceText(_sourceSmall,new(24,100),"Enter: confirm    Esc: back");}
-            else if(_entryMode=="confirm")
-            {SourceText(_sourceNormal,new(24,42),"PLAYER: "+_entryPlayerName);SourceText(_sourceNormal,new(24,58),"RIVAL: "+_entryRivalName);SourceText(_sourceNormal,new(40,88),"START ADVENTURE");SourceText(_sourceNormal,new(40,104),"CHANGE NAMES");SourceText(_sourceNormal,new(26,88+_entryCursor*16),"▶");}
+
         }
         if(_entryLoadCanRetry&&_entryMode=="notice")
-        {SourceText(_sourceSmall,new(24,52),"Enter: retry reading save");SourceText(_sourceSmall,new(24,68),"Backspace: NEW GAME");}
+        {SourceText(_sourceSmall,new(24,52),_saveText.Get("entry.control.retry"));SourceText(_sourceSmall,new(24,68),_saveText.Get("entry.control.new-game"));}
         if(_entryNotice is not null)ItemMessageBox(_entryNotice);
     }
     private bool RequestEntrySaveOverwrite()

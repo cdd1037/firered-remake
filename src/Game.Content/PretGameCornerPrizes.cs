@@ -61,7 +61,18 @@ public static class PretGameCornerPrizes
         return doc;
     }
 
-    public static GameCornerPrizeCatalog LoadCatalog(string root, GamePokemonCatalog owned, EarlyShopCatalog items, MachineCatalog machines, SharedMachineCatalog? shared = null) =>
-        GameCornerPrizeCatalog.Authenticate(owned, items, machines,
-            LoadSourceContract(root, shared).GetProperty("counters").Deserialize<ImmutableArray<GameCornerPrizeCounter>>(Options));
+    public static GameCornerPrizeCatalog LoadCatalog(string root, GamePokemonCatalog owned, EarlyShopCatalog items, MachineCatalog machines,
+        SharedMachineCatalog? shared = null, IReadOnlyDictionary<string, string>? sourceTexts = null)
+    {
+        var rows = LoadSourceContract(root, shared).GetProperty("counters");
+        var counters = rows.Deserialize<ImmutableArray<GameCornerPrizeCounter>>(Options);
+        sourceTexts ??= PretBattleText.Load(root);
+        counters = counters.Select((counter, index) =>
+        {
+            var symbols = rows[index].GetProperty("menuTextSymbols").EnumerateArray().Select(row => row.GetString()!).ToArray();
+            if (counter.Prizes.IsDefault || symbols.Length != counter.Prizes.Length + 1) throw new InvalidDataException("game_corner_prize_menu_texts");
+            return counter with { MenuLabels = symbols.Select(symbol => sourceTexts[symbol]).ToImmutableArray() };
+        }).ToImmutableArray();
+        return GameCornerPrizeCatalog.Authenticate(owned, items, machines, counters);
+    }
 }

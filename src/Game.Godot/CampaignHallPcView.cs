@@ -11,7 +11,7 @@ public partial class CampaignView
     private HallOfFamePcCursor? _hallPcCursor;
     private readonly List<Texture2D> _hallPcMutedSprites = [];
     private bool _hallPcExitHook;
-    private HallOfFamePcPresentation HallPcPresentation => _hallPcPresentation ??= PretHallOfFamePcPresentation.Load(_root);
+    private HallOfFamePcPresentation HallPcPresentation => _hallPcPresentation ??= PretHallOfFamePcPresentation.Load(_root, _catalog.BattleContent!.Texts);
     private string HallPcText(string symbol) => HallPcPresentation.Text[symbol];
 
     private void ClearHallPcSprites()

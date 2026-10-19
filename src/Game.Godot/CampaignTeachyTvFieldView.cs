@@ -113,8 +113,8 @@ public partial class CampaignView
         if (field.ContextOpen)
         {
             string[] actions = field.Kind == TeachyTvDemonstrationKind.RegisterItem
-                ? [_itemSkin.Text("gOtherText_Use"), "REGISTER", _itemSkin.Text("gFameCheckerText_Cancel")]
-                : [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")];
+                ? [SourceMenuLabelPresentation.Plain(_battleText, "gOtherText_Use"), SourceMenuLabelPresentation.Plain(_battleText, "gOtherText_Register"), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel")]
+                : [SourceMenuLabelPresentation.Plain(_battleText, "gOtherText_Use"), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel")];
             DrawItemActionPopup(actions.Length == 3, actions, field.ContextCursor,
                 field.SelectedItem is {} id ? _questPocketUi!.Items.Single(item => item.Id == id).Name : null);
         }
@@ -154,7 +154,7 @@ public partial class CampaignView
         var stacks = inventory.KeyItems ?? [];
         for (int i = 0; i < stacks.Length; i++)
             SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, i), QuestPocketItem(stacks[i]).Name);
-        SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, stacks.Length), _itemSkin.Text("gFameCheckerText_Cancel"));
+        SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, stacks.Length), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel"));
         int cursor = Math.Min(field.Cursor, stacks.Length);
         SourceText(_sourceNormal, OpeningItemUiSkin.ListCursor(false, cursor), _itemSkin.Text("gText_SelectorArrow2"));
         if (cursor < stacks.Length)

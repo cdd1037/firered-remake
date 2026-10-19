@@ -1,4 +1,5 @@
 using FireRed.Tests;
+using System.Text.Json;
 using Game.Content;
 using Game.Domain.Randomness;
 using Game.Domain.Trainers;
@@ -9,16 +10,30 @@ namespace FireRed.Tests.Battle.Lifecycle;
 public sealed class TrainerTowerCreationTests
 {
     [TestMethod]
-    [DataRow(1)]
-    [DataRow(50)]
-    [DataRow(100)]
-    public void EverySelectedTowerMemberPreservesFixedIdentityWithoutRandomDraws(int level)
+    [DataRow(1, false)]
+    [DataRow(50, false)]
+    [DataRow(100, false)]
+    [DataRow(1, true)]
+    [DataRow(50, true)]
+    [DataRow(100, true)]
+    public void EverySelectedTowerMemberPreservesFixedIdentityWithoutRandomDraws(int level, bool translated)
     {
         var mechanics = TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
         var canonical = PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root);
         var game = PretGamePokemonCatalog.LoadContent(
             File.ReadAllText(Path.Combine(TestAssets.Root, PretGamePokemonCatalog.RelativePath)), canonical, mechanics);
         var tower = PretTrainerTowerRules.Load(TestAssets.Root);
+        using var output = TestAssets.TemporaryOutput();
+        if (translated)
+        {
+            Directory.CreateDirectory(Path.Combine(output.Path, "source"));
+            var names = tower.Templates.SelectMany(floor => floor.Trainers.Select(trainer =>
+                KeyValuePair.Create(floor.Symbol + "/" + trainer.Index.ToString(System.Globalization.CultureInfo.InvariantCulture), "DISPLAY")))
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+            File.WriteAllText(Path.Combine(output.Path, "source/trainer-tower-names.json"), JsonSerializer.Serialize(names));
+            var pack = SourceTextPack.Load(output.Path);
+            tower = PretTrainerTowerRules.WithDisplayText(tower, PretMailComposer.Load(TestAssets.Root, pack).Catalog, pack);
+        }
         var rng = new RngState(42);
         var count = 0;
         foreach (var course in tower.Courses)
@@ -27,6 +42,8 @@ public sealed class TrainerTowerCreationTests
         {
             var descriptor = tower.DescribeBattle(course.Kind, floor.Index, trainer, level);
             var made = tower.CreateBattle(game.TrainerTowerOpponents, course.Kind, floor.Index, trainer, level, rng);
+            Assert.AreEqual(descriptor.Members[0].Trainer.Name, made.Trainer.SourceTrainerName);
+            if (translated) Assert.AreEqual("DISPLAY", made.Trainer.SourceTrainerName);
             Assert.AreEqual(rng, made.Rng);
             Assert.IsTrue(made.Trace.IsEmpty);
             Assert.AreEqual(descriptor.Members.Length, made.Party.Length);

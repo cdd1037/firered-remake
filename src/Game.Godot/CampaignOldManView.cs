@@ -121,7 +121,7 @@ public partial class CampaignView
         if (symbol is not null)
         {
             var source = _catalog.OldManTutorial.Texts[symbol];
-            var parsed = ParseOldManText(source.Text, "WEEDLE", "POKé BALL");
+            var parsed = ParseOldManText(source.Text, PresentedBattleSpeciesName(tutorial.Result.Weedle.SourceSpeciesId), _catalog.DisplayNames.ItemName("ITEM_POKE_BALL"));
             _oldManText = parsed.Text;
             if (parsed.Pause > 0) _oldManDurationTicks = parsed.Pause;
             // Dummy audio has no active voice to wait on. Keep both source controls observable; no claim of audible output.
@@ -133,7 +133,8 @@ public partial class CampaignView
             var values = new Dictionary<string,string>(StringComparer.Ordinal)
             {
                 ["B_SCR_ACTIVE_NAME_WITH_PREFIX"] = _catalog.PokemonDisplayName(tutorial.PartyBefore[tutorial.HiddenPlayerIndex]),
-                ["B_SCR_ACTIVE_ABILITY"] = "INTIMIDATE", ["B_DEF_NAME_WITH_PREFIX"] = "Wild WEEDLE"
+                ["B_SCR_ACTIVE_ABILITY"] = _catalog.DisplayNames.AbilityName("ABILITY_INTIMIDATE"),
+                ["B_DEF_NAME_WITH_PREFIX"] = _battleSelectionText.WildPrefix + PresentedBattleSpeciesName(tutorial.Result.Weedle.SourceSpeciesId)
             };
             _oldManText = string.Join('\n', SourceBattleText.Pages(_battleText, "sText_PkmnCutsAttackWith", values));
         }
@@ -216,8 +217,9 @@ public partial class CampaignView
                 DrawTextureRect(_oldManTextures[OldManWeedleTexture], new(new Vector2(layout.WeedleCenterX, layout.WeedleCenterY) - size / 2, size), false);
             }
             _battleSkin.DrawHealthbox(this, false, weedle.CurrentHp, weedle.Stats.MaxHp);
-            SourceText(_healthFont, LabBattleUiSkin.OpponentName, "WEEDLE");
-            float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText("WEEDLE"), fontSize: _healthFont.Size).X;
+            string name = PresentedBattleSpeciesName(weedle.SourceSpeciesId);
+            SourceText(_healthFont, LabBattleUiSkin.OpponentName, name);
+            float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText(name), fontSize: _healthFont.Size).X;
             SourceText(_healthMale, LabBattleUiSkin.OpponentName + new Vector2(width, 0), "♂");
             SourceText(_healthFont, LabBattleUiSkin.OpponentLevelWindow + new Vector2(10, 0), _healthFont.LevelPrefix + "5");
         }
@@ -227,7 +229,7 @@ public partial class CampaignView
         if (actions)
         {
             _uiCorrections.ClearBattleMenu(this); _battleSkin.DrawActionMenu(this);
-            string[] labels = ["FIGHT", "BAG", "POKéMON", "RUN"];
+            var labels = _battleSelectionText.ActionLabels;
             for (int i = 0; i < labels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), labels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, kind == OldManTutorialEventKind.MoveCursorToBag ? 1 : 0);
         }
@@ -283,14 +285,14 @@ public partial class CampaignView
             SourceText(_sourceSmall, OpeningItemUiSkin.QuantityText(false, 0), _itemSkin.FormatText("gText_TimesStrVar1", "  1"));
             if (pocket == 0) _itemSkin.DrawPotion(this); else DrawQuestPocketAsset(ball.Icon);
         }
-        SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, count), _itemSkin.Text("gFameCheckerText_Cancel"));
+        SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, count), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel"));
         SourceText(_sourceNormal, OpeningItemUiSkin.ListCursor(false, 0), _itemSkin.Text("gText_SelectorArrow2"));
         ItemLines(_sourceWhite, OpeningItemUiSkin.DescriptionText, pocket == 0 ? InventoryDescription(OpeningInventoryRules.PotionId) : pocket == 1 ? _itemSkin.Text("gText_CloseBag") : ball.Description);
         if (kind == OldManTutorialEventKind.SelectPokeBall)
         {
             _battleSkin.DrawStandardFrame(this, OpeningItemUiSkin.BattleBagActionFrame);
-            SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionText(0), _itemSkin.Text("gOtherText_Use"));
-            SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionText(1), _itemSkin.Text("gFameCheckerText_Cancel"));
+            SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionText(0), SourceMenuLabelPresentation.Plain(_battleText, "gOtherText_Use"));
+            SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionText(1), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel"));
             SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionCursor(0), _itemSkin.Text("gText_SelectorArrow2"));
             _itemSkin.DrawStandardFrame(this, OpeningItemUiSkin.BagSelectedFrame);
             ItemLines(_sourceNormal, OpeningItemUiSkin.BagSelectedText, _itemSkin.FormatText("gText_Var1IsSelected", ball.Name));

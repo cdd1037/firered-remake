@@ -1,4 +1,5 @@
 using Game.Application;
+using Game.Content;
 using Game.Domain.World;
 
 namespace FireRed.Tests.Application.Campaign;
@@ -6,6 +7,31 @@ namespace FireRed.Tests.Application.Campaign;
 [TestClass,TestCategory("Game")]
 public sealed class CampaignQuestLogTimelineTests
 {
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void LocalizedCaptionsKeepRecordedAndPlayerControlLookingTextLiteral(bool translated)
+    {
+        using var output = TestAssets.TemporaryOutput();
+        Directory.CreateDirectory(Path.Combine(output.Path, "source"));
+        if (translated) File.WriteAllText(Path.Combine(output.Path, "source/quest-log.json"),
+            System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string> {
+                ["SwitchMon1WithMon2"] = "{PLAYER} changed the partners\n{STR_VAR_1} and {STR_VAR_2}." }));
+        var source = PretQuestLogSource.Load(TestAssets.Root, SourceTextPack.Load(output.Path));
+        const string player = "{STR_VAR_1}", first = "{PLAYER}\\n$", second = "{DYNAMIC 0x00}";
+        var action = new CampaignQuestLogAction(-1, 0, 0, Direction.South, false, CampaignQuestLogEvent.PartyOrder, 127) {
+            TextKey = "SwitchMon1WithMon2", Arguments = [first, second] };
+        var log = new CampaignQuestLog([new("map.pallet-town",
+            [new(CampaignQuestLogRecorder.PlayerId, "player", 6, 8, Direction.South, true)], [action])]);
+        string saved = System.Text.Json.JsonSerializer.Serialize(log);
+        var playback = new CampaignQuestLogPlayback(log, player, source);
+        Assert.AreEqual(translated ? player + " changed the partners\n" + first + " and " + second + "." :
+            player + " switched the POKéMON\n" + first + " with " + second + ".", playback.Caption);
+        playback.Tick(10);
+        Assert.IsTrue(playback.Finished);
+        Assert.AreEqual(saved, System.Text.Json.JsonSerializer.Serialize(log));
+    }
+
     [TestMethod]
     public void CaptionAndTwoActorTracksAdvanceTogetherWithoutMutatingRecording()
     {

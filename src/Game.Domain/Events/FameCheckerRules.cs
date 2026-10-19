@@ -31,8 +31,27 @@ public sealed class FameCheckerCatalog
     public ImmutableArray<FameCheckerPerson> Persons { get; }
     public ImmutableArray<FameCheckerText> UiTexts { get; }
     public ImmutableArray<FameCheckerCollectionEvent> CollectionEvents { get; }
-    private FameCheckerCatalog(Document doc)
-    { Persons = doc.Persons; UiTexts = doc.UiTexts; CollectionEvents = doc.CollectionEvents; }
+    private FameCheckerCatalog(Document doc) : this(doc.Persons, doc.UiTexts, doc.CollectionEvents) { }
+    private FameCheckerCatalog(ImmutableArray<FameCheckerPerson> persons, ImmutableArray<FameCheckerText> uiTexts,
+        ImmutableArray<FameCheckerCollectionEvent> collectionEvents)
+    { Persons = persons; UiTexts = uiTexts; CollectionEvents = collectionEvents; }
+
+    public IEnumerable<FameCheckerText> Texts => UiTexts.Concat(Persons.SelectMany(person =>
+        new[] { person.MenuName, person.NameText, person.CompletionText }.Concat(person.Facts.SelectMany(fact =>
+            new[] { fact.Text, fact.OriginLocation, fact.OriginObjectName }))));
+
+    /// <summary>Project source-symbol text only. Fact indices, collection events and unlock rules are unchanged.</summary>
+    public FameCheckerCatalog WithDisplayText(IReadOnlyDictionary<string, string> texts)
+    {
+        FameCheckerText Project(FameCheckerText text) => text with { EncodedText = texts[text.Symbol] };
+        return new(Persons.Select(person => person with {
+            MenuName = Project(person.MenuName), NameText = Project(person.NameText),
+            CompletionText = Project(person.CompletionText),
+            Facts = person.Facts.Select(fact => fact with {
+                Text = Project(fact.Text), OriginLocation = Project(fact.OriginLocation),
+                OriginObjectName = Project(fact.OriginObjectName) }).ToImmutableArray()
+        }).ToImmutableArray(), UiTexts.Select(Project).ToImmutableArray(), CollectionEvents);
+    }
 
     public static FameCheckerCatalog Authenticate(ReadOnlySpan<byte> bytes)
     {

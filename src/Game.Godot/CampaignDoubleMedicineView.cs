@@ -101,7 +101,7 @@ public partial class CampaignView
     private void SelectDoubleBagItem(ItemId item,int actor)
     {
         if(!DoubleMedicineAvailable(item))
-        {_doubleNotice="This item's double-battle\nuse is not available yet.";return;}
+        {_doubleNotice=_inventoryText.Get("notice.double-use-unavailable");return;}
         _doubleMedicineItem=item;
         int member=_session.State.DoubleBattle!.Frame.Get(new(actor)).Member!.Value.Index;
         if(_catalog.PresetDoubleItems!.Find(item)!.BattleUsage==2)SubmitDoubleMedicine(actor,member);
@@ -110,10 +110,10 @@ public partial class CampaignView
     private string DoubleMedicineNotice(string error) => error switch
     {
         "source_item_no_effect" or "medicine_no_effect" or "potion_no_effect"=>ItemText("gText_WontHaveEffect"),
-        "source_item_not_in_bag" or "medicine_not_in_bag" or "potion_not_in_bag"=>"There are none left\nin the BAG.",
-        _ when error.Contains("target",StringComparison.Ordinal)=>"Choose the target again.",
-        _ when error.Contains("unsupported",StringComparison.Ordinal)=>"This item's double-battle\nuse is not available yet.",
-        _=>"That item can't be used\nright now."
+        "source_item_not_in_bag" or "medicine_not_in_bag" or "potion_not_in_bag"=>_inventoryText.Get("notice.none-left"),
+        _ when error.Contains("target",StringComparison.Ordinal)=>_inventoryText.Get("notice.choose-target-again"),
+        _ when error.Contains("unsupported",StringComparison.Ordinal)=>_inventoryText.Get("notice.double-use-unavailable"),
+        _=>_inventoryText.Get("notice.item-unavailable")
     };
     private ImmutableArray<string> DoubleMedicinePages(SourceMedicineAppliedEvent medicine)
     {
@@ -138,14 +138,14 @@ public partial class CampaignView
             var moves=_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves;
             for(int i=0;i<moves.Length;i++)
             {SourceText(_battleMoveFont,new(24,10+16*i),MoveName(moves[i].Move));SourceText(_sourceSmall,new(167,11+16*i),$"{moves[i].CurrentPp}/{moves[i].MaximumPp}");}
-            SourceText(_battleMoveFont,new(24,10+16*moves.Length),"CANCEL");SourceText(_battleMenuFont,new(10,10+16*_doubleCursor),">");
-            DoubleLines(_doubleNotice??"Restore which move's PP?");return true;
+            SourceText(_battleMoveFont,new(24,10+16*moves.Length),InventoryActionLabel(InventoryMenuAction.Cancel));SourceText(_battleMenuFont,new(10,10+16*_doubleCursor),">");
+            DoubleLines(_doubleNotice??SourceMenuLabelPresentation.Plain(_battleText, "gText_RestoreWhichMove"));return true;
         }
         var medicine=battle.CurrentEvent as SourceMedicineAppliedEvent;
         bool playerTarget=medicine is not null&&(medicine.TargetSide??BattleSide.Player)==BattleSide.Player;
         bool partyMedicine=playerTarget&&_catalog.PresetDoubleItems?.Find(medicine!.Item)?.BattleUsage!=2;
         if(_doubleMenu!="medicine-target"&&!partyMedicine)return false;
-        DrawNativeParty(_session.State.Party,medicine is null?_doubleCursor:-1,"Use on which POKéMON?",
+        DrawNativeParty(_session.State.Party,medicine is null?_doubleCursor:-1,SourceMenuLabelPresentation.Plain(_battleText, "gText_UseOnWhichPokemon"),
             cancel:medicine is null,layout:NativePartyLayout.Double,displayed:i=>
             {
                 var owned=_session.State.Party[i];var member=battle.Frame.Party(BattleSide.Player).Members[i];

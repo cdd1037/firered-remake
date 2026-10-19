@@ -77,7 +77,7 @@ public partial class CampaignView
         if (!FlyMapActive || !_flyMap!.IsVisitedDestination(_townMapPage, CurrentTownMapCell.SectionId, CurrentMapFlags)) return;
         var layout = _catalog.TownMap!.Layout;
         DrawTexture(_townMapTextures["keypad-a"], new(layout.TopBarRight.X, layout.TopBarRight.Y));
-        SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), "OK");
+        SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), _townMapLabels["gText_RegionMap_AButtonOK"]);
     }
 
     private void UseFieldPartyFly()
@@ -86,6 +86,6 @@ public partial class CampaignView
         if (accepted) { ResetFieldMenu(); return; }
         _fieldMenuMode = "party";
         _fieldMenuNotice = _status == "field_fly_badge_required"
-            ? "This can't be used until a new\nBADGE is obtained." : "Can't use that here.";
+            ? FieldMenuText.Get("notice.cut-badge-required") : FieldMenuText.Get("notice.cannot-use-here");
     }
 }

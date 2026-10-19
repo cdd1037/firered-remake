@@ -35,11 +35,14 @@ public partial class CampaignView
         if (!GameCornerCoinMenuVisible) return;
         _battleSkin.DrawUserFrame(this, new(104, 0, 128, 64));
         // The two original price rows select FONT_SMALL and CLEAR_TO 0x45/0x40.
-        SourceText(_sourceSmall, new(120, 10), " 50 COINS");
-        SourceText(_sourceSmall, new(120 + 0x45, 10), "¥1,000");
-        SourceText(_sourceSmall, new(120, 24), "500 COINS");
-        SourceText(_sourceSmall, new(120 + 0x40, 24), "¥10,000");
-        SourceText(_sourceNormal, new(120, 38), "EXIT");
+        string[] symbols = ["gText_50Coins_1000", "gText_500Coins_10000"];
+        for (int i = 0; i < symbols.Length; i++)
+        {
+            var row = SourceMenuLabelPresentation.Parse(_battleText[symbols[i]]);
+            SourceText(_sourceSmall, new(120, 10 + i * 14), row.Label);
+            if (row.SuffixX is { } x) SourceText(_sourceSmall, new(120 + x, 10 + i * 14), row.Suffix!);
+        }
+        SourceText(_sourceNormal, new(120, 38), InventoryActionLabel(InventoryMenuAction.Exit));
         SourceText(_sourceNormal, new(112, 10 + _gameCornerCoinCursor * 14), "▶");
     }
     private void DrawGameCornerCoinsBox()
@@ -49,8 +52,9 @@ public partial class CampaignView
             throw new InvalidDataException("game_corner_coin_box_view");
         // src/coins.c: 8x3 tile interior, x+1/y+1, normal label and small right-aligned amount.
         _itemSkin.DrawStandardFrame(this, new(box.X * 8, box.Y * 8, 80, 40));
-        SourceText(_sourceNormal, new(box.X * 8 + 8, box.Y * 8 + 8), "COINS");
-        string amount = box.Amount.ToString(CultureInfo.InvariantCulture).PadLeft(4) + " COINS";
+        SourceText(_sourceNormal, new(box.X * 8 + 8, box.Y * 8 + 8), SourceMenuLabelPresentation.Plain(_battleText, "gText_Coins_2"));
+        string amount = SourceMenuLabelPresentation.Plain(_battleText, "gText_Coins", new Dictionary<string, string>
+        { ["STR_VAR_1"] = box.Amount.ToString(CultureInfo.InvariantCulture).PadLeft(4) });
         float width = _sourceSmall.Font.GetStringSize(_sourceSmall.PrepareText(amount), fontSize: _sourceSmall.Size).X;
         SourceText(_sourceSmall, new(box.X * 8 + 72 - width, box.Y * 8 + 20), amount);
     }

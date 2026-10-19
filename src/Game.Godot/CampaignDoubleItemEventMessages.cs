@@ -17,7 +17,7 @@ public partial class CampaignView
             case SourceConfusionChangedEvent {Reason:"flavor-berry"} x when Following(x.Side)?.Flavor is not null:return DoubleSilent;
             case SourceConfusionChangedEvent {Reason:"item",After:0} x:return DoubleText("gText_PkmnSnappedOutOfConfusion",("STR_VAR_1",DoubleName(x.Side.Value)));
             case SourceInfatuationChangedEvent {Reason:"item",After:null} x:return DoubleText("gText_PkmnGotOverInfatuation",("STR_VAR_1",DoubleName(x.Side.Value)));
-            case SourceMtMoonVolatileEvent {Volatile:"mist",Reason:"item"} x:return DoubleText("gBattleText_MistShroud",("B_ATK_PREFIX2",x.Side.Side==BattleSide.Player?"Ally":"Foe"));
+            case SourceMtMoonVolatileEvent {Volatile:"mist",Reason:"item"} x:return DoubleText("gBattleText_MistShroud",("B_ATK_PREFIX2",SourceTrainerPresentationModel.SidePrefix(_battleText,x.Side.Side==BattleSide.Player,2)));
             case SourceMedicineAppliedEvent {Actor:{} actor} x:
                 var pages=ImmutableArray.CreateBuilder<SourceTrainerText>();
                 pages.Add(new(actor.Side==BattleSide.Player?"sText_PlayerUsedItem":"sText_Trainer1UsedItem",("B_LAST_ITEM",DoubleItem(x.Item.Value.Replace("pret:","",StringComparison.Ordinal)))));
@@ -31,10 +31,10 @@ public partial class CampaignView
                     new[]{("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_LAST_ITEM",DoubleItem(x.Item))}.Concat(values).ToArray());
                 if(x.PpRecovery is {} pp)return new([Text("sText_PkmnsItemRestoredPP",("B_BUFF1",MoveName(pp.Move)))]);
                 if(x.Item=="ITEM_WHITE_HERB")return new([Text("sText_PkmnsItemRestoredStatus")]);
-                if(x.Item=="ITEM_MENTAL_HERB")return new([Text("sText_PkmnsItemCuredProblem",("B_BUFF1","love"))]);
+                if(x.Item=="ITEM_MENTAL_HERB")return new([Text("sText_PkmnsItemCuredProblem",("B_BUFF1",SourceMenuLabelPresentation.Plain(_battleText,"gText_Love")))]);
                 if(x.FocusEnergyRaised==true)return new([Text("sText_PkmnUsedXToGetPumped")]);
                 if(x.StatChanges is {} stats&&!stats.IsEmpty)return new(stats.Where(c=>c.After>c.Before).Select(c=>Text("sText_UsingItemTheStatOfPkmnRose",
-                    ("B_BUFF1",WildStatName(c.Stat)),("B_BUFF2",x.Item=="ITEM_STARF_BERRY"?"rose sharply!":"rose!"))).ToImmutableArray());
+                    ("B_BUFF1",WildStatName(c.Stat)),("B_BUFF2",SourceTrainerPresentationModel.StatChangeText(_battleText,true,x.Item=="ITEM_STARF_BERRY")))).ToImmutableArray());
                 if(x.Flavor is {} flavor&&DoublePrior(b,x,p=>p is SourceConfusionChangedEvent {Reason:"flavor-berry"} c&&c.Side==x.Side))
                 {
                     string symbol=flavor switch {"spicy"=>"sText_PokeblockWasTooSpicy","dry"=>"sText_PokeblockWasTooDry","sweet"=>"sText_PokeblockWasTooSweet","bitter"=>"sText_PokeblockWasTooBitter","sour"=>"sText_PokeblockWasTooSour",_=>throw new InvalidDataException("Held berry flavor differs.")};

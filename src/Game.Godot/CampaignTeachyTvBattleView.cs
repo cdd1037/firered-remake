@@ -52,7 +52,7 @@ public partial class CampaignView
             if (b.CurrentStep?.Event is SourcePokedudeCaughtEvent)
             {
                 var raw = _catalog.OldManTutorial!.Texts["sText_GotchaPkmnCaught2"].Text;
-                var parsed = ParseOldManText(raw, PresentedBattleSpeciesName(b.DisplayOpponent.SourceSpeciesId), "POKé BALL");
+                var parsed = ParseOldManText(raw, PresentedBattleSpeciesName(b.DisplayOpponent.SourceSpeciesId), _catalog.DisplayNames.ItemName("ITEM_POKE_BALL"));
                 _wildPages = [parsed.Text]; _wildPage = 0;
             }
         }
@@ -170,7 +170,7 @@ public partial class CampaignView
             if (TeachyTvHidesCaughtOpponent && _oldManTextures.TryGetValue("poke-ball", out var ball))
                 DrawTextureRectRegion(ball, new(168, 58, 16, 16), new(0, 0, 16, 16));
             if (b.Stage == CampaignTeachyTvBattleStage.Boundary)
-            { _battleSkin.DrawBattleMessage(this); WildLines("This source demo cannot continue.\nPress B to return to TEACHY TV."); }
+            { _battleSkin.DrawBattleMessage(this); WildLines(_inventoryText.Get("notice.teachy-tv-demo-failed")); }
         }
         if (b.Voiceover.Pending is not null) DrawTeachyTvBattleVoiceover(b);
         return true;
@@ -227,12 +227,12 @@ public partial class CampaignView
                 SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, i), QuestPocketItem(stacks[i]).Name);
                 if (balls) SourceText(_sourceSmall, OpeningItemUiSkin.QuantityText(false, i), _itemSkin.FormatText("gText_TimesStrVar1", stacks[i].Quantity.ToString().PadLeft(3)));
             }
-            SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, stacks.Length), _itemSkin.Text("gFameCheckerText_Cancel"));
+            SourceText(_sourceNormal, OpeningItemUiSkin.ListText(false, stacks.Length), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel"));
             SourceText(_sourceNormal, OpeningItemUiSkin.ListCursor(false, b.VisibleCursor), _itemSkin.Text("gText_SelectorArrow2"));
             var selected = QuestPocketItem(stacks[b.VisibleCursor]); DrawQuestPocketAsset(selected.Icon);
             ItemLines(_sourceWhite, OpeningItemUiSkin.DescriptionText, selected.Description);
         }
-        if (b.ContextMenu) DrawItemActionPopup(false, [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")], 0,
+        if (b.ContextMenu) DrawItemActionPopup(false, [SourceMenuLabelPresentation.Plain(_battleText, "gOtherText_Use"), SourceMenuLabelPresentation.Plain(_battleText, "gFameCheckerText_Cancel")], 0,
             b.Lesson == 1 ? InventoryName(new("pret:ITEM_ANTIDOTE")) : QuestPocketItem(TeachyTvTemporaryBag.Balls!.Value[0]).Name);
     }
 
@@ -241,12 +241,12 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         DrawCaptureParty(_session.TeachyTvBattlePresentation!, true, true);
         if(b.Stage==CampaignTeachyTvBattleStage.MedicineTarget)
-            DrawNativeParty(PresentedBattlePlayerParty,_wildCursor,"Use on which POKéMON?");
+            DrawNativeParty(PresentedBattlePlayerParty,_wildCursor,SourceMenuLabelPresentation.Plain(_battleText,"gText_UseOnWhichPokemon"));
         if (b.ContextMenu)
         {
             _battleSkin.DrawStandardFrame(this, new(152, 40, 88, 64));
-            SourceText(_sourceNormal, new(168, 48), "SHIFT"); SourceText(_sourceNormal, new(168, 64), "SUMMARY");
-            SourceText(_sourceNormal, new(168, 80), "CANCEL"); SourceText(_sourceNormal, new(156, 48), "▶");
+            SourceText(_sourceNormal, new(168, 48), _summaryPartyText.Label(SummaryPartyAction.Shift)); SourceText(_sourceNormal, new(168, 64), _summaryPartyText.Label(SummaryPartyAction.Summary));
+            SourceText(_sourceNormal, new(168, 80), _summaryPartyText.Label(SummaryPartyAction.Cancel)); SourceText(_sourceNormal, new(156, 48), "▶");
         }
     }
 }

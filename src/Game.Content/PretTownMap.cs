@@ -30,7 +30,7 @@ public sealed class PretTownMap
     public JsonElement TownMap { get; }
 
     private PretTownMap(string directory, JsonElement document,
-        ImmutableDictionary<string,byte[]> payloads, SharedItemCatalog items)
+        ImmutableDictionary<string,byte[]> payloads, SharedItemCatalog items, IReadOnlyDictionary<string, string>? mapNames)
     {
         GeneratedDirectory=directory;TownMap=document;outputs=payloads;
         var options=items.CreateJsonOptions();
@@ -39,12 +39,13 @@ public sealed class PretTownMap
         Item=Parse<QuestItemDefinition>("itemDefinition");ItemDescription=document.GetProperty("itemDescription").GetString()!;
         SwitchAvailable=document.GetProperty("switchAvailable").GetBoolean();
         Gift=Parse<TownMapGift>("gift");Cells=Parse<ImmutableArray<TownMapCell>>("cells");
+        if (mapNames is not null) Cells = Cells.Select(cell => PretFlyMap.ProjectNames(cell, mapNames)).ToImmutableArray();
         Icons=Parse<ImmutableArray<TownMapIcon>>("icons");Positions=Parse<ImmutableArray<TownMapPositionSource>>("positions");
         positionsByMap=Positions.ToImmutableDictionary(p=>p.StableMapId,StringComparer.Ordinal);
     }
 
     /// <summary>Authenticates reviewed lock, all raw Git blobs and every output before exposing content.</summary>
-    public static PretTownMap Load(string projectRoot, SharedItemCatalog? items = null)
+    public static PretTownMap Load(string projectRoot, SharedItemCatalog? items = null, IReadOnlyDictionary<string, string>? mapNames = null)
     {
             var project=Path.GetFullPath(projectRoot);        var generated=Path.Combine(project,"content/generated/ui/town-map");
         byte[] Pinned(string root, string relative)
@@ -70,7 +71,7 @@ public sealed class PretTownMap
         using var document=JsonDocument.Parse(payloads["town-map.json"]);var d=document.RootElement;
                 Require(d.GetProperty("schemaVersion").GetInt32()==1 ,
             "Town Map document profile differs.");
-        var result=new PretTownMap(generated,d.Clone(),payloads.ToImmutable(), items ?? SharedItemCatalog.LoadProject(projectRoot));
+        var result=new PretTownMap(generated,d.Clone(),payloads.ToImmutable(), items ?? SharedItemCatalog.LoadProject(projectRoot), mapNames);
         result.Validate();return result;
     }
 

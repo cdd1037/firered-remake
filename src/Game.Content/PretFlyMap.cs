@@ -16,11 +16,12 @@ public sealed class PretFlyMap
     public ImmutableArray<FlyMapPositionOverride> PositionOverrides { get; }
     public ImmutableArray<int> FlyIconFrameTicks { get; }
     public ImmutableDictionary<string, string> UiTexts { get; }
+    public ImmutableDictionary<string, string> MapNames { get; }
     public bool SwitchAvailable => false;
     public string GeneratedDirectory { get; }
     public ImmutableArray<FlyMapBackground> Backgrounds { get; }
 
-    private PretFlyMap(string directory, JsonElement doc)
+    private PretFlyMap(string directory, JsonElement doc, SourceTextPack pack)
     {
         GeneratedDirectory = directory;
         var options = new JsonSerializerOptions
@@ -33,6 +34,13 @@ public sealed class PretFlyMap
             !doc.GetProperty("switchAvailable").GetBoolean(), "Fly map document profile differs.");
         Backgrounds = Parse<ImmutableArray<FlyMapBackground>>("backgrounds");
         Assets = Parse<ImmutableArray<TownMapAsset>>("assets"); Regions = Parse<ImmutableArray<FlyMapRegion>>("regions");
+        var names = Regions.SelectMany(region => region.Cells).SelectMany(cell => new[] {
+            KeyValuePair.Create(cell.SectionId, cell.Name), KeyValuePair.Create(cell.DungeonSectionId, cell.DungeonName)
+        }).Where(pair => pair.Value.Length != 0).GroupBy(pair => pair.Key, StringComparer.Ordinal).ToDictionary(
+            group => group.Key, group => group.Select(pair => pair.Value).Distinct().Single(), StringComparer.Ordinal);
+        MapNames = pack.Apply("map-section-names", names, preserveControls: true);
+        Regions = Regions.Select(region => region with {
+            Cells = region.Cells.Select(cell => ProjectNames(cell, MapNames)).ToImmutableArray() }).ToImmutableArray();
         sections = Parse<ImmutableArray<FlyMapSection>>("sections").ToImmutableDictionary(s => s.SectionId, StringComparer.Ordinal);
         PositionOverrides = Parse<ImmutableArray<FlyMapPositionOverride>>("positionOverrides");
         FlyIconFrameTicks = Parse<ImmutableArray<int>>("flyIconFrameTicks");
@@ -58,12 +66,17 @@ public sealed class PretFlyMap
     }
 
     /// <summary>Loads map graphics and destination data.</summary>
-    public static PretFlyMap Load(string projectRoot)
+    public static PretFlyMap Load(string projectRoot, SourceTextPack? pack = null)
     {
         string generated = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/ui/fly-map");
         using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(generated, "fly-map.json")));
-        return new(generated, document.RootElement);
+        return new(generated, document.RootElement, pack ?? SourceTextPack.Current);
     }
+
+    internal static TownMapCell ProjectNames(TownMapCell cell, IReadOnlyDictionary<string, string> names) => cell with {
+        Name = cell.Name.Length == 0 ? cell.Name : names[cell.SectionId],
+        DungeonName = cell.DungeonName.Length == 0 ? cell.DungeonName : names[cell.DungeonSectionId]
+    };
 
     public TownMapAsset Asset(string id) => Assets.Single(a => a.Id == id);
     public byte[] ReadAssetPng(string id) => File.ReadAllBytes(Path.Combine(GeneratedDirectory, Asset(id).TexturePath));

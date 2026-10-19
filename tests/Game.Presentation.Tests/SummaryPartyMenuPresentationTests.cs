@@ -139,4 +139,54 @@ public sealed class SummaryPartyMenuPresentationTests
         source[symbol] = value;
         Assert.ThrowsExactly<InvalidDataException>(() => new SourceSummaryText(source));
     }
+
+    [TestMethod]
+    [DataRow(0, "AlmostReady")]
+    [DataRow(5, "AlmostReady")]
+    [DataRow(6, "Soon")]
+    [DataRow(10, "Soon")]
+    [DataRow(11, "SomeTime")]
+    [DataRow(40, "SomeTime")]
+    [DataRow(41, "LongTime")]
+    [DataRow(255, "LongTime")]
+    public void EggHatchLinesKeepSourceFriendshipThresholds(int friendship, string suffix)
+    {
+        var source = Source(); string symbol = "gText_PokeSum_EggHatch_" + suffix;
+        Assert.AreEqual(source[symbol].Replace("\\n", "\n", StringComparison.Ordinal),
+            string.Join('\n', new SourceSummaryText(source).EggHatchLines(friendship)));
+        source[symbol] = "ONE\\nTWO\\nTHREE";
+        CollectionAssert.AreEqual(new[] { "ONE", "TWO", "THREE" }, new SourceSummaryText(source).EggHatchLines(friendship).ToArray());
+    }
+
+    [TestMethod]
+    [DataRow(true, false, 1, true, "NicePlace")]
+    [DataRow(true, true, 4, false, "NicePlace")]
+    [DataRow(false, false, 4, true, "Trade")]
+    [DataRow(false, true, 3, true, "Trade")]
+    [DataRow(false, true, 4, true, "TravelingMan")]
+    [DataRow(false, true, 5, true, "TravelingMan")]
+    [DataRow(false, true, 4, false, "DayCare")]
+    [DataRow(false, true, 5, false, "DayCare")]
+    public void EggOriginsKeepSourcePrecedenceAndAllowDisplayReplacement(bool fateful, bool currentOwner,
+        int metGame, bool giftEgg, string suffix)
+    {
+        var source = Source(); string symbol = "gText_PokeSum_EggOrigin_" + suffix;
+        Assert.AreEqual(source[symbol].Replace("\\n", "\n", StringComparison.Ordinal),
+            string.Join('\n', new SourceSummaryText(source).EggOriginLines(fateful, currentOwner, metGame, giftEgg)));
+        source[symbol] = "ORIGIN\\nDETAIL";
+        CollectionAssert.AreEqual(new[] { "ORIGIN", "DETAIL" },
+            new SourceSummaryText(source).EggOriginLines(fateful, currentOwner, metGame, giftEgg).ToArray());
+    }
+
+    [TestMethod]
+    [DataRow("gText_PokeSum_EggHatch_AlmostReady", "ONE\\nTWO")]
+    [DataRow("gText_PokeSum_EggOrigin_DayCare", "ONE\\nTWO\\nTHREE")]
+    [DataRow("gText_PokeSum_EggOrigin_Trade", "ONE\\pTWO")]
+    [DataRow("gText_PokeSum_EggOrigin_NicePlace", "{UNKNOWN}\\nTWO")]
+    public void EggTextRejectsWrongLineStructureAndUnknownControls(string symbol, string replacement)
+    {
+        var source = Source(); source[symbol] = replacement;
+        Assert.ThrowsExactly<InvalidDataException>(() => new SourceSummaryText(source));
+    }
+
 }

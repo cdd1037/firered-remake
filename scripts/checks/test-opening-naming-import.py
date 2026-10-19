@@ -64,12 +64,17 @@ for frame, name in enumerate(['pc_icon_off', 'pc_icon_on']):
             assert pc.getpixel((x, y + frame * 24)) == (*colors[index], 255 if index else 0)
 metadata = json.loads(files['opening.json'])
 templates = metadata['namingTemplates']
+assert metadata['rivalNameSymbols'] == ['gNameChoice_Green', 'gNameChoice_Gary', 'gNameChoice_Kaz', 'gNameChoice_Toru']
+assert 'rivalNames' not in metadata
+assert [metadata['texts'][symbol] for symbol in metadata['rivalNameSymbols']] == ['GREEN', 'GARY', 'KAZ', 'TORU']
+title_symbols = {'PLAYER': 'gText_YourName', 'BOX': 'gText_BoxName', 'CAUGHT_MON': 'gText_PkmnsNickname',
+                 'NICKNAME': 'gText_PkmnsNickname', 'RIVAL': 'gText_RivalsName'}
 assert set(templates) == {'NAMING_SCREEN_' + name for name in ['PLAYER', 'BOX', 'CAUGHT_MON', 'NICKNAME', 'RIVAL']}
 for name, limit, icon, y, title in [('PLAYER', 7, 1, 37, 'YOUR NAME?'), ('BOX', 8, 2, 41, 'BOX NAME?'),
                                   ('CAUGHT_MON', 10, 3, 40, "'s nickname?"), ('NICKNAME', 10, 3, 40, "'s nickname?"),
                                   ('RIVAL', 7, 4, 37, "RIVAL's NAME?")]:
     assert templates['NAMING_SCREEN_' + name] == dict(copyExistingString=False, maxChars=limit, iconFunction=icon,
-        addGenderIcon=icon == 3, initialPage=0, title=title, prefixSpeciesName=icon == 3, iconX=56, iconY=y)
+        addGenderIcon=icon == 3, initialPage=0, title=title, titleSymbol=title_symbols[name], prefixSpeciesName=icon == 3, iconX=56, iconY=y)
 assert metadata['namingLayout'] == dict(displayWidth=240, titleX=73, titleY=33, entryY=49,
                                       entryCellWidth=8, entryCenterOffset=6, genderX=168, genderY=49)
 assert metadata['animations']['naming-pc'] == [dict(frame=0, duration=2), dict(frame=1, duration=2)]

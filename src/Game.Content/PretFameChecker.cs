@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Domain.Events;
+using Game.Domain.Ids;
 
 namespace Game.Content;
 
@@ -18,6 +19,20 @@ public sealed class PretFameChecker
 
     public static PretFameChecker LoadPackage(string catalogPath) =>
         new(FameCheckerCatalog.Authenticate(File.ReadAllBytes(catalogPath)));
+
+    public PretFameChecker WithDisplayText(IReadOnlyDictionary<string, string> battleTexts,
+        IReadOnlyDictionary<string, string> storyTexts, SourceTrainerDisplayNames trainers)
+    {
+        var names = Catalog.Persons.Where(person => !battleTexts.ContainsKey(person.MenuName.Symbol) &&
+            !storyTexts.ContainsKey(person.MenuName.Symbol)).ToDictionary(person => person.MenuName.Symbol,
+                person => trainers.Name(new TrainerId("pret:" + person.TrainerSymbol)), StringComparer.Ordinal);
+        // A symbol has one display authority: shared battle, shared story, or the explicit trainer identity.
+        var display = Catalog.Texts.Select(text => text.Symbol).Distinct(StringComparer.Ordinal).ToDictionary(
+            symbol => symbol, symbol => battleTexts.TryGetValue(symbol, out var battle) ? battle :
+                storyTexts.TryGetValue(symbol, out var story) ? story : names.TryGetValue(symbol, out var name) ? name :
+                throw new InvalidDataException("fame_checker_display_text_missing: " + symbol), StringComparer.Ordinal);
+        return new(Catalog.WithDisplayText(display));
+    }
 
     /// <summary>Separates imported opcodes, mounted map context and a static reference path from map entrypoints.
     /// None is proof that script conditions are satisfiable, its dialogue executes, or the player has collected a fact.</summary>

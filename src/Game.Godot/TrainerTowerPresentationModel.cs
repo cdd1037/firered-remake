@@ -10,18 +10,20 @@ internal sealed class TrainerTowerMenuPresentation : SourceVerticalMenuPresentat
     { SourceSymbol = sourceSymbol; }
     private static string[] Validate(string sourceSymbol, IEnumerable<string> options)
     {
-        string[] expected = sourceSymbol switch
+        int count = sourceSymbol switch
         {
-            "MULTICHOICE_YES_NO_INFO" => ["YES", "NO", "INFO"],
-            "MULTICHOICE_TRAINER_TOWER_MODE" => ["SINGLE", "DOUBLE", "KNOCKOUT", "MIXED", "EXIT"],
-            "MULTICHOICE_ROOFTOP_B1F" => ["ROOFTOP", "B1F", "EXIT"],
+            "MULTICHOICE_YES_NO_INFO" => 3,
+            "MULTICHOICE_TRAINER_TOWER_MODE" => 5,
+            "MULTICHOICE_ROOFTOP_B1F" => 3,
             _ => throw new InvalidDataException("Trainer Tower source menu differs.")
         };
-        if (!options.SequenceEqual(expected)) throw new InvalidDataException("Trainer Tower menu rows differ.");
-        return expected;
+        var labels = options.ToArray();
+        if (labels.Length != count || labels.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidDataException("Trainer Tower menu rows differ.");
+        return labels;
     }
-    internal static string ElevatorFloorLabel(int floor) => floor switch
-    { 3 => "B1F", 15 => "ROOFTOP", _ => throw new InvalidDataException("Trainer Tower elevator floor differs.") };
+    internal static string ElevatorFloorTextSymbol(int floor) => floor switch
+    { 3 => "gText_B1F", 15 => "gText_Rooftop", _ => throw new InvalidDataException("Trainer Tower elevator floor differs.") };
 }
 
 /// <summary>Only live process deltas enter this counter. A saved game never supplies wall-clock elapsed time.</summary>

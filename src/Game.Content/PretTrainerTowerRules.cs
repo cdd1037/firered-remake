@@ -38,6 +38,33 @@ public static class PretTrainerTowerRules
         return document;
     }
     public static TrainerTowerCatalog Load(string root) => TrainerTowerCatalog.Authenticate(LoadDocument(root).Local);
+
+    /// <summary>Template identity, fixed Pokémon creation and saved course receipts remain source-owned.
+    /// Facility speech reuses the same word-ID display catalog as Mail and profile editing.</summary>
+    public static TrainerTowerCatalog WithDisplayText(TrainerTowerCatalog source, SourceEasyChatCatalog words,
+        SourceTextPack? pack = null)
+    {
+        string Key(TrainerTowerFloorTemplate floor, TrainerTowerTrainerTemplate trainer) =>
+            floor.Symbol + "/" + trainer.Index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var names = (pack ?? SourceTextPack.Current).Apply("trainer-tower-names", source.Templates.SelectMany(floor =>
+            floor.Trainers.Select(trainer => KeyValuePair.Create(Key(floor, trainer), trainer.Name)))
+            .ToDictionary(pair => pair.Key, pair => pair.Value), preserveControls: true);
+        ImmutableArray<TrainerTowerWord> Speech(ImmutableArray<TrainerTowerWord> speech) => speech.Select(word => {
+            if (word.Value is < ushort.MinValue or > ushort.MaxValue ||
+                !SourceEasyChatRules.IsKnownWord(words, (ushort)word.Value))
+                throw new InvalidDataException("trainer_tower_speech_word_missing: " + word.Value);
+            return word with { Text = SourceEasyChatRules.WordText(words, (ushort)word.Value) };
+        }).ToImmutableArray();
+        return TrainerTowerCatalog.Authenticate(source.Data with {
+            Templates = source.Templates.Select(floor => floor with {
+                Trainers = floor.Trainers.Select(trainer => trainer with {
+                    Name = names[Key(floor, trainer)], SpeechBefore = Speech(trainer.SpeechBefore),
+                    SpeechWin = Speech(trainer.SpeechWin), SpeechLose = Speech(trainer.SpeechLose),
+                    SpeechAfter = Speech(trainer.SpeechAfter)
+                }).ToImmutableArray()
+            }).ToImmutableArray()
+        });
+    }
     public static TrainerTowerItemsDocument LoadItemsDocument(string root)
     {
         var options = new JsonSerializerOptions(Options);

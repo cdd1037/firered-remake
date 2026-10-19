@@ -24,11 +24,11 @@ public partial class CampaignView
     private double _rocketSpinTicks;
     private int _rocketSpinDurationTicks;
     private bool RocketInputLocked=>_session?.State.RocketSpin is not null||RocketElevatorAnimating;
-    private static readonly string[] RocketElevatorRows=["B1F","B2F","B4F","EXIT"];
+    private static readonly string[] RocketElevatorRows=["gText_B1F","gText_B2F","gText_B4F","gOtherText_Exit"];
     private bool RocketElevatorMenuActive=>_session.State.World.Player.MapId==PretRocketHideoutRegion.ElevatorMapId&&
         _session.State.Script.Wait?.Kind==StoryWaitKind.MenuChoice&&_session.State.RocketElevator?.MenuDefault is not null;
     private bool RocketElevatorMenuVisible=>RocketElevatorMenuActive&&FieldTextComplete&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length;
-    private int RocketElevatorMenuWidth=>(((int)RocketElevatorRows.Max(row=>_sourceNormal.Font.GetStringSize(row,fontSize:_sourceNormal.Size).X)+9)/8+1)*8;
+    private int RocketElevatorMenuWidth=>(((int)RocketElevatorRows.Max(row=>_sourceNormal.Font.GetStringSize(SourceMenuLabelPresentation.Plain(_battleText,row),fontSize:_sourceNormal.Size).X)+9)/8+1)*8;
     private int RocketElevatorDuration=>_rocketElevatorDistance==0?0:24*(_rocketElevatorDistance+1);
     private bool RocketElevatorAnimating=>_rocketElevatorDistance>0&&_rocketElevatorTicks<RocketElevatorDuration;
     private int RocketElevatorWindowPhase
@@ -225,13 +225,13 @@ public partial class CampaignView
         if(_session.State.RocketElevator?.FloorWindowVisible==true)
         {
             _battleSkin.DrawUserFrame(this,new(168,0,72,48));
-            SourceText(_sourceNormal,new(176,10),"Now on:");
-            string floor=_session.State.Script.Variables.GetValueOrDefault("VAR_0x8005") switch{3=>"B1F",2=>"B2F",0=>"B4F",_=>throw new InvalidDataException("Rocket elevator floor display differs.")};
+            SourceText(_sourceNormal,new(176,10),SourceMenuLabelPresentation.Plain(_battleText,"gText_NowOn"));
+            string floor=SourceMenuLabelPresentation.Plain(_battleText,_session.State.Script.Variables.GetValueOrDefault("VAR_0x8005") switch{3=>"gText_B1F",2=>"gText_B2F",0=>"gText_B4F",_=>throw new InvalidDataException("Rocket elevator floor display differs.")});
             float width=_sourceNormal.Font.GetStringSize(floor,fontSize:_sourceNormal.Size).X;SourceText(_sourceNormal,new(232-width,24),floor);
         }
         if(!RocketElevatorMenuVisible)return;
         _battleSkin.DrawUserFrame(this,new(0,0,RocketElevatorMenuWidth+16,72));
-        for(int row=0;row<RocketElevatorRows.Length;row++)SourceText(_sourceNormal,new(16,10+row*14),RocketElevatorRows[row]);
+        for(int row=0;row<RocketElevatorRows.Length;row++)SourceText(_sourceNormal,new(16,10+row*14),SourceMenuLabelPresentation.Plain(_battleText,RocketElevatorRows[row]));
         SourceText(_sourceNormal,new(8,10+_rocketElevatorCursor*14),"▶");
     }
 }

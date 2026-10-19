@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
+using Game.Domain.Events;
 using Game.Domain.Pokemon;
 
 /// <summary>Presentation-only Summary choices. No mode can issue a game command.</summary>
@@ -38,6 +39,7 @@ internal sealed class SourceSummaryText
     internal string ChoosePrompt { get; }
     internal string ActionPrompt { get; }
     private readonly string[] _pageTitles;
+    private readonly ImmutableArray<ImmutableArray<string>> _eggHatchLines, _eggOriginLines;
     private readonly string _pick, _place, _switch;
     internal string Next { get; }
     internal string Egg { get; }
@@ -50,6 +52,11 @@ internal sealed class SourceSummaryText
         SummaryInteractionMode.Reorder => selection.Swapping ? _place : _switch,
         _ => _pick
     };
+
+    internal ImmutableArray<string> EggHatchLines(int friendship) => _eggHatchLines[friendship switch
+    { <= 5 => 0, <= 10 => 1, <= 40 => 2, _ => 3 }];
+    internal ImmutableArray<string> EggOriginLines(bool fateful, bool currentOwner, int metGame, bool giftEgg) =>
+        _eggOriginLines[fateful ? 0 : metGame is not (4 or 5) || !currentOwner ? 1 : giftEgg ? 2 : 3];
 
     internal SourceSummaryText(IReadOnlyDictionary<string, string> source)
     {
@@ -90,6 +97,21 @@ internal sealed class SourceSummaryText
         _pick = Plain("gText_PokeSum_Controls_Pick", prefix: "{DPAD_UPDOWN}");
         _place = Plain("gPCText_Place");
         _switch = Plain("gText_Switch2");
+        ImmutableArray<string> Lines(string symbol, int count)
+        {
+            if (!source.TryGetValue(symbol, out var value) || string.IsNullOrWhiteSpace(value))
+                throw new InvalidDataException("Missing Summary egg text: " + symbol);
+            var pages = SourceBattleText.Pages(source, symbol, ImmutableDictionary<string, string>.Empty);
+            if (pages.Length != 1) throw new InvalidDataException("Unsupported Summary egg pages: " + symbol);
+            var lines = pages[0].Split('\n').ToImmutableArray();
+            if (lines.Length != count || lines.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidDataException("Unsupported Summary egg lines: " + symbol);
+            return lines;
+        }
+        _eggHatchLines = [Lines("gText_PokeSum_EggHatch_AlmostReady", 3), Lines("gText_PokeSum_EggHatch_Soon", 3),
+            Lines("gText_PokeSum_EggHatch_SomeTime", 3), Lines("gText_PokeSum_EggHatch_LongTime", 3)];
+        _eggOriginLines = [Lines("gText_PokeSum_EggOrigin_NicePlace", 2), Lines("gText_PokeSum_EggOrigin_Trade", 2),
+            Lines("gText_PokeSum_EggOrigin_TravelingMan", 2), Lines("gText_PokeSum_EggOrigin_DayCare", 2)];
     }
 
     internal string Label(SummaryPartyAction action) => _labels[action];

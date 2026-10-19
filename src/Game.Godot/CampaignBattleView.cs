@@ -7,6 +7,7 @@ using Game.Domain.FirstBattle;
 using Game.Domain.Items;
 using Game.Domain.Growth;
 using Game.Domain.Pokemon;
+using Game.Domain.WildBattle;
 using Game.Domain.World;
 using Godot;
 
@@ -31,7 +32,6 @@ public partial class CampaignView
     private string? _battleNoticeReturn;
     private void LoadBattlePresentation()
     {
-        _battleText=(_catalog.BattleContent??throw new InvalidDataException("Battle content is unavailable.")).Texts;
         _battleSelectionText=new(_battleText);
         _summaryPartyText=new(_battleText);
         _growthText=new(_battleText);
@@ -119,8 +119,8 @@ public partial class CampaignView
                 case FirstBattleHpChangedEvent:break;
                 case FirstBattleRecoilEvent recoil:Source("sText_PkmnHitWithRecoil",("B_ATK_NAME_WITH_PREFIX",PrefixedName(recoil.Actor)));break;
                 case FirstBattleCriticalHitEvent:Source("sText_CriticalHit");break;
-                case FirstBattleStatChangedEvent stat:Source("sText_DefendersStatFell",("B_DEF_NAME_WITH_PREFIX",PrefixedName(stat.Target)),("B_BUFF1",stat.Stat==FirstBattleStat.Attack?"ATTACK":"DEFENSE"),("B_BUFF2","fell!"));break;
-                case FirstBattleStatAtMinimumEvent stat:Source("sText_StatsWontDecrease",("B_DEF_NAME_WITH_PREFIX",PrefixedName(stat.Target)),("B_BUFF1",stat.Stat==FirstBattleStat.Attack?"ATTACK":"DEFENSE"));break;
+                case FirstBattleStatChangedEvent stat:Source("sText_DefendersStatFell",("B_DEF_NAME_WITH_PREFIX",PrefixedName(stat.Target)),("B_BUFF1",SourceTrainerPresentationModel.StatName(_battleText,stat.Stat==FirstBattleStat.Attack?WildBattleStat.Attack:WildBattleStat.Defense)),("B_BUFF2",SourceTrainerPresentationModel.StatChangeText(_battleText,false,false)));break;
+                case FirstBattleStatAtMinimumEvent stat:Source("sText_StatsWontDecrease",("B_DEF_NAME_WITH_PREFIX",PrefixedName(stat.Target)),("B_BUFF1",SourceTrainerPresentationModel.StatName(_battleText,stat.Stat==FirstBattleStat.Attack?WildBattleStat.Attack:WildBattleStat.Defense)));break;
                 case FirstBattleTutorialEvent tutorial:
                     if(tutorial.Flag==FirstBattleTutorialFlags.Damage)Source("gText_InflictingDamageIsKey");
                     else if(tutorial.Flag==FirstBattleTutorialFlags.StatChange)Source("gText_LoweringStats");
@@ -173,7 +173,7 @@ public partial class CampaignView
             if(key.Keycode==Key.Up)_battleCursor=Math.Max(0,_battleCursor-1);
             if(key.Keycode==Key.Down)_battleCursor=Math.Min(entries-1,_battleCursor+1);
             if(key.Keycode==Key.Backspace||key.Keycode==Key.Enter&&_battleCursor==entries-1){_battleMenu="actions";_battleCursor=0;}
-            else if(key.Keycode==Key.Enter){if(_session.State.Inventory!.BagItems[_battleCursor].Item!=Game.Domain.Items.OpeningInventoryRules.PotionId){_battleNotice="This item's battle use is\nnot implemented yet.";return true;}_battleMenu="bag-actions";_battleCursor=0;}
+            else if(key.Keycode==Key.Enter){if(_session.State.Inventory!.BagItems[_battleCursor].Item!=Game.Domain.Items.OpeningInventoryRules.PotionId){_battleNotice=_inventoryText.Get("notice.battle-use-not-implemented");return true;}_battleMenu="bag-actions";_battleCursor=0;}
             return true;
         }
         if(_battleMenu=="bag-actions")
@@ -206,7 +206,7 @@ public partial class CampaignView
         else if(key.Keycode==Key.Enter)
         {
             if(_battleMenu=="moves")
-            {_lastMoveCursor=_battleCursor;bool accepted = Apply(new("battle_move",MoveSlot:FirstBattleRules.RequiresStruggle(b.State.Player)?-1:_battleCursor));if(accepted){_battleMenu="actions";_battleCursor=0;}else _battleNotice=_lastCommandFault?"The battle step was not committed.":"This move has no PP left.";}
+            {_lastMoveCursor=_battleCursor;bool accepted = Apply(new("battle_move",MoveSlot:FirstBattleRules.RequiresStruggle(b.State.Player)?-1:_battleCursor));if(accepted){_battleMenu="actions";_battleCursor=0;}else _battleNotice=_lastCommandFault?_summaryText.Get("notice.battle-step-not-committed"):_summaryText.Get("notice.battle-move-no-pp");}
             else switch(_battleCursor)
             {
                 case 0:_battleMenu="moves";_battleCursor=Math.Min(_lastMoveCursor,Math.Max(0,b.State.Player.Pokemon.Moves.Length-1));break;
@@ -250,7 +250,7 @@ public partial class CampaignView
                 shown=shown with { CurrentHp=(int)Math.Round(Mathf.Lerp(medicine.HpBefore,medicine.HpAfter,(float)Math.Clamp(_battleElapsed/.4,0,1))) };
             DrawNativeParty([PartyPresentationAssets.Displayed(b.OwnedBefore,shown,b.OwnedBefore.Status)],
                 b.Phase==CampaignBattlePhase.ChooseMove?_battleCursor:0,
-                _battleMenu=="medicine-target"?"Use on which POKéMON?":"Choose a POKéMON.",cancel:b.Phase==CampaignBattlePhase.ChooseMove);
+                _battleMenu=="medicine-target"?SourceMenuLabelPresentation.Plain(_battleText,"gText_UseOnWhichPokemon"):_summaryPartyText.ChoosePrompt,cancel:b.Phase==CampaignBattlePhase.ChooseMove);
             if(_battleNotice is not null)DrawNativePartyMessage(_battleNotice);
             else if(!_battlePages.IsEmpty)
             {
@@ -279,15 +279,15 @@ public partial class CampaignView
         }
         else if(b.Phase==CampaignBattlePhase.ChooseMove)
         {
-            if(_battleMenu=="medicine-target")Lines("Use on which POKéMON?");
-            else if(_battleMenu=="party")Lines("Choose a POKéMON.");
+            if(_battleMenu=="medicine-target")Lines(SourceMenuLabelPresentation.Plain(_battleText,"gText_UseOnWhichPokemon"));
+            else if(_battleMenu=="party")Lines(_summaryPartyText.ChoosePrompt);
             else if(_battleMenu=="actions")
             {
                 _battleSkin.DrawActionMenu(this);Lines(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore),_session.State.PlayerName));
                 var labels=_battleSelectionText.ActionLabels;for(int i=0;i<4;i++)SourceText(_battleMenuFont,LabBattleUiSkin.ActionText(i),labels[i]);
                 _uiCorrections.DrawSelectionCursor(this,false,_battleCursor);
             }
-            else if(FirstBattleRules.RequiresStruggle(b.State.Player)){_battleSkin.DrawMoveMenu(this);SourceText(_battleMoveFont,LabBattleUiSkin.MoveText(0),"STRUGGLE");_uiCorrections.DrawSelectionCursor(this,true,0);}
+            else if(FirstBattleRules.RequiresStruggle(b.State.Player)){_battleSkin.DrawMoveMenu(this);SourceText(_battleMoveFont,LabBattleUiSkin.MoveText(0),MoveName(FirstBattleRules.StruggleMove));_uiCorrections.DrawSelectionCursor(this,true,0);}
             else
             {
                 _battleSkin.DrawMoveMenu(this);var moves=b.State.Player.Pokemon.Moves;

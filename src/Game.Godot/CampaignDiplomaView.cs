@@ -16,7 +16,7 @@ public partial class CampaignView
     private void LoadDiplomaPresentation()
     {
         if (_diplomaArt is not null) return;
-        _diplomaArt = PretDiplomaPresentation.Load(_root);
+        _diplomaArt = PretDiplomaPresentation.Load(_root, _catalog.BattleContent!.Texts);
         foreach (bool national in new[] { false, true })
         {
             using var image = NativeImages.LoadPng(_diplomaArt.ReadTexture(national), 240, 160);

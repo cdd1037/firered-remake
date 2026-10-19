@@ -228,7 +228,7 @@ public partial class CampaignView
             if (scene.Choice)
             {
                 _battleSkin.DrawStandardFrame(this, new(176, 64, 64, 48));
-                SourceText(_sourceNormal, new(198, 73), "YES"); SourceText(_sourceNormal, new(198, 89), "NO");
+                SourceText(_sourceNormal, new(198, 73), InventorySourceText("gText_Yes")); SourceText(_sourceNormal, new(198, 89), InventorySourceText("gText_No"));
                 SourceText(_sourceNormal, new(184, TutorChoiceRow(_tutorCursor).Position.Y), "▶");
             }
         }

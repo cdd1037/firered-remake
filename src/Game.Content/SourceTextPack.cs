@@ -14,7 +14,9 @@ public sealed class SourceTextPack
         "story", "story-menus", "battle", "species-names", "species-categories", "species-descriptions",
         "pokedex-ui", "item-names", "move-names", "type-names", "ability-names", "nature-names",
         "item-descriptions", "machine-descriptions", "display-labels", "summary-moves", "summary-abilities", "summary-memos", "summary-locations",
-        "trainer-names", "trainer-class-names", "easy-chat-words", "easy-chat-groups"
+        "trainer-names", "trainer-class-names", "easy-chat-words", "easy-chat-groups",
+        "help", "opening", "opening-names", "teachy-tv",
+        "quest-log", "quest-log-map-names", "quest-log-departures", "map-section-names", "trainer-tower-names"
     };
     private readonly ImmutableDictionary<string, ImmutableDictionary<string, string>> groups;
     private SourceTextPack(ImmutableDictionary<string, ImmutableDictionary<string, string>> groups) => this.groups = groups;
@@ -46,7 +48,7 @@ public sealed class SourceTextPack
         {
             if (!originals.TryGetValue(id, out var original)) throw new InvalidDataException("Unknown source text ID: " + group + "/" + id);
             if (string.IsNullOrWhiteSpace(text)) throw new InvalidDataException("Empty source text: " + group + "/" + id);
-            if (preserveControls) ValidateControls(original, text, group + "/" + id);
+            if (preserveControls) ValidateControls(original, text, group + "/" + id, allowFormFeed: group == "opening");
         }
         return result.SetItems(replacements);
     }
@@ -62,8 +64,8 @@ public sealed class SourceTextPack
                 option with { Text = translated[option.TextSymbol] }).ToImmutableArray() }, StringComparer.Ordinal) };
     }
 
-    private static readonly Regex Tokens = new(@"\{[^{}\\$\r\n]+\}|\\[npl]|\$|\n", RegexOptions.CultureInvariant);
-    private static void ValidateControls(string original, string replacement, string id)
+    private static readonly Regex Tokens = new(@"\{[^{}\\$\r\n]+\}|\\[npl]|\$|\n|\f", RegexOptions.CultureInvariant);
+    private static void ValidateControls(string original, string replacement, string id, bool allowFormFeed)
     {
         (string Token, bool EmptyBefore)[] Signature(string text)
         {
@@ -74,7 +76,7 @@ public sealed class SourceTextPack
                 string literal = text[offset..match.Index];
                 ValidateLiteral(literal);
                 if (match.Value == "$" && match.Index != text.Length - 1 ||
-                    match.Value != "\n" && match.Value.Any(char.IsControl))
+                    match.Value != "\n" && !(allowFormFeed && match.Value == "\f") && match.Value.Any(char.IsControl))
                     throw new InvalidDataException("Invalid source text control: " + id);
                 signature.Add((match.Value, literal.Length == 0));
                 offset = match.Index + match.Length;
@@ -89,7 +91,7 @@ public sealed class SourceTextPack
             if (text.Any(c => c is '{' or '}' or '\\' or '$' || char.IsControl(c)))
                 throw new InvalidDataException("Invalid source text control: " + id);
         }
-        // Keep exact operand spelling, source escapes, actual LF, and page-end/adjacency
+        // Keep exact operand spelling, source escapes, actual LF (and opening FF), and page-end/adjacency
         // anchors. This conservative contract also keeps placeholder order unchanged.
         if (!Signature(original).SequenceEqual(Signature(replacement)))
             throw new InvalidDataException("Source text controls differ: " + id);

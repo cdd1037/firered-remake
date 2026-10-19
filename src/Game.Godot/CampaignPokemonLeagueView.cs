@@ -39,7 +39,7 @@ public partial class CampaignView
 
     private void LoadPokemonLeaguePresentation()
     {
-        _pokemonLeagueArt=PokemonLeaguePresentationAssets.Load(_root);
+        _pokemonLeagueArt=PokemonLeaguePresentationAssets.Load(_root, _catalog.BattleContent!.Texts);
         var color=LeagueCredits.GetProperty("headerColor").EnumerateArray().Select(v=>v.GetInt32()).ToArray();
         static float Channel(int c){int v=c>>3;return ((v<<3)|(v>>2))/255f;}
         _leagueCreditHeader=SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/ui/font"),foreground:new Color(Channel(color[0]),Channel(color[1]),Channel(color[2])),shadow:new Color("636363"));
@@ -330,11 +330,11 @@ public partial class CampaignView
         DrawHallBackground();
         if(c.Stage!=CampaignPokemonLeagueCompletionStage.DisplayingHallOfFame)
         {
-            ItemMessageBox(c.Stage==CampaignPokemonLeagueCompletionStage.SaveFailed?"Save failed. Your progress has not\nbeen confirmed. Enter: retry.":LeagueManifest.GetProperty("texts").GetProperty("gText_SavingDontTurnOffThePower2").GetString()!);
+            ItemMessageBox(c.Stage==CampaignPokemonLeagueCompletionStage.SaveFailed?_saveText.Get("league.error-save"):LeagueManifest.GetProperty("texts").GetProperty("gText_SavingDontTurnOffThePower2").GetString()!);
             if(_leagueOverwritePrompt)
             {
-                ItemMessageBox("A different save already exists.\nOverwrite this save?");_battleSkin.DrawStandardFrame(this,new(136,64,96,48));
-                SourceText(_sourceNormal,new(160,72),"YES");SourceText(_sourceNormal,new(160,88),"NO");SourceText(_sourceNormal,new(144,_leagueOverwriteYes?72:88),"▶");
+                ItemMessageBox(_saveText.Get("league.overwrite"));_battleSkin.DrawStandardFrame(this,new(136,64,96,48));
+                SourceText(_sourceNormal,new(160,72),InventorySourceText("gText_Yes"));SourceText(_sourceNormal,new(160,88),InventorySourceText("gText_No"));SourceText(_sourceNormal,new(144,_leagueOverwriteYes?72:88),"▶");
             }
             return true;
         }
@@ -373,8 +373,8 @@ public partial class CampaignView
             DrawTexture(_leagueTextures[_session.State.PlayerGender==0?"red-front":"leaf-front"],new(Math.Min(192,120+Math.Max(0,phase.PlayerTick-120))-32,40));
             if(phase.Ready)
             {
-                _battleSkin.DrawStandardFrame(this,new(8,8,144,64));SourceText(_sourceNormal,new(20,17),"NAME  "+_session.State.PlayerName);
-                SourceText(_sourceNormal,new(20,33),"IDNo. "+((ushort)_session.State.TrainerId).ToString("D5"));SourceText(_sourceNormal,new(20,49),"TIME  "+FormatPlayTime(_session.State.PlayTime));
+                _battleSkin.DrawStandardFrame(this,new(8,8,144,64));SourceText(_sourceNormal,new(20,17),_battleText["gText_Name"]+"  "+_session.State.PlayerName);
+                SourceText(_sourceNormal,new(20,33),_battleText["gText_IDNumber"]+" "+((ushort)_session.State.TrainerId).ToString("D5"));SourceText(_sourceNormal,new(20,49),_battleText["gText_Time"]+"  "+FormatPlayTime(_session.State.PlayTime));
                 if(_session.State.PlayTime.SinceCheckpoint)SourceText(_sourceSmall,new(8,83),CheckpointTimeNote);
                 ItemMessageBox(LeagueManifest.GetProperty("texts").GetProperty("gText_LeagueChamp").GetString()!);
             }

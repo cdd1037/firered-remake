@@ -19,7 +19,7 @@ public partial class CampaignView
         var definition=_catalog.PresetDoubleItems!.Find(item);
         if(definition is null||!(definition.IsFixedEffect||definition.IsPokeFlute||definition.IsEscapeItem))
         {
-            _wildNotice=definition?.Symbol=="ITEM_ENIGMA_BERRY"?"This BERRY's effect data\nis not available.":"This item can't be used\nin battle.";
+            _wildNotice=definition?.Symbol=="ITEM_ENIGMA_BERRY"?_inventoryText.Get("notice.berry-data-unavailable"):_inventoryText.Get("notice.battle-use-unavailable");
             _wildNoticeReturn="bag";return true;
         }
         _wildMedicineItem=item;
@@ -38,10 +38,10 @@ public partial class CampaignView
     private string SingleMedicineNotice(string error)=>error switch
     {
         "source_item_no_effect"=>ItemText("gText_WontHaveEffect"),
-        "source_item_not_in_bag"=>"There are none left\nin the BAG.",
-        "source_item_escape_trainer"=>"You can't flee from a\nTRAINER battle!",
-        "source_item_escape_special_scope"=>"You can't use that here.",
-        "source_item_enigma_data_required"=>"This BERRY's effect data\nis not available.",
+        "source_item_not_in_bag"=>_inventoryText.Get("notice.none-left"),
+        "source_item_escape_trainer"=>_inventoryText.Get("notice.trainer-escape"),
+        "source_item_escape_special_scope"=>SourceMenuLabelPresentation.Plain(_battleText, "gText_CantUseHere"),
+        "source_item_enigma_data_required"=>_inventoryText.Get("notice.berry-data-unavailable"),
         _=>WildCommandError()
     };
     private bool SingleMedicineInput(InputEventKey key,CampaignWildBattle battle)
@@ -73,8 +73,8 @@ public partial class CampaignView
         var moves=_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves;
         for(int i=0;i<moves.Length;i++)
         {SourceText(_battleMoveFont,new(24,10+16*i),MoveName(moves[i].Move));SourceText(_sourceSmall,new(167,11+16*i),$"{moves[i].CurrentPp}/{moves[i].MaximumPp}");}
-        SourceText(_battleMoveFont,new(24,10+16*moves.Length),"CANCEL");SourceText(_battleMenuFont,new(10,10+16*_wildCursor),">");
-        WildLines(_wildNotice??"Restore which move's PP?");return true;
+        SourceText(_battleMoveFont,new(24,10+16*moves.Length),InventoryActionLabel(InventoryMenuAction.Cancel));SourceText(_battleMenuFont,new(10,10+16*_wildCursor),">");
+        WildLines(_wildNotice??SourceMenuLabelPresentation.Plain(_battleText, "gText_RestoreWhichMove"));return true;
     }
     private void DrawSingleBattleItemList(ImmutableArray<InventoryStack> stacks,int selected)
     {
@@ -114,7 +114,7 @@ public partial class CampaignView
     {
         WildBattleConfusionChangedEvent {Reason:"item",After:0} x=>new("gText_PkmnSnappedOutOfConfusion",("STR_VAR_1",WildName(x.Side))),
         WildBattleInfatuationChangedEvent {Reason:"item",After:null} x=>new("gText_PkmnGotOverInfatuation",("STR_VAR_1",WildName(x.Side))),
-        WildBattleMtMoonVolatileEvent {Volatile:"mist",Reason:"item"} x=>new("gBattleText_MistShroud",("B_ATK_PREFIX2",x.Side==WildBattleSide.Player?"Ally":"Foe")),
+        WildBattleMtMoonVolatileEvent {Volatile:"mist",Reason:"item"} x=>new("gBattleText_MistShroud",("B_ATK_PREFIX2",SourceMenuLabelPresentation.Plain(_battleText, x.Side==WildBattleSide.Player?"sText_AllyPkmnPrefix2":"sText_FoePkmnPrefix3"))),
         _=>null
     };
 }

@@ -11,16 +11,17 @@ public sealed record HallOfFamePcPresentation(int MaximumTeams, int MaximumHallN
 /// <summary>Small authenticated PC-view contract. Existing League artwork stays owned by its existing package.</summary>
 public static class PretHallOfFamePcPresentation
 {
-    public static HallOfFamePcPresentation Load(string root) => FromAuthenticatedBytes(
-        File.ReadAllBytes(Path.Combine(root, "content/generated/ui/hall-pc.json")));
+    public static HallOfFamePcPresentation Load(string root, IReadOnlyDictionary<string, string>? sourceTexts = null) => FromAuthenticatedBytes(
+        File.ReadAllBytes(Path.Combine(root, "content/generated/ui/hall-pc.json")), sourceTexts ?? PretBattleText.Load(root));
 
-    public static HallOfFamePcPresentation FromAuthenticatedBytes(byte[] bytes)
+    public static HallOfFamePcPresentation FromAuthenticatedBytes(byte[] bytes, IReadOnlyDictionary<string, string>? sourceTexts = null)
     {
         var result = JsonSerializer.Deserialize<HallOfFamePcPresentation>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
             ?? throw new InvalidDataException("hall_pc_presentation_missing");
         if (result.MaximumTeams != HallOfFamePcRules.MaximumTeams || result.MaximumHallNumber != HallOfFamePcRules.MaximumHallNumber || result.MiscellaneousHelpContext != 31 ||
             !result.FullTeamPositions.SequenceEqual(HallOfFamePcRules.FullTeamPositions) || !result.HalfTeamPositions.SequenceEqual(HallOfFamePcRules.HalfTeamPositions) ||
             result.Text.Count != 8 ) throw new InvalidDataException("hall_pc_presentation_contract");
-        return result;
+        return sourceTexts is null ? result : result with { Text = result.Text.Keys.ToImmutableDictionary(
+            symbol => symbol, symbol => sourceTexts[symbol].Replace("\\n", "\n", StringComparison.Ordinal), StringComparer.Ordinal) };
     }
 }

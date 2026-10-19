@@ -137,6 +137,9 @@ public sealed class SourceBattleSelectionTextTests
     [TestMethod]
     [DataRow("gText_WhatWillPkmnDo")]
     [DataRow("gText_BattleMenu")]
+    [DataRow("gText_SafariZoneMenu")]
+    [DataRow("gText_WhatWillPlayerThrow")]
+    [DataRow("gText_BattleSwitchWhich")]
     [DataRow("sText_FoePkmnPrefix")]
     [DataRow("sText_WildPkmnPrefix")]
     [DataRow("gText_MoveInterfacePP")]
@@ -168,4 +171,48 @@ public sealed class SourceBattleSelectionTextTests
         Assert.AreEqual("What will\nEEVEE do?", text.ActionPrompt("EEVEE", "RED"));
         Assert.AreEqual("TYPE/", text.TypeLabel);
     }
+
+    [TestMethod]
+    public void SafariUsesItsOwnSourceMenuPromptAndLiteralPlayerName()
+    {
+        var source = Source();
+        var text = new SourceBattleSelectionText(source);
+        CollectionAssert.AreEqual(new[] { "BALL", "BAIT", "ROCK", "RUN" }, text.SafariActionLabels.ToArray());
+        Assert.AreEqual("What will RED\nthrow?", text.SafariPrompt("RED"));
+        const string player = @"{B_PLAYER_NAME}\p{PLAYER}";
+        Assert.AreEqual("What will " + player + "\nthrow?", text.SafariPrompt(player));
+        source["gText_SafariZoneMenu"] = Menu("SAME", "SAME", "SAME", "SAME");
+        source["gText_WhatWillPlayerThrow"] = "{B_PLAYER_NAME} chooses:\\n{B_PLAYER_NAME}";
+        text = new SourceBattleSelectionText(source);
+        CollectionAssert.AreEqual(new[] { "SAME", "SAME", "SAME", "SAME" }, text.SafariActionLabels.ToArray());
+        Assert.AreEqual(player + " chooses:\n" + player, text.SafariPrompt(player));
+        Assert.ThrowsExactly<ArgumentNullException>(() => text.SafariPrompt(null!));
+    }
+
+    [TestMethod]
+    public void PartySwitchPromptUsesTheExistingTwoLineSelectionLayout()
+    {
+        var source = Source();
+        Assert.AreEqual("Switch\nwhich?", new SourceBattleSelectionText(source).SwitchPrompt);
+        source["gText_BattleSwitchWhich"] = "{PALETTE 5}{COLOR_HIGHLIGHT_SHADOW 13 14 15}Change\\ncompanion?";
+        var text = new SourceBattleSelectionText(source);
+        source["gText_BattleSwitchWhich"] = "BROKEN";
+        Assert.AreEqual("Change\ncompanion?", text.SwitchPrompt);
+    }
+
+    [TestMethod]
+    [DataRow("gText_SafariZoneMenu", "{CLEAR_TO 56}", "{CLEAR_TO 57}")]
+    [DataRow("gText_SafariZoneMenu", "BALL", "{PLAYER}")]
+    [DataRow("gText_WhatWillPlayerThrow", "{B_PLAYER_NAME}", "{UNKNOWN}")]
+    [DataRow("gText_WhatWillPlayerThrow", "\\n", "\\p")]
+    [DataRow("gText_BattleSwitchWhich", "{PALETTE 5}", "")]
+    [DataRow("gText_BattleSwitchWhich", "\\n", "\\p")]
+    [DataRow("gText_BattleSwitchWhich", "which?", "{PLAYER}")]
+    public void AddedSelectionTextRejectsUnsupportedControls(string symbol, string before, string after)
+    {
+        var source = Source();
+        source[symbol] = source[symbol].Replace(before, after, StringComparison.Ordinal);
+        Assert.ThrowsExactly<InvalidDataException>(() => new SourceBattleSelectionText(source));
+    }
+
 }

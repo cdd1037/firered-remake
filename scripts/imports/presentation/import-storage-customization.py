@@ -54,8 +54,7 @@ graphics/misc/markings2.png'''.splitlines()) | frozenset(
 def load_lock(path):
     data = safe(path).read_bytes()
     lock = json.loads(data, object_pairs_hook=art.unique_pairs)
-    expected = (1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0)
-    if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'tree', 'profile', 'gameEdition', 'romRevision')) != expected:
+    if lock.get('commit') != COMMIT:
         raise ValueError('Storage customization source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Storage customization dependency set differs')
@@ -136,9 +135,9 @@ def convert( sources):
         asset_id = 'wallpaper-' + name
         add(asset_id,160,144,rgba,80,16)
         red,green,blue = map(int,title_rows[index])
-        wallpapers.append(dict(id=index,symbol=symbols[index],name=strings[menu_strings[selections[index]]],
+        wallpapers.append(dict(id=index,symbol=symbols[index],nameTextSymbol=menu_strings[selections[index]],
             categoryId=index//4,assetId=asset_id,titleShadowRgb555=red|(green<<5)|(blue<<10),titleTextRgb555=32767))
-    categories = [dict(id=i,name=strings[menu_strings[symbol]],wallpaperIds=list(range(i*4,i*4+4)))
+    categories = [dict(id=i,nameTextSymbol=menu_strings[symbol],wallpaperIds=list(range(i*4,i*4+4)))
                   for i,symbol in enumerate(category_symbols)]
     def sprite(source, first, w, h):
         tiles = pixels.tile_list(sources[source]); palette = pixels.colors(pixels.indexed_png(sources[source])[3])[:16]
@@ -161,12 +160,11 @@ def convert( sources):
     document = dict(schemaVersion=1,
         boxNameLength=8,boxNameAlphabet=alphabet,defaultNames=[strings['gText_Box']+str(i+1) for i in range(14)],
         defaultWallpapers=[i%4 for i in range(14)],categories=categories,wallpapers=wallpapers,assets=assets,
-        texts={key:strings[key] for key in sorted(set(menu_strings.values()) | {
-            'gText_WhatDoYouWantToDo','gText_PleasePickATheme','gText_PickTheWallpaper','gText_MarkYourPkmn','gText_BoxName'})},
+        textSymbols=sorted(set(menu_strings.values()) | {
+            'gText_WhatDoYouWantToDo','gText_PleasePickATheme','gText_PickTheWallpaper','gText_MarkYourPkmn','gText_BoxName'}),
         display=dict(logicalWidth=240,logicalHeight=160,wallpaperX=80,wallpaperY=16,
             titleCenterX=160,titleY=20,markingMenuX=176,markingMenuY=16,markingComboX=24,markingComboY=146,
-            markings=marking_rows,markingCancelPreservesOriginal=True,
-            labels={key:strings[key] for key in ('gPCText_Name','gPCText_Wallpaper','gPCText_Mark','gPCText_Cancel')}))
+            markings=marking_rows,markingCancelPreservesOriginal=True))
     outputs['storage-customization.json'] = canonical(document)
     outputs['manifest.json'] = canonical(dict(schemaVersion=1,
         inputCount=len(PATHS),

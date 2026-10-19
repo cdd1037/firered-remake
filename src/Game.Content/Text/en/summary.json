@@ -2,5 +2,19 @@
   "control.details": "DETAILS",
   "control.back": "BACK",
   "notice.selection-changed": "The selected POKéMON has changed.\nPlease open its moves again.",
-  "notice.order-failed": "The move order could not be\nchanged here."
+  "notice.order-failed": "The move order could not be\nchanged here.",
+  "notice.battle-step-not-committed": "The battle step was not committed.",
+  "notice.battle-move-no-pp": "This move has no PP left.",
+  "notice.battle-selection-changed": "The battle selection changed.\nChoose a move again.",
+  "notice.battle-order-not-committed": "The move order was not committed.",
+  "notice.battle-order-failed": "The moves could not be switched.\nChoose a move again.",
+  "notice.battle-event-unsupported": "This battle event is not\nsupported yet.",
+  "notice.battle-event-visual-unsupported": "This battle event is not\nsupported visually yet.",
+  "notice.battle-item-already-used": "The item was already used.\nChoose this POKéMON's action.",
+  "notice.battle-switch-unavailable": "That POKéMON can't\nswitch in now.",
+  "notice.battle-choice-unavailable": "That choice can't be\nused now.",
+  "notice.battle-no-target": "There is no available\ntarget.",
+  "prompt.battle-target-self": "Choose a target:\nSELF {pokemon}",
+  "prompt.battle-target-ally": "Choose a target:\nALLY {pokemon}",
+  "prompt.battle-target-foe": "Choose a target:\nFOE {pokemon}"
 }

@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Collections.Immutable;
+using Game.Domain.Events;
 
 namespace Game.Content;
 
@@ -20,7 +21,7 @@ public sealed class PretDiplomaPresentation
     private PretDiplomaPresentation(DiplomaDocument document, ImmutableDictionary<string, byte[]> textures)
         => (Document, _textures) = (document, textures);
 
-    public static PretDiplomaPresentation Load(string root)
+    public static PretDiplomaPresentation Load(string root, IReadOnlyDictionary<string, string>? sourceTexts = null)
     {
         var document = ContentJson.ParseStrict<DiplomaDocument>(GeneratedResourceFile.Read(root, Base + "diploma.json"), ContentJson.CreateOptions());
         if (document.SchemaVersion != 1 || document.Assets.IsDefaultOrEmpty ||
@@ -50,6 +51,13 @@ public sealed class PretDiplomaPresentation
                 throw new InvalidDataException("Diploma PNG header invalid.");
             textures.Add(asset.Id, bytes);
         }
+        sourceTexts ??= PretBattleText.Load(root);
+        // Keep the certificate's existing layout contract; convert source dynamics before binding saved names.
+        var values = new Dictionary<string, string> { ["DYNAMIC 0x00"] = "{PLAYER}", ["DYNAMIC 0x01"] = "{DEX}" };
+        string Text(string symbol) => SourceBattleText.Pages(sourceTexts, symbol, values).Single();
+        document = document with { PlayerTemplate = Text("gText_Diploma_Player"),
+            BodyTemplate = Text("gText_Diploma_ThisDocument"), Kanto = Text("gText_Diploma_Kanto"),
+            National = Text("gText_Diploma_National"), Signature = Text("gText_Diploma_GameFreak") };
         return new(document, textures.ToImmutable());
     }
 

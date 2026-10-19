@@ -147,14 +147,7 @@ public partial class CampaignView
         ? WildWithdrawing(PresentedWildBattle!) ? _catalog.PokemonDisplayName(PresentedWildBattle!.LastSwitch!.Outgoing) : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _catalog.PokemonDisplayName(_session.State.Party[forced.PreviousIndex]) : _catalog.PokemonDisplayName(PresentedWildBattle!.OwnedBefore)
         : TowerOpponentAppearance()?.Name ?? PresentedBattleSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
     private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? _battleSelectionText.FoePrefix : _battleSelectionText.WildPrefix : "") + WildName(side);
-    private static string WildStatName(WildBattleStat stat) => stat switch
-    {
-        WildBattleStat.Attack => "ATTACK", WildBattleStat.Defense => "DEFENSE", WildBattleStat.Accuracy => "accuracy",
-        WildBattleStat.Speed => "SPEED",
-        WildBattleStat.SpecialAttack => "SP. ATK", WildBattleStat.SpecialDefense => "SP. DEF",
-        WildBattleStat.Evasion => "evasiveness",
-        _ => throw new InvalidDataException("Unsupported wild battle stat presentation.")
-    };
+    private string WildStatName(WildBattleStat stat) => SourceTrainerPresentationModel.StatName(_battleText,stat);
     private ImmutableArray<string> WildSourcePages(string symbol, params (string Key, string Value)[] extra)
     {
         var values = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -234,7 +227,7 @@ public partial class CampaignView
                     Source("sText_PkmnHitWithRecoil", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(recoil.Actor))); break;
                 case WildBattleCriticalHitEvent: Source("sText_CriticalHit"); break;
                 case WildBattleStatChangedEvent stat:
-                    Source("sText_DefendersStatFell", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stat.Target)), ("B_BUFF1", WildStatName(stat.Stat)), ("B_BUFF2", "fell!")); break;
+                    Source("sText_DefendersStatFell", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stat.Target)), ("B_BUFF1", WildStatName(stat.Stat)), ("B_BUFF2", SourceTrainerPresentationModel.StatChangeText(_battleText,false,false))); break;
                 case WildBattleStatAtMinimumEvent stat:
                     Source("sText_StatsWontDecrease", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stat.Target)), ("B_BUFF1", WildStatName(stat.Stat))); break;
                 case WildBattleAbilityPreventedEvent ability when ability.Ability == "ABILITY_KEEN_EYE":

@@ -7,6 +7,7 @@ public partial class CampaignView
 {
     private readonly Dictionary<string, Texture2D> _townMapTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<int, SourceGameFont> _townMapFonts = [];
+    private readonly Dictionary<string, string> _townMapLabels = new(StringComparer.Ordinal);
     private SourceGameFont? _townMapSmallFont;
     private bool _townMapWasActive, _townMapMoving, _townMapWasWall;
     private Vector2I _townMapCursor, _townMapPlayer, _townMapMoveFrom, _townMapMoveTo;
@@ -36,6 +37,12 @@ public partial class CampaignView
     private void LoadTownMapPresentation()
     {
         if (_townMapTextures.Count > 0 || _catalog.TownMap is not { } map) return;
+        foreach (var (symbol, control) in new[] {
+            ("gText_RegionMap_DPadMove", "DPAD_ANY"), ("gText_RegionMap_UpDownPick", "DPAD_UPDOWN"),
+            ("gText_RegionMap_AButtonCancel", "A_BUTTON"), ("gText_RegionMap_AButtonSwitch", "A_BUTTON"),
+            ("gText_RegionMap_AButtonOK", "A_BUTTON") })
+            _townMapLabels.Add(symbol, SourceMenuLabelPresentation.Plain(_battleText, symbol,
+                new Dictionary<string, string>(StringComparer.Ordinal) { [control] = "" }));
         foreach (var asset in map.Assets.Where(a => a.Id != "item-town-map"))
         {
             using var image = NativeImages.LoadPng(map.ReadAssetTexture(asset.Id), asset.Width, asset.Height);
@@ -67,7 +74,7 @@ public partial class CampaignView
     private void DisposeTownMapPresentation()
     {
         foreach (var font in _townMapFonts.Values) font.Dispose();
-        _townMapTextures.Clear(); _townMapFonts.Clear(); _firstSeviiTownMap = null; _flyMap = null; _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
+        _townMapTextures.Clear(); _townMapFonts.Clear(); _townMapLabels.Clear(); _firstSeviiTownMap = null; _flyMap = null; _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
     }
 
     private void SynchronizeTownMapPresentation()
@@ -155,7 +162,7 @@ public partial class CampaignView
             { SourceSound("SE_M_HYPER_BEAM2"); CloseTownMap(); }
             else if(!(TrySelectFlyDestination()))if (!WallTownMapActive && CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
                 _session.State.Script.Flags.GetValueOrDefault(i.VisitedFlag)))
-                _townMapNotice = "Detailed guide pages are not\navailable yet.";
+                _townMapNotice = FieldMenuText.Get("notice.map-guide-unavailable");
         }
         return true;
     }
@@ -215,16 +222,16 @@ public partial class CampaignView
         NameWindow(layout.DungeonNameWindow, layout.DungeonName, cell.DungeonName,
             visited ? layout.DungeonVisitedTextColor : layout.DungeonUnvisitedTextColor);
         DrawTexture(_townMapTextures["keypad-dpad-any"], new(layout.TopBarLeft.X, layout.TopBarLeft.Y));
-        SourceText(_townMapSmallFont!, new(layout.TopBarLeft.X + 8, layout.TopBarLeft.Y), "MOVE");
+        SourceText(_townMapSmallFont!, new(layout.TopBarLeft.X + 8, layout.TopBarLeft.Y), _townMapLabels["gText_RegionMap_DPadMove"]);
         if (_townMapCursor == new Vector2I(layout.Cancel.X, layout.Cancel.Y))
         {
             DrawTexture(_townMapTextures["keypad-a"], new(layout.TopBarRight.X, layout.TopBarRight.Y));
-            SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), "CANCEL");
+            SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), _townMapLabels["gText_RegionMap_AButtonCancel"]);
         }
         if (TownMapCursorOnSwitch)
         {
             DrawTexture(_townMapTextures["keypad-a"], new(layout.TopBarRight.X, layout.TopBarRight.Y));
-            SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), "SWITCH");
+            SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), _townMapLabels["gText_RegionMap_AButtonSwitch"]);
         }
         DrawFlyMapAction();
         if (_townMapNotice is not null) ItemMessageBox(_townMapNotice);

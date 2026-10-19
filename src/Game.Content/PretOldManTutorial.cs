@@ -24,7 +24,8 @@ public static class PretOldManTutorial
     public const string Profile = "firered-old-man-tutorial-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
-    public static PretOldManTutorialContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson)
+    public static PretOldManTutorialContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson,
+        IReadOnlyDictionary<string, string>? battleText = null)
     {
         // Authenticate before composing. No caller-supplied manifest can legitimize changed source values.
         var original = PretRoute1PokemonCatalog.Load(canonical, route1GeneratedJson);
@@ -47,7 +48,13 @@ public static class PretOldManTutorial
             catalog.Species[new("pret:SPECIES_KAKUNA")].SourceSpeciesId != 14 ||
             catalog.Species[new("pret:SPECIES_BEEDRILL")].SourceSpeciesId != 15)
             throw Error("species", "Expected original fourteen species and the complete Weedle family.");
-        return new(catalog, doc.Texts.ToImmutableDictionary(x => x.Symbol),
+        var texts = doc.Texts.ToImmutableDictionary(text => text.Symbol,
+            text => battleText is null ? text : text with
+            {
+                // This generated tutorial uses decoded LF; its shared source bank uses \n.
+                Text = battleText[text.Symbol].Replace("\\n", "\n", StringComparison.Ordinal)
+            }, StringComparer.Ordinal);
+        return new(catalog, texts,
             doc.Assets, doc.TeachyTv, doc.OldManThrowFrames, doc.OldManThrowSource, doc.Layouts);
     }
 

@@ -186,8 +186,10 @@ public partial class CampaignView
         bool controls = _entryMode == "controls-guide";
         DrawRect(new(0, 0, 240, 160), Color.Color8(16, 115, 231));
         DrawRect(new(0, 0, 240, 16), Color.Color8(74, 82, 107));
-        SourceText(_openingGuideFont!, new(8, 0), controls ? "CONTROLS" : "");
-        SourceText(_openingGuideFont!, new(108, 0), _guidePage == 0 ? "A: NEXT" : "A: NEXT  B: BACK");
+        SourceText(_openingGuideFont!, new(8, 0), controls ? SourceMenuLabelPresentation.Plain(_battleText, "gText_Controls") : "");
+        SourceText(_openingGuideFont!, new(108, 0), _guidePage == 0
+            ? SourceMenuLabelPresentation.Plain(_battleText, "gText_HelpSystemControls_A_Next", new Dictionary<string, string> { ["A_BUTTON"] = "A: " })
+            : FieldMenuText.Get("opening.control.next-back"));
         if (controls)
         {
             if (_guidePage == 0) OpeningGuideText(_openingGuideFont!, new(2, 56), _opening!.Texts["gControlsGuide_Text_Intro"], 15);
@@ -337,7 +339,7 @@ public partial class CampaignView
         {
             DrawTexture(_openingTextures["background"], Vector2.Zero);
             _battleSkin.DrawStandardFrame(this, new(136, 64, 88, 48));
-            SourceText(_sourceNormal, new(152, 72), "BOY"); SourceText(_sourceNormal, new(152, 88), "GIRL");
+            SourceText(_sourceNormal, new(152, 72), SourceMenuLabelPresentation.Plain(_battleText, "gText_Boy")); SourceText(_sourceNormal, new(152, 88), SourceMenuLabelPresentation.Plain(_battleText, "gText_Girl"));
             SourceText(_sourceNormal, new(138, 72 + _entryCursor * 16), "▶");
             ItemMessageBox(_opening!.Pages("AskPlayerGender", _entryPlayerName, _entryRivalName)[0]); return true;
         }
@@ -359,7 +361,7 @@ public partial class CampaignView
             DrawOpeningPortrait(player ? OpeningPlayerPortrait : "rival");
             ItemMessageBox(_opening!.Pages(player ? "SoYourNameIsPlayer" : "ConfirmRivalName", _entryPlayerName, _entryRivalName)[0]);
             _battleSkin.DrawStandardFrame(this, new(8, 8, 64, 48));
-            SourceText(_sourceNormal, new(26, 16), "YES"); SourceText(_sourceNormal, new(26, 32), "NO");
+            SourceText(_sourceNormal, new(26, 16), SourceMenuLabelPresentation.Plain(_battleText, "gText_Yes")); SourceText(_sourceNormal, new(26, 32), SourceMenuLabelPresentation.Plain(_battleText, "gText_No"));
             SourceText(_sourceNormal, new(12, 16 + _entryCursor * 16), "▶"); return true;
         }
         return false;

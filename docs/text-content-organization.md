@@ -343,27 +343,46 @@ symbol和编辑器动作行复用battle bank，名字绑定单遍；EasyChat的1
 正常WM close经RequestQuit退出0，verbose无错误、警告或泄漏。此为实际引擎组合／退出验证，
 不是新原生画面、实音或中文验收。
 
-### 全部生产入口复查后的后续收口范围
+### 专用目录与公共 UI 合并收口
 
-这份列表按实际消费者分为三类，避免把专用目录误当成已自动接入Story／Battle。
-数目是现有目录或字段规模，不是逐项原生验收，也不要求复制英文资源。
+本轮按真实消费者接线，而非新增一份英文总表。Help 的 368 个引用 ID、Opening 的 24 个
+文本及六个建议名、Teachy TV 的 42 个文本、Quest Log 的 125 个模板／414 个地图 ID／
+离场标签使用各自现有身份。地图三种视图共用 Fly 目录的 83 个 MAPSEC 身份（81 个不同
+英文值），同名区域仍保留不同 ID。新增 source 分组为 help、opening、opening-names、
+teachy-tv、quest-log、quest-log-map-names、quest-log-departures、map-section-names、
+trainer-tower-names；没有复制默认英文文件。
 
-- 专用源目录显示投影：HelpCatalog→CampaignHelpView（368引用ID）；
-  PretOpeningPresentation→CampaignOpeningView/命名（24个文本ID、4种标题及建议名）；
-  PretMainMenuSource→EntryText（6个常规入口）；PretTeachyTv（42）及OldManTutorial（4）；
-  PretStorageCustomization→壁纸选项（42个源ID及类别／名称）；MoveTutor/Reminder/Deleter/
-  NameRaterSource→学习与记录页面（13/13/4/2字段）；NpcTradeContent（7）；HallPcPresentation（8）；
-  LeagueManifest（3个显示消息、43署名行及标题）；Diploma（5）；Town/Fly/Sevii地图名称与地牢标签；
-  Fame Checker（342个唯一文本symbol）；Quest Log（125模板、414地图名称及departure标签）。
-  原目录的ID、控制码和玩法字段保持，各消费者只投影显示字段，不能新增平行规则清单。
-- 共享／作者UI余项：仍有YES/NO/CANCEL和动作标签、蛋摘要／来源、Safari状态与提示、
-  Old Man动作名、地图按键提示、电梯楼层／Now on、Game Corner菜单、图鉴导航、命名提示／错误、
-  Help及Tower记录控制。下一收口应按共享label语义复用源bank，重制提示进入现有作者组，
-  不逐屏幕再建目录；正常生产分支与仅fallback分支须分别确认。
-- 预设／动态值：Tower个人名及设施speech仍直接读模板词；NPC交换昵称／OT、开场建议名、
-  默认箱名需要明确预设身份与玩家已输入值的边界。不能用显示字符串相等来猜测用户意图，
-  也不能改变原编码参与的个体生成或邮件协议。
+其他目录直接复用已有权威：Fame Checker 的 342 个符号分别来自 battle（10）、story
+（320）和明确 TrainerId（12）；常规入口、四种命名标题、Old Man、壁纸、教学服务、
+NPC 交换提示、奖品、Hall PC、Diploma 和片尾字幕均复用 battle。导入器保留原先丢失的
+文字 symbol，移除不再消费的壁纸／奖品／片尾英文副本。Tower 的 53 个预设人名按楼层
+符号／训练师索引投影，speech 按原词 ID 使用同一个 Easy Chat 名称／普通词目录。
 
-验证专用重复副本、字母键盘布局与图片内文字不算动态文本消费者。图片字、字形、中文排版、
-IME和目标语言排序另列，不以它们解释上述尚未接线的文字。当前批已冻结，不将此表中的
-后续项混入已通过测试范围。
+公共菜单、蛋摘要、Safari、电梯、图鉴导航、命名辅助提示、地图提示和战斗辅助页接入
+源标签或现有作者组。物品皮肤与 Quest 口袋在统一组合点接收同一 bank；物品参数和
+Quest 回顾参数单遍绑定，玩家值里的花括号、反斜杠和美元符号不再被二次解释。
+已无调用的旧蛋摘要和重复开场绘制分支移除。源本来为 sharply rose!、Safari throw?、
+No use. 等的少量提示恢复源措辞，选择身份、交易和战斗结果不变。
+
+覆盖包仍只接受已存在 ID，缺项回落英文，未知 ID／控制不匹配报错。Opening 的实际
+form-feed 分页只对 opening 分组允许且必须保留位置语义；其他组仍拒绝该控制。
+现有源占位符顺序、控制指令及空段锚点保持。这是安全的渐进覆盖边界，尚不支持任意
+重排原作控制骨架。作者模板仍支持具名参数重排与字面插入。
+
+明确保留的身份与未来工作：
+- 九组 NPC 交换固定昵称已作为 CustomNickname 保存，OT 属于原始身份／所有权校验，
+  DONTAE 邮件另含编码作者。它们不是普通文本覆盖入口；后续若需本地化这些预设，须
+  明确创建时身份语义，不能依据已保存英文名猜测。所有自定义玩家／宝可梦名字原样显示。
+- 箱名 null 表示默认 BOXn，但当前重命名输入等于默认名也会折叠为 null；本批不猜测
+  历史输入意图，默认箱名仍为现有规则。旧 Quest 回顾已记录的参数字符串保留原值。
+- 开场建议名仍受现有七字符／字符表输入约束。中文翻译、输入字符集、字体、排版、
+  IME、排序和图片内文字需实际目标语言验收。没有把这些边界标成已通过。
+- 原始规则编码、脚本身份、诊断错误码和开发状态不是显示翻译目录。玩家可见的错误
+  提示则使用现有作者组，原有文字保持；正常 RequestQuit 与强制退出诊断继续区分。
+
+本批验证：Content 152、Presentation 233、Application 23 项定向测试全部通过；四个
+项目串行构建零警告／错误。Opening 的维护导入检查、Storage／Prize 的固定输入重建
+及五个服务包检查通过。Prize 完整重建在外部目录验证，运行目录只更新文字 manifest，
+未用旧独立图标输出覆盖现有共享图集。正常 headless WM-close 启动／退出通过。
+一次自有云窗口抽样确认 Help 英文回落、返回现场、作者覆盖 SATCHEL 和 source 覆盖
+TOOLS 的实际 Bag 绘制；本批未逐屏原生复验全部目录，Dummy 音频不代表试听。

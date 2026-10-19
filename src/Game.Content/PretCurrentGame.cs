@@ -20,6 +20,7 @@ public sealed partial class PretCampaignCatalog
     private PretCampaignCatalog(string projectRoot)
     {
         var world = PretCurrentWorld.Load(projectRoot);
+        var battleTexts = PretBattleText.Load(projectRoot);
         QuestLogSource = PretQuestLogSource.Load(projectRoot);
         var canonicalPokemon = PretCanonicalPokemonCatalog.Load(projectRoot, projectRoot);
         var sharedItems = SharedItemCatalog.LoadProject(projectRoot);
@@ -55,7 +56,7 @@ public sealed partial class PretCampaignCatalog
         var seviiRubyTrainers = PretSeviiRubyRules.LoadTrainers(projectRoot);
         var twins = PretRoute8Twins.Load(projectRoot);
         var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(canonicalPokemon, projectRoot, sharedItems);
-        var npcTrades = PretNpcTrades.Load(world, doubleMechanics.Catalog);
+        var npcTrades = PretNpcTrades.Load(world, doubleMechanics.Catalog, sourceTexts: battleTexts);
         var gamePokemon = PretGamePokemonCatalog.Load(projectRoot, canonicalPokemon, doubleMechanics, npcTrades.Trades, sharedMachines);
         var npcTradeElyssa = PretNpcTradeElyssa.Load(world);
         var npcTradeHaden = PretNpcTradeHaden.Load(world);
@@ -97,7 +98,7 @@ public sealed partial class PretCampaignCatalog
         var regionalGift = PretRegionalGiftContract.Load(projectRoot, sharedItems);
         var eeveeArt = PretEeveeArt.Load(projectRoot, pokedexMenu: oakPokedex);
         var departmentStore = PretDepartmentStoreContract.Load(projectRoot);
-        var nameRater = PretNameRaterContract.Load(projectRoot);
+        var nameRater = PretNameRaterContract.Load(projectRoot, sourceTexts: battleTexts);
         var fuchsiaRoute = PretFuchsiaRouteRegion.Load(world);
         var fuchsiaGym = PretFuchsiaGymRegion.Load(world);
         var fuchsiaGymTrainers = PretFuchsiaGymTrainers.LoadDocument(canonicalPokemon, projectRoot);
@@ -187,7 +188,7 @@ public sealed partial class PretCampaignCatalog
         var mtMoon = PretMtMoonRegion.Load(world);
         var mtMoonPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "mtmoon", pokedexMenu: oakPokedex);
         var oakRating = PretOakRating.Load(projectRoot);
-        var townMap = PretTownMap.Load(projectRoot, sharedItems);
+        var townMap = PretTownMap.Load(projectRoot, sharedItems, flyMapPresentation.MapNames);
         // All ordinary maps come from the authoritative current world index.
         var maps = world.Maps;
         var region = PretViridianRegion.Load(world);
@@ -226,7 +227,7 @@ public sealed partial class PretCampaignCatalog
         var pokemonContent = new CampaignPokemonContent(gamePokemon, storyRuntime.NicknameCharacters)
         { AllowSleepStatus = true, AllowFreezeStatus = true, AllowToxicStatus = true };
 
-        var oldMan = PretOldManTutorial.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/pokemon/route1/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/old-man-tutorial.json"), Encoding.UTF8));
+        var oldMan = PretOldManTutorial.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/pokemon/route1/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/old-man-tutorial.json"), Encoding.UTF8), battleText: battleTexts);
         var forestPokemon = PretForestPokemon.Load(canonicalPokemon, projectRoot);
 
         var pewterPokemon = PretPewterPokemon.Load(canonicalPokemon, projectRoot);
@@ -245,7 +246,7 @@ public sealed partial class PretCampaignCatalog
             var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/trainer-battles/lab/lab-trainers.json"), Encoding.UTF8), SharedTrainerCatalog.LoadProject(projectRoot));
             var names = canonicalPokemon.MoveCatalog.MoveNames.ToImmutableSortedDictionary(
                 pair => pair.Key.Value, pair => pair.Value, StringComparer.Ordinal);
-            battleContent = new(trainers, names, PretBattleText.Load(projectRoot));
+            battleContent = new(trainers, names, battleTexts);
         }
 
         var mailPresentation = PretMailPresentation.Load(projectRoot, items: sharedItems, battleText: battleContent.Texts);
@@ -418,7 +419,7 @@ public sealed partial class PretCampaignCatalog
 
         var memorialTrainers = PretMemorialPillarTrainers.Load(originalTmAcquisition.MemorialTrainers);
 
-        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, gamePokemon, earlyShop.Catalog, machines, shared: sharedMachines);
+        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, gamePokemon, earlyShop.Catalog, machines, shared: sharedMachines, sourceTexts: battleTexts);
 
         ValidateCapeBrinkComposition(capeBrinkTutor, maps, compiled);
         var prizeRoom = PretGameCornerPrizeRoom.Load(regionalServices, maps);
@@ -437,8 +438,8 @@ public sealed partial class PretCampaignCatalog
         ValidateTrainerFanClubComposition(trainerFanClub, maps, compiled);
 
         ValidateCapeBrinkEncounterSources(capeBrinkTutor, pokemonContent.Catalog);
-        var moveReminder = PretMoveReminderService.Load(projectRoot, pokemonContent.Catalog);
-        var moveTutors = PretMoveTutors.Load(projectRoot, pokemonContent.Catalog);
+        var moveReminder = PretMoveReminderService.Load(projectRoot, pokemonContent.Catalog, sourceTexts: battleTexts);
+        var moveTutors = PretMoveTutors.Load(projectRoot, pokemonContent.Catalog, sourceTexts: battleTexts);
 
         // Change this explicit version only when the saved content model changes.
         const string version = "firered-current-content-v4";
@@ -468,7 +469,7 @@ public sealed partial class PretCampaignCatalog
         MoveTutors = moveTutors.Catalog.WithCapeBrink(capeBrinkTutor.AuthenticateTutor(pokemonContent.Catalog));
         MoveReminderHouse = moveReminderHouse; MoveReminder = moveReminder.Catalog;
         OriginalTutorRooms = originalTutorRooms; CopycatHouse = copycatHouse;
-        MoveDeleterHouse = moveDeleterHouse; MoveDeleter = moveDeleterHouse.Bind(pokemonContent!.Catalog);
+        MoveDeleterHouse = moveDeleterHouse; MoveDeleter = moveDeleterHouse.Bind(pokemonContent!.Catalog, sourceTexts: battleTexts);
         EventIslandRegion = eventIsland;
 
         SevenIslandRegion = sevenIsland;
@@ -652,6 +653,7 @@ public sealed partial class PretCampaignCatalog
         EscapeRoutes = CurrentEscapeRoutes.Create(maps, compiled);
         _scripts = SourceTextPack.Current.ApplyMenus(compiled);
         _text = SourceTextPack.Current.Apply("story", bank, preserveControls: true);
+        fameChecker = fameChecker.WithDisplayText(battleTexts, _text, TrainerDisplayNames);
         ContentVersion = version;
         PokemonContent = pokemonContent;
         BattleContent = battleContent;
@@ -808,6 +810,7 @@ public sealed partial class PretCampaignCatalog
 
         MailPresentation = mailPresentation;
         MailComposer = mailComposer.WithDisplayNames(oakPokedex, canonicalPokemon.MoveCatalog);
+        TrainerTowerCatalog = PretTrainerTowerRules.WithDisplayText(trainerTowerCatalog, MailComposer);
         TeachyTv = teachyTv;
         VsSeeker = vsSeeker.Catalog;
         VsSeekerTexts = vsSeekerPresentation.EncodedTexts;

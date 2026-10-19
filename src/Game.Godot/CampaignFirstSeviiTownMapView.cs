@@ -40,7 +40,7 @@ public partial class CampaignView
     private void LoadFirstSeviiTownMap()
     {
         if (_firstSeviiTownMap is not null) return;
-        var extension = PretFirstSeviiTownMap.Load(_root);
+        var extension = PretFirstSeviiTownMap.Load(_root, _catalog.FlyMapPresentation.MapNames);
         foreach (var a in extension.Assets)
         {
             using var image = NativeImages.LoadPng(extension.ReadAssetPng(a.Id), a.Width, a.Height);
@@ -135,8 +135,8 @@ public partial class CampaignView
         DrawTexture(_townMapTextures["switch-right-" + frame], new(s.RightArrowX - 16, selected.Position.Y));
         var l = _catalog.TownMap!.Layout;
         DrawTexture(_townMapTextures["keypad-updown"], new(l.TopBarLeft.X, l.TopBarLeft.Y));
-        SourceText(_townMapSmallFont!, new(l.TopBarLeft.X + 8, l.TopBarLeft.Y), "PICK");
+        SourceText(_townMapSmallFont!, new(l.TopBarLeft.X + 8, l.TopBarLeft.Y), _townMapLabels["gText_RegionMap_UpDownPick"]);
         DrawTexture(_townMapTextures["keypad-a"], new(l.TopBarRight.X, l.TopBarRight.Y));
-        SourceText(_townMapSmallFont!, new(l.TopBarRight.X + 8, l.TopBarRight.Y), "OK");
+        SourceText(_townMapSmallFont!, new(l.TopBarRight.X + 8, l.TopBarRight.Y), _townMapLabels["gText_RegionMap_AButtonOK"]);
     }
 }

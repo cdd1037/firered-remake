@@ -108,7 +108,8 @@ def run(root,reference,inherited,check=False):
   tiles.append(dict(metatileId=mid,x=col*16,y=0))
  for i,atlas in enumerate(atlases):emit('doors-'+str(i),atlas)
  strings={n:s.replace('\\n','\n').replace('\\\"','\"') for n,s in re.findall(r'const u8 (\w+)\[\] = _\("((?:[^"\\]|\\.)*)"\);',text('src/strings.c'))}
- credits=text('src/credits.c');enums=re.search(r'enum CreditsString\s*\{(.*?)\};',credits,re.S)[1];names=re.findall(r'CREDITS_STRING_(\w+)',enums);pairs=re.findall(r'\{ (\w+), (\w+), (?:TRUE|FALSE)\s*\}',re.search(r'sCreditsTexts\[\] = \{(.*?)\n\};',credits,re.S)[1]);need(len(names)==len(pairs),'Credits row count');texts={n:dict(title=strings.get(a,''),names=strings.get(b,'')) for n,(a,b) in zip(names,pairs)}
+ credits=text('src/credits.c');enums=re.search(r'enum CreditsString\s*\{(.*?)\};',credits,re.S)[1];names=re.findall(r'CREDITS_STRING_(\w+)',enums);pairs=re.findall(r'\{ (\w+), (\w+), (?:TRUE|FALSE)\s*\}',re.search(r'sCreditsTexts\[\] = \{(.*?)\n\};',credits,re.S)[1]);need(len(names)==len(pairs),'Credits row count');texts={n:dict(titleSymbol=a,namesSymbol=b) for n,(a,b) in zip(names,pairs)}
+ need(all(a in strings and b in strings for a,b in pairs),'Credits text references')
  maps=[]
  for symbol,body in re.findall(r'sOverworldCmd_(\w+)\[\] = \{(.*?)\n\};',credits,re.S):
   m=re.search(r'CREDITSOVWLDLOADMAP\((\w+), (\d+), (\d+), (\d+)\)',body);v=re.search(r'CREDITSOVWLDSCROLL\((-?\d+), (-?\d+), (0x\w+)\)',body)
@@ -134,7 +135,7 @@ def run(root,reference,inherited,check=False):
  get('src/trig.c');get('graphics/interface/std_menu.pal')
  inputs=[dict(path=p) for p,b in sorted(raw.items())]
  lock=enc(dict(schemaVersion=1,sourceCommit=COMMIT,files=inputs));lockpath=root/'scripts/recipes/presentation/pokemon-league-presentation.lock.json'
- manifest=runtime_json_bytes(dict(schemaVersion=1,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(title=strings['gString_PokemonFireRed_Staff'],texts=texts,commands=commands,maps=maps,zoom=zoomrows,headerColor=[int(v) for v in text('graphics/interface/std_menu.pal').splitlines()[8].split()]),hallSine=[int(float(v)*256) for v in re.findall(r'Q_8_8\((-?[0-9.]+)\)',text('src/trig.c'))[:256]],texts={k:strings[k] for k in ['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber']},outputs=[dict(path=p) for p,b in sorted(out.items())]));out['manifest.json']=manifest
+ manifest=runtime_json_bytes(dict(schemaVersion=1,assets=assets,trainers=trainers,portraits=portraits,sprites=sprites,pokemonIcons=icons,tiles=tiles,credits=dict(titleSymbol='gString_PokemonFireRed_Staff',texts=texts,commands=commands,maps=maps,zoom=zoomrows,headerColor=[int(v) for v in text('graphics/interface/std_menu.pal').splitlines()[8].split()]),hallSine=[int(float(v)*256) for v in re.findall(r'Q_8_8\((-?[0-9.]+)\)',text('src/trig.c'))[:256]],textSymbols=['gText_WelcomeToHOF','gText_LeagueChamp','gText_SavingDontTurnOffThePower2','gText_Level','gText_IDNumber'],outputs=[dict(path=p) for p,b in sorted(out.items())]));out['manifest.json']=manifest
  if check:
   need(lockpath.read_bytes()==lock,'Lock differs')
   for p,b in out.items():need((root/BASE/p).read_bytes()==b,'Generated resource differs: '+p)

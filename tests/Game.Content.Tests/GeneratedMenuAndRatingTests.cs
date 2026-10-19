@@ -15,6 +15,7 @@ public sealed class GeneratedMenuAndRatingTests
             string[] files =
             [
                 "ui/main-menu/main-menu.json",
+                "battle/text.json",
                 "data/services/oak-rating/oak-rating.json",
                 "data/constants.json",
                 "data/story.json"

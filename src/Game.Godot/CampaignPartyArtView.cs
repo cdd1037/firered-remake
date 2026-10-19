@@ -37,7 +37,7 @@ public partial class CampaignView
         if(direction!=0)return MouseNavigationKey(direction);
         if(cursor==slot)return false;cursor=slot;return true;
     }
-    private void DrawNativeParty(IReadOnlyList<PartyPokemon> party,int cursor,string prompt,int swapSource=-1,bool cancel=true,string cancelText="CANCEL",Func<int, PartyPokemon>? displayed=null, Func<int,string?>? description=null, NativePartyLayout layout=NativePartyLayout.Single)
+    private void DrawNativeParty(IReadOnlyList<PartyPokemon> party,int cursor,string prompt,int swapSource=-1,bool cancel=true,string? cancelText=null,Func<int, PartyPokemon>? displayed=null, Func<int,string?>? description=null, NativePartyLayout layout=NativePartyLayout.Single)
     {
         PartyAtlas(new(0,0,240,160),new(0,0,240,160));
         for(int i=0;i<6;i++)
@@ -72,7 +72,7 @@ public partial class CampaignView
         // Source message window is 21 tiles wide; CANCEL occupies the right seven.
         _battleSkin.DrawUserFrame(this,new(0,128,184,32));
         SourceText(_sourceSmall,new(8,137),prompt.Replace("\n"," "));
-        if(cancel){PartyAtlas(NativePartyCancel,new(cursor==party.Count?56:0,864,56,16));SourceText(_sourceSmallWhite,new(195,137),cancelText);}
+        if(cancel){PartyAtlas(NativePartyCancel,new(cursor==party.Count?56:0,864,56,16));SourceText(_sourceSmallWhite,new(195,137),cancelText??_summaryPartyText.Label(SummaryPartyAction.Cancel));}
     }
     private void DrawNativePartyMessage(string text)
     {

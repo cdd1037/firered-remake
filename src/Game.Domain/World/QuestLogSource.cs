@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text;
 
 namespace Game.Domain.World;
 
@@ -22,11 +23,22 @@ public sealed record QuestLogSource(ImmutableDictionary<string,string> Texts,
     public string MapName(string map)=>MapNames.TryGetValue(map,out var name)?name:throw new InvalidDataException("quest_log_map_name_missing: "+map);
     public string Expand(string key,string player,IReadOnlyList<string> values)
     {
-        var text=Texts[key].Replace("{PLAYER}",player,StringComparison.Ordinal);
-        for(int i=0;i<values.Count;i++)
-            text=text.Replace("{STR_VAR_"+(i+1)+"}",values[i],StringComparison.Ordinal)
-                .Replace("{DYNAMIC 0x"+i.ToString("X2")+"}",values[i],StringComparison.Ordinal);
-        if(text.Contains('{'))throw new InvalidDataException("quest_log_text_arguments_missing: "+key);
-        return text;
+        var arguments = new Dictionary<string, string>(StringComparer.Ordinal) { ["PLAYER"] = player };
+        for (int i = 0; i < values.Count; i++)
+        {
+            arguments["STR_VAR_" + (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)] = values[i];
+            arguments["DYNAMIC 0x" + i.ToString("X2", System.Globalization.CultureInfo.InvariantCulture)] = values[i];
+        }
+        var text = Texts[key];
+        var result = new StringBuilder();
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] != '{') { result.Append(text[i]); continue; }
+            int end = text.IndexOf('}', i + 1);
+            if (end < 0 || !arguments.TryGetValue(text[(i + 1)..end], out var value))
+                throw new InvalidDataException("quest_log_text_arguments_missing: " + key);
+            result.Append(value); i = end;
+        }
+        return result.ToString();
     }
 }

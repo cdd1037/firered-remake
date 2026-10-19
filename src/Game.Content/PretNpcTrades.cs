@@ -18,10 +18,12 @@ public sealed class PretNpcTrades
     public string GeneratedDirectory { get; }
 
     private PretNpcTrades(SilphSourcePackage source, NpcTradePokemonCatalog trades,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants)
+        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
+        IReadOnlyDictionary<string, string> sourceTexts)
     {
         Texts = source.Document("presentation-text.json").EnumerateArray().ToImmutableDictionary(
-            r => r.GetProperty("symbol").GetString()!, r => r.GetProperty("text").GetString()!, StringComparer.Ordinal);
+            r => r.GetProperty("symbol").GetString()!,
+            r => sourceTexts[r.GetProperty("symbol").GetString()!].Replace("\\n", "\n", StringComparison.Ordinal), StringComparer.Ordinal);
         Trades = trades; NewMaps = maps; Constants = constants;
         GeneratedDirectory = source.Directory;
 
@@ -33,7 +35,7 @@ public sealed class PretNpcTrades
         _ => throw new InvalidDataException("Unknown original Lounge warp destination: " + symbol)
     };
 
-    public static PretNpcTrades Load(PretCurrentWorld world, PokemonCatalog pokemon)
+    public static PretNpcTrades Load(PretCurrentWorld world, PokemonCatalog pokemon, IReadOnlyDictionary<string, string>? sourceTexts = null)
     {
         var projectRoot = world.ProjectRoot;
         ArgumentNullException.ThrowIfNull(pokemon);
@@ -48,7 +50,7 @@ public sealed class PretNpcTrades
             constants["FLAG_DID_MS_NIDO_TRADE"] == 587 && constants["FLAG_DID_NINA_TRADE"] == 593 &&
             constants["INGAME_TRADE_ELECTRODE"] == 6 && constants["INGAME_TRADE_TANGELA"] == 7 && constants["INGAME_TRADE_SEEL"] == 8 &&
             constants["PARTY_SIZE"] == 6, "Original trade IDs/cancel constant differ.");
-        return new(source, trades, maps.ToImmutable(), constants);
+        return new(source, trades, maps.ToImmutable(), constants, sourceTexts ?? PretBattleText.Load(projectRoot));
     }
     private static NpcTradePokemonDefinition Definition(JsonElement row)
     {

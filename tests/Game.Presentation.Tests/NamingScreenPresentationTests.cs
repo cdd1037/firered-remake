@@ -175,4 +175,29 @@ public sealed class NamingScreenPresentationTests
         var hide = new OpeningPortraitTransition("oak", null, 48); hide.AdvanceFrames(96); Assert.IsFalse(hide.Complete);
         hide.AdvanceFrames(1); Assert.IsTrue(hide.Complete);
     }
+    [TestMethod]
+    [DataRow(NamingScreenFlow.Player, "gText_YourName")]
+    [DataRow(NamingScreenFlow.Rival, "gText_RivalsName")]
+    [DataRow(NamingScreenFlow.Box, "gText_BoxName")]
+    [DataRow(NamingScreenFlow.Capture, "gText_PkmnsNickname")]
+    [DataRow(NamingScreenFlow.NameRater, "gText_PkmnsNickname")]
+    public void SourceTitleOverridesReachSharedNamingWithoutChangingUserTextOrCommands(NamingScreenFlow flow, string symbol)
+    {
+        using var output = TestAssets.TemporaryOutput();
+        Directory.CreateDirectory(Path.Combine(output.Path, "source"));
+        File.WriteAllText(Path.Combine(output.Path, "source", "battle.json"),
+            System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string> { [symbol] = " NAME!" }));
+        var source = PretOpeningPresentation.Load(TestAssets.Root, SourceTextPack.Load(output.Path));
+        var screen = new NamingScreenPresentation(source);
+        var context = new NamingScreenContext(flow, "actual-target", "GREEN", "TYPE{RIVAL}");
+        Assert.IsTrue(screen.Open(context));
+        Assert.AreEqual((screen.Template.PrefixSpeciesName ? "TYPE{RIVAL}" : "") + " NAME!", screen.Title);
+        Assert.AreEqual("GREEN", context.OriginalName);
+        Assert.AreEqual(context.IsOpening ? "GREEN" : "", context.InitialText);
+        Assert.AreEqual(new NamingScreenKey(NamingScreenAction.Insert, 'A'), screen.Activate());
+        screen.SelectSubmit();
+        Assert.AreEqual(NamingScreenAction.Submit, screen.Activate().Action);
+        Assert.AreEqual(source.NamingTemplates[context.TemplateSymbol].MaxChars, screen.MaxChars);
+    }
+
 }

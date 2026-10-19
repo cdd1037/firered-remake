@@ -21,7 +21,7 @@ public partial class CampaignView
     private void EnsureNamingPresentation()
     {
         if (_namingScreen is not null) return;
-        _opening ??= PretOpeningPresentation.Load(_root);
+        _opening ??= PretOpeningPresentation.Load(_root, battleText: _battleText);
         _namingScreen = new(_opening);
         string fonts = Path.Combine(_root, "content/generated/ui/font");
         _namingKeyboardFont = SourceGameFont.Load(fonts, foreground: Colors.White, shadow: Color.Color8(98, 98, 98));
@@ -307,16 +307,16 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 16), Color.Color8(74, 82, 107));
         string hint = _namingBinding!.Context.EscapeBehavior switch
         {
-            NamingEscapeBehavior.ReturnToEntry => "Tab: type/keys  Enter: OK  Esc: back",
-            NamingEscapeBehavior.KeepOriginal => "Tab: type/keys  Enter: OK  Esc: keep",
-            _ => "Tab: type/keys  Enter: OK  B: delete"
+            NamingEscapeBehavior.ReturnToEntry => FieldMenuText.Get("naming.hint.back"),
+            NamingEscapeBehavior.KeepOriginal => FieldMenuText.Get("naming.hint.keep"),
+            _ => FieldMenuText.Get("naming.hint.delete")
         };
         SourceText(_namingGuideFont!, new(4, 1), hint);
         if (_namingBinding.Context.IsOpening && _entryNotice is not null) ItemMessageBox(_entryNotice);
         else if (StorageBoxNaming && _pcNotice is not null) ItemMessageBox(_pcNotice);
         else if (CaptureNamingActive && (_session.State.SafariBattle is not null ? _safariNotice : _wildNotice) is {} notice) ItemMessageBox(notice);
         else if (_status.StartsWith("nickname_", StringComparison.Ordinal) || _status.StartsWith("name_rater_", StringComparison.Ordinal))
-            ItemMessageBox(_status == "nickname_length" ? "Use at most " + grid.MaxChars + " characters." : "That name could not be submitted.");
+            ItemMessageBox(_status == "nickname_length" ? FieldMenuText.Get("naming.notice.length", ("limit", grid.MaxChars.ToString())) : FieldMenuText.Get("naming.notice.failed"));
         return true;
     }
 

@@ -23,7 +23,7 @@ public partial class CampaignView
     private double _silphElevatorTicks;
     private int _silphElevatorDistance, _silphElevatorDirection, _silphElevatorDuration;
     private bool _silphElevatorDing;
-    private static readonly string[] SilphFloorLabels = ["11F", "10F", "9F", "8F", "7F", "6F", "5F", "4F", "3F", "2F", "1F", "EXIT"];
+    private static readonly string[] SilphFloorSymbols = ["gText_11F", "gText_10F", "gText_9F", "gText_8F", "gText_7F", "gText_6F", "gText_5F", "gText_4F", "gText_3F", "gText_2F", "gText_1F", "gOtherText_Exit"];
     private bool SilphElevatorMenuActive => _catalog is not null && _session?.State.SilphElevator?.MenuDefault is not null &&
         _session.State.Script.Wait?.Kind == StoryWaitKind.Presentation && _session.State.World.Player.MapId == SilphElevatorId;
     private bool SilphElevatorMenuVisible => SilphElevatorMenuActive && FieldTextComplete &&
@@ -31,7 +31,7 @@ public partial class CampaignView
     private bool SilphElevatorAnimating => _silphElevatorDistance > 0 && _silphElevatorTicks + 1e-8 < _silphElevatorDuration &&
         _session?.State.World.Player.MapId == SilphElevatorId;
     private bool SilphInputLocked => _session?.State.SilphPad is not null || _silphPad is not null || SilphElevatorAnimating;
-    private int SilphMenuWidth => (((int)SilphFloorLabels.Max(label => _sourceNormal.Font.GetStringSize(label, fontSize: _sourceNormal.Size).X) + 9) / 8 + 1) * 8;
+    private int SilphMenuWidth => (((int)SilphFloorSymbols.Max(symbol => _sourceNormal.Font.GetStringSize(SourceMenuLabelPresentation.Plain(_battleText, symbol), fontSize: _sourceNormal.Size).X) + 9) / 8 + 1) * 8;
     private Vector2 SilphCameraOffset => !SilphElevatorAnimating ? Vector2.Zero :
         new(0, _silphElevatorTicks < 3 ? 0 : ((int)Math.Floor(_silphElevatorTicks / 3) % 2 == 0 ? 1 : -1));
 
@@ -131,15 +131,15 @@ public partial class CampaignView
         if (_session.State.World.Player.MapId != SilphElevatorId) return;
         if (_session.State.SilphElevator?.FloorWindowVisible == true)
         {
-            _battleSkin.DrawUserFrame(this, new(168, 0, 72, 48)); SourceText(_sourceNormal, new(176, 10), "Now on:");
+            _battleSkin.DrawUserFrame(this, new(168, 0, 72, 48)); SourceText(_sourceNormal, new(176, 10), SourceMenuLabelPresentation.Plain(_battleText, "gText_NowOn"));
             int floor = _session.State.Script.Variables.GetValueOrDefault("VAR_0x8005");
             if (floor is < 4 or > 14) throw new InvalidDataException("Silph current floor differs.");
-            string label = (floor - 3) + "F";
+            string label = SourceMenuLabelPresentation.Plain(_battleText, SilphFloorSymbols[14 - floor]);
             SourceText(_sourceNormal, new(232 - _sourceNormal.Font.GetStringSize(label, fontSize: _sourceNormal.Size).X, 24), label);
         }
         if (!SilphElevatorMenuVisible) return;
         _battleSkin.DrawUserFrame(this, new(0, 0, SilphMenuWidth + 16, 112));
-        for (int row = 0; row < 7; row++) SourceText(_sourceNormal, new(16, 8 + row * 14), SilphFloorLabels[_silphMenuScroll + row], 1);
+        for (int row = 0; row < 7; row++) SourceText(_sourceNormal, new(16, 8 + row * 14), SourceMenuLabelPresentation.Plain(_battleText, SilphFloorSymbols[_silphMenuScroll + row]), 1);
         SourceText(_sourceNormal, new(8, 8 + _silphMenuRow * 14), "▶");
         // The source shows scroll indicators only when there are hidden entries in that direction.
         int tick = (int)Math.Floor(_silphMenuFrames + 1e-7);

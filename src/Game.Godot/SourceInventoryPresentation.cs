@@ -139,3 +139,18 @@ internal static class InventoryMenuPresentation
             ?? throw new ArgumentException("Missing inventory source text parameter: " + match.Value));
     }
 }
+
+/// <summary>Bind item UI source controls once; inserted display names stay literal.</summary>
+internal static class SourceInventoryText
+{
+    internal static string Format(IReadOnlyDictionary<string, string> source, string symbol,
+        string? strVar1 = null, string? strVar2 = null)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (strVar1 is not null) values.Add("STR_VAR_1", strVar1);
+        if (strVar2 is not null) values.Add("STR_VAR_2", strVar2);
+        var pages = Game.Domain.Events.SourceBattleText.Pages(source, symbol, values);
+        if (pages.Length != 1) throw new InvalidDataException("Item UI requires one source page: " + symbol);
+        return pages[0];
+    }
+}

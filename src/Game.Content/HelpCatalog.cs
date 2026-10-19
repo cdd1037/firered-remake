@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 
 namespace Game.Content;
 
@@ -22,19 +23,23 @@ public sealed class HelpCatalog
 {
     public const string ResourcePath = "content/generated/ui/help/help.json";
     private readonly HelpDocument _document;
+    private readonly string _billName, _someoneName;
     private readonly ImmutableDictionary<string, ImmutableDictionary<string, HelpEntryDefinition>> _entries;
     public string Greeting => _document.Texts["Help_Text_Greetings"];
     public string CancelLabel => _document.Texts["Help_Text_Cancel"];
     public IEnumerable<string> Contexts => _document.Contexts.Keys;
 
-    private HelpCatalog(HelpDocument document)
+    private HelpCatalog(HelpDocument document, IReadOnlyDictionary<string, string> battleText)
     {
         _document = document;
+        _billName = battleText["gString_Bill"];
+        _someoneName = battleText["gString_Someone"];
         _entries = document.Topics.ToImmutableDictionary(p => p.Key,
             p => p.Value.Entries.ToImmutableDictionary(e => e.Id, StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
-    public static HelpCatalog Load(string projectRoot)
+    public static HelpCatalog Load(string projectRoot, SourceTextPack? pack = null,
+        IReadOnlyDictionary<string, string>? battleText = null)
     {
         var d = ContentJson.ParseStrict<HelpDocument>(GeneratedResourceFile.Read(projectRoot, ResourcePath), ContentJson.CreateOptions());
         Require(d.SchemaVersion == 1 && d.Texts is { Count: > 0 } && d.Topics is { Count: > 0 } &&
@@ -75,7 +80,13 @@ public sealed class HelpCatalog
             d.HmFlags.All(f => f.StartsWith("FLAG_", StringComparison.Ordinal)), "Invalid HELP term progression.");
         Require(d.Maps.All(p => p.Key.StartsWith("MAP_", StringComparison.Ordinal) && d.Contexts.ContainsKey(p.Value.Context) &&
             (p.Value.DungeonFlag.Length == 0 || p.Value.Dungeon && p.Value.DungeonFlag.StartsWith("FLAG_", StringComparison.Ordinal))), "Invalid HELP map context.");
-        return new(d);
+        var references = d.Topics.Values.SelectMany(topic => new[] { topic.Label, topic.Description }
+                .Concat(topic.Entries.SelectMany(entry => new[] { entry.Question, entry.Answer })))
+            .Append("Help_Text_Greetings").Append("Help_Text_Cancel").Distinct(StringComparer.Ordinal)
+            .ToImmutableDictionary(id => id, id => d.Texts[id], StringComparer.Ordinal);
+        var selected = pack ?? SourceTextPack.Current;
+        d = d with { Texts = d.Texts.SetItems(selected.Apply("help", references, preserveControls: true)) };
+        return new(d, battleText ?? PretBattleText.Load(projectRoot, selected));
     }
 
     private static void Require(bool condition, string message)
@@ -99,8 +110,9 @@ public sealed class HelpCatalog
         if (progress.KantoCaughtCount < 0) throw new ArgumentOutOfRangeException(nameof(progress));
         if (!_document.Contexts.TryGetValue(contextId, out var contexts)) throw new ArgumentException("Unknown HELP context: " + contextId, nameof(contextId));
         bool basicTerms = progress.Flags.Contains(_document.BasicTermsFlag);
-        string Text(string key) => _document.Texts[key].Replace("{PLAYER}", progress.PlayerName, StringComparison.Ordinal)
-            .Replace("{STR_VAR_1}", progress.Flags.Contains("FLAG_SYS_NOT_SOMEONES_PC") ? "BILL" : "SOMEONE", StringComparison.Ordinal);
+        string Text(string key) => Regex.Replace(_document.Texts[key], @"\{(PLAYER|STR_VAR_1)\}",
+            match => match.Groups[1].Value == "PLAYER" ? progress.PlayerName :
+                progress.Flags.Contains("FLAG_SYS_NOT_SOMEONES_PC") ? _billName : _someoneName);
         bool Enabled(HelpCondition condition) => condition.Kind switch
         {
             "always" => true,

@@ -44,11 +44,11 @@ public sealed class OpeningPresentationContentTests
     {
         var opening = PretOpeningPresentation.Load(TestAssets.Root);
         var templates = opening.NamingTemplates;
-        Assert.AreEqual(new NamingScreenTemplate(false, 7, 1, false, 0, "YOUR NAME?", false, 56, 37), templates["NAMING_SCREEN_PLAYER"]);
-        Assert.AreEqual(new NamingScreenTemplate(false, 8, 2, false, 0, "BOX NAME?", false, 56, 41), templates["NAMING_SCREEN_BOX"]);
-        Assert.AreEqual(new NamingScreenTemplate(false, 10, 3, true, 0, "'s nickname?", true, 56, 40), templates["NAMING_SCREEN_CAUGHT_MON"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 7, 1, false, 0, "YOUR NAME?", false, 56, 37) { TitleSymbol = "gText_YourName" }, templates["NAMING_SCREEN_PLAYER"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 8, 2, false, 0, "BOX NAME?", false, 56, 41) { TitleSymbol = "gText_BoxName" }, templates["NAMING_SCREEN_BOX"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 10, 3, true, 0, "'s nickname?", true, 56, 40) { TitleSymbol = "gText_PkmnsNickname" }, templates["NAMING_SCREEN_CAUGHT_MON"]);
         Assert.AreEqual(templates["NAMING_SCREEN_CAUGHT_MON"], templates["NAMING_SCREEN_NICKNAME"]);
-        Assert.AreEqual(new NamingScreenTemplate(false, 7, 4, false, 0, "RIVAL's NAME?", false, 56, 37), templates["NAMING_SCREEN_RIVAL"]);
+        Assert.AreEqual(new NamingScreenTemplate(false, 7, 4, false, 0, "RIVAL's NAME?", false, 56, 37) { TitleSymbol = "gText_RivalsName" }, templates["NAMING_SCREEN_RIVAL"]);
         Assert.AreEqual(new NamingScreenLayout(240, 73, 33, 49, 8, 6, 168, 49), opening.NamingLayout);
         Assert.AreEqual(98, opening.NamingLayout.EntryX(templates["NAMING_SCREEN_PLAYER"].MaxChars));
         Assert.AreEqual(94, opening.NamingLayout.EntryX(templates["NAMING_SCREEN_BOX"].MaxChars));
@@ -67,6 +67,7 @@ public sealed class OpeningPresentationContentTests
         try
         {
             Directory.CreateDirectory(directory);
+            TestAssets.CopyFiles(root, ["content/generated/battle/text.json"]);
             string path = Path.Combine(directory, "opening.json");
             var source = JsonNode.Parse(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/ui/opening/opening.json")))!;
             File.WriteAllText(path, source.ToJsonString());
@@ -87,6 +88,9 @@ public sealed class OpeningPresentationContentTests
             Reject(json => json["namingTemplates"]!["NAMING_SCREEN_BOX"]!["addGenderIcon"] = true);
             Reject(json => json["namingTemplates"]!["NAMING_SCREEN_NICKNAME"]!["title"] = "different title");
             Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!["title"] = "");
+            Reject(json => json["namingTemplates"]!["NAMING_SCREEN_PLAYER"]!.AsObject().Remove("titleSymbol"));
+            Reject(json => json["rivalNameSymbols"]![0] = "gNameChoice_Unknown");
+            Reject(json => json["rivalNameSymbols"]![0] = json["rivalNameSymbols"]![1]!.GetValue<string>());
             Reject(json => json["namingTemplates"]!["NAMING_SCREEN_RIVAL"]!["iconX"] = 240);
             Reject(json => json.AsObject().Remove("namingLayout"));
             Reject(json => json["namingLayout"]!["entryCellWidth"] = 32);
@@ -103,6 +107,7 @@ public sealed class OpeningPresentationContentTests
         try
         {
             Directory.CreateDirectory(directory);
+            TestAssets.CopyFiles(root, ["content/generated/battle/text.json"]);
             foreach (string path in Directory.GetFiles(Path.Combine(TestAssets.Root, "content/generated/ui/opening"))) File.Copy(path, Path.Combine(directory, Path.GetFileName(path)));
             Assert.AreEqual(3, PretOpeningPresentation.Load(root).Keyboard.Length);
             string pathToJson = Path.Combine(directory, "opening.json");

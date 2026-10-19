@@ -133,7 +133,7 @@ public partial class CampaignView
                 foreach (var line in display.Texts) Source(line.Symbol,line.Values);
                 return pages.ToImmutable();
             }
-            pages.Add(SourceTrainerPresentationModel.UnsupportedNotice);
+            pages.Add(_summaryText.Get("notice.battle-event-unsupported"));
             Write("unsupportedDoublePresentation",new{type=e.GetType().Name,e.Sequence});
             return pages.ToImmutable();
         }
@@ -157,7 +157,7 @@ public partial class CampaignView
                 Source("sText_PkmnCutsAttackWith",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(stat.Actor)),("B_SCR_ACTIVE_ABILITY",DoubleAbility("ABILITY_INTIMIDATE")),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)));break;
             case SourceStatChangedEvent stat:
                 Source(stat.After>stat.Before?"sText_AttackersStatRose":"sText_DefendersStatFell",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)),("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)),
-                    ("B_BUFF1",WildStatName(stat.Stat)),("B_BUFF2",stat.After>stat.Before?(stat.After-stat.Before>1?"rose sharply!":"rose!"):(stat.Before-stat.After>1?"harshly fell!":"fell!")));break;
+                    ("B_BUFF1",WildStatName(stat.Stat)),("B_BUFF2",SourceTrainerPresentationModel.StatChangeText(_battleText,stat.After>stat.Before,Math.Abs(stat.After-stat.Before)>1)));break;
             case SourceStatAtMinimumEvent stat:Source("sText_StatsWontDecrease",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)),("B_BUFF1",WildStatName(stat.Stat)));break;
             case SourceStatAtMaximumEvent stat:Source("sText_StatsWontIncrease",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(stat.Target)),("B_BUFF1",WildStatName(stat.Stat)));break;
             case SourceMultiHitEvent hit:Source("sText_HitXTimes",("B_BUFF1",hit.ActualHits.ToString()));break;
@@ -250,7 +250,7 @@ public partial class CampaignView
                 break;
             default:
                 // Unsupported presentation stays visible and requires an explicit ACK; never silently erase an event.
-                pages.Add("This battle event is not\nsupported visually yet.");
+                pages.Add(_summaryText.Get("notice.battle-event-visual-unsupported"));
                 Write("unsupportedDoublePresentation",new{type=e.GetType().Name,e.Sequence});break;
         }
         return pages.ToImmutable();
@@ -277,7 +277,7 @@ public partial class CampaignView
     private void DoubleSubmit(CampaignCommand command)
     {
         bool accepted = Apply(command);
-        if(!accepted)_doubleNotice=_status=="preset_double_item_already_used"?"The item was already used.\nChoose this POKéMON's action.":command.Kind=="double_switch"?"That POKéMON can't\nswitch in now.":"That choice can't be\nused now.";
+        if(!accepted)_doubleNotice=_status=="preset_double_item_already_used"?_summaryText.Get("notice.battle-item-already-used"):command.Kind=="double_switch"?_summaryText.Get("notice.battle-switch-unavailable"):_summaryText.Get("notice.battle-choice-unavailable");
     }
     private void DoubleAcknowledge()
     {
@@ -304,7 +304,7 @@ public partial class CampaignView
     private void ChooseDoubleMove(int actor,int moveSlot)
     {
         _doubleChosenMove=moveSlot;var targets=DoubleTargets(actor,moveSlot);
-        if(targets.Length==0){_doubleNotice="There is no available\ntarget.";return;}
+        if(targets.Length==0){_doubleNotice=_summaryText.Get("notice.battle-no-target");return;}
         var move=moveSlot==WildBattleRules.StruggleSlot?null:_catalog.PresetDoublePokemon!.Moves[_session.State.DoubleBattle!.Frame.Get(new(actor)).Body!.Pokemon.Moves[moveSlot].Move];
         if(targets.Length==1||move?.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_RANDOM" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD")
         {DoubleSubmit(new("double_move",PartyIndex:actor,MoveSlot:moveSlot,Choice:targets[0]));return;}
@@ -375,7 +375,7 @@ public partial class CampaignView
                 break;
             case 1:OpenDoubleBag();break;
             case 2:_doubleMenu="party";_doubleCursor=0;break;
-            case 3:_doubleNotice="No! There's no running\nfrom a TRAINER battle!";break;
+            case 3:_doubleNotice=string.Join('\n',DoubleSource("sText_NoRunningFromTrainers"));break;
         }
         return true;
     }
@@ -419,7 +419,7 @@ public partial class CampaignView
             if(_doubleRewardStats.TryGetValue(_doublePage,out var stats)){DrawDoubleRewardStats(stats.Level,stats.Totals);return;}
             DoubleLines(_doublePages[_doublePage]);DrawTextCursor(_battleWhite,LabBattleUiSkin.BattleMessageText,_doublePages[_doublePage].Split('\n'),16,_doubleElapsed,true);
             if(_doubleMenu=="learn-choice")
-            { _battleSkin.DrawStandardFrame(this,new(184,64,56,48));SourceText(_battleMenuFont,new(200,72),"YES");SourceText(_battleMenuFont,new(200,88),"NO");SourceText(_battleMenuFont,new(188,72+16*_doubleCursor),">"); }
+            { _battleSkin.DrawStandardFrame(this,new(184,64,56,48));SourceText(_battleMenuFont,new(200,72),InventorySourceText("gText_Yes"));SourceText(_battleMenuFont,new(200,88),InventorySourceText("gText_No"));SourceText(_battleMenuFont,new(188,72+16*_doubleCursor),">"); }
             return;
         }
         if(b.SelectingSlot is not {} actor)return;
@@ -433,7 +433,7 @@ public partial class CampaignView
         else if(_doubleMenu=="targets")
         {
             _battleSkin.DrawBattleMessage(this);var targets=DoubleTargets(actor,_doubleChosenMove);int target=targets[_doubleCursor];
-            DoubleLines("Choose a target:\n"+(target==actor?"SELF ":(target&1)==0?"ALLY ":"FOE ")+DoubleName(target));
+            DoubleLines(_summaryText.Get(target==actor?"prompt.battle-target-self":(target&1)==0?"prompt.battle-target-ally":"prompt.battle-target-foe",("pokemon",DoubleName(target))));
             var center=DoubleHealthCenters[target];DrawRect(new(center+new Vector2(-32,-16),new(104,24)),Color.Color8(248,64,64),false,1);
         }
         else
@@ -502,7 +502,7 @@ public partial class CampaignView
             if (_doubleNotice is not null) ItemMessageBox(_doubleNotice);
             return;
         }
-        DrawNativeParty(_session.State.Party,_doubleCursor,"Choose a POKéMON.",
+        DrawNativeParty(_session.State.Party,_doubleCursor,_summaryPartyText.ChoosePrompt,
             cancel:b.ReplacementSlot is null,layout:NativePartyLayout.Double,
             displayed:i=>PartyPresentationAssets.Displayed(_session.State.Party[i],b.Frame.Party(BattleSide.Player).Members[i].Pokemon,
                 b.Frame.Party(BattleSide.Player).Members[i].Status));

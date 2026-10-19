@@ -22,12 +22,12 @@ public partial class CampaignView
         }
     }
 
-    private static string CaptureBallName(CaptureBall ball)=>ball switch
+    private string CaptureBallName(CaptureBall ball)=>_catalog.DisplayNames.ItemName(ball switch
     {
-        CaptureBall.Poke=>"POKé BALL", CaptureBall.Great=>"GREAT BALL",
-        CaptureBall.Ultra=>"ULTRA BALL", CaptureBall.Master=>"MASTER BALL",
-        CaptureBall.Net=>"NET BALL", CaptureBall.Nest=>"NEST BALL",
-        CaptureBall.Luxury=>"LUXURY BALL",
+        CaptureBall.Poke=>"ITEM_POKE_BALL", CaptureBall.Great=>"ITEM_GREAT_BALL",
+        CaptureBall.Ultra=>"ITEM_ULTRA_BALL", CaptureBall.Master=>"ITEM_MASTER_BALL",
+        CaptureBall.Net=>"ITEM_NET_BALL", CaptureBall.Nest=>"ITEM_NEST_BALL",
+        CaptureBall.Luxury=>"ITEM_LUXURY_BALL",
         _=>throw new InvalidDataException("Unsupported visible capture ball: "+ball)
-    };
+    });
 }

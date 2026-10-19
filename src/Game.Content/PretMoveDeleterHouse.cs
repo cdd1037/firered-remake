@@ -37,7 +37,8 @@ public sealed class PretMoveDeleterHouse
 
 
     /// <summary>Bind only after composition has constructed its final owned catalog. Reuses authenticated source bytes.</summary>
-    public MoveDeleterCatalog Bind(PokemonCatalog owned) => MoveDeleterCatalog.Authenticate(owned, PretMoveDeleterTexts.LoadProject(_projectRoot));
+    public MoveDeleterCatalog Bind(PokemonCatalog owned, IReadOnlyDictionary<string, string>? sourceTexts = null) =>
+        MoveDeleterCatalog.Authenticate(owned, PretMoveDeleterTexts.LoadProject(_projectRoot, sourceTexts));
 
     /// <summary>Load map/script evidence before compiling campaign scripts. dependencyRoot supplies unchanged town/NPC resources.</summary>
     public static PretMoveDeleterHouse Load(PretCurrentWorld world) => new(world);
