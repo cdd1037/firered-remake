@@ -56,6 +56,67 @@ public sealed class GeneratedLearnsetTests
     }
 
     [TestMethod]
+    [DataRow("data/pokemon/route1/catalog.json", true)]
+    [DataRow("data/services/old-man-tutorial.json", false)]
+    public void EarlyPokemonArtifactsDoNotStoreDisplayNameCopies(string relative, bool route1)
+    {
+        var canonical = TestAssets.Cached(() => PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root));
+        string routeJson = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/data/pokemon/route1/catalog.json"));
+        var original = JsonNode.Parse(File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated", relative)))!;
+        foreach (string field in new[] { "speciesNames", "moveNames" })
+        {
+            Assert.IsFalse(original.AsObject().ContainsKey(field));
+            var legacy = original.DeepClone();
+            legacy[field] = new JsonArray();
+            var error = Assert.ThrowsExactly<ContentValidationException>(() =>
+            {
+                if (route1) PretRoute1PokemonCatalog.Load(canonical, legacy.ToJsonString());
+                else PretOldManTutorial.LoadContent(canonical, routeJson, legacy.ToJsonString());
+            });
+            Assert.AreEqual("json_schema", error.Diagnostics.Single().Code);
+        }
+    }
+
+    [TestMethod]
+    public void OldManCompositionUsesCanonicalDefinitionsAndRejectsBrokenReferences()
+    {
+        var canonical = TestAssets.Cached(() => PretCanonicalPokemonCatalog.Load(TestAssets.Root, TestAssets.Root));
+        string routeJson = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/data/pokemon/route1/catalog.json"));
+        string tutorialJson = File.ReadAllText(Path.Combine(TestAssets.Root, "content/generated/data/services/old-man-tutorial.json"));
+        var route = PretRoute1PokemonCatalog.Load(canonical, routeJson);
+        var original = JsonNode.Parse(tutorialJson)!;
+        var catalog = PretOldManTutorial.LoadContent(canonical, routeJson, tutorialJson).Catalog;
+        var expectedSpecies = route.Species.Keys.Select(id => id.Value).Concat(
+            original["species"]!.AsArray().Select(row => row!["id"]!["value"]!.GetValue<string>())).ToHashSet();
+        var expectedMoves = route.Moves.Keys.Select(id => id.Value).Concat(
+            original["moves"]!.AsArray().Select(row => row!["value"]!.GetValue<string>())).ToHashSet();
+        Assert.IsTrue(expectedSpecies.SetEquals(catalog.Species.Keys.Select(id => id.Value)));
+        Assert.IsTrue(expectedMoves.SetEquals(catalog.Moves.Keys.Select(id => id.Value)));
+        foreach (var species in catalog.Species.Values)
+        {
+            var shared = canonical.Catalog.Species[species.Id];
+            Assert.AreEqual(shared.SourceSpeciesId, species.SourceSpeciesId);
+            Assert.AreSame(shared.BaseStats, species.BaseStats);
+            Assert.IsTrue(shared.LevelUpMoves == species.LevelUpMoves);
+        }
+        foreach (var move in catalog.Moves.Values) Assert.AreSame(canonical.Catalog.Moves[move.Id], move);
+        foreach (var mutation in new Action<JsonNode>[] {
+            json => json["species"]![0]!["id"]!["value"] = "pret:SPECIES_UNKNOWN",
+            json => json["moves"]![0]!["value"] = "pret:MOVE_UNKNOWN",
+            json => json["species"]![0]!.AsObject().Remove("evolutions"),
+            json => json["species"]![0]!["evolutions"]![0]!["target"]!["value"] = "pret:SPECIES_UNKNOWN",
+            json => json["species"]![0]!["evolutions"]![0]!["level"] =
+                json["species"]![0]!["evolutions"]![0]!["level"]!.GetValue<int>() + 1 })
+        {
+            var invalid = original.DeepClone();
+            mutation(invalid);
+            var error = Assert.ThrowsExactly<ContentValidationException>(() =>
+                PretOldManTutorial.LoadContent(canonical, routeJson, invalid.ToJsonString()));
+            Assert.AreEqual("json_schema", error.Diagnostics.Single().Code);
+        }
+    }
+
+    [TestMethod]
     public void CanonicalCatalogRetainsOrderedGameplayValidationWithoutRowProofs()
     {
         var root = TestAssets.Output();

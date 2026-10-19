@@ -66,13 +66,7 @@ def import_catalog(raw, out, lock_path=None):
     def ident(symbol):
         return {'value': 'pret:' + symbol}
 
-    def display_name(path, symbol, maximum):
-        match = one(r'^    \[' + symbol + r'\]\s*= _\("([A-Z -]+)"\),$', sources[path])
-        if len(match[1]) > maximum:
-            raise ValueError('Name exceeds source limit: ' + symbol)
-        return dict(id=ident(symbol), name=match[1], source=ref(path, symbol, match.start(), match.end()))
-
-    species, species_names, move_symbols = [], [], set()
+    species, move_symbols = [], set()
     stat_fields = ['HP', 'Attack', 'Defense', 'Speed', 'SpAttack', 'SpDefense']
     stat_keys = ['hp', 'attack', 'defense', 'speed', 'specialAttack', 'specialDefense']
     expected_fields = {'base' + s for s in stat_fields} | {'evYield_' + s for s in stat_fields} | {
@@ -124,8 +118,7 @@ def import_catalog(raw, out, lock_path=None):
                 raise ValueError('Evolution target outside bounded catalog')
             evolutions.append(dict(level=number(entry[1]), target=ident(entry[2])))
         species.append(dict(id=ident(symbol), sourceSpeciesId=species_id, baseStats=base, type1=types[0], type2=types[1], catchRate=number(fields['catchRate']), experienceYield=number(fields['expYield']), evYield=yields, growthRate=growth, genderRatio=ratio, ability1=abilities[0], ability2=abilities[1], friendship=number(fields['friendship']), levelUpMoves=entries, evolutions=evolutions))
-        species_names.append(display_name('src/data/text/species_names.h', symbol, 10))
-    moves, move_names = [], []
+    moves = []
     for symbol in sorted(move_symbols):
         fields, source = block('src/data/battle_moves.h', symbol)
         if set(fields) != {'effect', 'power', 'type', 'accuracy', 'pp', 'secondaryEffectChance', 'target', 'priority', 'flags'}:
@@ -136,14 +129,12 @@ def import_catalog(raw, out, lock_path=None):
         if any(not re.fullmatch(r'FLAG_\w+', flag) for flag in flags):
             raise ValueError('Unexpected move flags')
         moves.append(ident(symbol))
-        move_names.append(display_name('src/data/text/move_names.h', symbol, 12))
     limitations = [
         'Only the nine Kanto starter-family species plus Pidgey, Pidgeotto, Pidgeot, Rattata and Raticate are imported.',
         'Complete level-up moves and level evolutions are reference data; every BattleEffectImplemented flag is false.',
         'This catalog adds no battle, ability, capture, wild-generation, held-item, evolution or experience-award executor.',
-        'Names are the pinned canonical English source text. Translation cannot change stable IDs or trainer nameHash.',
         'No TM/HM, egg, tutor, breeding, wild held-item, original-save encoding or complete-species profile is enabled.']
-    document = dict(schemaVersion=1, species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=species_names, moveNames=[dict(id=row['id'], name=row['name']) for row in move_names])
+    document = dict(schemaVersion=1, species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves)
     data = (json.dumps(document, separators=(',', ':'), ensure_ascii=False) + '\n').encode('utf-8')
     manifest = dict(schemaVersion=1, repository=lock['repository'], commit=COMMIT, profile=PROFILE, outputs=[dict(path='content/generated/data/pokemon/route1/catalog.json')], counts=dict(species=len(species), moves=len(moves), levelUpEntries=sum((len(s['levelUpMoves']) for s in species)), evolutions=sum((len(s['evolutions']) for s in species))))
     # Reject reference/raw overlaps and symlink destinations before either output is changed.

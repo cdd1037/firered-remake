@@ -61,11 +61,7 @@ def import_content(repo, raw, out):
     def number(path, symbol):
         return int(one(r'^#define ' + symbol + r'\s+(\d+)\s*$', sources[path])[1])
 
-    def name(path, symbol):
-        m = one(r'^    \[' + symbol + r'\]\s*= _\("([A-Z -]+)"\),$', sources[path])
-        return dict(id=ident(symbol), name=m[1], source=ref(path, symbol, m))
-
-    species, species_names, move_symbols = [], [], set()
+    species, move_symbols = [], set()
     stat_fields = ['HP', 'Attack', 'Defense', 'Speed', 'SpAttack', 'SpDefense']
     stat_keys = ['hp', 'attack', 'defense', 'speed', 'specialAttack', 'specialDefense']
     for species_symbol in ['SPECIES_WEEDLE', 'SPECIES_KAKUNA', 'SPECIES_BEEDRILL']:
@@ -94,12 +90,10 @@ def import_content(repo, raw, out):
                 raise ValueError('Evolution target beyond complete family')
             evolutions.append(dict(level=int(m[1]), target=ident(m[2])))
         species.append(dict(id=ident(species_symbol), sourceSpeciesId=number('include/constants/species.h', species_symbol), baseStats=base, type1=types[1], type2=types[2], catchRate=int(f['catchRate']), experienceYield=int(f['expYield']), evYield=yields, growthRate='mediumFast', genderRatio=127, ability1=abilities[1], ability2=abilities[2], friendship=int(f['friendship']), levelUpMoves=entries, evolutions=evolutions))
-        species_names.append(name('src/data/text/species_names.h', species_symbol))
-    moves, move_names = [], []
+    moves = []
     for symbol in sorted(move_symbols):
         f, source = block('src/data/battle_moves.h', symbol)
         moves.append(ident(symbol))
-        move_names.append(name('src/data/text/move_names.h', symbol))
     textpath = 'src/battle_message.c'
     texts = []
     for symbol in ['sText_WildPkmnAppearedPause', 'gText_WhatWillOldManDo', 'sText_OldManUsedItem', 'sText_GotchaPkmnCaught2']:
@@ -125,8 +119,8 @@ def import_content(repo, raw, out):
         ('src/battle_bg.c', 'B_WIN_OAK_OLD_MAN', r'^    \[B_WIN_OAK_OLD_MAN\] = \{.*?^    \},'),
         ('src/battle_message.c', 'B_WIN_OAK_OLD_MAN', r'^    \[B_WIN_OAK_OLD_MAN\] = \{.*?^    \}')]:
         m = one(pattern, sources[path]); layouts.append(dict(symbol=symbol, text=m[0], source=ref(path, symbol, m)))
-    doc = dict(schemaVersion=1, species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, speciesNames=species_names, moveNames=[dict(id=row['id'], name=row['name']) for row in move_names], texts=texts, teachyTv=teachy_tv, assets=assets, oldManThrowFrames=frames, oldManThrowSource=ref(animpath, 'sAnimCmd_OldMan_1', anim), layouts=layouts)
-    data = (json.dumps(doc, indent=2, ensure_ascii=False) + '\n').encode()
+    doc = dict(schemaVersion=1, species=[dict(id=row['id'], evolutions=row['evolutions']) for row in species], moves=moves, texts=texts, teachyTv=teachy_tv, assets=assets, oldManThrowFrames=frames, oldManThrowSource=ref(animpath, 'sAnimCmd_OldMan_1', anim), layouts=layouts)
+    data = (json.dumps(doc, separators=(',', ':'), sort_keys=True, ensure_ascii=False) + '\n').encode()
     # No files are materialized until the complete closure verifies.
     if repo:
         for p, b in verified.items():

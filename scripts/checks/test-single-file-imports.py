@@ -29,8 +29,11 @@ class SingleFileImportTests(unittest.TestCase):
                                             capture_output=True, text=True, timeout=60)
                     self.assertEqual(0, result.returncode, result.stdout + result.stderr)
                     self.assertTrue(target.is_file(), target)
-                    self.assertEqual(json.loads((ROOT / 'content/generated' / relative).read_bytes()),
-                                     json.loads(target.read_bytes()))
+                    actual = json.loads(target.read_bytes())
+                    self.assertEqual(json.loads((ROOT / 'content/generated' / relative).read_bytes()), actual)
+                    if script == 'story/import-old-man-tutorial.py':
+                        self.assertNotIn('speciesNames', actual)
+                        self.assertNotIn('moveNames', actual)
             self.assertFalse(any(p.is_dir() and p.suffix in ('.json', '.png') for p in generated.rglob('*')))
 
 

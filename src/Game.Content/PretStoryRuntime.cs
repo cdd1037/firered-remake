@@ -9,9 +9,7 @@ public sealed record PretStoryRuntime(
     int SchemaVersion,
     PretStoryCompilation Compilation,
     ImmutableDictionary<string, string> TextBank,
-    ImmutableSortedDictionary<int, string> StarterSpeciesNames,
-    string NicknameCharacters,
-    ImmutableSortedDictionary<string, string> MoveNames)
+    string NicknameCharacters)
 {
     public const int CurrentSchemaVersion = 2;
     public static JsonSerializerOptions JsonOptions { get; } = new()

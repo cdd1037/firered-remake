@@ -1,18 +1,12 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using System.Text;
 using Game.Domain.Growth;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record PretRoute1SpeciesName(SpeciesId Id, string Name, PokemonSourceRef Source);
 public sealed record PretRoute1MoveName(MoveId Id, string Name);
-public sealed record PretRoute1PokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
-    ImmutableArray<PretRoute1SpeciesName> SpeciesNames, ImmutableArray<PretRoute1MoveName> MoveNames);
-public sealed record PretRoute1PokemonContent(PokemonCatalog Catalog,
-    ImmutableSortedDictionary<int, string> SpeciesNames, ImmutableDictionary<MoveId, string> MoveNames);
+public sealed record PretRoute1PokemonDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves);
 
 /// <summary>
 /// Authenticates the separate fourteen-species Route 1 artifact. No IO, instance creation, battle
@@ -23,18 +17,15 @@ public static class PretRoute1PokemonCatalog
     public const string Profile = "firered-route1-pokemon-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
 
-    public static PokemonCatalog Load(PretCanonicalPokemonCatalog canonical, string generatedJson) => LoadContent(canonical, generatedJson).Catalog;
-
-    public static PretRoute1PokemonContent LoadContent(PretCanonicalPokemonCatalog canonical, string generatedJson)
+    public static PokemonCatalog Load(PretCanonicalPokemonCatalog canonical, string generatedJson)
     {
         var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         var doc = ContentJson.ParseStrict<PretRoute1PokemonDocument>(generatedJson, options);
         if (doc.SchemaVersion != 1 )
             throw Error("profile", "Unknown Route 1 Pokemon profile or source commit.");
-        if (doc.Species.IsDefaultOrEmpty ||
-            doc.Moves.IsDefaultOrEmpty || doc.SpeciesNames.IsDefaultOrEmpty || doc.MoveNames.IsDefaultOrEmpty)
-            throw Error("missing_data", "Explicit nonempty source, species, move and name arrays are required.");
+        if (doc.Species.IsDefaultOrEmpty || doc.Moves.IsDefaultOrEmpty)
+            throw Error("missing_data", "Explicit nonempty species and move arrays are required.");
 
         var speciesIds = new HashSet<SpeciesId>();
         foreach (var species in doc.Species)
@@ -69,29 +60,10 @@ public static class PretRoute1PokemonCatalog
         if (!referencedMoves.SetEquals(moveIds))
             throw Error("move_references", "Move definitions must exactly cover the complete bounded learnsets.");
 
-        var speciesNames = ImmutableSortedDictionary.CreateBuilder<int, string>();
-        foreach (var name in doc.SpeciesNames)
-        {
-            if (name is null || !ExpectedSpecies.TryGetValue(name.Id, out int sourceId) ||
-                speciesNames.ContainsKey(sourceId) || string.IsNullOrWhiteSpace(name.Name))
-                throw Error("species_name", "Invalid or duplicate species display name.");
-            if (name.Id.Value != "pret:" + name.Source.Symbol)
-                throw Error("species_name_symbol", "Name provenance must match its species.");
-            speciesNames.Add(sourceId, name.Name);
-        }
-        var moveNames = ImmutableDictionary.CreateBuilder<MoveId, string>();
-        foreach (var name in doc.MoveNames)
-        {
-            if (name is null || !moveIds.Contains(name.Id) || moveNames.ContainsKey(name.Id) || string.IsNullOrWhiteSpace(name.Name))
-                throw Error("move_name", "Invalid or duplicate move display name.");
-            moveNames.Add(name.Id, name.Name);
-        }
-        if (speciesNames.Count != speciesIds.Count || moveNames.Count != moveIds.Count)
-            throw Error("names_missing", "Every imported species and move requires a nonblank display name.");
         var catalog = new PokemonCatalog(canonical.Catalog.SourceCommit, doc.Species.ToImmutableDictionary(x => x.Id),
             doc.Moves.ToImmutableDictionary(x => x.Id));
         PokemonFactory.ValidateDefinitions(catalog);
-        return new(catalog, speciesNames.ToImmutable(), moveNames.ToImmutable());
+        return catalog;
     }
 
     private static ContentValidationException Error(string code, string message) =>

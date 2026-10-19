@@ -48,6 +48,37 @@ public sealed class CatalogMoveEditabilityTests
         Assert.ThrowsExactly<ArgumentException>(() => PretMetronomeMoveCatalog.Load(output.Path));
     }
 
+    [TestMethod]
+    public void CurrentCompositionUsesEditedCanonicalMoveNamesWithoutStoryCopies()
+    {
+        var original = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
+        using var output = TestAssets.TemporaryOutput();
+        TestAssets.CopyFiles(output.Path, Directory.EnumerateFiles(Path.Combine(TestAssets.Root, "content/generated"),
+            "*", SearchOption.AllDirectories).Select(path => Path.GetRelativePath(TestAssets.Root, path)));
+        var names = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["pret:MOVE_TACKLE"] = "Mixed case {literal}",
+            ["pret:MOVE_STRING_SHOT"] = "同じ表示名",
+            ["pret:MOVE_SURF"] = "A move display label longer than twelve characters"
+        };
+        TestAssets.EditJson(output.Path, PretMetronomeMoveCatalog.CatalogRelativePath, document =>
+        {
+            foreach (var row in document["moveNames"]!.AsArray())
+                if (names.TryGetValue(row!["id"]!["value"]!.GetValue<string>(), out string? name)) row["name"] = name;
+        });
+        var edited = PretCampaignCatalog.LoadCurrent(output.Path);
+        var canonical = PretMetronomeMoveCatalog.Load(output.Path);
+        Assert.IsTrue(canonical.MoveNames.Keys.Select(id => id.Value).ToHashSet().SetEquals(edited.BattleContent.MoveNames.Keys));
+        foreach (var (id, name) in canonical.MoveNames)
+            Assert.AreEqual(name, edited.BattleContent.MoveNames[id.Value]);
+        foreach (var (id, name) in names) Assert.AreEqual(name, edited.BattleContent.MoveNames[id]);
+        foreach (var (id, move) in original.GamePokemon.Catalog.Moves)
+            Assert.IsTrue(PretMetronomeMoveCatalog.DefinitionsEqual(move, edited.GamePokemon.Catalog.Moves[id]));
+        Assert.AreEqual(original.PokemonContent.NicknameCharacters, edited.PokemonContent.NicknameCharacters);
+        CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(TestAssets.Root, "content/generated/data/story.json")),
+            File.ReadAllBytes(Path.Combine(output.Path, "content/generated/data/story.json")));
+    }
+
     private static void WriteMoves(string root, IEnumerable<PokemonMoveDefinition> moves, PretMetronomeMoveCatalog names)
     {
         var definitions = moves.ToImmutableArray();

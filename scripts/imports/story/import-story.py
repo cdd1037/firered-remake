@@ -114,13 +114,8 @@ def prepare():
     for entry in repel['texts']:
         bank[entry['symbol']] = entry['text'].replace('{PAUSE_UNTIL_PRESS}', '').replace('\n', r'\n').rstrip('$') + '$'
     const = constants(recipe['constantSymbols'])
-    pokemon = json.loads((ROOT / 'content/generated/data/pokemon/starters.json').read_text())
-    # The starter package defines the initial roster; later catalogs extend it at runtime.
-    species_ids = {const[s['id']['value'].removeprefix('pret:')] for s in pokemon['species']}
-    species_names = {str(const[name]): text for name, text in re.findall(r'\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*_\("([^"]+)"\)', read('src/data/text/species_names.h')) if name in const and const[name] in species_ids}
     keyboard = re.search(r'static const u8 sKeyboardChars[^=]+=(.*?);', read('src/naming_screen.c'), re.S)
     chars = ''.join(sorted(set(''.join(re.findall(r'__\("([^"]*)"\)', keyboard[1])))))
-    move_names = {'pret:' + name: text for name, text in re.findall(r'\[(MOVE_[A-Z0-9_]+)\]\s*=\s*_\("([^"]*)"\)', read('src/data/text/move_names.h'))}
     menus = extract_menus(RAW) + extract_list_menus(RAW)
     def pascal(value):
         if isinstance(value, dict): return {key[0].upper()+key[1:]: pascal(item) for key,item in value.items()}
@@ -128,7 +123,7 @@ def prepare():
         return value
     return dict(Sources=[dict(Path=e['path'], Text=selected_source(e), SourceRef=e['sourceRef']) for e in recipe['scripts']],
                 Constants=const, TextBank=bank, Menus={m['id']:pascal(m) for m in menus},
-                StarterSpeciesNames=species_names, NicknameCharacters=chars, MoveNames=move_names)
+                NicknameCharacters=chars)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

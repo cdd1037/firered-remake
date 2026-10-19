@@ -241,24 +241,9 @@ public sealed partial class PretCampaignCatalog
         CampaignBattleContent battleContent;
         {
             var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/trainer-battles/lab/lab-trainers.json"), Encoding.UTF8), SharedTrainerCatalog.LoadProject(projectRoot));
-            var names = storyRuntime.MoveNames.ToBuilder();
-            foreach (var move in new[]
-            {
-                "TACKLE",
-                "SCRATCH",
-                "GROWL",
-                "TAIL_WHIP",
-                "STRUGGLE"
-            }
-
-            )
-                if (!names.ContainsKey("pret:MOVE_" + move))
-                    throw new InvalidDataException("Battle move name missing.");
-            foreach (var (move, name) in canonicalPokemon.MoveCatalog.MoveNames)
-                if (!names.TryGetValue(move.Value, out var displayed) || displayed != name)
-                    throw new InvalidDataException("Battle move name differs from the shared move catalog: " + move.Value);
-
-            battleContent = new(trainers, names.ToImmutable());
+            var names = canonicalPokemon.MoveCatalog.MoveNames.ToImmutableSortedDictionary(
+                pair => pair.Key.Value, pair => pair.Value, StringComparer.Ordinal);
+            battleContent = new(trainers, names);
         }
 
         OpeningItemsCatalog openingItems;

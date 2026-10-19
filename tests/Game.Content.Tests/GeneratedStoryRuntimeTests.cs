@@ -17,6 +17,11 @@ public sealed class GeneratedStoryRuntimeTests
         File.Copy(Path.Combine(TestAssets.Root, relative), target, true);
         var story = PretStoryRuntime.Load(root);
         using var artifact = JsonDocument.Parse(File.ReadAllBytes(target));
+        Assert.IsFalse(artifact.RootElement.TryGetProperty("StarterSpeciesNames", out _));
+        Assert.IsFalse(artifact.RootElement.TryGetProperty("MoveNames", out _));
+        using var serialized = JsonDocument.Parse(JsonSerializer.Serialize(story, PretStoryRuntime.JsonOptions));
+        Assert.IsFalse(serialized.RootElement.TryGetProperty("StarterSpeciesNames", out _));
+        Assert.IsFalse(serialized.RootElement.TryGetProperty("MoveNames", out _));
         var compilation = artifact.RootElement.GetProperty("Compilation");
         static void SameKeys(JsonElement encoded, IEnumerable<string> loaded)
         {

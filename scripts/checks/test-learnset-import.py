@@ -154,6 +154,8 @@ class LearnsetImportTests(unittest.TestCase):
             module('imports/pokemon/import-route1-pokemon').import_catalog(RAW, out)
             self.assertEqual((GENERATED / 'data/pokemon/route1/catalog.json').read_bytes(),
                              (out / 'catalog.json').read_bytes())
+            self.assertEqual({'schemaVersion', 'species', 'moves'},
+                             set(json.loads((out / 'catalog.json').read_bytes())))
         for region in ('forest', 'rocktunnel'):
             with self.subTest(region=region):
                 recipe = presentation.load_lock(region)

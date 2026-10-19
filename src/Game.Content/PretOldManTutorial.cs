@@ -1,7 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Game.Domain.Growth;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -13,12 +10,10 @@ public sealed record OldManTutorialText(string Symbol, string Text, PokemonSourc
 public sealed record OldManThrowFrame(int Frame, int Ticks);
 public sealed record OldManTeachyTv(ItemId Item, string Description);
 public sealed record OldManTutorialDocument(int SchemaVersion, ImmutableArray<PokemonSpeciesDefinition> Species, ImmutableArray<PokemonMoveDefinition> Moves,
-    ImmutableArray<PretRoute1SpeciesName> SpeciesNames, ImmutableArray<PretRoute1MoveName> MoveNames,
     ImmutableArray<OldManTutorialText> Texts, OldManTeachyTv TeachyTv, ImmutableArray<OldManTutorialAsset> Assets,
     ImmutableArray<OldManThrowFrame> OldManThrowFrames, PokemonSourceRef OldManThrowSource,
     ImmutableArray<OldManTutorialText> Layouts);
 public sealed record PretOldManTutorialContent(PokemonCatalog Catalog,
-    ImmutableSortedDictionary<int, string> SpeciesNames, ImmutableDictionary<MoveId, string> MoveNames,
     ImmutableDictionary<string, OldManTutorialText> Texts, ImmutableArray<OldManTutorialAsset> Assets,
     OldManTeachyTv TeachyTv, ImmutableArray<OldManThrowFrame> OldManThrowFrames,
     PokemonSourceRef OldManThrowSource, ImmutableArray<OldManTutorialText> Layouts);
@@ -32,29 +27,19 @@ public static class PretOldManTutorial
     public static PretOldManTutorialContent LoadContent(PretCanonicalPokemonCatalog canonical, string route1GeneratedJson, string tutorialGeneratedJson)
     {
         // Authenticate before composing. No caller-supplied manifest can legitimize changed source values.
-        var original = PretRoute1PokemonCatalog.LoadContent(canonical, route1GeneratedJson);
+        var original = PretRoute1PokemonCatalog.Load(canonical, route1GeneratedJson);
         var options = canonical.ReferenceOptions();
         options.Converters.Add(new ExactEnumConverter<GrowthRate>());
         var doc = ContentJson.ParseStrict<OldManTutorialDocument>(tutorialGeneratedJson, options);
-        if (doc.SchemaVersion != 1 || doc.Species.Length != 3 || doc.SpeciesNames.Length != 3 ||
+        if (doc.SchemaVersion != 1 || doc.Species.Length != 3 ||
             doc.Texts.Length != 4 || doc.Assets.Length != 7)
             throw Error("profile", "Incomplete or unsupported tutorial source closure.");
-        var species = original.Catalog.Species.ToBuilder();
+        var species = original.Species.ToBuilder();
         foreach (var value in doc.Species) species.Add(value.Id, value);
-        var moves = original.Catalog.Moves.ToBuilder();
+        var moves = original.Moves.ToBuilder();
         foreach (var value in doc.Moves)
         {
             if (!moves.ContainsKey(value.Id)) moves.Add(value.Id, value);
-        }
-        var names = original.SpeciesNames.ToBuilder();
-        foreach (var value in doc.SpeciesNames)
-            names.Add(species[value.Id].SourceSpeciesId, value.Name);
-        var moveNames = original.MoveNames.ToBuilder();
-        foreach (var value in doc.MoveNames)
-        {
-            if (moveNames.TryGetValue(value.Id, out string? existing) && existing != value.Name)
-                throw Error("name_collision", "Existing move name differs.");
-            moveNames[value.Id] = value.Name;
         }
         var catalog = new PokemonCatalog(SourceCommit, species.ToImmutable(), moves.ToImmutable());
         PokemonFactory.ValidateDefinitions(catalog);
@@ -62,7 +47,7 @@ public static class PretOldManTutorial
             catalog.Species[new("pret:SPECIES_KAKUNA")].SourceSpeciesId != 14 ||
             catalog.Species[new("pret:SPECIES_BEEDRILL")].SourceSpeciesId != 15)
             throw Error("species", "Expected original fourteen species and the complete Weedle family.");
-        return new(catalog, names.ToImmutable(), moveNames.ToImmutable(), doc.Texts.ToImmutableDictionary(x => x.Symbol),
+        return new(catalog, doc.Texts.ToImmutableDictionary(x => x.Symbol),
             doc.Assets, doc.TeachyTv, doc.OldManThrowFrames, doc.OldManThrowSource, doc.Layouts);
     }
 

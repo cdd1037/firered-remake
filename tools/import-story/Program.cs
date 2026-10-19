@@ -43,8 +43,7 @@ static void WriteCanonical(Utf8JsonWriter writer, JsonElement element)
 
 public sealed record StoryImportInput(PretSourceScriptFile[] Sources, Dictionary<string,int> Constants,
     Dictionary<string,string> TextBank, ImmutableDictionary<string,StoryMenuDefinition> Menus,
-    ImmutableSortedDictionary<int,string> StarterSpeciesNames, string NicknameCharacters,
-    ImmutableSortedDictionary<string,string> MoveNames);
+    string NicknameCharacters);
 
 static class StoryImport
 {
@@ -57,8 +56,8 @@ static class StoryImport
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         compiled = CompleteFourIslandDayCareFallthrough(compiled);
-        return new(PretStoryRuntime.CurrentSchemaVersion, compiled, input.TextBank.ToImmutableDictionary(StringComparer.Ordinal), input.StarterSpeciesNames,
-            input.NicknameCharacters, input.MoveNames);
+        return new(PretStoryRuntime.CurrentSchemaVersion, compiled, input.TextBank.ToImmutableDictionary(StringComparer.Ordinal),
+            input.NicknameCharacters);
     }
     private static PretStoryCompilation CompleteSurfSourceFallthrough(PretStoryCompilation compiled)
     {
