@@ -8,6 +8,8 @@
   "notice.nothing-held": "It isn't holding anything.",
   "notice.take-bag-full": "The BAG is full. The item\ncouldn't be taken.",
   "notice.mail-egg-transfer-unavailable": "Mail and Eggs aren't supported\nfor item transfers here.",
+  "notice.mail-egg": "An EGG can't hold MAIL.",
+  "notice.mail-transfer-failed": "The MAIL couldn't be transferred.",
   "notice.transfer-failed": "The item couldn't be transferred.",
   "held.header": "HELD ITEM / {item}",
   "prompt.exchange": "Switch its held item for\n{item}?",

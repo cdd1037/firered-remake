@@ -14,7 +14,7 @@ public partial class CampaignView
     private string? _summaryMoveContext;
     private PokemonStorageMoveLocation? _summaryMoveLocation;
     private SummaryMoveSelection OwnedMoveSelection => new(_summaryMode, _summaryMoveCursor, _summarySwapSource);
-    private const string SummaryChangedNotice = "The selected POKéMON has changed.\nPlease open its moves again.";
+    private string SummaryChangedNotice => _summaryText.Get("notice.selection-changed");
 
     private void ResetOwnedSummarySelection()
     {
@@ -80,7 +80,7 @@ public partial class CampaignView
             else
             {
                 ResetOwnedSummarySelection();
-                const string notice = "The move order could not be\nchanged here.";
+                string notice = _summaryText.Get("notice.order-failed");
                 if (DayCareChoosing) _teachingSummaryNotice = notice;
                 else _fieldMenuNotice = notice;
             }

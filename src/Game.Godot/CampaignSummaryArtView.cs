@@ -119,12 +119,12 @@ public partial class CampaignView
             owned.IsEgg, mon.Friendship, owned.Status != 0);
         string skin = owned.IsEgg ? "egg" : details ? "moves_info" : new[] { "info", "skills", "moves" }[page];
         DrawTexture(SummaryTexture(skin + (mon.IsShiny && !owned.IsEgg ? "-shiny" : "")), Vector2.Zero);
-        SourceText(_sourceNormal, new(2, 1), page == 0 || owned.IsEgg ? "POKéMON INFO" : page == 1 ? "POKéMON SKILLS" : "KNOWN MOVES");
-        SourceText(_sourceSmallWhite, new(153, 2), details ? selection!.Control : owned.IsEgg ? "" : page == 2 && interactive ? "DETAILS" : "NEXT");
-        SourceText(_sourceSmallWhite, new(209, 2), "BACK");
+        SourceText(_sourceNormal, new(2, 1), _summaryPartyText.PageTitle(page, owned.IsEgg));
+        SourceText(_sourceSmallWhite, new(153, 2), details ? _summaryPartyText.Control(selection!) : owned.IsEgg ? "" : page == 2 && interactive ? _summaryText.Get("control.details") : _summaryPartyText.Next);
+        SourceText(_sourceSmallWhite, new(209, 2), _summaryText.Get("control.back"));
         if (owned.IsEgg)
         {
-            SourceText(_sourceNormal, new(167, 35), "EGG");
+            SourceText(_sourceNormal, new(167, 35), _summaryPartyText.Egg);
             DrawTexture(BreedingEggShell(), new(28 + portraitOffset, 33));
             var lines = EggSummaryLines(owned);
             for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(127, 61 + 14 * i), lines[i]);
@@ -173,9 +173,9 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(174, 20), $"{mon.CurrentHp}/{mon.Stats.MaxHp}");
             int[] stats = [mon.Stats.Attack, mon.Stats.Defense, mon.Stats.SpecialAttack, mon.Stats.SpecialDefense, mon.Stats.Speed];
             for (int i = 0; i < stats.Length; i++) SourceText(_sourceNormal, new(210, 38 + 13 * i), stats[i].ToString());
-            SourceText(_sourceNormal, new(74, 103), "EXP. POINTS");
+            SourceText(_sourceNormal, new(74, 103), _summaryPartyText.Experience);
             SourceText(_sourceNormal, new(175, 103), mon.Experience.ToString());
-            SourceText(_sourceNormal, new(74, 116), "NEXT LV.");
+            SourceText(_sourceNormal, new(74, 116), _summaryPartyText.NextLevel);
             uint next = mon.Level == 100 ? 0 : GrowthRules.ExperienceAtLevel(species.GrowthRate, mon.Level + 1) - mon.Experience;
             SourceText(_sourceNormal, new(175, 116), next.ToString());
             string hpColor = mon.CurrentHp * 5 <= mon.Stats.MaxHp ? "red" : mon.CurrentHp * 2 <= mon.Stats.MaxHp ? "yellow" : "green";
@@ -194,13 +194,13 @@ public partial class CampaignView
                 for (int i = candidates.FirstRow; i < end; i++)
                 {
                     int y = 21 + (i - candidates.FirstRow) * 28;
-                    if (i == candidates.Candidates.Length) SourceText(_sourceNormal, new(163, y), "CANCEL");
+                    if (i == candidates.Candidates.Length) SourceText(_sourceNormal, new(163, y), _summaryPartyText.Label(SummaryPartyAction.Cancel));
                     else
                     {
                         var move = _catalog.PokemonContent.Catalog.Moves[candidates.Candidates[i]];
                         DrawPokedexVisual(move.Type, 123, y);
                         SourceText(_sourceNormal, new(163, y), MoveName(move.Id));
-                        SourceText(_sourceSmall, new(187, y + 12), $"PP {move.Pp}/{move.Pp}");
+                        SourceText(_sourceSmall, new(187, y + 12), $"{_battleSelectionText.PpLabel}{move.Pp}/{move.Pp}");
                     }
                 }
             }
@@ -210,7 +210,7 @@ public partial class CampaignView
                 var move = _catalog.PokemonContent.Catalog.Moves[slot.Move];
                 DrawPokedexVisual(move.Type, 123, 21 + i * 28);
                 SourceText(_sourceNormal, new(163, 21 + i * 28), MoveName(slot.Move));
-                SourceText(_sourceSmall, new(187, 33 + i * 28), $"PP {slot.CurrentPp}/{slot.MaximumPp}");
+                SourceText(_sourceSmall, new(187, 33 + i * 28), $"{_battleSelectionText.PpLabel}{slot.CurrentPp}/{slot.MaximumPp}");
             }
             if (selection is { } selected)
             {
@@ -220,9 +220,9 @@ public partial class CampaignView
                     int y = 21 + mon.Moves.Length * 28;
                     DrawPokedexVisual(move.Type, 123, y);
                     SourceText(_sourceNormal, new(163, y), MoveName(newMove));
-                    SourceText(_sourceSmall, new(187, y + 12), $"PP {move.Pp}/{move.Pp}");
+                    SourceText(_sourceSmall, new(187, y + 12), $"{_battleSelectionText.PpLabel}{move.Pp}/{move.Pp}");
                 }
-                else if (!selected.Swapping && selected.Mode != SummaryInteractionMode.SelectNew) SourceText(_sourceNormal, new(163, 21 + mon.Moves.Length * 28), "CANCEL");
+                else if (!selected.Swapping && selected.Mode != SummaryInteractionMode.SelectNew) SourceText(_sourceNormal, new(163, 21 + mon.Moves.Length * 28), _summaryPartyText.Label(SummaryPartyAction.Cancel));
                 DrawSummaryMoveCursor(selected.Cursor - selected.FirstRow, false);
                 if (selected.Swapping) DrawSummaryMoveCursor(selected.SwapSource, true);
                 if (selected.SelectedMove(mon.Moves) is { } moveId)

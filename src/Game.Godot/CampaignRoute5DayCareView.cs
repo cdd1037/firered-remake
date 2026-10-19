@@ -23,8 +23,8 @@ public partial class CampaignView
     // pret 037335f: party_menu.c:2990,3109,3391,3840,6315; data/party_menu.h:1096,1099.
     // Eggs retain SUMMARY/CANCEL. STORE submits the live identity; the source script,
     // not this menu, decides whether the remaining party can battle.
-    private string[] DayCarePartyActions() => _session.State.Party[_tutorCursor].IsEgg
-        ? ["SUMMARY", "CANCEL"] : ["STORE", "SUMMARY", "CANCEL"];
+    private SummaryPartyMenuEntry[] DayCarePartyActions() => SummaryInteractionPresentationAssets.DayCarePartyActions(
+        _session.State.Party[_tutorCursor].IsEgg, _summaryPartyText.Label);
     private void DayCarePartyTransition()
     {
         _held = null; _repeat = 0; ReleaseFieldTextInput();
@@ -49,15 +49,16 @@ public partial class CampaignView
             // The original two/three-entry action popup does not wrap.
             if (key.Keycode == Key.Up) _dayCareActionCursor = Math.Max(0, _dayCareActionCursor - 1);
             if (key.Keycode == Key.Down) _dayCareActionCursor = Math.Min(actions.Length - 1, _dayCareActionCursor + 1);
-            if (cancel || confirm && actions[_dayCareActionCursor] == "CANCEL")
+            var action = SummaryInteractionPresentationAssets.SelectedPartyAction(actions, _dayCareActionCursor, confirm, cancel);
+            if (action == SummaryPartyAction.Cancel)
             {
                 _dayCareActionCursor = -1; DayCarePartyTransition();
             }
-            else if (confirm && actions[_dayCareActionCursor] == "SUMMARY")
+            else if (action == SummaryPartyAction.Summary)
             {
                 _dayCareSummaryPage = 0; ResetOwnedSummarySelection(); DayCarePartyTransition();
             }
-            else if (confirm)
+            else if (action == SummaryPartyAction.Store)
             {
                 var mon = _session.State.Party[_tutorCursor];
                 Apply(new("daycare_deposit", PartyIndex: _tutorCursor) { TargetInstanceId = mon.InstanceId });
@@ -112,11 +113,11 @@ public partial class CampaignView
         }
         // Source strings.c:323 and 314. PKMN's compact glyph is expanded by this
         // existing functional surface; original party/summary pixels remain separate.
-        DrawServicePartyChooser(_tutorCursor, _dayCareActionCursor < 0 ? "Choose a POKéMON." : "Do what with this POKéMON?");
+        DrawServicePartyChooser(_tutorCursor, _dayCareActionCursor < 0 ? _summaryPartyText.ChoosePrompt : _summaryPartyText.ActionPrompt);
         if (_dayCareActionCursor < 0) return;
         var actions = DayCarePartyActions();
         _battleSkin.DrawStandardFrame(this, new(152, DayCareActionTop - 8, 88, actions.Length * 16 + 16));
-        for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(170, DayCareActionTop + i * 16), actions[i]);
+        for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(170, DayCareActionTop + i * 16), actions[i].Label);
         SourceText(_sourceNormal, new(160, DayCareActionTop + _dayCareActionCursor * 16), "▶");
     }
 

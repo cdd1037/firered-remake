@@ -1,0 +1,6 @@
+{
+  "control.details": "DETAILS",
+  "control.back": "BACK",
+  "notice.selection-changed": "The selected POKéMON has changed.\nPlease open its moves again.",
+  "notice.order-failed": "The move order could not be\nchanged here."
+}

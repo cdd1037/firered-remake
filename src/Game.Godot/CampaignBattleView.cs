@@ -31,6 +31,7 @@ public partial class CampaignView
     {
         _battleText=PretBattleText.Load(_root);
         _battleSelectionText=new(_battleText);
+        _summaryPartyText=new(_battleText);
         var ui=System.IO.Path.Combine(_root,"content/generated/ui/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
         var fonts=System.IO.Path.Combine(_root,"content/generated/ui/font");
         SourceGameFont Font(Color fore,Color shadow,bool small=false)=>SourceGameFont.Load(fonts,small?"small":"normal",fore,shadow);

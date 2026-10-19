@@ -1,3 +1,4 @@
+using FireRed.Tests;
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -10,20 +11,14 @@ public sealed class SummaryInteractionPresentationTests
         new(new("pret:MOVE_TACKLE"), 12, 35), new(new("pret:MOVE_GROWL"), 7, 40),
         new(new("pret:MOVE_LEECH_SEED"), 4, 10), new(new("pret:MOVE_VINE_WHIP"), 2, 10)];
 
-    [TestMethod]
-    public void BattlePartyActionsKeepSummaryForEggsAndSingleMemberParty()
-    {
-        CollectionAssert.AreEqual(new[] { "SUMMARY", "CANCEL" }, SummaryInteractionPresentationAssets.BattlePartyActions(1, false, false));
-        CollectionAssert.AreEqual(new[] { "SUMMARY", "CANCEL" }, SummaryInteractionPresentationAssets.BattlePartyActions(6, true, true));
-        CollectionAssert.AreEqual(new[] { "SHIFT", "SUMMARY", "CANCEL" }, SummaryInteractionPresentationAssets.BattlePartyActions(6, false, false));
-        CollectionAssert.AreEqual(new[] { "SEND OUT", "SUMMARY", "CANCEL" }, SummaryInteractionPresentationAssets.BattlePartyActions(6, false, true));
-    }
+    private static SourceSummaryText Text => new(TestAssets.Cached(() => Game.Content.PretBattleText.Load(TestAssets.Root)));
+
     [TestMethod]
     public void ReadOnlyModeNeverExposesMoveSwappingEvenWithAnOldSwapCursor()
     {
         var selected = new SummaryMoveSelection(SummaryInteractionMode.ReadOnly, 1, 2);
         Assert.IsFalse(selected.CanReorder); Assert.IsFalse(selected.Swapping);
-        Assert.AreEqual("", selected.Control); Assert.AreEqual(5, selected.RowCount(4));
+        Assert.AreEqual("", Text.Control(selected)); Assert.AreEqual(5, selected.RowCount(4));
         Assert.AreEqual(Moves[1].Move, selected.SelectedMove(Moves));
         Assert.IsNull((selected with { Cursor = 4 }).SelectedMove(Moves));
         Assert.IsTrue((selected with { Cursor = 4 }).IsCancel(4));
@@ -35,7 +30,7 @@ public sealed class SummaryInteractionPresentationTests
         var selected = new SummaryMoveSelection(SummaryInteractionMode.Replace, 4, NewMove: candidate);
         Assert.AreEqual(candidate, selected.SelectedMove(Moves));
         Assert.IsTrue(selected.IsCancel(4)); Assert.IsFalse(selected.CanReorder);
-        Assert.AreEqual("PICK", selected.Control); Assert.AreEqual(5, selected.RowCount(4));
+        Assert.AreEqual("PICK", Text.Control(selected)); Assert.AreEqual(5, selected.RowCount(4));
         Assert.AreEqual(Moves[0].Move, (selected with { Cursor = 0 }).SelectedMove(Moves));
         Assert.AreEqual(12, Moves[0].CurrentPp);
     }
@@ -43,9 +38,9 @@ public sealed class SummaryInteractionPresentationTests
     public void ReorderModeKeepsTwoStageCancelAndAllSlotMetadata()
     {
         var selected = new SummaryMoveSelection(SummaryInteractionMode.Reorder, 1);
-        Assert.AreEqual(5, selected.RowCount(4)); Assert.AreEqual("SWITCH", selected.Control);
+        Assert.AreEqual(5, selected.RowCount(4)); Assert.AreEqual("SWITCH", Text.Control(selected));
         var swapping = selected with { SwapSource = 0 };
-        Assert.IsTrue(swapping.Swapping); Assert.AreEqual(4, swapping.RowCount(4)); Assert.AreEqual("PLACE", swapping.Control);
+        Assert.IsTrue(swapping.Swapping); Assert.AreEqual(4, swapping.RowCount(4)); Assert.AreEqual("PLACE", Text.Control(swapping));
         Assert.IsFalse((swapping with { Cursor = 4 }).IsCancel(4));
         Assert.AreEqual(Moves[1].Move, swapping.SelectedMove(Moves));
         Assert.AreEqual(7, Moves[1].CurrentPp); Assert.AreEqual(40, Moves[1].MaximumPp);

@@ -38,7 +38,7 @@ public partial class CampaignView
         var draft = _session.EasyChatEditor ?? throw new InvalidOperationException("No Easy Chat editor is active.");
         string prefix = draft.Context == CampaignEasyChatContext.Mail ? "mail_compose_" : "profile_compose_";
         bool accepted = Apply(new(prefix + kind, Choice: choice, Quantity: quantity, Text: draft.WaitId));
-        if (!accepted) _easyChatNotice = draft.Context == CampaignEasyChatContext.Mail ? MailError(_status) : "The profile couldn't be changed.";
+        if (!accepted) _easyChatNotice = draft.Context == CampaignEasyChatContext.Mail ? MailError(_status) : _easyChatText.Get("notice.profile-change-failed");
         return accepted;
     }
     private void EasyChatChooseWord(ushort word)
@@ -177,7 +177,7 @@ public partial class CampaignView
             if (draft.Phase != SourceEasyChatEditPhase.Edit)
             {
                 _battleSkin.DrawStandardFrame(this,new(168,64,56,48));
-                SourceMailScreen.Text(this,screen.EditorFont,new(184,74),"YES");SourceMailScreen.Text(this,screen.EditorFont,new(184,90),"NO");
+                SourceMailScreen.Text(this,screen.EditorFont,new(184,74),InventorySourceText("gText_Yes"));SourceMailScreen.Text(this,screen.EditorFont,new(184,90),InventorySourceText("gText_No"));
                 screen.DrawTriangle(this,new(176,81+_easyChatConfirm*16));
             }
         }

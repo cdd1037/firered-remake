@@ -48,9 +48,9 @@ public partial class CampaignView
         "mail_mailbox_full" => MailText("gText_PCMailboxFull"),
         "inventory_destination_full" or "inventory_stack_full" => MailText("gText_BagIsFull"),
         "mail_target_holding_item" => MailText("gText_PkmnHoldingItemCantHoldMail"),
-        "mail_egg" => "An EGG can't hold MAIL.",
-        "held_item_target_stale" or "item_party_index_invalid" => "The selected POKéMON changed.",
-        _ => "The MAIL couldn't be transferred." };
+        "mail_egg" => _inventoryText.Get("notice.mail-egg"),
+        "held_item_target_stale" or "item_party_index_invalid" => _inventoryText.Get("notice.target-changed"),
+        _ => _inventoryText.Get("notice.mail-transfer-failed") };
     private void LoadMailStationeryIcons()
     {
         if (!_session.MailComposerEnabled) return;
@@ -138,7 +138,7 @@ public partial class CampaignView
             int index = pending?.PartyIndex ?? _session.State.ItemMenu!.TargetPartyIndex!.Value;
             var owned = _session.State.Party[index];
             SourceText(_sourceNormal, new(12, 10), owned.Nickname);
-            SourceText(_sourceSmall, new(12, 32), "HELD ITEM / " + (owned.HeldItem == "ITEM_NONE" ? "NONE" : InventoryName(new("pret:" + owned.HeldItem))));
+            SourceText(_sourceSmall, new(12, 32), _inventoryText.Get("held.header", ("item", _catalog.DisplayNames.HeldItemName(owned.HeldItem))));
             if (pending is null)
             {
                 DrawMailRows([MailText("gText_Read2"), MailText("gText_Take2"), MailText("gFameCheckerText_Cancel")], 176, 58);
@@ -148,7 +148,7 @@ public partial class CampaignView
         if (pending?.Phase is CampaignMailPhase.SendToPc or CampaignMailPhase.EraseAttached or CampaignMailPhase.EraseMailbox)
         {
             _battleSkin.DrawStandardFrame(this, new(160, 56, 80, 48));
-            DrawMailRows(["YES", "NO"], 176, 62);
+            DrawMailRows([InventorySourceText("gText_Yes"), InventorySourceText("gText_No")], 176, 62);
             ItemMessageBox(MailText(pending.Phase switch { CampaignMailPhase.SendToPc => "gText_SendMailToPC",
                 CampaignMailPhase.EraseAttached => "gText_MailMessageWillBeLost", _ => "gText_MessageWillBeLost" }));
         }

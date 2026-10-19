@@ -7,6 +7,7 @@ using Godot;
 // Summary. Inspection changes only these view fields, never the battle frame.
 public partial class CampaignView
 {
+    private SourceSummaryText _summaryPartyText = null!;
     private SummarySelectionStamp? _battlePartySelection;
     private int _battlePartyIndex, _battlePartyAction, _battlePartySummaryPage = -1;
     private bool _battlePartyDouble;
@@ -24,10 +25,11 @@ public partial class CampaignView
             .Party(BattleSide.Player).Members[index];
         return PartyPresentationAssets.Displayed(owned, member.Pokemon, member.Status);
     }
-    private string[] BattlePartyActions => SummaryInteractionPresentationAssets.BattlePartyActions(
+    private SummaryPartyMenuEntry[] BattlePartyActions => SummaryInteractionPresentationAssets.BattlePartyActions(
         _session.State.Party.Length, _session.State.Party[_battlePartyIndex].IsEgg,
         _battlePartyDouble ? _session.State.DoubleBattle!.ReplacementSlot is not null
-            : PresentedWildBattle!.Replacement == CampaignReplacementStage.Select && !ForestTrainerShiftPending);
+            : PresentedWildBattle!.Replacement == CampaignReplacementStage.Select && !ForestTrainerShiftPending,
+        _summaryPartyText.Label);
     private void OpenBattlePartyActions(int index, bool doubles = false)
     {
         _battlePartyDouble = doubles; _battlePartyIndex = index; _battlePartyAction = 0; _battlePartySummaryPage = -1;
@@ -84,10 +86,11 @@ public partial class CampaignView
         var actions = BattlePartyActions;
         if (key.Keycode == Key.Up) _battlePartyAction = Math.Max(0, _battlePartyAction - 1);
         if (key.Keycode == Key.Down) _battlePartyAction = Math.Min(actions.Length - 1, _battlePartyAction + 1);
-        if (back || confirm && actions[_battlePartyAction] == "CANCEL") CloseBattlePartySelection();
-        else if (confirm && actions[_battlePartyAction] == "SUMMARY")
+        var action = SummaryInteractionPresentationAssets.SelectedPartyAction(actions, _battlePartyAction, confirm, back);
+        if (action == SummaryPartyAction.Cancel) CloseBattlePartySelection();
+        else if (action == SummaryPartyAction.Summary)
         { _battlePartySummaryPage = 0; ResetOwnedSummarySelection(); }
-        else if (confirm)
+        else if (action is SummaryPartyAction.Shift or SummaryPartyAction.SendOut)
         {
             int index = _battlePartyIndex;
             bool doubles = _battlePartyDouble;
@@ -105,11 +108,11 @@ public partial class CampaignView
         { DrawOwnedSummary(BattleSummaryPokemon(_battlePartyIndex), _battlePartySummaryPage, true); return true; }
         bool cancellable = _battlePartyDouble ? _session.State.DoubleBattle!.ReplacementSlot is null
             : PresentedWildBattle!.Replacement is null || ForestTrainerShiftPending;
-        DrawNativeParty(_session.State.Party, _battlePartyIndex, "Do what with this POKéMON?", cancel: cancellable,
+        DrawNativeParty(_session.State.Party, _battlePartyIndex, _summaryPartyText.ActionPrompt, cancel: cancellable,
             layout: _battlePartyDouble ? NativePartyLayout.Double : NativePartyLayout.Single, displayed: BattleSummaryPokemon);
         var actions = BattlePartyActions;
         _battleSkin.DrawStandardFrame(this, new(BattlePartyActionX, BattlePartyActionY, 96, actions.Length * 16 + 16));
-        for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(BattlePartyActionX + 16, BattlePartyActionY + 8 + i * 16), actions[i]);
+        for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(BattlePartyActionX + 16, BattlePartyActionY + 8 + i * 16), actions[i].Label);
         SourceText(_sourceNormal, new(BattlePartyActionX + 4, BattlePartyActionY + 8 + _battlePartyAction * 16), "▶");
         return true;
     }

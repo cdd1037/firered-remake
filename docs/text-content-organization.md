@@ -10,7 +10,8 @@
   控制指令属于既有战斗适配器。不能把页面字符串当成普通 UI 模板再解释。
 - 重制 UI：作者维护的英文分组位于 `src/Game.Content/Text/en/`，随 Content 程序集嵌入。
   `PresentationTextCatalog` 按组和语义 ID 查找，只支持具名字符串参数；当前消费者为
-  `CampaignSaveFeedback`、Start／队伍动作菜单与 Options。结果枚举／稳定动作 ID 决定行为。参数仅替换一次，
+  `CampaignSaveFeedback`、Start／队伍动作菜单、Options、物品菜单与 PC 通知／帮助。
+  结果枚举／稳定动作 ID 决定行为。参数仅替换一次，
   玩家名字中的花括号保持字面值；缺 ID、缺参、多参和重复参数明确失败。
 - 名称／说明：目前仍由物种、招式、道具等实际目录按稳定领域 ID 提供。不要从
   `pret:MOVE_*` 等标识字符串推导翻译，也不要用英文名称验证玩法身份。
@@ -70,7 +71,7 @@ Domain 不再提供英文字面 Label 作为支持判断；输入、鼠标行数
 
 ## 本轮后仍需收敛的边界
 
-- 其他菜单：摘要／养成／邮件子界面、宝可梦存储帮助和少量战斗辅助提示仍含作者英文；
+- 其他菜单：养成流程、少量战斗辅助提示和其他源标签仍待按实际消费者收敛；
   按实际消费者分组迁移。Old Man 动作菜单和换招顺序提示仍可复用已有源符号。
 - 物种显示名与持久化默认昵称仍需分界：`CampaignPokemonContent.SpeciesNames` 参与礼物、
   捕获、孵化和进化默认改名；不能直接删除昵称字符限制或拿语言覆盖改写保存身份。
@@ -144,3 +145,21 @@ PC 的 29 条作者通知和桌面操作提示归入 `storage.json`，源 MOVE/C
 严格存读档 5 项全部通过；Content、Presentation、Godot 编译零警告零错误。
 公开 PC 用例使用现有受控合法检查点，不是完整自然路线重放。该片未新增原生 PC
 窗口抽验，原生 Bag／摘要验收不能替代 PC 画面覆盖。
+
+
+摘要／战斗换人／日托弹窗共享源文本与稳定动作。旧 SUMMARY/CANCEL 字样不再决定
+换人或寄存；五个动作 ID 显式分派。已有 battle text 中的 17 个源符号供弹窗、标题、
+EXP/NEXT LV、EGG 和控制标签使用，PP 复用已有战斗标签。只解码实际消费的 A_BUTTON
+及 DPAD_UPDOWN 前缀，未知控制仍报错，不按英文单词截取。摘要的 DETAILS/BACK 是
+当前桌面布局的作者标签，与两条选择反馈一起归入四项 `summary.json`。
+
+邮件复用 inventory 的目标变化、持有物标题及 canonical 物品名称，YES/NO 复用现有
+源符号。两个邮件错误加到 inventory，个人档案编辑失败归入一项 `easy-chat.json`；
+没有复制邮件作者、保存词组或源正文，也没有新增只为测试而用的 formatter。
+
+摘要／邮件批验证：Content 27 项、Presentation 95 项、Application 27 项通过，包含
+现有日托公开路由、战斗摘要／学习权限以及 Mail／profile 事务；三项目编译零警告错误。
+真实云窗口使用仅两条覆盖的 summary 包，KNOWN MOVES 页清楚显示 INSPECT／RETURN，
+其余源标题、招式、PP 回落英文；进入 Details 后选第一槽、移到第二槽，再取消草稿，
+招式顺序及 PP 不变，显示恢复 SWITCH/CANCEL。两张截图人工检查通过，正常退出 0，
+世界／RNG／队伍／背包及原检查点不变，仅 PlayTime 推进；无保存、无实音或 IME 验收。
