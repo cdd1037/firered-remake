@@ -21,7 +21,8 @@ public sealed class SharedItemCatalog
         _items = document.Items.ToImmutableDictionary(item => item.Id);
         if (_items.Values.Select(item => item.SourceItemId).Distinct().Count() != _items.Count ||
             _items.Values.Any(item => item.Id.Value != "pret:" + item.SourceItemSymbol ||
-                item.SourceItemId < 0 || item.Price < 0 || item.Registrability is < 0 or > 1 ||
+                string.IsNullOrWhiteSpace(item.Name) || item.SourceItemId < 0 || item.Price < 0 ||
+                item.Registrability is < 0 or > 1 ||
                 item.CanToss != (item.Importance == 0) || item.CanGive != (item.Importance == 0) ||
                 item.CanSell != (item.Price != 0)))
             throw new InvalidDataException("item_catalog_definition");

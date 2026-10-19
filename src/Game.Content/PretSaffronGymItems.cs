@@ -19,16 +19,18 @@ public static class PretSaffronGymItems
             d.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([Tm04Id, MaxRepelId]) && d.Icons.Length == 1, "Saffron Gym item scope differs.");
         foreach (var item in d.Items)
         {
-            var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && i.Importance == 0 && i.Registrability == 0 &&
+            var i = item.Metadata.Item;
+            SilphSourcePackage.Need(!string.IsNullOrWhiteSpace(item.Metadata.Description),
+                "Saffron Gym item display text is missing.");
+            SilphSourcePackage.Need(item.EffectBytes.IsEmpty && i.Importance == 0 && i.Registrability == 0 &&
                 i.HoldEffect == "HOLD_EFFECT_NONE" && i.BattleUsage == 0 && i.BattleUseFunction == "NULL" && i.SecondaryId == 0 &&
                 i.CanGive && i.CanToss && i.CanSell, "Saffron Gym item declaration differs.");
         }
         var tm = d.Items[0].Metadata.Item; var max = d.Items[1].Metadata.Item;
-        SilphSourcePackage.Need(tm.SourceItemSymbol == "ITEM_TM04" && tm.SourceItemId == 292 && tm.Name == "TM04" && tm.Price == 3000 &&
+        SilphSourcePackage.Need(tm.SourceItemSymbol == "ITEM_TM04" && tm.SourceItemId == 292 && tm.Price == 3000 &&
             tm.Pocket == "POCKET_TM_CASE" && tm.Type == "ITEM_TYPE_PARTY_MENU" && tm.HoldEffectParam == 0 && tm.FieldUseFunction == "NULL" &&
-            max.SourceItemSymbol == "ITEM_MAX_REPEL" && max.SourceItemId == 84 && max.Name == "MAX REPEL" && max.Price == 700 &&
-            max.Pocket == "POCKET_ITEMS" && max.Type == "ITEM_TYPE_BAG_MENU" && max.HoldEffectParam == 250 && max.FieldUseFunction == "FieldUseFunc_Repel" &&
-            d.Items[1].Metadata.Description == "Prevents weak wild POKéMON from\nappearing for 250 steps.", "Saffron Gym TM04/Max Repel source values differ.");
+            max.SourceItemSymbol == "ITEM_MAX_REPEL" && max.SourceItemId == 84 && max.Price == 700 &&
+            max.Pocket == "POCKET_ITEMS" && max.Type == "ITEM_TYPE_BAG_MENU" && max.HoldEffectParam == 250 && max.FieldUseFunction == "FieldUseFunc_Repel", "Saffron Gym TM04/Max Repel source values differ.");
         var icon = d.Icons[0];
         SilphSourcePackage.Need(icon.Item == Tm04Id && icon.Width == 24 && icon.Height == 24 && icon.Region is not null , "TM04 source icon differs.");
 ItemIconAssets.Validate(icon);

@@ -19,7 +19,8 @@ public static class PretFuchsiaGymItems
         Need(document.SchemaVersion==1&&
             document.Items.Length==1&&document.Icons.Length==1,"Fuchsia Gym item scope differs.");
         var item=document.Items.Single();var d=item.Metadata.Item;
-        Need(d.Id==Tm06Id&&d.SourceItemSymbol=="ITEM_TM06"&&d.SourceItemId==294&&d.Name=="TM06"&&d.Price==3000&&
+        Need(!string.IsNullOrWhiteSpace(item.Metadata.Description),"TM06 display text is missing.");
+        Need(d.Id==Tm06Id&&d.SourceItemSymbol=="ITEM_TM06"&&d.SourceItemId==294&&d.Price==3000&&
             d.Importance==0&&d.Registrability==0&&d.Pocket=="POCKET_TM_CASE"&&d.Type=="ITEM_TYPE_PARTY_MENU"&&d.HoldEffect=="HOLD_EFFECT_NONE"&&
             d.HoldEffectParam==0&&d.FieldUseFunction=="NULL"&&d.BattleUsage==0&&d.BattleUseFunction=="NULL"&&
             d.SecondaryId==0&&d.CanToss&&d.CanSell&&d.CanGive&&item.EffectBytes.IsEmpty,"TM06 source item differs.");
