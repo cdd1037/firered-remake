@@ -17,6 +17,7 @@ public sealed class SourceGameFont : IDisposable
     private sealed record SourceData(string Face, byte[] Catalog, byte[] Atlas, byte[]? LevelCatalog, byte[]? LevelAtlas);
     private readonly SourceData _source;
     private bool _disposed;
+    private readonly byte[] _foreground,_shadow;
 
     public FontFile Font { get; }
     public int Size { get; }
@@ -28,12 +29,13 @@ public sealed class SourceGameFont : IDisposable
     public string LevelPrefix => Supports(LevelPrefixCodepoint) ? "\uE000"
         : throw new InvalidOperationException("LV_2 is supported only by the source small font.");
 
-    private SourceGameFont(FontFile font, int size, HashSet<int> characters, SourceData source)
+    private SourceGameFont(FontFile font, int size, HashSet<int> characters, SourceData source,byte[] foreground,byte[] shadow)
     {
         Font = font;
         Size = size;
         _characters = characters;
         _source = source;
+        _foreground=foreground;_shadow=shadow;
     }
 
     /// <summary>Load neutral source colors or independently recolor the original foreground/shadow masks.</summary>
@@ -57,6 +59,16 @@ public sealed class SourceGameFont : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return Create(_source, foreground, shadow, ColorProfile.SourceFloor);
+    }
+
+    /// <summary>Fade this font's actual display colors, retaining original glyph masks.</summary>
+    public SourceGameFont CreatePaletteVariant(int coefficient,ushort target=0)
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        byte[] colors=[.._foreground,.._shadow];
+        Game.Presentation.QuestLogPalettePresentation.TransformRgba(colors,0,coefficient,target);
+        return CreateColorVariant(Color.Color8(colors[0],colors[1],colors[2],colors[3]),
+            Color.Color8(colors[4],colors[5],colors[6],colors[7]));
     }
 
     private static SourceGameFont Create(SourceData input, Color? foreground, Color? shadow, ColorProfile colorProfile)
@@ -137,7 +149,7 @@ public sealed class SourceGameFont : IDisposable
                 font.SetGlyphTextureIdx(0, cacheSize, LevelPrefixCodepoint, 1);
                 characters.Add(LevelPrefixCodepoint);
             }
-            return new SourceGameFont(font, size, characters, input);
+            return new SourceGameFont(font, size, characters, input,fg,shade);
         }
         catch
         {

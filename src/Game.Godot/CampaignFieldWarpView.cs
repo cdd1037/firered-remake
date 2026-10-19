@@ -296,7 +296,7 @@ public partial class CampaignView
     private void ReleaseFinishedFieldSnapshot()
     {
         if(!_fieldSnapshotReleasePending)return;
-        _fieldSnapshotReleasePending=false;ClearCaveTransitionTexture();ClearQuestLogPaletteTextures();ResetQuestLogArt();
+        _fieldSnapshotReleasePending=false;ClearFieldReturnUiPalette();ClearCaveTransitionTexture();ClearQuestLogPaletteTextures();ResetQuestLogArt();
     }
     private void ResetFieldWarpPresentation()
     {

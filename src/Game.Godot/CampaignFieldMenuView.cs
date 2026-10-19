@@ -257,23 +257,25 @@ public partial class CampaignView
         return MouseNativeParty(point, ref _fieldPartyCursor, _session.State.Party.Length);
     }
 
-    private void DrawFieldMenu()
+    private void DrawFieldMenu(int paletteBlend=0)
     {
         if (!FieldMenuOpen) return;
+        var font=paletteBlend==0?_sourceNormal:FieldReturnUiFont(paletteBlend);
+        Func<Texture2D,Texture2D>? palette=paletteBlend==0?null:texture=>FieldSnapshotPaletteTexture(texture,true);
         if (_fieldMenuMode is "start" or "save-confirm" or "save-overwrite")
         {
             var entries = FieldMenuEntries();
-            DrawSafariFieldStats();
+            DrawSafariFieldStats(font,palette);
             // Source new_menu_helpers.c:666-672, plus the surrounding 8px frame.
-            _battleSkin.DrawUserFrame(this, new(168, 0, 72, entries.Length * 16 + 8));
-            for (int i = 0; i < entries.Length; i++) SourceText(_sourceNormal, new(184, 8 + i * 15), entries[i].Label);
-            SourceText(_sourceNormal, new(176, 8 + _fieldMenuCursor * 15), "▶");
+            _battleSkin.DrawUserFrame(this, new(168, 0, 72, entries.Length * 16 + 8),palette);
+            for (int i = 0; i < entries.Length; i++) SourceText(font, new(184, 8 + i * 15), entries[i].Label);
+            SourceText(font, new(176, 8 + _fieldMenuCursor * 15), "▶");
             if (_fieldMenuMode is "save-confirm" or "save-overwrite")
             {
                 ItemMessageBox(_fieldMenuMode=="save-overwrite"?"A save already exists.\nReplace it with this game?":"Would you like to\nsave the game?");
                 _battleSkin.DrawUserFrame(this, new(176, 64, 64, 48));
-                SourceText(_sourceNormal, new(192, 73), "YES"); SourceText(_sourceNormal, new(192, 89), "NO");
-                SourceText(_sourceNormal, new(182, 73 + 16 * _fieldSaveChoice), "▶");
+                SourceText(font, new(192, 73), "YES"); SourceText(font, new(192, 89), "NO");
+                SourceText(font, new(182, 73 + 16 * _fieldSaveChoice), "▶");
             }
         }
         else if (_fieldMenuMode is "pokedex" or "pokedex-entry" or "pokedex-order" or "pokedex-contents" or "pokedex-habitat" or "pokedex-area") DrawPokedexMenu();

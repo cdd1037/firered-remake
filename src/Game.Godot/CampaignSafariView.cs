@@ -69,12 +69,12 @@ public partial class CampaignView
     }
 
     // start_menu.c:128-136, 255-264: source 10x4 stats window and remaining/600.
-    private void DrawSafariFieldStats()
+    private void DrawSafariFieldStats(SourceGameFont? font=null,Func<Texture2D,Texture2D>? palette=null)
     {
         if (_session.State.SafariVisit is not { Active: true } visit) return;
-        _battleSkin.DrawUserFrame(this, new(0, 0, 96, 48));
-        SourceText(_sourceNormal, new(12, 11), visit.Steps.ToString().PadLeft(3) + "/600");
-        SourceText(_sourceNormal, new(12, 27), "BALLS  " + visit.Balls.ToString().PadLeft(2));
+        _battleSkin.DrawUserFrame(this, new(0, 0, 96, 48),palette);
+        SourceText(font??_sourceNormal, new(12, 11), visit.Steps.ToString().PadLeft(3) + "/600");
+        SourceText(font??_sourceNormal, new(12, 27), "BALLS  " + visit.Balls.ToString().PadLeft(2));
     }
 
     private void SynchronizeSafariBattle()

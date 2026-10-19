@@ -128,8 +128,11 @@ public sealed class LabBattleUiSkin : IDisposable
     /// <summary>The original frame1 nine-tile window. Outer bounds must use whole source tiles.</summary>
     public void DrawStandardFrame(CanvasItem canvas, Rect2 outer)=>DrawWindowFrame(canvas,outer,_textures["frame1"]);
     /// <summary>Source LoadStdWindowFrameGfx actually uses the player's selected USER frame.</summary>
-    public void DrawUserFrame(CanvasItem canvas,Rect2 outer)=>DrawWindowFrame(canvas,outer,
-        _userWindows is not null&&_userWindows.TryGetValue("frame",out var selected)?selected:_textures["frame1"]);
+    public void DrawUserFrame(CanvasItem canvas,Rect2 outer,Func<Texture2D,Texture2D>? palette=null)
+    {
+        var texture=_userWindows is not null&&_userWindows.TryGetValue("frame",out var selected)?selected:_textures["frame1"];
+        DrawWindowFrame(canvas,outer,palette is null?texture:palette(texture));
+    }
     private static void DrawWindowFrame(CanvasItem canvas, Rect2 outer,Texture2D texture)
     {
         if (outer.Size.X < 24 || outer.Size.Y < 24 || outer.Size.X % 8 != 0 || outer.Size.Y % 8 != 0
