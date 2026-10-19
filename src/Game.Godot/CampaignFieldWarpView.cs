@@ -26,11 +26,12 @@ public partial class CampaignView
         public FieldCaveTransitionPresentation.Exit? CaveExit;
         public FieldCaveTransitionPresentation.Enter? CaveEnter;
         public FieldCaveTransitionPresentation.CavePreview? Preview;
+        public FieldForestPreviewPresentation.ForestArrival? Forest;
         public Game.Content.MapPreviewEntry? PreviewArt;
         public int PreviewDuration;
         public bool Arriving;
         public FieldDoorPresentation.PhaseSample Sample=>Arriving
-            ?StairArrival is {} sa?FieldDoorPresentation.FromPlain(sa.Sample.Phase):DoorArrival?.Sample??StepArrival?.Sample??FieldDoorPresentation.FromPlain(Arrival!.Sample)
+            ?Forest is {} forest?FieldDoorPresentation.FromPlain(forest.Sample):StairArrival is {} sa?FieldDoorPresentation.FromPlain(sa.Sample.Phase):DoorArrival?.Sample??StepArrival?.Sample??FieldDoorPresentation.FromPlain(Arrival!.Sample)
             :StairDeparture is {} sd?FieldDoorPresentation.FromPlain(sd.Sample.Phase):DoorDeparture?.Sample??StepDeparture?.Sample??FieldDoorPresentation.FromPlain(Departure.Sample);
         public double Frames;
         public int ProcessedFrames,SwitchFrame;
@@ -77,7 +78,7 @@ public partial class CampaignView
             OriginView=CaptureFieldSnapshot(before,owner,0,true),
             DestinationView=CaptureFieldSnapshot(arrivalState,owner,1,false)
         };
-        if(animation.Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview)
+        if(animation.Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview or FieldTransitionInterlude.ForestPreview)
         {
             animation.PreviewDuration=_session.FieldTransitionPreviewDuration(before,receipt);
             animation.PreviewArt=MapPreviewCatalog.Find(_catalog.MapDefinition(receipt.To.MapId).RegionMapSection)
@@ -172,7 +173,7 @@ public partial class CampaignView
                         if(!step.Complete)continue;
                     }
                     else{animation.Departure.Advance(musicReady);if(!animation.Departure.Complete)continue;}
-                    if(animation.Interlude!=FieldTransitionInterlude.None)
+                    if(animation.Interlude is not (FieldTransitionInterlude.None or FieldTransitionInterlude.ForestPreview))
                     {
                         var art=CaveTransitionArt;
                         if(animation.Interlude==FieldTransitionInterlude.CaveExit)animation.CaveExit=new(art.TransitionPalette,art.WhitePalette);
@@ -183,10 +184,12 @@ public partial class CampaignView
                 }
                 animation.SwitchFrame=animation.ProcessedFrames;
                 animation.Arriving=true;
-                if(animation.Receipt.Arrival==FieldTransitionArrival.Stair)animation.StairArrival=new(animation.Receipt.ArrivalStairBehavior!.Value);
+                if(animation.Interlude==FieldTransitionInterlude.ForestPreview)animation.Forest=new(animation.PreviewDuration,
+                    _catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
+                else if(animation.Receipt.Arrival==FieldTransitionArrival.Stair)animation.StairArrival=new(animation.Receipt.ArrivalStairBehavior!.Value);
                 else if(animation.ArrivalArt is not null)animation.DoorArrival=new();
                 else if(animation.Receipt.Arrival==FieldTransitionArrival.NonAnimatedDoor)animation.StepArrival=new();
-                else animation.Arrival=new();
+                else animation.Arrival=new(_catalog.MapDefinition(animation.Receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal);
                 // Synchronize presentation at the source map-load callback. No
                 // command, State replacement, RNG change or event is generated.
                 // A requested source fade stopped the backend, even when the
@@ -203,7 +206,13 @@ public partial class CampaignView
             }
             else
             {
-                if(animation.StairArrival is {} stair){stair.Advance();if(!stair.Complete)continue;}
+                if(animation.Forest is {} forest)
+                {
+                    forest.Advance();
+                    if(forest.Preview.Sample.MusicStartRequested)SynchronizeSourceAudio(animation.Origin,animation.ArrivalState);
+                    if(!forest.Complete)continue;
+                }
+                else if(animation.StairArrival is {} stair){stair.Advance();if(!stair.Complete)continue;}
                 else if(animation.DoorArrival is {} door)
                 {
                     door.Advance();
@@ -212,7 +221,7 @@ public partial class CampaignView
                 }
                 else if(animation.StepArrival is {} step){step.Advance();if(!step.Complete)continue;}
                 else{animation.Arrival!.Advance();if(!animation.Arrival.Complete)continue;}
-                bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames,animation.Preview?.PreviewFrames??0);
+                bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames,animation.Forest?.ExtraWaitFrames??animation.Preview?.PreviewFrames??0);
                 Write("fieldWarpPresentation",new{phase="complete",animation.SwitchFrame,endFrame=animation.ProcessedFrames,recorded});
                 _fieldWarp=null;_fieldSnapshotReleasePending=true;
                 _fieldWarpSynchronizing=true;
@@ -249,6 +258,8 @@ public partial class CampaignView
         DrawFieldSnapshot(snapshot,0,sample.BackgroundBlend,sample.ObjectBlend,
             (animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveExit||!animation.Arriving&&animation.Interlude==FieldTransitionInterlude.CaveEnter)?(ushort)0x7fff:(ushort)0);
         DrawFieldDoorWipe(sample);
+        if(animation.Arriving&&animation.Forest is {} forest)
+            DrawForestPreview(animation.PreviewArt!,sample.BackgroundBlend,forest.Preview.Sample.AlphaA,forest.Preview.Sample.AlphaB,forest.Preview.Sample.TaskPhase>0);
         return true;
     }
 
@@ -256,7 +267,7 @@ public partial class CampaignView
         playback.ActiveTransitionTiming is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp} timing
             ?FieldDoorPresentation.SampleRecorded(timing.Cause,
                 timing.Arrival,timing.SwitchFrame,
-                (int)Math.Floor(playback.TransitionElapsedFrames+1e-7),timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture,timing.Interlude)
+                (int)Math.Floor(playback.TransitionElapsedFrames+1e-7),timing.DepartureStairBehavior,timing.ArrivalStairBehavior,timing.EffectiveDeparture,timing.Interlude,timing.ArrivalPalette)
             :default;
 
     private void ReleaseFinishedFieldSnapshot()

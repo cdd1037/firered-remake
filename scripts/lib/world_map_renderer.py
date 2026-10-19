@@ -45,7 +45,7 @@ def map_palettes(src, graphics_bases):
     return palettes
 
 
-def render_map(src, name, stable_id, output, *, tilesets, render_border=True, layout_symbol=None, technical_spawn=None, metatile_exports=None, cave_preview_flags=None):
+def render_map(src, name, stable_id, output, *, tilesets, render_border=True, layout_symbol=None, technical_spawn=None, metatile_exports=None, map_previews=None):
     output = Path(output)
     out = output.parent
     prefix = output.stem + "."
@@ -207,13 +207,15 @@ def render_map(src, name, stable_id, output, *, tilesets, render_border=True, la
     if not any(p.endswith('/scripts.inc') for p in scripts):
         raise ValueError('Missing map scripts: ' + name)
     mids = sorted({block & 1023 for block in blocks + border})
-    if cave_preview_flags is None:
-        from field_cave_art import cave_preview_flags as compile_preview_flags
-        cave_preview_flags = compile_preview_flags(src)
-    preview_flag = cave_preview_flags.get(events['region_map_section'])
-    if preview_flag is not None and not re.fullmatch(r'FLAG_[A-Z0-9_]+', preview_flag):
-        raise ValueError('Invalid cave preview visit flag')
-    document = dict(schemaVersion=3, cavePreviewVisitFlag=preview_flag, stableId=stable_id, sourceMapSymbol=events['id'],
+    if map_previews is None:
+        from field_map_preview_metadata import compile_metadata
+        map_previews = compile_metadata(src)
+    preview = map_previews.get(name)
+    if preview is not None and (set(preview) != {'type', 'visitFlag'} or preview['type'] not in ('cave', 'forest') or
+                                (preview['visitFlag'] is None and preview['type'] != 'forest') or
+                                (preview['visitFlag'] is not None and not re.fullmatch(r'FLAG_[A-Z0-9_]+', preview['visitFlag']))):
+        raise ValueError('Invalid map preview metadata')
+    document = dict(schemaVersion=3, mapPreview=preview, stableId=stable_id, sourceMapSymbol=events['id'],
         sourceMapName=name, width=width, height=height, tileSize=16,
         borderWidth=bw, borderHeight=bh, texturePath=prefix+'map.png', artifacts=artifacts,
         technicalSpawn=technical_spawn, events=events,

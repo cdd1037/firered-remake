@@ -395,8 +395,8 @@ public sealed class CaveEntryTransitionTests : WildBattleFixture
         Assert.AreEqual("WEATHER_SUNNY", content.MapDefinition(lavender).Weather);
         Assert.AreEqual("WEATHER_NONE", content.MapDefinition(tower).Weather);
         Assert.IsFalse(content.MapDefinition(tower).RequiresFlash);
-        Assert.IsTrue(content.MapDefinition(tower).HasCavePreview);
-        Assert.AreEqual(towerFlag, content.MapDefinition(tower).CavePreviewVisitFlag);
+        Assert.IsTrue(content.MapDefinition(tower).MapPreview?.Type==MapPreviewType.Cave);
+        Assert.AreEqual(towerFlag, content.MapDefinition(tower).MapPreview?.VisitFlag);
         Send(session, new("party_swap", PartyIndex: 1, Choice: 0));
         for (ulong frame = 1; frame <= 256; frame++) session.ObserveQuestLogFieldFrame(frame);
         var origin = session.State;

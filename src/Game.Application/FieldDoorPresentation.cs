@@ -31,7 +31,7 @@ public static partial class FieldDoorPresentation
         bool MusicFadeRequested,bool TeleportTask,bool OpenDoorSoundRequested);
 
     /// <summary>Replays the exact observed transfer; no current audio readiness is consulted.</summary>
-    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null,FieldTransitionDeparture departureKind=FieldTransitionDeparture.Immediate,FieldTransitionInterlude interludeKind=FieldTransitionInterlude.None)
+    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null,FieldTransitionDeparture departureKind=FieldTransitionDeparture.Immediate,FieldTransitionInterlude interludeKind=FieldTransitionInterlude.None,FieldArrivalPalette arrivalPalette=FieldArrivalPalette.Normal)
     {
         int interludeFrames=interludeKind switch
         {
@@ -80,8 +80,8 @@ public static partial class FieldDoorPresentation
             for(int frame=0;frame<Math.Min(NonAnimatedArrivalFrames,elapsedFrames-switchFrame);frame++)step.Advance();
             return step.Sample;
         }
-        var plainArrival=new FieldWarpPresentation.PlainArrival();
-        int plainFrames=Math.Min(FieldWarpPresentation.PlainArrivalFrames,elapsedFrames-switchFrame);
+        var plainArrival=new FieldWarpPresentation.PlainArrival(arrivalPalette);
+        int plainFrames=Math.Min(arrivalPalette==FieldArrivalPalette.Shade?18:FieldWarpPresentation.PlainArrivalFrames,elapsedFrames-switchFrame);
         for(int frame=0;frame<plainFrames;frame++)plainArrival.Advance();
         return FromPlain(plainArrival.Sample);
     }

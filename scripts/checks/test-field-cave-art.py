@@ -23,7 +23,8 @@ RAW = args.raw or ROOT / 'content/raw/pokefirered/037335f4'
 GENERATED = args.generated or ROOT / 'content/generated'
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
 sys.path.insert(0, str(SCRIPT_ROOT / 'scripts/lib'))
-from field_cave_art import compile_outputs, preview_types, cave_preview_flags
+from field_cave_art import compile_outputs, preview_types
+from field_map_preview_metadata import compile_metadata
 from world_source import WorldSource
 
 PNG = 'graphics/cave_transition/tiles.png'
@@ -117,7 +118,7 @@ class FieldCaveArtTests(unittest.TestCase):
         self.assertEqual('MPS_TYPE_CAVE', modified['MAPSEC_NEW_CAVE'])
 
     def test_every_installed_map_has_source_preview_type_without_changed_events(self):
-        flags = cave_preview_flags(source())
+        metadata = compile_metadata(source())
         index = json.loads((GENERATED / 'maps/world.json').read_bytes())
         self.assertTrue(index['maps'])
         for row in index['maps']:
@@ -125,7 +126,8 @@ class FieldCaveArtTests(unittest.TestCase):
             raw = json.loads((RAW / 'data/maps' / current['sourceMapName'] / 'map.json').read_bytes())
             with self.subTest(map=current['sourceMapName'], variant=row.get('variant')):
                 self.assertEqual(raw, current['events'])
-                self.assertEqual(flags.get(raw['region_map_section']), current['cavePreviewVisitFlag'])
+                self.assertEqual(metadata.get(current['sourceMapName']), current['mapPreview'])
+                self.assertNotIn('cavePreviewVisitFlag', current)
 
     def test_missing_required_art_input_fails(self):
         with tempfile.TemporaryDirectory(prefix='cave-art-missing-') as temporary:

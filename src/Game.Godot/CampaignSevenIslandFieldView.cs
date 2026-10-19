@@ -5,7 +5,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private readonly Dictionary<Texture2D,ImageTexture> _sevenIslandShadeTextures=[];
     private long _sevenIslandShakeSequence=-1;
     private (int Horizontal,int Vertical,int Shakes,int Delay)? _sevenIslandShake;
     private double _sevenIslandShakeFrames;
@@ -22,7 +21,7 @@ public partial class CampaignView
     {
         if(before?.World.Player.MapId!=after.World.Player.MapId||before?.FieldWeather!=after.FieldWeather)
         {
-            ClearSevenIslandShadeTextures();_sevenIslandShake=null;_sevenIslandShakeFrames=0;
+            ClearFieldShadeTextures();_sevenIslandShake=null;_sevenIslandShakeFrames=0;
         }
         var effects=after.PresentationEffects.Where(e=>e.Opcode=="TanobyShakeResolved").OrderBy(e=>e.Sequence).ToArray();
         if(before is null)
@@ -46,25 +45,8 @@ public partial class CampaignView
         _sevenIslandShakeFrames+=delta*60;
         if(_sevenIslandShakeFrames>=shake.Shakes*shake.Delay)_sevenIslandShake=null;
     }
-    private Texture2D SevenIslandShadeTexture(Texture2D original,bool background)
-    {
-        // Every used source chamber background/border tile palette was authenticated as 0..12.
-        // The chambers contain no NPCs; the player's alternate OBJ gamma table is unchanged at index3.
-        if(!background||_session.State.FieldWeather!="WEATHER_SHADE")return original;
-        if(!UnownFormRules.IsChamber(_session.State.World.Player.MapId)&&!(_session.State.World.Player.MapId.Value=="map.navel-rock-summit"))throw new InvalidDataException("Shade outside Tanoby chamber.");
-        if(_sevenIslandShadeTextures.TryGetValue(original,out var cached))return cached;
-        using var image=original.GetImage();image.Convert(Image.Format.Rgba8);byte[] pixels=image.GetData();
-        for(int i=0;i<pixels.Length;i+=4)if(pixels[i+3]!=0)
-            for(int c=0;c<3;c++){int value=SevenIslandFieldPresentation.ShadeChannel(pixels[i+c]>>3);pixels[i+c]=(byte)((value<<3)|(value>>2));}
-        using var shaded=Image.CreateFromData(image.GetWidth(),image.GetHeight(),false,Image.Format.Rgba8,pixels);
-        var texture=ImageTexture.CreateFromImage(shaded);_sevenIslandShadeTextures.Add(original,texture);return texture;
-    }
-    private void ClearSevenIslandShadeTextures()
-    {
-        foreach(var texture in _sevenIslandShadeTextures.Values)texture.Dispose();_sevenIslandShadeTextures.Clear();
-    }
     private void ResetSevenIslandFieldPresentation()
     {
-        ClearSevenIslandShadeTextures();_sevenIslandShake=null;_sevenIslandShakeFrames=0;_sevenIslandShakeSequence=-1;
+        ClearFieldShadeTextures();_sevenIslandShake=null;_sevenIslandShakeFrames=0;_sevenIslandShakeSequence=-1;
     }
 }

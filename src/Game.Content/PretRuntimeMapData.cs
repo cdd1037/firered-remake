@@ -18,7 +18,7 @@ internal sealed record PretRuntimeMapDocument(int SchemaVersion, string StableId
     ImmutableArray<PretWorldArtifact> Artifacts, PretWorldSpawn? TechnicalSpawn, JsonElement Events,
     string Blocks, string BorderBlocks,
     ImmutableArray<ImmutableArray<uint>> Metatiles, ImmutableArray<PretRuntimeMapBehavior> Behaviors,
-    ImmutableArray<string> ScriptPaths, string? CavePreviewVisitFlag);
+    ImmutableArray<string> ScriptPaths, MapPreviewDefinition? MapPreview);
 
 /// <summary>
 /// Map catalogs reference the one compact payload at each ordinary generated path.
@@ -113,8 +113,7 @@ public sealed class PretRuntimeMapData : IFieldMap
     public string SourceMapName => _data.SourceMapName;
     public string TexturePath => _data.TexturePath;
     public JsonElement Events => _data.Events;
-    public string? CavePreviewVisitFlag => _data.CavePreviewVisitFlag;
-    public bool HasCavePreview => CavePreviewVisitFlag is not null;
+    public MapPreviewDefinition? MapPreview => _data.MapPreview;
     public PretWorldSpawn? TechnicalSpawn => _data.TechnicalSpawn;
     public ImmutableArray<PretWorldArtifact> Artifacts => _data.Artifacts;
     public ImmutableArray<string> ScriptPaths => _data.ScriptPaths;
@@ -188,9 +187,11 @@ public sealed class PretRuntimeMapData : IFieldMap
         Require(d.SchemaVersion == 3 &&
             d.StableId == expectedStableId,
             "Runtime map version/source identity differs.");
-        Require(d.CavePreviewVisitFlag is null || (d.CavePreviewVisitFlag.StartsWith("FLAG_", StringComparison.Ordinal) &&
-            d.CavePreviewVisitFlag.Length is > 5 and <= 128 && d.CavePreviewVisitFlag.All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_')),
-            "Invalid runtime cave preview visit flag.");
+        Require(d.MapPreview is null || (Enum.IsDefined(d.MapPreview.Type) &&
+            (d.MapPreview.VisitFlag is null ? d.MapPreview.Type == MapPreviewType.Forest :
+             d.MapPreview.VisitFlag.StartsWith("FLAG_", StringComparison.Ordinal) && d.MapPreview.VisitFlag.Length is > 5 and <= 128 &&
+             d.MapPreview.VisitFlag.All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_'))),
+            "Invalid runtime map preview metadata.");
         Require(d.Width is > 0 and <= 1024 && d.Height is > 0 and <= 1024 && (long)d.Width * d.Height <= 262144 &&
             d.TileSize == 16 && d.BorderWidth is > 0 and <= 64 && d.BorderHeight is > 0 and <= 64,
             "Runtime map dimensions out of bounds.");
@@ -338,7 +339,7 @@ internal static class PretRuntimeMapValidation
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
                 RespectRequiredConstructorParameters = true,
-                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) }
+                Converters = { new ExactEnumConverter<MapPreviewType>(), new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) }
             }) ?? throw new InvalidDataException("Null runtime map JSON.");
         }
         catch (JsonException error) { throw new InvalidDataException("Invalid runtime map JSON.", error); }

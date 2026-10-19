@@ -70,8 +70,8 @@ def compile_world(raw, generated, selection):
         events = source.json('data/maps/' + row['sourceName'] + '/map.json')
         symbols[events['id']] = row['stableId']
     tilesets = tileset_bindings(source)
-    from field_cave_art import cave_preview_flags
-    previews = cave_preview_flags(source)
+    from field_map_preview_metadata import compile_metadata
+    previews = compile_metadata(source)
     entries = []
     for row in selected:
         name = row['sourceName']
@@ -87,7 +87,7 @@ def compile_world(raw, generated, selection):
         render_map(source, name, row['stableId'], Path(generated) / row['path'], tilesets=tilesets,
                    render_border=row.get('renderBorder', True), layout_symbol=row.get('layout'),
                    technical_spawn=row.get('technicalSpawn'),
-                   cave_preview_flags=previews)
+                   map_previews=previews)
     index = dict(schemaVersion=3, maps=entries, mapSymbols=symbols)
     (Path(generated) / 'maps').mkdir(parents=True, exist_ok=True)
     (Path(generated) / 'maps/world.json').write_bytes(encode(index))

@@ -1,16 +1,17 @@
 using System.Collections.Immutable;
+using Game.Domain.World;
 
 namespace Game.Content;
 
 /// <summary>Row-major indices into source palette banks 13/14. Any low nibble zero selects the backdrop.</summary>
 public sealed record MapPreviewArt(int Width, int Height, ImmutableArray<byte> Indices, ImmutableArray<ushort> Palette);
-public sealed record MapPreviewEntry(string RegionSection, string Name, string VisitFlag, MapPreviewArt Art);
+public sealed record MapPreviewEntry(string RegionSection, string Name, MapPreviewType Type, MapPreviewArt Art);
 
-/// <summary>Immutable cave-type region previews; aliases share art and retain their source visit flag.</summary>
+/// <summary>Immutable typed region previews; aliases share art while preserving their own region names.</summary>
 public sealed class GeneratedMapPreviewCatalog
 {
     private sealed record ArtDocument(int Width, int Height, string Indices8Bpp, ImmutableArray<ushort> Palette);
-    private sealed record EntryDocument(string RegionSection, string Name, string VisitFlag, int Art);
+    private sealed record EntryDocument(string RegionSection, string Name, MapPreviewType Type, int Art);
     private sealed record Document(int SchemaVersion, ImmutableArray<ArtDocument> Art, ImmutableArray<EntryDocument> Entries);
     private readonly ImmutableDictionary<string, MapPreviewEntry> _entries;
     public ImmutableArray<MapPreviewEntry> Entries { get; }
@@ -25,8 +26,10 @@ public sealed class GeneratedMapPreviewCatalog
 
     public static GeneratedMapPreviewCatalog Load(string generatedRoot)
     {
+        var options = ContentJson.CreateOptions();
+        options.Converters.Add(new ExactEnumConverter<MapPreviewType>());
         var document = ContentJson.ParseStrict<Document>(
-            GeneratedResourceFile.Read(generatedRoot, "maps/map-previews.json"), ContentJson.CreateOptions());
+            GeneratedResourceFile.Read(generatedRoot, "maps/map-previews.json"), options);
         static bool Symbol(string? value, string prefix) => value is not null && value.Length > prefix.Length &&
             value.Length <= 128 && value.StartsWith(prefix, StringComparison.Ordinal) &&
             value.All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_');
@@ -52,12 +55,12 @@ public sealed class GeneratedMapPreviewCatalog
         var usedArt = new HashSet<int>();
         foreach (var entry in document.Entries)
         {
-            if (entry is null || !Symbol(entry.RegionSection, "MAPSEC_") || !Symbol(entry.VisitFlag, "FLAG_") ||
+            if (entry is null || !Enum.IsDefined(entry.Type) || !Symbol(entry.RegionSection, "MAPSEC_") ||
                 string.IsNullOrWhiteSpace(entry.Name) || entry.Name.Length > 64 || entry.Name.Any(char.IsControl) ||
                 entry.Art < 0 || entry.Art >= art.Count || !sections.Add(entry.RegionSection))
                 throw new InvalidDataException("Invalid or duplicate generated map preview entry.");
             usedArt.Add(entry.Art);
-            entries.Add(new(entry.RegionSection, entry.Name, entry.VisitFlag, art[entry.Art]));
+            entries.Add(new(entry.RegionSection, entry.Name, entry.Type, art[entry.Art]));
         }
         if (usedArt.Count != art.Count) throw new InvalidDataException("Unused generated map preview art.");
         return new(entries.MoveToImmutable());

@@ -34,6 +34,7 @@ def preview_registry(src):
     rows = re.findall(pattern, table[1])
     if re.sub(pattern, '', table[1]).strip() or set(name for name, _ in rows) != set(expected[:-1]) or len(rows) != len(expected) - 1:
         raise ValueError('Incomplete or duplicate source preview rows')
+    flags = set(re.findall(r'^#define\s+(FLAG_\w+)\b', src.text('include/constants/flags.h'), re.M))
     result = {}
     for identity, body in rows:
         fields = re.findall(r'\.(\w+)\s*=\s*(\w+)\s*,?', body)
@@ -47,17 +48,14 @@ def preview_registry(src):
             raise ValueError('Invalid source preview section/type: ' + identity)
         if not re.fullmatch(r'FLAG_[A-Z0-9_]+', fields['flagId']):
             raise ValueError('Invalid source preview visit flag: ' + identity)
+        if fields['flagId'] not in flags:
+            raise ValueError('Unknown source preview visit flag: ' + fields['flagId'])
         result[section] = fields
     return result
 
 
 def preview_types(src):
     return {section: row['type'] for section, row in preview_registry(src).items()}
-
-
-def cave_preview_flags(src):
-    return {section: row['flagId'] for section, row in preview_registry(src).items()
-            if row['type'] == 'MPS_TYPE_CAVE'}
 
 
 def rgb555(rgb):

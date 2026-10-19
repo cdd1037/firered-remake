@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace Game.Application;
 
-public enum FieldTransitionInterlude { None,CaveExit,CaveEnter,CavePreviewEnter,RegionPreview }
+public enum FieldTransitionInterlude { None,CaveExit,CaveEnter,CavePreviewEnter,RegionPreview,ForestPreview }
 
 /// <summary>
 /// The generic cave EXIT interlude, between the field's black departure and

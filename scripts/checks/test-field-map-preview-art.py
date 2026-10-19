@@ -24,7 +24,7 @@ GENERATED = args.generated or ROOT / 'content/generated'
 sys.path.insert(0, str(ROOT / 'scripts/lib'))
 sys.path.insert(0, str(SCRIPT_ROOT / 'scripts/lib'))
 from field_map_preview_art import compile_outputs
-from field_cave_art import cave_preview_flags
+from field_map_preview_metadata import compile_metadata
 from world_source import WorldSource
 
 PREVIEWS = 'src/map_preview_screen.c'
@@ -51,25 +51,26 @@ def independent_registry():
             match = re.fullmatch(r'\s*\.(\w+) = (\w+),?', line)
             if match:
                 fields[match[1]] = match[2]
-        if fields['type'] == 'MPS_TYPE_CAVE':
-            fields['base'] = declarations[fields['tilesptr']].rsplit('/', 1)[0]
-            rows.append(fields)
+        fields['base'] = declarations[fields['tilesptr']].rsplit('/', 1)[0]
+        rows.append(fields)
     if not rows:
-        raise AssertionError('Empty source cave preview registry')
+        raise AssertionError('Empty source map preview registry')
     return rows
 
 
 class FieldMapPreviewArtTests(unittest.TestCase):
-    def test_every_cave_registry_row_name_flag_and_art_binding_matches_source(self):
+    def test_every_registry_row_type_name_flag_and_art_binding_matches_source(self):
         actual = document()
         expected = independent_registry()
         names = {r['id']: r.get('name') for r in json.loads((RAW / 'src/data/region_map/region_map_sections.json').read_bytes())['map_sections']}
         self.assertEqual({r['mapsec'] for r in expected}, {r['regionSection'] for r in actual['entries']})
-        self.assertEqual({r['mapsec']: r['flagId'] for r in expected}, cave_preview_flags(source()))
+        kinds = {'MPS_TYPE_CAVE': 'cave', 'MPS_TYPE_FOREST': 'forest'}
+        self.assertEqual({'cave', 'forest'}, {entry['type'] for entry in actual['entries']})
         arts = {}
         for row, entry in zip(expected, actual['entries'], strict=True):
-            self.assertEqual((row['mapsec'], names[row['mapsec']], row['flagId']),
-                             (entry['regionSection'], entry['name'], entry['visitFlag']))
+            self.assertEqual((row['mapsec'], names[row['mapsec']], kinds[row['type']]),
+                             (entry['regionSection'], entry['name'], entry['type']))
+            self.assertEqual({'regionSection', 'name', 'type', 'art'}, set(entry))
             arts.setdefault(row['base'], entry['art'])
             self.assertEqual(arts[row['base']], entry['art'])
         self.assertEqual(len(set(arts.values())), len(actual['art']))
@@ -139,6 +140,86 @@ class FieldMapPreviewArtTests(unittest.TestCase):
         self.assertIn('MAPSEC_NEW_CAVE', [r['regionSection'] for r in entries])
         self.assertNotIn('MAPSEC_MT_MOON', [r['regionSection'] for r in entries])
 
+    def test_forest_registry_change_drives_new_section_without_an_allowlist(self):
+        src = source()
+        src.data[PREVIEWS] = src.data[PREVIEWS].replace(b'.mapsec = MAPSEC_VIRIDIAN_FOREST,', b'.mapsec = MAPSEC_NEW_FOREST,')
+        path = 'src/data/region_map/region_map_sections.json'
+        src.data[path] = src.data[path].replace(b'"MAPSEC_VIRIDIAN_FOREST"', b'"MAPSEC_NEW_FOREST"')
+        entries = {r['regionSection']: r for r in document(src)['entries']}
+        self.assertEqual('forest', entries['MAPSEC_NEW_FOREST']['type'])
+        self.assertNotIn('MAPSEC_VIRIDIAN_FOREST', entries)
+
+    def test_forest_art_aliases_share_only_art_and_retain_region_names(self):
+        entries = {r['regionSection']: r for r in document()['entries']}
+        viridian, pattern = [entries['MAPSEC_' + name] for name in ('VIRIDIAN_FOREST', 'PATTERN_BUSH')]
+        self.assertEqual(viridian['art'], pattern['art'])
+        self.assertNotEqual(viridian['name'], pattern['name'])
+        warehouse, berry = [entries['MAPSEC_' + name] for name in ('ROCKET_WAREHOUSE', 'BERRY_FOREST')]
+        self.assertNotEqual(warehouse['name'], berry['name'])
+        self.assertNotEqual(warehouse['art'], berry['art'])
+
+    def test_every_map_metadata_type_and_actual_flag_matches_source_independently(self):
+        actual = compile_metadata(source())
+        registry = {row['mapsec']: row for row in independent_registry()}
+        checked = set()
+        for path in sorted((RAW / 'data/maps').glob('*/map.json')):
+            events = json.loads(path.read_bytes())
+            row = registry.get(events['region_map_section'])
+            if row is None:
+                self.assertNotIn(path.parent.name, actual)
+                continue
+            checked.add(path.parent.name)
+            flag = row['flagId']
+            if row['type'] == 'MPS_TYPE_FOREST':
+                text = path.with_name('scripts.inc').read_text()
+                callback = re.search(r'map_script MAP_SCRIPT_ON_TRANSITION, (\w+)', text)
+                flag = None
+                if callback:
+                    body = text.split(callback[1] + '::', 1)[1].strip().splitlines()
+                    self.assertRegex(body[0], r'^setworldmapflag FLAG_[A-Z0-9_]+$')
+                    flag = body[0].split()[1]
+            self.assertEqual(dict(type=row['type'].removeprefix('MPS_TYPE_').lower(), visitFlag=flag),
+                             actual[path.parent.name])
+        self.assertTrue(checked)
+        self.assertEqual(checked, set(actual))
+        self.assertEqual('FLAG_WORLD_MAP_FIVE_ISLAND_ROCKET_WAREHOUSE', actual['FiveIsland_RocketWarehouse']['visitFlag'])
+        self.assertIsNone(actual['PokemonMansion_2F']['visitFlag'])
+        self.assertEqual('forest', actual['PokemonMansion_2F']['type'])
+
+    def test_forest_entry_producer_uses_actual_script_changes_without_region_exceptions(self):
+        src = source()
+        path = 'data/maps/FiveIsland_RocketWarehouse/scripts.inc'
+        src.data[path] = src.data[path].replace(b'setworldmapflag FLAG_WORLD_MAP_FIVE_ISLAND_ROCKET_WAREHOUSE',
+                                               b'setworldmapflag FLAG_WORLD_MAP_POWER_PLANT')
+        self.assertEqual('FLAG_WORLD_MAP_POWER_PLANT', compile_metadata(src)['FiveIsland_RocketWarehouse']['visitFlag'])
+
+    def test_forest_entry_missing_conditional_duplicate_or_unknown_producer_fails(self):
+        original = b'setworldmapflag FLAG_WORLD_MAP_VIRIDIAN_FOREST'
+        for replacement in (b'end', b'call NewConditionalFlag', b'setworldmapflag FLAG_UNKNOWN',
+                            original + b'\n\t' + original):
+            src = source()
+            path = 'data/maps/ViridianForest/scripts.inc'
+            src.data[path] = src.data[path].replace(original, replacement, 1)
+            with self.subTest(replacement=replacement), self.assertRaises(ValueError):
+                compile_metadata(src)
+
+    def test_later_callback_flag_producer_unknown_operation_and_cycles_fail(self):
+        for replacement in (b'setworldmapflag FLAG_WORLD_MAP_POWER_PLANT', b'special UnknownEffect',
+                            b'call PowerPlant_EventScript_ShowZapdos', b'call PowerPlant_OnTransition'):
+            src = source()
+            path = 'data/maps/PowerPlant/scripts.inc'
+            src.data[path] = src.data[path].replace(b'clearflag FLAG_HIDE_ZAPDOS', replacement)
+            with self.subTest(replacement=replacement), self.assertRaises(ValueError):
+                compile_metadata(src)
+
+    def test_later_resume_callback_cannot_overwrite_duration_flag(self):
+        src = source()
+        path = 'data/maps/PowerPlant/scripts.inc'
+        src.data[path] = src.data[path].replace(b'specialvar VAR_RESULT, GetBattleOutcome',
+                                               b'setworldmapflag FLAG_WORLD_MAP_POWER_PLANT')
+        with self.assertRaisesRegex(ValueError, 'Ambiguous forest entry visit flag'):
+            compile_metadata(src)
+
     def test_missing_art_input_fails(self):
         with tempfile.TemporaryDirectory(prefix='map-preview-missing-') as temporary:
             root = Path(temporary)
@@ -148,6 +229,17 @@ class FieldMapPreviewArtTests(unittest.TestCase):
                 path.write_bytes((RAW / name).read_bytes())
             with self.assertRaises(FileNotFoundError):
                 compile_outputs(WorldSource(root))
+
+    def test_forests_retain_the_same_source_art_validation(self):
+        rows = [row for row in independent_registry() if row['type'] == 'MPS_TYPE_FOREST']
+        self.assertTrue(rows)
+        for base in sorted({row['base'] for row in rows}):
+            with self.subTest(base=base):
+                src = source()
+                path = base + '/tilemap.bin'
+                src.data[path] = src.data[path][:-2]
+                with self.assertRaisesRegex(ValueError, '256x160'):
+                    compile_outputs(src)
 
     def test_short_tilemap_fails(self):
         src = source()

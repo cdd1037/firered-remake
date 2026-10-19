@@ -75,6 +75,7 @@ public partial class CampaignView
 
     private void ClearCaveTransitionTexture()
     {
+        ClearForestPreview();
         _caveTransitionTexture?.Dispose();_caveTransitionTexture=null;
         foreach(var font in _mapPreviewFonts.Values)font.Dispose();_mapPreviewFonts.Clear();
         _mapPreviewFont?.Dispose();_mapPreviewFont=null;

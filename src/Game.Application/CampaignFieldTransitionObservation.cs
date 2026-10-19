@@ -22,11 +22,12 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
     [JsonIgnore] public FieldTransitionDeparture EffectiveDeparture=>Cause==FieldTransitionCause.NonAnimatedDoor?FieldTransitionDeparture.StepOntoWarp:Departure;
 
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public FieldTransitionInterlude Interlude{get;init;}
-    // Actual live preview wrapper duration; Quest playback omits it and restores
-    // the one Enter_0 callback skipped by the live preview's direct handoff.
+    // Observed cave wrapper or extra forest arrival wait. Quest omits the
+    // selected span; cave playback also restores the skipped Enter_0 callback.
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int PreviewFrames{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public FieldArrivalPalette ArrivalPalette{get;init;}
     [JsonIgnore] public int PreviewOmittedFrames=>PreviewFrames>0?
-        Interlude==FieldTransitionInterlude.RegionPreview?PreviewFrames+FieldCaveTransitionPresentation.PreviewEnterFrames:PreviewFrames-1:0;
+        Interlude==FieldTransitionInterlude.ForestPreview?PreviewFrames:Interlude==FieldTransitionInterlude.RegionPreview?PreviewFrames+FieldCaveTransitionPresentation.PreviewEnterFrames:PreviewFrames-1:0;
     [JsonIgnore] public int InterludeFrames=>Interlude switch
     {
         FieldTransitionInterlude.CaveExit=>FieldCaveTransitionPresentation.ExitFrames,
@@ -44,7 +45,9 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
         if(!Enum.IsDefined(Departure)||Departure!=FieldTransitionDeparture.Immediate&&(Cause!=FieldTransitionCause.PlainWarp||Arrival!=FieldTransitionArrival.Plain))return false;
         if(!Enum.IsDefined(Interlude)||Interlude!=FieldTransitionInterlude.None&&
             (Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor)||Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)))return false;
-        if(Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview?
+        if(!Enum.IsDefined(ArrivalPalette)||ArrivalPalette!=FieldArrivalPalette.Normal&&Arrival!=FieldTransitionArrival.Plain)return false;
+        if(Interlude==FieldTransitionInterlude.ForestPreview?PreviewFrames<=0||PreviewFrames>int.MaxValue-FieldWarpPresentation.PlainArrivalFrames||Arrival!=FieldTransitionArrival.Plain:
+            Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview?
             PreviewFrames<FieldCaveTransitionPresentation.MinimumPreviewFrames||PreviewFrames>int.MaxValue-FieldCaveTransitionPresentation.EnterFrames:
             PreviewFrames!=0)return false;
         if(SwitchFrame<0||EndFrame<=SwitchFrame)return false;
@@ -53,7 +56,8 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
         if(Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp)||
             Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.AnimatedDoor or FieldTransitionArrival.NonAnimatedDoor or FieldTransitionArrival.Stair))return false;
         int minimum=FieldDoorPresentation.DepartureFrames(Cause,EffectiveDeparture);
-        int arrival=FieldDoorPresentation.ArrivalFrames(Arrival);
+        int arrival=ArrivalPalette==FieldArrivalPalette.Shade?18:FieldDoorPresentation.ArrivalFrames(Arrival);
+        if(Interlude==FieldTransitionInterlude.ForestPreview)arrival+=PreviewFrames;
         return DepartureEndFrame>=minimum&&EndFrame-SwitchFrame==arrival;
     }
 }
@@ -61,7 +65,7 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
 public static partial class CampaignQuestLogRecorder
 {
     private static int TransitionTimingBytes(CampaignQuestLogTransitionTiming? timing)=>timing is null?0:
-        8+(timing.PreviewFrames==0?0:1)+(timing.Interlude==FieldTransitionInterlude.None?0:1)+(timing.Departure==FieldTransitionDeparture.StepOntoWarp?1:0)+(timing.Arrival==FieldTransitionArrival.Plain?0:1)+(timing.DepartureDoor is null?0:4)+(timing.ArrivalDoor is null?0:4)+(timing.DepartureStairBehavior is null?0:1)+(timing.ArrivalStairBehavior is null?0:1);
+        8+(timing.ArrivalPalette==FieldArrivalPalette.Normal?0:1)+(timing.PreviewFrames==0?0:1)+(timing.Interlude==FieldTransitionInterlude.None?0:1)+(timing.Departure==FieldTransitionDeparture.StepOntoWarp?1:0)+(timing.Arrival==FieldTransitionArrival.Plain?0:1)+(timing.DepartureDoor is null?0:4)+(timing.ArrivalDoor is null?0:4)+(timing.DepartureStairBehavior is null?0:1)+(timing.ArrivalStairBehavior is null?0:1);
 
     private static string? ValidateTransitionTiming(CampaignQuestLogAction action,CampaignQuestLogActor player)
     {
@@ -146,11 +150,13 @@ public sealed partial class CampaignSession
         var interlude=FieldTransitionInterludeFor(receipt);
         bool caveExit=interlude==FieldTransitionInterlude.CaveExit;
         bool caveEnter=interlude is FieldTransitionInterlude.CaveEnter or FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview;
-        if(!caveExit&&!caveEnter&&receipt.Cause!=FieldTransitionCause.ConnectedEdge&&
+        bool forest=interlude==FieldTransitionInterlude.ForestPreview;
+        bool forestExit=from.MapPreview?.Type==MapPreviewType.Forest&&receipt.Cause is FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor;
+        if(!caveExit&&!caveEnter&&!forest&&!forestExit&&receipt.Cause!=FieldTransitionCause.ConnectedEdge&&
             (string.IsNullOrEmpty(from.RegionMapSection)||from.RegionMapSection!=to.RegionMapSection))return false;
         static bool OrdinaryMap(FieldMapDefinition map)=>
             (map.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR")&&
-            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY")&&!map.RequiresFlash;
+            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY"||map.Weather=="WEATHER_SHADE"&&map.MapPreview?.Type==MapPreviewType.Forest)&&!map.RequiresFlash;
         bool ladder=receipt.Cause==FieldTransitionCause.PlainWarp&&receipt.Departure==FieldTransitionDeparture.StepOntoWarp&&
             receipt.Arrival==FieldTransitionArrival.Plain&&receipt.ArrivalAnchor==receipt.To&&receipt.DepartureStep is {} ladderStep&&
             _content.Maps[receipt.From.MapId].SourceBehaviorAt(ladderStep.X,ladderStep.Y)==0x61&&
@@ -159,6 +165,7 @@ public sealed partial class CampaignSession
             (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY")&&!map.RequiresFlash;
         // Same-section underground -> underground has no flash-transition table row.
         // Its ladder step, black fade and stationary arrival use the existing controllers.
+        if(forest)return to.MapPreview?.VisitFlag is not null&&!state.IsCycling&&!state.IsSurfing&&receipt.Arrival==FieldTransitionArrival.Plain&&OrdinaryMap(from)&&OrdinaryMap(to);
         if(caveExit)return NormalCave(from)&&OrdinaryMap(to);
         if(caveEnter)return !state.IsCycling&&!state.IsSurfing&&OrdinaryMap(from)&&
             (NormalCave(to)||interlude==FieldTransitionInterlude.RegionPreview&&OrdinaryMap(to));
@@ -175,7 +182,9 @@ public sealed partial class CampaignSession
             receipt.DepartureStairBehavior is not null||receipt.ArrivalStairBehavior is not null)return FieldTransitionInterlude.None;
         static bool Ordinary(FieldMapDefinition map)=>map.MapType is "MAP_TYPE_TOWN" or "MAP_TYPE_CITY" or "MAP_TYPE_ROUTE" or "MAP_TYPE_INDOOR";
         // The destination preview selector precedes the map-type interlude table.
-        bool preview=from.RegionMapSection!=to.RegionMapSection&&to.HasCavePreview;
+        if(from.RegionMapSection!=to.RegionMapSection&&to.MapPreview?.Type==MapPreviewType.Forest&&Ordinary(from)&&Ordinary(to)&&receipt.Arrival==FieldTransitionArrival.Plain)
+            return FieldTransitionInterlude.ForestPreview;
+        bool preview=from.RegionMapSection!=to.RegionMapSection&&to.MapPreview?.Type==MapPreviewType.Cave;
         if(preview&&Ordinary(from))
         {
             if(to.MapType=="MAP_TYPE_UNDERGROUND")return FieldTransitionInterlude.CavePreviewEnter;
@@ -187,9 +196,9 @@ public sealed partial class CampaignSession
 
     public int FieldTransitionPreviewDuration(CampaignState origin,FieldTransitionReceipt receipt)
     {
-        if(FieldTransitionInterludeFor(receipt) is not (FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview)||
+        if(FieldTransitionInterludeFor(receipt) is not (FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview or FieldTransitionInterlude.ForestPreview)||
             !TryGetFieldTransitionArrival(origin,receipt,out _))return 0;
-        var flag=_content.MapDefinition(receipt.To.MapId).CavePreviewVisitFlag;
+        var flag=_content.MapDefinition(receipt.To.MapId).MapPreview?.VisitFlag;
         return flag is null?0:origin.Script.Flags.GetValueOrDefault(flag)?40:120;
     }
 
@@ -203,6 +212,7 @@ public sealed partial class CampaignSession
         var timing=new CampaignQuestLogTransitionTiming(receipt.Cause,switchFrame,endFrame)
         {
             Interlude=FieldTransitionInterludeFor(receipt),PreviewFrames=previewFrames,
+            ArrivalPalette=_content.MapDefinition(receipt.To.MapId).Weather=="WEATHER_SHADE"?FieldArrivalPalette.Shade:FieldArrivalPalette.Normal,
             Departure=receipt.Cause==FieldTransitionCause.PlainWarp?receipt.Departure:FieldTransitionDeparture.Immediate,
             Arrival=receipt.Arrival,DepartureStairBehavior=receipt.DepartureStairBehavior,ArrivalStairBehavior=receipt.ArrivalStairBehavior,
             DepartureDoor=receipt.Cause==FieldTransitionCause.AnimatedDoor?new(receipt.From.X,receipt.From.Y-1):

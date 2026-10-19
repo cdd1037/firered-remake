@@ -3,9 +3,7 @@ internal static class SevenIslandFieldPresentation
 {
     internal static int ShadeChannel(int rgb5)
     {
-        if(rgb5 is <0 or >31)throw new ArgumentOutOfRangeException(nameof(rgb5));
-        // BuildGammaShiftTables: three fixed-8-bit decrements of (rgb5 << 8) / 16.
-        return (rgb5*13)>>4;
+        return Game.Application.FieldShadePresentation.Channel(rgb5);
     }
     internal static (int X,int Y) ShakeOffset(int horizontal,int vertical,int shakes,int delay,int frame)
     {

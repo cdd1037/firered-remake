@@ -1,4 +1,4 @@
-"""Compile cave-type region preview art from the shared original registry.
+"""Compile all region preview art from the shared original registry.
 
 PNG indices are reduced to 4bpp exactly as gbagfx ConvertBitDepth does, then
 resolved through each tilemap entry's palette bank. No source paths or recipes
@@ -70,21 +70,16 @@ def compile_outputs(src):
         if row['id'] in names:
             raise ValueError('Duplicate source region section')
         names[row['id']] = row.get('name')
-    flags = set(re.findall(r'^#define\s+(FLAG_\w+)\b', src.text('include/constants/flags.h'), re.M))
     art_indices, art, entries = {}, [], []
     for section, row in registry.items():
-        if row['type'] != 'MPS_TYPE_CAVE':
-            continue
         name = names.get(section)
         if not isinstance(name, str) or not name or len(name) > 64 or any(ord(c) < 32 for c in name):
             raise ValueError('Missing or invalid source preview name: ' + section)
-        if row['flagId'] not in flags:
-            raise ValueError('Unknown source preview visit flag: ' + row['flagId'])
         binding = tuple(row[key] for key in ('tilesptr', 'tilemapptr', 'palptr'))
         if binding not in art_indices:
             art_indices[binding] = len(art)
             art.append(compile_art(src, row, declarations))
-        entries.append(dict(regionSection=section, name=name, visitFlag=row['flagId'], art=art_indices[binding]))
+        entries.append(dict(regionSection=section, name=name, type=row['type'].removeprefix('MPS_TYPE_').lower(), art=art_indices[binding]))
     if not entries:
-        raise ValueError('Empty cave preview catalog')
+        raise ValueError('Empty map preview catalog')
     return {'maps/map-previews.json': encode(dict(schemaVersion=1, art=art, entries=entries))}

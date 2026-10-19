@@ -89,8 +89,8 @@ public sealed class CaveExitTransitionTests : WildBattleFixture
         Assert.AreEqual("WEATHER_SUNNY", to.Weather);
         Assert.AreEqual("MUS_MT_MOON", from.Music);
         Assert.AreEqual("MUS_ROUTE3", to.Music);
-        Assert.IsTrue(from.HasCavePreview);
-        Assert.IsFalse(to.HasCavePreview);
+        Assert.IsTrue(from.MapPreview?.Type==MapPreviewType.Cave);
+        Assert.IsFalse(to.MapPreview?.Type==MapPreviewType.Cave);
         Assert.IsFalse(from.RequiresFlash);
         Assert.IsFalse(to.RequiresFlash);
         Assert.AreEqual("MtMoon_1F_OnTransition", from.Programs.OnTransition);

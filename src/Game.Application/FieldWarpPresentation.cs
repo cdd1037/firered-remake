@@ -55,6 +55,13 @@ public static class FieldWarpPresentation
             Advance(); // BeginNormalPaletteFade immediately updates the BG half.
         }
 
+        /// <summary>Direct source palette fills do not move the normal-fade cursor.</summary>
+        public void FillBanks(int coefficient)
+        {
+            if(coefficient is <0 or >16)throw new ArgumentOutOfRangeException(nameof(coefficient));
+            BackgroundBlend=ObjectBlend=coefficient;
+        }
+
         public void Advance()
         {
             if(!Active)return;
@@ -106,24 +113,21 @@ public static class FieldWarpPresentation
     public sealed class PlainArrival
     {
         private int _phase;
-        private bool _weatherInitialized,_weatherReady;
-        public NormalPalette Palette {get;}=new(true);
+        public FieldArrivalPalettePresentation Palette {get;}
         public int Frames {get;private set;}
         public int Phase=>_phase;
         public bool Complete {get;private set;}
         public PhaseSample Sample=>new(Frames,Phase,Palette.BackgroundBlend,Palette.ObjectBlend,Palette.Active,Complete);
 
+        public PlainArrival(FieldArrivalPalette paletteKind=FieldArrivalPalette.Normal)=>Palette=new(paletteKind);
+
         public void Advance()
         {
             if(Complete)return;
             Frames++;
-            // Task_ExitNonDoor(priority10), WeatherInit/Main(priority80), then
-            // UpdatePaletteFade. NONE/SUNNY use the normal-palette branch. The
-            // first weather callback initializes; later callbacks expose readiness.
+            // Arrival priority10 observes weather before priority80 and palette.
             if(_phase==0)_phase=1;
-            else if(_weatherReady)Complete=true;
-            if(!_weatherInitialized)_weatherInitialized=true;
-            else if(!Palette.Active)_weatherReady=true;
+            else if(Palette.WeatherReady)Complete=true;
             Palette.Advance();
         }
     }

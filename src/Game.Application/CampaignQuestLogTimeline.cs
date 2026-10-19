@@ -36,8 +36,8 @@ internal sealed class CampaignQuestLogTimeline
     {
         Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;
         Map=scene.Map;_segmentActors=scene.Actors;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
-        // The source recorder clock is stopped while CB2 owns the preview. Keep
-        // stored live observations intact, projecting their omitted span once.
+        // The source recorder clock is stopped during preview ownership (CB2
+        // for caves, field controls for forests). Project each omitted span once.
         var actions=WithoutRegionPreviewWaits(scene.Actions);
         _moves=actions.Where(a=>a.Event==CampaignQuestLogEvent.None).OrderBy(a=>a.StartFrame).ToImmutableArray();
         // Ordinary warp tasks lock field controls until their recorded release.
@@ -82,7 +82,7 @@ internal sealed class CampaignQuestLogTimeline
     private static ImmutableArray<CampaignQuestLogAction> WithoutRegionPreviewWaits(ImmutableArray<CampaignQuestLogAction> actions)
     {
         var spans=actions.Where(a=>a.TransitionTiming is {PreviewFrames:>0})
-            .Select(a=>(Start:a.StartFrame+a.TransitionTiming!.DepartureEndFrame,Length:a.TransitionTiming!.PreviewOmittedFrames)).ToArray();
+            .Select(a=>(Start:a.StartFrame+(a.TransitionTiming!.Interlude==FieldTransitionInterlude.ForestPreview?a.TransitionTiming.SwitchFrame:a.TransitionTiming.DepartureEndFrame),Length:a.TransitionTiming!.PreviewOmittedFrames)).ToArray();
         if(spans.Length==0)return actions;
         int Frame(int frame)=>frame-spans.Sum(span=>Math.Clamp(frame-span.Start,0,span.Length));
         return actions.Select(action=>
@@ -91,7 +91,7 @@ internal sealed class CampaignQuestLogTimeline
                 return action with{StartFrame=Frame(action.StartFrame)};
             int omitted=timing.PreviewOmittedFrames;
             return action with{StartFrame=Frame(action.StartFrame),Frames=action.Frames-omitted,
-                TransitionTiming=timing with{Interlude=timing.Interlude==FieldTransitionInterlude.RegionPreview?FieldTransitionInterlude.None:timing.Interlude,PreviewFrames=0,SwitchFrame=timing.SwitchFrame-omitted,EndFrame=timing.EndFrame-omitted}};
+                TransitionTiming=timing with{Interlude=timing.Interlude is FieldTransitionInterlude.RegionPreview or FieldTransitionInterlude.ForestPreview?FieldTransitionInterlude.None:timing.Interlude,PreviewFrames=0,SwitchFrame=timing.SwitchFrame-(timing.Interlude==FieldTransitionInterlude.ForestPreview?0:omitted),EndFrame=timing.EndFrame-omitted}};
         }).ToImmutableArray();
     }
 

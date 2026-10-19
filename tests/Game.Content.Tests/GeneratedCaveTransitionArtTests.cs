@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Game.Content;
+using Game.Domain.World;
 using System.Text;
 
 namespace FireRed.Tests.Content;
@@ -67,9 +68,9 @@ public sealed class GeneratedCaveTransitionArtTests
     public void SourceDerivedPreviewMetadataDistinguishesCaveForestAndOrdinaryRegions()
     {
         var maps = PretRuntimeMapCatalog.Load(Path.Combine(Generated, "maps/world.json")).Maps.Values;
-        Assert.IsTrue(maps.Single(map => map.SourceMapName == "MtMoon_1F").HasCavePreview);
-        Assert.IsFalse(maps.Single(map => map.SourceMapName == "ViridianForest").HasCavePreview);
-        Assert.IsFalse(maps.Single(map => map.SourceMapName == "Route4").HasCavePreview);
+        Assert.AreEqual(MapPreviewType.Cave, maps.Single(map => map.SourceMapName == "MtMoon_1F").MapPreview?.Type);
+        Assert.AreEqual(MapPreviewType.Forest, maps.Single(map => map.SourceMapName == "ViridianForest").MapPreview?.Type);
+        Assert.IsNull(maps.Single(map => map.SourceMapName == "Route4").MapPreview);
     }
 
     [TestMethod]
@@ -79,7 +80,7 @@ public sealed class GeneratedCaveTransitionArtTests
         var entry = manifest["maps"]!.AsArray().First(row => row!["sourceMapSymbol"]!.GetValue<string>() == "MAP_MT_MOON_1F")!;
         var map = JsonNode.Parse(File.ReadAllBytes(Path.Combine(Generated, entry["path"]!.GetValue<string>())))!.AsObject();
         string stableId = map["stableId"]!.GetValue<string>();
-        Assert.IsTrue(map.Remove("cavePreviewVisitFlag"));
+        Assert.IsTrue(map.Remove("mapPreview"));
         Assert.ThrowsExactly<InvalidDataException>(() =>
             PretRuntimeMapData.Decode(Encoding.UTF8.GetBytes(map.ToJsonString()), stableId));
     }
