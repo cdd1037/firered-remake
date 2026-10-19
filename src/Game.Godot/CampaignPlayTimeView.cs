@@ -68,5 +68,5 @@ public partial class CampaignView
     private static string FormatPlayTime(CampaignPlayTime time) =>
         time.Hours.ToString(CultureInfo.InvariantCulture) + ":" + time.Minutes.ToString("D2", CultureInfo.InvariantCulture) +
         (time.SinceCheckpoint ? "+" : "");
-    private const string CheckpointTimeNote = "+ Time since checkpoint.";
+    private string CheckpointTimeNote => _saveText.Get("notice.checkpoint-time");
 }

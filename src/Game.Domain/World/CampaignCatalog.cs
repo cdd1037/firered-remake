@@ -120,6 +120,8 @@ public interface ICampaignCatalog:IStoryCatalog
     // Dex metadata does not imply that a species is admitted for ownership or battle.
     int? SourceSpeciesHeightDecimeters(int sourceSpeciesId) => null;
     string? SourceSpeciesName(int sourceSpeciesId) => null;
+    string TrainerDisplayName(TrainerId id) => throw new NotSupportedException("trainer_display_names_not_enabled");
+    string TrainerClassDisplayName(string id) => throw new NotSupportedException("trainer_class_display_names_not_enabled");
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     VictoryRoadTrainerCatalog? VictoryRoadTrainerParties=>null;

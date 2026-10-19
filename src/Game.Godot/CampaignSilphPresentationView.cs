@@ -59,9 +59,6 @@ public partial class CampaignView
     }
     private string? VisibleSilphTrainerPortrait() => _session.State.ForestTrainerBattle is { } battle &&
         _catalog.SilphTrainers?.Trainers.TryGetValue(battle.Trainer, out var trainer) == true ? trainer.TrainerPic == "TRAINER_PIC_JUGGLER" ? "juggler-front" : _silphTrainerPortraits[trainer.TrainerPic] : null;
-    private string? VisibleSilphTrainerClass() => _session.State.ForestTrainerBattle is { } battle &&
-        _catalog.SilphTrainers?.Trainers.TryGetValue(battle.Trainer, out var trainer) == true ? trainer.TrainerClass switch
-        { "TRAINER_CLASS_TEAM_ROCKET" => "TEAM ROCKET", "TRAINER_CLASS_SCIENTIST" => "SCIENTIST", "TRAINER_CLASS_RIVAL_LATE" => "RIVAL", "TRAINER_CLASS_BOSS" => "BOSS", "TRAINER_CLASS_JUGGLER" => "JUGGLER", _ => throw new InvalidDataException("Unsupported Silph trainer class.") } : null;
     private void LoadSilphItemArt()
     {
         var items = _catalog.SilphItems ?? throw new InvalidDataException("Silph item metadata missing.");

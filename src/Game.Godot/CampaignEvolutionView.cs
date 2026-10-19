@@ -324,7 +324,7 @@ public partial class CampaignView
         var lines = text.Split('\n');
         for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(10, 119 + i * 16), lines[i]);
         if (scene.Stage == CampaignEvolutionStage.Proposal && _evolutionAnimation?.CanCancel == true)
-            SourceText(_sourceSmall, new(14, 94), "B/Backspace: stop evolution");
+            SourceText(_sourceSmall, new(14, 94), _growthText.EvolutionCancel);
         if (_wildNotice is not null) ItemMessageBox(_wildNotice);
     }
 }

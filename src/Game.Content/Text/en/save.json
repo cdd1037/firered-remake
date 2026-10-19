@@ -4,6 +4,7 @@
   "success.save": "{PlayerName} saved the game.",
   "success.backup": "Loaded the verified backup.\nSave files were not changed.",
   "success.load": "Game loaded.",
+  "notice.checkpoint-time": "+ Time since checkpoint.",
   "overwrite": "Replace the existing save?",
   "blocked": "Can't {Action} during this event.\nFinish it, then try again.",
   "missing": "No saved game was found.\nUse SAVE to create one.",

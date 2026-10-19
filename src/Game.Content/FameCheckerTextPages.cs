@@ -31,6 +31,15 @@ public sealed record FameCheckerTextPage(string Text, ImmutableArray<FameChecker
 /// Frame progression and scrolling belong to the presentation layer.</summary>
 public static class FameCheckerTextPages
 {
+    public static string Plain(FameCheckerText source, string playerName, string rivalName)
+    {
+        var pages = Parse(source.EncodedText.EndsWith('$') ? source : source with { EncodedText = source.EncodedText + "$" },
+            playerName, rivalName);
+        if (pages.Length != 1 || pages[0].EndAction != FameCheckerTextEndAction.End)
+            throw new InvalidDataException("Fame Checker label must be one unprompted page.");
+        return pages[0].Text;
+    }
+
     public const int MaximumEncodedLength = 16384;
     public const int MaximumNameLength = 64;
     public const int MaximumLineLength = 1024;
@@ -158,8 +167,8 @@ public static class FameCheckerTextPages
     private static void ValidateName(string name, string parameter)
     {
         ArgumentNullException.ThrowIfNull(name, parameter);
-        if (name.Length is 0 or > MaximumNameLength || name.Any(c => char.IsControl(c) || c is '\\' or '{' or '}' or '$'))
-            throw new ArgumentException("Name must be bounded plain text without source controls.", parameter);
+        if (name.Length is 0 or > MaximumNameLength || name.Any(char.IsControl))
+            throw new ArgumentException("Name must be bounded plain text without control characters.", parameter);
         ValidateUnicode(name, parameter);
     }
 

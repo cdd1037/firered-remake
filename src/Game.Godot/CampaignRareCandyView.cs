@@ -5,6 +5,7 @@ using Godot;
 public partial class CampaignView
 {
     private int _candyMoveCursor;
+    private SourceGrowthText _growthText=null!;
     private string? _candyViewKey, _candyNotice;
     private void SynchronizeRareCandy()
     {
@@ -57,13 +58,13 @@ public partial class CampaignView
         {
             _battleSkin.DrawStandardFrame(this, new(48, 0, 192, 112));
             var before = scene.Result.StatsBefore; var after = owned.Pokemon.Stats;
-            var values = new[] { ("MAX. HP", before.MaxHp, after.MaxHp), ("ATTACK", before.Attack, after.Attack),
-                ("DEFENSE", before.Defense, after.Defense), ("SP. ATK", before.SpecialAttack, after.SpecialAttack),
-                ("SP. DEF", before.SpecialDefense, after.SpecialDefense), ("SPEED", before.Speed, after.Speed) };
+            var values = new[] { (before.MaxHp, after.MaxHp), (before.Attack, after.Attack),
+                (before.Defense, after.Defense), (before.SpecialAttack, after.SpecialAttack),
+                (before.SpecialDefense, after.SpecialDefense), (before.Speed, after.Speed) };
             for (int i = 0; i < values.Length; i++)
             {
-                var (label, oldValue, newValue) = values[i];
-                SourceText(_sourceNormal, new(58, 7 + i * 16), label);
+                var (oldValue, newValue) = values[i];
+                SourceText(_sourceNormal, new(58, 7 + i * 16), _growthText.StatLabels[i]);
                 SourceText(_sourceNormal, new(194, 7 + i * 16), scene.Stage == CampaignRareCandyStage.StatsTotal
                     ? newValue.ToString().PadLeft(3) : "+" + (newValue - oldValue).ToString().PadLeft(2));
             }

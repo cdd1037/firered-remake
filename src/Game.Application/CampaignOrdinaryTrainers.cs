@@ -49,21 +49,6 @@ public sealed partial class CampaignSession
         BoundTrainerScript(OrdinaryBinding(id), script, sourceLine);
     private IEnumerable<ForestTrainerBattleDefinition> OrdinaryTrainerScripts => TrainerOccurrences.Primary.Values.Select(occurrence => occurrence.Source.Definition);
     private IEnumerable<TrainerId> OrdinaryTrainerIds => OrdinaryTrainerBindings.Keys;
-    private string OrdinaryTrainerClass(TrainerId id)=>OrdinaryTrainer(id).TrainerClass switch
-    {
-        "TRAINER_CLASS_PAINTER"=>"PAINTER", "TRAINER_CLASS_LADY"=>"LADY", "TRAINER_CLASS_PKMN_BREEDER"=>"POKéMON BREEDER",
-        "TRAINER_CLASS_ELITE_FOUR"=>"ELITE FOUR","TRAINER_CLASS_CHAMPION"=>"CHAMPION",
-        "TRAINER_CLASS_CRUSH_GIRL"=>"CRUSH GIRL","TRAINER_CLASS_PKMN_RANGER"=>"POKéMON RANGER",
-        "TRAINER_CLASS_BLACK_BELT"=>"BLACK BELT","TRAINER_CLASS_RUIN_MANIAC"=>"RUIN MANIAC",
-        "TRAINER_CLASS_CUE_BALL"=>"CUE BALL","TRAINER_CLASS_TUBER"=>"TUBER","TRAINER_CLASS_AROMA_LADY"=>"AROMA LADY",
-        "TRAINER_CLASS_BURGLAR"=>"BURGLAR","TRAINER_CLASS_SWIMMER_F"=>"SWIMMER",
-        "TRAINER_CLASS_SCIENTIST"=>"SCIENTIST","TRAINER_CLASS_PSYCHIC"=>"PSYCHIC","TRAINER_CLASS_JUGGLER"=>"JUGGLER","TRAINER_CLASS_TAMER"=>"TAMER",
-        "TRAINER_CLASS_CHANNELER"=>"CHANNELER","TRAINER_CLASS_BOSS"=>"BOSS","TRAINER_CLASS_POKEMANIAC"=>"POKéMANIAC","TRAINER_CLASS_GAMER"=>"GAMER","TRAINER_CLASS_ENGINEER"=>"ENGINEER","TRAINER_CLASS_SAILOR"=>"SAILOR","TRAINER_CLASS_FISHERMAN"=>"FISHERMAN","TRAINER_CLASS_GENTLEMAN"=>"GENTLEMAN","TRAINER_CLASS_RIVAL_LATE"=>"RIVAL",
-        "TRAINER_CLASS_PICNICKER"=>"PICNICKER","TRAINER_CLASS_SWIMMER_M"=>"SWIMMER",
-        "TRAINER_CLASS_SUPER_NERD"=>"SUPER NERD","TRAINER_CLASS_HIKER"=>"HIKER","TRAINER_CLASS_TEAM_ROCKET"=>"TEAM ROCKET",
-        "TRAINER_CLASS_YOUNGSTER"=>"YOUNGSTER","TRAINER_CLASS_LASS"=>"LASS","TRAINER_CLASS_RIVAL_EARLY"=>"RIVAL","TRAINER_CLASS_BUG_CATCHER"=>"BUG CATCHER","TRAINER_CLASS_CAMPER"=>"CAMPER","TRAINER_CLASS_LEADER"=>"LEADER",
-        "TRAINER_CLASS_BIRD_KEEPER"=>"BIRD KEEPER","TRAINER_CLASS_ROCKER"=>"ROCKER","TRAINER_CLASS_BIKER"=>"BIKER","TRAINER_CLASS_BEAUTY"=>"BEAUTY","TRAINER_CLASS_COOLTRAINER"=>"COOLTRAINER",
-        _=>throw new InvalidDataException("ordinary_trainer_class_unsupported")
-    };
+    private string OrdinaryTrainerClass(TrainerId id) => _content.TrainerClassDisplayName(OrdinaryTrainer(id).TrainerClass);
     private int OrdinaryWonFlagCount(CampaignState state)=>state.BattledTrainers.Count(x=>OrdinaryTrainerIds.Contains(new TrainerId(x)));
 }

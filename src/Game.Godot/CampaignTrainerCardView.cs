@@ -16,7 +16,7 @@ public partial class CampaignView
     private double _trainerCardFlashFrames=32;
     private void LoadTrainerCardPresentation()
     {
-        _trainerCard=PretTrainerCard.Load(_root);
+        _trainerCard=PretTrainerCard.Load(_root,_battleText);
         var fg=_trainerCard.Layout.StatTextRgb;var shadow=_trainerCard.Layout.StatShadowRgb;
         _trainerCardStatFont=SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/ui/font"),
             foreground:Color.Color8(fg[0],fg[1],fg[2]),shadow:Color.Color8(shadow[0],shadow[1],shadow[2]));
@@ -25,7 +25,7 @@ public partial class CampaignView
     }
     private void OpenTrainerCard()
     {
-        if(_trainerCard is null){_fieldMenuNotice="The TRAINER CARD cannot be\nopened here.";return;}
+        if(_trainerCard is null){_fieldMenuNotice=FieldMenuText.Get("notice.trainer-card-unavailable");return;}
         if(!CommitPlayTime(true)){_fieldMenuNotice=_status;return;}
         _trainerCardBack=false;_trainerCardFlipFrames=-1;_trainerCardStars=_session.TrainerCardStars;
         _fieldMenuMode="trainer-card";SourceSound("SE_CARD_OPEN");
@@ -118,7 +118,7 @@ public partial class CampaignView
             SourceText(_trainerCardStatFont!,new(row.ValueX,row.Y),PretTrainerCard.FormatHallOfFameTime(debut));
         }
         else if(s.HallOfFame is {FirstHallOfFamePlayTime:null})
-            SourceText(_sourceSmall,new(18,43),"HOF debut time unavailable");
+            SourceText(_sourceSmall,new(18,43),FieldMenuText.Get("notice.hall-debut-time-unavailable"));
         for(int kind=0;kind<card.Rules.StickerVariables.Length;kind++)
         {
             int tier=s.Script.Variables.GetValueOrDefault(card.Rules.StickerVariables[kind]);

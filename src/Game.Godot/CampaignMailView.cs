@@ -13,9 +13,8 @@ public partial class CampaignView
     private bool MailScreen => _session.State.MailComposer is not null || _session.State.MailInteraction is not null ||
         _session.State.ItemMenu is { Origin: "party", View: "held", TargetPartyIndex: { } index } &&
         index >= 0 && index < _session.State.Party.Length && SourceMailRules.IsMailItem(_session.State.Party[index].HeldItem);
-    private string MailText(string symbol) => _catalog.NpcTradeMail!.Texts[symbol]
-        .Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal)
-        .Replace("{STR_VAR_1}", SelectedMailboxMessage?.AuthorName ?? "", StringComparison.Ordinal);
+    private string MailText(string symbol) => MailSourceScreen.Content.SourceText.Text(symbol,
+        SelectedMailboxMessage?.AuthorName ?? "");
     private SourceMailMessage? SelectedMailboxMessage => _session.State.MailInteraction is { MailboxSlot: >= 0 } pending &&
         pending.MailboxSlot < SourceMailState.MailboxCapacity ? (_session.State.Mail ?? SourceMailState.Empty).Mailbox[pending.MailboxSlot] : null;
     private int[] MailboxSlots => (_session.State.Mail ?? SourceMailState.Empty).Mailbox

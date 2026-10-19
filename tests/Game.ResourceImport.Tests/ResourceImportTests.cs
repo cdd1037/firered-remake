@@ -11,6 +11,7 @@ public sealed class ResourceImportTests
     {
         await Run("test-trainer-import.py");
         await Run("test-trainer-portraits.py");
+        await Run("test-trainer-display-import.py");
     }
     [TestMethod]
     public Task SharedPokemonPresentation() => Run("test-pokemon-import.py");

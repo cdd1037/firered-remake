@@ -7,7 +7,6 @@ using Godot;
 public partial class CampaignView
 {
     private readonly Dictionary<string, string> _saffronGymTrainerPortraits = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _saffronGymTrainerClasses = new(StringComparer.Ordinal);
     private bool IsSaffronGymLeader(string id) => id == "pret:TRAINER_LEADER_SABRINA";
 
     private void LoadSaffronGymPresentation()
@@ -53,11 +52,7 @@ public partial class CampaignView
             throw new InvalidDataException("Max Repel source pixels differ.");
         using (var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, rgba))
             _earlyItemIcons.Add(new("pret:ITEM_MAX_REPEL"), (ImageTexture)SceneTextures.FromImage(image));
-        foreach (var row in root.GetProperty("trainerClasses").EnumerateObject()) _saffronGymTrainerClasses.Add(row.Name, row.Value.GetString()!);
     }
-    private string? VisibleSaffronGymTrainerClass() => _session.State.ForestTrainerBattle is { } battle && _catalog.SaffronGymTrainers?.Trainers.TryGetValue(battle.Trainer, out var trainer) == true
-        ? _saffronGymTrainerClasses[trainer.TrainerClass] : null;
-
     private void LoadSaffronGymTrainerArt()
     {
 

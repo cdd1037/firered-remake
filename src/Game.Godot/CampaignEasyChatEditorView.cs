@@ -156,14 +156,16 @@ public partial class CampaignView
         DrawTexture(screen.Texture(EasyChatLayout.BackgroundIds[_easyChatBrowseMode == 2 ? "words" : _easyChatBrowseMode == 1 ? "groups" : "fields"]), Vector2.Zero);
         if (EasyChatTemplate.TitleTextSymbol is {} titleSymbol)
         {
-            string title = _catalog.MailComposer!.Texts[titleSymbol];
+            string title = screen.Content.SourceText.Text(titleSymbol);
             var font = screen.TitleFont;
             SourceMailScreen.Text(this, font, new(EasyChatLayout.TitleX + (EasyChatLayout.TitleWidth - SourceMailScreen.TextWidth(font, title)) / 2, EasyChatLayout.TitleY), title);
         }
         screen.DrawEditorFields(this, EasyChatLayout, EasyChatTemplate, draft.Words, _session.EasyChatWordText);
         if (_easyChatBrowseMode == 0)
         {
-            foreach (var (label,x) in new[] { ("DEL. ALL",32), ("CANCEL",119), ("OK",196) }) SourceMailScreen.Text(this, screen.EditorFont, new(x,90), label);
+            for (int index = 0; index < screen.Content.SourceText.EditorActionLabels.Length; index++)
+                SourceMailScreen.Text(this, screen.EditorFont, new(new[] { 32, 119, 196 }[index], 90),
+                    screen.Content.SourceText.EditorActionLabels[index]);
             var center = _easyChatEditRow == EasyChatTemplate.Rows ? new Vector2(new[] {28,115,191}[_easyChatEditColumn],97)
                 : screen.FieldPosition(EasyChatLayout, EasyChatTemplate, draft.Words, _session.EasyChatWordText, EasyChatEditSlot) + new Vector2(-4,7);
             screen.DrawTriangle(this, center);
@@ -173,7 +175,7 @@ public partial class CampaignView
                 SourceEasyChatEditPhase.ConfirmDelete => ["gText_AllTextBeingEditedWill", "gText_BeDeletedThatOkay"],
                 _ => EasyChatTemplate.InstructionTextSymbols };
             _battleSkin.DrawStandardFrame(this, new(24,112,192,48));
-            for (int i=0;i<symbols.Length;i++) SourceMailScreen.Text(this,screen.EditorFont,new(32,122+i*16),_catalog.MailComposer!.Texts[symbols[i]]);
+            for (int i=0;i<symbols.Length;i++) SourceMailScreen.Text(this,screen.EditorFont,new(32,122+i*16),screen.Content.SourceText.Text(symbols[i]));
             if (draft.Phase != SourceEasyChatEditPhase.Edit)
             {
                 _battleSkin.DrawStandardFrame(this,new(168,64,56,48));
@@ -193,7 +195,7 @@ public partial class CampaignView
         {
             for (int row=0;row<4;row++) for (int column=0;column<EasyChatAlphabet[row].Length;column++)
             {
-                int bucket=EasyChatAlphabet[row][column]; string text=bucket==0?"others":((char)('A'+bucket-1)).ToString();
+                int bucket=EasyChatAlphabet[row][column]; string text=_catalog.MailComposer!.Alphabetical[bucket].Name;
                 SourceMailScreen.Text(this,screen.EditorFont,new(bucket==0?141:29+EasyChatAlphaOffsets[column],90+row*16),text);
             }
         }

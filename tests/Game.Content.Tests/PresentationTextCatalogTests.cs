@@ -44,6 +44,7 @@ public sealed class PresentationTextCatalogTests
         var text = PresentationTextCatalog.English("save");
         Assert.AreEqual("RED saved the game.", text.Get("success.save", ("PlayerName", "RED")));
         Assert.AreEqual("Loaded the verified backup.\nSave files were not changed.", text.Get("success.backup"));
+        Assert.AreEqual("+ Time since checkpoint.", text.Get("notice.checkpoint-time"));
         Assert.ThrowsExactly<InvalidDataException>(() => PresentationTextCatalog.English("missing"));
     }
 
@@ -68,6 +69,8 @@ public sealed class PresentationTextCatalogTests
             ("notice.cannot-use-here", "Can't use that here."),
             ("notice.party-empty", "You have no POKéMON\nin your party."),
             ("notice.bag-unavailable", "The BAG cannot be opened\nhere."),
+            ("notice.trainer-card-unavailable", "The TRAINER CARD cannot be\nopened here."),
+            ("notice.hall-debut-time-unavailable", "HOF debut time unavailable"),
             ("prompt.save-overwrite", "A save already exists.\nReplace it with this game?"),
             ("prompt.save", "Would you like to\nsave the game?"),
             ("choice.yes", "YES"),

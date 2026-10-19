@@ -380,7 +380,7 @@ public partial class CampaignView
         // A worker may finish after this scene leaves, but has no callback or node reference.
         _startupExited=true;_startupReady=false;_catalogLoad=null;
         DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();DisposeFameCheckerPresentation();DisposeTeachyTvPresentation();DisposeVsSeekerPresentation();
-        _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
+        _saffronGymTrainerPortraits.Clear();
         DisposeMailPresentation();_pokemonCollectionArt=null;_earlyDex.Clear();_supplementalDex.Clear();_sharedTrainerPresentation.Clear();_registeredTrainerPresentation.Clear();DisposeGiftEggPresentation();DisposeMemorialPillarPresentation();DisposeOrdinaryEvolutionPresentation();DisposeBreedingPresentation();DisposeGameCornerPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
         DisposeOptionsPresentation();DisposeCapturePresentation();DisposeStorageCustomizationPresentation();
         DisposePokemonTowerPresentation();DisposeCenterHealingPresentation();DisposeOldManPresentation();

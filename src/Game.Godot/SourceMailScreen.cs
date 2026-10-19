@@ -86,7 +86,7 @@ public sealed class SourceMailScreen : IDisposable
         if (message.ItemId != itemId) throw new InvalidDataException("mail_reader_item_mismatch");
         var font = Font(paper.TextRgb, paper.ShadowRgb);
         foreach (var line in _content.ReaderLines(itemId, message.Words, wordText)) Text(canvas, font, new(line.X, line.Y), line.Text);
-        Text(canvas, font, new(paper.AuthorX, paper.AuthorY), paper.AuthorPrefix + message.AuthorName);
+        Text(canvas, font, new(paper.AuthorX, paper.AuthorY), _content.SourceText.Text("gText_From") + message.AuthorName);
         if (paper.IconKind != "none" && PretMailPresentation.IconRenderSpecies(message.Species) is {} renderSpecies)
         {
             var image = icon(renderSpecies) ?? throw new InvalidDataException("mail_species_icon_missing:" + renderSpecies);

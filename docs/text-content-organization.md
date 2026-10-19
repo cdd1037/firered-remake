@@ -199,7 +199,7 @@ Moves、DETAILS 草稿取消和返回完成，截图人工检查。正常退出 
 
 ## 原作文本与名称的部分覆盖
 
-`FIRERED_TEXT_PACK` 顶层仍是七组作者UI（129条英文、6,737字节）；`source/` 下是
+`FIRERED_TEXT_PACK` 顶层仍是七组作者UI（132条英文、6,944字节）；`source/` 下是
 已有生成目录的可选覆盖，没有复制整份英文默认目录。未设置包使用英文，缺少组／条目
 回落原生成值；显式目录不存在、未知组／ID及空值报错。运行时一次选择并读取不可变包，
 更换语言需重新启动；无热重载、版本锁、来源hash或第二份规则目录。
@@ -218,6 +218,11 @@ Moves、DETAILS 草稿取消和返回完成，截图人工检查。正常退出 
   均使用物品ID。描述覆盖不扩展道具准入或可教学机器；机器UI仍使用其独立源说明语义。
 - `summary-moves`／`summary-abilities`：源MOVE_*／ABILITY_*；`summary-memos`与
   `summary-locations`：当前摘要目录键。
+- `trainer-names`：既有TrainerId；`trainer-class-names`：源TRAINER_CLASS_*。原始编码、
+  业务定义和素材校验不改。saved RivalName在实际对手显示中优先于目录覆盖。
+- `easy-chat-words`：1006个非物种／招式词的既有ushort十进制ID；807个名称词复用当前
+  物种／招式目录，不能在这里重复覆盖。`easy-chat-groups`使用EC_GROUP_*及alphabet:数值ID，
+  只替换22个类别和27个字母桶标题，词值、解锁和源排序不变。
 
 示例：`source/species-names.json`只需`{"150":"MIND CAT"}`，
 `source/battle.json`可只包含`{"gText_MenuPokemon":"CREATURES"}`（键必须真实存在）。
@@ -235,13 +240,11 @@ Moves、DETAILS 草稿取消和返回完成，截图人工检查。正常退出 
 
 ### 仍未接入的有限文本边界
 
-- Trainer目录604条记录、48个阶级ID尚未接显示覆盖；数量是目录范围，不代表全部可达。
-  TrainerCard的12个源文本字段中有8个实际绘制。个体生成所用编码与玩家自定义对手名须独立保留。
-- Mail三个目录54行／44个源symbol，实际UI使用35个已有battle-bank symbol但尚未接线。
-  EasyChat共1813词，807个物种／招式条目已有名称投影；其余1006词需要按既有词ID稀疏覆盖，
-  不复制英文词表。词值、解锁条件、编码和源排序不随显示替换。
-- 养成结果、船票／化石菜单和区域物品说明已接入；糖果六项能力标签、进化取消按键提示
-  等辅助标签仍有硬编码。它们不自动进入14种编译Story菜单。
+- 本批已接Trainer 604记录／48个使用中阶级、Card八字段、Mail实际35个源symbol及
+  编辑器动作行、EasyChat词和分组、糖果六能力标签与进化取消提示。源阶级表保留其107个
+  实际声明供动态设施阶级复用，未建立历史数量准入。
+- 仍待独立闭合的专用入口包括Fame Checker事实／标签、Quest Log模板／地名、Tower动态
+  个人名及其设施speech词显示。它们不是字体问题，也不因Story／Battle已覆盖而自动覆盖。
 - 图鉴栖息地标题、测量显示、早期素材内无人消费的重复显示字段尚未继续迁移。
 - 目录排序仍使用既有源索引，未提供按目标语言重新排序。SourceGameFont不自动提供
   缺失字形。实际中文翻译、字体／图片、布局、真实IME均未做。
@@ -317,4 +320,50 @@ TM36／HM06／HM07原有不同说明选择，TM CASE显示由机器目录负责�
 8项、普通物品10项、调用者6项、输入闭包7项检查通过。实际稀疏替换包启动发现
 Potion／Super Potion仍有两个英文身份门槛，现保留ID、效果和权限校验而允许替换名称；
 两行参数化测试保留错误身份／效果／空名负例。修后完整headless组合到达ready并退出0，
-无画面／实音结论；退出仍报告一个ObjectDB实例，记录为独立生命周期诊断，未屏蔽。
+无画面／实音结论。该探针使用--quit-after强制结束，绕过正常RequestQuit音频退休流程，
+所以退出的AudioStreamGeneratorPlayback引用诊断属于既有强退验收边界；不是新发现的
+普通退出泄漏。此前正常WM退出已验证无该警告，详见plain-field-transition-presentation.md。
+
+有限显示身份复查发现Tower的脚本Marowak选择器还同时检查英文名称；现只按物种105
+认证，替换名称与gText_Ghost仅影响显示。商店说明直接使用已投影值，不再次展开或裁剪。
+Fame Checker短标签复用其原有单遍控制解码器，删除另一串联替换入口；插入的名字是字面
+文本，原始分页、控制字符和Unicode合法性检查仍保留。该修复不等于专用Fame Checker
+事实目录已经接入语言覆盖。
+
+Trainer显示使用604个既有TrainerId和源阶级ID，保留原训练家定义、编码及区域素材绑定。
+导入107条实际阶级声明（当前定义使用48类），删除普通／双打重复阶级分派和废弃区域
+显示缓存；源SWIMMER♂／♀恢复性别符号。玩家RivalName仍优先。Mail的35个实际UI
+symbol和编辑器动作行复用battle bank，名字绑定单遍；EasyChat的1006普通词、22类别和
+27字母桶标题稀疏覆盖，807名称词共享现有名称目录。Card八字段、六能力标签和进化提示
+也复用源symbol，三个重制辅助提示进入已有作者组；没有新增英文默认词表。
+
+最后投影批验证：Content117项／2秒、Application18项／8秒、Presentation22项／244毫秒；
+四个相关项目编译零警告错误，源阶级导入3项与producer --check通过。新目录4,126字节
+仅本地生成，所有604训练家／1549成员定义字节保持。带稀疏替换包的headless完整组装到ready，
+正常WM close经RequestQuit退出0，verbose无错误、警告或泄漏。此为实际引擎组合／退出验证，
+不是新原生画面、实音或中文验收。
+
+### 全部生产入口复查后的后续收口范围
+
+这份列表按实际消费者分为三类，避免把专用目录误当成已自动接入Story／Battle。
+数目是现有目录或字段规模，不是逐项原生验收，也不要求复制英文资源。
+
+- 专用源目录显示投影：HelpCatalog→CampaignHelpView（368引用ID）；
+  PretOpeningPresentation→CampaignOpeningView/命名（24个文本ID、4种标题及建议名）；
+  PretMainMenuSource→EntryText（6个常规入口）；PretTeachyTv（42）及OldManTutorial（4）；
+  PretStorageCustomization→壁纸选项（42个源ID及类别／名称）；MoveTutor/Reminder/Deleter/
+  NameRaterSource→学习与记录页面（13/13/4/2字段）；NpcTradeContent（7）；HallPcPresentation（8）；
+  LeagueManifest（3个显示消息、43署名行及标题）；Diploma（5）；Town/Fly/Sevii地图名称与地牢标签；
+  Fame Checker（342个唯一文本symbol）；Quest Log（125模板、414地图名称及departure标签）。
+  原目录的ID、控制码和玩法字段保持，各消费者只投影显示字段，不能新增平行规则清单。
+- 共享／作者UI余项：仍有YES/NO/CANCEL和动作标签、蛋摘要／来源、Safari状态与提示、
+  Old Man动作名、地图按键提示、电梯楼层／Now on、Game Corner菜单、图鉴导航、命名提示／错误、
+  Help及Tower记录控制。下一收口应按共享label语义复用源bank，重制提示进入现有作者组，
+  不逐屏幕再建目录；正常生产分支与仅fallback分支须分别确认。
+- 预设／动态值：Tower个人名及设施speech仍直接读模板词；NPC交换昵称／OT、开场建议名、
+  默认箱名需要明确预设身份与玩家已输入值的边界。不能用显示字符串相等来猜测用户意图，
+  也不能改变原编码参与的个体生成或邮件协议。
+
+验证专用重复副本、字母键盘布局与图片内文字不算动态文本消费者。图片字、字形、中文排版、
+IME和目标语言排序另列，不以它们解释上述尚未接线的文字。当前批已冻结，不将此表中的
+后续项混入已通过测试范围。

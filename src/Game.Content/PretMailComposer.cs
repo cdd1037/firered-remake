@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Game.Domain.Pokemon;
 
 namespace Game.Content;
@@ -17,7 +18,7 @@ public sealed class PretMailComposer
 
     }
 
-    public static PretMailComposer Load(string root)
+    public static PretMailComposer Load(string root, SourceTextPack? pack = null)
     {
         var source = new SilphSourcePackage(root,"data/services/mail-composer");
         var document = SafariSource.Parse<ComposerDocument>(source.Read("catalog.json"));
@@ -67,8 +68,46 @@ public sealed class PretMailComposer
         var catalog = new SourceEasyChatCatalog(document.Groups, words, document.Alphabetical,
             contracts.NameCharacters, contracts.SeenPokemonGroup, contracts.NationalPokemonGroup, contracts.DeoxysSpecies, contracts.UnownSpecies)
             { Texts = texts, Templates = templates, ProfileDefinition = profile };
+        var selectedPack = pack ?? SourceTextPack.Current;
+        var labels = selectedPack.Apply("easy-chat-groups", document.Groups.ToDictionary(group => group.Symbol, group => group.Name)
+            .Concat(document.Alphabetical.Select(bucket => KeyValuePair.Create(
+                "alphabet:" + bucket.Id.ToString(CultureInfo.InvariantCulture), bucket.Name)))
+            .ToDictionary(pair => pair.Key, pair => pair.Value), preserveControls: true);
+        var replacements = selectedPack.Apply("easy-chat-words",
+            words.Values.Where(word => !IsSpeciesWord(catalog, word) && !IsMoveWord(word)).ToDictionary(
+                word => word.Value.ToString(CultureInfo.InvariantCulture), word => word.Text), preserveControls: true);
+        catalog = catalog with {
+            Groups = document.Groups.Select(group => group with { Name = labels[group.Symbol] }).ToImmutableArray(),
+            Alphabetical = document.Alphabetical.Select(bucket => bucket with {
+                Name = labels["alphabet:" + bucket.Id.ToString(CultureInfo.InvariantCulture)] }).ToImmutableArray(),
+            Words = words.ToImmutableDictionary(pair => pair.Key, pair =>
+                IsSpeciesWord(catalog, pair.Value) || IsMoveWord(pair.Value) ? pair.Value :
+                    pair.Value with { Text = replacements[pair.Key.ToString(CultureInfo.InvariantCulture)] }) };
         return new(catalog, contracts.Texts);
     }
+
+    /// <summary>Names are projected from their existing catalogs using numeric source identities.
+    /// Word values, source ordering, unlock flags, encoding and saved phrases stay unchanged.</summary>
+    public SourceEasyChatCatalog WithDisplayNames(PretPokedexMenu pokemon, PretMetronomeMoveCatalog moves)
+    {
+        var moveNames = moves.Moves.Values.ToDictionary(move => move.SourceMoveId, move => moves.MoveNames[move.Id]);
+        string Name(SourceEasyChatWord word)
+        {
+            if (IsSpeciesWord(Catalog, word))
+                return pokemon.Entries.TryGetValue(word.Index, out var entry) ? entry.Name :
+                    throw new InvalidDataException("easy_chat_species_name_missing: " + word.Value);
+            if (IsMoveWord(word))
+                return moveNames.TryGetValue(word.Index, out var name) ? name :
+                    throw new InvalidDataException("easy_chat_move_name_missing: " + word.Value);
+            return word.Text;
+        }
+        return Catalog with { Words = Catalog.Words.ToImmutableDictionary(pair => pair.Key,
+            pair => pair.Value with { Text = Name(pair.Value) }) };
+    }
+
+    private static bool IsSpeciesWord(SourceEasyChatCatalog catalog, SourceEasyChatWord word) =>
+        word.Group == catalog.SeenPokemonGroup || word.Group == catalog.NationalPokemonGroup;
+    private static bool IsMoveWord(SourceEasyChatWord word) => word.Group is 18 or 19;
 
     private sealed record ComposerDocument(ImmutableArray<SourceEasyChatGroup> Groups,
         ImmutableArray<SourceEasyChatWord> Words, ImmutableArray<SourceEasyChatAlphabeticalGroup> Alphabetical);

@@ -9,6 +9,7 @@ using Game.Domain.Items;
 using Game.Domain.Pokemon;
 using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 
 namespace Game.Application;
 
@@ -333,7 +334,7 @@ public sealed partial class CampaignSession
         var pages = ImmutableArray.CreateBuilder<CampaignWildPage>();
         if (won)
         {
-            pages.Add(new($"{state.PlayerName} defeated\n{OrdinaryTrainerClass(trainer.Trainer)} {(IsPokemonLeagueChampion(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsSilphRival(trainer.Trainer)||IsPokemonTowerRival(trainer.Trainer)||IsRoute22Trainer(trainer.Trainer)||IsCeruleanRival(trainer.Trainer)||IsSsAnneRival(trainer.Trainer)?state.RivalName:OrdinaryTrainer(trainer.Trainer).SourceTrainerName)}!"));
+            pages.Add(new($"{state.PlayerName} defeated\n{OrdinaryTrainerClass(trainer.Trainer)} {_content.TrainerDisplayName(OrdinaryTrainer(trainer.Trainer), state.RivalName)}!"));
             foreach (var text in _content.TextPages(trainer.VsSeeker is {} vsReceipt ? VsSeekerOccurrence(vsReceipt).Arguments[2] : OrdinaryTrainerScript(trainer.Trainer,trainer.SourceScriptEntry,trainer.SourceScriptLine).DefeatText)) pages.Add(new(CampaignSourceText.DisplayPage(text, state)));
             pages.Add(new($"{state.PlayerName} got {award}\nfor winning!"));
         }

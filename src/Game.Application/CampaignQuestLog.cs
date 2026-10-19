@@ -257,10 +257,10 @@ public static partial class CampaignQuestLogRecorder
             string flavor=source?.Texts[player.CurrentHp<player.Stats.MaxHp/3?"Somehow":player.CurrentHp<player.Stats.MaxHp/3*2?"Tenaciously":"Handily"]??"handily";
             return definition.TrainerClass switch
             {
-                "TRAINER_CLASS_LEADER"=>Event(CampaignQuestLogEvent.GymWon,"TookOnGymLeadersMonWithMonAndWon",map,definition.SourceTrainerName,loser,victor,flavor),
-                "TRAINER_CLASS_ELITE_FOUR"=>Event(CampaignQuestLogEvent.EliteFourWon,"TookOnEliteFoursMonWithMonAndWon",definition.SourceTrainerName,loser,victor,flavor),
+                "TRAINER_CLASS_LEADER"=>Event(CampaignQuestLogEvent.GymWon,"TookOnGymLeadersMonWithMonAndWon",map,catalog.TrainerDisplayName(definition, after.RivalName),loser,victor,flavor),
+                "TRAINER_CLASS_ELITE_FOUR"=>Event(CampaignQuestLogEvent.EliteFourWon,"TookOnEliteFoursMonWithMonAndWon",catalog.TrainerDisplayName(definition, after.RivalName),loser,victor,flavor),
                 "TRAINER_CLASS_CHAMPION"=>Event(CampaignQuestLogEvent.ChampionWon,"PlayerBattledChampionRival",after.PlayerName,after.RivalName,loser,victor,source?.Texts[player.CurrentHp<player.Stats.MaxHp/3?"Barely":player.CurrentHp<player.Stats.MaxHp/3*2?"Somehow":"Coolly"]??"coolly"),
-                _=>Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,definition.SourceTrainerName,loser,victor,flavor)
+                _=>Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,catalog.TrainerDisplayName(definition, after.RivalName),loser,victor,flavor)
             };
         }
         var pairHistory=after.DoubleBattleHistory?.LastOrDefault();
@@ -272,7 +272,7 @@ public static partial class CampaignQuestLogRecorder
             var victor=attacker.Side==Game.Domain.Battle.BattleSide.Player?pair.Frame.Get(attacker).Body!.Pokemon:left.CurrentHp!=0?left:right;
             int hp=left.CurrentHp+right.CurrentHp,maxHp=left.Stats.MaxHp+right.Stats.MaxHp;
             string flavor=source?.Texts[hp<maxHp/3?"Somehow":hp<maxHp/3*2?"Tenaciously":"Handily"]??"handily";
-            return Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,pairTrainer.SourceTrainerName,SpeciesId(last.Species),SpeciesId(victor.SourceSpeciesId),flavor);
+            return Event(CampaignQuestLogEvent.TrainerWon,"TookOnTrainersMonWithMonAndWon",map,catalog.TrainerDisplayName(pairTrainer, after.RivalName),SpeciesId(last.Species),SpeciesId(victor.SourceSpeciesId),flavor);
         }
         if(command.Kind=="machine_teach"&&command.PartyIndex>=0&&command.PartyIndex<before.Party.Length&&command.PartyIndex<after.Party.Length&&catalog is not null)
         {

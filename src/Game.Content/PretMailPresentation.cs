@@ -26,10 +26,13 @@ public sealed class PretMailPresentation
     public ImmutableDictionary<string, byte[]> PngFiles { get; }
     public ImmutableDictionary<string, string> Texts { get; }
     public JsonElement EasyChat { get; }
+    public SourceMailTextPresentation SourceText { get; }
     public ImmutableDictionary<string, EasyChatPresentationTemplate> Templates { get; }
 
-    private PretMailPresentation(JsonElement document, ImmutableDictionary<string, byte[]> files, SharedItemCatalog items)
+    private PretMailPresentation(JsonElement document, ImmutableDictionary<string, byte[]> files, SharedItemCatalog items,
+        IReadOnlyDictionary<string, string> battleText)
     {
+        SourceText = new(battleText);
         Stationery = Parse<ImmutableArray<MailStationery>>(document.GetProperty("stationery"));
         Items = document.GetProperty("items").Deserialize<ImmutableArray<EarlyShopItemDefinition>>(items.CreateJsonOptions());
         Assets = Parse<ImmutableArray<MailPresentationAsset>>(document.GetProperty("assets")).ToImmutableDictionary(a => a.Id, StringComparer.Ordinal);
@@ -102,7 +105,8 @@ public sealed class PretMailPresentation
         return mailSpecies is > 0 and < 412 ? mailSpecies : null;
     }
 
-    public static PretMailPresentation Load(string projectRoot, string? dependencyRoot = null, SharedItemCatalog? items = null)
+    public static PretMailPresentation Load(string projectRoot, string? dependencyRoot = null, SharedItemCatalog? items = null,
+        IReadOnlyDictionary<string, string>? battleText = null)
     {
         dependencyRoot ??= projectRoot;
         var doc = SafariSource.Parse<JsonElement>(SafariSource.Read(projectRoot, Base + "catalog.json"));
@@ -111,6 +115,7 @@ public sealed class PretMailPresentation
         {
             png.Add(asset.Id, SafariSource.Read(asset.PngPath.StartsWith(Base, StringComparison.Ordinal) ? projectRoot : dependencyRoot, asset.PngPath));
         }
-        return new(doc, png.ToImmutable(), items ?? SharedItemCatalog.LoadProject(dependencyRoot));
+        return new(doc, png.ToImmutable(), items ?? SharedItemCatalog.LoadProject(dependencyRoot),
+            battleText ?? PretBattleText.Load(dependencyRoot));
     }
 }

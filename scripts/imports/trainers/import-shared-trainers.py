@@ -11,7 +11,8 @@ from pathlib import Path
 
 from shared_trainers import publish_trainers, read_trainers
 
-from trainer_import import generate
+from trainer_import import generate, class_names
+from runtime_json import runtime_json_bytes
 
 ROOT = _PROJECT_ROOT
 
@@ -41,7 +42,20 @@ def main():
     args = parser.parse_args()
     identities = reference_ids(args.generated_root)
     definitions = generate(args.raw_root, identities)
+    classes = class_names(args.raw_root)
+    if any(trainer['trainerClass'] not in classes for trainer in definitions):
+        raise ValueError('Shared trainer class has no source display name')
+    class_path = args.generated_root / 'data/trainer-class-names.json'
+    if any(path.is_symlink() for path in (class_path, *class_path.parents)):
+        raise ValueError('Symlink in trainer class name output: ' + str(class_path))
+    class_data = runtime_json_bytes(classes, sort_keys=True)
+    if args.check and (not class_path.is_file() or class_path.read_bytes() != class_data):
+        raise ValueError('Shared trainer class names differ: ' + str(class_path))
     publish_trainers(args.generated_root, definitions, check=args.check)
+    if not args.check:
+        class_path.parent.mkdir(parents=True, exist_ok=True)
+        if not class_path.is_file() or class_path.read_bytes() != class_data:
+            class_path.write_bytes(class_data)
     if set(read_trainers(args.generated_root)) != set(identities):
         raise ValueError('Shared trainer table contains unreferenced definitions')
     print(json.dumps(dict(checked=args.check, trainers=len(definitions), members=sum(len(t['party']) for t in definitions))))

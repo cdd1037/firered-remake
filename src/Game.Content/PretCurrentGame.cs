@@ -25,6 +25,8 @@ public sealed partial class PretCampaignCatalog
         var sharedItems = SharedItemCatalog.LoadProject(projectRoot);
         Items = sharedItems;
         DisplayNames = SourceDisplayNames.LoadProject(projectRoot, sharedItems, canonicalPokemon.Catalog);
+        TrainerDisplayNames = SourceTrainerDisplayNames.LoadProject(projectRoot,
+            SharedTrainerCatalog.LoadProject(projectRoot), sharedItems.TextPack);
         var sharedMachines = SharedMachineCatalog.LoadProject(projectRoot, sharedItems);
         // Resource readers validate their formats; no original-file identity pass is required.
         var mapNumbers = PretCelioMapNumbers.LoadSourceTable(projectRoot);
@@ -59,7 +61,6 @@ public sealed partial class PretCampaignCatalog
         var npcTradeHaden = PretNpcTradeHaden.Load(world);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
         var mailComposer = PretMailComposer.Load(projectRoot);
-        var mailPresentation = PretMailPresentation.Load(projectRoot, items: sharedItems);
         var goodRodService = PretGoodRodService.Load(world);
         var superRodService = PretSuperRodService.Load(world);
         var seafoam = PretSeafoamRegion.Load(world);
@@ -246,6 +247,8 @@ public sealed partial class PretCampaignCatalog
                 pair => pair.Key.Value, pair => pair.Value, StringComparer.Ordinal);
             battleContent = new(trainers, names, PretBattleText.Load(projectRoot));
         }
+
+        var mailPresentation = PretMailPresentation.Load(projectRoot, items: sharedItems, battleText: battleContent.Texts);
 
         OpeningItemsCatalog openingItems;
         openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/items/opening/opening-items.json"), Encoding.UTF8), sharedItems);
@@ -804,7 +807,7 @@ public sealed partial class PretCampaignCatalog
 
 
         MailPresentation = mailPresentation;
-        MailComposer = mailComposer.Catalog;
+        MailComposer = mailComposer.WithDisplayNames(oakPokedex, canonicalPokemon.MoveCatalog);
         TeachyTv = teachyTv;
         VsSeeker = vsSeeker.Catalog;
         VsSeekerTexts = vsSeekerPresentation.EncodedTexts;

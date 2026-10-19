@@ -169,7 +169,7 @@ public partial class CampaignView
             _battleSkin.DrawStandardFrame(this, new(0, 64, 64, 48));
             ItemLabel(new(20, 73), "YES"); ItemLabel(new(20, 89), "NO"); ItemLabel(new(8, 73 + _shopConfirm * 16), "▶");
         }
-        else ItemMessageBox(selected < items.Length ? _session.ShopItem(items[selected]).Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$') : _session.ShopText("gText_QuitShopping"));
+        else ItemMessageBox(selected < items.Length ? _session.ShopItem(items[selected]).Description : _session.ShopText("gText_QuitShopping"));
     }
     private bool FieldMedicineTargetInput(InputEventKey key)
     {

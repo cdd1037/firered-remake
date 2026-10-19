@@ -32,6 +32,8 @@ public sealed class SharedTrainerCatalog
     public static SharedTrainerCatalog Load(string json) => new(
         ContentJson.ParseStrict<SharedTrainerDocument>(json, ContentJson.CreateOptions()));
 
+    public IEnumerable<TrainerDefinition> Definitions => _trainers.Values;
+
     public TrainerDefinition Definition(TrainerId id) => _trainers.TryGetValue(id, out var trainer)
         ? trainer : throw new InvalidDataException("trainer_definition_missing: " + id.Value);
 

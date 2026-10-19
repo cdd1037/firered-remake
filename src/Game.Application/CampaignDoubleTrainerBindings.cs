@@ -116,7 +116,7 @@ public sealed partial class CampaignSession
     }
 
     private string DoubleTrainerClass(TrainerId trainer) =>
-        DoubleTrainer(trainer).TrainerClass["TRAINER_CLASS_".Length..].Replace('_', ' ');
+        _content.TrainerClassDisplayName(DoubleTrainer(trainer).TrainerClass);
     private string DoubleEncounterMusic(TrainerId trainer) => (DoubleTrainer(trainer).EncounterMusicGender & 0x7f) switch
     {
         1 or 2 or 9 => "MUS_ENCOUNTER_GIRL",

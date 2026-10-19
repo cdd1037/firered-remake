@@ -38,7 +38,6 @@ public partial class CampaignView
 
     }
     private FirstSeviiPresentationTrainer? FirstSeviiTrainer(string? id)=>id is null?null:_firstSeviiPresentation?.Document.Trainers.SingleOrDefault(t=>t.Id==id);
-    private string? VisibleFirstSeviiTrainerClass()=>FirstSeviiTrainer(_session.State.ForestTrainerBattle?.Trainer.Value)?.ClassName;
     private string? VisibleFirstSeviiTrainerPortrait()=>FirstSeviiTrainer(_session.State.ForestTrainerBattle?.Trainer.Value) is {} trainer?
         _firstSeviiPresentation!.Document.Portraits.Single(p=>p.TrainerPic==trainer.TrainerPic).AssetId:null;
     private FirstSeviiPresentationTrainer? FirstSeviiDoubleTrainer=>FirstSeviiTrainer(_session.State.DoubleBattle?.Trainer.Value);

@@ -23,6 +23,9 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public MachineCatalog Machines { get; }
     public SharedItemCatalog Items { get; }
     public SourceDisplayNames DisplayNames { get; }
+    public SourceTrainerDisplayNames TrainerDisplayNames { get; }
+    public string TrainerDisplayName(TrainerId id) => TrainerDisplayNames.Name(id);
+    public string TrainerClassDisplayName(string id) => TrainerDisplayNames.ClassName(id);
     public string ContentVersion { get; }
     public CampaignPokemonContent PokemonContent { get; }
     public CampaignBattleContent BattleContent { get; }

@@ -101,7 +101,8 @@ public partial class CampaignView
         }
     }
     private string? TrainerTowerTrainerText(string field) => VisibleTrainerTowerTrainer is {} trainer
-        ? field == "name" ? trainer.Name : _trainerTowerBindings[trainer.FacilityClass].GetProperty(field).GetString() : null;
+        ? field == "name" ? trainer.Name : field == "className" ? _catalog.TrainerClassDisplayName(trainer.TrainerClass)
+            : _trainerTowerBindings[trainer.FacilityClass].GetProperty(field).GetString() : null;
     private Texture2D? TrainerTowerTrainerPortrait => TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraits[id] : null;
     private Vector2 VisibleTrainerPortraitPosition => VisibleSharedTrainer?.Position ?? (TrainerTowerTrainerText("portrait") is {} id ? _trainerTowerPortraitPositions[id] : new(144, 8));
     private Texture2D VisibleTrainerPortrait => VisibleSharedTrainer?.Portrait ?? TrainerTowerTrainerPortrait ?? _forestTrainerPortraits[VisibleTrainerPortraitId];

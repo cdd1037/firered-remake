@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <Compile Include="../../src/Game.Godot/PokemonTowerPresentationModel.cs" Link="PokemonTowerPresentationModel.cs" />
     <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Application/FieldForestPreviewPresentation.cs" Link="FieldForestPreviewPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldHorizontalFogPresentation.cs" Link="FieldHorizontalFogPresentation.cs" />

@@ -271,3 +271,27 @@ def natural_moves(read, species, level):
     if not moves:
         raise ValueError('Trainer member has no natural moves: ' + species)
     return moves
+
+
+def class_names(raw):
+    """Import display labels at their existing source class symbols, including facility classes."""
+    path = 'src/data/text/trainer_class_names.h'
+    text = raw[path].decode() if isinstance(raw, dict) else (Path(raw) / path).read_text()
+    match = re.fullmatch(r'\s*const u8 gTrainerClassNames\[\]\[13\] = \{(.*?)\};\s*', text, re.S)
+    if not match:
+        raise ValueError('Trainer class name table declaration differs')
+    names = {}
+    for line in match[1].splitlines():
+        if not line.strip():
+            continue
+        row = re.fullmatch(r'\s*\[(TRAINER_CLASS_[A-Z_]+)\]\s*= _\("([^"\\]+)"\),\s*', line)
+        if row is None or row[1] in names:
+            raise ValueError('Missing or duplicate trainer class name declaration')
+        # The source uses the two-tile Pokémon glyph. Runtime display names are plain text.
+        value = row[2].replace('{PKMN}', 'POKéMON')
+        if not value.strip() or any(c in value for c in '{}\\$') or any(ord(c) < 32 for c in value):
+            raise ValueError('Unsupported trainer class name control: ' + row[1])
+        names[row[1]] = value
+    if not names:
+        raise ValueError('Trainer class name table is empty')
+    return names

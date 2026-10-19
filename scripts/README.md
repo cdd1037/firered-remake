@@ -21,7 +21,8 @@ Python 只用于离线导入、资源重建和检查；游戏运行时读取 `co
 python scripts/imports/pokemon/import-regional-presentation.py --region cerulean --out /tmp/example/cerulean
 python scripts/imports/pokemon/import-evolution-presentation.py --selection stone-evolution --check
 
-# 训练家队伍和展示图
+# 训练家共享定义／班级显示名，以及区域队伍和展示图
+python scripts/imports/trainers/import-shared-trainers.py --check
 python scripts/imports/trainers/import-trainer-battles.py --recipe scripts/recipes/trainers/bill.json --check
 python scripts/imports/trainers/import-trainer-portraits.py --group cerulean --check
 
@@ -41,6 +42,11 @@ python scripts/imports/rebuild-resources.py diploma --check
 # 原版情境 HELP 文本、排序、解锁条件与地图分类
 python scripts/imports/rebuild-resources.py help --check
 ```
+
+共享训练家入口从已有区域引用生成 `data/trainers.json`，同时从固定 raw 的
+`src/data/text/trainer_class_names.h` 生成 `data/trainer-class-names.json`；
+`--check` 核对两份输出。班级显示名保留原符号键，PKMN 图片字转为 POKéMON 文本，
+SWIMMER 的男女符号保留。原始姓名编码仍由队伍定义提供，不读取显示覆盖。
 
 单文件资源的 `--out` / `--output` 指向 JSON 文件，不是同名目录。训练家导入还维护共享定义；非标准输出位置应显式传 `--generated-root`。物品图标临时输出至 `sprites/item-icons/`，最终用 `python scripts/lib/item_icon_exports.py --project-root <工程>` 合入 `sprites/items.png`。
 

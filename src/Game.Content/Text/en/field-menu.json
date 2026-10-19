@@ -19,6 +19,8 @@
   "notice.cannot-use-here": "Can't use that here.",
   "notice.party-empty": "You have no POKéMON\nin your party.",
   "notice.bag-unavailable": "The BAG cannot be opened\nhere.",
+  "notice.trainer-card-unavailable": "The TRAINER CARD cannot be\nopened here.",
+  "notice.hall-debut-time-unavailable": "HOF debut time unavailable",
   "prompt.save-overwrite": "A save already exists.\nReplace it with this game?",
   "prompt.save": "Would you like to\nsave the game?",
   "choice.yes": "YES",

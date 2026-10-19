@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Game.Domain.Events;
 
 namespace Game.Content;
 
@@ -31,17 +32,32 @@ public sealed class PretTrainerCard
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory,"manifest.json");
 
     private PretTrainerCard(string directory, ImmutableArray<TrainerCardAsset> assets,
-        JsonElement document, ImmutableDictionary<string,byte[]> outputs)
+        JsonElement document, ImmutableDictionary<string,byte[]> outputs, IReadOnlyDictionary<string,string> sourceTexts)
     {
         GeneratedDirectory=directory; Assets=assets; TrainerCard=document; outputBytes=outputs;
         var options=ContentJson.CreateOptions();
         Layout=ContentJson.ParseStrict<TrainerCardLayout>(document.GetProperty("layout").GetRawText(),options);
-        Texts=ContentJson.ParseStrict<TrainerCardTexts>(document.GetProperty("texts").GetRawText(),options);
+        var texts=ContentJson.ParseStrict<TrainerCardTexts>(document.GetProperty("texts").GetRawText(),options);
+        string Label(string symbol)
+        {
+            Require(sourceTexts.TryGetValue(symbol,out var value) && !string.IsNullOrWhiteSpace(value),
+                "Missing Trainer Card source text: "+symbol);
+            var pages=SourceBattleText.Pages(sourceTexts,symbol,ImmutableDictionary<string,string>.Empty);
+            Require(pages.Length==1 && pages[0].IndexOfAny(['\r','\n'])<0,
+                "Unsupported Trainer Card source text: "+symbol);
+            return pages[0];
+        }
+        // These eight fields are drawn by the own-card view. The four link-only fields
+        // remain unconsumed metadata; the shared battle bank owns visible source text.
+        Texts=texts with { Name=Label("gText_TrainerCardName"), Id=Label("gText_TrainerCardIDNo"),
+            Money=Label("gText_TrainerCardMoney"), Currency=Label("gText_TrainerCardYen"),
+            Pokedex=Label("gText_TrainerCardPokedex"), Time=Label("gText_TrainerCardTime"),
+            Colon=Label("gText_Colon2"), HallOfFame=Label("gText_HallOfFameDebut") };
         Rules=ContentJson.ParseStrict<TrainerCardRules>(document.GetProperty("rules").GetRawText(),options);
     }
 
     /// <summary>Loads and validates generated runtime presentation resources without reading original source.</summary>
-    public static PretTrainerCard Load(string projectRoot)
+    public static PretTrainerCard Load(string projectRoot, IReadOnlyDictionary<string,string>? sourceTexts = null)
     {
         var project=Path.GetFullPath(projectRoot);
         var directory=Path.Combine(project,"content/generated/ui/trainer-card");
@@ -75,7 +91,7 @@ public sealed class PretTrainerCard
                 "Trainer Card asset metadata differs.");
 
         }
-        var result=new PretTrainerCard(directory,assets,a.Clone(),outputs.ToImmutable());
+        var result=new PretTrainerCard(directory,assets,a.Clone(),outputs.ToImmutable(),sourceTexts??PretBattleText.Load(project));
         Require(result.Layout.LogicalWidth==240 && result.Layout.LogicalHeight==160 && result.Layout.FontId==2 &&
             result.Layout.Badges.Length==8 && result.Layout.StatTextRgb.Length==3 && result.Layout.StatShadowRgb.Length==3 && result.Rules.MaximumSupportedStars==3 &&
             result.Rules.StickerVariables.SequenceEqual(new[] { "VAR_HOF_BRAG_STATE", "VAR_EGG_BRAG_STATE" }) &&

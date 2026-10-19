@@ -34,6 +34,7 @@ public partial class CampaignView
         _battleText=(_catalog.BattleContent??throw new InvalidDataException("Battle content is unavailable.")).Texts;
         _battleSelectionText=new(_battleText);
         _summaryPartyText=new(_battleText);
+        _growthText=new(_battleText);
         var ui=System.IO.Path.Combine(_root,"content/generated/ui/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
         var fonts=System.IO.Path.Combine(_root,"content/generated/ui/font");
         SourceGameFont Font(Color fore,Color shadow,bool small=false)=>SourceGameFont.Load(fonts,small?"small":"normal",fore,shadow);
@@ -82,7 +83,7 @@ public partial class CampaignView
     private ImmutableArray<string> BattleSourcePages(string symbol,params (string Key,string Value)[] extra)
     {
         var b=_session.State.Battle!;
-        var values=new Dictionary<string,string>(StringComparer.Ordinal){["B_PLAYER_NAME"]=_session.State.PlayerName,["PLAYER"]=_session.State.PlayerName,["B_TRAINER1_CLASS"]="RIVAL",["B_TRAINER1_NAME"]=_session.State.RivalName,["B_PLAYER_MON1_NAME"]=_catalog.PokemonDisplayName(b.OwnedBefore),["B_OPPONENT_MON1_NAME"]=BattleName(FirstBattleSide.Opponent)};
+        var values=new Dictionary<string,string>(StringComparer.Ordinal){["B_PLAYER_NAME"]=_session.State.PlayerName,["PLAYER"]=_session.State.PlayerName,["B_TRAINER1_CLASS"]=_catalog.TrainerClassDisplayName("TRAINER_CLASS_RIVAL_EARLY"),["B_TRAINER1_NAME"]=_session.State.RivalName,["B_PLAYER_MON1_NAME"]=_catalog.PokemonDisplayName(b.OwnedBefore),["B_OPPONENT_MON1_NAME"]=BattleName(FirstBattleSide.Opponent)};
         foreach(var (key,value) in extra)values[key]=value;
         return SourceBattleText.Pages(_battleText,symbol,values);
     }

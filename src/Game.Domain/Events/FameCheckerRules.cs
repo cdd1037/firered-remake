@@ -9,11 +9,7 @@ public enum FameCheckerPickState { Hidden = 0, Silhouette = 1, Colored = 2 }
 
 /// <summary>Original encoded text, including every color/font token, placeholder, page break and terminator.</summary>
 public sealed record FameCheckerText(string Symbol, string SourcePath, int SourceLine, string EncodedText,
-    ImmutableArray<string> ControlCodes)
-{
-    public string Expand(string playerName, string rivalName) => EncodedText
-        .Replace("{PLAYER}", playerName, StringComparison.Ordinal).Replace("{RIVAL}", rivalName, StringComparison.Ordinal);
-}
+    ImmutableArray<string> ControlCodes);
 
 public sealed record FameCheckerFact(int Index, FameCheckerText Text, FameCheckerText OriginLocation,
     FameCheckerText OriginObjectName, string IconSymbol, int IconSourceId);

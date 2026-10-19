@@ -11,13 +11,19 @@ namespace FireRed.Tests.Application.Campaign;
 public sealed class CampaignQuestLogDoubleWinTests:WildBattleFixture
 {
     [TestMethod]
-    [DataRow(0,false,0)]
-    [DataRow(2,false,2)]
-    [DataRow(1,false,0)]
-    [DataRow(1,true,2)]
-    [DataRow(-1,false,-1)]
-    public void CompletionUsesExactAttackerOrSourceLivingFallbackAndNeverGuessesUnknown(int attacker,bool leftFainted,int expected)
+    [DataRow(0,false,0,false)]
+    [DataRow(0,false,0,true)]
+    [DataRow(2,false,2,false)]
+    [DataRow(2,false,2,true)]
+    [DataRow(1,false,0,false)]
+    [DataRow(1,false,0,true)]
+    [DataRow(1,true,2,false)]
+    [DataRow(1,true,2,true)]
+    [DataRow(-1,false,-1,false)]
+    [DataRow(-1,false,-1,true)]
+    public void CompletionUsesExactAttackerOrSourceLivingFallbackAndNeverGuessesUnknown(int attacker,bool leftFainted,int expected,bool translated)
     {
+        if(translated)content=TrainerDisplayTextFixture.WithTranslations(content);
         var session=Controlled([Owned("SNORLAX",30,1,"TACKLE"),Owned("PIDGEY",20,2,"TACKLE")],Owned("PIDGEY",20,99,"TACKLE"));
         var basis=session.State;
         var entry=SourceTwinsTrainerEncounter.Begin(catalog,content.Route8Twins!,basis.Party.Select(p=>new WildBattleCalledPartyMember(p.Pokemon,p.HeldItem,p.Status,p.IsEgg)).ToImmutableArray(),basis.World.Rng,false,false,false);
@@ -37,6 +43,8 @@ public sealed class CampaignQuestLogDoubleWinTests:WildBattleFixture
         {
             var caption=log!.Scenes.Single().Actions.Single();
             Assert.AreEqual(CampaignQuestLogEvent.TrainerWon,caption.Event);
+            Assert.AreEqual(content.TrainerDisplayName(content.Route8Twins.Trainer.Id),caption.Arguments[1]);
+            if(translated)Assert.AreEqual(TrainerDisplayTextFixture.Name,caption.Arguments[1]);
             Assert.AreEqual(content.SourceSpeciesName(opponent),caption.Arguments[2]);
             Assert.AreEqual(content.SourceSpeciesName(frame.Get(new(expected)).Body!.Pokemon.SourceSpeciesId),caption.Arguments[3]);
             Assert.IsTrue(log.Scenes.Single().Closed);

@@ -10,6 +10,15 @@ public sealed class FameCheckerTextPresentationTests
         FameCheckerTextPages.Parse(new FameCheckerText("test", "test", 1, text, []), "RED", "BLUE");
 
     [TestMethod]
+    public void PlainLabelsUseTheSameLiteralParameterBinding()
+    {
+        var source = new FameCheckerText("label", "test", 1, "{PLAYER} / {RIVAL}$", []);
+        Assert.AreEqual("{RIVAL}$ / BLUE", FameCheckerTextPages.Plain(source, "{RIVAL}$", "BLUE"));
+        Assert.ThrowsExactly<InvalidDataException>(() => FameCheckerTextPages.Plain(
+            source with { EncodedText = "A\\pB$" }, "RED", "BLUE"));
+    }
+
+    [TestMethod]
     public void ParserPreservesZeroWidthFormattingAndLiteralExpandedNames()
     {
         var pages = Pages("{COLOR BLUE}{SHADOW LIGHT_BLUE}A\\nB\\l{FONT_FEMALE}{PLAYER}\\pC$");

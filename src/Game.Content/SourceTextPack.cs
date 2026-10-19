@@ -13,7 +13,8 @@ public sealed class SourceTextPack
     private static readonly HashSet<string> Groups = new(StringComparer.Ordinal) {
         "story", "story-menus", "battle", "species-names", "species-categories", "species-descriptions",
         "pokedex-ui", "item-names", "move-names", "type-names", "ability-names", "nature-names",
-        "item-descriptions", "machine-descriptions", "display-labels", "summary-moves", "summary-abilities", "summary-memos", "summary-locations"
+        "item-descriptions", "machine-descriptions", "display-labels", "summary-moves", "summary-abilities", "summary-memos", "summary-locations",
+        "trainer-names", "trainer-class-names", "easy-chat-words", "easy-chat-groups"
     };
     private readonly ImmutableDictionary<string, ImmutableDictionary<string, string>> groups;
     private SourceTextPack(ImmutableDictionary<string, ImmutableDictionary<string, string>> groups) => this.groups = groups;

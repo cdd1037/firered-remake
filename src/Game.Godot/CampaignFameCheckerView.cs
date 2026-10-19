@@ -49,7 +49,7 @@ public partial class CampaignView
         font = SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/ui/font"),foreground:C(color),shadow:C(shadow));
         _fameFonts.Add((color,shadow),font); return font;
     }
-    private string FamePlain(FameCheckerText text) => text.Expand(_session.State.PlayerName,_session.State.RivalName).TrimEnd('$');
+    private string FamePlain(FameCheckerText text) => FameCheckerTextPages.Plain(text,_session.State.PlayerName,_session.State.RivalName);
     private void SynchronizeFameChecker()
     {
         var owner = _session.State.FameChecker;
