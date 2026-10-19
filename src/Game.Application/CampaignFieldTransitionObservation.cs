@@ -162,15 +162,16 @@ public sealed partial class CampaignSession
             receipt.Arrival==FieldTransitionArrival.Plain&&receipt.ArrivalAnchor==receipt.To&&receipt.DepartureStep is {} ladderStep&&
             _content.Maps[receipt.From.MapId].SourceBehaviorAt(ladderStep.X,ladderStep.Y)==0x61&&
             _content.Maps[receipt.To.MapId].SourceBehaviorAt(receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y)==0x61;
-        static bool NormalCave(FieldMapDefinition map)=>map.MapType=="MAP_TYPE_UNDERGROUND"&&
-            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY")&&!map.RequiresFlash;
+        static bool OrdinaryCave(FieldMapDefinition map)=>map.MapType=="MAP_TYPE_UNDERGROUND"&&
+            (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY");
+        static bool NormalCave(FieldMapDefinition map)=>OrdinaryCave(map)&&!map.RequiresFlash;
         // Same-section underground -> underground has no flash-transition table row.
         // Its ladder step, black fade and stationary arrival use the existing controllers.
         if(forest)return to.MapPreview?.VisitFlag is not null&&!state.IsCycling&&!state.IsSurfing&&receipt.Arrival==FieldTransitionArrival.Plain&&OrdinaryMap(from)&&OrdinaryMap(to);
         if(caveExit)return NormalCave(from)&&OrdinaryMap(to);
         if(caveEnter)return !state.IsCycling&&!state.IsSurfing&&OrdinaryMap(from)&&
             (NormalCave(to)||interlude==FieldTransitionInterlude.RegionPreview&&OrdinaryMap(to));
-        if(ladder)return NormalCave(from)&&NormalCave(to);
+        if(ladder)return OrdinaryCave(from)&&OrdinaryCave(to);
         return (receipt.Departure==FieldTransitionDeparture.Immediate||receipt.Cause==FieldTransitionCause.NonAnimatedDoor)&&
             OrdinaryMap(from)&&OrdinaryMap(to);
     }

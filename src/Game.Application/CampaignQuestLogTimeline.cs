@@ -23,6 +23,7 @@ internal sealed class CampaignQuestLogTimeline
     public int ArtRevision{get;private set;}
     public double Frame=>_frame;
     public string? Layout{get;private set;}
+    public int? FlashLevel{get;private set;}
     public ImmutableArray<FieldMetatileEdit> Tiles{get;private set;}
     public string? Caption=>_captions.Where(c=>c.Start<=_frame&&c.VisibleEnd>_frame).Select(c=>c.Text).FirstOrDefault();
     public bool Finished=>_frame>=_end;
@@ -34,7 +35,7 @@ internal sealed class CampaignQuestLogTimeline
     }
     public CampaignQuestLogTimeline(CampaignQuestLogScene scene,string player,QuestLogSource? source,bool savedScene=false)
     {
-        Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;
+        Layout=scene.Layout;Tiles=scene.Tiles.IsDefault?[]:scene.Tiles;FlashLevel=scene.FlashLevel;
         Map=scene.Map;_segmentActors=scene.Actors;_actors=scene.Actors.ToDictionary(a=>a.Id,StringComparer.Ordinal);
         // The source recorder clock is stopped during preview ownership (CB2
         // for caves, field controls for forests). Project each omitted span once.
@@ -121,7 +122,7 @@ internal sealed class CampaignQuestLogTimeline
         if(_transition is not {Transition:{} transition} action||_transitionSwitched||
             _frame<action.StartFrame+(action.TransitionTiming?.SwitchFrame??0))return;
         _transitionSwitched=true;
-        Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;
+        Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;FlashLevel=transition.FlashLevel;
         _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
         _moving.Clear();ArtRevision++;
     }

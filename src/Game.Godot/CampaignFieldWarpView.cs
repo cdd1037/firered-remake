@@ -61,7 +61,7 @@ public partial class CampaignView
             else pose=new(){Position=new(actor.X*16,actor.Y*16),Facing=actor.Facing,Visible=actor.Visible};
             poses.Add(actor.Id,pose);
         }
-        return new(owner,0,revision,false,new(scene.Map,actors,scene.Layout,scene.Tiles),poses,keepPresentedPoses?_fieldSurfBlobFrames:0,state.PlayerGender);
+        return new(owner,0,revision,false,new(scene.Map,actors,scene.Layout,scene.Tiles){FlashLevel=scene.FlashLevel},poses,keepPresentedPoses?_fieldSurfBlobFrames:0,state.PlayerGender);
     }
 
     // The authoritative movement command has already committed. This owns only

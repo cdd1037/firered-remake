@@ -17,20 +17,28 @@ public static partial class CampaignQuestLogRecorder
         if(map?.GetTile(tile.X,tile.Y) is not null)return true;
         return catalog.ConnectedFieldMaps is {} maps&&ConnectedFieldCoordinates.Resolve(maps,id,tile.X,tile.Y) is not null;
     }
-    private static string? ValidateAppearance(CampaignQuestLogScene scene)
+    private static string? ValidateAppearance(CampaignQuestLogScene scene,ICampaignCatalog? catalog=null)
     {
+        if(scene.FlashLevel is {} level&&(level is not (0 or FieldFlashSourcePresentation.MaximumLevel)||
+            level!=0&&catalog is not null&&(!catalog.Maps.ContainsKey(new(scene.Map))||!catalog.MapDefinition(new(scene.Map)).RequiresFlash)))return "save_quest_log_flash_level_invalid";
         if(scene.Layout is {} layout&&!Identifier(layout))return "save_quest_log_layout_invalid";
         if(!scene.Tiles.IsDefault&&(scene.Tiles.Length>AppearanceTileLimit||scene.Tiles.Any(t=>t is null||!ValidTile(t))||scene.Tiles.Select(t=>(t.X,t.Y)).Distinct().Count()!=scene.Tiles.Length))return "save_quest_log_tiles_invalid";
         return null;
     }
     private static CampaignQuestLogScene? CaptureAppearance(CampaignQuestLogScene scene,CampaignState state)
     {
-        var result=scene with{Layout=state.MapLayout,Tiles=state.MapEdits?.Values.ToImmutableArray()??[]};
-        return ValidateAppearance(result) is null?result:null;
+        // quest_log.c records/restores the scene flags. Keep only the stable visible
+        // consequence here, without executable flags or inferred historical state.
+        var result=scene with{Layout=state.MapLayout,Tiles=state.MapEdits?.Values.ToImmutableArray()??[],FlashLevel=state.FlashLevel};
+        return ValidateAppearance(result) is null&&VisualMemoryBudget(result)<=VisualMemoryLimit?result:null;
     }
     private static bool TryRecordAppearance(CampaignQuestLogScene scene,CampaignState before,CampaignState after,QuestLogSource? source,out CampaignQuestLogScene updated,int? recordingFrame=null)
     {
-        updated=scene;if(before.MapLayout==after.MapLayout&&ReferenceEquals(before.MapEdits,after.MapEdits))return true;
+        updated=scene;
+        // Flash use already ends the scene at its field-move event. Any other
+        // unrepresented visibility change cuts recording rather than rewriting it.
+        if(before.FlashLevel!=after.FlashLevel)return false;
+        if(before.MapLayout==after.MapLayout&&ReferenceEquals(before.MapEdits,after.MapEdits))return true;
         var actions=scene.Actions;int start=actions.Where(a=>a.Event==CampaignQuestLogEvent.None).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max();
         start=Math.Max(start,recordingFrame??0);
         var additions=ImmutableArray.CreateBuilder<CampaignQuestLogAction>();

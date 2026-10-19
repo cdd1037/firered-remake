@@ -96,7 +96,7 @@ public partial class CampaignView
                 DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0});
         }
         var snapshot=new FieldSnapshot(playback,playback.SceneIndex,playback.ArtRevision,playback.SavedGameVisible,
-            new(playback.Map,actors,playback.Layout,playback.Tiles),poses,playback.Frame,_session.State.PlayerGender);
+            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender);
         var warp=QuestLogFieldWarpSample(playback);
         if(playback.ActiveTransitionTiming is {} timing)
         {
@@ -187,5 +187,6 @@ public partial class CampaignView
             }
         }
         DrawFieldSnapshotLayer(snapshot,art,camera,2,neighbors);
+        if(projection.FlashLevel is >0)DrawFieldFlashMask(FieldFlashSourcePresentation.Radius(projection.FlashLevel.Value));
     }
 }

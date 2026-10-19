@@ -31,6 +31,8 @@ public sealed record CampaignQuestLogAction(int ActorIndex,int X,int Y,Direction
 }
 public sealed record CampaignQuestLogScene(string Map,ImmutableArray<CampaignQuestLogActor> Actors,ImmutableArray<CampaignQuestLogAction> Actions)
 {
+    // Null is an older recording with no visibility evidence; explicit zero is lit.
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public int? FlashLevel{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? Layout{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<FieldMetatileEdit> Tiles{get;init;}
 
@@ -60,7 +62,7 @@ public static partial class CampaignQuestLogRecorder
             if(scene is null||!Identifier(scene.Map)||scene.Actors.IsDefault||scene.Actors.Length is <1 or >ActorLimit||scene.Actions.IsDefault||scene.Actions.Length is <1 or >ActionLimit)return "save_quest_log_scene_invalid";
             if(LogicalCommandCount(scene.Actions)>QuestLogSource.EventCursorCount)return "save_quest_log_command_limit";
             if(source is not null&&(!source.MapNames.ContainsKey(scene.Map)||Budget(scene.Actions,source)>QuestLogSource.ScriptBytes))return "save_quest_log_map_or_budget_invalid";
-            if(ValidateAppearance(scene) is {} appearanceError)return appearanceError;
+            if(ValidateAppearance(scene,catalog) is {} appearanceError)return appearanceError;
             if(catalog is not null&&!scene.Tiles.IsDefault&&scene.Tiles.Any(t=>!ValidAppearanceCoordinate(catalog,scene,t)))return "save_quest_log_tiles_invalid";
             if(catalog is not null&&scene.Layout is {} sceneLayout&&catalog.MapLayout(new(scene.Map),sceneLayout) is null)return "save_quest_log_layout_invalid";
             if(scene.Actors.Any(a=>!ValidActor(a))||scene.Actors.Select(a=>a.Id).Distinct(StringComparer.Ordinal).Count()!=scene.Actors.Length||scene.Actors.Count(a=>a.Id==PlayerId)!=1)return "save_quest_log_actor_invalid";
@@ -196,7 +198,7 @@ public static partial class CampaignQuestLogRecorder
         return log;
     }
     public static CampaignQuestLogScene SavedScene(CampaignState state,QuestLogSource source)=>new(state.World.Player.MapId.Value,Actors(state,source),
-        [Event(CampaignQuestLogEvent.Arrived,"SavedGameAtLocation",source.MapName(state.World.Player.MapId.Value))]){Layout=state.MapLayout,Tiles=state.MapEdits?.Values.ToImmutableArray()??[]};
+        [Event(CampaignQuestLogEvent.Arrived,"SavedGameAtLocation",source.MapName(state.World.Player.MapId.Value))]){Layout=state.MapLayout,Tiles=state.MapEdits?.Values.ToImmutableArray()??[],FlashLevel=state.FlashLevel};
     public static CampaignQuestLog? Close(CampaignQuestLog? log)=>log is null||log.Scenes[^1].Closed?log:new(log.Scenes.SetItem(log.Scenes.Length-1,log.Scenes[^1] with{Closed=true}));
     private static bool MayStart(CampaignQuestLogEvent kind,CampaignState state,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainers)
     {
@@ -402,6 +404,7 @@ public sealed class CampaignQuestLogPlayback
     public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_timeline.ActiveTransitionTiming;
     public double TransitionElapsedFrames=>_timeline.TransitionElapsedFrames;
     public string? Layout=>_timeline.Layout;
+    public int? FlashLevel=>_timeline.FlashLevel;
     public ImmutableArray<FieldMetatileEdit> Tiles=>_timeline.Tiles;
     public string? Caption=>Ending?null:SavedGameVisible?_savedCaption:_timeline.Caption;
     public IEnumerable<CampaignQuestLogActor> Actors=>_timeline.Actors;

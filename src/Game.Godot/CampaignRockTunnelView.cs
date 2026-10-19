@@ -59,13 +59,14 @@ public partial class CampaignView
     private void DrawFieldFlashMask()
     {
         if(_session.State.FlashLevel==0)return;
-        int radius=FieldFlashRadius;
+        DrawFieldFlashMask(FieldFlashRadius);
+    }
+    private void DrawFieldFlashMask(int radius)
+    {
         if(radius!=_fieldFlashMaskRadius)
         {
-            _fieldFlashMaskRadius=radius;Array.Clear(_fieldFlashLeft);Array.Clear(_fieldFlashRight);
-            void Set(int y,int left,int right){if(y is >=0 and <160){_fieldFlashLeft[y]=Math.Clamp(left,0,255);_fieldFlashRight[y]=Math.Clamp(right,0,255);}}
-            int xy=radius,error=radius,yx=0;
-            while(xy>=yx){Set(80-yx,120-xy,120+xy);Set(80+yx,120-xy,120+xy);Set(80-xy,120-yx,120+yx);Set(80+xy,120-yx,120+yx);error-=(yx*2)-1;yx++;if(error<0){error+=2*(xy-1);xy--;}}
+            _fieldFlashMaskRadius=radius;
+            FieldFlashWindowPresentation.FillBoundaries(radius,_fieldFlashLeft,_fieldFlashRight);
         }
         for(int y=0;y<160;y++){int left=Math.Min(240,_fieldFlashLeft[y]),right=Math.Min(240,_fieldFlashRight[y]);if(left>0)DrawRect(new(0,y,left,1),Colors.Black);if(right<240)DrawRect(new(right,y,240-right,1),Colors.Black);}
     }
