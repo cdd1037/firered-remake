@@ -44,6 +44,9 @@ def build(raw, *, selection=None):
     if ride is None: raise ValueError('Missing source Surf avatar table')
     ids.update(re.findall(r'OBJ_EVENT_GFX_\w+', ride[1]))
     if not ids: raise ValueError('No world NPC graphics IDs')
+    shadow_sizes = {name: int(value) for name, value in re.findall(
+        r'^#define\s+(SHADOW_SIZE_\w+)\s+(\d+)\b',
+        (raw / 'include/constants/event_objects.h').read_text(), re.M)}
     outputs = {}; catalog = {}; groups = {}
     with tempfile.TemporaryDirectory(prefix='firered-overworld-') as temp:
         folder = Path(temp) / 'npc'
@@ -52,7 +55,8 @@ def build(raw, *, selection=None):
             image = Image.open(folder / (name + '.png')).convert('RGBA')
             catalog[row['graphicsId']] = dict(frameWidth=row['frameWidth'],frameHeight=row['frameHeight'],
                 frameCount=row['frameCount'],anchorX=row['tileCenterAnchor']['x'],anchorY=row['tileCenterAnchor']['y'],
-                inanimate=row['declaration']['inanimate']=='TRUE')
+                inanimate=row['declaration']['inanimate']=='TRUE',
+                shadowSize=shadow_sizes[row['declaration']['shadowSize']])
             if name in STANDALONE:
                 path = name + '.png'; outputs[path] = (folder / path).read_bytes()
                 catalog[row['graphicsId']].update(texturePath=path,region=dict(x=0,y=0,width=image.width,height=image.height))
@@ -85,7 +89,25 @@ def build(raw, *, selection=None):
         effect = Image.new('RGBA', finder.size)
         effect.putdata([(*colors[index], 0 if index == 0 else 255) for index in pixels])
         outputs['itemfinder.png'] = encode_png(effect)
+    outputs.update(shadow_outputs(raw, colors))
     outputs['catalog.json'] = (json.dumps(catalog,sort_keys=True,separators=(',',':'))+'\n').encode()
+    return outputs
+
+
+def shadow_outputs(raw, colors):
+    # Shadow templates retain OBJ palette zero (the player's palette), with
+    # source index zero transparent. These are the four source OAM geometries.
+    from image_io import encode_png
+    outputs = {}
+    for size, name, dimensions in (('s', 'small', (8, 8)), ('m', 'medium', (16, 8)),
+                                   ('l', 'large', (32, 8)), ('xl', 'extra_large', (64, 32))):
+        with Image.open(raw / f'graphics/field_effects/pics/shadow_{name}.png') as source:
+            if source.mode != 'P' or source.size != dimensions:
+                raise ValueError('Overworld shadow source format differs: ' + name)
+            pixels = [index & 15 for index in source.get_flattened_data()]
+            image = Image.new('RGBA', dimensions)
+            image.putdata([(*colors[index], 0 if index == 0 else 255) for index in pixels])
+            outputs[f'field-shadow-{size}.png'] = encode_png(image)
     return outputs
 
 

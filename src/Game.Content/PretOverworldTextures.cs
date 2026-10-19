@@ -4,8 +4,13 @@ namespace Game.Content;
 public static class PretOverworldTextures
 {
     public static IReadOnlyDictionary<string, OverworldSprite> Load(string generatedDirectory)
-        => ContentJson.ParseStrict<Dictionary<string, OverworldSprite>>(
+    {
+        var catalog = ContentJson.ParseStrict<Dictionary<string, OverworldSprite>>(
             File.ReadAllText(Path.Combine(generatedDirectory, "sprites/overworld", "catalog.json")), ContentJson.CreateOptions());
+        if (catalog.Values.Any(sprite => sprite.ShadowSize is < 0 or > 3))
+            throw new InvalidDataException("Unsupported overworld shadow size.");
+        return catalog;
+    }
 
     public const string RelativePrefix = "sprites/overworld/";
 
@@ -32,4 +37,4 @@ public static class PretOverworldTextures
 
 /// <summary>One animation sheet, stored once in the shared overworld catalog.</summary>
 public sealed record OverworldSprite(string TexturePath, ImageRegion Region, int FrameWidth, int FrameHeight,
-    int FrameCount, int AnchorX, int AnchorY, bool Inanimate);
+    int FrameCount, int AnchorX, int AnchorY, bool Inanimate, int ShadowSize);

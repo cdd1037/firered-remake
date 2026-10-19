@@ -402,6 +402,7 @@ public sealed class CampaignQuestLogPlayback
     public int ArtRevision=>_timeline.ArtRevision;
     public double Frame=>_timeline.Frame;
     public double MapFrames=>_timeline.MapFrames;
+    public IEnumerable<CampaignFieldJumpCue> JumpEffects=>_timeline.JumpEffects;
     public CampaignQuestLogActor MapOriginPlayer=>_timeline.MapOriginPlayer;
     public CampaignQuestLogTransitionTiming? ActiveTransitionTiming=>_timeline.ActiveTransitionTiming;
     public double TransitionElapsedFrames=>_timeline.TransitionElapsedFrames;

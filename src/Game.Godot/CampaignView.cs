@@ -10,7 +10,7 @@ using Direction=Game.Domain.World.Direction;
 /// <summary>Godot presentation for the verified source-driven opening. Domain commands remain authoritative.</summary>
 public partial class CampaignView:Node2D
 {
-    private sealed record SpriteAsset(Texture2D Texture,int Width,int Height,int Count,Vector2 Anchor,bool Inanimate);
+    private sealed record SpriteAsset(Texture2D Texture,int Width,int Height,int Count,Vector2 Anchor,bool Inanimate,int ShadowSize=1);
     private sealed record BorderArt(int Width,int Height,Texture2D Bottom,Texture2D Middle,Texture2D Top);
     private sealed record MapArt(PretWorldMap Source,Texture2D Bottom,Texture2D Middle,Texture2D Top,SpriteAsset Player,Dictionary<string,SpriteAsset> Npcs,BorderArt? Border);
     private sealed class Pose{public Vector2 Position;public Direction Facing;public bool Visible=true;public int Frame;public int DrawYOffset;public int DrawXOffset;public bool IsJump;}
@@ -194,7 +194,7 @@ public partial class CampaignView:Node2D
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)).Concat(_art is null?[]:[PresentationMapKey(_art.Source.Id)]));
         var next=GetMapArt(id);ReleaseMapEdits();_art=next;
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)));
-        _poses.Clear();_tracks.Clear();_held=null;_repeat=0;_fade=fade ? .16 : 0;
+        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_held=null;_repeat=0;_fade=fade ? .16 : 0;
     }
     private void Synchronize(CampaignState? before,CampaignState after,CampaignState? motionOrigin=null)
     {
@@ -249,6 +249,7 @@ public partial class CampaignView:Node2D
                 if(clips.Count>0){_tracks.Add(new(){Actor=motion.ActorId,Clips=clips});if(!_poses.TryGetValue(motion.ActorId,out var pose))_poses[motion.ActorId]=pose=new();pose.Position=clips[0].From;pose.Facing=clips[0].Facing;pose.Visible=clips[0].Visible;}
             }
         }
+        SynchronizeFieldJumpEffects(before,after,normalStep);
         foreach(var effect in after.PresentationEffects.Where(e=>e.Opcode=="playfanfare"&&e.Sequence>_lastFanfareSequence))
         {_fanfareRemaining=(_cues.CounterFor(effect.Args[0])+1)/60.0;_lastFanfareSequence=effect.Sequence;}
         SynchronizeNamingScreen(before,after);
@@ -282,6 +283,7 @@ public partial class CampaignView:Node2D
         if(ProcessFieldReturn(delta))return;
         if(!PlayerEntryActive&&!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
         if(ProcessHelpPresentation(delta))return;
+        AdvanceFieldJumpEffects(delta);
         AdvanceInventoryPresentation(delta);
         ProcessNamingPresentation(delta);
         ProcessCampaignButtonRepeats(delta);
@@ -621,6 +623,7 @@ public partial class CampaignView:Node2D
         // Visible unknown graphics still fail the normal resource lookup.
         var entries=_session.State.Actors.Values.Where(a=>a.MovementType!="MOVEMENT_TYPE_INVISIBLE"&&RegionalServicesActorHasPixels(a)&&_poses.TryGetValue(a.LocalId,out var pose)&&pose.Visible).Select(a=>(Id:a.LocalId,Asset:_art.Npcs[ResolveRegionGraphics(a.GraphicsId)])).ToList();
         if(hero.Visible&&!(CinnabarLanding&&CinnabarFallPose.FixedPriority)&&!SixIslandLandingFixedPriority)entries.Add(("LOCALID_PLAYER",CurrentPlayerSprite));
+        DrawLiveFieldJumpEffects(camera);
         DrawSsAnneWake();DrawFieldStrengthDust(camera);DrawFieldSurfLanding(camera);DrawCinnabarLandingDust(camera);
         foreach(var (id,asset) in entries.OrderBy(e=>_poses[e.Id].Position.Y).ThenBy(e=>e.Id,StringComparer.Ordinal))DrawCityServicesActor(id,asset,_poses[id],camera);
         if(_art.Border is {} borderTop)DrawMapBorder(borderTop.Top,camera);DrawConnectedNeighbors(camera,2);DrawBillMapLayer(_art.Top,camera,2);

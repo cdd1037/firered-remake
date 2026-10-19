@@ -51,7 +51,7 @@ public static class CampaignFieldMovementTiming
 
     public static int? SourceDuration(string action)
     {
-        if(action.StartsWith("jump_2_",StringComparison.Ordinal))return LedgeFrames;
+        if(CampaignFieldJumpEffects.Duration(action) is {} jumpFrames)return jumpFrames;
         if(action.StartsWith("face_",StringComparison.Ordinal))return 1;
         if(action.StartsWith("ride_water_current_",StringComparison.Ordinal))return 6;
         if(action.StartsWith("player_run_",StringComparison.Ordinal))return action.EndsWith("_slow",StringComparison.Ordinal)?11:8;
@@ -69,20 +69,21 @@ public static class CampaignFieldMovementTiming
     public static CampaignFieldMovementPose Sample(string? action,int duration,double elapsedFrames)
     {
         int frame=Math.Clamp((int)Math.Floor(elapsedFrames+1e-7),0,duration);
+        bool ordinary=action is "jump_down" or "jump_up" or "jump_left" or "jump_right";
         bool far=action is "jump_2_down" or "jump_2_up" or "jump_2_left" or "jump_2_right";
         bool special=action is "jump_special_down" or "jump_special_up" or "jump_special_left" or "jump_special_right"
             or "jump_special_with_effect_down" or "jump_special_with_effect_up" or "jump_special_with_effect_left" or "jump_special_with_effect_right";
         bool inPlace=action is "jump_in_place_down" or "jump_in_place_up" or "jump_in_place_left" or "jump_in_place_right";
         bool reverse=action is "jump_in_place_down_up" or "jump_in_place_up_down" or "jump_in_place_left_right" or "jump_in_place_right_left";
-        if(!far&&!special&&!inPlace&&!reverse)return new(Fraction(action,duration,elapsedFrames),0);
+        if(!ordinary&&!far&&!special&&!inPlace&&!reverse)return new(Fraction(action,duration,elapsedFrames),0);
         int length=far||special?32:16;
         int completed=Math.Min(frame,length);
-        double fraction=far?completed/32d:special?((completed+1)/2)/16d:Math.Clamp(elapsedFrames/duration,0,1);
+        double fraction=far?completed/32d:ordinary?completed/16d:special?((completed+1)/2)/16d:Math.Clamp(elapsedFrames/duration,0,1);
         if(completed==0||completed==length)return new(fraction,0,true);
         ReadOnlySpan<int> high=[-4,-6,-8,-10,-11,-12,-12,-12,-11,-10,-9,-8,-6,-4,0,0];
         ReadOnlySpan<int> normal=[-2,-4,-6,-8,-9,-10,-10,-10,-9,-8,-6,-5,-3,-2,0,0];
         int index=(completed-1)>>(far||special?1:0);
-        return new(fraction,reverse?normal[index]:high[index],true);
+        return new(fraction,ordinary||reverse?normal[index]:high[index],true);
     }
 
     // Source event_object_movement.c pixel schedules, shared by both renderers.

@@ -13,7 +13,7 @@ public sealed class CampaignFieldJumpPoseTests : WildBattleFixture
     {
         using var source=JsonDocument.Parse(File.ReadAllText(TestAssets.GeneratedFile("tests/Reference/field-jump-source-vectors.json", "python tests/Reference/generate_field_jump_vectors.py --reference content/raw/pokefirered/037335f4 --output tests/Reference/field-jump-source-vectors.json")));
         var cases=source.RootElement.GetProperty("cases").EnumerateArray().ToArray();
-        Assert.AreEqual(20,cases.Length);
+        Assert.AreEqual(24,cases.Length);
         foreach(var item in cases)
         {
             string action=item.GetProperty("action").GetString()!;int duration=item.GetProperty("duration").GetInt32();
@@ -50,9 +50,9 @@ public sealed class CampaignFieldJumpPoseTests : WildBattleFixture
     [TestMethod]
     public void FractionalHostFramesHoldSourcePixelsWithoutChangingNonJumpTiming()
     {
-        foreach(string action in new[]{"jump_2_down","jump_special_left","jump_in_place_up"})
+        foreach(string action in new[]{"jump_down","jump_2_down","jump_special_left","jump_in_place_up"})
         {
-            int duration=action.Contains("in_place",StringComparison.Ordinal)?16:32;
+            int duration=CampaignFieldJumpEffects.Duration(action)??32;
             for(int frame=0;frame<duration;frame++)
             {
                 var whole=CampaignFieldMovementTiming.Sample(action,duration,frame);

@@ -10,7 +10,7 @@ public partial class CampaignView
     // belong to the visible snapshot, never to the already-committed destination.
     private sealed record FieldSnapshot(object Owner,int Scene,int Revision,bool SavedGameVisible,
         CampaignQuestLogMapProjection Projection,IReadOnlyDictionary<string,Pose> Poses,double Frame,int PlayerGender)
-    { public FieldDoorPaint? Door {get;init;} public FieldHorizontalFogPresentation.Scene? Fog {get;init;} public string? Weather {get;init;} }
+    { public IReadOnlyList<CampaignFieldJumpCue> Jumps {get;init;}=[]; public FieldDoorPaint? Door {get;init;} public FieldHorizontalFogPresentation.Scene? Fog {get;init;} public string? Weather {get;init;} }
     private (object Owner,int Scene,int Revision,bool Saved,FieldDoorPaint? Door)? _fieldSnapshotArtState;
     private int _fieldSnapshotArtSerial;
     private string? _fieldSnapshotArtKey;
@@ -45,7 +45,7 @@ public partial class CampaignView
                 if(npcs.ContainsKey(graphics))continue;
                 var sprite=_overworldSprites![graphics];var r=sprite.Region;
                 var texture=owner.NativeTexture(Path.Combine(_root,"content/generated/sprites/overworld",sprite.TexturePath),new(r.X,r.Y,r.Width,r.Height));
-                npcs.Add(graphics,new(texture,sprite.FrameWidth,sprite.FrameHeight,sprite.FrameCount,new(sprite.AnchorX,sprite.AnchorY),sprite.Inanimate));
+                npcs.Add(graphics,new(texture,sprite.FrameWidth,sprite.FrameHeight,sprite.FrameCount,new(sprite.AnchorX,sprite.AnchorY),sprite.Inanimate,sprite.ShadowSize));
             }
             var bottom=owner.MapTexture(source.BottomTexturePath);var middle=owner.MapTexture(source.MiddleTexturePath);var top=owner.MapTexture(source.TopTexturePath);
             var original=new MapArt(source,bottom,middle,top,new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,

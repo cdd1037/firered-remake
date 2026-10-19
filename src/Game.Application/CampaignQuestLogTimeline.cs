@@ -12,6 +12,8 @@ internal sealed class CampaignQuestLogTimeline
     private readonly ImmutableArray<(int Start,int VisibleEnd,string Text)> _captions;
     private readonly Dictionary<string,CampaignQuestLogActor> _actors;
     private readonly Dictionary<string,(CampaignQuestLogActor From,int Start,int Duration,string? Action)> _moving=new(StringComparer.Ordinal);
+    private readonly List<(CampaignFieldJumpCue Cue,int Start)> _jumps=[];
+    public IEnumerable<CampaignFieldJumpCue> JumpEffects=>_jumps.Select(j=>j.Cue with{ElapsedFrames=_frame-j.Start});
     private readonly int _end;
     private int _move;
     private double _frame;
@@ -104,6 +106,7 @@ internal sealed class CampaignQuestLogTimeline
     public void Tick(double seconds)
     {
         _frame+=seconds*60;
+        _jumps.RemoveAll(j=>_frame>=j.Start+j.Cue.Duration+CampaignFieldJumpEffects.DustLifetimeFrames);
         SwitchPendingTransition();
         while(_move<_moves.Length&&_moves[_move].StartFrame<=_frame)
         {
@@ -119,8 +122,14 @@ internal sealed class CampaignQuestLogTimeline
             var initial=action.Spawn??_segmentActors[action.ActorIndex];
             var prior=_actors.GetValueOrDefault(initial.Id)??initial;
             _moving[initial.Id]=(prior,action.StartFrame,action.Frames,action.SourceAction);
+            if(CampaignFieldJumpEffects.IsOrdinaryJump(action.SourceAction))
+            {
+                _jumps.RemoveAll(j=>j.Cue.ActorId==initial.Id&&action.StartFrame<j.Start+j.Cue.Duration);
+                _jumps.Add((new(initial.Id,Map,prior.X,prior.Y,action.X,action.Y,action.SourceAction!,action.Frames,0),action.StartFrame));
+            }
             _actors[initial.Id]=prior with{X=action.X,Y=action.Y,Facing=action.Facing,Visible=action.Visible,Graphics=action.Graphics??prior.Graphics};
         }
+        _jumps.RemoveAll(j=>_frame>=j.Start+j.Cue.Duration+CampaignFieldJumpEffects.DustLifetimeFrames);
     }
     private void SwitchPendingTransition()
     {
@@ -130,6 +139,6 @@ internal sealed class CampaignQuestLogTimeline
         _mapLoadFrame=action.StartFrame+(action.TransitionTiming?.SwitchFrame??0);
         Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;FlashLevel=transition.FlashLevel;
         _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
-        _moving.Clear();ArtRevision++;
+        _moving.Clear();_jumps.Clear();ArtRevision++;
     }
 }

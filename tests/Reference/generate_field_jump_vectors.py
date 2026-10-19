@@ -130,7 +130,7 @@ def generate(reference):
     constants = (reference / 'include/constants/global.h').read_text()
     # The named wrappers are the bounded admission surface, not prefix matching.
     cases = []
-    for family, prefix in [('Jump2', 'jump_2_'), ('JumpInPlace', 'jump_in_place_'),
+    for family, prefix in [('Jump', 'jump_'), ('Jump2', 'jump_2_'), ('JumpInPlace', 'jump_in_place_'),
                            ('JumpSpecial', 'jump_special_'), ('JumpSpecialWithEffect', 'jump_special_with_effect_')]:
         for title, suffix, vector in DIRECTIONS:
             cases.append({'action': prefix + suffix, 'wrapper': family + title, 'vector': vector})

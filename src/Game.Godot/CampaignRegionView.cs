@@ -65,7 +65,7 @@ public partial class CampaignView
             if(r.Width!=sprite.FrameWidth*sprite.FrameCount||r.Height!=sprite.FrameHeight)
                 throw new InvalidDataException("Region NPC sheet size invalid.");
             result.Add(id,new(texture,sprite.FrameWidth,sprite.FrameHeight,sprite.FrameCount,
-                new(sprite.AnchorX,sprite.AnchorY),sprite.Inanimate));
+                new(sprite.AnchorX,sprite.AnchorY),sprite.Inanimate,sprite.ShadowSize));
         }
         return result;
     }

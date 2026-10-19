@@ -31,6 +31,7 @@ public sealed class NativePresentationImportTests
     [DataRow("test-impact-adapter-animation-import.py")]
     [DataRow("test-projectile-animation-import.py")]
     [DataRow("test-itemfinder-presentation.py")]
+    [DataRow("test-overworld-shadow-art.py")]
     [DataRow("test-npc-trade-scene-import.py")]
     [DataRow("test-party-screen.py")]
     [DataRow("test-summary-screen.py")]

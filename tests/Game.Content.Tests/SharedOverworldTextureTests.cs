@@ -36,6 +36,27 @@ public sealed class SharedOverworldTextureTests
             Assert.Throws<InvalidDataException>(() => PretOverworldTextures.Resolve(directory, PretOverworldTextures.RelativePrefix + "red-normal.png"));
     }
     [TestMethod]
+    public void Shadow_size_is_required_and_rejects_unsupported_values()
+    {
+        using var output = TestAssets.TemporaryOutput();
+        string directory = Path.Combine(output.Path, "sprites/overworld");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "catalog.json");
+        const string valid = """
+            {"actor":{"texturePath":"actors.png","region":{"x":0,"y":0,"width":16,"height":32},"frameWidth":16,"frameHeight":32,"frameCount":1,"anchorX":8,"anchorY":24,"inanimate":false,"shadowSize":1}}
+            """;
+        File.WriteAllText(path, valid);
+        Assert.AreEqual(1, PretOverworldTextures.Load(output.Path)["actor"].ShadowSize);
+        File.WriteAllText(path, valid.Replace(",\"shadowSize\":1", "", StringComparison.Ordinal));
+        Assert.Throws<ContentValidationException>(() => PretOverworldTextures.Load(output.Path));
+        foreach (int invalid in new[] { -1, 4 })
+        {
+            File.WriteAllText(path, valid.Replace("\"shadowSize\":1", $"\"shadowSize\":{invalid}", StringComparison.Ordinal));
+            Assert.Throws<InvalidDataException>(() => PretOverworldTextures.Load(output.Path));
+        }
+    }
+
+    [TestMethod]
     public void Canonical_catalog_preserves_animation_geometry_and_current_world_graphics()
     {
         string generated = Path.Combine(TestAssets.Root, "content/generated");
@@ -47,8 +68,11 @@ public sealed class SharedOverworldTextureTests
             Assert.AreEqual(sprite.FrameHeight, sprite.Region.Height);
             Assert.AreEqual(sprite.FrameWidth / 2, sprite.AnchorX);
             Assert.AreEqual(sprite.FrameHeight - 8, sprite.AnchorY);
+            Assert.IsTrue(sprite.ShadowSize is >= 0 and <= 3);
             Assert.IsTrue(File.Exists(Path.Combine(generated, "sprites/overworld", sprite.TexturePath)));
         }
+        Assert.AreEqual(1, catalog["OBJ_EVENT_GFX_RED_NORMAL"].ShadowSize);
+        Assert.AreEqual(0, catalog["OBJ_EVENT_GFX_PUSHABLE_BOULDER"].ShadowSize);
         var world = PretCurrentWorld.Load(TestAssets.Root);
         int checkedGraphics = 0;
         foreach (var map in world.RuntimeMaps.MapsByPath.Values)

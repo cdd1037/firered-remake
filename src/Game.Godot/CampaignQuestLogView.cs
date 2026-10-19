@@ -100,7 +100,7 @@ public partial class CampaignView
                 DrawYOffset=movement?.DrawYOffset??0,IsJump=movement?.IsJump??false,Frame=movement is {} frame?1+(int)(frame.Fraction*3):0});
         }
         var snapshot=new FieldSnapshot(playback,playback.SceneIndex,playback.ArtRevision,playback.SavedGameVisible,
-            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender){Fog=_questFogScene};
+            new(playback.Map,actors,playback.Layout,playback.Tiles){FlashLevel=playback.FlashLevel},poses,playback.Frame,_session.State.PlayerGender){Fog=_questFogScene,Jumps=playback.JumpEffects.ToArray()};
         var warp=QuestLogFieldWarpSample(playback);
         if(playback.ActiveTransitionTiming is {} timing)
         {
@@ -173,6 +173,7 @@ public partial class CampaignView
         if(lowerTarget is null)DrawRect(new(0,0,240,160),backdropColor);
         DrawFieldSnapshotLayer(snapshot,art,camera,0,neighbors,lowerTarget);DrawFieldSnapshotLayer(snapshot,art,camera,1,neighbors,lowerTarget);
         if(snapshot.Fog is {} fog)DrawFieldFogSample(fog,FieldSnapshotPaletteTexture(_fieldFogTexture!,false));
+        DrawFieldJumpEffects(snapshot.Jumps,projection,snapshot.Poses,camera,art,texture=>FieldSnapshotPaletteTexture(texture,false));
         foreach(var actor in projection.Actors.Where(a=>a.Visible&&snapshot.Poses[a.Id].Visible)
             .OrderBy(a=>snapshot.Poses[a.Id].Position.Y).ThenBy(a=>a.Id,StringComparer.Ordinal))
         {

@@ -25,6 +25,7 @@ public partial class CampaignView
     {
         if(_help.Active||PlayerEntryActive||_fieldWarp is not null||QuestLogPlaybackActive)return;
         var state=_session.State;
+        if(FieldDisplayOwner() is FieldReturnPresentation.Owner.FullScreenMenu or FieldReturnPresentation.Owner.Battle)_fieldJumpCues.Clear();
         // Existing field-move controllers own their return/warp program.
         if(state.NoncombatFieldEffect is not null||state.CutEffect is not null||state.RockSmashEffect is not null||
             state.FlashEffect is not null||state.StrengthEffect is not null||state.SurfEffect is not null||state.FlyEffect is not null)

@@ -49,5 +49,6 @@ exports/
 /tests/Reference/Recovery/verification.json
 /tests/Reference/Weather/verification.json
 /tests/Reference/field-jump-source-vectors.json
+/tests/Reference/field-jump-effect-source-vectors.json
 /tests/Reference/quest-exit-source-vectors.json
 /tests/Reference/quest-palette-source-vectors.json
