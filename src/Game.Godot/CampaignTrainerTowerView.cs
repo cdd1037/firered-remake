@@ -126,7 +126,7 @@ public partial class CampaignView
         return FormatTrainerTowerSpeech(frame.Outcome == Game.Domain.WildBattle.WildBattleOutcome.Won ? trainer.SpeechLose : trainer.SpeechWin);
     }
     private string? PresentedFieldText => _trainerTowerSpeechPages.Length > 0
-        ? _trainerTowerSpeechPages[_trainerTowerSpeechPage] : _session.FormatVisibleText(PewterDisplayText);
+        ? _trainerTowerSpeechPages[_trainerTowerSpeechPage] : _session.FormatVisibleText(CampaignSourceText.PrepareDisplayPage);
     private void SynchronizeTrainerTowerSpeech()
     {
         var dialogue = _session.State.Dialogue;
@@ -140,7 +140,7 @@ public partial class CampaignView
         var trainer = template.Trainers[_session.State.Script.Variables.GetValueOrDefault("VAR_0x8006")];
         var words = _session.State.Script.Variables.GetValueOrDefault("VAR_0x8005") switch
         { 2 => trainer.SpeechBefore, 3 => trainer.SpeechWin, 4 => trainer.SpeechLose, 5 => trainer.SpeechAfter, _ => throw new InvalidDataException("Tower speech kind differs.") };
-        _trainerTowerSpeechPages = ForestTrainerPlainPages(FormatTrainerTowerSpeech(words)).ToArray();
+        _trainerTowerSpeechPages = SourceTrainerPresentationModel.ScrollResultPages(FormatTrainerTowerSpeech(words)).ToArray();
     }
     private bool TryTrainerTowerSpeechInput(InputEventKey key)
     {

@@ -288,7 +288,7 @@ public partial class CampaignView
                     if (_session.State.ForestTrainerBattle is null && b.State.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw) Source("sText_PlayerWhiteout");
                     else if (_session.State.ForestTrainerBattle is not null)
                     {
-                        var added = ForestTrainerPlainPages(TrainerTowerBattleSpeech(b.PageIndex) ?? page.Text).ToArray();
+                        var added = SourceTrainerPresentationModel.ScrollResultPages(TrainerTowerBattleSpeech(b.PageIndex) ?? page.Text).ToArray();
                         for (int i = 0; i + 1 < added.Length; i++) _wildArrowPages.Add(pages.Count + i);
                         pages.AddRange(added);
                     }

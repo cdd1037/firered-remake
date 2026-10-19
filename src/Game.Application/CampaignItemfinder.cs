@@ -56,7 +56,8 @@ public sealed partial class CampaignSession
         if(ValidateCampaignInventory(inventory) is {} error)return new(CommandStatus.Rejected,state,error);
         var added=EarlyInventoryAddRules.Add(ShopCatalog,inventory,item.Id,1);
         if(!added.Succeeded&&added.Error is not("inventory_stack_full" or "inventory_destination_full"))return new(CommandStatus.Fault,state,added.Error);
-        string Render(string symbol)=>ItemfinderSource.Texts[symbol].Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal).Replace("{STR_VAR_2}",item.Name,StringComparison.Ordinal).Replace("{STR_VAR_3}","ITEMS POCKET",StringComparison.Ordinal);
+        string Render(string symbol) => CampaignSourceText.Bind(ItemfinderSource.Texts[symbol], token => token switch
+        { "PLAYER" => state.PlayerName, "STR_VAR_2" => item.Name, "STR_VAR_3" => "ITEMS POCKET", _ => null });
         var pages=ImmutableArray.Create(Render("Text_DugUpItemFromGround"),Render(added.Succeeded?"Text_PutItemAway":"Text_TooBadBagFull"));
         // One authoritative transaction owns the add and one-time flag. A full pocket changes neither.
         return new(CommandStatus.Accepted,state with{Inventory=added.Succeeded?added.State:inventory,

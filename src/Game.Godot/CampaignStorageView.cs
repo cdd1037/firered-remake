@@ -31,9 +31,9 @@ public partial class CampaignView
     private int _pcCursor, _boxCursor;
     private string? _pcNotice;
     private bool _storagePartyPeek;
-    private string PcText(string symbol,string? name=null)=>string.Join('\n',_catalog.TextPages(symbol))
-        .Replace("{PLAYER}",_session.State.PlayerName,StringComparison.Ordinal)
-        .Replace("{DYNAMIC 0x00}",name??"",StringComparison.Ordinal);
+    private string PcText(string symbol, string? name = null) => CampaignSourceText.Bind(
+        string.Join('\n', _catalog.TextPages(symbol)), token => token switch
+        { "PLAYER" => _session.State.PlayerName, "DYNAMIC 0x00" => name ?? "", _ => null });
     private void SynchronizeStorage()
     {
         SynchronizeHallPc();

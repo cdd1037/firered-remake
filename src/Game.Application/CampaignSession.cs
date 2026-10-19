@@ -8,7 +8,6 @@ using Game.Domain.Items;
 using Game.Domain.Options;
 using Game.Domain.World;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 namespace Game.Application;
 public sealed record CampaignActor(string LocalId,int SourceLocalId,string GraphicsId,int X,int Y,int Elevation,Direction Facing,string MovementType,string ScriptId,string HideFlag,bool Active,bool Invisible,int TemplateX,int TemplateY)
 { public bool Visible=>Active&&!Invisible; }
@@ -277,7 +276,6 @@ public sealed partial class CampaignSession
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
     public long Revision=>_commands.Revision;
-    private static readonly Regex VisibleTextParameter = new(@"\{([^{}]+)\}", RegexOptions.CultureInvariant);
     public string? VisibleText => FormatVisibleText();
     /// <summary>Prepare authored page controls before binding. Inserted names and buffers stay literal.</summary>
     public string? FormatVisibleText(Func<string, string>? prepareTemplate = null)
@@ -286,15 +284,7 @@ public sealed partial class CampaignSession
         if (state.Dialogue is not {} dialogue) return null;
         string template = dialogue.Pages[dialogue.Page];
         if (prepareTemplate is not null) template = prepareTemplate(template);
-        // English pret strings.c defines both Kun/Chan expansions as empty;
-        // string_util.c chooses one by gender. Never reparse a bound value.
-        return VisibleTextParameter.Replace(template, match => match.Groups[1].Value switch
-        {
-            "PLAYER" => state.PlayerName,
-            "RIVAL" => state.RivalName,
-            "KUN" => "",
-            var token => state.TextBuffers.TryGetValue(token, out var value) ? value : match.Value
-        });
+        return CampaignSourceText.Bind(template, state);
     }
     // Convenience entrypoint with the same current-only contract as CreateCurrent.
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)

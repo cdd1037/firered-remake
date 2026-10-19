@@ -108,25 +108,6 @@ public partial class CampaignView
         // The application already expanded source defeat/scurry dialogue into pages.
         return false;
     }
-    // These exact source text controls are presentation cues, not printable words.
-    // Match only admitted controls (Erika uses the combined PLAY_BGM spelling).
-    // Keep unknown controls visible for diagnosis; never erase arbitrary brace content.
-    // Audio reads the untouched source pages separately; cleaning does not fire cues.
-    private static string PewterDisplayText(string text)
-    {
-        foreach(var token in new[]{"{FONT_NORMAL}","{FONT_MALE}","{PLAY_BGM MUS_ENCOUNTER_GYM_LEADER}","{PLAY_BGM MUS_ENCOUNTER_ROCKET}","{PLAY_BGM}","{MUS_ENCOUNTER_GYM_LEADER}","{MUS_ENCOUNTER_ROCKET}","{PAUSE_MUSIC}","{MUS_OBTAIN_BADGE}","{PAUSE 0xFE}","{PAUSE 0x56}","{RESUME_MUSIC}"})
-            text=text.Replace(token,"",StringComparison.Ordinal);
-        return text;
-    }
-    private static IEnumerable<string> ForestTrainerPlainPages(string text)
-    {
-        text = PewterDisplayText(text);
-        var lines = text.Split('\n');
-        if (lines.Length <= 2) { yield return text; yield break; }
-        // A field-return text can contain three lines. Preserve all its words by
-        // scrolling one line at a time in the two-line battle message window.
-        for (int i = 0; i + 1 < lines.Length; i++) yield return lines[i] + "\n" + lines[i + 1];
-    }
     private bool ForestTrainerShiftPending => _session.State.ForestTrainerBattle?.Combat.Phase == ForestTrainerCombatPhase.AwaitingShiftChoice;
     private void SynchronizeForestTrainerChoice()
     {

@@ -344,7 +344,7 @@ public sealed partial class CampaignSession
         {
             pages.Add($"{state.PlayerName} defeated\n{DoubleTrainerClass(b.Trainer)} {DoubleTrainer(b.Trainer).SourceTrainerName}!");
             string defeat=b.VsSeeker is {} receipt?VsSeekerOccurrence(receipt).Arguments[2]:DoubleInteraction(b.Trainer,state.Actors[b.ActorId].ScriptId).DefeatText;
-            pages.AddRange(_content.TextPages(defeat));pages.Add($"{state.PlayerName} got ¥{award}\nfor winning!");
+            pages.AddRange(_content.TextPages(defeat).Select(page => CampaignSourceText.DisplayPage(page, state)));pages.Add($"{state.PlayerName} got ¥{award}\nfor winning!");
         }
         else
         {

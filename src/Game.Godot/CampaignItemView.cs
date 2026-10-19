@@ -13,7 +13,9 @@ public partial class CampaignView
     private bool _itemPopup,_itemQuantityOpen;
     private string? _itemNotice;
     private string? _itemMenuKey;
-    private string ItemText(string symbol)=>string.Join("\n",_catalog.TextPages(symbol)).Replace("{PLAYER}",_session.State.PlayerName,StringComparison.Ordinal).Replace("{STR_VAR_1}",SelectedPersonalPcItemName,StringComparison.Ordinal);
+    private string ItemText(string symbol) => CampaignSourceText.Bind(
+        string.Join("\n", _catalog.TextPages(symbol)), token => token switch
+        { "PLAYER" => _session.State.PlayerName, "STR_VAR_1" => SelectedPersonalPcItemName, _ => null });
     private string SelectedPersonalPcItemName => _session.State.ItemMenu is { View:"withdraw" or "deposit" } menu
         && _itemCursor < (menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks).Length
         ? InventoryName((menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item) : _catalog.OpeningItems!.Potion.Name;

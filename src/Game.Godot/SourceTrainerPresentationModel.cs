@@ -12,6 +12,14 @@ internal sealed record SourceTrainerEventDisplay(ImmutableArray<SourceTrainerTex
 /// <summary>Read-only source-event projection. No RNG, HP, PP, party or command mutation.</summary>
 internal static class SourceTrainerPresentationModel
 {
+    internal static IEnumerable<string> ScrollResultPages(string text)
+    {
+        var lines = text.Split('\n');
+        if (lines.Length <= 2) { yield return text; yield break; }
+        // A field-return text can contain three lines. Preserve all its words by
+        // scrolling one line at a time in the two-line battle message window.
+        for (int i = 0; i + 1 < lines.Length; i++) yield return lines[i] + "\n" + lines[i + 1];
+    }
     internal const string UnsupportedNotice = "This battle event is not\nsupported yet.";
     private static readonly SourceTrainerEventDisplay Silent = new([]);
     private static readonly SourceTrainerEventDisplay Unsupported = new([], true);

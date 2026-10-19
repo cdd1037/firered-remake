@@ -334,17 +334,17 @@ public sealed partial class CampaignSession
         if (won)
         {
             pages.Add(new($"{state.PlayerName} defeated\n{OrdinaryTrainerClass(trainer.Trainer)} {(IsPokemonLeagueChampion(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsSilphRival(trainer.Trainer)||IsPokemonTowerRival(trainer.Trainer)||IsRoute22Trainer(trainer.Trainer)||IsCeruleanRival(trainer.Trainer)||IsSsAnneRival(trainer.Trainer)?state.RivalName:OrdinaryTrainer(trainer.Trainer).SourceTrainerName)}!"));
-            foreach (var text in _content.TextPages(trainer.VsSeeker is {} vsReceipt ? VsSeekerOccurrence(vsReceipt).Arguments[2] : OrdinaryTrainerScript(trainer.Trainer,trainer.SourceScriptEntry,trainer.SourceScriptLine).DefeatText)) pages.Add(new(text.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal).Replace("{RIVAL}",state.RivalName,StringComparison.Ordinal)));
+            foreach (var text in _content.TextPages(trainer.VsSeeker is {} vsReceipt ? VsSeekerOccurrence(vsReceipt).Arguments[2] : OrdinaryTrainerScript(trainer.Trainer,trainer.SourceScriptEntry,trainer.SourceScriptLine).DefeatText)) pages.Add(new(CampaignSourceText.DisplayPage(text, state)));
             pages.Add(new($"{state.PlayerName} got {award}\nfor winning!"));
         }
         else
         {
-            if(IsRoute22Trainer(trainer.Trainer))foreach(var text in _content.TextPages(_content.Route22Trainers!.Battles[trainer.Trainer].VictoryText))pages.Add(new(text.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal).Replace("{RIVAL}",state.RivalName,StringComparison.Ordinal)));
+            if(IsRoute22Trainer(trainer.Trainer))foreach(var text in _content.TextPages(_content.Route22Trainers!.Battles[trainer.Trainer].VictoryText))pages.Add(new(CampaignSourceText.DisplayPage(text, state)));
             pages.Add(new($"{state.PlayerName} is out of usable\nPOKéMON!"));
             int lost = WhiteOutLoss(state);
             pages.Add(new(state.Money == 0 ? $"{state.PlayerName} whited out!" : $"{state.PlayerName} panicked and lost\n{lost}...\n{state.PlayerName} whited out!"));
             foreach (var page in _content.TextPages(HasCenterRespawn(state) ? "gText_PlayerScurriedToCenter" : "gText_PlayerScurriedBackHome"))
-                pages.Add(new(page.Replace("{PLAYER}", state.PlayerName, StringComparison.Ordinal)));
+                pages.Add(new(CampaignSourceText.DisplayPage(page, state)));
         }
         var history = new CampaignForestTrainerHistory(trainer.Id, trainer.Trainer.Value, trainer.Frame.Outcome,
             trainer.ExperienceGained, prize.Awarded, trainer.OpponentsSent)

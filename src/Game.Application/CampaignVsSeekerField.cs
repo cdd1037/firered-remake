@@ -12,12 +12,15 @@ public sealed record CampaignVsSeekerEffect(string Origin, string Phase, int Tic
 
 public sealed partial class CampaignSession
 {
-    private string VsSeekerText(string symbol, CampaignState state) =>
-        (_content.VsSeekerTexts.TryGetValue(symbol, out var text) ? text : string.Join("\n\n", _content.TextPages(symbol)))
-            .Replace("{STR_VAR_1}", (100 - VsProgress(state).State.ChargeSteps).ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace("{PLAYER}", state.PlayerName, StringComparison.Ordinal)
+    private string VsSeekerText(string symbol, CampaignState state)
+    {
+        var template = (_content.VsSeekerTexts.TryGetValue(symbol, out var text) ? text : string.Join("\n\n", _content.TextPages(symbol)))
             .Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).TrimEnd('$')
             .Replace(@"\p", "\n\n", StringComparison.Ordinal).Replace(@"\l", "\n", StringComparison.Ordinal).Replace(@"\n", "\n", StringComparison.Ordinal);
+        return CampaignSourceText.Bind(template, token => token switch
+        { "STR_VAR_1" => (100 - VsProgress(state).State.ChargeSteps).ToString(CultureInfo.InvariantCulture),
+            "PLAYER" => state.PlayerName, _ => null });
+    }
 
     private Decision<CampaignState> UseVsSeeker(CampaignState state, CampaignCommand command, bool registered = false)
     {

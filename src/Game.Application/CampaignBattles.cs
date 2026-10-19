@@ -151,7 +151,7 @@ public sealed partial class CampaignSession
             if(e is LabBattleExperienceEvent xp)pages.Add(new("experience",$"{PokemonName(reward.Pokemon)} gained\n{xp.Gained} EXP. Points!",e));
             if(e is LabBattleLevelEvent level){pages.Add(new("level",$"{PokemonName(reward.Pokemon)} grew to\nlevel {level.After}!",e));pages.Add(new("stats","",e));}
         }
-        foreach(var text in _content.TextPages(b.State.Outcome==FirstBattleOutcome.Won?definition.DefeatText:definition.VictoryText))pages.Add(new("source",text.Replace("{RIVAL}",state.RivalName,StringComparison.Ordinal).Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal)));
+        foreach(var text in _content.TextPages(b.State.Outcome==FirstBattleOutcome.Won?definition.DefeatText:definition.VictoryText))pages.Add(new("source",CampaignSourceText.DisplayPage(text, state)));
         foreach(var e in reward.Events.OfType<LabBattleMoneyEvent>())pages.Add(new("money",$"{state.PlayerName} got {e.Awarded}\nfor winning!",e));
         int? fraction=null;
         if(b.State.Outcome==FirstBattleOutcome.Won){var mon=reward.Pokemon.Pokemon;fraction=(mon.CurrentHp<mon.Stats.MaxHp/3*2?1:0)+(mon.CurrentHp<mon.Stats.MaxHp/3?1:0);}

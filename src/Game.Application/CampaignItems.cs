@@ -144,8 +144,7 @@ public sealed partial class CampaignSession
             if(State.ItemMenu?.SourceMessages is {} messages)return messages[State.ItemMenu.SourceMessageIndex];
             if(State.ItemMenu?.MessageSymbol is not {} symbol)return null;
             var text=string.Join("\n",_content.TextPages(symbol));
-            foreach(var buffer in State.TextBuffers)text=text.Replace("{"+buffer.Key+"}",buffer.Value,StringComparison.Ordinal);
-            return text.Replace("{PLAYER}",State.PlayerName,StringComparison.Ordinal);
+            return CampaignSourceText.Bind(text, State);
         }
     }
 }

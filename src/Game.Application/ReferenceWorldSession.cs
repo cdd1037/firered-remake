@@ -17,8 +17,8 @@ public sealed class ReferenceWorldSession
     public ReferenceWorldState State=>_commands.State;
     public long Revision=>_commands.Revision;
     public string? VisibleText=>State.Dialogue is {} cursor ?
-        _dialogues.Values.Single(d=>d.ScriptId==cursor.ScriptId).Pages[cursor.PageIndex]
-            .Replace("{PLAYER}",State.PlayerName,StringComparison.Ordinal).Replace("{RIVAL}",State.RivalName,StringComparison.Ordinal) : null;
+        CampaignSourceText.Bind(_dialogues.Values.Single(d=>d.ScriptId==cursor.ScriptId).Pages[cursor.PageIndex],
+            token => token switch { "PLAYER" => State.PlayerName, "RIVAL" => State.RivalName, _ => null }) : null;
     public ReferenceWorldSession(IWorldMap map, TilePosition start,string contentVersion,Func<TilePosition,string?> interaction,IReadOnlyDictionary<string,ReadOnlyDialogue> dialogues,ReferenceWorldState? restored=null)
     {
         _map=map;_interaction=interaction;_dialogues=dialogues;_contentVersion=contentVersion;

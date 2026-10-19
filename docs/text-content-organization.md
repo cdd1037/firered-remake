@@ -238,9 +238,6 @@ Moves、DETAILS 草稿取消和返回完成，截图人工检查。正常退出 
 - 原作专用目录：Trainer姓名／阶级、Mail显示词组、部分养成／辅助提示、特殊菜单
   （例如FossilLab EXIT）和剩余区域物品说明；它们不自动进入14种编译Story菜单。
 - 图鉴栖息地标题、测量显示、早期素材内无人消费的重复显示字段尚未继续迁移。
-- ForestTrainerPlainPages三个战后／Tower路径接收已组合文字，仍有后置控制处理；
-  完整解决需保留其模板／最终值边界，不能简单删除控制处理。当前新增名称组不包含
-  trainer／Easy Chat文字；不要据此声称所有输入链路已改为单遍。
 - 目录排序仍使用既有源索引，未提供按目标语言重新排序。SourceGameFont不自动提供
   缺失字形。实际中文翻译、字体／图片、布局、真实IME均未做。
 
@@ -277,3 +274,11 @@ SOURCE三页标题／ONWARD、作者INSPECT／RETURN及四行Psychic说明，所
 crossed_circle光标诊断。窗口发生于后续点字窄修之前；点字仅定向自动验证，非原生验证。
 音频Dummy，未验中文、IME、实际战斗文本或完整剧情。证据保存在工作区外部验收目录，
 截图和状态副本不进入Git。
+
+
+最终页绑定修复：单打、双打和Tower最终页只做两行滚动分页，不再删除控制样式的字面值。
+源结果页在Application生产边界经CampaignSourceText先准备原控制、再绑定名字／buffer；
+普通剧情使用同一入口，音频仍读取原Dialogue.Pages。初战、Itemfinder、VsSeeker、袋中提示、
+PC提示与旧ReferenceWorld显示复用单遍绑定，VsSeeker的源分页展开也先于名字插入。
+保留未知token可诊断，不扩大合法昵称字符限制。Application49、Presentation91项通过，
+相关三项目编译零警告错误；本窄修没有新增原生窗口验收。

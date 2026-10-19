@@ -39,6 +39,11 @@ public sealed class StoryTextBindingTests
         }
         Assert.AreEqual("First\n" + bound + "\nLast", session.FormatVisibleText(Prepare));
         Assert.AreEqual(1, preparationCalls);
+        Assert.AreEqual("First\n" + bound + "\nLast", CampaignSourceText.DisplayPage(template, state),
+            "Battle result producers remove source cues before binding, just like ordinary field text.");
+        Assert.AreEqual("First\n" + bound + "\nLast", session.FormatVisibleText(CampaignSourceText.PrepareDisplayPage));
+        Assert.AreEqual(literalName + "|SECOND", CampaignSourceText.Bind("{FIRST}|{SECOND}",
+            token => token switch { "FIRST" => literalName, "SECOND" => "SECOND", _ => null }));
         Assert.AreSame(state, session.State);
         Assert.AreEqual(template, session.State.Dialogue!.Pages[0]);
     }
