@@ -10,7 +10,7 @@ using Game.Domain.World;
 namespace FireRed.Tests.Application.Campaign;
 
 [TestClass, TestCategory("Game")]
-public sealed class CampaignElevatorTransitionRouteTests
+public sealed partial class CampaignElevatorTransitionRouteTests
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 

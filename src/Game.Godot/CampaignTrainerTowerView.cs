@@ -158,9 +158,12 @@ public partial class CampaignView
             ?? throw new InvalidDataException("Tower dynamic object graphics missing: " + value);
     }
 
+    private void ObserveTrainerTowerTime(double delta)=>
+        _trainerTowerFrames.Advance(delta, !PlayerEntryActive && _session.State.TrainerTower is { TimerRunning: true });
+
     private void ProcessTrainerTowerTime(double delta)
     {
-        _trainerTowerFrames.Advance(delta, !PlayerEntryActive && _session.State.TrainerTower is { TimerRunning: true });
+        ObserveTrainerTowerTime(delta);
         CommitTrainerTowerTime(false);
     }
     private void CommitTrainerTowerTime(bool flush)

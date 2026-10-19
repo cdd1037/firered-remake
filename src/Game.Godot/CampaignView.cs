@@ -196,7 +196,7 @@ public partial class CampaignView:Node2D
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)));
         _poses.Clear();_tracks.Clear();_held=null;_repeat=0;_fade=fade ? .16 : 0;
     }
-    private void Synchronize(CampaignState? before,CampaignState after)
+    private void Synchronize(CampaignState? before,CampaignState after,CampaignState? motionOrigin=null)
     {
         if(before is null)ResetFieldWarpPresentation();
         if(BeginFieldWarpPresentation(before,after))return;
@@ -231,7 +231,8 @@ public partial class CampaignView:Node2D
             }
             foreach(var motion in after.Motions)
             {
-                var clips=new List<Clip>();int index=0;var current=motion.Path[0];bool visible=motion.ActorId=="LOCALID_PLAYER"?(before?.PlayerVisible??true):(before?.Actors.GetValueOrDefault(motion.ActorId)?.Visible??after.Actors.GetValueOrDefault(motion.ActorId)?.Visible??true);
+                var movementOrigin=motionOrigin??before;
+                var clips=new List<Clip>();int index=0;var current=motion.Path[0];bool visible=motion.ActorId=="LOCALID_PLAYER"?(movementOrigin?.PlayerVisible??true):(movementOrigin?.Actors.GetValueOrDefault(motion.ActorId)?.Visible??after.Actors.GetValueOrDefault(motion.ActorId)?.Visible??true);
                 foreach(var action in motion.Actions)
                 {
                     if(action=="step_end")break;

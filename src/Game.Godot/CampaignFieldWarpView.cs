@@ -10,6 +10,7 @@ public partial class CampaignView
     {
         public required FieldTransitionReceipt Receipt;
         public required CampaignState Origin;
+        public required CampaignState ArrivalState;
         public required FieldSnapshot OriginView;
         public required FieldSnapshot DestinationView;
         public readonly FieldWarpPresentation.Departure Departure=new();
@@ -60,13 +61,13 @@ public partial class CampaignView
     {
         if(_fieldWarpSynchronizing||before is null||before.FieldWeather is not null||
             after.FieldTransition is not {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor} receipt||
-            receipt.From!=before.World.Player||!_session.CanPresentFieldTransition(before,receipt))return false;
+            receipt.From!=before.World.Player||!_session.TryGetFieldTransitionArrival(before,receipt,out var arrivalState))return false;
         var owner=new object();
         var animation=new FieldWarpAnimation
         {
-            Receipt=receipt,Origin=before,
+            Receipt=receipt,Origin=before,ArrivalState=arrivalState,
             OriginView=CaptureFieldSnapshot(before,owner,0,true),
-            DestinationView=CaptureFieldSnapshot(after,owner,1,false)
+            DestinationView=CaptureFieldSnapshot(arrivalState,owner,1,false)
         };
         if(receipt.Cause==FieldTransitionCause.AnimatedDoor)
         {
@@ -105,6 +106,9 @@ public partial class CampaignView
     {
         if(_fieldWarp is not {} animation)return false;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
+        // Its VBlank timer continues while field input is locked. Retain the
+        // elapsed frames; the ordinary clock path commits after release.
+        ObserveTrainerTowerTime(delta);
         _held=null;_repeat=0;animation.Frames+=delta*60;
         int frame=(int)Math.Floor(animation.Frames+1e-7);
         while(animation.ProcessedFrames<frame)
@@ -139,9 +143,11 @@ public partial class CampaignView
                 // destination selector chooses the same song again (e.g. cycling).
                 // Clear only that stopped song's view cache so SourceMusic restarts it.
                 if(animation.WaitForMusic&&_sourceAudio is {} audio&&audio.Snapshot().Music?.Playing!=true)_audioMusic=null;
-                _fieldWarpSynchronizing=true;
-                try{Synchronize(animation.Origin,_session.State);}
-                finally{_fieldWarpSynchronizing=false;}
+                // Load the captured entry scene, not the precommitted OnFrame
+                // movement/effects. Those become eligible only after arrival.
+                LoadMap(animation.ArrivalState.World.Player.MapId,false);
+                ApplyMapEdits(animation.ArrivalState);
+                SynchronizeSourceAudio(animation.Origin,animation.ArrivalState);
                 _fade=0;
                 Write("fieldWarpPresentation",new{phase="arrival",animation.SwitchFrame,animation.Receipt.To});
             }
@@ -158,6 +164,9 @@ public partial class CampaignView
                 bool recorded=_session.CompleteFieldTransitionPresentation(animation.Receipt,animation.SwitchFrame,animation.ProcessedFrames);
                 Write("fieldWarpPresentation",new{phase="complete",animation.SwitchFrame,endFrame=animation.ProcessedFrames,recorded});
                 _fieldWarp=null;_fieldSnapshotReleasePending=true;
+                _fieldWarpSynchronizing=true;
+                try{Synchronize(animation.Origin,_session.State,animation.ArrivalState);}
+                finally{_fieldWarpSynchronizing=false;}
                 _held=null;_repeat=0;ResetCampaignButtonInput();
                 break;
             }

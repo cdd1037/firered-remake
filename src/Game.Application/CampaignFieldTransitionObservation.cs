@@ -69,7 +69,7 @@ public sealed partial class CampaignSession
         ReferenceEquals(State.FieldTransition,receipt)&&!WalkingFieldTransition(receipt)&&SupportsFieldTransition(State,receipt);
 
     public bool CanPresentFieldTransition(CampaignState origin,FieldTransitionReceipt receipt)=>
-        ReferenceEquals(State.FieldTransition,receipt)&&SupportsFieldTransitionOrigin(origin,receipt)&&SupportsFieldTransition(State,receipt);
+        TryGetFieldTransitionArrival(origin,receipt,out _);
 
     private static bool WalkingFieldTransition(FieldTransitionReceipt receipt)=>
         receipt.Cause is FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor||

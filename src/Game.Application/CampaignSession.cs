@@ -728,7 +728,8 @@ public sealed partial class CampaignSession
         var variables=state.Script.Variables.RemoveRange(state.Script.Variables.Keys.Where(k=>k.StartsWith("VAR_TEMP_",StringComparison.Ordinal)));
         var flags=state.Script.Flags.RemoveRange(state.Script.Flags.Keys.Where(k=>k.StartsWith("FLAG_TEMP_",StringComparison.Ordinal)));
         var actors=definition.Actors.ToImmutableSortedDictionary(a=>a.LocalId,a=>new CampaignActor(a.LocalId,a.SourceLocalId,a.GraphicsId,a.X,a.Y,a.Elevation,DirectionFromType(a.MovementType),a.MovementType,a.ScriptId,a.HideFlag,false,false,a.X,a.Y),StringComparer.Ordinal);
-        var queue=ImmutableArray.CreateBuilder<string>();if(definition.Programs.OnLoad is {} onLoad)queue.Add(onLoad);if(definition.Programs.OnTransition is {} onTransition)queue.Add(onTransition);
+        // Source RunOnTransitionMapScript precedes InitMap -> RunOnLoadMapScript.
+        var queue=ImmutableArray.CreateBuilder<string>();if(definition.Programs.OnTransition is {} onTransition)queue.Add(onTransition);if(definition.Programs.OnLoad is {} onLoad)queue.Add(onLoad);
         queue.Add("@renewable-hidden-items");
         if(definition.Programs.OnResume is {} onResume)queue.Add(onResume);
         queue.Add("@spawn");
@@ -781,6 +782,7 @@ public sealed partial class CampaignSession
                 state=StartStory(state,next);continue;
             }
             if(state.ArrivalFacing is {} facing){state=state with{World=state.World with{Player=state.World.Player with{Facing=facing}},ArrivalFacing=null};}
+            CaptureScriptWarpArrival(state);
             var table=_content.MapDefinition(state.World.Player.MapId).Programs.OnFrameTable;
             if(table is null)return state;
             var trigger=_content.Conditions(table).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);
@@ -966,18 +968,7 @@ public sealed partial class CampaignSession
                 case "warp":
                     var destination=_content.MapFromSourceSymbol(a[0]);int x,y;
                     if(a.Length==3){x=Int(a[1]);y=Int(a[2]);}else{var index=Int(a[1]);if(index>=0&&index<_content.Maps[destination].FieldWarps.Length){var w=_content.Maps[destination].FieldWarps[index];x=w.X;y=w.Y;}else{x=Int(a[2]);y=Int(a[3]);}}
-                    var cell=_content.Maps[destination].GetTile(x,y)??throw new InvalidDataException("Script warp out of map");
-                    var arrivalBehavior=_content.Maps[destination].SourceBehaviorAt(x,y);
-                    var facing=arrivalBehavior switch{0x62=>Direction.West,0x63=>Direction.East,0x64=>Direction.South,0x65=>Direction.North,0x6c or 0x6e=>Direction.West,0x6d or 0x6f=>Direction.East,_=>Direction.South};
-                    if(arrivalBehavior==0x69){y++;cell=_content.Maps[destination].GetTile(x,y)??throw new InvalidDataException("Script door exit missing.");}
-                    state=state with{World=state.World with{Player=new(destination,x,y,cell.Elevation,facing)}};
-                    // Source map loading initializes the script context and unlocks field controls
-                    // (overworld.c CB2_LoadMap, lines 1568-1572). Safari's lockall/warp/waitstate/end scripts rely
-                    // on that reset rather than an explicit releaseall in the old map.
-                    if((effect.Source.Path is SafariEntranceSource or SafariSharedSource)&&
-                        (destination.Value is "map.safari-zone-center" or SafariEntranceMap))
-                        state=state with{Script=state.Script with{Locked=false}};
-                    state=EnterMap(state,facing);break;
+                    state=EnterScriptWarp(state,destination,x,y);break;
                 case "showmonpic":
                     var pictureSpecies=Int(a[0]);RequireSpecies(pictureSpecies);
                     if(Int(a[1]) is <0 or >20||Int(a[2]) is <0 or >10)throw new InvalidDataException("pokemon_picture_bounds");

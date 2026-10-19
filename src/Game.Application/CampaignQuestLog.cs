@@ -477,6 +477,8 @@ public sealed partial class CampaignSession
     public void StopQuestLogRecording(){DiscardUnfinishedFieldTransitionObservation();_questLogRecordingOpen=false;_questLogFieldClock.Reset();_questLogStartGate?.EndRecording();}
     private Decision<CampaignState> DecideWithQuestLogRecording(CampaignState state,CampaignCommand command)
     {
+        var commandOrigin=state;
+        _scriptWarpReceipt=null;_scriptWarpArrival=null;
         var previousLog=state.QuestLog;
         state=ReconcileFieldTransitionObservation(state);
         if(state.FieldTransition is not null)state=state with{FieldTransition=null};
@@ -511,6 +513,8 @@ public sealed partial class CampaignSession
         }
         CompleteQuestLogScriptDelay(state,result.State,log);
         result=ReferenceEquals(log,result.State.QuestLog)?result:result with{State=result.State with{QuestLog=log}};
+        _scriptWarpPresentation=_scriptWarpReceipt is {} receipt&&_scriptWarpArrival is {} scriptArrival&&
+            ReferenceEquals(result.State.FieldTransition,receipt)?new(commandOrigin,receipt,scriptArrival):null;
         CaptureFieldTransitionObservation(state,result.State,command);
         return result;
     }

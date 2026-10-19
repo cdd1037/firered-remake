@@ -97,11 +97,7 @@ public sealed partial class CampaignSession
             bool lift=effect.Source.Path=="data/maps/TrainerTower_Elevator/scripts.inc"&&effect.Source.Symbol=="TrainerTower_Elevator_EventScript_SelectLobby";
             if(!(loss&&a.SequenceEqual(new[]{"MAP_TRAINER_TOWER_LOBBY","9","7"})||lift&&a.SequenceEqual(new[]{"MAP_TRAINER_TOWER_LOBBY","17","8"})))
                 throw new InvalidDataException("trainer_tower_lobby_warp_source");
-            int x=loss?9:17,y=loss?7:9;var lobby=new MapId(TrainerTowerLobby);var landing=_content.Maps[lobby].GetTile(x,y)!;
-            // CB2_LoadMap replaces the old script context. The loss script ends at
-            // waitstate with no end instruction; it must not resume after loading.
-            next=EnterMap(state with{World=state.World with{Player=new(lobby,x,y,landing.Elevation,Direction.South)},
-                Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false},Dialogue=null,Motions=[],PresentationEffects=[],PresentationTicks=0},Direction.South);
+            next=EnterScriptWarp(state,new MapId(TrainerTowerLobby),loss?9:17,loss?7:8);
             return true;
         }
         if(opcode=="addvar")
