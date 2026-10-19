@@ -256,17 +256,18 @@ public sealed partial class CampaignSession
             state.SilphElevator is not {} target||!ValidSilphDestination(target)||
             target.FloorWindowVisible||target.MenuDefault is not null)
             return new(CommandStatus.Fault,state,"silph_dynamic_destination_missing");
-        var map=_content.Maps[target.DestinationMapId];int x=target.X,y=target.Y;
+        var map=_content.Maps[target.DestinationMapId];int x=target.X,y=target.Y,anchorElevation=target.Elevation;
         if(target.DestinationWarpId!=255)
         {
-            var warp=map.FieldWarps.Single(w=>w.Index==target.DestinationWarpId);x=warp.X;y=warp.Y;
+            var warp=map.FieldWarps.Single(w=>w.Index==target.DestinationWarpId);x=warp.X;y=warp.Y;anchorElevation=warp.Elevation;
         }
         if(map.SourceBehaviorAt(x,y)!=0x69)throw new InvalidDataException("silph_dynamic_arrival_door");
+        var anchor=new TilePosition(map.Id,x,y,anchorElevation,Direction.South);
         y++;
         var tile=map.GetTile(x,y)??throw new InvalidDataException("silph_dynamic_arrival_cell");
         if(tile.Blocked)throw new InvalidDataException("silph_dynamic_arrival_blocked");
-        var moved=state with{World=state.World with{Revision=checked(state.World.Revision+1),
-            Player=new(map.Id,x,y,tile.Elevation,Direction.South)},Exploration=ResetEncounterModifiers(state.Exploration!)};
+        var moved=CommitDynamicFieldWarp(state,new(map.Id,x,y,tile.Elevation,Direction.South),anchor,0x69)
+            with{Exploration=ResetEncounterModifiers(state.Exploration!)};
         return new(CommandStatus.Accepted,Pump(EnterMap(moved,Direction.South)));
     }
 

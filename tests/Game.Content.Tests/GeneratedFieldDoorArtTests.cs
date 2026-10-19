@@ -64,11 +64,17 @@ public sealed class GeneratedFieldDoorArtTests
     }
 
     [TestMethod]
-    public void LargeDoorUsesThreeFullHeightStagesAndAllReplacementLayers()
+    [DataRow("LAYOUT_SSANNE_ROOM1", 0x281, "SE_DOOR")]
+    [DataRow("LAYOUT_CELADON_CITY_DEPARTMENT_STORE_1F", 0x28d, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_SILPH_CO_1F", 0x2e2, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_ROCKET_HIDEOUT_B1F", 0x2ab, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_TRAINER_TOWER_ROOF", 0x356, "SE_SLIDING_DOOR")]
+    [DataRow("LAYOUT_TRAINER_TOWER_LOBBY", 0x2c3, "SE_SLIDING_DOOR")]
+    public void LargeDoorUsesThreeFullHeightStagesAndAllReplacementLayers(string layout,int metatile,string sound)
     {
-        var door = GeneratedFieldDoorArt.Load(Generated).Find("LAYOUT_SSANNE_ROOM1", 0x281);
+        var door = GeneratedFieldDoorArt.Load(Generated).Find(layout,metatile);
         Assert.IsNotNull(door);
-        Assert.AreEqual("SE_DOOR", door.SoundEffect);
+        Assert.AreEqual(sound, door.SoundEffect);
         Assert.AreEqual(16, door.Width);
         Assert.AreEqual(32, door.Height);
         for (int frame = 0; frame < 3; frame++)

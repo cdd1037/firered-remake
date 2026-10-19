@@ -40,17 +40,19 @@ public sealed partial class CampaignSession
         var p=state.World.Player;
         if(command.Direction!=Direction.South||p.Facing!=Direction.South||_content.Maps[p.MapId].SourceBehaviorAt(p.X,p.Y)!=0x65)return null;
         if(!_content.RocketHideoutDynamicExits.Any(e=>e.X==p.X&&e.Y==p.Y&&e.SourceWarpId==127)||state.RocketElevator is not {} target)return new(CommandStatus.Fault,state,"rocket_dynamic_destination_missing");
-        var map=_content.Maps[target.DestinationMapId];int x=target.X,y=target.Y;
+        var map=_content.Maps[target.DestinationMapId];int x=target.X,y=target.Y,anchorElevation=target.Elevation;
         if(target.DestinationWarpId!=255)
         {
             var w=map.FieldWarps.SingleOrDefault(w=>w.Index==target.DestinationWarpId)??throw new InvalidDataException("rocket_dynamic_source_warp");
-            x=w.X;y=w.Y;
+            x=w.X;y=w.Y;anchorElevation=w.Elevation;
         }
         int behavior=map.SourceBehaviorAt(x,y)??throw new InvalidDataException("rocket_dynamic_arrival_missing");
+        var anchor=new TilePosition(map.Id,x,y,anchorElevation,Direction.South);
         if(behavior==0x69)y++;
         var tile=map.GetTile(x,y)??throw new InvalidDataException("rocket_dynamic_arrival_cell");
         if(tile.Blocked)throw new InvalidDataException("rocket_dynamic_arrival_blocked");
-        var moved=state with{World=state.World with{Revision=checked(state.World.Revision+1),Player=new(map.Id,x,y,tile.Elevation,Direction.South)},Exploration=ResetEncounterModifiers(state.Exploration!)};
+        var moved=CommitDynamicFieldWarp(state,new(map.Id,x,y,tile.Elevation,Direction.South),anchor,behavior)
+            with{Exploration=ResetEncounterModifiers(state.Exploration!)};
         return new(CommandStatus.Accepted,Pump(EnterMap(moved,Direction.South)));
     }
 }

@@ -23,6 +23,11 @@
     "METATILE_SeviiIslands45_DayCareDoor",
     "METATILE_SeviiIslands45_RocketWarehouseDoor_Unlocked",
     "METATILE_SeviiIslands67_Door",
-    "METATILE_SSAnne_Door"
+    "METATILE_SSAnne_Door",
+    "METATILE_DepartmentStore_ElevatorDoor",
+    "METATILE_SilphCo_HideoutElevatorDoor",
+    "METATILE_SilphCo_ElevatorDoor",
+    "METATILE_TrainerTower_LobbyElevatorDoor",
+    "METATILE_TrainerTower_RoofElevatorDoor"
   ]
 }

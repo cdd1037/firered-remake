@@ -28,6 +28,13 @@ UNUSED_WARP = 'METATILE_VermilionCity_SSAnneWarp'
 SS_ANNE_DOOR = 'METATILE_SSAnne_Door'
 SS_ANNE = 'LAYOUT_SSANNE_1F_CORRIDOR'
 SS_ANNE_PNG = 'graphics/door_anims/ss_anne.png'
+ELEVATOR_DOORS = {
+    'METATILE_DepartmentStore_ElevatorDoor',
+    'METATILE_SilphCo_HideoutElevatorDoor',
+    'METATILE_SilphCo_ElevatorDoor',
+    'METATILE_TrainerTower_LobbyElevatorDoor',
+    'METATILE_TrainerTower_RoofElevatorDoor',
+}
 
 
 def source():
@@ -101,7 +108,7 @@ class OriginalLayout:
     def rgba(self, door):
         original = Image.open(RAW / door['path'])
         height = door['height']
-        if original.mode != 'P' or original.size != (16, height * 3) or original.getextrema()[1] > 15:
+        if original.mode != 'P' or original.size != (16, height * 3):
             raise AssertionError('Invalid original door sheet')
         if height == 32 and self.primary.crop((0, 0, 8, 8)).getextrema() != (0, 0):
             raise AssertionError('Large original door requires transparent blank tile')
@@ -115,21 +122,24 @@ class OriginalLayout:
                     # source array. The verified all-zero tile stays invisible.
                     pixels.extend((0, 0, 0, 0))
                     continue
-                index = original.getpixel((local_x, y)) if layer == 0 else self.primary.getpixel((local_x % 8, y % 8))
+                index = (original.getpixel((local_x, y)) if layer == 0 else self.primary.getpixel((local_x % 8, y % 8))) & 15
                 slot = 0 if layer == 2 else door['palettes'][tile + layer * 4]
                 pixels.extend((*self.palettes[slot][index], 255 if index else 0))
         return bytes(pixels)
 
 
 class FieldDoorArtTests(unittest.TestCase):
-    def test_recipe_admits_real_small_doors_and_normal_large_door_but_not_special_large_doors(self):
+    def test_recipe_admits_real_small_normal_large_and_elevator_doors_only(self):
         rows = independent_small_doors()
         admitted = json.loads(RECIPE.read_bytes())['metatiles']
         self.assertEqual(len(admitted), len(set(admitted)))
         normal_large = {name for name, row in independent_doors().items()
                         if row['height'] == 32 and row['sound'] == 'SE_DOOR'}
         self.assertEqual({SS_ANNE_DOOR}, normal_large)
-        self.assertEqual((set(rows) - {UNUSED_WARP}) | normal_large, set(admitted))
+        self.assertEqual((set(rows) - {UNUSED_WARP}) | normal_large | ELEVATOR_DOORS, set(admitted))
+        for name in ELEVATOR_DOORS:
+            self.assertEqual((32, 'SE_SLIDING_DOOR'),
+                             (independent_doors()[name]['height'], independent_doors()[name]['sound']))
         # The original table documents this reused harbor warp as having no door.
         self.assertIn('warp to enter the SS Anne from the harbor, which has no door.', (RAW / 'src/field_door.c').read_text())
 
@@ -137,6 +147,7 @@ class FieldDoorArtTests(unittest.TestCase):
         rows = independent_small_doors()
         del rows[UNUSED_WARP]
         rows[SS_ANNE_DOOR] = independent_doors()[SS_ANNE_DOOR]
+        rows.update({name: independent_doors()[name] for name in ELEVATOR_DOORS})
         layouts = {row['id']: row for row in json.loads((RAW / 'data/layouts/layouts.json').read_bytes())['layouts'] if 'id' in row}
         selected = current_layouts()
         document, atlas = unpack(compile_outputs(source(), selected))
@@ -169,6 +180,55 @@ class FieldDoorArtTests(unittest.TestCase):
         self.assertEqual(set(rows), represented)
         self.assertEqual({'SE_DOOR', 'SE_SLIDING_DOOR'}, sounds)
         self.assertGreater(len(expected), len(rows))
+
+    def test_elevator_door_bindings_use_actual_floor_warp_cells_and_source_palettes(self):
+        examples = (
+            ('CeladonCity_DepartmentStore_1F', 'METATILE_DepartmentStore_ElevatorDoor'),
+            ('CeladonCity_DepartmentStore_5F', 'METATILE_DepartmentStore_ElevatorDoor'),
+            ('RocketHideout_B1F', 'METATILE_SilphCo_HideoutElevatorDoor'),
+            ('RocketHideout_B4F', 'METATILE_SilphCo_HideoutElevatorDoor'),
+            ('SilphCo_1F', 'METATILE_SilphCo_ElevatorDoor'),
+            ('SilphCo_11F', 'METATILE_SilphCo_ElevatorDoor'),
+            ('TrainerTower_Lobby', 'METATILE_TrainerTower_LobbyElevatorDoor'),
+            ('TrainerTower_Roof', 'METATILE_TrainerTower_RoofElevatorDoor'),
+        )
+        layouts = {row['id']: row for row in json.loads((RAW / 'data/layouts/layouts.json').read_bytes())['layouts'] if 'id' in row}
+        doors = independent_doors()
+        selected = current_layouts()
+        document, atlas = unpack(compile_outputs(source(), selected))
+        actual = {(entry['layout'], entry['metatileId']): entry for entry in document['entries']}
+        for name, label in examples:
+            with self.subTest(map=name, door=label):
+                raw_map = json.loads((RAW / 'data/maps' / name / 'map.json').read_bytes())
+                layout, door = layouts[raw_map['layout']], doors[label]
+                self.assertIn(raw_map['layout'], selected)
+                blocks = [x[0] & 1023 for x in struct.iter_unpack('<H', (RAW / layout['blockdata_filepath']).read_bytes())]
+                anchors = [warp for warp in raw_map['warp_events'] if warp['dest_map'].endswith('_ELEVATOR')
+                           and blocks[warp['y'] * layout['width'] + warp['x']] == door['metatile']]
+                self.assertTrue(anchors, 'No actual elevator warp anchors the admitted door')
+                self.assertTrue(all(warp['y'] > 0 for warp in anchors), 'A 32px door needs its upper metatile')
+                entry = actual[raw_map['layout'], door['metatile']]
+                self.assertEqual((16, 32, 'SE_SLIDING_DOOR'),
+                                 (entry['width'], entry['height'], entry['soundEffect']))
+                self.assertEqual(OriginalLayout(layout).rgba(door),
+                                 atlas.crop((0, entry['atlasY'], 48, entry['atlasY'] + 96)).tobytes())
+
+    def test_elevator_extension_preserves_existing_bindings_and_all_replacement_pixels(self):
+        admitted = json.loads(RECIPE.read_bytes())['metatiles']
+        previous = [label for label in admitted if label not in ELEVATOR_DOORS]
+        selected = current_layouts()
+        before, before_atlas = unpack(compile_outputs(source(), selected, admitted=previous))
+        after, after_atlas = unpack(compile_outputs(source(), selected))
+        actual = {(entry['layout'], entry['metatileId']): entry for entry in after['entries']}
+        self.assertTrue(before['entries'])
+        self.assertGreater(len(after['entries']), len(before['entries']))
+        for old in before['entries']:
+            with self.subTest(layout=old['layout'], metatile=old['metatileId']):
+                current = actual[old['layout'], old['metatileId']]
+                self.assertEqual({key: value for key, value in old.items() if key != 'atlasY'},
+                                 {key: value for key, value in current.items() if key != 'atlasY'})
+                self.assertEqual(before_atlas.crop((0, old['atlasY'], 48, old['atlasY'] + old['height'] * 3)).tobytes(),
+                                 after_atlas.crop((0, current['atlasY'], 48, current['atlasY'] + current['height'] * 3)).tobytes())
 
     def test_dynamic_warehouse_door_is_bound_even_before_source_script_replaces_locked_tile(self):
         name = 'METATILE_SeviiIslands45_RocketWarehouseDoor_Unlocked'
@@ -263,22 +323,79 @@ class FieldDoorArtTests(unittest.TestCase):
             compile_outputs(src, {SS_ANNE}, admitted=[SS_ANNE_DOOR])
 
     def test_large_admitted_sheet_requires_three_full_indexed_frames_even_outside_its_layout(self):
-        for mutation in ('rgb', 'size', 'index'):
-            with self.subTest(mutation=mutation):
-                image = Image.open(RAW / SS_ANNE_PNG)
-                if mutation == 'rgb':
-                    image = image.convert('RGB')
-                elif mutation == 'size':
-                    image = image.crop((0, 0, 16, 48))
-                else:
-                    image.putpalette([0, 0, 0] * 256)
-                    image.putpixel((0, 0), 16)
-                data = io.BytesIO()
-                image.save(data, format='PNG')
+        doors = independent_doors()
+        for label in sorted(ELEVATOR_DOORS | {SS_ANNE_DOOR}):
+            for mutation in ('rgb', 'size'):
+                with self.subTest(door=label, mutation=mutation):
+                    image = Image.open(RAW / doors[label]['path'])
+                    if mutation == 'rgb':
+                        image = image.convert('RGB')
+                    elif mutation == 'size':
+                        image = image.crop((0, 0, 16, 48))
+                    data = io.BytesIO()
+                    image.save(data, format='PNG')
+                    src = source()
+                    src.data[doors[label]['path']] = data.getvalue()
+                    with self.assertRaisesRegex(ValueError, 'indexed 4bpp|three original 16x32 frames'):
+                        compile_outputs(src, {PALLET}, admitted=[label])
+
+    def test_indexed_png_editing_palette_banks_follow_original_4bpp_conversion(self):
+        conversion = (RAW / 'tools/gbagfx/convert_png.c').read_text()
+        self.assertIn('unsigned char pixel = ((srcByte >> j) % (1 << srcBitDepth)) % (1 << destBitDepth);', conversion)
+        self.assertIn('image->pixels = ConvertBitDepth(image->pixels, bit_depth, image->bitDepth, image->width * image->height);', conversion)
+        command = (RAW / 'tools/gbagfx/main.c').read_text()
+        self.assertIn("options.bitDepth = outputFileExtension[0] - '0';", command)
+        # These source sheets actually use several editing-palette banks. Their
+        # high bits never select the runtime palette; field_door.c does that.
+        doors = independent_doors()
+        banked = [label for label in ELEVATOR_DOORS
+                  if Image.open(RAW / doors[label]['path']).getextrema()[1] > 15]
+        self.assertTrue(banked)
+        admitted = json.loads(RECIPE.read_bytes())['metatiles']
+        src = source()
+        selected = current_layouts()
+        expected = compile_outputs(src, selected)
+        for label in admitted:
+            path = doors[label]['path']
+            image = Image.open(RAW / path)
+            image.putpalette([0, 0, 0] * 256)
+            image = image.point(lambda index: (index & 15) | 0xf0)
+            data = io.BytesIO()
+            image.save(data, format='PNG')
+            self.assertGreater(Image.open(io.BytesIO(data.getvalue())).getextrema()[0], 15)
+            src.data[path] = data.getvalue()
+        self.assertEqual(expected, compile_outputs(src, selected))
+
+    def test_every_admitted_elevator_sheet_is_required_even_outside_its_layout(self):
+        src = source()
+        compile_outputs(src, {PALLET})
+        doors = independent_doors()
+        with tempfile.TemporaryDirectory(prefix='elevator-door-required-') as directory:
+            root = Path(directory)
+            for name, data in src.data.items():
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+            for label in sorted(ELEVATOR_DOORS):
+                with self.subTest(door=label):
+                    path = doors[label]['path']
+                    (root / path).unlink()
+                    with self.assertRaises(FileNotFoundError):
+                        compile_outputs(WorldSource(root), {PALLET})
+                    (root / path).write_bytes(src.data[path])
+
+    def test_incomplete_or_unloaded_source_palette_slots_fail(self):
+        for numbers in ('12, 12, 2, 2, 2, 2, 2', '13, 12, 2, 2, 2, 2, 2, 2'):
+            with self.subTest(palettes=numbers):
                 src = source()
-                src.data[SS_ANNE_PNG] = data.getvalue()
-                with self.assertRaisesRegex(ValueError, 'indexed 4bpp|three original 16x32 frames'):
-                    compile_outputs(src, {PALLET}, admitted=[SS_ANNE_DOOR])
+                path = 'src/field_door.c'
+                changed, replacements = re.subn(
+                    rb'(sDoorAnimPalettes_HideoutElevator\[\] = \{)[^}]+',
+                    lambda match: match[1] + numbers.encode(), src.data[path])
+                self.assertEqual(1, replacements)
+                src.data[path] = changed
+                with self.assertRaisesRegex(ValueError, 'unloaded map palette'):
+                    compile_outputs(src, {PALLET})
 
     def test_every_rgba_matches_independent_original_pixels_with_current_map_palettes(self):
         src = source()
@@ -384,22 +501,15 @@ class FieldDoorArtTests(unittest.TestCase):
             (root / path).unlink()
             with self.assertRaises(FileNotFoundError):
                 compile_outputs(WorldSource(root), {PALLET})
-        for mutation in ('rgb', 'size', 'index'):
+        for mutation in ('rgb', 'size'):
             with self.subTest(mutation=mutation):
                 image = Image.open(RAW / path)
                 if mutation == 'rgb':
                     image = image.convert('RGB')
                 elif mutation == 'size':
                     image = image.crop((0, 0, 16, 32))
-                else:
-                    # Retain index 16 in the saved PNG rather than letting its
-                    # original 16-color editing palette truncate it to 4 bits.
-                    image.putpalette([0, 0, 0] * 256)
-                    image.putpixel((0, 0), 16)
                 data = io.BytesIO()
                 image.save(data, format='PNG')
-                if mutation == 'index':
-                    self.assertEqual(16, Image.open(io.BytesIO(data.getvalue())).getpixel((0, 0)))
                 malformed = source()
                 malformed.data[path] = data.getvalue()
                 with self.assertRaisesRegex(ValueError, 'indexed 4bpp|three original 16x16 frames'):

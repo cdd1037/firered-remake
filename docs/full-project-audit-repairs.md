@@ -77,3 +77,8 @@ The same door renderer now consumes source-sized 16×32 replacement frames for t
 ## Ordinary nonanimated door traversal
 
 The previously rejected nonanimated-door branch now uses authenticated accepted-step metadata and the shared live/recap palette/pose controller. The Cinnabar laboratory public round trip exercises normal movement before warp, delayed music, hidden arrival and automatic exit step without changing authoritative positions, counters or RNG. Caption timers continue through the initial normal walk and pause only after the source warp lock. Exact callback and verification boundaries are recorded in [ordinary field transitions](plain-field-transition-presentation.md).
+
+
+## Dynamic elevator return ownership
+
+The four ordinary manual elevator exits now publish their resolved movement through a shared transition commit instead of bypassing presentation with a direct player assignment. Static and dynamic destinations use one arrival classification; existing floor validation, counters, roaming/encounter behavior and entry scripts remain authoritative. Source elevator 1×2 sliding-door data enters the existing importer and renderer, including original 4bpp low-nibble conversion. Elevator cabins remain source-disabled for Quest recording, so no synthetic recap timing is created. The separate Trainer Tower scripted lobby ride is not covered by this receipt slice. See [ordinary field transitions](plain-field-transition-presentation.md) for tests and acceptance limits.

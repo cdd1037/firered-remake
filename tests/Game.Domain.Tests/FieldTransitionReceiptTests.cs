@@ -67,6 +67,31 @@ public sealed class FieldTransitionReceiptTests
     }
 
     [TestMethod]
+    [DataRow(0x00,FieldTransitionArrival.Plain)]
+    [DataRow(0x69,FieldTransitionArrival.AnimatedDoor)]
+    [DataRow(0x60,FieldTransitionArrival.NonAnimatedDoor)]
+    [DataRow(0x6c,FieldTransitionArrival.Stair)]
+    [DataRow(0x6f,FieldTransitionArrival.Stair)]
+    public void StaticArrivalUsesTheSharedResolvedDestinationClassification(int behavior,FieldTransitionArrival arrival)
+    {
+        MapId from=new("map.from"),to=new("map.to");
+        var source=new FieldMap(from,[new(0,1,1,3,to,0)],new(){[(1,1)]=0x65});
+        var destination=new FieldMap(to,[new(0,2,1,0,from,0)],new(){[(2,1)]=behavior});
+        var before=new WorldSnapshot(RuleVersions.GridWorldV0,0,7,new(from,1,1,3,Direction.South),new(42));
+        var result=FieldMovementRules.Move(before,new(new("test:arrival"),0,Direction.South),
+            new Dictionary<MapId,IFieldMap>{{from,source},{to,destination}},true,true);
+        Assert.AreEqual(TransitionStatus.Accepted,result.Status,result.Diagnostic?.Code);
+        Assert.IsNotNull(result.Presentation);
+        Assert.AreEqual(arrival,result.Presentation.Arrival);
+        Assert.AreEqual(arrival,FieldTransitionReceipt.ArrivalAt(behavior));
+        Assert.AreEqual(1,result.Presentation.ArrivalAnchor.Y);
+        Assert.AreEqual(0,result.Presentation.ArrivalAnchor.Elevation);
+        Assert.AreEqual(behavior is 0x60 or 0x69?2:1,result.State.Player.Y);
+        Assert.AreEqual(before.StepCount,result.State.StepCount);
+        Assert.AreEqual(before.Rng,result.State.Rng);
+    }
+
+    [TestMethod]
     public void ConnectedProducerDistinguishesCrossingFromBlockedBoundary()
     {
         MapId from=new("map.from"),to=new("map.to");

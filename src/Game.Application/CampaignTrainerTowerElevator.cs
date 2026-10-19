@@ -51,9 +51,11 @@ public sealed partial class CampaignSession
         if(command.Direction!=Direction.South||p.Facing!=Direction.South||map.SourceBehaviorAt(p.X,p.Y)!=0x65)return null;
         if(state.TrainerTowerElevator is not {} target||target.FloorWindowVisible||target.MenuDefault is not null)return new(CommandStatus.Rejected,state,"trainer_tower_elevator_destination");
         var destination=_content.Maps[target.DestinationMapId];int x=target.X,y=target.Y;
-        if(destination.SourceBehaviorAt(x,y)==0x69)y++;
+        int behavior=destination.SourceBehaviorAt(x,y)??throw new InvalidDataException("trainer_tower_elevator_arrival");
+        var anchor=new TilePosition(destination.Id,x,y,target.Elevation,Direction.South);
+        if(behavior==0x69)y++;
         var tile=destination.GetTile(x,y)!;
-        var next=state with{World=state.World with{Revision=checked(state.World.Revision+1),Player=new(target.DestinationMapId,x,y,tile.Elevation,Direction.South)}};
+        var next=CommitDynamicFieldWarp(state,new(target.DestinationMapId,x,y,tile.Elevation,Direction.South),anchor,behavior);
         return new(CommandStatus.Accepted,Pump(EnterMap(next,Direction.South)));
     }
 }

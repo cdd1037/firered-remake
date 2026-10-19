@@ -62,7 +62,7 @@ public static class FieldMovementRules
             if(tile is null||tile.Blocked)return Fail("warp_arrival_blocked",$"{destination.Id}:{x},{y}");
             var position=new TilePosition(destination.Id,x,y,tile.Elevation,facing);
             var cause=caveStep?(map.SourceBehaviorAt(frontX,frontY)==0x60?FieldTransitionCause.NonAnimatedDoor:FieldTransitionCause.PlainWarp):here is >=0x6c and <=0x6f?FieldTransitionCause.StairWarp:warp.X==frontX&&warp.Y==frontY&&map.SourceBehaviorAt(frontX,frontY)==0x69&&intent.Direction==Direction.North?FieldTransitionCause.AnimatedDoor:FieldTransitionCause.PlainWarp;
-            var arrivalKind=behavior switch{0x69=>FieldTransitionArrival.AnimatedDoor,0x60=>FieldTransitionArrival.NonAnimatedDoor,>=0x6c and <=0x6f=>FieldTransitionArrival.Stair,_=>FieldTransitionArrival.Plain};
+            var arrivalKind=FieldTransitionReceipt.ArrivalAt(behavior);
             var receipt=new FieldTransitionReceipt(cause,caveStep?FieldTransitionDeparture.StepOntoWarp:FieldTransitionDeparture.Immediate,arrivalKind,state.Player,position,new(destination.Id,arrival.X,arrival.Y,arrival.Elevation,facing))
             { DepartureStep=caveStep?new(state.Player.MapId,frontX,frontY,
                 map.GetTile(frontX,frontY)!.Elevation is 0 or 15?state.Player.Elevation:map.GetTile(frontX,frontY)!.Elevation,intent.Direction):null };

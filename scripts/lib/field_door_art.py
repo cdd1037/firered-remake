@@ -103,9 +103,12 @@ def tile_pixels(image, tile, palette):
 def indexed_image(src, path):
     image = Image.open(io.BytesIO(src.data[path]))
     image.load()
-    if image.mode != 'P' or image.width % 8 or image.height % 8 or image.getextrema()[1] > 15:
+    if image.mode != 'P' or image.width % 8 or image.height % 8:
         raise ValueError('Expected indexed 4bpp door/tileset pixels: ' + path)
-    return image
+    # Original PNGs can retain several editing-palette banks. gbagfx ReadPng
+    # converts indexed input to the requested .4bpp depth with pixel % 16;
+    # field_door.c independently selects the live map palette for each tile.
+    return image.point(lambda index: index % 16)
 
 
 def compile_outputs(src, used_layouts, *, admitted=None):
