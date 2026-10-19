@@ -6,6 +6,33 @@ namespace FireRed.Tests.Content;
 public sealed class GeneratedBattleTextTests
 {
     [TestMethod]
+    public void BattleTemplatesBindLiteralNamesOnceAndKeepSourcePageControls()
+    {
+        var source = new Dictionary<string, string> {
+            ["message"] = "{ACTOR} used {MOVE}!{WAIT_SE}\\nNext\\lLast{PAUSE 60}\\pDone{PAUSE_UNTIL_PRESS}"
+        };
+        var values = new Dictionary<string, string> {
+            ["ACTOR"] = "Literal {MOVE}\\p{WAIT_SE}", ["MOVE"] = "Name {ACTOR}\\n"
+        };
+        Assert.AreSequenceEqual(new[] {
+            "Literal {MOVE}\\p{WAIT_SE} used Name {ACTOR}\\n!\nNext", "Next\nLast", "Done"
+        }, PretBattleText.Pages(source, "message", values));
+    }
+
+    [TestMethod]
+    [DataRow("{MISSING}")]
+    [DataRow("{ACTOR")]
+    [DataRow("ACTOR}")]
+    [DataRow("{PAUSE 61}")]
+    [DataRow("bad\\x")]
+    [DataRow("bad\\")]
+    public void BattleTemplatesStillRejectUnknownOrMalformedControls(string template)
+    {
+        Assert.ThrowsExactly<InvalidDataException>(() => PretBattleText.Pages(
+            new Dictionary<string, string> { ["message"] = template }, "message", new Dictionary<string, string>()));
+    }
+
+    [TestMethod]
     public void LoadsDialogueWithoutOriginalSources()
     {
         var root = Path.Combine(Path.GetTempPath(), "firered-battle-text-" + Guid.NewGuid().ToString("N"));

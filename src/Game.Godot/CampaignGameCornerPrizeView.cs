@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
 using Game.Content;
 using Game.Domain.Items;
 using Godot;
@@ -12,20 +10,13 @@ public partial class CampaignView
     private bool GameCornerPrizeMenuActive => GameCornerPrizeMenu is not null;
     private bool GameCornerPrizeMenuVisible => GameCornerPrizeMenuActive && FieldTextComplete &&
         _session.State.Dialogue?.Page + 1 == _session.State.Dialogue?.Pages.Length;
-    private static (string Name, int? Offset, string? Price) PrizeMenuText(string label)
-    {
-        var match = Regex.Match(label, @"^([^{}]+)\{CLEAR_TO 0x([0-9A-Fa-f]+)\}\{FONT_SMALL\}([^{}]+)$");
-        if (match.Success) return (match.Groups[1].Value, int.Parse(match.Groups[2].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture), match.Groups[3].Value);
-        if (label != "NO THANKS") throw new InvalidDataException("prize_menu_text_control");
-        return (label, null, null);
-    }
     private (int Left, int Width) GameCornerPrizeLayout()
     {
         var menu = GameCornerPrizeMenu ?? throw new InvalidDataException("prize_menu_missing");
         float width = 0;
-        foreach (var text in menu.MenuLabels.Select(PrizeMenuText))
-            width = Math.Max(width, text.Offset is {} offset ? offset + _sourceSmall.Font.GetStringSize(text.Price!, fontSize: _sourceSmall.Size).X :
-                _sourceNormal.Font.GetStringSize(text.Name, fontSize: _sourceNormal.Size).X);
+        foreach (var text in menu.MenuLabels.Select(SourceMenuLabelPresentation.Parse))
+            width = Math.Max(width, text.SuffixX is {} offset ? offset + _sourceSmall.Font.GetStringSize(text.Suffix!, fontSize: _sourceSmall.Size).X :
+                _sourceNormal.Font.GetStringSize(text.Label, fontSize: _sourceNormal.Size).X);
         int tiles = ((int)width + 9) / 8 + 1;
         int left = Math.Min(menu.Kind == "items" ? 10 : 11, 28 - tiles);
         if (left < 0 || tiles < 1) throw new InvalidDataException("prize_menu_width");
@@ -67,9 +58,9 @@ public partial class CampaignView
         _battleSkin.DrawUserFrame(this, new(layout.Left, 0, layout.Width, 104));
         for (int i = 0; i < menu.MenuLabels.Length; i++)
         {
-            var text = PrizeMenuText(menu.MenuLabels[i]);
-            SourceText(_sourceNormal, new(layout.Left + 16, 10 + i * 14), text.Name);
-            if (text.Offset is {} offset) SourceText(_sourceSmall, new(layout.Left + 16 + offset, 10 + i * 14), text.Price!);
+            var text = SourceMenuLabelPresentation.Parse(menu.MenuLabels[i]);
+            SourceText(_sourceNormal, new(layout.Left + 16, 10 + i * 14), text.Label);
+            if (text.SuffixX is {} offset) SourceText(_sourceSmall, new(layout.Left + 16 + offset, 10 + i * 14), text.Suffix!);
         }
         SourceText(_sourceNormal, new(layout.Left + 8, 10 + _gameCornerPrizeCursor * 14), "▶");
     }

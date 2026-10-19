@@ -205,3 +205,35 @@ Moves、DETAILS 草稿取消和返回完成，截图人工检查。正常退出 
 检查点及覆盖包未变；初末玩法状态仅 PlayTime 推进，无保存。两项覆盖 INSPECT／RETURN
 仍有效。此验收使用明确指定昵称意图的受控副本，不证明旧档可自动迁移；实音与真实 IME
 仍未验收。
+
+## 本轮有限收尾边界
+
+当前 `FIRERED_TEXT_PACK` 只覆盖七组作者 UI：129 条英文、合计6,737字节。
+原作剧情、战斗及名称说明仍直接读生成目录，不能把它称为完整语言选择机制。
+下一独立覆盖工作应按实际消费者接入，保留现有稳定ID，而非复制全部英文：
+
+- 剧情：`PretStoryRuntime.TextBank` 与 `Compilation.Menus.Options.Text` 都需按源符号
+  覆盖；只处理 TextBank 会漏掉菜单。保留分页／控制／占位符语义。
+- 战斗：`PretBattleText.Load` 同时供事件分页、菜单与摘要源标签使用。参数现已只在
+  模板扫描时绑定一次，名称字面值不再被二次展开或解释成分页／等待控制。
+- 名称与说明：PokedexMenu、SourceDisplayNames、SharedItemCatalog、MoveCatalog 与
+  SummaryPresentation 各自已有真实目录，应在这些入口按稳定ID覆盖；默认昵称已解耦。
+- 尚待清理的实际重复：Route1／OldMan 名称图和 Story.StarterSpeciesNames 无产品读者；
+  Story.MoveNames 仅复制后与 canonical 比较。可删除前者、让后者直接使用现有目录，
+  不涉及训练师个体生成需要的编码名字。
+- 仍需按消费者处理的旧显示校验：FossilLab 重复物品文本，FourIsland／SixIsland
+  物品名字等值，Seafoam 名字／阶级英文，以及 Mail 的显示词组／署名布局。邮件作者
+  与词ID还参与持久化身份，不能把翻译写回旧消息；其显示投影应另行接入。
+
+Game Corner 已改用现有 SourceMenuLabelPresentation，取消重复解析器及 NO THANKS
+英文门槛；取消行为始终由行号／127决定。未增加每地图规则或另一文本缓存。
+
+新增测试已使用参数行、共用 TestAssets 临时输出与 JSON 编辑入口。Domain 昵称规则、
+实际进化／孵蛋规则、Content 目录投影及 Application 事务分别验证不同边界，不因文件
+数多而合并成一个巨型夹具；今后删除无消费者名称图时应同步删除对应过时名称测试。
+实际中文翻译、字体排版和真实 IME 仍未实施，Dummy 音频也不代表实音验收。
+
+单遍战斗绑定／奖品菜单收尾验证：Content 10、Presentation 45 项通过，涵盖字面参数
+包含另一参数名及反斜杠、原分页滚动、三个等待控制与六种错误输入；既有通用价格标签
+测试验证替换取消标签及不支持控制拒绝。Content、Presentation、Godot 编译零警告错误。
+这两个小改动未再启动原生窗口；前述昵称窗口验收对应其自身冻结 DLL。
