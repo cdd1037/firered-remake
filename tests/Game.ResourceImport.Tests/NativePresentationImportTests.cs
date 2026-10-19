@@ -26,7 +26,7 @@ public sealed class NativePresentationImportTests
     [DataRow("test-impact-emission-animation-import.py")]
     [DataRow("test-orbital-particle-animation-import.py")]
     [DataRow("test-fire-seed-animation-import.py")]
-    [DataRow("test-physical-animation-import.py")]
+    [DataRow("test-physical-animation-import.py", 10)]
     [DataRow("test-elemental-animation-import.py")]
     [DataRow("test-source-animation-expectations.py")]
     [DataRow("test-impact-adapter-animation-import.py")]
@@ -37,6 +37,6 @@ public sealed class NativePresentationImportTests
     [DataRow("test-npc-trade-scene-import.py")]
     [DataRow("test-party-screen.py")]
     [DataRow("test-summary-screen.py")]
-    public Task GeneratedNativePresentationMatchesSource(string script) =>
-        PythonResourceCheck.Run("scripts/checks/" + script, timeout: TimeSpan.FromMinutes(3));
+    public Task GeneratedNativePresentationMatchesSource(string script, int timeoutMinutes = 3) =>
+        PythonResourceCheck.Run("scripts/checks/" + script, timeout: TimeSpan.FromMinutes(timeoutMinutes));
 }

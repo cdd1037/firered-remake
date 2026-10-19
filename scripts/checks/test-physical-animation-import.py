@@ -10,6 +10,11 @@ ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('physical_import',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
 class PhysicalImportTests(unittest.TestCase):
+ @classmethod
+ def setUpClass(cls):
+  # Share only immutable clean output; every test decodes its own JSON graph.
+  # Source mutation, blocked-output and regeneration checks still build fresh.
+  cls._pack_bytes=imp.build(REFERENCE)[0]
  def test_indexed_owner_does_not_construct_rgb_shadows(self):
   with patch.object(imp.hit,'rgb555',side_effect=AssertionError('Indexed materials must not construct RGB shadows')):
    indexed,pixels=imp.build_indexed_assets(REFERENCE)
@@ -18,7 +23,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertFalse({r['id'] for r in indexed}&{r['id'] for r in pack['assets']})
   for name,blob in pixels.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/physical-'+name)).read_bytes())
  def test_random_fist_names_raw_impact_for_double_kick_and_thrash(self):
-  data,blocked=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==24)
+  data=self._pack_bytes;pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==24)
   self.assertEqual(['gBasicHitSplatSpriteTemplate'],script['spriteDependencies'])
   self.assertEqual([['gFistFootRandomPosSpriteTemplate','ANIM_ATTACKER','3','1','20','1']],[c['args'] for c in script['commands'] if c['op']=='createsprite'])
   self.assertEqual({'SE_M_VITAL_THROW2':116},script['soundEffects'])
@@ -46,7 +51,7 @@ class PhysicalImportTests(unittest.TestCase):
    with patch.object(imp,'read_sources',return_value=changed):
     with self.assertRaisesRegex(ValueError,'Multi-strike source template'):imp.build(REFERENCE)
  def test_wish_reuses_existing_gold_and_granting_assets_with_exact_source_program(self):
-  pack=json.loads(imp.build(REFERENCE)[0]);script=next(s for s in pack['scripts'] if s['moveId']==273)
+  pack=json.loads(self._pack_bytes);script=next(s for s in pack['scripts'] if s['moveId']==273)
   self.assertEqual({'SE_M_HEAL_BELL':188,'SE_M_REFLECT':200},script['soundEffects'])
   self.assertEqual({'ANIM_TAG_GOLD_STARS':10233,'ANIM_TAG_SPARKLE_2':10049},script['spriteTags'])
   self.assertEqual([['SE_M_REFLECT','SOUND_PAN_TARGET','SOUND_PAN_ATTACKER','-3','0']],[c['args'] for c in script['commands'] if c['op']=='panse_adjustall'])
@@ -72,7 +77,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertEqual({'SE_M_REFLECT':200},imp.elemental.sound_effects(REFERENCE,[dict(op='panse_adjustall',args=['SE_M_REFLECT','63','-64','-3','0'])]))
   with self.assertRaisesRegex(ValueError,'Undefined source sound dependency'):imp.elemental.sound_effects(REFERENCE,[dict(op='panse_adjustall',args=['SE_UNKNOWN_WISH','63','-64','-3','0'])])
  def test_meteor_source_dependency_closure_and_authored_schedule(self):
-  pack=json.loads(imp.build(REFERENCE)[0]);script=next(s for s in pack['scripts'] if s['moveId']==309)
+  pack=json.loads(self._pack_bytes);script=next(s for s in pack['scripts'] if s['moveId']==309)
   self.assertEqual({'SE_M_BARRIER':201,'SE_M_VITAL_THROW2':116},script['soundEffects'])
   self.assertEqual({'ANIM_TAG_GOLD_STARS':10233,'ANIM_TAG_HANDS_AND_FEET':10143,'ANIM_TAG_IMPACT':10135},script['spriteTags'])
   self.assertEqual(16,pack['backgroundSymbols']['BG_COSMIC'])
@@ -99,7 +104,7 @@ class PhysicalImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
   self.assertNotIn(309,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('callback:gUnknownMeteorSpriteTemplate',next(s for s in blocked if s['moveId']==309)['missing'])
  def test_bullet_seed_retains_authored_particles_and_callback_only_sound(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==331)
+  data=self._pack_bytes;pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==331)
   self.assertEqual({'SE_M_HORN_ATTACK':159},script['soundEffects'])
   self.assertFalse(any(c['op'].startswith('playse') for c in script['commands']))
   particles=[c for c in script['commands'] if c['op']=='createsprite']
@@ -145,7 +150,7 @@ class PhysicalImportTests(unittest.TestCase):
     self.assertEqual(1,len(matches),label);resolved.append(matches[0])
    assert_source_move_identities(self,resolved,REFERENCE)
  def test_shared_goto_retains_branch_and_one_level_calls(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   for move in [20,35]:
    script=next(s for s in pack['scripts'] if s['moveId']==move)
    self.assertEqual('goto',script['commands'][1]['op'])
@@ -174,7 +179,7 @@ class PhysicalImportTests(unittest.TestCase):
     expected.append((r//8)+(g//8)*32+(b//8)*1024+(32768 if index else 0))
    self.assertEqual(expected,list(pixels))
  def test_powder_frames_loop_and_palette_variants_match_source(self):
-  data,_=imp.build(REFERENCE);recipes=json.loads(data)['spriteRecipes']
+  data=self._pack_bytes;recipes=json.loads(data)['spriteRecipes']
   powders=[r for r in recipes if r['callback']=='AnimMovePowderParticle']
   self.assertEqual(3,len(powders))
   for recipe in powders:
@@ -200,7 +205,7 @@ class PhysicalImportTests(unittest.TestCase):
   slam=next(b for b in blocked if b['moveId']==282)
   self.assertIn('graphics:ANIM_TAG_SLAM_HIT_2',slam['missing'])
  def test_task_affine_program_is_parsed_as_task_data_not_sprite_affine(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   required={'DefenseCurlDeformMonAffineAnimCmds','sAffineAnims_StretchBattlerUp','sFacadeSquishAffineAnimCmds','sGrowAndShrinkAffineAnimCmds','sSlackOffSquishAffineAnimCmds','sSmellingSaltsSquishAffineAnimCmds','sSplashEffectAffineAnimCmds','sStrongFrustrationAffineAnimCmds','sThrashMoveMonAffineAnimCmds'}
   self.assertTrue(required<=set(pack['taskAffinePrograms']))
   # Read pinned declarations independently of the producer's task-affine parser.
@@ -235,7 +240,7 @@ class PhysicalImportTests(unittest.TestCase):
   with self.assertRaises(ValueError):imp.task_affine_program(source.replace('JUMP(1)','JUMP(100)'),'test')
   with self.assertRaises(ValueError):imp.task_affine_program(source.replace('AFFINEANIMCMD_LOOP(3)','UNKNOWN_AFFINE(3)'),'test')
  def test_mud_sport_closure_keeps_static_tile_recipe_and_exact_shared_pixels(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   recipe=next(r for r in pack['spriteRecipes'] if r['template']=='gMudsportMudSpriteTemplate')
   self.assertEqual(('AnimMudSportDirt','mud-sand',16,16),(recipe['callback'],recipe['asset'],recipe['width'],recipe['height']))
   script=next(s for s in pack['scripts'] if s['moveId']==300)
@@ -250,7 +255,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertIn(150,{s['moveId'] for s in json.loads(data)['scripts']});self.assertNotIn(300,{s['moveId'] for s in json.loads(data)['scripts']})
   self.assertIn('callback:MissingMudSportParticle',next(b for b in blocked if b['moveId']==300)['missing'])
  def test_growth_breath_and_slack_off_share_source_tasks_and_existing_healing_pixels(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   programs=pack['taskAffinePrograms']
   self.assertEqual(48,sum(c['duration'] for c in programs['sGrowAndShrinkAffineAnimCmds']))
   self.assertEqual(56,sum(c['duration'] for c in programs['sSlackOffSquishAffineAnimCmds']))
@@ -279,7 +284,7 @@ class PhysicalImportTests(unittest.TestCase):
   for body in ['ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(64),\nANIMCMD_END,','ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(1),\nANIMCMD_LOOP(3),\nANIMCMD_END,','ANIMCMD_FRAME(0, 1),\nANIMCMD_LOOP(1),\nANIMCMD_JUMP(1),']:
    with self.assertRaises(ValueError):parse(body)
  def test_defense_curl_has_the_complete_deformation_palette_and_finite_orb_closure(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==111)
+  data=self._pack_bytes;pack=json.loads(data);script=next(s for s in pack['scripts'] if s['moveId']==111)
   grayscale=[c for c in script['commands'] if c['op']=='createvisualtask' and c['args'][0]=='AnimTask_SetGrayscaleOrOriginalPal']
   self.assertEqual(['0','1'],[c['args'][-1] for c in grayscale])
   orb=next(r for r in pack['spriteRecipes'] if r['template']=='gEclipsingOrbSpriteTemplate')
@@ -291,7 +296,7 @@ class PhysicalImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
   self.assertNotIn(111,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('callback:MissingGrayscale',next(b for b in blocked if b['moveId']==111)['missing'])
  def test_attached_callbacks_reuse_exact_frame_and_affine_recipes(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={s['moveId'] for s in pack['scripts']}
+  data=self._pack_bytes;pack=json.loads(data);roots={s['moveId'] for s in pack['scripts']}
   self.assertTrue({99,207,321}<=roots)
   eye=next(r for r in pack['spriteRecipes'] if r['template']=='gEyeSparkleSpriteTemplate');anger=next(r for r in pack['spriteRecipes'] if r['template']=='gAngerMarkSpriteTemplate')
   self.assertEqual([0,4,8,4,0],[f['tile'] for f in eye['animations'][0]]);self.assertEqual([4]*5,[f['duration'] for f in eye['animations'][0]])
@@ -319,7 +324,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertFalse({207,321}&{s['moveId'] for s in json.loads(data)['scripts']})
   self.assertIn('callback:MissingAnger',next(b for b in blocked if b['moveId']==207)['missing']);self.assertIn('callback:MissingRock',next(b for b in blocked if b['moveId']==321)['missing'])
  def test_ordinary_multihit_keeps_both_source_branches_and_shared_callbacks(self):
-  data,_=imp.build(REFERENCE);roots={s['moveId']:s for s in json.loads(data)['scripts']}
+  data=self._pack_bytes;roots={s['moveId']:s for s in json.loads(data)['scripts']}
   for move,name in [(3,'DoubleSlap'),(4,'CometPunch')]:
    root=roots[move];choice=next(c for c in root['commands'] if c['op']=='choosetwoturnanim')
    self.assertEqual([name+'Left',name+'Right'],choice['args'])
@@ -345,7 +350,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertNotIn(3,{s['moveId'] for s in json.loads(data)['scripts']})
   self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==3)['missing'])
  def test_conditional_move_turn_retains_three_kick_branches_and_fallthrough(self):
-  data,_=imp.build(REFERENCE);roots={s['moveId']:s for s in json.loads(data)['scripts']};root=roots[167]
+  data=self._pack_bytes;roots={s['moveId']:s for s in json.loads(data)['scripts']};root=roots[167]
   self.assertEqual([['0','TripleKickLeft'],['1','TripleKickRight']],[c['args'] for c in root['commands'] if c['op']=='jumpifmoveturn'])
   self.assertEqual(['TripleKickCenter'],root['commands'][7]['args'])
   for label,x,y,affine in [('Left','-16','-16','2'),('Right','8','0','2'),('Center','0','-8','1')]:
@@ -369,7 +374,7 @@ class PhysicalImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=raw):data,blocked=imp.build(REFERENCE)
   self.assertNotIn(167,{s['moveId'] for s in json.loads(data)['scripts']});self.assertIn('invocation:move-turn',next(b for b in blocked if b['moveId']==167)['missing'])
  def test_bone_closures_share_source_linear_affine_recipe_and_generated_dependencies(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={s['moveId']:s for s in pack['scripts']}
+  data=self._pack_bytes;pack=json.loads(data);roots={s['moveId']:s for s in pack['scripts']}
   self.assertTrue({125,198}<=roots.keys());self.assertNotIn(155,roots)
   bone=next(r for r in pack['spriteRecipes'] if r['template']=='gSpinningBoneSpriteTemplate')
   self.assertEqual(('bone','AnimBoneHitProjectile',32,32),(bone['asset'],bone['callback'],bone['width'],bone['height']))
@@ -403,7 +408,7 @@ class PhysicalImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=changed):
    with self.assertRaisesRegex(ValueError,'Elemental recipe differs'):imp.build(REFERENCE)
  def test_physical_sound_and_tag_metadata_covers_actual_root_and_called_dependencies(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   for root in pack['scripts']:
    commands=root['commands']+[row for c in root['commands'] if c['op']=='call' for row in pack['subroutines'][c['args'][0]]]
    self.assertEqual(imp.physical_sound_effects(REFERENCE,commands,imp.read_sources(REFERENCE)['src/battle_anim_effects_2.c'].decode()),root['soundEffects'])
@@ -411,7 +416,7 @@ class PhysicalImportTests(unittest.TestCase):
   slack=next(s for s in pack['scripts'] if s['moveId']==303)
   self.assertIn('SE_M_ABSORB_2',slack['soundEffects'])
  def test_claw_trio_uses_one_shared_nonaffine_recipe_and_retains_unused_loads(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);roots={s['moveId']:s for s in pack['scripts']}
+  data=self._pack_bytes;pack=json.loads(data);roots={s['moveId']:s for s in pack['scripts']}
   self.assertTrue({232,306,337}<=roots.keys());claw=next(r for r in pack['spriteRecipes'] if r['template']=='gClawSlashSpriteTemplate')
   self.assertEqual(('AnimClawSlash','claw-slash',32,32),(claw['callback'],claw['asset'],claw['width'],claw['height']))
   self.assertEqual(2,len(claw['animations']));self.assertEqual([],claw['affineAnimations']);self.assertFalse(claw['affineDoubleSize']);self.assertFalse(claw['blend'])
@@ -432,7 +437,7 @@ class PhysicalImportTests(unittest.TestCase):
    with self.assertRaisesRegex(ValueError,'palette alias'):imp.build_assets(REFERENCE)
   raw=imp.read_sources(REFERENCE);self.assertEqual(assets['claw-slash'],imp.registered_sprite_pixels(raw,'gBattleAnimSpriteGfx_ClawSlash','claw_slash'))
  def test_dragon_claw_reuses_identical_fire_vortex_and_retains_rgb_expression(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);root=next(s for s in pack['scripts'] if s['moveId']==337)
+  data=self._pack_bytes;pack=json.loads(data);root=next(s for s in pack['scripts'] if s['moveId']==337)
   elemental=json.loads((ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
   self.assertEqual(next(r for r in elemental['spriteRecipes'] if r['template']=='gFireSpinSpriteTemplate'),next(r for r in pack['spriteRecipes'] if r['template']=='gFireSpinSpriteTemplate'))
   blends=[c for c in root['commands'] if c['op']=='createvisualtask' and c['args'][0]=='AnimTask_BlendBattleAnimPal']
@@ -440,7 +445,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertEqual(['DragonClawFireSpiral']*2,[c['args'][0] for c in root['commands'] if c['op']=='call'])
   spiral=pack['subroutines']['DragonClawFireSpiral'];self.assertTrue(all(c['args'][-1]=='ANIM_ATTACKER' for c in spiral if c['op']=='createsprite'))
  def test_visual_sound_wrappers_resolve_source_symbols_generically(self):
-  data,_=imp.build(REFERENCE);root=next(s for s in json.loads(data)['scripts'] if s['moveId']==337)
+  data=self._pack_bytes;root=next(s for s in json.loads(data)['scripts'] if s['moveId']==337)
   self.assertEqual(2,sum(c['op']=='createvisualtask' and c['args'][0]=='SoundTask_PlaySE1WithPanning' for c in root['commands']))
   for name in ['SoundTask_PlaySE1WithPanning','SoundTask_PlaySE2WithPanning']:
    self.assertEqual({'SE_M_RAZOR_WIND':root['soundEffects']['SE_M_RAZOR_WIND']},imp.elemental.sound_effects(REFERENCE,[dict(op='createvisualtask',args=[name,'5','SE_M_RAZOR_WIND','SOUND_PAN_TARGET'])]))
@@ -452,7 +457,7 @@ class PhysicalImportTests(unittest.TestCase):
    with patch.object(imp,'read_sources',return_value=changed):data,_=imp.build(REFERENCE)
    self.assertFalse(expected&{s['moveId'] for s in json.loads(data)['scripts']})
  def test_shared_stinger_callback_closes_exact_three_roots_with_existing_materials(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);scripts={s['moveId']:s for s in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
+  data=self._pack_bytes;pack=json.loads(data);scripts={s['moveId']:s for s in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
   stinger=recipes['gLinearStingerSpriteTemplate'];self.assertEqual(('needle','AnimTranslateStinger',16,16,False,False,[]),(stinger['asset'],stinger['callback'],stinger['width'],stinger['height'],stinger['blend'],stinger['affineDoubleSize'],stinger['affineAnimations']))
   for move,particles in [(40,1),(41,2),(131,3)]:
    script=scripts[move];self.assertEqual(particles,sum(c['op']=='createsprite' and c['args'][0]=='gLinearStingerSpriteTemplate' for c in script['commands']))
@@ -470,7 +475,7 @@ class PhysicalImportTests(unittest.TestCase):
    source=imp.read_sources(REFERENCE)['src/'+file].decode()
    with self.assertRaises(ValueError):imp.elemental.recipe(source.replace('.callback = '+callback, '.callback = UnknownNeedleCallback'),template,callback)
  def test_arc_projectiles_share_exact_callback_and_three_authored_particles(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
+  data=self._pack_bytes;pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
   for move,template,asset,size,sound in [(42,'gPinMissileSpriteTemplate','needle',16,'SE_M_JUMP_KICK'),(333,'gIcicleSpearSpriteTemplate','icicle-spear',32,'SE_M_ICY_WIND')]:
    r=recipes[template];self.assertEqual(('AnimMissileArc',asset,size,size,False,False,[]),(r['callback'],r['asset'],r['width'],r['height'],r['blend'],r['affineDoubleSize'],r['affineAnimations']))
    script=next(s for s in pack['scripts'] if s['moveId']==move)
@@ -501,7 +506,7 @@ class PhysicalImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=changed):
    with self.assertRaisesRegex(ValueError,'Icicle source sheet or palette'):imp.build_assets(REFERENCE)
  def test_spinning_family_uses_shared_frames_and_exact_affine_programs(self):
-  data,blocked=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   self.assertTrue({5,25,299}<={r['moveId'] for r in pack['scripts']})
   for name,delta in [('gMegaPunchKickSpriteTemplate',-4),('gSpinningHandOrFootSpriteTemplate',-8)]:
    recipe=next(r for r in pack['spriteRecipes'] if r['template']==name)
@@ -510,7 +515,7 @@ class PhysicalImportTests(unittest.TestCase):
    self.assertEqual([('frame',256,256,0,0,0),('frame',delta,delta,20,1,0),('jump',0,0,0,0,1)],[(r['op'],r['x'],r['y'],r['rotation'],r['duration'],r['target']) for r in recipe['affineAnimations'][0]])
   self.assertIn('FireSpreadEffect',pack['subroutines'])
  def test_impact_helper_preserves_scoped_return_and_exact_target_side_predicates(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);body=pack['subroutines']['SetImpactBackground'];labels=pack['subroutineLabels']['SetImpactBackground']
+  data=self._pack_bytes;pack=json.loads(data);body=pack['subroutines']['SetImpactBackground'];labels=pack['subroutineLabels']['SetImpactBackground']
   self.assertEqual({'SetImpactBackgroundRet':5,'SetImpactOpponentBG':6,'SetImpactPlayerBG':8},labels)
   self.assertEqual(['AnimTask_IsContest','AnimTask_IsTargetPlayerSide'],[r['args'][0] for r in body if r['op']=='createvisualtask'])
   self.assertEqual([['7','0','SetImpactOpponentBG'],['7','1','SetImpactPlayerBG']],[r['args'] for r in body if r['op']=='jumpargeq'])
@@ -540,7 +545,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertEqual(atlas.indexed_tiles((REFERENCE/'graphics/battle_anims/backgrounds/impact.png').read_bytes())[0],read(moves[4]['tiles']))
   for id,name in [(4,'opponent'),(5,'player')]:self.assertEqual((REFERENCE/f'graphics/battle_anims/backgrounds/impact_{name}.bin').read_bytes(),read(moves[id]['tilemap']))
  def test_dirt_roots_reuse_one_random_callback_and_existing_mixed_sheet(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data)
+  data=self._pack_bytes;pack=json.loads(data)
   for move,name,sub,size,tile,loop in [(28,'gSandAttackDirtSpriteTemplate','SandAttackDirt',8,0,0),(189,'gMudSlapMudSpriteTemplate','MudSlapMud',16,1,-1)]:
    root=next(r for r in pack['scripts'] if r['moveId']==move);recipe=next(r for r in pack['spriteRecipes'] if r['template']==name)
    self.assertEqual(('mud-sand','AnimDirtScatter',size,size,False),(recipe['asset'],recipe['callback'],recipe['width'],recipe['height'],recipe['affineDoubleSize']))
@@ -564,7 +569,7 @@ class PhysicalImportTests(unittest.TestCase):
   self.assertFalse({28,189}&{r['moveId'] for r in json.loads(data)['scripts']})
   self.assertTrue(all('callback:UnknownDirt' in next(r for r in blocked if r['moveId']==move)['missing'] for move in [28,189]))
  def test_fang_shared_sheet_and_distinct_source_end_lifetimes(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
+  data=self._pack_bytes;pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
   for name,durations,affine in [('gFangSpriteTemplate',[8,16,4,4],True),('gSuperFangSpriteTemplate',[2,2,2,2],False)]:
    r=recipes[name];self.assertEqual(('fang-attack',32,32,False,affine),(r['asset'],r['width'],r['height'],r['blend'],r['affineDoubleSize']))
    self.assertEqual([0,16,32,48],[f['tile'] for f in r['animations'][0]]);self.assertEqual(durations,[f['duration'] for f in r['animations'][0]]);self.assertEqual([-1],r['loopStarts']);self.assertEqual(int(affine),len(r['affineAnimations']))
@@ -606,12 +611,12 @@ class PhysicalImportTests(unittest.TestCase):
    with patch.object(imp.elemental,'read',side_effect=changed):
     with self.assertRaisesRegex(ValueError,'FireRed contest predicate'):imp.elemental.fold_firered_contest_branches(REFERENCE,'Dead:\n',rows,{})
  def test_multi_strike_recipes_preserve_unmirrored_swipe_and_hand_frame_parity(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']};swipe=recipes['gFurySwipesSpriteTemplate'];hand=recipes['gArmThrustHandSpriteTemplate']
+  data=self._pack_bytes;pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']};swipe=recipes['gFurySwipesSpriteTemplate'];hand=recipes['gArmThrustHandSpriteTemplate']
   self.assertEqual(('swipe','AnimFurySwipes',32,32,False),(swipe['asset'],swipe['callback'],swipe['width'],swipe['height'],swipe['affineDoubleSize']));self.assertEqual([],swipe['affineAnimations'])
   self.assertEqual([[0,16,32,48]]*2,[[f['tile'] for f in a] for a in swipe['animations']]);self.assertEqual([[False]*4,[True]*4],[[f['hFlip'] for f in a] for a in swipe['animations']]);self.assertTrue(all(f['duration']==4 for a in swipe['animations'] for f in a))
   self.assertEqual(('hands-and-feet','AnimArmThrustHit',False),(hand['asset'],hand['callback'],hand['affineDoubleSize']));self.assertEqual([0,16,32,48,48],[a[0]['tile'] for a in hand['animations']]);self.assertEqual([False,False,False,False,True],[a[0]['hFlip'] for a in hand['animations']]);self.assertEqual([],hand['affineAnimations'])
  def test_arm_branch_and_two_authored_swipes_remain_per_invocation(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);rows={r['moveId']:r for r in pack['scripts']};arm=rows[292];swipe=rows[154]
+  data=self._pack_bytes;pack=json.loads(data);rows={r['moveId']:r for r in pack['scripts']};arm=rows[292];swipe=rows[154]
   self.assertEqual(2,sum(c['op']=='createsprite' and c['args'][0]=='gFurySwipesSpriteTemplate' for c in swipe['commands']));self.assertEqual([['16','0','1'],['-16','0','0']],[c['args'][3:] for c in swipe['commands'] if c['op']=='createsprite' and c['args'][0]=='gFurySwipesSpriteTemplate'])
   self.assertEqual([['ArmThrustRight','ArmThrustLeft']],[c['args'] for c in arm['commands'] if c['op']=='choosetwoturnanim']);self.assertEqual([['10','-8','14','3']],[c['args'][3:] for c in arm['commands'] if c['op']=='createsprite' and c['args'][0]=='gArmThrustHandSpriteTemplate']);self.assertEqual({'SE_M_DOUBLE_SLAP','SE_M_SWAGGER'},set(arm['soundEffects']))
  def test_swipe_registered_sheet_keeps_even_unsampled_source_tiles(self):
@@ -631,7 +636,7 @@ class PhysicalImportTests(unittest.TestCase):
    with patch.object(imp,'read_sources',return_value=changed):
     with self.assertRaisesRegex(ValueError,'strike source|Swipe source'):imp.build(REFERENCE)
  def test_power_shake_roots_keep_native_operands_branch_graphs_and_existing_materials(self):
-  data,_=imp.build(REFERENCE);pack=json.loads(data);rows={s['moveId']:s for s in pack['scripts']}
+  data=self._pack_bytes;pack=json.loads(data);rows={s['moveId']:s for s in pack['scripts']}
   quake=rows[89];self.assertEqual('Move_EARTHQUAKE',quake['label'])
   self.assertEqual([['AnimTask_HorizontalShake','5','(MAX_BATTLERS_COUNT + 1)','10','50'],['AnimTask_HorizontalShake','5','MAX_BATTLERS_COUNT','10','50']],[c['args'] for c in quake['commands'] if c['op']=='createvisualtask'])
   self.assertEqual({'SE_M_EARTHQUAKE'},set(quake['soundEffects']))

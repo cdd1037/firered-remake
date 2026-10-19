@@ -20,6 +20,7 @@ def build(reference):
    match=re.search(r'^'+re.escape(start)+r':\n',source,re.M)
    if not match:raise ValueError('Missing source label '+start)
    rows=[];labels={start:0}
+   line_base=source[:match.end()].count('\n')
    for offset,line in enumerate(source[match.end():].splitlines()):
     line=line.split('@',1)[0].strip()
     if not line:continue
@@ -31,7 +32,7 @@ def build(reference):
     if op in {'jumprettrue','jumpretfalse'}:
      if len(args)!=1:raise ValueError('Malformed return comparison')
      args=['7','1' if op=='jumprettrue' else '0',args[0]];op='jumpargeq'
-    rows.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
+    rows.append(dict(op=op,args=args,line=line_base+offset+1))
     if op in {end,'goto'}:return elemental.fold_firered_contest_branches(reference,source,rows,labels)
    raise ValueError('Unterminated source label '+start)
   rows,labels=block(label);cursor=0

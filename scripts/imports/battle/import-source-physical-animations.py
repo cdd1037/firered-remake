@@ -712,6 +712,7 @@ def build(reference):
    if not match:raise ValueError('Missing source subroutine label '+entry)
    if entry!=label:labels[entry]=len(result)
    parsed.add(entry);terminated=False
+   line_base=source[:match.end()].count('\n')
    for offset,line in enumerate(source[match.end():].splitlines()):
     text=line.split('@',1)[0].strip()
     if not text:continue
@@ -727,7 +728,7 @@ def build(reference):
     if op in {'jumprettrue','jumpretfalse'}:
      if len(args)!=1 or not re.search(r'^'+re.escape(args[0])+r':\n',source,re.M):raise ValueError('Missing source predicate target')
      args=['7','1' if op=='jumprettrue' else '0',args[0]];op='jumpargeq'
-    previous=len(result);result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
+    previous=len(result);result.append(dict(op=op,args=args,line=line_base+offset+1))
     result,labels=elemental.fold_firered_contest_branches(reference,source,result,labels)
     if len(result)==previous:continue
     op,args=result[-1]['op'],result[-1]['args']
@@ -759,6 +760,7 @@ def build(reference):
   match=re.search(r'^'+re.escape(label)+r':\n',source,re.M)
   if not match:raise ValueError('Missing source label '+label)
   result=[];local={}
+  line_base=source[:match.end()].count('\n')
   for offset,line in enumerate(source[match.end():].splitlines()):
    text=line.split('@',1)[0].strip()
    if not text:continue
@@ -776,7 +778,7 @@ def build(reference):
    if op=='createvisualtask' and args and args[0]=='AnimTask_AirCutterProjectile':
     if len(args)!=7 or args[4]!='6 * 256':raise ValueError('Air Cutter source speed expression differs')
     args[4]=str(6*256)
-   result.append(dict(op=op,args=args,line=source[:match.end()].count('\n')+offset+1))
+   result.append(dict(op=op,args=args,line=line_base+offset+1))
    if op in {'choosetwoturnanim','goto','end','return'}:return result,local
   raise ValueError('Unterminated source block '+label)
  def branch_targets(commands):

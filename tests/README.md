@@ -77,3 +77,5 @@ dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/tes
 20个大型族改为显式代表／边界输入，常规本地结果合计16,419,741字节；每个选中案例保留连续逐帧断言。其余生成结果同样忽略，尚未全部缩减组合。完整原始组合由独立生成器显式生成，复用同一托管比较器，迁移全量72/72通过；完整数值与外部原件逐值核对。两个历史单回合snapshot改为明确HP、PP、身份字段和随机调用规则用例，原hash仅留外部迁移对照。
 
 同一25类常规筛选：原196例墙钟233.868秒，治理后203例墙钟193.502秒（新增7项用例选择检查，约减少17.25%）。额外Presentation40、Battle83、Domain22、Application154和按需Audio1例通过。解决方案构建0警告0错误。此计时不代表所有测试或真实游戏性能；普通测试不隐式编译C，缺数据的命令提示和指定全量目录禁止回退均有测试。
+
+物理动画导入检查保留完整 75 项及独立源突变构建，默认资源测试仍全部执行；该套件单独给 10 分钟预算，其他 NativePresentation 检查仍为 3 分钟。普通定向开发可直接选择现有 unittest 方法，例如 `python scripts/checks/test-physical-animation-import.py PhysicalImportTests.test_task_affine_program_is_parsed_as_task_data_not_sprite_affine`；不传方法仍执行全套。正例共享本次运行生成的不可变 JSON 字节，每项自行解码；突变、blocked 与再生成检查继续独立构建。

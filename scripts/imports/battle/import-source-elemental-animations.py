@@ -686,13 +686,14 @@ def discover_scripts(reference):
   m=re.search(r'^'+label+r'\s*:\n',source,re.M)
   if not m:raise ValueError('Missing '+label)
   result=[]
+  line_base=source[:m.end()].count('\n')
   for offset,line in enumerate(source[m.end():].splitlines()):
    row=line.split('@',1)[0].strip()
    if not row:continue
    if row.endswith(':'):raise ValueError('Unexpected label')
    op,*tail=row.split(None,1);args=[a.strip() for a in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else []
    if op not in hit.OPS|{'setpan','call','return','splitbgprio_all','splitbgprio','panse','waitplaysewithpan','splitbgprio_foes','createsoundtask','waitsound','setarg','panse_adjustnone','fadetobg','waitbgfadein','waitbgfadeout','restorebg','visible','invisible','monbg_static','clearmonbg_static','jumpifcontest'}:raise ValueError('Unsupported command '+op)
-   result.append(dict(op=op,args=args,line=source[:m.end()].count('\n')+offset+1))
+   result.append(dict(op=op,args=args,line=line_base+offset+1))
    if op==end:return fold_firered_contest_branches(reference,source,result,{})[0]
   raise ValueError('Unterminated '+label)
  # Discover complete source roots only when every dependency has a reviewed adapter.
