@@ -120,7 +120,7 @@ public sealed partial class CampaignSession
                 int requested = content.Catalog.Species[definition.RequestedSpecies].SourceSpeciesId;
                 int received = content.Catalog.Species[definition.ReceivedSpecies].SourceSpeciesId;
                 next = Result(requested) with { TextBuffers = state.TextBuffers
-                    .SetItem("STR_VAR_1", content.SpeciesNames[requested]).SetItem("STR_VAR_2", content.SpeciesNames[received]) };
+                    .SetItem("STR_VAR_1", SpeciesName(requested)).SetItem("STR_VAR_2", SpeciesName(received)) };
                 break;
             case "ChoosePartyMon":
                 if (state.NpcTrade is not null || state.Script.Flags.GetValueOrDefault(definition.CompletionFlag) ||
@@ -179,6 +179,6 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("npc_trade_presentation_context");
         // BufferInGameTradeMonName runs after the source swap and therefore reads the received nickname.
         return next with { NpcTrade = null, TextBuffers = next.TextBuffers
-            .SetItem("STR_VAR_1", incoming.Nickname).SetItem("STR_VAR_2", _content.PokemonContent!.SpeciesNames[incoming.Pokemon.SourceSpeciesId]) };
+            .SetItem("STR_VAR_1", PokemonName(incoming)).SetItem("STR_VAR_2", SpeciesName(incoming.Pokemon.SourceSpeciesId)) };
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Game.Content;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 
 namespace FireRed.Tests.Content;
 
@@ -19,19 +20,31 @@ public sealed class SeviiRubySpeciesDisplayNameTests
             "*", SearchOption.AllDirectories).Select(path => Path.GetRelativePath(TestAssets.Root, path)));
         var expected = SeviiRubyOwnedPokemonCatalog.AdditionalSpecies.Select(id => Original.GamePokemon.Catalog.Species[id]).ToArray();
         var sourceIds = expected.Select(species => species.SourceSpeciesId).ToHashSet();
-        // Current party/save names still use the existing nickname alphabet and ten-character limit.
-        const string name = "Fire pal";
+        const string name = "Flamme {literal} compagnon";
+        const string eggName = "œuf {literal}";
         TestAssets.EditJson(output.Path, PokedexPath, document =>
         {
             foreach (var entry in document["entries"]!.AsArray())
                 if (sourceIds.Contains(entry!["sourceSpeciesId"]!.GetValue<int>())) entry["name"] = name;
         });
 
+        TestAssets.EditJson(output.Path, SourceDisplayNames.RelativePath, document => document["eggName"] = eggName);
         var edited = PretCampaignCatalog.LoadCurrent(output.Path);
+        Assert.AreEqual(eggName, edited.SourceSpeciesName(412));
+        Assert.AreEqual(eggName, edited.PresentedSpeciesName(412));
         foreach (var species in expected)
         {
-            Assert.AreEqual(name, edited.PokemonContent.SpeciesNames[species.SourceSpeciesId]);
+            Assert.AreEqual(name, edited.PresentedSpeciesName(species.SourceSpeciesId));
             Assert.AreEqual(name, edited.SourceSpeciesName(species.SourceSpeciesId));
+            var pokemon = PokemonFactory.Create(edited.GamePokemon.Catalog,
+                new(species.Id, 30, 1, IvPolicy.Fixed(20), PersonalityPolicy.Fixed(1)), new(0)).Pokemon;
+            var owned = new PartyPokemon(1, pokemon, null, "RED", 0, 2, "MAPSEC_ROUTE_1", 30, 4, "ITEM_POKE_BALL", "ITEM_NONE");
+            Assert.AreEqual(name, edited.PokemonDisplayName(owned));
+            string originalEnglish = Original.SourceSpeciesName(species.SourceSpeciesId)!;
+            Assert.AreEqual(originalEnglish, edited.PokemonDisplayName(owned with { CustomNickname = originalEnglish }));
+            Assert.AreEqual("PETAL", edited.PokemonDisplayName(owned with { CustomNickname = "PETAL" }));
+            Assert.AreEqual(eggName, edited.PokemonDisplayName(owned with { IsEgg = true }));
+
             var actual = edited.GamePokemon.Catalog.Species[species.Id];
             Assert.AreEqual(species.SourceSpeciesId, actual.SourceSpeciesId);
             Assert.AreEqual(species.BaseStats, actual.BaseStats);
@@ -54,10 +67,13 @@ public sealed class SeviiRubySpeciesDisplayNameTests
     }
 
     [TestMethod]
-    [DataRow("pret:SPECIES_RAPIDASH")]
-    [DataRow("pret:SPECIES_SLUGMA")]
-    [DataRow("pret:SPECIES_MAGCARGO")]
-    public void UnchangedDisplayLabelsCannotReplaceRequiredAdmittedSpecies(string speciesId)
+    [DataRow("pret:SPECIES_RAPIDASH", false)]
+    [DataRow("pret:SPECIES_RAPIDASH", true)]
+    [DataRow("pret:SPECIES_SLUGMA", false)]
+    [DataRow("pret:SPECIES_SLUGMA", true)]
+    [DataRow("pret:SPECIES_MAGCARGO", false)]
+    [DataRow("pret:SPECIES_MAGCARGO", true)]
+    public void UnchangedDisplayLabelsCannotReplaceRequiredAdmittedSpecies(string speciesId, bool campaignContent)
     {
         var id = new SpeciesId(speciesId);
         var original = Original.GamePokemon;
@@ -67,7 +83,11 @@ public sealed class SeviiRubySpeciesDisplayNameTests
         });
         var owned = GamePokemonCatalog.Create(original.Mechanics, original.Catalog with { Species = species },
             original.Opponents.Catalog, original.TrainerTowerOpponents.Catalog);
-        var error = Assert.ThrowsExactly<InvalidDataException>(() => Validate(owned, Original.PokemonContent));
+        var error = Assert.ThrowsExactly<InvalidDataException>(() =>
+        {
+            if (campaignContent) Validate(Original.GamePokemon, new(owned, Original.PokemonContent.NicknameCharacters));
+            else Validate(owned, Original.PokemonContent);
+        });
         Assert.AreEqual("sevii_ruby_composition_scope", error.Message);
     }
 
@@ -78,19 +98,23 @@ public sealed class SeviiRubySpeciesDisplayNameTests
     [DataRow("numeric-key")]
     public void SeviiSpeciesStillRequireNonblankNamesAtTheirCanonicalNumericIds(string change)
     {
-        var species = Original.GamePokemon.Catalog.Species[SeviiRubyOwnedPokemonCatalog.AdditionalSpecies[0]];
-        var names = Original.PokemonContent.SpeciesNames;
-        names = change switch
+        using var output = TestAssets.TemporaryOutput();
+        TestAssets.CopyFiles(output.Path, [PokedexPath]);
+        int sourceId = Original.GamePokemon.Catalog.Species[SeviiRubyOwnedPokemonCatalog.AdditionalSpecies[0]].SourceSpeciesId;
+        TestAssets.EditJson(output.Path, PokedexPath, document =>
         {
-            "empty" => names.SetItem(species.SourceSpeciesId, ""),
-            "blank" => names.SetItem(species.SourceSpeciesId, " \t\n"),
-            "missing" => names.Remove(species.SourceSpeciesId),
-            "numeric-key" => names.Remove(species.SourceSpeciesId).Add(9999, names[species.SourceSpeciesId]),
-            _ => throw new ArgumentOutOfRangeException(nameof(change))
-        };
-        var error = Assert.ThrowsExactly<InvalidDataException>(() => Validate(Original.GamePokemon,
-            Original.PokemonContent with { SpeciesNames = names }));
-        Assert.AreEqual("sevii_ruby_composition_scope", error.Message);
+            var entries = document["entries"]!.AsArray();
+            var entry = entries.Single(row => row!["sourceSpeciesId"]!.GetValue<int>() == sourceId)!;
+            switch (change)
+            {
+                case "empty": entry["name"] = ""; break;
+                case "blank": entry["name"] = " \t\n"; break;
+                case "missing": entries.Remove(entry); break;
+                case "numeric-key": entry["sourceSpeciesId"] = 9999; break;
+                default: throw new ArgumentOutOfRangeException(nameof(change));
+            }
+        });
+        Assert.ThrowsExactly<InvalidDataException>(() => PretPokedexMenu.Load(output.Path));
     }
 
     private static void Validate(GamePokemonCatalog owned, CampaignPokemonContent pokemon) =>

@@ -36,7 +36,7 @@ internal static partial class SourceBattleItemRules
                 value.Any(c => c != ' ') && value.All(PokemonStateValidator.NicknameAlphabet.Contains);
             bool Symbol(string value, string prefix) => value is not null && value.StartsWith(prefix, StringComparison.Ordinal) &&
                 value.Length > prefix.Length && value[prefix.Length..].All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_');
-            if (!Name(owned.Nickname,10) || !Name(owned.OriginalTrainerName,7) || owned.OriginalTrainerGender is not (0 or 1) ||
+            if (!PokemonNicknameRules.IsValidCustomNickname(owned.CustomNickname) || !Name(owned.OriginalTrainerName,7) || owned.OriginalTrainerGender is not (0 or 1) ||
                 owned.Language is not (1 or 2 or 3 or 4 or 5 or 7) || PokemonStateValidator.ValidateOriginMetadata(mechanics.Catalog,owned) is not null ||
                 owned.MetLevel < 0 || owned.MetLevel > owned.Pokemon.Level || owned.MetGame is not (1 or 2 or 3 or 4 or 5 or 7 or 8 or 10 or 11 or 12 or 15) ||
                 owned.Ball is not ("ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL" or "ITEM_GREAT_BALL" or "ITEM_POKE_BALL" or "ITEM_SAFARI_BALL" or "ITEM_NET_BALL" or "ITEM_DIVE_BALL" or "ITEM_NEST_BALL" or "ITEM_REPEAT_BALL" or "ITEM_TIMER_BALL" or "ITEM_LUXURY_BALL" or "ITEM_PREMIER_BALL") ||

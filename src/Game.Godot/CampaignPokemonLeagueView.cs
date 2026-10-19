@@ -353,7 +353,7 @@ public partial class CampaignView
         {
             var mon=team.Members[phase.Current];
             var details=HallPcDetails(new(mon,new(0,0),true));
-            string nickname=mon.SpeciesOrEgg==412?"EGG":details.Nickname;
+            string nickname=details.Nickname;
             float width=HallPcTextWidth(_sourceWhite,nickname);
             SourceText(_sourceWhite,new(144-(mon.SpeciesOrEgg==412?width/2:width),121),nickname);
             if(mon.SpeciesOrEgg!=412)

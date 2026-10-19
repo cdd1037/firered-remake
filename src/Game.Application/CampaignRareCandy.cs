@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             Inventory = consumed.State, ItemMenu = null,
             RareCandy = new(result, menu, CampaignRareCandyStage.LevelMessage,
-                [$"{result.Pokemon.Nickname} grew to\nLV. {result.Pokemon.Pokemon.Level}!"], 0, result.PendingMoves)
+                [$"{PokemonName(result.Pokemon)} grew to\nLV. {result.Pokemon.Pokemon.Level}!"], 0, result.PendingMoves)
         }));
     }
 
@@ -57,7 +57,7 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Accepted, BeginRareCandyFanfare(state with { RareCandy = scene with
                 {
                     Stage = CampaignRareCandyStage.MoveMessage, PageIndex = 0,
-                    Pages = scene.Result.LearnedMoves.Select(m => $"{state.Party[index].Nickname} learned\n{BattleContent.MoveNames[m.Move.Value]}!").ToImmutableArray()
+                    Pages = scene.Result.LearnedMoves.Select(m => $"{PokemonName(state.Party[index])} learned\n{BattleContent.MoveNames[m.Move.Value]}!").ToImmutableArray()
                 } }));
             if (scene.Stage == CampaignRareCandyStage.MoveMessage && scene.PageIndex + 1 < scene.Pages.Length)
                 return new(CommandStatus.Accepted, BeginRareCandyFanfare(state with { RareCandy = scene with { PageIndex = scene.PageIndex + 1 } }));
@@ -75,8 +75,8 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Rejected, state, "pokemon_learning_effect_unsupported");
             if (command.MoveSlot >= 0)
                 owned = ReplaceOwnedLevelMove(owned, command.MoveSlot, move.Move);
-            string text = command.MoveSlot < 0 ? $"{owned.Nickname} did not learn\n{BattleContent.MoveNames[move.Move.Value]}."
-                : $"{owned.Nickname} learned\n{BattleContent.MoveNames[move.Move.Value]}!";
+            string text = command.MoveSlot < 0 ? $"{PokemonName(owned)} did not learn\n{BattleContent.MoveNames[move.Move.Value]}."
+                : $"{PokemonName(owned)} learned\n{BattleContent.MoveNames[move.Move.Value]}!";
             var next = state with
             {
                 Party = state.Party.SetItem(index, owned),
@@ -104,7 +104,7 @@ public sealed partial class CampaignSession
                 {
                     Party = state.Party.SetItem(index, owned with { Pokemon = owned.Pokemon with { Moves = learning.Moves } }),
                     RareCandy = scene with { Stage = CampaignRareCandyStage.MoveMessage,
-                        Pages = [$"{owned.Nickname} learned\n{BattleContent.MoveNames[move.Move.Value]}!"], PageIndex = 0 }
+                        Pages = [$"{PokemonName(owned)} learned\n{BattleContent.MoveNames[move.Move.Value]}!"], PageIndex = 0 }
                 });
         }
         return scene.Result.Evolution is { } proposal && (NationalDexEnabledIn(state) || BattlePokemon.Species[proposal.TargetSpecies].SourceSpeciesId <= 151)

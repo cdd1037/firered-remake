@@ -7,7 +7,7 @@ namespace Game.Content;
 
 internal sealed record SourceDisplayNameDocument(int SchemaVersion,
     ImmutableDictionary<string, string> Types, ImmutableDictionary<string, string> Abilities,
-    ImmutableDictionary<string, string> Natures, string NoHeldItem);
+    ImmutableDictionary<string, string> Natures, string NoHeldItem, string EggName);
 
 /// <summary>Source display names keyed by gameplay identity; item definitions remain in SharedItemCatalog.</summary>
 public sealed class SourceDisplayNames
@@ -17,16 +17,19 @@ public sealed class SourceDisplayNames
     private readonly ImmutableDictionary<Nature, string> natures;
     private readonly SharedItemCatalog items;
     private readonly string noHeldItem;
+    public string EggName { get; }
 
     private SourceDisplayNames(SourceDisplayNameDocument document, SharedItemCatalog items, PokemonCatalog pokemon)
     {
         if (document.SchemaVersion != 1 || !ValidNames(document.Types, "TYPE_") ||
             !ValidNames(document.Abilities, "ABILITY_") || string.IsNullOrWhiteSpace(document.NoHeldItem) ||
+            string.IsNullOrWhiteSpace(document.EggName) ||
             document.Natures.Count != Enum.GetValues<Nature>().Length || Enum.GetValues<Nature>().Any(nature =>
                 !document.Natures.TryGetValue(((int)nature).ToString(CultureInfo.InvariantCulture), out var name) ||
                 string.IsNullOrWhiteSpace(name)))
             throw new InvalidDataException("display_name_catalog_shape");
         types = document.Types; abilities = document.Abilities; noHeldItem = document.NoHeldItem;
+        EggName = document.EggName;
         natures = document.Natures.ToImmutableDictionary(
             pair => (Nature)int.Parse(pair.Key, CultureInfo.InvariantCulture), pair => pair.Value);
         this.items = items;

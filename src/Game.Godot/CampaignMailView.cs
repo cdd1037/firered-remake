@@ -2,6 +2,7 @@ using Game.Application;
 using Game.Content;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 public partial class CampaignView
@@ -137,7 +138,7 @@ public partial class CampaignView
             _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
             int index = pending?.PartyIndex ?? _session.State.ItemMenu!.TargetPartyIndex!.Value;
             var owned = _session.State.Party[index];
-            SourceText(_sourceNormal, new(12, 10), owned.Nickname);
+            SourceText(_sourceNormal, new(12, 10), _catalog.PokemonDisplayName(owned));
             SourceText(_sourceSmall, new(12, 32), _inventoryText.Get("held.header", ("item", _catalog.DisplayNames.HeldItemName(owned.HeldItem))));
             if (pending is null)
             {

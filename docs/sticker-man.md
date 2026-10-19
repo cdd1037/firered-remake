@@ -18,7 +18,7 @@ New games initialize `GAME_STAT_HATCHED_EGGS` at zero. The shared gift/day-care 
 
 A save missing this counter is rejected with `save_hatched_egg_count_missing_migration_required`. The original generation-57604 representative checkpoint has no trustworthy lifetime total and remains unchanged; it is no longer claimed to be a current valid Continue baseline. No counter was inferred from its party, boxes or surviving receipts.
 
-Application regression fixtures explicitly use a synthetic test-only total of 1000 after checksum decoding, then run normal current-state validation. That controlled fixture is not a migrated player checkpoint or evidence of its historical total. The raw-checkpoint rejection test remains separate. Users with an independently known lifetime count may explicitly convert to a new destination:
+Application regressions now strictly load a separately prepared schema-2 controlled fixture with an explicit synthetic test-only total of 1000. Ordinary tests do not add the counter or convert old saves. This fixture is not evidence of a player’s historical total. The command below operates only on an otherwise supported current-schema save with an independently known lifetime count; it cannot upgrade schema-1 nickname representation:
 
 ```sh
 dotnet run --project src/Game.Tooling -- set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT

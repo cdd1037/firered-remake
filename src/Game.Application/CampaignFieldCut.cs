@@ -125,7 +125,7 @@ public sealed partial class CampaignSession
             case "bufferpartymonnick":
                 RequireTree();RequireBuffer(a[0]);int index=Value(a[1]);
                 if(index<0||index>=state.Party.Length)throw new InvalidDataException("field_cut_nickname_index_invalid");
-                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],state.Party[index].Nickname)};return true;
+                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],PokemonName(state.Party[index]))};return true;
             case "buffermovename":
                 RequireTree();RequireBuffer(a[0]);if(!Is(a[1],"MOVE_CUT"))throw new InvalidDataException("field_cut_move_unsupported");
                 next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],_content.BattleContent!.MoveNames[FieldCutMove])};return true;
@@ -137,7 +137,7 @@ public sealed partial class CampaignSession
                 var mon=state.Party[partyIndex];var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty.WithComparers(StringComparer.Ordinal);
                 next=state with
                 {
-                    CutEffect=new(partyIndex,mon.Pokemon.SourceSpeciesId,mon.Nickname,state.LastTalked!,FieldCutSourcePresentation.ShowMon),
+                    CutEffect=new(partyIndex,mon.Pokemon.SourceSpeciesId,PokemonName(mon),state.LastTalked!,FieldCutSourcePresentation.ShowMon),
                     GameStats=stats.SetItem(CutUsageStat,Math.Min(0xffffff,stats.GetValueOrDefault(CutUsageStat)+1)),
                     PresentationTicks=FieldCutSourcePresentation.ShowMonCueFrames
                 };return true;

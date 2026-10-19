@@ -2,13 +2,14 @@ using System.Collections.Immutable;
 
 namespace Game.Domain.Pokemon;
 
-// Text bytes are admitted by the successor content contract, not guessed by the view.
+// Script text is admitted by the content contract. Display labels stay outside these rules.
 public sealed record NameRaterSourceContent(string ChoosePokemonText, string ChoosePokemonCancelText);
 
 public enum NameRaterEligibility { Eligible, Egg, ForeignTrainerId, ForeignTrainerName }
-public sealed record NameRaterTarget(int PartyIndex, long InstanceId, string OriginalName);
+public sealed record NameRaterTarget(int PartyIndex, long InstanceId, string? OriginalCustomNickname);
+// Changed describes stored nullable naming intent, not display-text equality.
 public sealed record NameRaterRenameResult(ImmutableArray<PartyPokemon> Party, string? Error,
-    string? OriginalName = null, string? FinalName = null, bool Changed = false)
+    string? OriginalCustomNickname = null, string? FinalCustomNickname = null, bool Changed = false)
 {
     public bool Accepted => Error is null;
 }
@@ -68,9 +69,8 @@ public static class NameRaterRules
             _ => null
         };
         if (error is not null) return error;
-        if (PokemonNicknameRules.Validate(mon.Nickname, PokemonStateValidator.NicknameAlphabet) is not null ||
-            mon.Nickname.All(c => c == ' ')) return "name_rater_original_name_unsupported";
-        target = new(partyIndex, mon.InstanceId, mon.Nickname);
+        if (!PokemonNicknameRules.IsValidCustomNickname(mon.CustomNickname)) return "name_rater_original_name_unsupported";
+        target = new(partyIndex, mon.InstanceId, mon.CustomNickname);
         return null;
     }
 
@@ -88,12 +88,12 @@ public static class NameRaterRules
         if (error is not null) return Reject(error);
         error = Begin(party, target.PartyIndex, target.InstanceId, playerTrainerId, playerName, out var current);
         if (error is not null) return Reject(error);
-        if (!string.Equals(target.OriginalName, current!.OriginalName, StringComparison.Ordinal)) return Reject("name_rater_original_name_changed");
-        var name = PokemonNicknameRules.Apply(target.OriginalName, input, alphabet);
-        bool changed = !string.Equals(name, target.OriginalName, StringComparison.Ordinal);
-        // Return the original immutable party for a same-name/blank submission; only nickname
-        // is replaced for a changed name. Exact source buffer comparison is still observable.
-        var updated = changed ? party.SetItem(target.PartyIndex, party[target.PartyIndex] with { Nickname = name }) : party;
-        return new(updated, null, target.OriginalName, name, changed);
+        if (!string.Equals(target.OriginalCustomNickname, current!.OriginalCustomNickname, StringComparison.Ordinal)) return Reject("name_rater_original_name_changed");
+        var name = PokemonNicknameRules.Apply(target.OriginalCustomNickname, input, alphabet);
+        bool changed = !string.Equals(name, target.OriginalCustomNickname, StringComparison.Ordinal);
+        // Blank input preserves nullable intent; explicitly typing a default species name
+        // creates a custom name. Application owns the separate source display-buffer comparison.
+        var updated = changed ? party.SetItem(target.PartyIndex, party[target.PartyIndex] with { CustomNickname = name }) : party;
+        return new(updated, null, target.OriginalCustomNickname, name, changed);
     }
 }

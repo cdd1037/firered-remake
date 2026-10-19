@@ -73,7 +73,7 @@ public sealed partial class CampaignSession
         {
             if(e is SourceRewardAppliedEvent applied)
             {
-                string name=state.Party[applied.Recipient.Index].Nickname;
+                string name=PokemonName(state.Party[applied.Recipient.Index]);
                 foreach(var reward in applied.Reward.Events)
                 {
                     if(reward is WildRewardExperienceEvent xp)pages.Add(new($"{name} gained\n{xp.Gained} EXP. Points!",reward,applied.Recipient.Index));
@@ -82,7 +82,7 @@ public sealed partial class CampaignSession
                 }
             }
             else if(e is SourceRewardLearningEvent {Outcome:SourceRewardLearningOutcome.Added} learned)
-                pages.Add(new($"{state.Party[learned.Recipient.Index].Nickname} learned\n{BattleContent.MoveNames[learned.Candidate.Move.Value]}!",null,learned.Recipient.Index));
+                pages.Add(new($"{PokemonName(state.Party[learned.Recipient.Index])} learned\n{BattleContent.MoveNames[learned.Candidate.Move.Value]}!",null,learned.Recipient.Index));
         }
         var next=b with{DisplayBatch=BeginDisplayBatch(b),Frame=result.State,SourceEvents=result.Events,Events=ProjectCanonicalWildEvents(result.Events),EventIndex=0,
             Phase=CampaignBattlePhase.Events,Pages=pages.ToImmutable(),PageIndex=0,

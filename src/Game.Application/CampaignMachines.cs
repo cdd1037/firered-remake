@@ -40,7 +40,7 @@ public sealed partial class CampaignSession
         {
             Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", result.Pokemon.Nickname)
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(result.Pokemon))
                 .SetItem("STR_VAR_2", _content.BattleContent!.MoveNames[definition.Move.Value]),
             ItemMenu = menu with { View = "message", MessageSymbol = "gText_PkmnLearnedMove3", ReturnView = "machines" }
         });

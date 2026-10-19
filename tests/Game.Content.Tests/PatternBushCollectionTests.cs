@@ -24,10 +24,7 @@ public sealed class PatternBushCollectionTests
         var machines = SharedMachineCatalog.LoadProject(TestAssets.Root);
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics,
             PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades, machines);
-        var dex = PretPokedexMenu.Load(TestAssets.Root);
-        var content = new CampaignPokemonContent(game, game.Catalog.Species.Values.ToImmutableSortedDictionary(
-            species => species.SourceSpeciesId, species => dex.Entries[species.SourceSpeciesId].Name),
-            PokemonStateValidator.NicknameAlphabet);
+        var content = new CampaignPokemonContent(game, PokemonStateValidator.NicknameAlphabet);
         return new(canonical, content, machines);
     });
 
@@ -106,7 +103,7 @@ public sealed class PatternBushCollectionTests
         Assert.IsTrue(received.Egg.Pokemon.Moves.Any(slot => slot.Move == new MoveId("pret:MOVE_TOXIC")));
         var hatched = SourceEggRules.Hatch(content, received.Egg, new(42, "RED", 0), "MAPSEC_FOUR_ISLAND", received.Rng).Pokemon;
         Assert.IsFalse(hatched.IsEgg);
-        Assert.AreEqual(child, hatched.Nickname);
+        Assert.IsNull(hatched.CustomNickname);
         Assert.IsNull(PokemonStateValidator.ValidateParty(content, hatched));
     }
 
@@ -115,7 +112,7 @@ public sealed class PatternBushCollectionTests
         var content = Source.Value.Content;
         var pokemon = PokemonFactory.Create(content.Catalog, new(new("pret:SPECIES_" + symbol), level, 42,
             IvPolicy.Fixed(15), PersonalityPolicy.Fixed(personality)), new(0)).Pokemon;
-        return new(id, pokemon, content.SpeciesNames[pokemon.SourceSpeciesId], "RED", 0, 2,
+        return new(id, pokemon, null, "RED", 0, 2,
             "MAPSEC_PATTERN_BUSH", level, 4, "ITEM_POKE_BALL", "ITEM_NONE");
     }
 }

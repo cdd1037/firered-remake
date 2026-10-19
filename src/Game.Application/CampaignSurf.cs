@@ -104,7 +104,7 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("field_surf_effect_context");
         var mon=state.Party[index];long sequence=checked(state.Script.EffectSequence+1);
         return state with{IsSurfing=true,IsCycling=false,SavedMusic="",Music=SurfMusic(p.MapId),Dialogue=null,SignMessage=null,MessagePointer=null,
-            SurfEffect=new(index,mon.InstanceId,mon.Pokemon.SourceSpeciesId,mon.Nickname,p,destination,state.World.StepCount,FieldSurfSourcePresentation.ShowMon,"field-surf:"+sequence+":show-mon"),
+            SurfEffect=new(index,mon.InstanceId,mon.Pokemon.SourceSpeciesId,PokemonName(mon),p,destination,state.World.StepCount,FieldSurfSourcePresentation.ShowMon,"field-surf:"+sequence+":show-mon"),
             Script=state.Script with{Locked=true,EffectSequence=sequence},PresentationTicks=FieldSurfSourcePresentation.ShowMonCueFrames,PresentationEffects=[],Motions=[]};
     }
     private bool TryApplyFieldSurfEffect(CampaignState state,StoryEffect effect,out CampaignState next)
@@ -124,7 +124,7 @@ public sealed partial class CampaignSession
                 next=state with{Script=state.Script with{Variables=vars}};return true;
             case "bufferpartymonnick":
                 if(a.Length!=2||a[0]!="STR_VAR_1"||Value(a[1]) is var n&&(n<0||n>=state.Party.Length))throw new InvalidDataException("surf_nickname");
-                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],state.Party[Value(a[1])].Nickname)};return true;
+                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],PokemonName(state.Party[Value(a[1])]))};return true;
             case "setfieldeffectargument":
                 if(a.Length!=2||Value(a[0])!=0||Value(a[1]) is var selected&&(selected<0||selected>=state.Party.Length||!FieldHmSourceRules.Knows(state.Party[selected],FieldHmSourceRules.SurfMove)))throw new InvalidDataException("surf_argument");
                 next=state with{FieldEffectArguments=ImmutableSortedDictionary<int,int>.Empty.Add(0,Value(a[1]))};return true;

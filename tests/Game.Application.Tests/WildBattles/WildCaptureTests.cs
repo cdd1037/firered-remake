@@ -26,7 +26,9 @@ public sealed class WildCaptureTests : WildBattleFixture
 {
 
     [TestMethod]
-    public void public_capture_exact_instance_nickname_and_PC_delivery()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void public_capture_exact_instance_nickname_and_PC_delivery(bool customName)
     {
         var session = StartField();
         var b = session.State.WildBattle!;
@@ -41,14 +43,14 @@ public sealed class WildCaptureTests : WildBattleFixture
             if (session.State.WildBattle?.Capture is { } pending)
             {
                 Assert.IsTrue(CanonicalJson.Hash(pending.Pokemon) == CanonicalJson.Hash(enemy.Pokemon), "capture pending retains exact persistent enemy before storage");
-                Drain(session, nickname: true);
+                Drain(session, nickname: customName);
             }
         }
 
         Assert.IsTrue(session.State.WildBattle is null && session.State.NextPokemonId == id + 1, "capture commits one identity");
         var all = session.State.Party.Concat(session.State.Storage!.Boxes.SelectMany(box => box.Slots).OfType<PartyPokemon>());
         var captured = all.Single(p => p.InstanceId == id);
-        Assert.IsTrue(captured.Nickname == "CANON" && captured.Pokemon.Personality == enemy.Pokemon.Personality && captured.Pokemon.Ivs == enemy.Pokemon.Ivs && captured.Pokemon.Species == enemy.Pokemon.Species && captured.Pokemon.Experience == enemy.Pokemon.Experience, "capture preserves identity and chosen nickname");
+        Assert.IsTrue(captured.CustomNickname == (customName ? "CANON" : null) && captured.Pokemon.Personality == enemy.Pokemon.Personality && captured.Pokemon.Ivs == enemy.Pokemon.Ivs && captured.Pokemon.Species == enemy.Pokemon.Species && captured.Pokemon.Experience == enemy.Pokemon.Experience, "capture preserves identity and chosen nickname");
         Assert.IsTrue(captured.HeldItem == WildBattleSourcePartyEffects.PersistentHeldItem(enemy) && captured.Pokemon.CurrentHp == captured.Pokemon.Stats.MaxHp && captured.Status == 0 && captured.Pokemon.Moves.All(m => m.CurrentPp == m.MaximumPp), "existing PC receive heals HP PP status and retains held item");
         Assert.IsTrue(session.State.Party.Length == (count == 6 ? 6 : count + 1), "capture destination capacity");
         Assert.IsTrue(session.State.Exploration!.Battles[^1].ExperienceGained == 0 && session.State.Exploration.Battles[^1].Outcome == WildBattleOutcome.Caught, "capture earns zero EXP");

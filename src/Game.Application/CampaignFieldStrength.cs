@@ -108,8 +108,8 @@ public sealed partial class CampaignSession
                 var mon=state.Party[partyIndex];var position=new TilePosition(state.World.Player.MapId,actor.X,actor.Y,actor.Elevation,actor.Facing);
                 next=state with
                 {
-                    StrengthEffect=new(partyIndex,mon.InstanceId,mon.Pokemon.SourceSpeciesId,mon.Nickname,actor.LocalId,state.World.Player,position,position,FieldStrengthSourcePresentation.ShowMon,""),
-                    TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",mon.Nickname),PresentationTicks=FieldStrengthSourcePresentation.ShowMonCueFrames
+                    StrengthEffect=new(partyIndex,mon.InstanceId,mon.Pokemon.SourceSpeciesId,PokemonName(mon),actor.LocalId,state.World.Player,position,position,FieldStrengthSourcePresentation.ShowMon,""),
+                    TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",PokemonName(mon)),PresentationTicks=FieldStrengthSourcePresentation.ShowMonCueFrames
                 };return true;
             case "waitstate":
                 RequireBoulder();

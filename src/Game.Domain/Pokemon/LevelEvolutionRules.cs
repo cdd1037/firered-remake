@@ -11,7 +11,7 @@ public enum LevelEvolutionOutcome { Evolved, Cancelled }
 public sealed record LevelEvolutionLearnedMove(int Level, MoveId Move, int Slot);
 public sealed record LevelEvolutionPendingMove(int Level, MoveId Move);
 public sealed record LevelEvolutionResult(LevelEvolutionOutcome Outcome, PartyPokemon Pokemon,
-    SpeciesId PreviousSpecies, SpeciesId TargetSpecies, bool NicknameChanged,
+    SpeciesId PreviousSpecies, SpeciesId TargetSpecies,
     ImmutableArray<LevelEvolutionLearnedMove> LearnedMoves, ImmutableArray<LevelEvolutionPendingMove> PendingMoves);
 
 /// <summary>
@@ -82,7 +82,7 @@ public static class LevelEvolutionRules
         return ApplySpeciesChange(content, afterRewards, eligibility.TargetSpecies);
     }
 
-    // Item use reaches the same original species/stat/name/exact-level-move operation.
+    // Item use reaches the same original species/stat/exact-level-move operation.
     // Eligibility remains separate, and the existing public level result is unchanged.
     internal static LevelEvolutionResult ApplySpeciesChange(CampaignPokemonContent content, PartyPokemon afterRewards,
         SpeciesId targetSpecies)
@@ -120,8 +120,6 @@ public static class LevelEvolutionRules
             Gender = PokemonFactory.GenderFromPersonality(target.GenderRatio, before.Personality),
             AbilityId = before.AbilitySlot == 0 ? target.Ability1 : target.Ability2
         };
-        bool rename = afterRewards.Language == 2 && string.Equals(afterRewards.Nickname,
-            content.SpeciesNames[before.SourceSpeciesId], StringComparison.Ordinal);
         var learned = ImmutableArray.CreateBuilder<LevelEvolutionLearnedMove>();
         var pending = ImmutableArray.CreateBuilder<LevelEvolutionPendingMove>();
         foreach (var move in PokemonMoveRules.AtLevel(target, pokemon.Level))
@@ -142,12 +140,11 @@ public static class LevelEvolutionRules
             learned.Add(new(pokemon.Level, move, pokemon.Moves.Length));
             pokemon = pokemon with { Moves = pokemon.Moves.Add(new(move, definition.Pp, definition.Pp)) };
         }
-        var evolved = afterRewards with
-        {
-            Pokemon = pokemon, Nickname = rename ? content.SpeciesNames[target.SourceSpeciesId] : afterRewards.Nickname
-        };
+        // Evolution changes species identity, never the user's nullable naming intent.
+        // A default name will resolve from the new species in the display layer.
+        var evolved = afterRewards with { Pokemon = pokemon };
         Validate(content, evolved);
-        return new(LevelEvolutionOutcome.Evolved, evolved, before.Species, target.Id, rename,
+        return new(LevelEvolutionOutcome.Evolved, evolved, before.Species, target.Id,
             learned.ToImmutable(), pending.ToImmutable());
     }
 
@@ -160,7 +157,7 @@ public static class LevelEvolutionRules
     {
         ValidateProposal(content, afterRewards, eligibility);
         return new(LevelEvolutionOutcome.Cancelled, afterRewards, afterRewards.Pokemon.Species,
-            eligibility.TargetSpecies, false, [], []);
+            eligibility.TargetSpecies, [], []);
     }
 
     private static void ValidateProposal(CampaignPokemonContent content, PartyPokemon afterRewards,

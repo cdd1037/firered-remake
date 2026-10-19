@@ -209,7 +209,7 @@ public partial class CampaignView
             var mon = state.Party[scene.PartyIndex];
             if (scene.Payment)
             {
-                SourceText(_sourceNormal, new(12, 6), mon.Nickname);
+                SourceText(_sourceNormal, new(12, 6), _catalog.PokemonDisplayName(mon));
                 for (int i = 0; i < 2; i++)
                 {
                     var row = TutorPaymentRow(i);
@@ -219,7 +219,7 @@ public partial class CampaignView
             }
             else
             {
-                SourceText(_sourceNormal, new(12, 6), mon.Nickname);
+                SourceText(_sourceNormal, new(12, 6), _catalog.PokemonDisplayName(mon));
                 DrawTextureRectRegion(PresentedPokemonIcon(mon.Pokemon), new(108, 36, 32, 32), new(0, 0, 32, 32));
             }
             _battleSkin.DrawStandardFrame(this, TutorMessageRect);

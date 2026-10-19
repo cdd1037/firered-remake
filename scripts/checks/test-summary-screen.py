@@ -48,8 +48,21 @@ class SummaryScreenTests(unittest.TestCase):
                                    ('natures','0','HARDY'),('natures','3','ADAMANT'),('natures','24','QUIRKY')]:
             with self.subTest(symbol=symbol):self.assertEqual(names[group][symbol],value)
         self.assertEqual(names['noHeldItem'],'NONE')
+        self.assertEqual(names['eggName'],'EGG')
         self.assertEqual(json.loads(self.outputs['text.json'])['memos']['ATrade'],'a trade')
         self.assertNotIn('items',names)
+    def test_single_display_labels_follow_source_and_reject_invalid_inputs(self):
+        source=(RAW/'src/strings.c').read_text()
+        for symbol, expected in [('gText_EggNickname','EGG'),('gText_PokeSum_Item_None','NONE')]:
+            with self.subTest(symbol=symbol):
+                row='const u8 '+symbol+'[] = _("'+expected+'");'
+                self.assertIn(row,source)
+                literal='label {DYNAMIC 0x01} {LV_2}'
+                changed=source.replace(row,row.replace(expected,literal))
+                self.assertEqual(module.source_display_label(changed,symbol),literal)
+                for invalid in [source.replace(row,''),source+'\n'+row,
+                                source.replace(row,row.replace(expected,' '))]:
+                    with self.assertRaises(ValueError):module.source_display_label(invalid,symbol)
     def test_name_tables_reject_missing_duplicate_and_unparsed_rows(self):
         for body in ['', '[TYPE_FIRE] = _("FIRE"), [TYPE_FIRE] = _("FIRE"),',
                      '[TYPE_FIRE] = _(" "),', '[TYPE_FIRE] = UNREVIEWED_MACRO,']:

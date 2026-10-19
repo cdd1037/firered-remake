@@ -185,7 +185,7 @@ public sealed partial class CampaignSession
                 next = Set(destination, state.Party.Where((p, i) => i != state.DayCareInteraction!.PartyIndex && !p.IsEgg && p.Pokemon.CurrentHp > 0).Count()); break;
             case "GetSelectedMonNicknameAndSpecies" when returns:
                 Require("FourIsland_PokemonDayCare_GiveMonToRaise"); var selected = Selected();
-                next = Set(destination, selected.Pokemon.SourceSpeciesId) with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", selected.Nickname) }; break;
+                next = Set(destination, selected.Pokemon.SourceSpeciesId) with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(selected)) }; break;
             case "StoreSelectedPokemonInDaycare" when !returns:
                 Require("FourIsland_PokemonDayCare_GiveMonToRaise"); _ = Selected();
                 var deposit = FourIslandDayCareRules.Deposit(_content.PokemonContent!, _binding.Ownership, FourDayCare(state), state.Route5DayCare ?? Route5DayCareState.Empty,
@@ -200,7 +200,7 @@ public sealed partial class CampaignSession
                 int slot = state.Script.Variables.GetValueOrDefault("VAR_0x8004"); var quote = FourDayCareQuote(state, slot);
                 next = Set(returns ? destination : "VAR_0x8005", returns ? quote.LevelsGained : quote.Cost) with {
                     DayCareInteraction = FourDayCareScene() with { ResidentSlot = slot, Quote = quote }, TextBuffers = state.TextBuffers
-                        .SetItem("STR_VAR_1", FourDayCareResident(state, slot).Pokemon.Nickname).SetItem("STR_VAR_2", (returns ? quote.LevelsGained : quote.Cost).ToString(CultureInfo.InvariantCulture)) }; break;
+                        .SetItem("STR_VAR_1", PokemonName(FourDayCareResident(state, slot).Pokemon)).SetItem("STR_VAR_2", (returns ? quote.LevelsGained : quote.Cost).ToString(CultureInfo.InvariantCulture)) }; break;
             case "CalculatePlayerPartyCount" when returns:
                 Require("FourIsland_PokemonDayCare_TryRetrieveMon", "FourIsland_EventScript_DaycareAcceptEgg"); next = Set(destination, state.Party.Length); break;
             case "ShowDaycareLevelMenu" when !returns:
@@ -208,7 +208,7 @@ public sealed partial class CampaignSession
                 if (FourDayCare(state).Count != 2 || FourDayCare(state).HasPendingEgg) throw new InvalidDataException("daycare_resident_menu_context");
                 next = state with { DayCareInteraction = FourDayCareScene(CampaignRoute5DayCareStage.Residents) with { Residents = Enumerable.Range(0, 2).Select(i => {
                     var mon = FourDayCareResident(state, i).Pokemon; var q = FourDayCareQuote(state, i);
-                    return new CampaignDayCareResidentRow(i, mon.InstanceId, mon.Nickname, mon.Pokemon.SourceSpeciesId, q.LevelAfter, q.LevelsGained); }).ToImmutableArray() } }; break;
+                    return new CampaignDayCareResidentRow(i, mon.InstanceId, PokemonName(mon), mon.Pokemon.SourceSpeciesId, q.LevelAfter, q.LevelsGained); }).ToImmutableArray() } }; break;
             case "IsEnoughForCostInVar0x8005" when returns:
                 Require("FourIsland_PokemonDayCare_CheckEnoughMoney");
                 int cost = FourDayCareQuote(state, state.DayCareInteraction!.ResidentSlot).Cost;
@@ -223,7 +223,7 @@ public sealed partial class CampaignSession
                 if (withdrawal.Quote != scene.Quote || state.Script.Variables.GetValueOrDefault("VAR_0x8005") != withdrawal.MoneyPaid) throw new InvalidDataException("daycare_quote_changed");
                 next = DebitSourceMoney(Set(destination, withdrawal.Party[^1].Pokemon.SourceSpeciesId), withdrawal.MoneyPaid) with { FourIslandDayCare = withdrawal.State,
                     Party = withdrawal.Party, Mail = state.Mail is null && FourDayCareResident(state, scene.ResidentSlot).Mail is null ? null : withdrawal.Mail,
-                    TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", withdrawal.Party[^1].Nickname), DayCareInteraction = scene with { Withdrawn = true } }; break;
+                    TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(withdrawal.Party[^1])), DayCareInteraction = scene with { Withdrawn = true } }; break;
             case "SubtractMoneyFromVar0x8005" when !returns:
                 Require("FourIsland_PokemonDayCare_RetrieveMon");
                 if (state.DayCareInteraction is not { Withdrawn: true, PaymentAcknowledged: false, Quote: {} paid } transaction ||
@@ -232,8 +232,8 @@ public sealed partial class CampaignSession
             case "GetDaycareMonNicknames" when !returns:
                 Require(FourDayCareMan, "FourIsland_EventScript_CheckOnOneMon", "FourIsland_EventScript_CheckOnTwoMons");
                 var buffers = state.TextBuffers;
-                if (FourDayCare(state).First is {} first) buffers = buffers.SetItem("STR_VAR_1", first.Pokemon.Nickname).SetItem("STR_VAR_3", first.Pokemon.OriginalTrainerName);
-                if (FourDayCare(state).Second is {} second) buffers = buffers.SetItem("STR_VAR_2", second.Pokemon.Nickname);
+                if (FourDayCare(state).First is {} first) buffers = buffers.SetItem("STR_VAR_1", PokemonName(first.Pokemon)).SetItem("STR_VAR_3", first.Pokemon.OriginalTrainerName);
+                if (FourDayCare(state).Second is {} second) buffers = buffers.SetItem("STR_VAR_2", PokemonName(second.Pokemon));
                 next = state with { TextBuffers = buffers }; break;
             case "SetDaycareCompatibilityString" when !returns:
                 Require("FourIsland_EventScript_CheckOnTwoMons");

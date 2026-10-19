@@ -139,17 +139,22 @@ public sealed class EggHatchStatisticTests
     }
 
     [TestMethod]
-    public void Legacy_unknown_total_requires_explicit_migration_instead_of_receipt_guessing()
+    public void Missing_lifetime_total_is_rejected_without_guessing_from_retained_receipts()
     {
         var state = Egg(true);
         state = state with { GameStats = state.GameStats!.Remove(Stat) };
         Assert.AreEqual("save_hatched_egg_count_missing_migration_required", Invoke("ValidateHatchedEggCount", state));
-        byte[] source = File.ReadAllBytes(TestAssets.Checkpoint);
-        var (loaded, rules) = CurrentCampaignFixture.DecodeRawCheckpoint(source);
-        var legacy = loaded.State with { GameStats = loaded.State.GameStats?.Remove(Stat) };
-        Assert.AreEqual("save_hatched_egg_count_missing_migration_required", rules == "firered-current-campaign-v3"
-            ? session.ValidateLegacyTrainerTowerCheckpoint(legacy) : session.ValidatePlayerSave(legacy));
-        Assert.ThrowsExactly<InvalidDataException>(() => CampaignSession.RestoreCurrent(CurrentCampaignFixture.Catalog, legacy, loaded.Generation));
-        CollectionAssert.AreEqual(source, File.ReadAllBytes(TestAssets.Checkpoint));
+        // This state is explicitly controlled current-schema test input. Removing
+        // its synthetic total tests the statistic boundary without admitting an
+        // old nickname schema or claiming a recovered lifetime count.
+        var loaded = CurrentCampaignFixture.Checkpoint;
+        var missing = loaded.State with { GameStats = loaded.State.GameStats?.Remove(Stat) };
+        Assert.AreEqual("save_hatched_egg_count_missing_migration_required", session.ValidatePlayerSave(missing));
+        Assert.ThrowsExactly<InvalidDataException>(() => CampaignSession.RestoreCurrent(CurrentCampaignFixture.Catalog, missing, loaded.Generation));
+        var currentBytes = SaveCodec.Encode(missing, loaded.Generation, session.RulesVersion, CurrentCampaignFixture.Catalog.ContentVersion);
+        var result = PlayerSaveOperations.Load(() => SaveCodec.Decode<CampaignState>(currentBytes,
+            session.RulesVersion, CurrentCampaignFixture.Catalog.ContentVersion, validate: session.ValidatePlayerSave));
+        Assert.AreEqual(SaveOperationStatus.MigrationRequired, result.Result.Status);
+        Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
     }
 }

@@ -7,7 +7,7 @@ namespace FireRed.Tests;
 internal static class TestAssets
 {
     public static string Root { get; } = FindRoot();
-    public static string Checkpoint => Environment.GetEnvironmentVariable("FIRERED_TEST_CHECKPOINT") ?? Path.GetFullPath(Path.Combine(Root, "checkpoints/current-ownership-v3-20261015/continued-checkpoint.json"));
+    public static string Checkpoint => Environment.GetEnvironmentVariable("FIRERED_TEST_CHECKPOINT") ?? Path.GetFullPath(Path.Combine(Root, "checkpoints/current-schema2-20261019/TEST-CONTROLLED-hatch1000.json"));
     public static string Source => Path.Combine(Root, "content/raw/pokefirered/037335f4");
 
     public static string GeneratedFile(string path, string generationCommand)

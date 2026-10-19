@@ -21,8 +21,7 @@ public sealed partial class PretCampaignCatalog
     public ImmutableArray<CampaignSilphElevatorFloor> SilphElevatorFloors=>SilphRegion?.ElevatorFloors??[];
     public ImmutableArray<CampaignSilphElevatorEntrance> SilphElevatorEntrances=>SilphRegion?.ElevatorEntrances??[];
     public ImmutableArray<CampaignSilphDynamicExit> SilphDynamicExits=>SilphRegion?.DynamicExits??[];
-    public string PresentedSpeciesName(int species)=>PokemonContent?.SpeciesNames.GetValueOrDefault(species)
-        ??SourceSpeciesName(species)
+    public string PresentedSpeciesName(int species)=>SourceSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
 
     private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,EarlyShopCatalog shop,MachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)

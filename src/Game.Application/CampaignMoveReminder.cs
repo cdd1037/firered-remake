@@ -56,7 +56,7 @@ public sealed partial class CampaignSession
     private CampaignMoveReminder ReminderMessage(CampaignMoveReminder scene, CampaignMoveReminderStage stage, string symbol,
         PartyPokemon mon, string? forgotten = null)
     {
-        string raw = _content.MoveReminder!.Texts[symbol].Replace("{STR_VAR_1}", mon.Nickname, StringComparison.Ordinal)
+        string raw = _content.MoveReminder!.Texts[symbol].Replace("{STR_VAR_1}", PokemonName(mon), StringComparison.Ordinal)
             .Replace("{STR_VAR_2}", scene.Move is { } move ? BattleContent.MoveNames[move.Value] : "", StringComparison.Ordinal)
             .Replace("{STR_VAR_3}", forgotten ?? "", StringComparison.Ordinal);
         raw = Regex.Replace(raw, @"\{[^}]+\}", "", RegexOptions.CultureInvariant);
@@ -104,7 +104,7 @@ public sealed partial class CampaignSession
             var mon = state.Party[command.PartyIndex]; var candidates = MoveReminderRules.Candidates(_content.MoveReminder!, mon);
             if (candidates.Error is not null && candidates.Error != "move_reminder_egg") { decision = Reject(candidates.Error); return true; }
             var selected = state with { MoveReminder = new(CampaignMoveReminderStage.FieldScript, command.PartyIndex, mon.InstanceId) { Moves = candidates.Moves },
-                TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname),
+                TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon)),
                 Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_0x8004", command.PartyIndex).SetItem("VAR_0x8005", candidates.Moves.Length) } };
             decision = new(CommandStatus.Accepted, ContinueMoveReminder(selected)); return true;
         }
@@ -182,7 +182,7 @@ public sealed partial class CampaignSession
         string forgotten = slot is { } index ? BattleContent.MoveNames[mon.Pokemon.Moves[index].Move.Value] : "";
         scene = scene with { Lesson = result };
         return TutorSound(state with { Party = state.Party.SetItem(scene.PartyIndex, result.Pokemon),
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname).SetItem("STR_VAR_2", BattleContent.MoveNames[result.Move.Value]).SetItem("STR_VAR_3", forgotten),
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon)).SetItem("STR_VAR_2", BattleContent.MoveNames[result.Move.Value]).SetItem("STR_VAR_3", forgotten),
             MoveReminder = ReminderMessage(scene, slot is null ? CampaignMoveReminderStage.Learned : CampaignMoveReminderStage.Forgotten,
                 slot is null ? "gText_MonLearnedMove" : "gText_1_2_and_Poof", mon, forgotten) },
             slot is null ? "playfanfare" : "playse", slot is null ? "MUS_LEVEL_UP" : "SE_BALL_BOUNCE_1");

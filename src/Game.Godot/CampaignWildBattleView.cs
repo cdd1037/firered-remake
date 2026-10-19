@@ -7,6 +7,7 @@ using Game.Domain.Growth;
 using Game.Domain.Pokemon;
 using Game.Domain.Ids;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 using Godot;
 
 public partial class CampaignView
@@ -142,7 +143,7 @@ public partial class CampaignView
         ? ((WildBattlePlayerSwitchedEvent)WildCurrentEvent(b)!).Previous.Pokemon : b.DisplayPlayer;
     private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => PresentedBattlePlayerParty[b.RewardPartyIndex];
     private string WildName(WildBattleSide side) => side == WildBattleSide.Player
-        ? WildWithdrawing(PresentedWildBattle!) ? PresentedWildBattle!.LastSwitch!.Outgoing.Nickname : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _session.State.Party[forced.PreviousIndex].Nickname : PresentedWildBattle!.OwnedBefore.Nickname
+        ? WildWithdrawing(PresentedWildBattle!) ? _catalog.PokemonDisplayName(PresentedWildBattle!.LastSwitch!.Outgoing) : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _catalog.PokemonDisplayName(_session.State.Party[forced.PreviousIndex]) : _catalog.PokemonDisplayName(PresentedWildBattle!.OwnedBefore)
         : TowerOpponentAppearance()?.Name ?? PresentedBattleSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
     private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? _battleSelectionText.FoePrefix : _battleSelectionText.WildPrefix : "") + WildName(side);
     private static string WildStatName(WildBattleStat stat) => stat switch
@@ -223,7 +224,7 @@ public partial class CampaignView
                     Source("gText_PkmnHPRestoredByVar2", ("STR_VAR_1", WildName(potion.Side)), ("STR_VAR_2", potion.HpRestored.ToString())); break;
                 case WildBattleMedicineAppliedEvent medicine when SingleMedicinePages(medicine,Source): break;
                 case WildBattleMedicineAppliedEvent medicine:
-                    string targetName=PresentedBattlePlayerParty.Single(p=>p.InstanceId==medicine.TargetInstanceId).Nickname;
+                    string targetName=_catalog.PokemonDisplayName(PresentedBattlePlayerParty.Single(p=>p.InstanceId==medicine.TargetInstanceId));
                     string medicineText=medicine.HpAfter>medicine.HpBefore?"gText_PkmnHPRestoredByVar2":
                         WildBattleStatus.IsSleeping(medicine.StatusBefore)?"gText_PkmnWokeUp2":ForestPresentationStatus(medicine.StatusBefore) switch
                         {WildBattleStatus.Poison=>"gText_PkmnCuredOfPoison",WildBattleStatus.Burn=>"gText_PkmnBurnHealed",WildBattleStatus.Freeze=>"gText_PkmnThawedOut",WildBattleStatus.Paralysis=>"gText_PkmnCuredOfParalysis",_=>throw new InvalidDataException("Unsupported medicine result message.")};
@@ -260,10 +261,10 @@ public partial class CampaignView
                 case WildBattlePlayerReplacedEvent: Source("sText_GoPkmn"); break;
                 case WildBattlePlayerSwitchedEvent:
                     if (SourcePlayerBatonSwitch(b))
-                    { Source(SourceBatonSendOutText(b), ("B_BUFF1", b.OwnedBefore.Nickname)); break; }
+                    { Source(SourceBatonSendOutText(b), ("B_BUFF1", _catalog.PokemonDisplayName(b.OwnedBefore))); break; }
                     var change = b.LastSwitch ?? throw new InvalidDataException("Voluntary switch presentation is missing.");
-                    Source(change.WithdrawalTextSymbol, ("B_BUFF1", change.Outgoing.Nickname));
-                    Source(change.SendOutTextSymbol, ("B_BUFF1", b.OwnedBefore.Nickname));
+                    Source(change.WithdrawalTextSymbol, ("B_BUFF1", _catalog.PokemonDisplayName(change.Outgoing)));
+                    Source(change.SendOutTextSymbol, ("B_BUFF1", _catalog.PokemonDisplayName(b.OwnedBefore)));
                     break;
                 default:
                     pages.Add("This battle event is not\nsupported yet.");
@@ -276,12 +277,12 @@ public partial class CampaignView
             switch (page.Reward)
             {
                 case WildRewardExperienceEvent xp:
-                    Source("sText_PkmnGainedEXP", ("B_BUFF1", WildRewardRecipient(b).Nickname), ("B_BUFF2", ""), ("B_BUFF3", xp.Gained.ToString())); break;
+                    Source("sText_PkmnGainedEXP", ("B_BUFF1", _catalog.PokemonDisplayName(WildRewardRecipient(b))), ("B_BUFF2", ""), ("B_BUFF3", xp.Gained.ToString())); break;
                 case WildRewardLevelEvent level when page.Text.Length > 0:
-                    Source("sText_PkmnGrewToLv", ("B_BUFF1", WildRewardRecipient(b).Nickname), ("B_BUFF2", level.After.ToString())); break;
+                    Source("sText_PkmnGrewToLv", ("B_BUFF1", _catalog.PokemonDisplayName(WildRewardRecipient(b))), ("B_BUFF2", level.After.ToString())); break;
                 case WildRewardLevelEvent: break;
                 case WildRewardMoveLearnedEvent learned:
-                    Source("sText_PkmnLearnedMove", ("B_BUFF1", WildRewardRecipient(b).Nickname), ("B_BUFF2", MoveName(learned.Move))); break;
+                    Source("sText_PkmnLearnedMove", ("B_BUFF1", _catalog.PokemonDisplayName(WildRewardRecipient(b))), ("B_BUFF2", MoveName(learned.Move))); break;
                 default:
                     if (VermilionPayDayResultPage(b, Source) || ForestTrainerResultPage(b, Source)) break;
                     if (_session.State.ForestTrainerBattle is null && b.State.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw) Source("sText_PlayerWhiteout");
@@ -353,7 +354,7 @@ public partial class CampaignView
             _wildPages = []; _wildPage = 0; _wildElapsed = 0; _wildMenu = "learn-moves";
             _wildCursor = WildRewardRecipient(b).Pokemon.Moves.Length; return;
         }
-        var values = new[] { ("B_BUFF1", WildRewardRecipient(b).Nickname), ("B_BUFF2", MoveName(b.PendingMoves[0].Move)) };
+        var values = new[] { ("B_BUFF1", _catalog.PokemonDisplayName(WildRewardRecipient(b))), ("B_BUFF2", MoveName(b.PendingMoves[0].Move)) };
         _wildPages = [.. WildSourcePages("sText_TryToLearnMove1", values), .. WildSourcePages("sText_TryToLearnMove2", values), .. WildSourcePages("sText_TryToLearnMove3", values)];
         _wildPage = 0; _wildElapsed = 0; _wildMenu = "learn-intro"; _wildCursor = 0;
     }
@@ -553,7 +554,7 @@ public partial class CampaignView
         else if (_wildMenu == "party") WildLines("Choose a POKéMON.");
         else if (_wildMenu == "actions")
         {
-            _battleSkin.DrawActionMenu(this); WildLines(_battleSelectionText.ActionPrompt(b.OwnedBefore.Nickname, _session.State.PlayerName));
+            _battleSkin.DrawActionMenu(this); WildLines(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore), _session.State.PlayerName));
             var labels = _battleSelectionText.ActionLabels;
             for (int i = 0; i < labels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), labels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, _wildCursor);
@@ -592,7 +593,7 @@ public partial class CampaignView
     }
     private void DrawWildStats(CampaignWildBattle b, WildRewardLevelEvent level)
     {
-        WildLines(string.Join('\n', WildSourcePages("sText_PkmnGrewToLv", ("B_BUFF1", WildRewardRecipient(b).Nickname), ("B_BUFF2", level.After.ToString()))));
+        WildLines(string.Join('\n', WildSourcePages("sText_PkmnGrewToLv", ("B_BUFF1", _catalog.PokemonDisplayName(WildRewardRecipient(b))), ("B_BUFF2", level.After.ToString()))));
         _battleSkin.DrawStandardFrame(this, new(144, 56, 96, 104));
         var stats = new[] { ("gText_LevelUp_MaxHP", level.StatsBefore.MaxHp, level.StatsAfter.MaxHp), ("gText_LevelUp_Attack", level.StatsBefore.Attack, level.StatsAfter.Attack), ("gText_LevelUp_Defense", level.StatsBefore.Defense, level.StatsAfter.Defense), ("gText_LevelUp_SpAtk", level.StatsBefore.SpecialAttack, level.StatsAfter.SpecialAttack), ("gText_LevelUp_SpDef", level.StatsBefore.SpecialDefense, level.StatsAfter.SpecialDefense), ("gText_LevelUp_Speed", level.StatsBefore.Speed, level.StatsAfter.Speed) };
         for (int i = 0; i < stats.Length; i++)

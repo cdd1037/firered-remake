@@ -52,7 +52,7 @@ public sealed class StoneEvolutionTests
     private PartyPokemon Factory(string species, int level)
     {
         var mon = PokemonFactory.Create(content.Catalog, new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(17), PersonalityPolicy.Fixed(324468760)), new RngState(0)).Pokemon;
-        return new(91, mon, content.SpeciesNames[mon.SourceSpeciesId], "RED", 0, 2, "MAPSEC_ROUTE_1", level, 4, "ITEM_POKE_BALL", "ITEM_NONE");
+        return new(91, mon, null, "RED", 0, 2, "MAPSEC_ROUTE_1", level, 4, "ITEM_POKE_BALL", "ITEM_NONE");
     }
 
     private CampaignState Fixture(int species, string item)
@@ -200,7 +200,7 @@ public sealed class StoneEvolutionTests
         full = full.SetItem(0, new(cut.Id, 7, cut.Pp * 6 / 5, 1));
         nidorino = nidorino with
         {
-            Nickname = "ROYAL",
+            CustomNickname = "ROYAL",
             Pokemon = nidorino.Pokemon with
             {
                 CurrentHp = nidorino.Pokemon.Stats.MaxHp - 9,
@@ -209,7 +209,7 @@ public sealed class StoneEvolutionTests
         };
         var nidProposal = ItemEvolutionRules.Eligibility(content, nidorino)!;
         var nidResult = ItemEvolutionRules.Apply(content, nidorino, nidProposal);
-        Assert.IsTrue(nidResult.Pokemon.Nickname == "ROYAL" && Hash(nidResult.Pokemon.Pokemon.Moves) == Hash(full), "Nidorino keeps nickname, full HM moves and depleted PP Ups");
+        Assert.IsTrue(nidResult.Pokemon.CustomNickname == "ROYAL" && Hash(nidResult.Pokemon.Pokemon.Moves) == Hash(full), "Nidorino keeps nickname, full HM moves and depleted PP Ups");
         Assert.IsTrue(nidResult.PendingMoves.Any(m => m.Move.Value == "pret:MOVE_THRASH") && nidResult.Pokemon.Pokemon.Stats.MaxHp - nidResult.Pokemon.Pokemon.CurrentHp == 9, "Nidoking exact level22 Thrash decision and HP deficit");
         Refuses(() => ItemEvolutionRules.Apply(content, nidorino with { InstanceId = 92 }, nidProposal), "stale different-member proposal refused");
         Refuses(() => ItemEvolutionRules.Apply(content, nidorino, nidProposal with { TargetSpecies = new("pret:SPECIES_CLEFABLE") }), "forged target refused");
@@ -269,7 +269,7 @@ public sealed class StoneEvolutionTests
         var pp = content.Catalog.Moves[wounded.Pokemon.Moves[0].Move].Pp;
         wounded = wounded with
         {
-            Nickname = "PETAL",
+            CustomNickname = "PETAL",
             Pokemon = wounded.Pokemon with
             {
                 CurrentHp = wounded.Pokemon.Stats.MaxHp - 11,
@@ -277,7 +277,7 @@ public sealed class StoneEvolutionTests
             }
         };
         var named = Evolve(sun with { Party = sun.Party.SetItem(sun.Party.Length - 1, wounded) }, "pret:ITEM_SUN_STONE", 182, "sun-named-wounded");
-        Assert.IsTrue(named.Party[^1].Nickname == "PETAL", "public custom nickname retained");
+        Assert.IsTrue(named.Party[^1].CustomNickname == "PETAL", "public custom nickname retained");
     }
 
     [TestMethod]

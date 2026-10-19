@@ -114,7 +114,7 @@ public sealed class FlashLadderTransitionTests : WildBattleFixture
         var boxed = session.State.Storage.Boxes[13].Slots.Single(mon => mon?.InstanceId == deposited.InstanceId)!;
         Assert.AreEqual(deposited.InstanceId, boxed.InstanceId);
         Assert.AreEqual(deposited.IsEgg, boxed.IsEgg);
-        Assert.AreEqual(deposited.Nickname, boxed.Nickname);
+        Assert.AreEqual(deposited.CustomNickname, boxed.CustomNickname);
         Assert.AreEqual(deposited.Pokemon.Species, boxed.Pokemon.Species);
         Assert.AreEqual(deposited.Pokemon.Personality, boxed.Pokemon.Personality);
         Assert.AreEqual(deposited.Pokemon.OriginalTrainerId, boxed.Pokemon.OriginalTrainerId);

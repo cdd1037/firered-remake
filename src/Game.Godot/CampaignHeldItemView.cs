@@ -1,5 +1,6 @@
 using Game.Application;
 using Game.Domain.Ids;
+using Game.Domain.World;
 using Godot;
 
 public partial class CampaignView
@@ -86,7 +87,7 @@ public partial class CampaignView
         _itemCursor = Math.Min(_itemCursor, (_heldGivePc ? _session.State.Inventory!.PcItems : FieldItemStacks).Length);
         _questPocketCursor = Math.Min(_questPocketCursor, QuestPocketStacks.Length);
         if (_session.State.MailComposer is not null) { _itemNotice = null; return; }
-        _itemNotice = !accepted ? HeldItemNotice(_status) : _inventoryText.Get("notice.gave", ("item", InventoryName(item)), ("pokemon", _session.State.Party[_heldTarget].Nickname));
+        _itemNotice = !accepted ? HeldItemNotice(_status) : _inventoryText.Get("notice.gave", ("item", InventoryName(item)), ("pokemon", _catalog.PokemonDisplayName(_session.State.Party[_heldTarget])));
     }
     private string HeldItemNotice(string status) => _inventoryText.Get(status switch {
         "held_item_none" => "notice.nothing-held",
@@ -107,7 +108,7 @@ public partial class CampaignView
         {
             int index = _heldGiveItem is not null ? _heldTarget : _session.State.ItemMenu!.TargetPartyIndex!.Value;
             var owned = _session.State.Party[index];
-            SourceText(_sourceNormal, new(12, 10), owned.Nickname);
+            SourceText(_sourceNormal, new(12, 10), _catalog.PokemonDisplayName(owned));
             SourceText(_sourceSmall, new(12, 32), _inventoryText.Get("held.header", ("item", _catalog.DisplayNames.HeldItemName(owned.HeldItem))));
             string[] options = _heldExchange ? [InventorySourceText("gText_Yes"), InventorySourceText("gText_No")]
                 : [InventoryActionLabel(InventoryMenuAction.Give), InventoryActionLabel(InventoryMenuAction.Take), InventoryActionLabel(InventoryMenuAction.Cancel)];

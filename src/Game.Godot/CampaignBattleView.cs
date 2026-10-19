@@ -6,6 +6,7 @@ using Game.Domain.FirstBattle;
 using Game.Domain.Items;
 using Game.Domain.Growth;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 public partial class CampaignView
@@ -76,11 +77,11 @@ public partial class CampaignView
         _battleDarkArt.Clear();
         DisposeBattleForms();
     }
-    private string BattleName(FirstBattleSide side)=>side==FirstBattleSide.Player?_session.State.Battle!.OwnedBefore.Nickname:_catalog.PokemonContent!.SpeciesNames[_session.State.Battle!.State.Opponent.Pokemon.SourceSpeciesId];
+    private string BattleName(FirstBattleSide side)=>side==FirstBattleSide.Player?_catalog.PokemonDisplayName(_session.State.Battle!.OwnedBefore):(_catalog.SourceSpeciesName(_session.State.Battle!.State.Opponent.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing."));
     private ImmutableArray<string> BattleSourcePages(string symbol,params (string Key,string Value)[] extra)
     {
         var b=_session.State.Battle!;
-        var values=new Dictionary<string,string>(StringComparer.Ordinal){["B_PLAYER_NAME"]=_session.State.PlayerName,["PLAYER"]=_session.State.PlayerName,["B_TRAINER1_CLASS"]="RIVAL",["B_TRAINER1_NAME"]=_session.State.RivalName,["B_PLAYER_MON1_NAME"]=b.OwnedBefore.Nickname,["B_OPPONENT_MON1_NAME"]=BattleName(FirstBattleSide.Opponent)};
+        var values=new Dictionary<string,string>(StringComparer.Ordinal){["B_PLAYER_NAME"]=_session.State.PlayerName,["PLAYER"]=_session.State.PlayerName,["B_TRAINER1_CLASS"]="RIVAL",["B_TRAINER1_NAME"]=_session.State.RivalName,["B_PLAYER_MON1_NAME"]=_catalog.PokemonDisplayName(b.OwnedBefore),["B_OPPONENT_MON1_NAME"]=BattleName(FirstBattleSide.Opponent)};
         foreach(var (key,value) in extra)values[key]=value;
         return PretBattleText.Pages(_battleText,symbol,values);
     }
@@ -133,8 +134,8 @@ public partial class CampaignView
             var page=b.Pages[b.PageIndex];
             switch(page.Reward)
             {
-                case LabBattleExperienceEvent xp:Source("sText_PkmnGainedEXP",("B_BUFF1",b.OwnedBefore.Nickname),("B_BUFF2",""),("B_BUFF3",xp.Gained.ToString()));break;
-                case LabBattleLevelEvent level when page.Kind=="level":Source("sText_PkmnGrewToLv",("B_BUFF1",b.OwnedBefore.Nickname),("B_BUFF2",level.After.ToString()));break;
+                case LabBattleExperienceEvent xp:Source("sText_PkmnGainedEXP",("B_BUFF1",_catalog.PokemonDisplayName(b.OwnedBefore)),("B_BUFF2",""),("B_BUFF3",xp.Gained.ToString()));break;
+                case LabBattleLevelEvent level when page.Kind=="level":Source("sText_PkmnGrewToLv",("B_BUFF1",_catalog.PokemonDisplayName(b.OwnedBefore)),("B_BUFF2",level.After.ToString()));break;
                 case LabBattleLevelEvent:break;
                 case LabBattleMoneyEvent money:Source("sText_PlayerGotMoney",("B_BUFF1",money.Awarded.ToString()));break;
                 default:pages.Add(page.Text);break;
@@ -259,7 +260,7 @@ public partial class CampaignView
         if(_battleNotice is not null)Lines(_battleNotice);
         else if(b.Phase==CampaignBattlePhase.Results&&b.Pages[b.PageIndex] is {Kind:"stats",Reward:LabBattleLevelEvent level})
         {
-            Lines(string.Join('\n',BattleSourcePages("sText_PkmnGrewToLv",("B_BUFF1",b.OwnedBefore.Nickname),("B_BUFF2",level.After.ToString()))));
+            Lines(string.Join('\n',BattleSourcePages("sText_PkmnGrewToLv",("B_BUFF1",_catalog.PokemonDisplayName(b.OwnedBefore)),("B_BUFF2",level.After.ToString()))));
             _battleSkin.DrawStandardFrame(this,new(144,56,96,104));
             var stats=new[]{("gText_LevelUp_MaxHP",level.StatsBefore.MaxHp,level.StatsAfter.MaxHp),("gText_LevelUp_Attack",level.StatsBefore.Attack,level.StatsAfter.Attack),("gText_LevelUp_Defense",level.StatsBefore.Defense,level.StatsAfter.Defense),("gText_LevelUp_SpAtk",level.StatsBefore.SpecialAttack,level.StatsAfter.SpecialAttack),("gText_LevelUp_SpDef",level.StatsBefore.SpecialDefense,level.StatsAfter.SpecialDefense),("gText_LevelUp_Speed",level.StatsBefore.Speed,level.StatsAfter.Speed)};
             for(int i=0;i<stats.Length;i++)
@@ -280,7 +281,7 @@ public partial class CampaignView
             else if(_battleMenu=="party")Lines("Choose a POKéMON.");
             else if(_battleMenu=="actions")
             {
-                _battleSkin.DrawActionMenu(this);Lines(_battleSelectionText.ActionPrompt(b.OwnedBefore.Nickname,_session.State.PlayerName));
+                _battleSkin.DrawActionMenu(this);Lines(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore),_session.State.PlayerName));
                 var labels=_battleSelectionText.ActionLabels;for(int i=0;i<4;i++)SourceText(_battleMenuFont,LabBattleUiSkin.ActionText(i),labels[i]);
                 _uiCorrections.DrawSelectionCursor(this,false,_battleCursor);
             }

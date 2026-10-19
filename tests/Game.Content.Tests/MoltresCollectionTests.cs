@@ -22,9 +22,7 @@ public sealed class MoltresCollectionTests
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics,
             PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades, machines);
         var dex = PretPokedexMenu.Load(TestAssets.Root);
-        var content = new CampaignPokemonContent(game, game.Catalog.Species.Values.ToImmutableSortedDictionary(
-            species => species.SourceSpeciesId, species => dex.Entries[species.SourceSpeciesId].Name),
-            PokemonStateValidator.NicknameAlphabet);
+        var content = new CampaignPokemonContent(game, PokemonStateValidator.NicknameAlphabet);
         return new(canonical, content, machines, dex);
     });
 
@@ -46,7 +44,8 @@ public sealed class MoltresCollectionTests
         Assert.AreEqual("TYPE_FLYING", definition.Type2);
         Assert.IsTrue(definition.Evolutions.IsEmpty);
         var mon = Make(Moltres, 1, 50);
-        Assert.AreEqual("MOLTRES", mon.Nickname);
+        Assert.IsNull(mon.CustomNickname);
+        Assert.AreEqual("MOLTRES", source.Dex.Entries[mon.Pokemon.SourceSpeciesId].Name);
         Assert.AreEqual(PokemonGender.Genderless, mon.Pokemon.Gender);
         Assert.AreEqual(156250u, mon.Pokemon.Experience);
         Assert.AreEqual(35, mon.Pokemon.Friendship);
@@ -145,7 +144,7 @@ public sealed class MoltresCollectionTests
         var content = Source.Value.Content;
         var pokemon = PokemonFactory.Create(content.Catalog, new(species, level, 42,
             IvPolicy.Fixed(15), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        return new(id, pokemon, content.SpeciesNames[pokemon.SourceSpeciesId], "RED", 0, 2,
+        return new(id, pokemon, null, "RED", 0, 2,
             "MAPSEC_MT_EMBER", level, 4, "ITEM_ULTRA_BALL", "ITEM_NONE");
     }
 }

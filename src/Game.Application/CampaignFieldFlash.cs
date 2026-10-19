@@ -83,7 +83,7 @@ public sealed partial class CampaignSession
         var mon=state.Party[command.PartyIndex];long sequence=state.Script.EffectSequence+1;
         return new(CommandStatus.Accepted,state with
         {
-            FlashEffect=new(command.PartyIndex,mon.InstanceId,mon.Pokemon.SourceSpeciesId,mon.Nickname,state.World.Player.MapId,
+            FlashEffect=new(command.PartyIndex,mon.InstanceId,mon.Pokemon.SourceSpeciesId,PokemonName(mon),state.World.Player.MapId,
                 FieldFlashSourcePresentation.ShowMon,"field-flash:"+sequence,state.FlashLevel),
             Script=state.Script with{Locked=true,EffectSequence=sequence},
             PresentationEffects=[],PresentationTicks=FieldFlashSourcePresentation.ShowMonCueFrames

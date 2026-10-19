@@ -215,7 +215,7 @@ public static partial class CampaignQuestLogRecorder
     private static CampaignQuestLogAction? Describe(CampaignState before,CampaignState after,CampaignCommand command,ICampaignCatalog? catalog,QuestLogSource? source,Func<string,Game.Domain.Trainers.TrainerDefinition?>? trainerLookup,bool playedSlots)
     {
         string map=source?.MapNames.GetValueOrDefault(after.World.Player.MapId.Value)??Location(after.World.Player.MapId.Value);
-        string Species(Game.Domain.Pokemon.PartyPokemon mon)=>catalog?.SourceSpeciesName(mon.Pokemon.SourceSpeciesId)??mon.Nickname;
+        string Species(Game.Domain.Pokemon.PartyPokemon mon)=>catalog?.SourceSpeciesName(mon.Pokemon.SourceSpeciesId)??"POKéMON";
         string Item(string item)=>catalog?.Inventory.Items.GetValueOrDefault(new Game.Domain.Ids.ItemId(item.StartsWith("ITEM_",StringComparison.Ordinal)?"pret:"+item:item))?.Name??item;
         foreach(var effect in after.PresentationEffects.Where(e=>e.Sequence>before.Script.EffectSequence))
             if(effect.Opcode=="special"&&effect.Args.Contains("SetUsedPkmnCenterQuestLogEvent"))return Event(CampaignQuestLogEvent.PokemonCenter,"MonsWereFullyRestoredAtCenter");

@@ -196,7 +196,7 @@ public abstract class WildBattleFixture
         {
             InstanceId = id,
             Pokemon = mon,
-            Nickname = species,
+            CustomNickname = null,
             HeldItem = "ITEM_NONE",
             Status = 0,
             MetLevel = level,
@@ -255,7 +255,7 @@ public abstract class WildBattleFixture
                     Pokemon = enemy.Pokemon, HeldItem = enemy.HeldItem, Status = enemy.Status } }))),
             EntryLevels = party.Select(p => p.Pokemon.Level).ToImmutableArray(),
             ActivePartyIndex = 0,
-            Origin = new("MAPSEC_ROUTE_1", enemy.Pokemon.Level, enemy.Nickname),
+            Origin = new("MAPSEC_ROUTE_1", enemy.Pokemon.Level),
 
             OpponentHpAtLastSwitch = enemy.Pokemon.CurrentHp
         };

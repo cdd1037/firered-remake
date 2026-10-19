@@ -1,6 +1,7 @@
 using Game.Application;
 using Game.Domain.Events;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Route 5's source party callback uses the existing party rows and bounded summary.
@@ -148,12 +149,13 @@ public partial class CampaignView
         for (int i = 0; i < rows.Length; i++)
         {
             var row = rows[i]; int y = 8 + i * 14;
-            SourceText(_sourceNormal, new(104, y), row.Nickname);
             var mon = (row.Slot == 0 ? _session.State.FourIslandDayCare?.First : _session.State.FourIslandDayCare?.Second)?.Pokemon;
             if (mon is null || mon.InstanceId != row.InstanceId) throw new InvalidDataException("Day-Care resident presentation identity differs.");
+            string name = _catalog.PokemonDisplayName(mon);
+            SourceText(_sourceNormal, new(104, y), name);
             if (mon.Pokemon.Gender != PokemonGender.Genderless)
             {
-                float nameWidth = _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(row.Nickname), fontSize: _sourceNormal.Size).X;
+                float nameWidth = _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(name), fontSize: _sourceNormal.Size).X;
                 SourceText(mon.Pokemon.Gender == PokemonGender.Female ? _healthFemale : _healthMale,
                     new(104 + nameWidth, y), mon.Pokemon.Gender == PokemonGender.Female ? "♀" : "♂");
             }

@@ -95,7 +95,7 @@ public partial class CampaignView
         {
             string symbol = capture.Stage == CampaignCaptureStage.DexNotice ? "sText_PkmnDataAddedToDex" : "sText_GiveNicknameCaptured";
             _safariPages = PretBattleText.Pages(_battleText, symbol, new Dictionary<string, string>(StringComparer.Ordinal)
-                { ["B_OPPONENT_MON1_NAME"] = capture.Origin.DefaultName });
+                { ["B_OPPONENT_MON1_NAME"] = (_catalog.SourceSpeciesName(capture.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")) });
         }
         else if (_session.VisibleSafariMessage is { } text)
         {
@@ -190,10 +190,10 @@ public partial class CampaignView
             if(SafariCaptureBallPlayback() is {} playback)DrawCaptureTargetFrame(sprite.Texture,sprite.Position,playback.Sample(SafariCaptureBallTick),playback.Ball,playback.TargetBlend(SafariCaptureBallTick));
             else DrawTexture(sprite.Texture, sprite.Position);
             _battleSkin.DrawHealthbox(this, false, target.CurrentHp, target.Stats.MaxHp);
-            SourceText(_healthFont, LabBattleUiSkin.OpponentName, battle.Origin.DefaultName);
+            SourceText(_healthFont, LabBattleUiSkin.OpponentName, (_catalog.SourceSpeciesName(target.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));
             if (target.Gender != PokemonGender.Genderless)
             {
-                float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText(battle.Origin.DefaultName), fontSize: _healthFont.Size).X;
+                float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText((_catalog.SourceSpeciesName(target.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing."))), fontSize: _healthFont.Size).X;
                 SourceText(target.Gender == PokemonGender.Female ? _healthFemale : _healthMale,
                     LabBattleUiSkin.OpponentName + new Vector2(width, 0), target.Gender == PokemonGender.Female ? "♀" : "♂");
             }

@@ -35,7 +35,7 @@ public static class SourceGiftEggRules
         var result = PokemonFactory.Create(content.Catalog,
             new(species, SourceEggRules.HatchLevel, trainer.TrainerId, IvPolicy.Random, PersonalityPolicy.Random), rng);
         var pokemon = result.Pokemon with { Friendship = row.Breeding.EggCycles, EggStatCalculationIvs = result.Pokemon.Ivs };
-        var egg = new PartyPokemon(nextInstanceId, pokemon, SourceEggRules.JapaneseEggNickname,
+        var egg = new PartyPokemon(nextInstanceId, pokemon, null,
             trainer.Name, trainer.Gender, 1, MetLocation, 0, metGame, "ITEM_POKE_BALL", "ITEM_NONE") { IsEgg = true };
         if (PokemonStateValidator.ValidateParty(content, egg) is { } invalid) throw new InvalidOperationException(invalid);
         return new(egg, result.Rng, result.Trace);

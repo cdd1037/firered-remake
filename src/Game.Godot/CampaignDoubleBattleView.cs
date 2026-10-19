@@ -7,6 +7,7 @@ using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Four canonical positions, original doubles healthboxes and source event pages.
@@ -66,7 +67,7 @@ public partial class CampaignView
         var body = DoubleDisplayedBody(slot);
         var b=_session.State.DoubleBattle!;
         int member=b.CurrentEvent is SourceCalledPartySwitchedEvent change&&change.Side.Value==slot?(DoubleSwitchSending(change)?change.IncomingIndex:change.OutgoingIndex):b.DisplayedMembers[slot].Index;
-        return (slot & 1) == 0 ? _session.State.Party[member].Nickname :
+        return (slot & 1) == 0 ? _catalog.PokemonDisplayName(_session.State.Party[member]) :
             PresentedBattleSpeciesName(WildBattleTransformationRules.PersistentPokemon(body).SourceSpeciesId);
     }
     private bool DoubleSwitchSending(SourceCalledPartySwitchedEvent change)=>change.Kind is WildBattleCalledSwitchKind.FaintedReplacement or WildBattleCalledSwitchKind.BatonPass or WildBattleCalledSwitchKind.Forced||_doublePage>0;
@@ -79,7 +80,7 @@ public partial class CampaignView
         return b.DisplayedSlots[slot];
     }
     private string DoubleBodyName(WildBattleCombatant body)
-    {var p=WildBattleTransformationRules.PersistentPokemon(body);return _session.State.Party.First(m=>m.Pokemon.Personality==p.Personality&&m.Pokemon.OriginalTrainerId==p.OriginalTrainerId).Nickname;}
+    {var p=WildBattleTransformationRules.PersistentPokemon(body);return _catalog.PokemonDisplayName(_session.State.Party.First(m=>m.Pokemon.Personality==p.Personality&&m.Pokemon.OriginalTrainerId==p.OriginalTrainerId));}
     private string DoublePrefixed(BattlerSlot slot) => (slot.Side == BattleSide.Opponent ? _battleSelectionText.FoePrefix : "") + DoubleName(slot.Value);
     private ImmutableArray<string> DoubleSource(string symbol, params (string Key,string Value)[] extra)
     {
@@ -109,7 +110,7 @@ public partial class CampaignView
         if(b.LearningPending)
         {
             CaptureMoveSelection("double:" + b.Id, DoubleLearningPokemon(b), b.Frame.Rewards!.Pending!.Moves[0].Move);
-            var pending=b.Frame.Rewards!.Pending!;string name=_session.State.Party[pending.Recipient.Index].Nickname;
+            var pending=b.Frame.Rewards!.Pending!;string name=_catalog.PokemonDisplayName(_session.State.Party[pending.Recipient.Index]);
             _doublePages=DoubleSource("sText_TryToLearnMove1",("B_BUFF1",name),("B_BUFF2",MoveName(pending.Moves[0].Move)))
                 .AddRange(DoubleSource("sText_TryToLearnMove2",("B_BUFF1",name)))
                 .AddRange(DoubleSource("sText_TryToLearnMove3",("B_BUFF2",MoveName(pending.Moves[0].Move))));
@@ -212,8 +213,8 @@ public partial class CampaignView
                 if(x.Kind==WildBattleCalledSwitchKind.Forced){Source("sText_PkmnWasDraggedOut",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;}
                 if(x.Side.Side==BattleSide.Player)
                 {
-                    if(x.Kind==WildBattleCalledSwitchKind.Voluntary)Source("sText_PkmnThatsEnough",("B_BUFF1",_session.State.Party[x.OutgoingIndex].Nickname));
-                    Source("sText_GoPkmn2",("B_BUFF1",_session.State.Party[x.IncomingIndex].Nickname));
+                    if(x.Kind==WildBattleCalledSwitchKind.Voluntary)Source("sText_PkmnThatsEnough",("B_BUFF1",_catalog.PokemonDisplayName(_session.State.Party[x.OutgoingIndex])));
+                    Source("sText_GoPkmn2",("B_BUFF1",_catalog.PokemonDisplayName(_session.State.Party[x.IncomingIndex])));
                 }
                 else Source("sText_Trainer1SentOutPkmn2",("B_BUFF1",PresentedBattleSpeciesName(b.Frame.Party(BattleSide.Opponent).Members[x.IncomingIndex].Pokemon.SourceSpeciesId)));
                 break;
@@ -222,7 +223,7 @@ public partial class CampaignView
                 Source("sText_GoPkmn2",("B_BUFF1",DoubleBodyName(x.Replacement.Body)));break;
             case SourcePlayerReplacedEvent x:Source("sText_GoPkmn2",("B_BUFF1",DoubleBodyName(x.Replacement.Body)));break;
             case SourceRewardAppliedEvent reward:
-                string name=_session.State.Party[reward.Recipient.Index].Nickname;
+                string name=_catalog.PokemonDisplayName(_session.State.Party[reward.Recipient.Index]);
                 Source("sText_PkmnGainedEXP",("B_BUFF1",name),("B_BUFF2",""),("B_BUFF3",reward.Reward.ExperienceGained.ToString()));
                 foreach(var result in reward.Reward.Events)
                 {
@@ -236,9 +237,9 @@ public partial class CampaignView
                 }
                 break;
             case SourceRewardLearningEvent learned when learned.Outcome is SourceRewardLearningOutcome.Added or SourceRewardLearningOutcome.Replaced:
-                Source("sText_PkmnLearnedMove",("B_BUFF1",_session.State.Party[learned.Recipient.Index].Nickname),("B_BUFF2",MoveName(learned.Candidate.Move)));break;
+                Source("sText_PkmnLearnedMove",("B_BUFF1",_catalog.PokemonDisplayName(_session.State.Party[learned.Recipient.Index])),("B_BUFF2",MoveName(learned.Candidate.Move)));break;
             case SourceRewardLearningEvent learned when learned.Outcome==SourceRewardLearningOutcome.Declined:
-                Source("sText_DidNotLearnMove",("B_BUFF1",_session.State.Party[learned.Recipient.Index].Nickname),("B_BUFF2",MoveName(learned.Candidate.Move)));break;
+                Source("sText_DidNotLearnMove",("B_BUFF1",_catalog.PokemonDisplayName(_session.State.Party[learned.Recipient.Index])),("B_BUFF2",MoveName(learned.Candidate.Move)));break;
             // Typed bookkeeping events have no printed page; HP/faint/rewards still have their own boundaries.
             case SourcePpCommandEvent or SourceOrderEvent or SourceTurnReadyEvent or SourceCalledMoveTransitionEvent or SourceMoveTargetResolvedEvent or SourceCallerSelectionEvent or
                 SourceHpChangedEvent or SourceEndedEvent or SourceReplacementRequiredEvent or SourceCalledPartySwitchRequiredEvent or
@@ -473,7 +474,7 @@ public partial class CampaignView
     private void DrawDoubleRewardStats(WildRewardLevelEvent level,bool totals)
     {
         var reward=(SourceRewardAppliedEvent)_session.State.DoubleBattle!.CurrentEvent!;
-        DoubleLines(string.Join('\n',DoubleSource("sText_PkmnGrewToLv",("B_BUFF1",_session.State.Party[reward.Recipient.Index].Nickname),("B_BUFF2",level.After.ToString()))));
+        DoubleLines(string.Join('\n',DoubleSource("sText_PkmnGrewToLv",("B_BUFF1",_catalog.PokemonDisplayName(_session.State.Party[reward.Recipient.Index])),("B_BUFF2",level.After.ToString()))));
         _battleSkin.DrawStandardFrame(this,new(144,56,96,104));
         var rows=new[]{("gText_LevelUp_MaxHP",level.StatsBefore.MaxHp,level.StatsAfter.MaxHp),("gText_LevelUp_Attack",level.StatsBefore.Attack,level.StatsAfter.Attack),
             ("gText_LevelUp_Defense",level.StatsBefore.Defense,level.StatsAfter.Defense),("gText_LevelUp_SpAtk",level.StatsBefore.SpecialAttack,level.StatsAfter.SpecialAttack),

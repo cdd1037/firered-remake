@@ -128,7 +128,7 @@ public sealed partial class CampaignSession
         {
             if (!effect.Args.SequenceEqual(new[] { "STR_VAR_1" })) throw new InvalidDataException("ultimate_tutor_species_buffer");
             var mon = state.Party[CapeBrinkTutorRules.LeadIndex(state.Party)];
-            next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", _content.PokemonContent!.SpeciesNames[mon.Pokemon.SourceSpeciesId]) };
+            next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", SpeciesName(mon.Pokemon.SourceSpeciesId)) };
             return true;
         }
         var flags = state.Script.Flags.Where(f => f.Value).Select(f => f.Key).ToImmutableHashSet(StringComparer.Ordinal);

@@ -19,7 +19,7 @@ public sealed record CampaignMonPicture(int SourceSpeciesId,int X,int Y)
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? AssetId { get; init; }
 }
-public sealed record CampaignNickname(int PartyIndex,string OriginalName,bool Submitted)
+public sealed record CampaignNickname(int PartyIndex,string? OriginalCustomNickname,bool Submitted)
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageAddress? BoxAddress{get;init;}
 }
@@ -428,6 +428,8 @@ public sealed partial class CampaignSession
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
         return ValidateSeafoamEncounterProgress(s)??ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateVsSeekerProgress(s)??ValidateRegisteredKeyItem(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidatePokedexAideProgress(s)??ValidateCyclingRoadState(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldRockSmashState(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
+    private string SpeciesName(int species) => _content.SourceSpeciesName(species) ?? throw new InvalidDataException("species_name_missing");
+    private string PokemonName(PartyPokemon pokemon) => _content.PokemonDisplayName(pokemon);
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
     {
@@ -586,11 +588,11 @@ public sealed partial class CampaignSession
                 if(command.Text is null)return new(CommandStatus.Rejected,state,"nickname_text_required");
                 var content=_content.PokemonContent??throw new InvalidDataException("pokemon_content_missing");
                 var error=PokemonNicknameRules.Validate(command.Text,content.NicknameCharacters);if(error is not null)return new(CommandStatus.Rejected,state,error);
-                var name=PokemonNicknameRules.Apply(naming.OriginalName,command.Text,content.NicknameCharacters);
+                var name=PokemonNicknameRules.Apply(naming.OriginalCustomNickname,command.Text,content.NicknameCharacters);
                 if(naming.BoxAddress is not null)return SubmitBoxGiftNickname(state,naming,wait,name);
                 var mon=state.Party[naming.PartyIndex];
                 // Resume the existing field context. EnterMap would wrongly clear the starter branch's temp variables.
-                return new(CommandStatus.Accepted,state with{Party=state.Party.SetItem(naming.PartyIndex,mon with{Nickname=name}),Nickname=naming with{Submitted=true},TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",name),ScreenIsBlack=false,PresentationTicks=16,Script=state.Script with{Wait=wait with{Kind=StoryWaitKind.Presentation}}});
+                return new(CommandStatus.Accepted,state with{Party=state.Party.SetItem(naming.PartyIndex,mon with{CustomNickname=name}),Nickname=naming with{Submitted=true},TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",PokemonName(mon with { CustomNickname = name })),ScreenIsBlack=false,PresentationTicks=16,Script=state.Script with{Wait=wait with{Kind=StoryWaitKind.Presentation}}});
             }
             if(command.Kind is "sign_tick" or "sign_cancel")return DecideRegionalSignWalkaway(state,command);
             if(command.Kind=="button_press")return SourceScriptedButtonWait(state)?DecideSourceScriptedButton(state,command):ArticunoButtonWait(state)?DecideArticunoButton(state,command):PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):state.MonPicture is not null?DecidePokemonPictureButton(state,command):DecideOakRatingButton(state,command);
@@ -998,10 +1000,10 @@ public sealed partial class CampaignSession
                     var species=RequireSpecies(Int(a[0]));
                     if(state.Party.Length>=6)throw new InvalidDataException("gift_pc_destination_not_implemented");
                     var held=a.Length>2?Int(a[2]):0;if(held!=0)throw new InvalidDataException("gift_held_item_not_implemented");
-                    var created=PokemonFactory.Create(_content.PokemonContent!.Catalog,new(species.Definition.Id,Int(a[1]),state.TrainerId,IvPolicy.Random,PersonalityPolicy.Random),state.World.Rng);
+                    var created=PokemonFactory.Create(_content.PokemonContent!.Catalog,new(species.Id,Int(a[1]),state.TrainerId,IvPolicy.Random,PersonalityPolicy.Random),state.World.Rng);
                     var met=_content.MapDefinition(state.World.Player.MapId).RegionMapSection;if(string.IsNullOrEmpty(met))throw new InvalidDataException("met_location_missing");
-                    var owned=new PartyPokemon(state.NextPokemonId,created.Pokemon,species.Name,state.PlayerName,state.PlayerGender,2,met,Int(a[1]),4,"ITEM_POKE_BALL","ITEM_NONE");
-                    state=state with{World=state.World with{Rng=created.Rng},Party=state.Party.Add(owned),NextPokemonId=checked(state.NextPokemonId+1),SeenSpecies=state.SeenSpecies.Add(species.Definition.SourceSpeciesId),CaughtSpecies=state.CaughtSpecies.Add(species.Definition.SourceSpeciesId),Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",0)}};break;
+                    var owned=new PartyPokemon(state.NextPokemonId,created.Pokemon,null,state.PlayerName,state.PlayerGender,2,met,Int(a[1]),4,"ITEM_POKE_BALL","ITEM_NONE");
+                    state=state with{World=state.World with{Rng=created.Rng},Party=state.Party.Add(owned),NextPokemonId=checked(state.NextPokemonId+1),SeenSpecies=state.SeenSpecies.Add(species.SourceSpeciesId),CaughtSpecies=state.CaughtSpecies.Add(species.SourceSpeciesId),Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",0)}};break;
                 case "fadescreen":
                     if(a[0] is not ("FADE_TO_BLACK" or "FADE_FROM_BLACK"))throw new InvalidDataException("screen_fade_mode_unsupported");
                     state=state with{ScreenIsBlack=a[0]=="FADE_TO_BLACK",PresentationTicks=16};break;
@@ -1023,8 +1025,8 @@ public sealed partial class CampaignSession
                     {if(!state.Party.IsEmpty)state=state with{Party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(_content.PokemonContent!.Catalog,p)).ToImmutableArray()};break;}
                     if(a[0]!="ChangePokemonNickname")throw new InvalidDataException("native_special_unsupported: "+a[0]);
                     var partyIndex=state.Script.Variables.GetValueOrDefault("VAR_0x8004");if(partyIndex<0||partyIndex>=state.Party.Length)throw new InvalidDataException("nickname_party_index_invalid");
-                    var originalName=state.Party[partyIndex].Nickname;
-                    state=state with{Nickname=new(partyIndex,originalName,false),TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",originalName).SetItem("STR_VAR_3",originalName)};break;
+                    var originalName=PokemonName(state.Party[partyIndex]);
+                    state=state with{Nickname=new(partyIndex,state.Party[partyIndex].CustomNickname,false),TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",originalName).SetItem("STR_VAR_3",originalName)};break;
                 case "waitstate":
                     if(state.WildBattle is not null)state=state with{Script=state.Script with{Wait=state.Script.Wait! with{Kind=StoryWaitKind.Battle}}};
                     else if(state.OldManTutorial is not null)state=state with{Script=state.Script with{Wait=state.Script.Wait! with{Kind=StoryWaitKind.Battle}}};
@@ -1035,11 +1037,11 @@ public sealed partial class CampaignSession
         }
         return state;
     }
-    private (PokemonSpeciesDefinition Definition,string Name) RequireSpecies(int sourceId)
+    private PokemonSpeciesDefinition RequireSpecies(int sourceId)
     {
         var content=_content.PokemonContent??throw new InvalidDataException("pokemon_content_missing");
         var definition=content.Catalog.Species.Values.SingleOrDefault(x=>x.SourceSpeciesId==sourceId)??throw new InvalidDataException("pokemon_species_not_supported: "+sourceId);
-        return (definition,content.SpeciesNames[sourceId]);
+        return definition;
     }
     private CampaignState ApplyMovement(CampaignState state,string actorId,string program)=>ApplyMovementActions(state,actorId,_content.Movement(program),program);
     private CampaignState ApplyMovementActions(CampaignState state,string actorId,ImmutableArray<string> actions,string? sourceProgram=null)

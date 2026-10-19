@@ -35,8 +35,8 @@ public static class CampaignHallOfFamePcProjection
             {
                 var member = team.Members[i];
                 if (member is null || member.PartySlot != i || member.SpeciesOrEgg is < 1 or > HallOfFamePcRules.EggSpecies ||
-                    member.Level is < 1 or > 100 || member.Nickname is null || member.Nickname.Length is < 1 or > 10 ||
-                    member.NicknameBytes.IsDefault || member.NicknameBytes.Length != 10) return false;
+                    member.Level is < 1 or > 100 ||
+                    (member.SpeciesOrEgg == 412 ? member.CustomNickname is not null : !PokemonNicknameRules.IsValidCustomNickname(member.CustomNickname))) return false;
             }
         }
         return true;

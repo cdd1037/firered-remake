@@ -3,6 +3,7 @@ using Game.Application;
 using Game.Domain.WildBattle;
 using Game.Domain.Ids;
 using Game.Domain.Items;
+using Game.Domain.World;
 using Godot;
 
 // Source-authenticated Mt. Moon assets and field item selectors. Application commands
@@ -154,7 +155,7 @@ public partial class CampaignView
         bool ppBoost = IsFieldPpBoost(_mtMoonTargetItem);
         var boostMoves = ppBoost ? SourceFieldPpBoostRules.SelectMoves(_catalog.EarlyShop!,
             _catalog.PokemonContent!, member, _mtMoonTargetItem) : null;
-        ItemLabel(new(16, 8), member.Nickname);
+        ItemLabel(new(16, 8), _catalog.PokemonDisplayName(member));
         for (int i = 0; i < member.Pokemon.Moves.Length; i++)
         {
             var move = member.Pokemon.Moves[i];

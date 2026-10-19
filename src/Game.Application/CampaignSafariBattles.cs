@@ -50,15 +50,15 @@ public sealed partial class CampaignSession
         var started = SafariBattleRules.Start(_content.PresetDoubleMechanics, generated, visit.Balls, rng);
         if (!started.Succeeded) throw new InvalidDataException(started.Fault);
         var origin = new CampaignWildOrigin(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,
-            generated.Level, _content.PokemonContent!.SpeciesNames[generated.SourceSpeciesId]);
+            generated.Level);
         // Check the owned projection before accepting a battle whose caught receipt we could not deliver.
         var owned = new PartyPokemon(state.NextPokemonId, generated with { OriginalTrainerId = state.TrainerId },
-            origin.DefaultName, state.PlayerName, state.PlayerGender, 2, origin.MetLocation,
+            null, state.PlayerName, state.PlayerGender, 2, origin.MetLocation,
             origin.MetLevel, 4, "ITEM_SAFARI_BALL", heldItem);
         var error = PokemonStateValidator.ValidateParty(_content.PokemonContent, owned);
         if (error is not null) throw new InvalidDataException(error);
         var battle = new CampaignSafariBattle("wild-battle:" + exploration.NextWildBattleId, started.State!,
-            heldItem, origin, CampaignBattlePhase.Events, [], [$"Wild {origin.DefaultName} appeared!"], 0,
+            heldItem, origin, CampaignBattlePhase.Events, [], [$"Wild {SpeciesName(generated.SourceSpeciesId)} appeared!"], 0,
             [.. generationTrace, .. started.RandomTrace]) { Fishing = fishingOrigin };
         state = ResetFieldPoisonCounterForBattle(state);
         return state with
@@ -108,7 +108,7 @@ public sealed partial class CampaignSession
         return new(CommandStatus.Accepted, state with
         {
             SafariBattle = battle with { State = result.State!, Events = result.Events,
-                Pages = SafariActionPages(state.PlayerName, battle.Origin.DefaultName, result.Events),
+                Pages = SafariActionPages(state.PlayerName, SpeciesName(battle.State.Target.SourceSpeciesId), result.Events),
                 PageIndex = 0, Phase = CampaignBattlePhase.Events, RandomTrace = result.RandomTrace },
             SafariVisit = visit with { Balls = result.State!.BallsRemaining },
             World = state.World with { Rng = result.State.Rng }
@@ -173,7 +173,7 @@ public sealed partial class CampaignSession
             { Stage = capture.Stage == CampaignCaptureStage.DexNotice ? CampaignCaptureStage.DexEntry : CampaignCaptureStage.NicknameChoice } } });
         if (command.Kind == "capture_choice" && capture.Stage == CampaignCaptureStage.NicknameChoice)
         {
-            if (command.Choice == 0) return new(CommandStatus.Accepted, DeliverSafariCapture(state, capture.Origin.DefaultName));
+            if (command.Choice == 0) return new(CommandStatus.Accepted, DeliverSafariCapture(state, null));
             if (command.Choice == 1) return new(CommandStatus.Accepted, state with
             { SafariBattle = battle with { Capture = capture with { Stage = CampaignCaptureStage.Naming } } });
             return new(CommandStatus.Rejected, state, "capture_choice_required");
@@ -185,12 +185,12 @@ public sealed partial class CampaignSession
             var error = PokemonNicknameRules.Validate(command.Text, alphabet);
             if (error is not null) return new(CommandStatus.Rejected, state, error);
             return new(CommandStatus.Accepted, DeliverSafariCapture(state,
-                PokemonNicknameRules.Apply(capture.Origin.DefaultName, command.Text, alphabet)));
+                PokemonNicknameRules.Apply(null, command.Text, alphabet)));
         }
         return new(CommandStatus.Rejected, state, "capture_presentation_pending");
     }
 
-    private CampaignState DeliverSafariCapture(CampaignState state, string nickname)
+    private CampaignState DeliverSafariCapture(CampaignState state, string? nickname)
     {
         var battle = state.SafariBattle!;
         var capture = battle.Capture!;
@@ -222,7 +222,7 @@ public sealed partial class CampaignSession
         string symbol = wasFull ? (bill ? "Text_MonSentToBoxBillsBoxFull" : "Text_MonSentToBoxSomeonesBoxFull")
             : (bill ? "Text_MonSentToBoxInBillsPC" : "Text_MonSentToBoxInSomeonesPC");
         return next with { Script = next.Script with { Flags = flags, Variables = next.Script.Variables.SetItem("VAR_PC_BOX_TO_SEND_MON", box) },
-            TextBuffers = next.TextBuffers.SetItem("STR_VAR_1", PokemonStorageCustomizationRules.BoxName(next.Storage!, box)).SetItem("STR_VAR_2", nickname).SetItem("STR_VAR_3", PokemonStorageCustomizationRules.BoxName(next.Storage!, oldBox)),
+            TextBuffers = next.TextBuffers.SetItem("STR_VAR_1", PokemonStorageCustomizationRules.BoxName(next.Storage!, box)).SetItem("STR_VAR_2", PokemonName(owned)).SetItem("STR_VAR_3", PokemonStorageCustomizationRules.BoxName(next.Storage!, oldBox)),
             SafariBattle = battle with { Capture = capture with { Stage = CampaignCaptureStage.SentToPc,
                 Address = received.Address, MessageSymbol = symbol } } };
     }

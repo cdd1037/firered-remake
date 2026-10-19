@@ -104,7 +104,7 @@ public sealed partial class CampaignSession
         var result=SacredAshRules.Use(ShopCatalog,_content.PokemonContent!,state.Inventory!,state.Party);
         if(result.Error is {} invalid)return invalid=="medicine_no_effect"?new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol="gText_WontHaveEffect",ReturnView="bag"}}):new(CommandStatus.Rejected,state,invalid);
         var template=string.Join("\n",_content.TextPages("gText_PkmnHPRestoredByVar2"));
-        var messages=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>template.Replace("{STR_VAR_1}",p.Nickname,StringComparison.Ordinal).Replace("{STR_VAR_2}",p.Pokemon.Stats.MaxHp.ToString(CultureInfo.InvariantCulture),StringComparison.Ordinal)).ToImmutableArray();
+        var messages=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>template.Replace("{STR_VAR_1}",PokemonName(p),StringComparison.Ordinal).Replace("{STR_VAR_2}",p.Pokemon.Stats.MaxHp.ToString(CultureInfo.InvariantCulture),StringComparison.Ordinal)).ToImmutableArray();
         return new(CommandStatus.Accepted,state with{Inventory=result.Inventory,Party=result.Party,
             ItemMenu=menu with{View="message",MessageSymbol="gText_PkmnHPRestoredByVar2",ReturnView="bag",SourceMessages=messages,SourceMessageIndex=0}});
     }

@@ -3,6 +3,7 @@ using Game.Content;
 using Game.Domain.Items;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Source TM Case presentation; teaching and inventory changes remain authoritative commands.</summary>
@@ -69,7 +70,7 @@ public partial class CampaignView
     }
 
     private ImmutableArray<string> MachineTextPages(string symbol) => _catalog.TextPages(symbol)
-        .Select(text => text.Replace("{STR_VAR_1}", _session.State.Party.Length > _machineParty ? _session.State.Party[_machineParty].Nickname : "", StringComparison.Ordinal)
+        .Select(text => text.Replace("{STR_VAR_1}", _session.State.Party.Length > _machineParty ? _catalog.PokemonDisplayName(_session.State.Party[_machineParty]) : "", StringComparison.Ordinal)
             .Replace("{STR_VAR_2}", MachineMoveName, StringComparison.Ordinal)).ToImmutableArray();
     private string MachineText(string symbol) => MachineTextPages(symbol)[0];
     private string MachineCompatibility(PartyPokemon pokemon) => pokemon.IsEgg ? "gText_NotAble"

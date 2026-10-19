@@ -60,7 +60,7 @@ public sealed partial class CampaignSession
     }
 
     private PartyPokemon TeachyTvTemporaryMember(CampaignState state, PokemonInstance pokemon, uint status, int index) =>
-        new(index, pokemon, _content.PokemonContent!.SpeciesNames[pokemon.SourceSpeciesId], state.PlayerName, state.PlayerGender,
+        new(index, pokemon, null, state.PlayerName, state.PlayerGender,
             2, _content.MapDefinition(state.World.Player.MapId).RegionMapSection, pokemon.Level, 4, "ITEM_POKE_BALL", "ITEM_NONE") { Status = status };
 
     private CampaignWildBattle ProjectTeachyTvBattle(CampaignState state, CampaignTeachyTvBattle b)

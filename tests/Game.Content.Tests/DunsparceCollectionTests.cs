@@ -25,10 +25,7 @@ public sealed class DunsparceCollectionTests
         var machines = SharedMachineCatalog.LoadProject(TestAssets.Root);
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics,
             PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades, machines);
-        var dex = PretPokedexMenu.Load(TestAssets.Root);
-        var content = new CampaignPokemonContent(game, game.Catalog.Species.Values.ToImmutableSortedDictionary(
-            species => species.SourceSpeciesId, species => dex.Entries[species.SourceSpeciesId].Name),
-            PokemonStateValidator.NicknameAlphabet);
+        var content = new CampaignPokemonContent(game, PokemonStateValidator.NicknameAlphabet);
         return new(canonical, content, machines);
     });
 
@@ -42,7 +39,6 @@ public sealed class DunsparceCollectionTests
         Assert.AreSame(definition, game.Opponents.Catalog.Species[Dunsparce]);
         Assert.AreSame(definition, game.TrainerTowerOpponents.Catalog.Species[Dunsparce]);
         Assert.AreEqual(206, definition.SourceSpeciesId);
-        Assert.AreEqual("DUNSPARCE", source.Content.SpeciesNames[definition.SourceSpeciesId]);
         Assert.AreEqual(new SixStats(100, 70, 70, 45, 65, 65), definition.BaseStats);
         Assert.AreEqual(190, definition.CatchRate);
         Assert.AreEqual(GrowthRate.MediumFast, definition.GrowthRate);
@@ -118,7 +114,7 @@ public sealed class DunsparceCollectionTests
             egg.Pokemon.Moves.Select(slot => slot.Move.Value[10..]).ToArray());
         var hatched = SourceEggRules.Hatch(content, egg, new(42, "RED", 0), "MAPSEC_FOUR_ISLAND", received.Rng).Pokemon;
         Assert.IsFalse(hatched.IsEgg);
-        Assert.AreEqual("DUNSPARCE", hatched.Nickname);
+        Assert.IsNull(hatched.CustomNickname);
         Assert.AreEqual(Dunsparce, hatched.Pokemon.Species);
         Assert.IsNull(PokemonStateValidator.ValidateParty(content, hatched));
     }
@@ -204,7 +200,7 @@ public sealed class DunsparceCollectionTests
         var content = Source.Value.Content;
         var pokemon = PokemonFactory.Create(content.Catalog, new(Dunsparce, level, 42,
             IvPolicy.Fixed(15), PersonalityPolicy.Fixed(personality)), new(0)).Pokemon;
-        return new(id, pokemon, content.SpeciesNames[pokemon.SourceSpeciesId], "RED", 0, 2,
+        return new(id, pokemon, null, "RED", 0, 2,
             "MAPSEC_THREE_ISLE_PORT", level, 4, "ITEM_POKE_BALL", "ITEM_NONE");
     }
 }

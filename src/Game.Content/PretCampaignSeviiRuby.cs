@@ -24,9 +24,7 @@ public sealed partial class PretCampaignCatalog
     internal static void ValidateSeviiRubyComposition(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,GamePokemonCatalog owned,GameOpponentPokemonCatalog opponents,SeviiRubyTrainerCatalog trainers,PretStoryCompilation scripts,CampaignPokemonContent pokemon,SeviiRubyItemContent items)
     {
         foreach (var id in SeviiRubyOwnedPokemonCatalog.AdditionalSpecies)
-            if (!owned.Catalog.Species.TryGetValue(id, out var species) ||
-                !pokemon.SpeciesNames.TryGetValue(species.SourceSpeciesId, out var name) ||
-                string.IsNullOrWhiteSpace(name))
+            if (!owned.Catalog.Species.ContainsKey(id) || !pokemon.Catalog.Species.ContainsKey(id))
                 throw new InvalidDataException("sevii_ruby_composition_scope");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
         foreach (var battle in trainers.BattlesByScript.Values)

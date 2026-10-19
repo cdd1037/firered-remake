@@ -116,7 +116,7 @@ public partial class CampaignView
             bool intro=b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is WildBattleStartedEvent;
             phase=intro&&(_wildPage==0||_wildPage==1&&_towerRevealTicks<47)?PokemonTowerPresentationModel.RevealPhase.BeforeReveal:PokemonTowerPresentationModel.RevealPhase.AfterReveal;
         }
-        return PokemonTowerPresentationModel.Opponent(kind,phase,b.DisplayOpponent.SourceSpeciesId,_catalog.PokemonContent!.SpeciesNames[b.DisplayOpponent.SourceSpeciesId]);
+        return PokemonTowerPresentationModel.Opponent(kind,phase,b.DisplayOpponent.SourceSpeciesId,(_catalog.SourceSpeciesName(b.DisplayOpponent.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));
     }
     private bool PokemonTowerStartedPages(CampaignWildBattle b,Action<string,(string Key,string Value)[]> source)
     {

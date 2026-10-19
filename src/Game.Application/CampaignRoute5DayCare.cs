@@ -157,7 +157,7 @@ public sealed partial class CampaignSession
                 state.Script.Variables.GetValueOrDefault("VAR_RESULT") == state.Party.Length)
                 next = Set("VAR_RESULT", state.Party.Length - 1);
             else if (effect.Opcode == "bufferpartymonnick" && effect.Args.SequenceEqual(new[] { "STR_VAR_1", (state.Party.Length - 1).ToString(CultureInfo.InvariantCulture) }))
-                next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", state.Party[^1].Nickname) };
+                next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(state.Party[^1])) };
             else throw new InvalidDataException("daycare_returned_party_operands");
             return true;
         }
@@ -206,7 +206,7 @@ public sealed partial class CampaignSession
                 next = Set(destination, state.Party.Where((p, i) => i != state.DayCareInteraction!.PartyIndex && !p.IsEgg && p.Pokemon.CurrentHp > 0).Count()); break;
             case "GetSelectedMonNicknameAndSpecies" when returns:
                 Require("TryGiveMon"); var selected = Selected();
-                next = Set(destination, selected.Pokemon.SourceSpeciesId) with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", selected.Nickname) }; break;
+                next = Set(destination, selected.Pokemon.SourceSpeciesId) with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(selected)) }; break;
             case "PutMonInRoute5Daycare" when !returns:
                 Require("TryGiveMon"); _ = Selected();
                 var deposit = Route5DayCareRules.Deposit(_content.PokemonContent!, _binding.Ownership,
@@ -220,7 +220,7 @@ public sealed partial class CampaignSession
                 Require("CheckOnMon"); var quote = Quote();
                 next = Set(returns ? destination : "VAR_0x8005", returns ? quote.LevelsGained : quote.Cost) with
                 { DayCareInteraction = state.DayCareInteraction! with { Quote = quote }, TextBuffers = state.TextBuffers
-                    .SetItem("STR_VAR_1", state.Route5DayCare!.Resident!.Pokemon.Nickname)
+                    .SetItem("STR_VAR_1", PokemonName(state.Route5DayCare!.Resident!.Pokemon))
                     .SetItem("STR_VAR_2", (returns ? quote.LevelsGained : quote.Cost).ToString(CultureInfo.InvariantCulture)) }; break;
             case "CalculatePlayerPartyCount" when returns:
                 Require("TryRetrieveMon"); next = Set(destination, state.Party.Length); break;

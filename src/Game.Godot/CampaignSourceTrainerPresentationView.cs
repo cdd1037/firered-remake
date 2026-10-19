@@ -4,6 +4,7 @@ using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 
 public partial class CampaignView
 {
@@ -76,7 +77,7 @@ public partial class CampaignView
         string PartyName(WildBattleSide side, int index)
         {
             if (side == WildBattleSide.Player)
-                return index >= 0 && index < PresentedBattlePlayerParty.Length ? PresentedBattlePlayerParty[index].Nickname
+                return index >= 0 && index < PresentedBattlePlayerParty.Length ? _catalog.PokemonDisplayName(PresentedBattlePlayerParty[index])
                     : throw new InvalidDataException("Source player party display index differs.");
             if (_session.State.ForestTrainerBattle is { } trainer)
             {

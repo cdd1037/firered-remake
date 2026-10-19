@@ -1,7 +1,10 @@
 using System.Collections.Immutable;
 namespace Game.Domain.Pokemon;
-/// <summary>Ownership/met data around the already validated creature rules; no engine/UI dependencies.</summary>
-public sealed record PartyPokemon(long InstanceId,PokemonInstance Pokemon,string Nickname,string OriginalTrainerName,
+/// <summary>Ownership/met data around the already validated creature rules; no engine/UI dependencies.
+/// A null CustomNickname uses the current species display name; non-null always means a literal name.
+/// Eggs carry no custom nickname and are presented from their explicit IsEgg state.</summary>
+public sealed record PartyPokemon(long InstanceId,PokemonInstance Pokemon,
+    [property: System.Text.Json.Serialization.JsonRequired] string? CustomNickname,string OriginalTrainerName,
     int OriginalTrainerGender,int Language,string MetLocation,int MetLevel,int MetGame,string Ball,string HeldItem)
 {
     // Acquisition metadata only; obedience never reads this flag.
@@ -20,19 +23,14 @@ public sealed record StarterChoiceDefinition(int Index,int SourceSpeciesId,int R
 public sealed record CampaignPokemonContent
 {
     public GamePokemonCatalog Pokemon { get; init; }
-    public ImmutableSortedDictionary<int, string> SpeciesNames { get; init; }
     public string NicknameCharacters { get; init; }
-    public CampaignPokemonContent(GamePokemonCatalog pokemon, ImmutableSortedDictionary<int, string> speciesNames, string nicknameCharacters)
+    public CampaignPokemonContent(GamePokemonCatalog pokemon, string nicknameCharacters)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
         if (nicknameCharacters is null || nicknameCharacters.Length != PokemonStateValidator.NicknameAlphabet.Length ||
             !nicknameCharacters.ToHashSet().SetEquals(PokemonStateValidator.NicknameAlphabet))
             throw new ArgumentException("pokemon_nickname_alphabet");
-        if (speciesNames is null || speciesNames.Count != pokemon.Catalog.Species.Count ||
-            pokemon.Catalog.Species.Values.Any(s => !speciesNames.TryGetValue(s.SourceSpeciesId, out var name) ||
-                string.IsNullOrWhiteSpace(name) || name.Length > 10 || name.Any(c => !nicknameCharacters.Contains(c))))
-            throw new ArgumentException("pokemon_species_names");
-        Pokemon = pokemon; SpeciesNames = speciesNames; NicknameCharacters = nicknameCharacters;
+        Pokemon = pokemon; NicknameCharacters = nicknameCharacters;
     }
     public PokemonCatalog Catalog => Pokemon.Catalog;
     public ImmutableArray<StarterChoiceDefinition> StarterChoices{get;init;}=[];
@@ -51,10 +49,16 @@ public static class PokemonNicknameRules
         if(input.Any(c=>!allowedCharacters.Contains(c,StringComparison.Ordinal)))return "nickname_character_unsupported";
         return null;
     }
-    // The original input buffer starts empty. An all-space or empty submission restores its backup.
-    public static string Apply(string original,string input,string allowedCharacters)
+    // Stored custom names must contain at least one non-space source-keyboard character.
+    // Display labels are not constrained by this ten-byte naming-screen contract.
+    public static bool IsValidCustomNickname(string? value) => value is null ||
+        value.Any(c => c != ' ') && Validate(value, PokemonStateValidator.NicknameAlphabet) is null;
+
+    // The input buffer starts empty. Blank input preserves nullable naming intent; every
+    // nonblank submission is literal, even when it equals the current species display name.
+    public static string? Apply(string? originalCustomNickname,string input,string allowedCharacters)
     {
         var error=Validate(input,allowedCharacters);if(error is not null)throw new ArgumentException(error);
-        return input.All(c=>c==' ')?original:input;
+        return input.All(c=>c==' ')?originalCustomNickname:input;
     }
 }

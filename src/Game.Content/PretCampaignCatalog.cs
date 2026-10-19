@@ -90,7 +90,8 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
     public bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => PokedexMenu?.Entries.ContainsKey(sourceSpeciesId) == true;
     public int? SourceSpeciesHeightDecimeters(int sourceSpeciesId) => PokedexMenu?.Entries.GetValueOrDefault(sourceSpeciesId)?.HeightDecimeters;
-    public string? SourceSpeciesName(int sourceSpeciesId) => PokedexMenu?.Entries.GetValueOrDefault(sourceSpeciesId)?.Name;
+    public string? SourceSpeciesName(int sourceSpeciesId) => sourceSpeciesId == 412
+        ? DisplayNames.EggName : PokedexMenu?.Entries.GetValueOrDefault(sourceSpeciesId)?.Name;
 
     public CampaignOakRatingProjection EvaluateOakRating(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)
     {

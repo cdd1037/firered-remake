@@ -139,7 +139,7 @@ public sealed partial class CampaignSession
             {
                 Party = state.Party.SetItem(i, CampaignFieldPoisonRules.ResolveFaint(mon)),
                 FieldPoison = poison with { NextPartyIndex = i + 1 },
-                TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
+                TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon))
             };
             return ShowFieldPoisonMessage(state, "gText_PkmnFainted3");
         }

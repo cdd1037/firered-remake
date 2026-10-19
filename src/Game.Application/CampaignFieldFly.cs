@@ -59,7 +59,7 @@ public sealed partial class CampaignSession
         return new(CommandStatus.Accepted, state with
         {
             TownMap = new("fly"),
-            FlyEffect = new(command.PartyIndex, mon.InstanceId, mon.Pokemon.SourceSpeciesId, mon.Nickname,
+            FlyEffect = new(command.PartyIndex, mon.InstanceId, mon.Pokemon.SourceSpeciesId, PokemonName(mon),
                 state.World.Player, null, source.RegionMapSection, null, FieldFlySourcePresentation.Choose,
                 "field-fly:" + checked(Revision + 1) + ":choose")
         });

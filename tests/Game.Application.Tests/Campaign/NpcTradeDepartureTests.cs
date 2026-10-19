@@ -32,7 +32,7 @@ public sealed class NpcTradeDepartureTests
     {
         var made = PokemonFactory.Create(content.Catalog, new(species, 30, initial.TrainerId,
             IvPolicy.Fixed(12), PersonalityPolicy.Fixed(7)), initial.World.Rng).Pokemon;
-        return new(id, made, content.SpeciesNames[made.SourceSpeciesId], initial.PlayerName, initial.PlayerGender,
+        return new(id, made, null, initial.PlayerName, initial.PlayerGender,
             2, "MAPSEC_ROUTE_24", 30, 4, "ITEM_POKE_BALL", "ITEM_NONE");
     }
 
@@ -119,7 +119,7 @@ public sealed class NpcTradeDepartureTests
                 outgoing.Pokemon.Personality, outgoing.Pokemon.Ivs, 30, outgoing.MetLocation)] },
             EvolutionHistory = evolved ? [new(outgoing.InstanceId, null, 25, 26, 30, 30) { Item = "ITEM_THUNDER_STONE" }] : []
         };
-        var stale = prepared with { Party = prepared.Party.SetItem(1, outgoing with { Nickname = "CHANGED" }) };
+        var stale = prepared with { Party = prepared.Party.SetItem(1, outgoing with { CustomNickname = "CHANGED" }) };
         string staleHash = CanonicalJson.Hash(stale);
         var rejected = Assert.ThrowsExactly<TargetInvocationException>(() => Effect(stale, tradeId, "DoInGameTradeScene"));
         Assert.AreEqual("npc_trade_swap_context", rejected.InnerException!.Message);

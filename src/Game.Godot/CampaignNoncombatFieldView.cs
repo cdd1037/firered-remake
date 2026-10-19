@@ -90,7 +90,7 @@ public partial class CampaignView
         if (!_fieldHealingSecondSound && _fieldHealingFrames >= _fieldHealingDonated)
         { _fieldHealingSecondSound = true; SourceSound("SE_USE_ITEM"); }
         if (_fieldHealingFrames < _fieldHealingDonated + _fieldHealingRestored) return;
-        string name = _session.State.Party[_fieldHealingTarget].Nickname;
+        string name = _catalog.PokemonDisplayName(_session.State.Party[_fieldHealingTarget]);
         _fieldMenuNotice = $"{name}'s HP was restored\nby {_fieldHealingRestored} point(s).";
         _fieldMenuMode = "party"; ResetFieldHealingSelection();
     }

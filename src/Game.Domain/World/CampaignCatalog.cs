@@ -118,7 +118,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => sourceSpeciesId is >=1 and <=251 or >=277 and <=411;
     // Dex metadata does not imply that a species is admitted for ownership or battle.
     int? SourceSpeciesHeightDecimeters(int sourceSpeciesId) => null;
-    string? SourceSpeciesName(int sourceSpeciesId) => PokemonContent?.SpeciesNames.GetValueOrDefault(sourceSpeciesId);
+    string? SourceSpeciesName(int sourceSpeciesId) => null;
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     VictoryRoadTrainerCatalog? VictoryRoadTrainerParties=>null;
@@ -224,4 +224,12 @@ public static class RegionalFlavorRules
     public static string? ScriptFor(int behavior, Direction facing) =>
         !Enum.IsDefined(facing) || behavior is 0x86 or 0x87 or 0x88 && facing != Direction.North
             ? null : behavior == 0x85 ? "EventScript_WallTownMap" : Labels.GetValueOrDefault(behavior);
+}
+
+/// <summary>Custom names are owned literal data; unnamed creatures use the current species display catalog.</summary>
+public static class CampaignPokemonNames
+{
+    public static string PokemonDisplayName(this ICampaignCatalog catalog, PartyPokemon pokemon) =>
+        pokemon.CustomNickname ?? catalog.SourceSpeciesName(pokemon.IsEgg ? 412 : pokemon.Pokemon.SourceSpeciesId)
+        ?? throw new InvalidDataException("pokemon_display_name_missing");
 }

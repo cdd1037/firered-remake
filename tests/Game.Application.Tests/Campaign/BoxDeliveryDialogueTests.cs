@@ -52,7 +52,7 @@ public sealed class BoxDeliveryDialogueTests : WildBattleFixture
         var session = StartField();
         var state = Boxes(session.State, rollover, renamed);
         var target = state.WildBattle!.Frame!.Party(Game.Domain.Battle.BattleSide.Opponent).Members[0].Pokemon;
-        var origin = new CampaignWildOrigin("MAPSEC_KANTO_SAFARI_ZONE", target.Level, "CAUGHT");
+        var origin = new CampaignWildOrigin("MAPSEC_KANTO_SAFARI_ZONE", target.Level);
         var capture = new CampaignPendingCapture(target, "ITEM_NONE", 0, origin, false, CampaignCaptureStage.NicknameChoice)
             { Ball = safari ? "ITEM_SAFARI_BALL" : "ITEM_POKE_BALL" };
         if (safari)

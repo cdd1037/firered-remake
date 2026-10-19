@@ -61,7 +61,7 @@ public static class PokemonStateValidator
             ? ValidateEggInstance(catalog, owned.Pokemon)
             : ValidateInstance(catalog, owned.Pokemon);
         if (instanceError is not null) return instanceError;
-        if (owned.IsEgg ? owned.Nickname != SourceEggRules.JapaneseEggNickname : !ValidName(owned.Nickname, 10)) return "party_nickname";
+        if (owned.IsEgg ? owned.CustomNickname is not null : !PokemonNicknameRules.IsValidCustomNickname(owned.CustomNickname)) return "party_nickname";
         if (!ValidName(owned.OriginalTrainerName, 7)) return "party_original_trainer_name";
         if (owned.OriginalTrainerGender is not (0 or 1)) return "party_original_trainer_gender";
         // 6 is explicitly unused in the pinned source language list.
@@ -255,7 +255,7 @@ public static class PokemonStateValidator
         if (content is null) return "pokemon_content_missing";
         var error = ValidateCatalog(content.Catalog);
         if (error is not null) return error;
-        if (content.NicknameCharacters is null || content.SpeciesNames is null) return "pokemon_content_invalid";
+        if (content.NicknameCharacters is null) return "pokemon_content_invalid";
         return null;
     }
 

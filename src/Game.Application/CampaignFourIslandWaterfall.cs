@@ -55,7 +55,7 @@ public sealed partial class CampaignSession
                 next=state with{Script=state.Script with{Variables=vars}};return true;
             case "bufferpartymonnick":
                 if(a.Length!=2||a[0]!="STR_VAR_1"||Value(a[1]) is var n&&(n<0||n>=state.Party.Length))throw new InvalidDataException("waterfall_nickname");
-                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],state.Party[Value(a[1])].Nickname)};return true;
+                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],PokemonName(state.Party[Value(a[1])]))};return true;
             case "setfieldeffectargument":
                 if(a.Length!=2||Value(a[0])!=0||Value(a[1]) is var selected&&(selected<0||selected>=state.Party.Length||!WaterfallSourceRules.Knows(state.Party[selected])))throw new InvalidDataException("waterfall_argument");
                 next=state with{FieldEffectArguments=ImmutableSortedDictionary<int,int>.Empty.Add(0,Value(a[1]))};return true;

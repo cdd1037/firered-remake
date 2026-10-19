@@ -6,9 +6,9 @@
 - `tools/`、`scripts/`：开发工具与资源导入入口；音频命令行工具位于 `tools/AudioTool/`，见 [音频说明](docs/audio.md)。
 - `tests/`、`docs/`：测试与维护说明。
 - `content/raw/`、`content/generated/`：本地导入输入与转换资源，不纳入源码 Git。
-- `checkpoints/`：代表存档与说明。默认 `current-ownership-v3-20261015/continued-checkpoint.json` 为 generation 57604，不会自动覆盖用户存档槽。
+- `checkpoints/`：本地代表存档与受控测试档，不纳入 Git。测试默认 `current-schema2-20261019/TEST-CONTROLLED-hatch1000.json`；旧 `current-ownership-v3-20261015/continued-checkpoint.json` 原件保留。均不会自动覆盖用户存档槽。
 
-当前 Sticker Man/孵蛋计数切片要求明确的终身孵蛋次数。上述旧代表档缺少此字段，原文件保持不变，暂不能作为当前可继续基线；不会按剩余蛋记录猜测历史次数。已知次数才可显式转换到新文件，详见 [Sticker Man 与存档边界](docs/sticker-man.md)。新游戏从零正确计数。
+当前存档 schema2 明确区分默认物种显示名与自定义昵称，正常加载拒绝 schema1，不猜测旧昵称意图。默认测试档已一次性准备，普通旧名字全部保留显式 custom，蛋默认 null，孵蛋计数 1000 为合成测试输入；普通测试仅严格读取，不运行迁移或补计数。旧 generation 57604 原件缺少可信终身孵蛋总数，也不包含明确昵称身份，保持不变，不能作为当前 Continue 基线。新游戏从零正确计数。
 
 源码、转换资源和代表存档各有明确边界。提交版本以 Git 为准，不在 README 重复记录历史分支节点。随工程包不含 SDK、Godot、NuGet/编译缓存、运行日志或测试探针。
 

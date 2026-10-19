@@ -125,7 +125,7 @@ public sealed partial class CampaignSession
                     DaisyGrooming = state.DaisyGrooming with { Groomed = true },
                     Script = state.Script with { Variables = state.Script.Variables.SetItem(MassageCounter, 0) } }; return true;
             case "BufferMonNickname":
-                var name = DaisySelected(state).Nickname;
+                var name = PokemonName(DaisySelected(state));
                 next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", name[..Math.Min(10, name.Length)]) }; return true;
             case "HasAllKantoMons": next = Result(KantoPokedexRules.HasAllKantoMons(state.CaughtSpecies) ? 1 : 0); return true;
             case "ShowDiploma":

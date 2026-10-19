@@ -92,7 +92,7 @@ public sealed class GiftEggOwnershipTests
     {
         var made = PokemonFactory.Create(content.Catalog, new(new("pret:SPECIES_BULBASAUR"), 5, initial.TrainerId,
             IvPolicy.Fixed(3), PersonalityPolicy.Fixed(pid)), new RngState(0)).Pokemon;
-        return new(id, made, content.SpeciesNames[made.SourceSpeciesId], initial.PlayerName, initial.PlayerGender,
+        return new(id, made, null, initial.PlayerName, initial.PlayerGender,
             2, "MAPSEC_FOUR_ISLAND", 0, 4, "ITEM_POKE_BALL", "ITEM_NONE");
     }
     private static CampaignEggParent Receipt(PartyPokemon mon) => new(mon.InstanceId, mon.Pokemon.SourceSpeciesId,

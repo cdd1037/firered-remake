@@ -67,7 +67,7 @@ public partial class CampaignView
     }
 
     private string PresentedBattleSpeciesName(int species) =>
-        _pokedexMenu?.Entries.GetValueOrDefault(species)?.Name ?? _catalog.PresentedSpeciesName(species);
+        _catalog.SourceSpeciesName(species) ?? throw new InvalidDataException("Pokemon species display name missing.");
 
     private PokedexMenuTexture? VictoryRoadDexPortrait(int species)
     {

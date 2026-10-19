@@ -354,7 +354,7 @@ public partial class CampaignView
             SourceText(_sourceSmall, new(6, 88), PresentedOwnedName(displayed));
             if (!displayed.IsEgg)
             {
-                SourceText(_sourceSmall, new(6, 102), _catalog.PokemonContent!.SpeciesNames[displayed.Pokemon.SourceSpeciesId]);
+                SourceText(_sourceSmall, new(6, 102), (_catalog.SourceSpeciesName(displayed.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));
                 SourceText(_sourceSmall, new(10, 116), $"Lv{displayed.Pokemon.Level}");
             }
         }

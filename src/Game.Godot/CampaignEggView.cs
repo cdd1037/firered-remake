@@ -1,12 +1,13 @@
 using Game.Application;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Egg presentation reads the owned marker and an explicit Application hatch scene.
 /// The renderer never creates a Pokemon, chooses shard variants or advances gameplay RNG.</summary>
 public partial class CampaignView
 {
-    private static string PresentedOwnedName(PartyPokemon owned) => owned.IsEgg ? "EGG" : owned.Nickname;
+    private string PresentedOwnedName(PartyPokemon owned) => _catalog.PokemonDisplayName(owned);
     private Texture2D PresentedOwnedIcon(PartyPokemon owned) => owned.IsEgg ? BreedingEggIcon() : PresentedPokemonIcon(owned.Pokemon);
 
     // pokemon_summary_screen.c PrintInfoPage: <=5, <=10, <=40, then >40.
@@ -39,7 +40,7 @@ public partial class CampaignView
     {
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         SourceText(_sourceNormal, new(8, 8), "POKéMON INFO");
-        SourceText(_sourceNormal, new(82, 30), "EGG");
+        SourceText(_sourceNormal, new(82, 30), _catalog.PokemonDisplayName(owned));
         DrawTexture(BreedingEggShell(), new(8, 38));
         var lines = EggSummaryLines(owned);
         for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(82, 51 + 15 * i), lines[i]);

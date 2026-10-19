@@ -74,7 +74,7 @@ public sealed partial class CampaignSession
         if (NoncombatFieldMoveRules.IsHealing(move)) { decision = No("field_heal_target_required"); return true; }
         string phase = move == NoncombatFieldMoveRules.SweetScent ? "show-mon" : "confirm";
         decision = new(CommandStatus.Accepted, state with { NoncombatFieldEffect = new(move, command.PartyIndex, owner.InstanceId,
-            owner.Pokemon.SourceSpeciesId, owner.Nickname, state.World.Player,
+            owner.Pokemon.SourceSpeciesId, PokemonName(owner), state.World.Player,
             move == NoncombatFieldMoveRules.SweetScent ? null : NoncombatDestination(state, move), phase, NextNoncombatWait(phase)) });
         return true;
     }

@@ -2,6 +2,7 @@ using System.Text;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Tutorials;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Non-interactive presentation of the already committed Old Man result. No battle rules or player inventory writes.</summary>
@@ -129,7 +130,7 @@ public partial class CampaignView
         {
             var values = new Dictionary<string,string>(StringComparer.Ordinal)
             {
-                ["B_SCR_ACTIVE_NAME_WITH_PREFIX"] = tutorial.PartyBefore[tutorial.HiddenPlayerIndex].Nickname,
+                ["B_SCR_ACTIVE_NAME_WITH_PREFIX"] = _catalog.PokemonDisplayName(tutorial.PartyBefore[tutorial.HiddenPlayerIndex]),
                 ["B_SCR_ACTIVE_ABILITY"] = "INTIMIDATE", ["B_DEF_NAME_WITH_PREFIX"] = "Wild WEEDLE"
             };
             _oldManText = string.Join('\n', PretBattleText.Pages(PretBattleText.Load(_root), "sText_PkmnCutsAttackWith", values));

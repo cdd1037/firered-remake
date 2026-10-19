@@ -57,7 +57,8 @@ dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/tes
 
 - 游戏资源需已在 `content/raw` 和 `content/generated`；导入器读取 `content/raw/pokefirered/037335f4`，测试不下载素材或安装编译器。
 - 音频需要 `content/generated/audio/synth/firered.pack` 和同目录的 `normal-cries.bin`（相对主游戏根目录）。
-- 应用与 Continue 默认使用 `checkpoints/current-ownership-v3-20261015/continued-checkpoint.json`，可用 `FIRERED_TEST_CHECKPOINT` 指定有效的当前存档。部分用例在内存中准备位置、HP、PP、EXP 等受控状态，不代表自然路线重放或历史缺失证明已恢复。
+- 应用与 Continue 测试默认使用本地忽略的 `checkpoints/current-schema2-20261019/TEST-CONTROLLED-hatch1000.json`，可用 `FIRERED_TEST_CHECKPOINT` 指定已有效的当前 schema2 存档。默认文件已一次性准备为普通旧名字全部保留显式 custom、蛋默认 null、合成孵蛋计数 1000 的受控测试档；它不恢复玩家昵称意图或历史总数。普通测试只严格加载，不执行旧档转换、不补计数。旧 `current-ownership-v3-20261015/continued-checkpoint.json` 原件保留，schema1 不能直接加载。
+- 上述文件是本地测试输入，不在 Git；缺失时请提供有效当前档并设置 `FIRERED_TEST_CHECKPOINT`，不要把旧 schema1 原件作为兼容输入。部分用例另在内存中准备位置、HP、PP、EXP 等受控状态，不代表自然路线重放或历史缺失证明已恢复。
 - 生成的参考数值、逐帧轨迹和验证报告仅存放在本地忽略目录，不纳入 Git；源码、明确语义用例、独立生成器仍受版本控制。手写的 schema 输入和固定源版本清单是测试定义，不是生成结果。
 - 普通测试读取已准备的本地数据，不启动 C 编译器，不自动下载，也不会因缺失数据跳过。缺失时明确失败并给出对应生成命令；先按提示显式准备，再重跑所选测试。不要以当前产品输出重新生成参考期望。
 - 大型动画族的生成器默认选择有明确分支/边界意义的代表案例，保留所选案例初始化到销毁的每一帧。`--full` 在外部输出目录生成完整组合，`FIRERED_SOURCE_VECTOR_DIR` 指向该目录后，同一托管比较器逐值检查全量数据。指定目录缺文件时不得回退到较小本地数据。具体命令与覆盖身份写在对应族的 `tests/Reference` 或 `Game.Presentation.Tests/Reference` 文档中。

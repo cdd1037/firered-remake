@@ -148,8 +148,8 @@ public sealed partial class CampaignSession
         var pages=ImmutableArray.CreateBuilder<CampaignBattlePage>();
         foreach(var e in reward.Events)
         {
-            if(e is LabBattleExperienceEvent xp)pages.Add(new("experience",$"{reward.Pokemon.Nickname} gained\n{xp.Gained} EXP. Points!",e));
-            if(e is LabBattleLevelEvent level){pages.Add(new("level",$"{reward.Pokemon.Nickname} grew to\nlevel {level.After}!",e));pages.Add(new("stats","",e));}
+            if(e is LabBattleExperienceEvent xp)pages.Add(new("experience",$"{PokemonName(reward.Pokemon)} gained\n{xp.Gained} EXP. Points!",e));
+            if(e is LabBattleLevelEvent level){pages.Add(new("level",$"{PokemonName(reward.Pokemon)} grew to\nlevel {level.After}!",e));pages.Add(new("stats","",e));}
         }
         foreach(var text in _content.TextPages(b.State.Outcome==FirstBattleOutcome.Won?definition.DefeatText:definition.VictoryText))pages.Add(new("source",text.Replace("{RIVAL}",state.RivalName,StringComparison.Ordinal).Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal)));
         foreach(var e in reward.Events.OfType<LabBattleMoneyEvent>())pages.Add(new("money",$"{state.PlayerName} got {e.Awarded}\nfor winning!",e));

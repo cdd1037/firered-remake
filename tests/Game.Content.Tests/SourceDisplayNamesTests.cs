@@ -24,12 +24,14 @@ public sealed class SourceDisplayNamesTests
     [DataRow("nature", "0", "HARDY")]
     [DataRow("nature", "3", "ADAMANT")]
     [DataRow("nature", "24", "QUIRKY")]
+    [DataRow("egg", "", "EGG")]
     public void NamesRetainSourceSpellings(string kind, string id, string expected) =>
         Assert.AreEqual(expected, kind switch
         {
             "type" => Names.TypeName(id),
             "ability" => Names.AbilityName(id),
             "nature" => Names.NatureName((Nature)int.Parse(id)),
+            "egg" => Names.EggName,
             _ => throw new ArgumentException("Unknown display-name kind.")
         });
 
@@ -67,6 +69,7 @@ public sealed class SourceDisplayNamesTests
             json["types"]!["TYPE_GRASS"] = "leaf {literal}";
             json["abilities"]!["ABILITY_OVERGROW"] = "growth {literal}";
             json["noHeldItem"] = "empty {literal}";
+            json["eggName"] = "œuf {literal}";
             json["natures"]!["0"] = "nature {DYNAMIC 0x01} {LV_2}";
             json["natures"]!["3"] = "nature {DYNAMIC 0x01} {LV_2}";
         });
@@ -77,6 +80,7 @@ public sealed class SourceDisplayNamesTests
         Assert.AreEqual("leaf {literal}", names.TypeName("TYPE_GRASS"));
         Assert.AreEqual("growth {literal}", names.AbilityName("ABILITY_OVERGROW"));
         Assert.AreEqual("empty {literal}", names.HeldItemName("ITEM_NONE"));
+        Assert.AreEqual("œuf {literal}", names.EggName);
         Assert.AreEqual("nature {DYNAMIC 0x01} {LV_2}", names.NatureName(Nature.Hardy));
         Assert.AreEqual(names.NatureName(Nature.Hardy), names.NatureName(Nature.Adamant));
         Assert.AreEqual(100, StatRules.ApplyNature(100, Nature.Hardy, Stat.Attack));
@@ -93,6 +97,7 @@ public sealed class SourceDisplayNamesTests
     [DataRow("blank-type")]
     [DataRow("blank-ability")]
     [DataRow("blank-none")]
+    [DataRow("blank-egg")]
     [DataRow("missing-type")]
     [DataRow("missing-ability")]
     [DataRow("bad-symbol")]
@@ -116,6 +121,7 @@ public sealed class SourceDisplayNamesTests
                 case "blank-type": json["types"]!["TYPE_GRASS"] = " "; break;
                 case "blank-ability": json["abilities"]!["ABILITY_OVERGROW"] = " "; break;
                 case "blank-none": json["noHeldItem"] = " "; break;
+                case "blank-egg": json["eggName"] = " "; break;
                 case "missing-type": json["types"]!.AsObject().Remove("TYPE_GRASS"); break;
                 case "missing-ability": json["abilities"]!.AsObject().Remove("ABILITY_OVERGROW"); break;
                 case "bad-symbol": json["types"]!["grass"] = "GRASS"; break;
@@ -139,15 +145,16 @@ public sealed class SourceDisplayNamesTests
         Assert.ThrowsExactly<InvalidDataException>(() => SourceDisplayNames.LoadProject(temp.Path, Items, Pokemon));
     }
     [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void MissingNatureTableAndDuplicateNumericIdentityFailSchema(bool duplicate)
+    [DataRow("natures", false)]
+    [DataRow("eggName", false)]
+    [DataRow("natures", true)]
+    public void MissingRequiredLabelsAndDuplicateNumericIdentityFailSchema(string property, bool duplicate)
     {
         using var temp = TestAssets.TemporaryOutput();
         TestAssets.CopyFiles(temp.Path, [SourceDisplayNames.RelativePath]);
         string path = Path.Combine(temp.Path, SourceDisplayNames.RelativePath);
         var json = JsonNode.Parse(File.ReadAllText(path))!;
-        if (!duplicate) json.AsObject().Remove("natures");
+        if (!duplicate) json.AsObject().Remove(property);
         string text = json.ToJsonString();
         if (duplicate) text = text.Replace("\"natures\":{", "\"natures\":{\"0\":\"duplicate\",", StringComparison.Ordinal);
         File.WriteAllText(path, text);

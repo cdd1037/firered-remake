@@ -3,6 +3,7 @@ using Game.Application;
 using Game.Content;
 using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Ordinary source trainer presentation. Commands remain the sole authority for
@@ -53,7 +54,7 @@ public partial class CampaignView
         if (_session.State.ForestTrainerBattle?.CurrentTrainerEvent is not { } item) return false;
         if(item is SsAnneTrainerPlayerForcedOutEvent forcedPlayer)
         {
-            source("sText_PkmnWasDraggedOut",[("B_DEF_NAME_WITH_PREFIX",_session.State.Party[forcedPlayer.PartyIndex].Nickname)]);return true;
+            source("sText_PkmnWasDraggedOut",[("B_DEF_NAME_WITH_PREFIX",_catalog.PokemonDisplayName(_session.State.Party[forcedPlayer.PartyIndex]))]);return true;
         }
         if(item is CeruleanTrainerItemUsedEvent medicine)
         {

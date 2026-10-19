@@ -4,7 +4,9 @@ public sealed record SaveEnvelope(int SchemaVersion, string RulesVersion, string
 public sealed record LoadedSave<T>(T State, long Generation, string Source);
 public static class SaveCodec
 {
-    public const int CurrentSchema = 1;
+    // Schema 2 stores explicit nullable custom nicknames. Schema 1 cannot identify
+    // default names versus literal user names, so normal loading never guesses.
+    public const int CurrentSchema = 2;
     // CanonicalJson sorts every key, including polymorphic discriminators such as
     // "kind". Decode that unchanged canonical representation in any property order.
     // Player-save admission still belongs to the supplied semantic validator.

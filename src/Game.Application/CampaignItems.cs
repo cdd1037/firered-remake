@@ -124,7 +124,7 @@ public sealed partial class CampaignSession
             if(command.PartyIndex<0||command.PartyIndex>=state.Party.Length)return No("item_party_index_invalid");
             var result=UseCampaignPartyPotion(state.Inventory!,state.Party[command.PartyIndex],PotionUseContext.Field);
             if(!result.Succeeded)return result.Error=="potion_no_effect"?Message("gText_WontHaveEffect","bag"):No(result.Error!);
-            return new(CommandStatus.Accepted,state with{Inventory=result.Inventory,Party=state.Party.SetItem(command.PartyIndex,result.Pokemon),TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",result.Pokemon.Nickname).SetItem("STR_VAR_2",result.HpRestored.ToString(CultureInfo.InvariantCulture)),ItemMenu=menu with{View="message",MessageSymbol="gText_PkmnHPRestoredByVar2",ReturnView="bag"}});
+            return new(CommandStatus.Accepted,state with{Inventory=result.Inventory,Party=state.Party.SetItem(command.PartyIndex,result.Pokemon),TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",PokemonName(result.Pokemon)).SetItem("STR_VAR_2",result.HpRestored.ToString(CultureInfo.InvariantCulture)),ItemMenu=menu with{View="message",MessageSymbol="gText_PkmnHPRestoredByVar2",ReturnView="bag"}});
         }
         return No("item_menu_active");
     }

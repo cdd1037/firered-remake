@@ -74,7 +74,7 @@ public sealed class HallOfFameSnapshotTests
     {
         int slot = Enumerable.Range(0, original.Party.Length).First(i => original.Party[i].ChampionRibbon);
         string archive = CanonicalJson.Hash(original.HallOfFame);
-        var state = original with { Party = original.Party.SetItem(slot, original.Party[slot] with { Nickname = "NEW NAME" }) };
+        var state = original with { Party = original.Party.SetItem(slot, original.Party[slot] with { CustomNickname = "NEW NAME" }) };
         Assert.IsNull(Validate(state));
         Assert.AreEqual(archive, CanonicalJson.Hash(state.HallOfFame));
     }
@@ -85,7 +85,7 @@ public sealed class HallOfFameSnapshotTests
     [DataRow("species")]
     [DataRow("level")]
     [DataRow("slot")]
-    [DataRow("nickname-bytes")]
+    [DataRow("invalid-custom-name")]
     [DataRow("duplicate-id")]
     [DataRow("championship")]
     public void SnapshotStillRejectsInvalidLocalContentAndChampionship(string corruption)
@@ -99,7 +99,7 @@ public sealed class HallOfFameSnapshotTests
             "species" => member with { SpeciesOrEgg = 999 },
             "level" => member with { Level = 101 },
             "slot" => member with { PartySlot = 5 },
-            "nickname-bytes" => member with { NicknameBytes = [] },
+            "invalid-custom-name" => member with { CustomNickname = "" },
             "duplicate-id" => member with { InstanceId = team.Members[1].InstanceId },
             _ => member
         };

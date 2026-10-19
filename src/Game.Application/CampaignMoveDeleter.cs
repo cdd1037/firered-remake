@@ -160,7 +160,7 @@ public sealed partial class CampaignSession
             if (!onlyMove && (effect.Source.Symbol != DeleterChoose || !confirmed)) throw new InvalidDataException("move_deleter_buffer_context");
             // The one-move refusal only displays STR_VAR_1; the original uninitialized
             // move variable must not be used to index the compact managed move array.
-            next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
+            next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon))
                 .SetItem("STR_VAR_2", confirmed ? BattleContent.MoveNames[selected.Move!.Value.Value] : "") };
             return true;
         }

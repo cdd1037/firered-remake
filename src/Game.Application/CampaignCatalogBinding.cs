@@ -10,7 +10,7 @@ using Game.Domain.World;
 
 namespace Game.Application;
 
-/// <summary>One maintained game. The payload schema stays at 1; the rules ID is a strict new save boundary.</summary>
+/// <summary>One maintained game; save schema and gameplay rules have distinct compatibility boundaries.</summary>
 public static class CurrentGameProfile
 {
     public const string Id = "current";

@@ -5,6 +5,7 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Ordinary doubles medicine selection. Only the accepted command spends an item;
@@ -122,7 +123,7 @@ public partial class CampaignView
             {WildBattleStatus.Poison=>"gText_PkmnCuredOfPoison",WildBattleStatus.Burn=>"gText_PkmnBurnHealed",
              WildBattleStatus.Freeze=>"gText_PkmnThawedOut",WildBattleStatus.Paralysis=>"gText_PkmnCuredOfParalysis",
              _=>throw new InvalidDataException("Unsupported doubles medicine result message.")};
-        return DoubleSource(symbol,("STR_VAR_1",target.Nickname),("STR_VAR_2",(medicine.HpAfter-medicine.HpBefore).ToString()));
+        return DoubleSource(symbol,("STR_VAR_1",_catalog.PokemonDisplayName(target)),("STR_VAR_2",(medicine.HpAfter-medicine.HpBefore).ToString()));
     }
     private int DoubleMedicineHp(SourceMedicineAppliedEvent medicine)=>(int)Math.Round(Mathf.Lerp(medicine.HpBefore,medicine.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
     private uint DoubleMedicineStatus(SourceMedicineAppliedEvent medicine)=>_doubleElapsed<.4?medicine.StatusBefore:medicine.StatusAfter;

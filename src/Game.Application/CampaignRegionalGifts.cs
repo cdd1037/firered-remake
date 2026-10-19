@@ -75,8 +75,8 @@ public sealed partial class CampaignSession
         var species = RequireSpecies(sourceSpecies);
         // Source constructs before GiveMonToPlayer: PID low/high then two packed IV draws even on full storage.
         var created = PokemonFactory.Create(_content.PokemonContent!.Catalog,
-            new(species.Definition.Id, level, state.TrainerId, IvPolicy.Random, PersonalityPolicy.Random), state.World.Rng);
-        var owned = new PartyPokemon(state.NextPokemonId, created.Pokemon, species.Name, state.PlayerName, state.PlayerGender,
+            new(species.Id, level, state.TrainerId, IvPolicy.Random, PersonalityPolicy.Random), state.World.Rng);
+        var owned = new PartyPokemon(state.NextPokemonId, created.Pokemon, null, state.PlayerName, state.PlayerGender,
             2, met, level, 4, "ITEM_POKE_BALL", "ITEM_NONE");
         var receive = PokemonStorageRules.Receive(_content.PokemonContent, state.Party, state.Storage, owned);
         var next = state with { World = state.World with { Rng = created.Rng } };
@@ -143,21 +143,21 @@ public sealed partial class CampaignSession
             case "special":
                 if (state.GiftDelivery.BoxAddress is not { } slot || state.Storage!.Boxes[slot.BoxIndex].Slots[slot.SlotIndex] is not { } mon ||
                     mon.InstanceId != instanceId) throw new InvalidDataException("script_gift_box_nickname_context");
-                next = state with { Nickname = new(-1, mon.Nickname, false) { BoxAddress = slot },
-                    TextBuffers = state.TextBuffers.SetItem("STR_VAR_3", mon.Nickname).SetItem("STR_VAR_2", mon.Nickname) }; break;
+                next = state with { Nickname = new(-1, mon.CustomNickname, false) { BoxAddress = slot },
+                    TextBuffers = state.TextBuffers.SetItem("STR_VAR_3", PokemonName(mon)).SetItem("STR_VAR_2", PokemonName(mon)) }; break;
         }
         return true;
     }
 
-    private Decision<CampaignState> SubmitBoxGiftNickname(CampaignState state, CampaignNickname naming, StoryWait wait, string name)
+    private Decision<CampaignState> SubmitBoxGiftNickname(CampaignState state, CampaignNickname naming, StoryWait wait, string? name)
     {
         if (state.GiftDelivery?.BoxAddress != naming.BoxAddress || state.Storage is not { } storage || PendingScriptGiftInstanceId(state) is not { } instanceId)
             return new(CommandStatus.Rejected, state, "gift_box_nickname_not_pending");
         var address = naming.BoxAddress!; var box = storage.Boxes[address.BoxIndex]; var mon = box.Slots[address.SlotIndex];
         if (mon is null || mon.InstanceId != instanceId) return new(CommandStatus.Rejected, state, "gift_box_nickname_instance_mismatch");
         return new(CommandStatus.Accepted, state with { Storage = storage with { Boxes = storage.Boxes.SetItem(address.BoxIndex,
-            box with { Slots = box.Slots.SetItem(address.SlotIndex, mon with { Nickname = name }) }) }, Nickname = naming with { Submitted = true },
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", name), ScreenIsBlack = false, PresentationTicks = 16,
+            box with { Slots = box.Slots.SetItem(address.SlotIndex, mon with { CustomNickname = name }) }) }, Nickname = naming with { Submitted = true },
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", PokemonName(mon with { CustomNickname = name })), ScreenIsBlack = false, PresentationTicks = 16,
             Script = state.Script with { Wait = wait with { Kind = StoryWaitKind.Presentation } } });
     }
 }

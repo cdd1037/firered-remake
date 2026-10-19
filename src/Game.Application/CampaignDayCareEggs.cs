@@ -80,7 +80,7 @@ public sealed partial class CampaignSession
             Other(b.SpecialDefense, iv.SpecialDefense, Stat.SpecialDefense), Other(b.Speed, iv.Speed, Stat.Speed));
         made = made with { Ivs = parent.Ivs, Stats = stats, CurrentHp = stats.MaxHp,
             Moves = parent.Moves.Select(m => new PokemonMoveSlot(m, content.Catalog.Moves[m].Pp, content.Catalog.Moves[m].Pp)).ToImmutableArray() };
-        return new(parent.InstanceId, made, content.SpeciesNames[parent.SourceSpeciesId], state.PlayerName, state.PlayerGender,
+        return new(parent.InstanceId, made, null, state.PlayerName, state.PlayerGender,
             2, "MAPSEC_FOUR_ISLAND", 0, 4, "ITEM_POKE_BALL", parent.HeldItem);
     }
 
@@ -159,7 +159,7 @@ public sealed partial class CampaignSession
             GameStats = stats.SetItem(HatchedEggsStat, Math.Min(0xffffff, hatchCount + 1)),
             Party = state.Party.SetItem(index, hatched.Pokemon), World = state.World with { Rng = hatched.Rng },
             SeenSpecies = state.SeenSpecies.Add(egg.Pokemon.SourceSpeciesId),
-            CaughtSpecies = state.CaughtSpecies.Add(egg.Pokemon.SourceSpeciesId), TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", hatched.Pokemon.Nickname),
+            CaughtSpecies = state.CaughtSpecies.Add(egg.Pokemon.SourceSpeciesId), TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(hatched.Pokemon)),
             EggHatch = new(index, egg.InstanceId, egg.Pokemon.SourceSpeciesId, CampaignEggHatchStage.Animation, shards.AnimationIndexes),
             Dialogue = null, ScreenIsBlack = false, PresentationTicks = 0, PresentationEffects = [] };
         return true;
@@ -192,8 +192,8 @@ public sealed partial class CampaignSession
                 if (command.Choice is not (0 or 1)) { decision = No("choice_required"); return true; }
                 if (command.Choice == 0) { next = CompleteEggHatch(state); break; }
                 var mon = state.Party[scene.PartyIndex];
-                next = state with { EggHatch = scene with { Stage = CampaignEggHatchStage.Naming }, Nickname = new(scene.PartyIndex, mon.Nickname, false),
-                    Dialogue = null, TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", mon.Nickname).SetItem("STR_VAR_3", mon.Nickname),
+                next = state with { EggHatch = scene with { Stage = CampaignEggHatchStage.Naming }, Nickname = new(scene.PartyIndex, mon.CustomNickname, false),
+                    Dialogue = null, TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", PokemonName(mon)).SetItem("STR_VAR_3", PokemonName(mon)),
                     Script = state.Script with { Wait = wait with { Kind = StoryWaitKind.Nickname } } }; break;
             case CampaignEggHatchStage.Naming:
                 if (state.Nickname?.Submitted != true) { decision = No("nickname_submission_required"); return true; }

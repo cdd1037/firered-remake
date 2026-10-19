@@ -3,6 +3,7 @@ using Game.Application;
 using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 
 public partial class CampaignView
 {
@@ -11,7 +12,7 @@ public partial class CampaignView
     private string DoubleAbility(string symbol)=>_catalog.DisplayNames.AbilityName(symbol);
     private string DoubleItem(string symbol)=>_catalog.DisplayNames.ItemName(symbol);
     private string DoublePartyName(CampaignDoubleBattle b,BattleSide side,int member)=>side==BattleSide.Player
-        ?_session.State.Party[member].Nickname:_catalog.PokemonContent!.SpeciesNames[b.Frame.Party(side).Members[member].Pokemon.SourceSpeciesId];
+        ?_catalog.PokemonDisplayName(_session.State.Party[member]):(_catalog.SourceSpeciesName(b.Frame.Party(side).Members[member].Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing."));
     private static SourceMoveUsedEvent? DoubleInvocation(CampaignDoubleBattle b,SourceBattleEvent current)=>
         b.Events.LastOrDefault(e=>e.Sequence<=current.Sequence&&e is SourceMoveUsedEvent) as SourceMoveUsedEvent;
     private static MoveId? DoubleLastMove(CampaignDoubleBattle b,SourceBattleEvent current,BattlerSlot actor)
@@ -50,7 +51,7 @@ public partial class CampaignView
                 return DoubleText("sText_NaturePowerTurnedInto",("B_CURRENT_MOVE",MoveName(move)));
             case SourceTransformedEvent x:
                 return DoubleText("sText_PkmnTransformedInto",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),
-                    ("B_BUFF1",_catalog.PokemonContent!.SpeciesNames[_catalog.PresetDoublePokemon!.Species[x.AppearanceSpecies].SourceSpeciesId]));
+                    ("B_BUFF1",(_catalog.SourceSpeciesName(_catalog.PresetDoublePokemon!.Species[x.AppearanceSpecies].SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing."))));
             case SourceMoveCopiedEvent x:return DoubleText(x.Permanent?"sText_PkmnSketchedMove":"sText_PkmnLearnedMove2",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_BUFF1",MoveName(x.CopiedMove)));
             case SourceCalledOverlayChangedEvent x:return DoubleOverlayMessage(b,x);
             case SourceHeldItemRecycledEvent x:return SourceTrainerPresentationModel.RecycledItem(DoublePrefixed(x.Actor),x.Item,DoubleItem);

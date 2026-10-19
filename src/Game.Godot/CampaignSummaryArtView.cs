@@ -3,6 +3,7 @@ using Game.Application;
 using Game.Domain.Pokemon;
 using Game.Domain.Growth;
 using Game.Domain.Capture;
+using Game.Domain.World;
 using Godot;
 
 // One generated native Summary skin serves field, PC, and battle inspection.
@@ -135,7 +136,7 @@ public partial class CampaignView
         var species = _catalog.PokemonContent!.Catalog.Species[mon.Species];
         bool flip = _summaryPresentation.FlipPortrait(mon.Species.Value);
         SourceText(_sourceSmall, new(4, 18), "Lv" + mon.Level);
-        SourceText(_sourceNormal, new(35, 17), owned.Nickname);
+        SourceText(_sourceNormal, new(35, 17), _catalog.PokemonDisplayName(owned));
         if (mon.Gender != PokemonGender.Genderless)
             SourceText(mon.Gender == PokemonGender.Female ? _healthFemale : _healthMale, new(107, 18), mon.Gender == PokemonGender.Female ? "♀" : "♂");
         if (details)
@@ -156,7 +157,7 @@ public partial class CampaignView
         if (page == 0)
         {
             SourceText(_sourceNormal, new(167, 21), _pokedexMenu!.Entries[mon.SourceSpeciesId].NationalNumber.ToString("D3"));
-            SourceText(_sourceNormal, new(167, 35), _catalog.PokemonContent.SpeciesNames[mon.SourceSpeciesId]);
+            SourceText(_sourceNormal, new(167, 35), (_catalog.SourceSpeciesName(mon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));
             DrawPokedexVisual(species.Type1, 167, 51);
             if (species.Type2 != species.Type1) DrawPokedexVisual(species.Type2, 203, 51);
             SourceText(_sourceNormal, new(167, 65), owned.OriginalTrainerName);

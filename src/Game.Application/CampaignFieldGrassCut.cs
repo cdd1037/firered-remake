@@ -43,7 +43,7 @@ public sealed partial class CampaignSession
         var mon=state.Party[partyIndex];var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty;
         return new(CommandStatus.Accepted,state with
         {
-            CutEffect=new(partyIndex,mon.Pokemon.SourceSpeciesId,mon.Nickname,"",FieldCutSourcePresentation.ShowMon)
+            CutEffect=new(partyIndex,mon.Pokemon.SourceSpeciesId,PokemonName(mon),"",FieldCutSourcePresentation.ShowMon)
                 {Grass=true,WaitId="cut-grass:"+checked(Revision+1)+":show"},
             GameStats=stats.SetItem(CutUsageStat,Math.Min(0xffffff,stats.GetValueOrDefault(CutUsageStat)+1)),
             Script=state.Script with{Locked=true},PresentationTicks=FieldCutSourcePresentation.ShowMonCueFrames,PresentationEffects=[],Motions=[]

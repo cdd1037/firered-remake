@@ -195,7 +195,7 @@ public partial class CampaignView
                 if(selected.IsEgg) DrawTexture(BreedingEggShell(),new(8,16));
                 else if(_battleArt.TryGetValue((PresentedRenderSpecies(selected.Pokemon),"front",selected.Pokemon.IsShiny),out var art))DrawTexture(art.Texture,new(8,16));
                 SourceText(_sourceSmall,new(6,88),PresentedOwnedName(selected));
-                if(!selected.IsEgg){SourceText(_sourceSmall,new(6,102),_catalog.PokemonContent!.SpeciesNames[selected.Pokemon.SourceSpeciesId]);SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");}
+                if(!selected.IsEgg){SourceText(_sourceSmall,new(6,102),(_catalog.SourceSpeciesName(selected.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");}
             }
             SourceText(_sourceSmall,new(6,132),$"{slots.Count(p=>p is not null)}/30 P{_session.State.Party.Length}");
             DrawStorageMarkings(selected);

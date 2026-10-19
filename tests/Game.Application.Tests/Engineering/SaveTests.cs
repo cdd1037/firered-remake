@@ -83,7 +83,7 @@ public sealed class SaveTests
     {
         using var storage = new IsolatedFileStorage();
         File.WriteAllBytes(storage.Slot + ".bak", SaveCodec.Encode(new Counter(4), 1, "audit-r1", "audit-c1"));
-        File.WriteAllText(storage.Slot, "{\"SchemaVersion\":1,\"RulesVersion\":\"audit-r1\",\"ContentVersion\":\"audit-c1\",\"GameEdition\":\"firered\",\"Generation\":2,\"PayloadHash\":\"missing\"}", Encoding.UTF8);
+        File.WriteAllText(storage.Slot, "{\"SchemaVersion\":" + SaveCodec.CurrentSchema + ",\"RulesVersion\":\"audit-r1\",\"ContentVersion\":\"audit-c1\",\"GameEdition\":\"firered\",\"Generation\":2,\"PayloadHash\":\"missing\"}", Encoding.UTF8);
         var loaded = new SaveService(storage).Load<Counter>(storage.Slot, "audit-r1", "audit-c1");
         Assert.IsTrue(loaded.Source == storage.Slot + ".bak" && loaded.State.Value == 4, "Undefined JsonElement bypassed backup recovery.");
         return;

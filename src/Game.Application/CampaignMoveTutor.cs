@@ -56,7 +56,7 @@ public sealed partial class CampaignSession
         PartyPokemon? mon = null, string? moveName = null, CampaignMoveTutorStage? noticeReturn = null)
     {
         string raw = _content.MoveTutors!.Texts[symbol]
-            .Replace("{STR_VAR_1}", mon?.Nickname ?? "", StringComparison.Ordinal)
+            .Replace("{STR_VAR_1}", mon is null ? "" : PokemonName(mon), StringComparison.Ordinal)
             .Replace("{STR_VAR_2}", moveName ?? BattleContent.MoveNames[_content.MoveTutors.Definitions[scene.TutorIndex].Move.Value], StringComparison.Ordinal);
         // Control tokens remain in the authenticated source text. This functional menu uses
         // existing page/ack presentation and emits the source sound/fanfare separately.
@@ -75,7 +75,7 @@ public sealed partial class CampaignSession
         var catalog = _content.MoveTutors!; var tutor = catalog.Definitions[scene.TutorIndex];
         CampaignState Message(CampaignMoveTutorStage stage, string symbol, PartyPokemon? mon = null, CampaignMoveTutorStage? next = null) =>
             state with { MoveTutor = TutorMessage(scene, stage, symbol, mon, noticeReturn: next),
-                TextBuffers = mon is null ? state.TextBuffers : state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
+                TextBuffers = mon is null ? state.TextBuffers : state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon))
                     .SetItem("STR_VAR_2", BattleContent.MoveNames[tutor.Move.Value]) };
         CampaignState result;
         if (scene.Stage == CampaignMoveTutorStage.Party)
@@ -128,7 +128,7 @@ public sealed partial class CampaignSession
                     scene = scene with { MoveSlot = command.MoveSlot };
                     string forgotten = BattleContent.MoveNames[selected.Pokemon.Moves[command.MoveSlot].Move.Value];
                     result = state with { MoveTutor = TutorMessage(scene, CampaignMoveTutorStage.Forgotten, "gText_12PoofForgotMove", selected, forgotten),
-                        TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", selected.Nickname).SetItem("STR_VAR_2", forgotten) };
+                        TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(selected)).SetItem("STR_VAR_2", forgotten) };
                     result = TutorSound(result, "playse", "SE_BALL_BOUNCE_1");
                 }
             }
@@ -154,7 +154,7 @@ public sealed partial class CampaignSession
         if (symbol is null) return LearnTutorMove(state with { MoveTutor = scene }, null);
         return state with { MoveTutor = TutorMessage(scene,
             eligibility == MoveTutorEligibility.Able ? CampaignMoveTutorStage.ReplaceQuestion : CampaignMoveTutorStage.Notice, symbol, mon),
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon))
                 .SetItem("STR_VAR_2", BattleContent.MoveNames[tutor.Move.Value]) };
     }
 
@@ -165,7 +165,7 @@ public sealed partial class CampaignSession
         if (!result.Succeeded) throw new InvalidDataException(result.Error);
         return TutorSound(state with { Party = state.Party.SetItem(scene.PartyIndex, result.Pokemon),
             UltimateTutor = state.UltimateTutor is { } ultimate ? ultimate with { Learned = true } : null,
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname).SetItem("STR_VAR_2", BattleContent.MoveNames[_content.MoveTutors!.Definitions[scene.TutorIndex].Move.Value]),
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(mon)).SetItem("STR_VAR_2", BattleContent.MoveNames[_content.MoveTutors!.Definitions[scene.TutorIndex].Move.Value]),
             MoveTutor = TutorMessage(scene, CampaignMoveTutorStage.Learned, "gText_PkmnLearnedMove3", result.Pokemon) }, "playfanfare", "MUS_LEVEL_UP");
     }
 

@@ -2,6 +2,7 @@ using Game.Application;
 using Game.Content;
 using Game.Domain.Options;
 using Game.Presentation.BattleAnimations;
+using Game.Domain.World;
 using Godot;
 
 // Source-backed evolution staging. The Application command remains the only species mutation.
@@ -162,10 +163,11 @@ public partial class CampaignView
         if (_evolutionAnimationKey != animationKey)
         {
             _evolutionAnimationKey = animationKey;
-            // Stone evolution already committed its new default name; the scene introduces
-            // the exact pre-command nickname, including user-chosen names.
-            _evolutionIntroName = before?.Party.FirstOrDefault(p => p.InstanceId == scene.Proposal.InstanceId)?.Nickname
-                ?? _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId).Nickname;
+            // Stone evolution already committed its new species; resolve the intro
+            // from the previous owned snapshot, preserving any explicit custom name.
+            var introPokemon = before?.Party.FirstOrDefault(p => p.InstanceId == scene.Proposal.InstanceId)
+                ?? _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId);
+            _evolutionIntroName = _catalog.PokemonDisplayName(introPokemon);
             _evolutionCommitRequested = false; _evolutionCompletionCue = false; _evolutionCryStarted = false; _evolutionFanfare = 0;
             _evolutionIntroCueAvailable = true; _evolutionIntroTextPressed = false;
             // Ordinary saved result pages must not propose or commit evolution a second time.
@@ -312,7 +314,7 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
         string text = _evolutionAnimation?.Animating == true ? _evolutionAnimation.IntroVisibleText : scene.Stage switch
         {
-            CampaignEvolutionStage.Proposal => $"What? {_evolutionIntroName ?? owned.Nickname}\nis evolving!",
+            CampaignEvolutionStage.Proposal => $"What? {_evolutionIntroName ?? _catalog.PokemonDisplayName(owned)}\nis evolving!",
             CampaignEvolutionStage.LearnMove => MoveLearningPrompt(scene.PendingMoves[0].Move),
             _ => scene.Pages[scene.PageIndex]
         };

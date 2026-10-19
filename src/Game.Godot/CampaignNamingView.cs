@@ -2,6 +2,7 @@ using Game.Application;
 using Game.Content;
 using Game.Domain.Events;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>One source naming screen and one native editor. Adapters select the
@@ -72,7 +73,7 @@ public partial class CampaignView
         if (CaptureNamingActive)
         {
             var capture = state.SafariBattle?.Capture ?? state.WildBattle!.Capture!;
-            return MonNamingBinding(NamingScreenFlow.Capture, "capture:" + (state.SafariBattle?.Id ?? state.WildBattle!.Id), capture.Origin.DefaultName, capture.Pokemon);
+            return MonNamingBinding(NamingScreenFlow.Capture, "capture:" + (state.SafariBattle?.Id ?? state.WildBattle!.Id), (_catalog.SourceSpeciesName(capture.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")), capture.Pokemon);
         }
         if (state.Nickname is not { Submitted: false } naming || state.Script.Wait?.Kind != StoryWaitKind.Nickname) return null;
         PartyPokemon mon;
@@ -92,11 +93,11 @@ public partial class CampaignView
             if (EggHatchNaming && (state.EggHatch!.InstanceId != mon.InstanceId || mon.IsEgg || state.EggHatch.SourceSpeciesId != mon.Pokemon.SourceSpeciesId))
                 throw new InvalidDataException("Hatch naming identity differs.");
         }
-        return MonNamingBinding(flow, "owned:" + mon.InstanceId, naming.OriginalName, mon.Pokemon);
+        return MonNamingBinding(flow, "owned:" + mon.InstanceId, _catalog.PokemonDisplayName(mon), mon.Pokemon);
     }
 
     private NamingScreenBinding MonNamingBinding(NamingScreenFlow flow, string identity, string originalName, PokemonInstance mon)
-        => new(new(flow, identity, originalName, _catalog.PokemonContent!.SpeciesNames[mon.SourceSpeciesId], mon.Gender), mon);
+        => new(new(flow, identity, originalName, (_catalog.SourceSpeciesName(mon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")), mon.Gender), mon);
 
     private void OpenNamingScreen(NamingScreenBinding binding)
     {

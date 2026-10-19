@@ -36,35 +36,18 @@ public sealed class CampaignCompositionTests
     }
 
     [TestMethod]
-    public void RawCheckpointIsNeverAutomaticallyUpgradedAndSourceBytesStayIntact()
+    public void CurrentControlledCheckpointLoadsStrictlyAndSourceBytesStayIntact()
     {
         var session = CampaignSession.CreateCurrent(catalog, new(0x11223344));
         byte[] source = File.ReadAllBytes(TestAssets.Checkpoint);
-        var (loaded, rules) = CurrentCampaignFixture.DecodeRawCheckpoint(source);
-        if (rules != session.RulesVersion)
-        {
-            var result = PlayerSaveOperations.Load(() => SaveCodec.Decode<CampaignState>(source,
-                session.RulesVersion, catalog.ContentVersion, validate: session.ValidatePlayerSave));
-            Assert.AreEqual(SaveOperationStatus.IncompatibleVersion, result.Result.Status);
-            Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
-            Assert.IsNull(result.Saved);
-            if (loaded.State.GameStats?.ContainsKey("GAME_STAT_HATCHED_EGGS") != true)
-                Assert.AreEqual("save_hatched_egg_count_missing_migration_required",
-                    session.ValidateLegacyTrainerTowerCheckpoint(loaded.State));
-        }
-        else if (loaded.State.GameStats?.ContainsKey("GAME_STAT_HATCHED_EGGS") == true)
-        {
-            var restored = CampaignSession.RestoreCurrent(catalog, loaded.State, loaded.Generation);
-            Assert.AreEqual(CanonicalJson.Hash(loaded.State), CanonicalJson.Hash(restored.State));
-        }
-        else
-        {
-            var result = PlayerSaveOperations.Load(() => SaveCodec.Decode<CampaignState>(source,
-                session.RulesVersion, catalog.ContentVersion, validate: session.ValidatePlayerSave));
-            Assert.AreEqual(SaveOperationStatus.MigrationRequired, result.Result.Status);
-            Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
-            Assert.IsNull(result.Saved);
-        }
-        Assert.IsTrue(File.ReadAllBytes(TestAssets.Checkpoint).AsSpan().SequenceEqual(source));
+        // The default fixture was explicitly prepared with literal old names and
+        // synthetic hatch count 1000. Ordinary tests never convert its schema or
+        // invent absent statistics. An override must already be a current save.
+        var loaded = SaveCodec.Decode<CampaignState>(source, session.RulesVersion,
+            catalog.ContentVersion, validate: session.ValidatePlayerSave);
+        Assert.IsTrue(loaded.State.GameStats!.ContainsKey("GAME_STAT_HATCHED_EGGS"));
+        var restored = CampaignSession.RestoreCurrent(catalog, loaded.State, loaded.Generation);
+        Assert.AreEqual(CanonicalJson.Hash(loaded.State), CanonicalJson.Hash(restored.State));
+        CollectionAssert.AreEqual(source, File.ReadAllBytes(TestAssets.Checkpoint));
     }
 }

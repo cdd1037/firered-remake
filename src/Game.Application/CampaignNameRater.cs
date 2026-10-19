@@ -62,7 +62,7 @@ public sealed partial class CampaignSession
                 string? error = NameRaterRules.ValidateSelection(state.Party, command.PartyIndex, command.TargetInstanceId);
                 if (error is not null) { decision = new(CommandStatus.Rejected, state, error); return true; }
                 var mon = state.Party[command.PartyIndex];
-                target = new(command.PartyIndex, mon.InstanceId, mon.Nickname);
+                target = new(command.PartyIndex, mon.InstanceId, mon.CustomNickname);
             }
             int result = target?.PartyIndex ?? NameRaterRules.CancelSlot;
             var next = state with { NameRater = new(false, target), Dialogue = null, Motions = [],
@@ -89,15 +89,16 @@ public sealed partial class CampaignSession
             state.Nickname is not { Submitted: false, BoxAddress: null } naming ||
             !NameRaterWait(state, StoryWaitKind.Nickname, NameRaterSharedPath, NameRaterShared)) return Reject("nickname_not_pending");
         if (command.TargetInstanceId != target.InstanceId) return Reject("name_rater_target_mismatch");
-        if (naming.PartyIndex != target.PartyIndex || naming.OriginalName != target.OriginalName ||
+        string originalName = PokemonName(state.Party[target.PartyIndex] with { CustomNickname = target.OriginalCustomNickname });
+        if (naming.PartyIndex != target.PartyIndex || naming.OriginalCustomNickname != target.OriginalCustomNickname ||
             state.Script.Variables.GetValueOrDefault("VAR_0x8004", -1) != target.PartyIndex ||
-            state.TextBuffers.GetValueOrDefault("STR_VAR_2") != target.OriginalName ||
-            state.TextBuffers.GetValueOrDefault("STR_VAR_3") != target.OriginalName) return Reject("name_rater_nickname_context");
+            state.TextBuffers.GetValueOrDefault("STR_VAR_2") != originalName ||
+            state.TextBuffers.GetValueOrDefault("STR_VAR_3") != originalName) return Reject("name_rater_nickname_context");
         var content = _content.PokemonContent ?? throw new InvalidDataException("pokemon_content_missing");
         var rename = NameRaterRules.Rename(state.Party, target, state.TrainerId, state.PlayerName, command.Text, content.NicknameCharacters);
         if (!rename.Accepted) return Reject(rename.Error!);
         return new(CommandStatus.Accepted, state with { Party = rename.Party, Nickname = naming with { Submitted = true },
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", rename.FinalName!), ScreenIsBlack = false, PresentationTicks = 16,
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", PokemonName(rename.Party[target.PartyIndex])), ScreenIsBlack = false, PresentationTicks = 16,
             Script = state.Script with { Wait = state.Script.Wait! with { Kind = StoryWaitKind.Presentation } } });
     }
 
@@ -147,8 +148,8 @@ public sealed partial class CampaignSession
                 break;
             case "GetPartyMonSpecies": next = Result(NameRaterRules.SpeciesOrEgg(NameRaterSelected(state))); break;
             case "BufferMonNickname":
-                var buffered = NameRaterSelected(state).Nickname;
-                next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", buffered[..Math.Min(10, buffered.Length)]) };
+                var buffered = PokemonName(NameRaterSelected(state));
+                next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", buffered) };
                 break;
             case "IsMonOTIDNotPlayers": next = Result(NameRaterRules.TrainerIdDiffers(NameRaterSelected(state), state.TrainerId) ? 1 : 0); break;
             case "IsMonOTNameNotPlayers":
@@ -161,15 +162,15 @@ public sealed partial class CampaignSession
                 string? error = NameRaterRules.Begin(state.Party, target.PartyIndex, target.InstanceId, state.TrainerId, state.PlayerName, out var current);
                 if (error is not null) throw new InvalidDataException(error);
                 if (current != target || state.Nickname is not null) throw new InvalidDataException("name_rater_original_name_changed");
-                next = state with { Nickname = new(target.PartyIndex, mon.Nickname, false),
-                    TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", mon.Nickname).SetItem("STR_VAR_3", mon.Nickname) };
+                next = state with { Nickname = new(target.PartyIndex, mon.CustomNickname, false),
+                    TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", PokemonName(mon)).SetItem("STR_VAR_3", PokemonName(mon)) };
                 break;
             case "NameRaterWasNicknameChanged":
                 var renamed = NameRaterSelected(state);
-                if (state.TextBuffers.GetValueOrDefault("STR_VAR_3") != state.NameRater!.Target!.OriginalName)
+                if (state.TextBuffers.GetValueOrDefault("STR_VAR_3") != PokemonName(renamed with { CustomNickname = state.NameRater!.Target!.OriginalCustomNickname }))
                     throw new InvalidDataException("name_rater_backup_changed");
-                next = Result(string.Equals(renamed.Nickname, state.TextBuffers["STR_VAR_3"], StringComparison.Ordinal) ? 0 : 1) with
-                { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", renamed.Nickname) };
+                next = Result(string.Equals(PokemonName(renamed), state.TextBuffers["STR_VAR_3"], StringComparison.Ordinal) ? 0 : 1) with
+                { TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", PokemonName(renamed)) };
                 break;
         }
         return true;

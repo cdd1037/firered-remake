@@ -34,7 +34,7 @@ public sealed partial class CampaignSession
             Inventory = result.Inventory,
             Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
             TextBuffers = result.HpRestored > 0 ? state.TextBuffers
-                .SetItem("STR_VAR_1", result.Pokemon.Nickname)
+                .SetItem("STR_VAR_1", PokemonName(result.Pokemon))
                 .SetItem("STR_VAR_2", result.HpRestored.ToString(CultureInfo.InvariantCulture)) : state.TextBuffers,
             ItemMenu = menu with { View = "message", MessageSymbol = symbol, ReturnView = menu.View }
         });

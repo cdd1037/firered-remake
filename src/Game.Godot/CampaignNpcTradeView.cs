@@ -3,6 +3,7 @@ using Game.Content;
 using Game.Domain.Capture;
 using Game.Domain.Events;
 using Game.Domain.Pokemon;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Source-backed NPC wireless scene; the Application transaction is its only exchange owner.</summary>
@@ -163,8 +164,8 @@ public partial class CampaignView
         // trade_scene.c TradeBufferOTnameAndNicknames uses these exact bindings.
         string text = NpcTradeSourceText(symbol)
             .Replace("{STR_VAR_1}", incoming.OriginalTrainerName, StringComparison.Ordinal)
-            .Replace("{STR_VAR_2}", outgoing.Nickname, StringComparison.Ordinal)
-            .Replace("{STR_VAR_3}", incoming.Nickname, StringComparison.Ordinal);
+            .Replace("{STR_VAR_2}", _catalog.PokemonDisplayName(outgoing), StringComparison.Ordinal)
+            .Replace("{STR_VAR_3}", _catalog.PokemonDisplayName(incoming), StringComparison.Ordinal);
         if (text.Contains('{') || text.Contains('}')) throw new InvalidDataException("Unrendered NPC trade source control token.");
         return text;
     }

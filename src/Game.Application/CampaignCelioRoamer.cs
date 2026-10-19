@@ -56,8 +56,7 @@ public sealed partial class CampaignSession
         {
             DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
             CelioRoamer = origin, CelioRoamerEncounterTrace = gateTrace, ActivePartyIndex = active,
-            Origin = new(_content.MapDefinition(origin.Map).RegionMapSection, SourceRoamerRules.Level,
-                _content.PokemonContent!.SpeciesNames[battle.Opponent.Pokemon.SourceSpeciesId]),
+            Origin = new(_content.MapDefinition(origin.Map).RegionMapSection, SourceRoamerRules.Level),
             OpponentHpAtLastSwitch = battle.Opponent.Pokemon.CurrentHp
         };
         return PrepareWildPresentation(state with { WildBattle = presentation,

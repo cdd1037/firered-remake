@@ -16,7 +16,6 @@ public sealed record SourceEggShardResult(RngState Rng, ImmutableArray<RandomTra
 public static class SourceEggRules
 {
     public const int HatchLevel = 5;
-    public const string JapaneseEggNickname = "タマゴ";
     public const int ReceiptDrawCount = 9;
     public const int HatchDrawCount = 2;
     public const int NormalShardDrawCount = 19;
@@ -105,7 +104,7 @@ public static class SourceEggRules
             Ivs = new(ivs[0], ivs[1], ivs[2], ivs[3], ivs[4], ivs[5]),
             EggStatCalculationIvs = basis, Friendship = row.Breeding.EggCycles, Moves = moves
         };
-        var egg = new PartyPokemon(nextInstanceId, pokemon, JapaneseEggNickname, trainer.Name, trainer.Gender,
+        var egg = new PartyPokemon(nextInstanceId, pokemon, null, trainer.Name, trainer.Gender,
             1, metLocation, 0, metGame, "ITEM_POKE_BALL", "ITEM_NONE") { IsEgg = true };
         if (PokemonStateValidator.ValidateParty(content, egg) is { } error) throw new InvalidOperationException(error);
         return new(egg, rng, trace.ToImmutable());
@@ -145,7 +144,7 @@ public static class SourceEggRules
         var moves = old.Moves.Select(m => new PokemonMoveSlot(m.Move, content.Catalog.Moves[m.Move].Pp,
             content.Catalog.Moves[m.Move].Pp)).ToImmutableArray();
         var pokemon = created.Pokemon with { Ivs = old.Ivs, Stats = stats, CurrentHp = stats.MaxHp, Moves = moves, Friendship = 120 };
-        var hatched = new PartyPokemon(egg.InstanceId, pokemon, content.SpeciesNames[pokemon.SourceSpeciesId],
+        var hatched = new PartyPokemon(egg.InstanceId, pokemon, null,
             trainer.Name, trainer.Gender, trainer.Language, hatchLocation, 0, egg.MetGame, "ITEM_POKE_BALL", "ITEM_NONE")
         { ModernFatefulEncounter = egg.ModernFatefulEncounter, Markings = egg.Markings };
         if (PokemonStateValidator.ValidateParty(content, hatched) is { } invalid) throw new InvalidOperationException(invalid);

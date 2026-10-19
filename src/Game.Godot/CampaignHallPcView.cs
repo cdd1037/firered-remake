@@ -106,15 +106,18 @@ public partial class CampaignView
     private (string Dex, string Nickname, string Species, string Level, string TrainerId) HallPcDetails(CampaignHallOfFamePcMember member)
     {
         var snapshot = member.Snapshot;
-        if (!member.ShowPokemonDetails) return ("", snapshot.Nickname, "", "", "");
+        string speciesName = _catalog.SourceSpeciesName(snapshot.SpeciesOrEgg)
+            ?? throw new InvalidDataException("Archived Hall Pokemon species display name missing.");
+        string name = snapshot.CustomNickname ?? speciesName;
+        if (!member.ShowPokemonDetails) return ("", name, "", "", "");
         var entry = _pokedexMenu?.Entries.GetValueOrDefault(snapshot.SpeciesOrEgg)
             ?? throw new InvalidDataException("Archived Hall Pokemon National Dex entry missing.");
         var definition = _catalog.PokemonContent!.Catalog.Species.Values.Single(s => s.SourceSpeciesId == snapshot.SpeciesOrEgg);
         var gender = snapshot.SpeciesOrEgg is 29 or 32 ? PokemonGender.Genderless
             : PokemonFactory.GenderFromPersonality(definition.GenderRatio, snapshot.Personality);
         string suffix = gender switch { PokemonGender.Male => "♂", PokemonGender.Female => "♀", _ => " " };
-        return (HallPcText("gText_Number") + entry.NationalNumber.ToString("D3"), snapshot.Nickname,
-            "/" + entry.Name + suffix, HallPcText("gText_Level") + snapshot.Level,
+        return (HallPcText("gText_Number") + entry.NationalNumber.ToString("D3"), name,
+            "/" + speciesName + suffix, HallPcText("gText_Level") + snapshot.Level,
             HallPcText("gText_IDNumber") + member.DisplayTrainerId.ToString("D5"));
     }
 

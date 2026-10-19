@@ -3,6 +3,7 @@ using Game.Application;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 using Game.Domain.WildBattle;
+using Game.Domain.World;
 using Godot;
 
 /// <summary>Single-battle selection and presentation. The campaign command owns every item effect.</summary>
@@ -103,7 +104,7 @@ public partial class CampaignView
             return true;
         }
         source("sText_PlayerUsedItem",[("B_LAST_ITEM",SingleBattleItemName(item.Item))]);
-        string name=PresentedBattlePlayerParty.Single(p=>p.InstanceId==item.TargetInstanceId).Nickname;
+        string name=_catalog.PokemonDisplayName(PresentedBattlePlayerParty.Single(p=>p.InstanceId==item.TargetInstanceId));
         if(item.HpAfter>item.HpBefore)source("gText_PkmnHPRestoredByVar2",[("STR_VAR_1",name),("STR_VAR_2",(item.HpAfter-item.HpBefore).ToString())]);
         else if(item.StatusBefore!=item.StatusAfter&&item.StatusAfter==0)source("gText_PkmnBecameHealthy",[("STR_VAR_1",name)]);
         if(item.PpRecovery is {IsEmpty:false})source("gText_PPWasRestored",[]);

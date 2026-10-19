@@ -86,7 +86,7 @@ public sealed class EggFactoryTests
                     return new PokemonMoveSlot(m.Id, m.Pp, m.Pp);
                 }).ToImmutableArray()
             };
-        return new(nextId++, p, content.SpeciesNames[p.SourceSpeciesId], "LEAF", 1, 2, "MAPSEC_ROUTE_1", 30, 4, "ITEM_POKE_BALL", "ITEM_NONE");
+        return new(nextId++, p, null, "LEAF", 1, 2, "MAPSEC_ROUTE_1", 30, 4, "ITEM_POKE_BALL", "ITEM_NONE");
     }
 
     private FourIslandDayCareState Pair(PartyPokemon a, PartyPokemon b, ushort low = 123) => new(new(a, 7), new(b, 19), low, 51);
@@ -105,10 +105,10 @@ public sealed class EggFactoryTests
         Assert.IsTrue(Environment.Version.Major == 10, "actual runtime10");
         Assert.IsTrue(metadata.Species.Keys.ToHashSet().SetEquals(content.Catalog.Species.Keys), "breeding covers every owned species");
         Assert.AreEqual(58, metadata.AllMachineMoves.Length, "all original inheritance machine slots");
-        Assert.IsTrue(PokemonStateValidator.ValidatePartyCollection(content, [], 1)is null, "authenticated content names and owner");
+        Assert.IsTrue(PokemonStateValidator.ValidatePartyCollection(content, [], 1)is null, "authenticated content and owner");
         Assert.IsTrue(received.Trace.Length == 9 && received.Rng.Cursor == 9, "receipt exactly9 draws");
         Assert.IsTrue((egg.Pokemon.Personality & 0xffff) == 123 && egg.Pokemon.Personality >> 16 == received.Trace[0].Raw, "stored pending low and fresh high PID");
-        Assert.IsTrue(egg.IsEgg && egg.Language == 1 && egg.Nickname == "タマゴ" && egg.Pokemon.Friendship == 20 && egg.MetLevel == 0, "source Japanese egg and cycle metadata");
+        Assert.IsTrue(egg.IsEgg && egg.Language == 1 && egg.CustomNickname is null && egg.Pokemon.Friendship == 20 && egg.MetLevel == 0, "explicit egg, Japanese language and cycle metadata");
         Assert.IsTrue(egg.Pokemon.Level == 5 && egg.Pokemon.OriginalTrainerId == trainer.TrainerId && egg.OriginalTrainerName == "RED" && egg.HeldItem == "ITEM_NONE" && egg.Ball == "ITEM_POKE_BALL", "source receipt OT level ball no item");
         Assert.IsTrue(before == JsonSerializer.Serialize(parents), "receipt leaves parents and pending state unchanged");
         Assert.IsTrue(egg.Pokemon.Stats == Stats(egg.Pokemon, egg.Pokemon.EggStatCalculationIvs!), "receipt stats retain initial random IV basis");
@@ -120,7 +120,7 @@ public sealed class EggFactoryTests
         Assert.IsTrue(PokemonStateValidator.ValidateParty(content, egg with { Pokemon = egg.Pokemon with { EggStatCalculationIvs = new(32, 0, 0, 0, 0, 0) } }) == "pokemon_egg_stat_basis", "egg basis range checked");
         Assert.IsTrue(PokemonStateValidator.ValidateParty(content, egg with { Pokemon = egg.Pokemon with { Friendship = 21 } }) == "pokemon_egg_state", "cycles bounded by authenticated species");
         Assert.IsTrue(PokemonStateValidator.ValidateParty(content, egg with { Pokemon = egg.Pokemon with { Evs = new(1, 0, 0, 0, 0, 0) } }) == "pokemon_egg_state", "egg EVs forbidden");
-        Assert.IsTrue(PokemonStateValidator.ValidateParty(content, egg with { Nickname = "EGG" }) == "party_nickname" && PokemonStateValidator.ValidateParty(content, egg with { Language = 2 }) == "party_egg_metadata", "egg language and nickname exact");
+        Assert.IsTrue(PokemonStateValidator.ValidateParty(content, egg with { CustomNickname = "EGG" }) == "party_nickname" && PokemonStateValidator.ValidateParty(content, egg with { Language = 2 }) == "party_egg_metadata", "egg language and absence of custom nickname remain exact");
         Assert.IsTrue(PokemonStateValidator.ValidateParty(content, female with { Pokemon = female.Pokemon with { Stats = female.Pokemon.Stats with { Attack = 99 } } }) == "pokemon_stats", "ordinary stat validation remains strict");
         Assert.IsTrue(PokemonStateValidator.ValidateParty(content, egg with { Status = 8 }) == "party_egg_metadata" && PokemonStateValidator.ValidateParty(content, egg with { HeldItem = "ITEM_ORAN_BERRY" }) == "party_egg_metadata", "eggs reject status and held items");
         var evolved = PokemonFactory.Create(content.Catalog, new(new("pret:SPECIES_VENUSAUR"), 5, trainer.TrainerId, IvPolicy.Fixed(3), PersonalityPolicy.Fixed(123)), new(0)).Pokemon;
@@ -184,6 +184,7 @@ public sealed class EggFactoryTests
     {
         var hatch = SourceEggRules.Hatch(content, egg with { ModernFatefulEncounter = true, MetGame = 3 }, new(9001, "BLUE", 1, 3), "MAPSEC_PALLET_TOWN", received.Rng);
         Assert.IsTrue(hatch.Trace.Length == 2 && hatch.Rng.Cursor == 11 && hatch.Pokemon.InstanceId == egg.InstanceId, "hatch consumes2 discarded IV draws and keeps instance");
+        Assert.IsNull(hatch.Pokemon.CustomNickname, "hatching returns to the source species display name");
         Assert.IsTrue(!hatch.Pokemon.IsEgg && hatch.Pokemon.Pokemon.EggStatCalculationIvs is null && hatch.Pokemon.Pokemon.Ivs == egg.Pokemon.Ivs && hatch.Pokemon.Pokemon.Personality == egg.Pokemon.Personality, "hatch restores IVs PID and clears egg basis");
         Assert.IsTrue(hatch.Pokemon.Pokemon.Stats == Stats(egg.Pokemon, egg.Pokemon.Ivs) && hatch.Pokemon.Pokemon.Friendship == 120 && Moves(hatch.Pokemon) == Moves(egg), "hatch recalculates final stats friendship120 preserved moves");
         Assert.IsTrue(hatch.Pokemon.Pokemon.OriginalTrainerId == 9001 && hatch.Pokemon.OriginalTrainerName == "BLUE" && hatch.Pokemon.Language == 3 && hatch.Pokemon.OriginalTrainerGender == 1 && hatch.Pokemon.MetLocation == "MAPSEC_PALLET_TOWN", "hatch uses current player and location language");

@@ -168,7 +168,7 @@ public sealed partial class CampaignSession
                 return true;
             case var info when info == service.InfoSpecial:
                 next = state with { TextBuffers = state.TextBuffers
-                    .SetItem("STR_VAR_1", _content.PokemonContent?.SpeciesNames[SizeRecordSpeciesNumber(service)] ?? throw new InvalidDataException("size_record_species_name_missing"))
+                    .SetItem("STR_VAR_1", SpeciesName(SizeRecordSpeciesNumber(service)))
                     .SetItem("STR_VAR_3", PokemonSizeRecordRules.FormatInches(PokemonSizeRecordRules.SizeTenthsCentimeters(SizeRecordValue(state), SizeRecordHeight(service)))) };
                 return true;
             case "ChoosePartyMon":

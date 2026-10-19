@@ -88,7 +88,7 @@ public sealed partial class CampaignSession
                 next=state with{FieldEffectArguments=ImmutableSortedDictionary<int,int>.Empty.Add(0,argument)};return true;
             case "bufferpartymonnick":
                 Rock();if(a.Length!=2||a[0]!="STR_VAR_1"||Value(a[1]) is <0 or >=6||Value(a[1])>=state.Party.Length)throw new InvalidDataException("field_rock_smash_nickname");
-                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],state.Party[Value(a[1])].Nickname)};return true;
+                next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],PokemonName(state.Party[Value(a[1])]))};return true;
             case "buffermovename":
                 Rock();if(a.Length!=2||a[0]!="STR_VAR_2"||!Is(a[1],"MOVE_ROCK_SMASH"))throw new InvalidDataException("field_rock_smash_move_buffer");
                 next=state with{TextBuffers=state.TextBuffers.SetItem(a[0],_content.BattleContent!.MoveNames[FieldRockSmashSourceRules.Move])};return true;
@@ -99,7 +99,7 @@ public sealed partial class CampaignSession
                     !arguments.TryGetValue(0,out int index)||index<0||index>=state.Party.Length||!FieldRockSmashSourceRules.Knows(state.Party[index]))
                     throw new InvalidDataException("field_rock_smash_effect");
                 var mon=state.Party[index];var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty.WithComparers(StringComparer.Ordinal);
-                next=state with{RockSmashEffect=new(index,mon.InstanceId,mon.Pokemon.SourceSpeciesId,mon.Nickname,rock.LocalId,state.World.Player,FieldRockSmashSourcePresentation.ShowMon,""),
+                next=state with{RockSmashEffect=new(index,mon.InstanceId,mon.Pokemon.SourceSpeciesId,PokemonName(mon),rock.LocalId,state.World.Player,FieldRockSmashSourcePresentation.ShowMon,""),
                     GameStats=stats.SetItem(FieldRockSmashSourceRules.UsageStat,Math.Min(0xffffff,stats.GetValueOrDefault(FieldRockSmashSourceRules.UsageStat)+1)),
                     PresentationTicks=FieldRockSmashSourcePresentation.ShowMonCueFrames};return true;
             case "waitstate":

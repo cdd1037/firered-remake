@@ -54,16 +54,25 @@ def source_nature_names(text, constants):
     return {str(identities[symbol]): values[pointer] for symbol, pointer in pointers.items()}
 
 
+def source_display_label(text, symbol):
+    matches = re.findall(r'\b' + re.escape(symbol) + r'\[\] = _\("((?:[^"\\]|\\.)*)"\);', text)
+    if len(matches) != 1:
+        raise ValueError('Missing or ambiguous display label: ' + symbol)
+    value = ast.literal_eval('"' + matches[0] + '"')
+    if not value.strip():
+        raise ValueError('Empty display label: ' + symbol)
+    return value
+
+
 def display_names(raw):
     abilities = source_name_table((raw / 'src/data/text/abilities.h').read_text(), 'gAbilityNames', 'ABILITY_')
     types = source_name_table((raw / 'src/battle_main.c').read_text(), 'gTypeNames', 'TYPE_')
     natures = source_nature_names((raw / 'src/data/text/nature_names.h').read_text(),
                                  (raw / 'include/constants/pokemon.h').read_text())
-    none = re.findall(r'\bgText_PokeSum_Item_None\[\] = _\("((?:[^"\\]|\\.)*)"\);',
-                      (raw / 'src/strings.c').read_text())
-    if len(none) != 1 or not none[0].strip():
-        raise ValueError('Missing or ambiguous Summary no-item text')
-    return dict(schemaVersion=1, types=types, abilities=abilities, natures=natures, noHeldItem=ast.literal_eval('"' + none[0] + '"'))
+    strings = (raw / 'src/strings.c').read_text()
+    return dict(schemaVersion=1, types=types, abilities=abilities, natures=natures,
+                noHeldItem=source_display_label(strings, 'gText_PokeSum_Item_None'),
+                eggName=source_display_label(strings, 'gText_EggNickname'))
 
 
 def convert(raw):

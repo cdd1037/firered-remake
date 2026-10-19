@@ -44,8 +44,41 @@ public sealed class SaveRecoveryTests : ProtocolFixture
     {
         var b = Encoding.UTF8.GetString(SaveCodec.Encode(new Counter(8), 4, "r1", "c1"));
         Throws(() => SaveCodec.Decode<Counter>(Encoding.UTF8.GetBytes(b.Replace("\"Value\":8", "\"Value\":9")), "r1", "c1"));
-        Throws(() => SaveCodec.Decode<Counter>(Encoding.UTF8.GetBytes(b.Replace("\"SchemaVersion\":1", "\"SchemaVersion\":2")), "r1", "c1"));
+        Throws(() => SaveCodec.Decode<Counter>(Encoding.UTF8.GetBytes(b.Replace($"\"SchemaVersion\":{SaveCodec.CurrentSchema}", $"\"SchemaVersion\":{SaveCodec.CurrentSchema + 1}", StringComparison.Ordinal)), "r1", "c1"));
         Throws(() => SaveCodec.Decode<Counter>(Encoding.UTF8.GetBytes(b), "r1", "different"));
+    }
+
+    [TestMethod]
+    public void save_schema_one_is_rejected_before_payload_admission()
+    {
+        var payload = JsonSerializer.SerializeToElement(new Counter(8));
+        byte[] old = CanonicalJson.Encode(new SaveEnvelope(1, "r1", "c1", "firered", 4,
+            CanonicalJson.Hash(payload), payload));
+        bool validatorCalled = false;
+        var error = Assert.ThrowsExactly<InvalidDataException>(() => SaveCodec.Decode<Counter>(old, "r1", "c1",
+            validate: _ => { validatorCalled = true; return null; }));
+        Assert.AreEqual("save_schema_unsupported", error.Message);
+        Assert.IsFalse(validatorCalled, "Old nickname identity cannot be admitted by a payload validator.");
+        Assert.AreEqual(SaveOperationStatus.IncompatibleVersion,
+            SaveOperationResult.Failure(SaveOperation.Load, error).Status);
+    }
+
+    [TestMethod]
+    public void save_schema_one_primary_and_backup_are_preserved_when_loading_fails()
+    {
+        var payload = JsonSerializer.SerializeToElement(new Counter(8));
+        byte[] old = CanonicalJson.Encode(new SaveEnvelope(1, "r", "c", "firered", 4,
+            CanonicalJson.Hash(payload), payload));
+        var fs = new MemoryStorage();
+        fs.Files["s"] = old.ToArray();
+        fs.Files["s.bak"] = old.ToArray();
+        var result = PlayerSaveOperations.Load(() => new SaveService(fs).Load<Counter>("s", "r", "c"));
+        Assert.AreEqual(SaveOperationStatus.IncompatibleVersion, result.Result.Status);
+        Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
+        Assert.IsNull(result.Saved);
+        Assert.AreEqual(2, fs.Files.Count);
+        CollectionAssert.AreEqual(old, fs.Files["s"]);
+        CollectionAssert.AreEqual(old, fs.Files["s.bak"]);
     }
 
     [TestMethod]
@@ -101,7 +134,7 @@ public sealed class SaveRecoveryTests : ProtocolFixture
     {
         var fs = new MemoryStorage();
         fs.Files["s.bak"] = SaveCodec.Encode(new Counter(4), 1, "r", "c");
-        fs.Files["s"] = Encoding.UTF8.GetBytes("{\"SchemaVersion\":1,\"RulesVersion\":\"r\",\"ContentVersion\":\"c\",\"GameEdition\":\"firered\",\"Generation\":2,\"PayloadHash\":\"missing\"}");
+        fs.Files["s"] = Encoding.UTF8.GetBytes("{\"SchemaVersion\":" + SaveCodec.CurrentSchema + ",\"RulesVersion\":\"r\",\"ContentVersion\":\"c\",\"GameEdition\":\"firered\",\"Generation\":2,\"PayloadHash\":\"missing\"}");
         Assert.IsTrue(new SaveService(fs).Load<Counter>("s", "r", "c").State.Value == 4, "missing payload blocked backup");
     }
 
@@ -111,7 +144,7 @@ public sealed class SaveRecoveryTests : ProtocolFixture
         var fs = new MemoryStorage();
         fs.Files["s.bak"] = SaveCodec.Encode(new IdHolder(new("valid:map")), 1, "r", "c");
         var payload = JsonSerializer.SerializeToElement(new { Map = new { Value = "bad id" } });
-        fs.Files["s"] = CanonicalJson.Encode(new SaveEnvelope(1, "r", "c", "firered", 2, CanonicalJson.Hash(payload), payload));
+        fs.Files["s"] = CanonicalJson.Encode(new SaveEnvelope(SaveCodec.CurrentSchema, "r", "c", "firered", 2, CanonicalJson.Hash(payload), payload));
         Assert.IsTrue(new SaveService(fs).Load<IdHolder>("s", "r", "c").State.Map.Value == "valid:map", "invalid id blocked backup");
     }
 

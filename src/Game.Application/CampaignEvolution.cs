@@ -85,9 +85,9 @@ public sealed partial class CampaignSession
         var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal);
         int target = evolved.Pokemon.Pokemon.SourceSpeciesId;
         var pages = ImmutableArray.CreateBuilder<string>();
-        pages.Add($"Congratulations! Your {owned.Nickname}\nevolved into {_content.PokemonContent!.SpeciesNames[target]}!");
+        pages.Add($"Congratulations! Your {PokemonName(owned)}\nevolved into {SpeciesName(target)}!");
         foreach (var learned in evolved.LearnedMoves)
-            pages.Add($"{evolved.Pokemon.Nickname} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
+            pages.Add($"{PokemonName(evolved.Pokemon)} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
         var stats = state.GameStats ?? ImmutableSortedDictionary<string, int>.Empty.WithComparers(StringComparer.Ordinal);
         return new(CommandStatus.Accepted, state with
         {
@@ -148,9 +148,9 @@ public sealed partial class CampaignSession
             if (result.Outcome == LevelEvolutionOutcome.Evolved)
             {
                 int target = result.Pokemon.Pokemon.SourceSpeciesId;
-                pages.Add($"Congratulations! Your {owned.Nickname}\nevolved into {_content.PokemonContent!.SpeciesNames[target]}!");
+                pages.Add($"Congratulations! Your {PokemonName(owned)}\nevolved into {SpeciesName(target)}!");
                 foreach (var learned in result.LearnedMoves)
-                    pages.Add($"{result.Pokemon.Nickname} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
+                    pages.Add($"{PokemonName(result.Pokemon)} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
                 var history = new CampaignEvolutionHistory(owned.InstanceId, scene.BattleId,
                     owned.Pokemon.SourceSpeciesId, target, scene.Proposal.LevelBeforeBattle, scene.Proposal.Level) { Item = candyScene ? RareCandyItem : null,
                     NormalTrigger = NormalEvolutionTrigger(BattlePokemon.Species[owned.Pokemon.Species].Evolutions.Single(e => e.Target == result.TargetSpecies).Method, owned.Pokemon) };
@@ -163,7 +163,7 @@ public sealed partial class CampaignSession
                     GameStats = stats.SetItem(EvolutionCountStat, Math.Min(0xffffff, stats.GetValueOrDefault(EvolutionCountStat) + 1))
                 };
             }
-            else pages.Add($"Huh? {owned.Nickname}\nstopped evolving!");
+            else pages.Add($"Huh? {PokemonName(owned)}\nstopped evolving!");
             return new(CommandStatus.Accepted, next with
             {
                 Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = pages.ToImmutable(), PageIndex = 0, PendingMoves = result.PendingMoves }
@@ -185,8 +185,8 @@ public sealed partial class CampaignSession
             if (command.MoveSlot >= 0)
                 owned = ReplaceOwnedLevelMove(owned, command.MoveSlot, move.Move);
             string message = command.MoveSlot < 0
-                ? $"{owned.Nickname} did not learn\n{BattleContent.MoveNames[move.Move.Value]}."
-                : $"{owned.Nickname} learned\n{BattleContent.MoveNames[move.Move.Value]}!";
+                ? $"{PokemonName(owned)} did not learn\n{BattleContent.MoveNames[move.Move.Value]}."
+                : $"{PokemonName(owned)} learned\n{BattleContent.MoveNames[move.Move.Value]}!";
             return new(CommandStatus.Accepted, state with
             {
                 Party = state.Party.SetItem(index, owned),
@@ -212,7 +212,7 @@ public sealed partial class CampaignSession
                 return state with
                 {
                     Party = state.Party.SetItem(index, owned with { Pokemon = owned.Pokemon with { Moves = learning.Moves } }),
-                    Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = [$"{owned.Nickname} learned\n{BattleContent.MoveNames[move.Move.Value]}!"], PageIndex = 0 }
+                    Evolution = scene with { Stage = CampaignEvolutionStage.Results, Pages = [$"{PokemonName(owned)} learned\n{BattleContent.MoveNames[move.Move.Value]}!"], PageIndex = 0 }
                 };
         }
         if (scene.CandyUse is { } candyUse)

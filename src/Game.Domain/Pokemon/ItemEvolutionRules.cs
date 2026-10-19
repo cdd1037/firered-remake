@@ -13,7 +13,7 @@ public sealed record ItemEvolutionEligibility(long InstanceId, SpeciesId Previou
 public sealed record ItemEvolutionLearnedMove(int Level, MoveId Move, int Slot);
 public sealed record ItemEvolutionPendingMove(int Level, MoveId Move);
 public sealed record ItemEvolutionResult(PartyPokemon Pokemon, SpeciesId PreviousSpecies, SpeciesId TargetSpecies,
-    string Item, bool NicknameChanged, ImmutableArray<ItemEvolutionLearnedMove> LearnedMoves,
+    string Item, ImmutableArray<ItemEvolutionLearnedMove> LearnedMoves,
     ImmutableArray<ItemEvolutionPendingMove> PendingMoves);
 
 /// <summary>
@@ -65,7 +65,7 @@ public static class ItemEvolutionRules
     }
 
     /// <summary>
-    /// Applies a current actual-use proposal through the same species/stat/name/exact-level-move
+    /// Applies a current actual-use proposal through the same species/stat/exact-level-move
     /// implementation as level evolution. The source item scene cannot be cancelled. Existing
     /// held items are preserved; they are never the bag stone being consumed. Retain PendingMoves
     /// for explicit move decisions, including Body Slam/Thrash only at exactly level 22.
@@ -78,7 +78,7 @@ public static class ItemEvolutionRules
         if (expected is null || expected != eligibility)
             throw new ArgumentException("Item evolution proposal is stale, ineligible or belongs to another Pokemon.", nameof(eligibility));
         var evolved = LevelEvolutionRules.ApplySpeciesChange(content, owned, eligibility.TargetSpecies);
-        return new(evolved.Pokemon, evolved.PreviousSpecies, evolved.TargetSpecies, eligibility.Item, evolved.NicknameChanged,
+        return new(evolved.Pokemon, evolved.PreviousSpecies, evolved.TargetSpecies, eligibility.Item,
             evolved.LearnedMoves.Select(m => new ItemEvolutionLearnedMove(m.Level, m.Move, m.Slot)).ToImmutableArray(),
             evolved.PendingMoves.Select(m => new ItemEvolutionPendingMove(m.Level, m.Move)).ToImmutableArray());
     }

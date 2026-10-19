@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 namespace Game.Application;
 public enum CampaignCaptureStage { DexNotice,DexEntry,NicknameChoice,Naming,SentToPc }
 public enum CampaignReplacementStage { UseNext,Select }
-public sealed record CampaignWildOrigin(string MetLocation,int MetLevel,string DefaultName);
+public sealed record CampaignWildOrigin(string MetLocation,int MetLevel);
 public sealed record CampaignPendingCapture(PokemonInstance Pokemon,string HeldItem,uint Status,CampaignWildOrigin Origin,bool FirstCaught,CampaignCaptureStage Stage)
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? Ball{get;init;}
@@ -75,7 +75,7 @@ public sealed partial class CampaignSession
             return new(CommandStatus.Accepted,state with{WildBattle=b with{Capture=capture with{Stage=capture.Stage==CampaignCaptureStage.DexNotice?CampaignCaptureStage.DexEntry:CampaignCaptureStage.NicknameChoice}}});
         if(command.Kind=="capture_choice"&&capture.Stage==CampaignCaptureStage.NicknameChoice)
         {
-            if(command.Choice==0)return new(CommandStatus.Accepted,DeliverCapturedPokemon(state,capture.Origin.DefaultName));
+            if(command.Choice==0)return new(CommandStatus.Accepted,DeliverCapturedPokemon(state,null));
             if(command.Choice==1)return new(CommandStatus.Accepted,state with{WildBattle=b with{Capture=capture with{Stage=CampaignCaptureStage.Naming}}});
             return new(CommandStatus.Rejected,state,"capture_choice_required");
         }
@@ -84,11 +84,11 @@ public sealed partial class CampaignSession
             if(command.Text is null)return new(CommandStatus.Rejected,state,"nickname_text_required");
             var alphabet=_content.PokemonContent!.NicknameCharacters;var error=PokemonNicknameRules.Validate(command.Text,alphabet);
             if(error is not null)return new(CommandStatus.Rejected,state,error);
-            return new(CommandStatus.Accepted,DeliverCapturedPokemon(state,PokemonNicknameRules.Apply(capture.Origin.DefaultName,command.Text,alphabet)));
+            return new(CommandStatus.Accepted,DeliverCapturedPokemon(state,PokemonNicknameRules.Apply(null,command.Text,alphabet)));
         }
         return new(CommandStatus.Rejected,state,"capture_presentation_pending");
     }
-    private CampaignState DeliverCapturedPokemon(CampaignState state,string nickname)
+    private CampaignState DeliverCapturedPokemon(CampaignState state,string? nickname)
     {
         var b=state.WildBattle!;var c=b.Capture!;var captures=state.Exploration!.Captured!.Value;
         if(CaptureCapacityError(state) is not null||state.NextPokemonId is <2 or long.MaxValue||captures.Any(x=>x.BattleId==b.Id)||state.Exploration.Battles.Any(x=>x.Id==b.Id))throw new InvalidDataException("capture_delivery_already_committed_or_full");
@@ -116,7 +116,7 @@ public sealed partial class CampaignSession
             return next with
             {
                 Script=next.Script with{Flags=flags,Variables=next.Script.Variables.SetItem("VAR_PC_BOX_TO_SEND_MON",box)},
-                TextBuffers=next.TextBuffers.SetItem("STR_VAR_1",PokemonStorageCustomizationRules.BoxName(next.Storage!,box)).SetItem("STR_VAR_2",nickname).SetItem("STR_VAR_3",PokemonStorageCustomizationRules.BoxName(next.Storage!,oldBox)),
+                TextBuffers=next.TextBuffers.SetItem("STR_VAR_1",PokemonStorageCustomizationRules.BoxName(next.Storage!,box)).SetItem("STR_VAR_2",PokemonName(owned)).SetItem("STR_VAR_3",PokemonStorageCustomizationRules.BoxName(next.Storage!,oldBox)),
                 WildBattle=b with{Capture=c with{Stage=CampaignCaptureStage.SentToPc,Address=received.Address,MessageSymbol=symbol}}
             };
         }

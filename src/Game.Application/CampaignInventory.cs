@@ -84,7 +84,7 @@ public sealed partial class CampaignSession
         }
         // Status cure returns directly to the Bag. HP restoration retains the existing source text.
         return new(CommandStatus.Accepted, state with { Inventory = result.Inventory, Party = state.Party.SetItem(command.PartyIndex, result.Pokemon),
-            TextBuffers = result.HpRestored > 0 ? state.TextBuffers.SetItem("STR_VAR_1", result.Pokemon.Nickname).SetItem("STR_VAR_2", result.HpRestored.ToString(System.Globalization.CultureInfo.InvariantCulture)) : state.TextBuffers,
+            TextBuffers = result.HpRestored > 0 ? state.TextBuffers.SetItem("STR_VAR_1", PokemonName(result.Pokemon)).SetItem("STR_VAR_2", result.HpRestored.ToString(System.Globalization.CultureInfo.InvariantCulture)) : state.TextBuffers,
             ItemMenu = result.HpRestored > 0 ? menu with { View = "message", MessageSymbol = "gText_PkmnHPRestoredByVar2", ReturnView = menu.View } : menu });
     }
 }

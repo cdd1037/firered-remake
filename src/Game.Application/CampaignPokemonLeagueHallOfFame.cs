@@ -16,7 +16,7 @@ public enum CampaignPokemonLeagueCompletionStage
 public sealed record CampaignPokemonLeagueCompletion(CampaignPokemonLeagueCompletionStage Stage,string RequestId,
     int ChallengeNumber,int PartyCount,bool FieldEffectCompleted,bool SaveSucceeded);
 public sealed record CampaignHallOfFamePokemon(int PartySlot,long InstanceId,int SpeciesOrEgg,uint OriginalTrainerId,
-    uint Personality,int Level,string Nickname,ImmutableArray<byte> NicknameBytes);
+    uint Personality,int Level,[property: JsonRequired] string? CustomNickname);
 public sealed record CampaignHallOfFameTeam(int ChallengeNumber,string TrainerBattleId,ImmutableArray<CampaignHallOfFamePokemon> Members);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record CampaignHallOfFameArchive(
@@ -38,23 +38,6 @@ public sealed partial class CampaignSession
             return new(pending.RequestId,snapshot,Revision,CanonicalJson.Hash(snapshot));
         }
     }
-    private static ImmutableArray<byte> PokemonLeagueNicknameBytes(string nickname)
-    {
-        // English revision-0 charmap, the existing ten-character naming alphabet.
-        // Owned strings do not retain unused raw storage bytes; normalize that tail
-        // to EOS while preserving all ten visible character bytes exactly.
-        if(nickname.Length is <1 or >10)throw new InvalidDataException("pokemon_league_nickname_length");
-        var bytes=Enumerable.Repeat((byte)255,10).ToArray();
-        for(int i=0;i<nickname.Length;i++)bytes[i]=nickname[i] switch
-        {
-            >= 'A' and <= 'Z'=>(byte)(0xbb+nickname[i]-'A'),>= 'a' and <= 'z'=>(byte)(0xd5+nickname[i]-'a'),
-            >= '0' and <= '9'=>(byte)(0xa1+nickname[i]-'0'),' '=>(byte)0,'.'=>(byte)0xad,','=>(byte)0xb8,
-            '!'=>(byte)0xab,'?'=>(byte)0xac,'/'=>(byte)0xba,'-'=>(byte)0xae,'♂'=>(byte)0xb5,'♀'=>(byte)0xb6,
-            '…'=>(byte)0xb0,'“'=>(byte)0xb1,'”'=>(byte)0xb2,'‘'=>(byte)0xb3,'\''=>(byte)0xb4,
-            _=>throw new InvalidDataException("pokemon_league_nickname_encoding")
-        };
-        return bytes.ToImmutableArray();
-    }
     private CampaignState EnterPokemonLeagueHallOfFame(CampaignState state)
     {
         if(state.PokemonLeagueCompletion is not{Stage:CampaignPokemonLeagueCompletionStage.RecordingFieldEffect,FieldEffectCompleted:true} pending||
@@ -68,7 +51,7 @@ public sealed partial class CampaignSession
         bool ribbon=state.Party.Any(p=>!p.IsEgg&&!p.ChampionRibbon);
         var party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p) with{ChampionRibbon=p.ChampionRibbon||!p.IsEgg}).ToImmutableArray();
         var members=party.Select((p,i)=>new CampaignHallOfFamePokemon(i,p.InstanceId,NameRaterRules.SpeciesOrEgg(p),p.Pokemon.OriginalTrainerId,
-            p.Pokemon.Personality,p.Pokemon.Level,p.IsEgg?"EGG":p.Nickname,PokemonLeagueNicknameBytes(p.IsEgg?"EGG":p.Nickname))).ToImmutableArray();
+            p.Pokemon.Personality,p.Pokemon.Level,p.CustomNickname)).ToImmutableArray();
         var flags=state.Script.Flags.SetItem("FLAG_SYS_GAME_CLEAR",true);
         var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty;
         // SAVE_HALL_OF_FAME's statistic, team and ribbon awards are prepared once.
@@ -173,9 +156,8 @@ public sealed partial class CampaignSession
                 // Renaming, evolution, hatching, trading and release cannot rewrite them.
                 if(m.PartySlot!=i||m.InstanceId<=0||m.InstanceId>=state.NextPokemonId||
                     m.SpeciesOrEgg!=412&&!BattlePokemon.Species.Values.Any(s=>s.SourceSpeciesId==m.SpeciesOrEgg)||
-                    m.Level is <1 or >100||m.Nickname is null||m.Nickname.Length is <1 or >10||
-                    (m.SpeciesOrEgg==412?m.Nickname!="EGG":m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))||
-                    m.NicknameBytes.IsDefault||!m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname)))
+                    m.Level is <1 or >100||
+                    (m.SpeciesOrEgg==412 ? m.CustomNickname is not null : !PokemonNicknameRules.IsValidCustomNickname(m.CustomNickname)))
                     return "save_pokemon_league_hof_member";
             }
         }
