@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
 public sealed record SourceBattlerAffine(bool DoubleSize,int XScale,int YScale)
@@ -19,18 +18,7 @@ public sealed class SourceMetallicMaterial
 }
 public static class SourceStatMoveCatalog
 {
-
     public static bool Supports(int move)=>move is 74 or 106 or 334 or 110 or 107;
-    public static (IReadOnlyDictionary<int,SourceAnimationScript> Scripts,SourceMetallicMaterial Material) Read(string folder)
-    {
-        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
-        using var doc=JsonDocument.Parse(bytes);
-        SourceAnimationCommand[] Commands(JsonElement row)=>row.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray();
-        var subs=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value));
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,Commands(r.GetProperty("commands"))){Subroutines=subs}).ToDictionary(s=>s.MoveId);
-        var data=System.IO.File.ReadAllBytes(Path.Combine(folder,"metal-shine.bin"));
-        return (scripts,new(data));
-    }
 }
 public sealed partial class SourceBattleAnimation
 {

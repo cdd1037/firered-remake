@@ -7,9 +7,10 @@ HERE=Path(__file__).resolve().parent
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('--build-dir',type=Path);p.add_argument('--reference-helper',type=Path,default=HERE.parent/'reference_c.py');p.add_argument('--output',type=Path,default=HERE.parent.parent/'Game.Presentation.Tests/Fixtures/caller-prelude-schedule-source-vectors.json');a=p.parse_args()
 if a.output.exists():raise FileExistsError('Refusing to overwrite reviewed fixture: '+str(a.output))
 sys.path.insert(0,str(a.reference_helper.resolve().parent));from reference_c import compile_c
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,identity,verify,COMMIT
 r=a.reference;out=(a.build_dir or Path(tempfile.mkdtemp(prefix='caller-prelude-schedule-'))).resolve();out.mkdir(parents=True,exist_ok=True)
-paths=['src/battle_anim.c','data/battle_anim_scripts.s'];verify(r,paths);source=(r/paths[0]).read_text();script=(r/paths[1]).read_text();names=['WaitAnimFrameCount','RunAnimScriptCommand','Cmd_loadspritegfx','Cmd_delay'];funcs=[function(source,n) for n in names]
+paths=['src/battle_anim.c','data/battle_anim_scripts.s'];verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json');source=(r/paths[0]).read_text();script=(r/paths[1]).read_text();names=['WaitAnimFrameCount','RunAnimScriptCommand','Cmd_loadspritegfx','Cmd_delay'];funcs=[function(source,n) for n in names]
 cases=[]
 for move,name in [(118,'Move_METRONOME'),(214,'Move_SLEEP_TALK')]:
  lines=[]

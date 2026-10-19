@@ -4,6 +4,7 @@ import argparse,hashlib,json,struct,sys
 from pathlib import Path
 from PIL import Image
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import COMMIT
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('supplement',type=Path);a=p.parse_args();out=Path(__file__).resolve().parent;sources={};pins=json.loads((out/'pinned-inputs.json').read_text())
 def sha(b):return hashlib.sha256(b).hexdigest()

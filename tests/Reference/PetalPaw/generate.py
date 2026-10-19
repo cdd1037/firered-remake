@@ -12,7 +12,7 @@ def module(name,path):
 
 def build(root,reference,out):
  helper=module('reference_c',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
- extract=module('source_extract',root/'tests/Reference/CallerPrelude/source_extract.py')
+ extract=module('source_extract',root/'tests/Reference/source_extract.py')
  engine=module('sprite_harness',root/'tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py')
  pins=json.loads((Path(__file__).parent/'pinned-inputs.json').read_text());s={p:(reference/p).read_text() for p in pins}
  for path,digest in pins.items():

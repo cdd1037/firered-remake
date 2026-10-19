@@ -3,6 +3,7 @@ import tempfile
 import argparse,json,subprocess,sys,re
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from source_extract import *
 from validate_common import verify,compile_pair,observe
 HERE=Path(__file__).resolve().parent
@@ -11,8 +12,8 @@ paths=['src/battle_anim_ice.c','src/battle_anim_mons.c','src/battle_anim.c','inc
 verify(root,paths)
 sources={p:(root/p).read_text() for p in paths}
 names={paths[0]:['AnimThrowMistBall'],paths[1]:['SetAnimSpriteInitialXOffset','InitSpritePosToAnimAttacker','InitAnimLinearTranslation','StartAnimLinearTranslation','AnimTranslateLinear','AnimTranslateLinear_WithFollowup','TranslateAnimSpriteToTargetMonLocation'],paths[2]:['DestroyAnimSprite']}
-functions='\n'.join(function(sources[path],name) for path,ns in names.items() for name in ns)
-generated=(HERE/'harness.c.in').read_text().replace('@FUNCTIONS@',functions).replace('@ARRAY@',array(sources[paths[1]],'sBattlerCoords')).replace('@ENUM@',enum_containing(sources[paths[3]],'BATTLER_COORD_X_2')).replace('@DEFINES@',macros([sources[paths[3]],sources[paths[4]]],['MAX_BATTLERS_COUNT','B_SIDE_PLAYER','sTransl_Speed','sTransl_InitX','sTransl_InitY','sTransl_DestX','sTransl_DestY']))
+functions='\n'.join(function(sources[path],name, signed_byte=False) for path,ns in names.items() for name in ns)
+generated=(HERE/'harness.c.in').read_text().replace('@FUNCTIONS@',functions).replace('@ARRAY@',array(sources[paths[1]],'sBattlerCoords')).replace('@ENUM@',enum_containing(sources[paths[3]],'BATTLER_COORD_X_2')).replace('@DEFINES@',macros([sources[paths[3]],sources[paths[4]]],['MAX_BATTLERS_COUNT','B_SIDE_PLAYER','sTransl_Speed','sTransl_InitX','sTransl_InitY','sTransl_DestX','sTransl_DestY'], require_separator=True))
 (out/'generated.c').write_text(generated);compile_pair(out/'generated.c',out/'oracle')
 script=sources['data/battle_anim_scripts.s'];m=re.search(r'^\s*createsprite gMistBallSpriteTemplate, ANIM_TARGET, 0, ([^\n]+)',script,re.M);recipe=[int(x.strip(),0) for x in m[1].split(',')];assert recipe==[0,0,0,0,30,0]
 cases=[]

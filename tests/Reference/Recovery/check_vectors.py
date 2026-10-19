@@ -27,6 +27,7 @@ if a.full and a.prepare and a.prepare.resolve().is_relative_to(root):
     raise SystemExit('Prepare the full corpus in an external temporary directory.')
 shutil.copytree(here, out, dirs_exist_ok=not a.output,
                 ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*vectors.json', 'verification.json'))
+shutil.copy2(here.parent / 'source_extract.py', out / 'source_extract.py')
 
 def run(script, *arguments):
     subprocess.run([sys.executable, '-B', str(script), *map(str, arguments)], check=True)

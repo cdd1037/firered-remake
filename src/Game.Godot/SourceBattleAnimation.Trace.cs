@@ -1,17 +1,5 @@
-using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
-public static class SourceTraceAnimationCatalog
-{
-
-    public static IReadOnlyDictionary<int,SourceAnimationScript> Read(string folder,JsonDocument hitManifest)
-    {
-        var bytes=System.IO.File.ReadAllBytes(folder);
-        using var doc=JsonDocument.Parse(bytes);
-        var shared=SourceHitAnimationCatalog.Script(hitManifest,1);
-        return doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,r.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray()){SineTable=shared.SineTable,SpriteRecipes=shared.SpriteRecipes}).ToDictionary(s=>s.MoveId);
-    }
-}
 public sealed partial class SourceBattleAnimation
 {
     private bool ValidateTraceOperand(SourceAnimationCommand c)

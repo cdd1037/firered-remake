@@ -3,12 +3,13 @@
 import argparse,json,re,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array,macros,identity,COMMIT,verify
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent
-paths=['src/battle_anim.c','src/battle_anim_rock.c','src/sprite.c','include/sprite.h','include/gba/types.h','include/constants/battle.h','include/constants/battle_anim.h','data/battle_anim_scripts.s'];verify(r,paths);s={p:(r/p).read_text() for p in paths}
+paths=['src/battle_anim.c','src/battle_anim_rock.c','src/sprite.c','include/sprite.h','include/gba/types.h','include/constants/battle.h','include/constants/battle_anim.h','data/battle_anim_scripts.s'];verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json');s={p:(r/p).read_text() for p in paths}
 h=s['include/sprite.h'];types=h[h.index('enum\n{\n    SUBSPRITES_OFF'):h.index('struct Sprite;')];h=s['include/gba/types.h'];types+='\n'+h[h.index('struct PlttData'):h.index('struct BgAffineSrcData')]
 funcs={'src/battle_anim.c':['WaitAnimFrameCount','RunAnimScriptCommand','Cmd_loadspritegfx','Cmd_createsprite','Cmd_delay','Cmd_waitforvisualfinish'],'src/sprite.c':['CreateSpriteAndAnimate','AnimateSprites','SetSubspriteTables'],'src/battle_anim_rock.c':['AnimFlyingSandCrescent']}
-bodies=[function(s[p],n) for p,ns in funcs.items() for n in ns];protos='\n'.join(f[:f.index('{')].strip()+';' for f in bodies)
+bodies=[function(s[p],n, signed_byte=False) for p,ns in funcs.items() for n in ns];protos='\n'.join(f[:f.index('{')].strip()+';' for f in bodies)
 def root(name):
  text=s['data/battle_anim_scripts.s'].split(name+':\n',1)[1];lines=[]
  for line in text.splitlines():

@@ -3,17 +3,18 @@ import tempfile
 import argparse,json,re,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array,macros,identity,COMMIT,verify
 HERE=Path(__file__).resolve().parent
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('--build-dir',type=Path);p.add_argument('--output',type=Path,default=(HERE.parents[1]/ 'Game.Presentation.Tests/Fixtures')/'weather-motion-source-vectors.json');p.add_argument('--full', action='store_true', help='Emit the complete original-C corpus instead of semantic representatives');a=p.parse_args();r=a.reference;out=(a.build_dir or Path(tempfile.mkdtemp(prefix='weather-motion-reference-'))).resolve();out.mkdir(parents=True,exist_ok=True)
 paths=['src/battle_anim_rock.c','src/battle_anim_fire.c','src/battle_anim_utility_funcs.c','src/battle_anim_mons.c','src/battle_anim_normal.c','src/blend_palette.c','src/sprite.c','include/sprite.h','include/gba/types.h','include/constants/battle.h','include/constants/battle_anim.h','include/palette.h','data/battle_anim_scripts.s']
-verify(r,paths)
+verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json')
 s={p:(r/p).read_text() for p in paths};header=s['include/sprite.h'];types=header[header.index('enum\n{\n    SUBSPRITES_OFF'):header.index('struct Sprite;')];oam=s['include/gba/types.h'];types+='\n'+oam[oam.index('struct PlttData'):oam.index('struct BgAffineSrcData')]
 funcs={'src/battle_anim_rock.c':['AnimFlyingSandCrescent'],'src/battle_anim_fire.c':['AnimTask_MoveHeatWaveTargets','AnimTask_MoveHeatWaveTargets_Step','AnimTask_BlendBackground'],'src/battle_anim_utility_funcs.c':['AnimTask_BlendBattleAnimPal','AnimTask_BlendParticle','StartBlendAnimSpriteColor','AnimTask_BlendSpriteColor_Step2'],'src/battle_anim_mons.c':['GetAnimBattlerSpriteId','GetBattleAnimBg1Data','GetBattlePalettesMask','GetBattleMonSpritePalettesMask'],'src/battle_anim_normal.c':['UnpackSelectedBattlePalettes'],'src/blend_palette.c':['BlendPalette'],'src/sprite.c':['SetSubspriteTables','AddSubspritesToOamBuffer']}
 bodies=[]
 for path,ns in funcs.items():
  for n in ns:
-  f=function(s[path],n)
+  f=function(s[path],n, signed_byte=False)
   if n=='BlendPalette':f=f.replace('void BlendPalette(','void SourceBlendPalette(')
   bodies.append(f)
 protos='\n'.join(f[:f.index('{')].strip()+';' for f in bodies)

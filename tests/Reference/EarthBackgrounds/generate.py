@@ -8,7 +8,7 @@ def module(name,path):
 
 def build(root,reference,out,full=False):
  helper=module('reference_c',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
- f=module('native_sprite',root/'tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py');x=module('extract',root/'tests/Reference/ConfusionKiss/source_extract.py');here=Path(__file__).parent;pins=json.loads((here/'pinned-inputs.json').read_text());s={p:(reference/p).read_text() for p in pins}
+ f=module('native_sprite',root/'tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py');x=module('extract',root/'tests/Reference/source_extract.py');here=Path(__file__).parent;pins=json.loads((here/'pinned-inputs.json').read_text());s={p:(reference/p).read_text() for p in pins}
  for p,h in pins.items():
   if hashlib.sha256((reference/p).read_bytes()).hexdigest()!=h:raise ValueError('Pinned source changed: '+p)
  if not re.search(r'^#define ARG_RET_ID 7$',s['include/constants/battle_anim.h'],re.M):raise ValueError('Source retained predicate register differs')

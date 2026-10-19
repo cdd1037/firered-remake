@@ -22,7 +22,7 @@ def run_c(code,name,build,helper,args):
 
 def build(root,reference,build_dir,full=False):
  helper=module('reference_c',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
- x=module('source_extract',root/'tests/Reference/Recovery/source_extract.py')
+ x=module('source_extract',root/'tests/Reference/source_extract.py')
  f=module('fang_harness',root/'tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py')
  paths=['src/sprite.c','include/sprite.h','src/battle_anim_psychic.c','src/battle_anim_effects_2.c','src/battle_anim_mons.c','src/battle_anim_normal.c','src/palette.c','src/blend_palette.c','include/palette.h','include/gba/types.h','include/gba/defines.h','include/constants/rgb.h','data/battle_anim_scripts.s','src/battle_script_commands.c']
  pins=json.loads((Path(__file__).parent/'pinned-inputs.json').read_text())

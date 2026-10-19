@@ -686,17 +686,14 @@ public static class SourceHitAnimationCatalog
         var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
         return JsonDocument.Parse(bytes);
     }
-    public static SourceAnimationScript Script(JsonDocument manifest,int move)
-    {
-        var row=manifest.RootElement.GetProperty("scripts").EnumerateArray().Single(x=>x.GetProperty("moveId").GetInt32()==move);
-        var recipes=Recipes(manifest.RootElement.GetProperty("spriteRecipes"));
-        return new(move,row.GetProperty("label").GetString()!,row.GetProperty("commands").EnumerateArray().Select(x=>new SourceAnimationCommand(x.GetProperty("op").GetString()!,x.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),x.GetProperty("line").GetInt32())).ToArray()){SpriteRecipes=recipes,SineTable=manifest.RootElement.GetProperty("sineTable").EnumerateArray().Select(x=>x.GetInt32()).ToArray()};
-    }
     public static IReadOnlyDictionary<string,SourceSpriteRecipe> Recipes(JsonElement rows)=>rows.EnumerateArray().Select(x=>new SourceSpriteRecipe(x.GetProperty("template").GetString()!,x.GetProperty("asset").GetString()!,x.GetProperty("callback").GetString()!,x.GetProperty("blend").GetBoolean(),x.GetProperty("animations").EnumerateArray().Select(a=>a.EnumerateArray().Select(f=>new SourceSpriteAnimFrame(f.GetProperty("tile").GetInt32(),f.GetProperty("duration").GetInt32(),f.GetProperty("hFlip").GetBoolean(),f.GetProperty("vFlip").GetBoolean())).ToArray()).ToArray()){Width=x.TryGetProperty("width",out var w)?w.GetInt32():32,Height=x.TryGetProperty("height",out var h)?h.GetInt32():32,LoopStarts=x.TryGetProperty("loopStarts",out var loops)?loops.EnumerateArray().Select(v=>v.GetInt32()).ToArray():[],FrameLoops=x.TryGetProperty("frameLoops",out var frameLoops)?frameLoops.EnumerateArray().Select(a=>a.EnumerateArray().Select(c=>new SourceSpriteFrameLoop(c.GetProperty("at").GetInt32(),c.GetProperty("start").GetInt32(),c.GetProperty("count").GetInt32())).ToArray()).ToArray():[],AffineAnimations=x.TryGetProperty("affineAnimations",out var affine)?SourceSpriteAffineProgram.Read(affine):[],AffineDoubleSize=x.TryGetProperty("affineDoubleSize",out var doubleSize)&&doubleSize.GetBoolean(),Subsprites=x.TryGetProperty("subsprites",out var subsprites)?subsprites.EnumerateArray().Select(p=>new SourceSpriteSubsprite(p.GetProperty("x").GetInt32(),p.GetProperty("y").GetInt32(),p.GetProperty("width").GetInt32(),p.GetProperty("height").GetInt32(),p.GetProperty("tileOffset").GetInt32(),p.GetProperty("priority").GetInt32())).ToArray():[]}).ToDictionary(x=>x.Template);
     public static SourcePixelAsset Asset(JsonDocument manifest,string folder,string id)
     {
         var row=manifest.RootElement.GetProperty("assets").EnumerateArray().Single(x=>x.GetProperty("id").GetString()==id);
-        string path=row.GetProperty("path").GetString()!;
+        return Asset(folder,row.GetProperty("path").GetString()!);
+    }
+    internal static SourcePixelAsset Asset(string folder,string path)
+    {
         if(Path.GetFileName(path)!=path)throw new InvalidDataException("Asset path differs.");
         var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,path));
         int width=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes),height=System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(2));

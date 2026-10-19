@@ -37,7 +37,7 @@ def native_source(root, gpu_source):
         if digest != expected:
             raise ValueError('Pinned git blob differs: ' + name)
         source[name] = data.decode()
-    x = module('scanline_extract', root / 'tests/Reference/Recovery/source_extract.py')
+    x = module('scanline_extract', root / 'tests/Reference/source_extract.py')
     macros = x.macros([source['include/gba/io_reg.h']], [
         'DMA_ENABLE', 'DMA_START_HBLANK', 'DMA_REPEAT', 'DMA_SRC_INC',
         'DMA_DEST_INC', 'DMA_16BIT', 'DMA_32BIT', 'DMA_DEST_RELOAD',

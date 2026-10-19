@@ -1,20 +1,8 @@
-using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
 public static class SourceExplosionAnimationCatalog
 {
-
     public static bool Supports(int move)=>move is 120 or 153;
-    public static (IReadOnlyDictionary<int,SourceAnimationScript> Scripts,SourcePixelAsset Explosion) Read(string folder)
-    {
-        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
-        using var doc=JsonDocument.Parse(bytes);
-        SourceAnimationCommand[] Commands(JsonElement row)=>row.EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray();
-        var subs=doc.RootElement.GetProperty("subroutines").EnumerateObject().ToDictionary(p=>p.Name,p=>Commands(p.Value));
-        var recipes=doc.RootElement.GetProperty("spriteRecipes").EnumerateArray().Select(x=>new SourceSpriteRecipe(x.GetProperty("template").GetString()!,x.GetProperty("asset").GetString()!,x.GetProperty("callback").GetString()!,x.GetProperty("blend").GetBoolean(),x.GetProperty("animations").EnumerateArray().Select(a=>a.EnumerateArray().Select(f=>new SourceSpriteAnimFrame(f.GetProperty("tile").GetInt32(),f.GetProperty("duration").GetInt32(),f.GetProperty("hFlip").GetBoolean(),f.GetProperty("vFlip").GetBoolean())).ToArray()).ToArray())).ToDictionary(x=>x.Template);
-        var scripts=doc.RootElement.GetProperty("scripts").EnumerateArray().Select(r=>new SourceAnimationScript(r.GetProperty("moveId").GetInt32(),r.GetProperty("label").GetString()!,Commands(r.GetProperty("commands"))){Subroutines=subs,SpriteRecipes=recipes}).ToDictionary(s=>s.MoveId);
-        return (scripts,SourceHitAnimationCatalog.Asset(doc,folder,"explosion"));
-    }
 }
 public sealed partial class SourceBattleAnimation
 {

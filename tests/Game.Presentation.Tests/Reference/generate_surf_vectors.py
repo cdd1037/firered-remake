@@ -16,7 +16,7 @@ def source(root):
  for p,sha in PINS.items():
   data=(raw/p).read_bytes();assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha,p
   if p.endswith(('.c','.h')):src[p]=data.decode()
- x=module('surf_extract',root/'tests/Reference/Recovery/source_extract.py');bg=module('surf_bg',root/'scripts/imports/battle/import-source-animation-backgrounds.py')
+ x=module('surf_extract',root/'tests/Reference/source_extract.py');bg=module('surf_bg',root/'scripts/imports/battle/import-source-animation-backgrounds.py')
  pals=[struct.unpack('<16H',bg.indexed_tiles((raw/'graphics/battle_anims/backgrounds/water.png').read_bytes())[1]),struct.unpack('<16H',bg.palette((raw/'graphics/battle_anims/backgrounds/water_muddy.pal').read_bytes()))]
  h=r'''
 #include <assert.h>

@@ -9,7 +9,7 @@ def module(name,path):
 
 def build(root,reference,out):
  helper=module('baton_reference',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
- extract=module('baton_extract',root/'tests/Reference/CallerPrelude/source_extract.py')
+ extract=module('baton_extract',root/'tests/Reference/source_extract.py')
  pins=json.loads((HERE/'pinned-inputs.json').read_text());sources={}
  for path,digest in pins.items():
   data=(reference/path).read_bytes()

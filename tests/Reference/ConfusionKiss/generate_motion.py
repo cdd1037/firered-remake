@@ -8,10 +8,11 @@ p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument
 # External staging may point at the canonical authored portable compiler helper.
 sys.path.insert(0,str(a.reference_helper.resolve().parent))
 from reference_c import compile_c,verify_reference
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array,macros,enum_containing,identity,COMMIT,verify
 r=a.reference.resolve();out=(a.build_dir or Path(tempfile.mkdtemp(prefix='confusion-kiss-reference-'))).resolve();out.mkdir(parents=True,exist_ok=True)
 paths=['src/battle_main.c','src/battle_anim_ghost.c','src/battle_anim_effects_2.c','src/battle_anim_effects_3.c','src/battle_anim_sound_tasks.c','src/battle_anim_normal.c','src/battle_anim_mons.c','src/battle_anim.c','src/sprite.c','src/trig.c','src/random.c','src/palette.c','src/blend_palette.c','include/sprite.h','src/data/battle_anim.h','include/gba/types.h','include/gba/io_reg.h','include/gba/defines.h','include/global.h','include/battle.h','include/battle_anim.h','include/palette.h','include/random.h','include/constants/songs.h','include/constants/battle_anim.h','include/constants/battle.h','data/battle_anim_scripts.s']
-verify_reference(r);verify(r,paths);s={p:(r/p).read_text() for p in paths}
+verify_reference(r);verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json');s={p:(r/p).read_text() for p in paths}
 header=s['include/sprite.h'];types=header[header.index('struct AnimFrameCmd'):header.index('\nenum\n{\n    SUBSPRITES_OFF')]
 oam=s['include/gba/types.h'];types+='\n'+oam[oam.index('struct OamData'):oam.index('#define ST_OAM_HFLIP')]
 types+='\n'+enum_containing(s['src/palette.c'],'NORMAL_FADE')+re.search(r'struct PaletteFadeControl\s*\{[\s\S]*?\n\};',s['include/palette.h'])[0]+'\n'+oam[oam.index('struct PlttData'):oam.index('struct OamData')]

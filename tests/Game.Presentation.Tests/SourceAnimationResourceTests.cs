@@ -126,6 +126,54 @@ public sealed class SourceAnimationResourceTests
         finally{if(Directory.Exists(folder))Directory.Delete(folder,true);}
     }
     [TestMethod]
+    public void IndexedMaterialTakesPrecedenceOverSamePackRgbFallback()
+    {
+        string folder=Path.Combine(Path.GetTempPath(),"animation-indexed-"+Guid.NewGuid().ToString("N"));
+        try
+        {
+            CopyManifestMetadata(folder);
+            string path=Path.Combine(folder,"hit/manifest.json");var json=JsonNode.Parse(File.ReadAllText(path))!;
+            json["assets"]!.AsArray().Single(row=>row!["id"]!.GetValue<string>()=="impact")!["path"]="absent-fallback.rgb555";
+            var indexed=json["indexedAssets"]!.AsArray().Single(row=>row!["id"]!.GetValue<string>()=="impact")!;
+            File.WriteAllText(path,json.ToJsonString());
+            using var resources=new SourceAnimationResources(folder);Assert.AreEqual(0,resources.CachedAssetCount);
+            // Lazy reads must need only detached metadata and subsequently available pixels.
+            foreach(string file in Directory.EnumerateFiles(folder,"*.json",SearchOption.AllDirectories))File.Delete(file);
+            foreach(string key in new[]{"indicesPath","palettePath"})
+            {string file=indexed[key]!.GetValue<string>();File.Copy(Path.Combine(Folder,"hit",file),Path.Combine(folder,"hit",file));}
+            using var original=new SourceAnimationResources(Folder);
+            var expected=original.Asset("impact");var loaded=resources.Asset("impact");
+            Assert.AreEqual(expected.Width,loaded.Width);Assert.AreEqual(expected.Height,loaded.Height);Assert.AreEqual(expected.PaletteTag,loaded.PaletteTag);
+            CollectionAssert.AreEqual(expected.Pixels,loaded.Pixels);CollectionAssert.AreEqual(expected.PaletteIndices,loaded.PaletteIndices);CollectionAssert.AreEqual(expected.Palette,loaded.Palette);
+            Assert.AreSame(expected:loaded,actual:resources.Asset("impact"));Assert.AreEqual(1,resources.CachedAssetCount);
+        }
+        finally{if(Directory.Exists(folder))Directory.Delete(folder,true);}
+    }
+    [TestMethod]
+    public void ConflictingMaterialFromDistinctPacksIsStillRejected()
+    {
+        string folder=Path.Combine(Path.GetTempPath(),"animation-conflict-"+Guid.NewGuid().ToString("N"));
+        try
+        {
+            CopyManifestMetadata(folder);
+            var bytes=File.ReadAllBytes(Path.Combine(Folder,"explosion/explosion.rgb555"));
+            File.WriteAllBytes(Path.Combine(folder,"explosion/explosion.rgb555"),bytes);
+            File.Copy(Path.Combine(Folder,"elemental-explosion.rgb555"),Path.Combine(folder,"elemental-explosion.rgb555"));
+            bytes[4]^=1;File.WriteAllBytes(Path.Combine(folder,"conflicting-explosion.rgb555"),bytes);
+            string path=Path.Combine(folder,"general.json");var json=JsonNode.Parse(File.ReadAllText(path))!;
+            json["assets"]!.AsArray().Add(new JsonObject{["id"]="explosion",["path"]="conflicting-explosion.rgb555"});File.WriteAllText(path,json.ToJsonString());
+            using var resources=new SourceAnimationResources(folder);
+            var failure=Assert.ThrowsExactly<InvalidDataException>(()=>resources.Asset("explosion"));
+            StringAssert.Contains(failure.Message,"Conflicting source sprite pixels explosion");Assert.AreEqual(0,resources.CachedAssetCount);
+        }
+        finally{if(Directory.Exists(folder))Directory.Delete(folder,true);}
+    }
+    private static void CopyManifestMetadata(string folder)
+    {
+        foreach(string file in Directory.EnumerateFiles(Folder,"*.json",SearchOption.AllDirectories))
+        {string target=Path.Combine(folder,Path.GetRelativePath(Folder,file));Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(file,target);}
+    }
+    [TestMethod]
     public void ConflictingDuplicateTemplateFailsWithoutReadingPixels()
     {
         string folder=Path.Combine(Path.GetTempPath(),"animation-recipes-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);

@@ -56,19 +56,15 @@ public sealed class PhysicalMoveAnimationTests
         }
     }
     [TestMethod]
-    public void ExistingDedicatedCatalogsStillTerminateWithSharedRuntime()
+    public void PreviouslyDedicatedRootsTerminateThroughCanonicalResources()
     {
-        string folder=Path.Combine(TestAssets.Root,"content/generated/battle/animations");
-        using var hit=SourceHitAnimationCatalog.Read(Path.Combine(folder,"hit"));
-        var scripts=new List<SourceAnimationScript>();
-        scripts.AddRange(new[]{1,10,15,33,39,68,148,163,206,233}.Select(id=>SourceHitAnimationCatalog.Script(hit,id)));
-        scripts.AddRange(SourceTraceAnimationCatalog.Read(Path.Combine(folder,"trace.json"),hit).Values);
-        scripts.AddRange(SourceStatMoveCatalog.Read(Path.Combine(folder,"stat-moves")).Scripts.Values);
-        scripts.AddRange(SourceExplosionAnimationCatalog.Read(Path.Combine(folder,"explosion")).Scripts.Values);
-        Assert.AreEqual(20,scripts.Count);
+        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
+        int[] moves=[1,10,15,33,39,68,148,163,206,233,97,98,332,74,106,334,110,107,120,153];
+        var scripts=moves.Select(id=>resources.Resolve(id).Script).ToArray();
+        Assert.AreEqual(20,scripts.Length);
         foreach(var script in scripts)
         {
-            var runtime=new SourceBattleAnimation(script,new("legacy",script.MoveId,script.MoveId,new(0),new(1)),Battlers(false),false,new Audio());
+            var runtime=new SourceBattleAnimation(script,new("canonical",script.MoveId,script.MoveId,new(0),new(1)),Battlers(false),false,new Audio());
             int frames=0;while(runtime.Active&&frames++<2000)runtime.Tick();
             Assert.IsFalse(runtime.Active,script.Label);Assert.AreEqual(0,runtime.ActiveVisualCount,script.Label);
         }

@@ -14,7 +14,7 @@ def source(root):
  raw=root/'content/raw/pokefirered/037335f4';base=module('ghost_focus_base',root/'tests/Game.Presentation.Tests/Reference/generate_focus_sound_vectors.py');h=base.source(root).split('static const int config0')[0]
  for path,digest in PINS.items():
   if hashlib.sha256((raw/path).read_bytes()).hexdigest()!=digest:raise ValueError('Pinned ghost/song input differs: '+path)
- x=module('ghost_extract',root/'tests/Reference/Recovery/source_extract.py');src={p:(raw/p).read_text() for p in PINS}
+ x=module('ghost_extract',root/'tests/Reference/source_extract.py');src={p:(raw/p).read_text() for p in PINS}
  h=h.replace('static bool8 IsBattlerSpriteVisible(u8 b){return b<slots;}','static int hidden;static bool8 IsBattlerSpriteVisible(u8 b){return b<slots&&!(hidden&(1<<b));}')
  h=h.replace('static s16 GetBattlerSpriteCoordAttr(u8 b,u8 attr){assert(attr==0);return (s16[]){64,48,32,56}[b];}','static s16 GetBattlerSpriteCoordAttr(u8 b,u8 attr){s16 height=(s16[]){64,48,32,56}[b];assert(attr==0||attr==5);return attr==0?height:GetBattlerSpriteCoord(b,3)+height/2;}')
  # These adapters model static source battle geometry and VRAM entrypoints only.

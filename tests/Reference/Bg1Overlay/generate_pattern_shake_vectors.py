@@ -3,13 +3,14 @@
 import argparse,hashlib,json,subprocess,sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array
 p=argparse.ArgumentParser();p.add_argument('--repository',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();root=a.repository.resolve();out=a.output.resolve()
 if out.is_relative_to(root):raise SystemExit('Use an output directory outside the repository.')
 out.mkdir(parents=True,exist_ok=True)
 source=root/'content/raw/pokefirered/037335f4/src/battle_anim_fire.c';raw=source.read_bytes();sha=hashlib.sha256(raw).hexdigest()
 if sha!='369439a2956832942756db1afc5b9ca8955762b7af121ff4b4aeda156e07ede6':raise SystemExit('Pinned pattern-shake input differs.')
-s=raw.decode();body=function(s,'AnimTask_ShakeTargetInPattern');tables='\n'.join(array(s,n) for n in ['sShakeDirsPattern0','sShakeDirsPattern1'])
+s=raw.decode();body=function(s,'AnimTask_ShakeTargetInPattern', signed_byte=False);tables='\n'.join(array(s,n) for n in ['sShakeDirsPattern0','sShakeDirsPattern1'])
 prefix='''#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

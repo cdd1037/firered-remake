@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
 // Register state for the source's BG1 layer, gated by a copied battler OBJ window.
@@ -20,18 +19,6 @@ public sealed class SourceStatMaskMaterial
         int tile=entry&1023,index=_data[(tile/16*8+ty)*128+(tile%16*8+tx)];
         if(index==0)return 0;
         return (ushort)(0x8000|BinaryPrimitives.ReadUInt16LittleEndian(_data.AsSpan(8192+(palette-1)*32+index*2)));
-    }
-}
-public static class SourceStatAnimationCatalog
-{
-
-    public static (SourceAnimationScript Script,SourceStatMaskMaterial Material) Read(string folder)
-    {
-        var bytes=System.IO.File.ReadAllBytes(Path.Combine(folder,"manifest.json"));
-        using var doc=JsonDocument.Parse(bytes);var row=doc.RootElement.GetProperty("script");
-        var script=new SourceAnimationScript(0,row.GetProperty("label").GetString()!,row.GetProperty("commands").EnumerateArray().Select(c=>new SourceAnimationCommand(c.GetProperty("op").GetString()!,c.GetProperty("args").EnumerateArray().Select(a=>a.GetString()!).ToArray(),c.GetProperty("line").GetInt32())).ToArray());
-        var data=System.IO.File.ReadAllBytes(Path.Combine(folder,"stat-mask.bin"));
-        return (script,new(data));
     }
 }
 public sealed partial class SourceBattleAnimation

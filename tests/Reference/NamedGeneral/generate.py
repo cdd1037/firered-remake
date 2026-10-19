@@ -11,8 +11,9 @@ from pathlib import Path
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,required=True);p.add_argument('--reference',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args();a.reference=a.reference or a.repo/'content/raw/pokefirered/037335f4'
 if a.output.exists():raise FileExistsError(a.output)
-here=Path(__file__).resolve().parent;sys.path[:0]=[str(a.repo/'tests/Reference'),str(a.repo/'tests/Reference/Recovery')]
+here=Path(__file__).resolve().parent;sys.path[:0]=[str(a.repo/'tests/Reference')]
 from reference_c import verify_reference,compile_c
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array,macros,enum_containing,COMMIT
 verify_reference(a.reference);pins=json.loads((here/'pinned-inputs.json').read_text());sources={}
 for path,digest in pins.items():

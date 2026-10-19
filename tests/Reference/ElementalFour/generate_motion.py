@@ -12,6 +12,7 @@ sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 from reference_c import compile_c, verify_reference
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function, array, macros, identity, COMMIT, verify, enum_containing
 
 p = argparse.ArgumentParser()
@@ -20,7 +21,7 @@ p.add_argument('--build-dir', type=Path)
 p.add_argument('--output', type=Path, default=HERE.parent.parent/'Game.Presentation.Tests/Fixtures/elemental-four-motion-source-vectors.json')
 p.add_argument('--full', action='store_true', help='Emit the complete original-C corpus instead of semantic representatives');a = p.parse_args(); r = a.reference.resolve(); out = (a.build_dir or Path(tempfile.mkdtemp(prefix="elemental-four-reference-"))).resolve(); out.mkdir(parents=True, exist_ok=True)
 paths = ['src/battle_anim_effects_1.c','src/battle_anim_effects_2.c','src/battle_anim_water.c','src/battle_anim_ice.c','src/battle_anim_mons.c','src/battle_anim.c','src/sprite.c','src/trig.c','include/sprite.h','src/data/battle_anim.h','include/gba/types.h','include/global.h','include/battle.h','include/battle_anim.h','include/constants/battle_anim.h','include/constants/battle.h','data/battle_anim_scripts.s']
-verify_reference(r); verify(r, paths)
+verify_reference(r); verify(r, paths, Path(__file__).resolve().parent / 'pinned-inputs.json')
 s = {path:(r/path).read_text() for path in paths}
 header=s['include/sprite.h'];types=header[header.index('struct AnimFrameCmd'):header.index('\nenum\n{\n    SUBSPRITES_OFF')]
 oam=s['include/gba/types.h'];types+='\n'+oam[oam.index('struct OamData'):oam.index('#define ST_OAM_HFLIP')]

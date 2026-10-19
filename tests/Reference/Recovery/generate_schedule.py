@@ -2,9 +2,10 @@
 import argparse,json,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,identity,verify,COMMIT
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent
-paths=['src/battle_anim.c','data/battle_anim_scripts.s'];verify(r,paths);source=(r/paths[0]).read_text();script=(r/paths[1]).read_text();names=['WaitAnimFrameCount','RunAnimScriptCommand','Cmd_loadspritegfx','Cmd_delay']
+paths=['src/battle_anim.c','data/battle_anim_scripts.s'];verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json');source=(r/paths[0]).read_text();script=(r/paths[1]).read_text();names=['WaitAnimFrameCount','RunAnimScriptCommand','Cmd_loadspritegfx','Cmd_delay']
 funcs=[function(source,n) for n in names]
 def block(name):
  lines=[]

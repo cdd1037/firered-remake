@@ -32,7 +32,7 @@ def declaration(source, type_name, name):
 def build(root, reference, out):
     helper = module('present_reference_c', root / 'tests/Reference/reference_c.py')
     helper.verify_reference(reference)
-    extract = module('present_source_extract', root / 'tests/Reference/ConfusionKiss/source_extract.py')
+    extract = module('present_source_extract', root / 'tests/Reference/source_extract.py')
     pins = json.loads((Path(__file__).parent / 'pinned-inputs.json').read_text())
     sources = {}
     for path, digest in pins.items():

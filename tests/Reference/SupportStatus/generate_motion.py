@@ -19,6 +19,7 @@ p.add_argument('--reference-helper', type=Path, default=HERE.parent/'reference_c
 a = p.parse_args()
 sys.path.insert(0, str(a.reference_helper.resolve().parent))
 from reference_c import compile_c, verify_reference
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function, array, macros, enum_containing, identity, COMMIT, verify
 r = a.reference.resolve()
 out = (a.build_dir or Path(tempfile.mkdtemp(prefix='support-status-reference-'))).resolve()
@@ -29,7 +30,7 @@ if a.full and a.output.resolve().is_relative_to((HERE.parent.parent/'Game.Presen
  p.error('--full output must stay outside the local representative Fixtures directory')
 paths = ['src/battle_main.c', 'src/battle_anim_effects_1.c', 'src/battle_anim_psychic.c', 'src/battle_anim_effects_3.c', 'src/battle_anim_mons.c', 'src/battle_anim.c', 'src/sprite.c', 'src/trig.c', 'include/sprite.h', 'src/data/battle_anim.h', 'include/gba/types.h', 'include/gba/io_reg.h', 'include/gba/defines.h', 'include/global.h', 'include/battle.h', 'include/battle_anim.h', 'include/palette.h', 'include/constants/songs.h', 'include/constants/battle_anim.h', 'include/constants/battle.h', 'include/constants/pokemon.h', 'data/battle_anim_scripts.s']
 verify_reference(r)
-verify(r, paths)
+verify(r, paths, Path(__file__).resolve().parent / 'pinned-inputs.json')
 s = {p: (r/p).read_text() for p in paths}
 header = s['include/sprite.h']
 types = header[header.index('struct AnimFrameCmd'):header.index('\nenum\n{\n    SUBSPRITES_OFF')]

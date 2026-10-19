@@ -2,12 +2,13 @@
 import argparse,json,hashlib,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,macros,enum_containing,identity,COMMIT,verify
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent
 paths=['src/battle_anim_rock.c','src/battle_anim_mons.c','include/battle_anim.h','include/gba/io_reg.h','include/gba/defines.h','include/constants/battle.h','include/palette.h']
-verify(r,paths)
+verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json')
 s={p:(r/p).read_text() for p in paths};funcs={'src/battle_anim_mons.c':['GetBattleAnimBg1Data'],'src/battle_anim_rock.c':['AnimTask_LoadSandstormBackground','AnimTask_LoadSandstormBackground_Step']}
-c=(out/'bg-harness.c.in').read_text().replace('@DEFINES@',macros(list(s.values()),['BLDCNT_TGT1_BG1','BLDCNT_EFFECT_BLEND','BLDCNT_TGT2_ALL','BLDALPHA_BLEND','REG_OFFSET_BLDCNT','REG_OFFSET_BLDALPHA','REG_OFFSET_BG1HOFS','REG_OFFSET_BG1VOFS','BG_PLTT_ID','PLTT_SIZE_4BPP','B_SIDE_PLAYER','BG_ANIM_PAL_1'])).replace('@ENUM@',enum_containing(s[paths[2]],'BG_ANIM_PRIORITY')).replace('@ARRAYS@','').replace('@FUNCTIONS@','\n'.join(function(s[p],n) for p,ns in funcs.items() for n in ns));(out/'bg.c').write_text(c)
+c=(out/'bg-harness.c.in').read_text().replace('@DEFINES@',macros(list(s.values()),['BLDCNT_TGT1_BG1','BLDCNT_EFFECT_BLEND','BLDCNT_TGT2_ALL','BLDALPHA_BLEND','REG_OFFSET_BLDCNT','REG_OFFSET_BLDALPHA','REG_OFFSET_BG1HOFS','REG_OFFSET_BG1VOFS','BG_PLTT_ID','PLTT_SIZE_4BPP','B_SIDE_PLAYER','BG_ANIM_PAL_1'])).replace('@ENUM@',enum_containing(s[paths[2]],'BG_ANIM_PRIORITY')).replace('@ARRAYS@','').replace('@FUNCTIONS@','\n'.join(function(s[p],n, signed_byte=False) for p,ns in funcs.items() for n in ns));(out/'bg.c').write_text(c)
 for opt in ['O0','O2']:subprocess.run(['cc','-std=c11','-'+opt,'-fwrapv',str(out/'bg.c'),'-o',str(out/('bg-'+opt))],check=True)
 cases=[]
 for flag in [0,1]:

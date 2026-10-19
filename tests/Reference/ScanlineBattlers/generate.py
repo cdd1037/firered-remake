@@ -8,7 +8,7 @@ def module(name,path):
 
 def build(root,reference,out,full=False):
  helper=module('reference_c',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
- x=module('source_extract',root/'tests/Reference/ConfusionKiss/source_extract.py');here=Path(__file__).parent;pins=json.loads((here/'pinned-inputs.json').read_text());src={p:(reference/p).read_text() for p in pins}
+ x=module('source_extract',root/'tests/Reference/source_extract.py');here=Path(__file__).parent;pins=json.loads((here/'pinned-inputs.json').read_text());src={p:(reference/p).read_text() for p in pins}
  for p,h in pins.items():
   if hashlib.sha256((reference/p).read_bytes()).hexdigest()!=h:raise ValueError('Pinned input differs: '+p)
  if '#define Q_8_8(n) ((s16)((n) * 256))' not in src['include/global.h']:raise ValueError('Source sine conversion differs')

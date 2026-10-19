@@ -4,8 +4,9 @@ from pathlib import Path
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('--repo',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--build-dir',type=Path);a=p.parse_args();here=Path(__file__).resolve().parent
 if a.output.exists():raise FileExistsError(a.output)
-sys.path.insert(0,str(a.repo/'tests/Reference'));sys.path.insert(0,str(a.repo/'tests/Reference/CallerPrelude'))
+sys.path.insert(0,str(a.repo/'tests/Reference'))
 from reference_c import compile_c,verify_reference
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,macros,identity,COMMIT
 verify_reference(a.reference)
 names={'src/battle_anim_ghost.c':['AnimTask_NightmareClone','AnimTask_NightmareClone_Step'],'src/battle_anim_mons.c':['CloneBattlerSpriteWithBlend','DestroySpriteWithActiveSheet','TranslateSpriteLinearFixedPoint']}

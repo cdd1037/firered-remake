@@ -5,8 +5,9 @@ sys.dont_write_bytecode = True
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('--repo',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--build-dir',type=Path);a=p.parse_args()
 if a.output.exists():raise FileExistsError(a.output)
 here=Path(__file__).resolve().parent
-sys.path[:0]=[str(a.repo/'tests/Reference'),str(a.repo/'tests/Reference/Recovery')]
+sys.path[:0]=[str(a.repo/'tests/Reference')]
 from reference_c import verify_reference, compile_c, COMMIT
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function, macros
 verify_reference(a.reference)
 names={'src/battle_anim_dark.c':['AnimTask_MoveAttackerMementoShadow','AnimTask_MoveAttackerMementoShadow_Step','AnimTask_MoveTargetMementoShadow','AnimTask_MoveTargetMementoShadow_Step','DoMementoShadowEffect','SetAllBattlersSpritePriority','AnimTask_InitMementoShadow','AnimTask_MementoHandleBg'], 'src/scanline_effect.c':['ScanlineEffect_Clear','ScanlineEffect_SetParams','ScanlineEffect_InitHBlankDmaTransfer','CopyValue16Bit','CopyValue32Bit']}

@@ -26,7 +26,7 @@ def module(name, path):
 def build(root, reference, directory, full):
     helper = module('water_sport_reference', root / 'tests/Reference/reference_c.py')
     helper.verify_reference(reference)
-    extract = module('water_sport_extract', root / 'tests/Reference/ConfusionKiss/source_extract.py')
+    extract = module('water_sport_extract', root / 'tests/Reference/source_extract.py')
     here = Path(__file__).parent
     pins = json.loads((here / 'pinned-inputs.json').read_text())
     source = {p: (reference / p).read_text() for p in pins}

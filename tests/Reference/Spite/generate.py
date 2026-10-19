@@ -4,8 +4,9 @@ from pathlib import Path
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser();p.add_argument('reference',nargs='?',type=Path);p.add_argument('--repo','--root',dest='repo',type=Path,required=True);p.add_argument('--scanline-source',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--build-dir',type=Path);a=p.parse_args();a.reference=a.reference or a.repo/'content/raw/pokefirered/037335f4';here=Path(__file__).resolve().parent
 if a.output.exists():raise FileExistsError(a.output)
-sys.path[:0]=[str(a.repo/'tests/Reference'),str(a.repo/'tests/Reference/Recovery')]
+sys.path[:0]=[str(a.repo/'tests/Reference')]
 from reference_c import verify_reference,compile_c
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array,macros,COMMIT
 verify_reference(a.reference)
 names={'src/battle_anim_ghost.c':['AnimTask_SpiteTargetShadow','AnimTask_SpiteTargetShadow_Step1','AnimTask_SpiteTargetShadow_Step2','AnimTask_SpiteTargetShadow_Step3'],'src/scanline_effect.c':['ScanlineEffect_Stop','ScanlineEffect_Clear','ScanlineEffect_SetParams','ScanlineEffect_InitHBlankDmaTransfer','CopyValue16Bit','CopyValue32Bit','TaskFunc_UpdateWavePerFrame','GenerateWave','ScanlineEffect_InitWave'],'src/battle_anim_mons.c':['CloneBattlerSpriteWithBlend','DestroySpriteWithActiveSheet'],'src/blend_palette.c':['BlendPalette']}

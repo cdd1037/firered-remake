@@ -2,8 +2,9 @@
 import argparse,json,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,macros,identity,COMMIT,verify
-p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent;paths=['src/battle_anim.c','include/constants/battle_anim.h'];verify(r,paths);s=(r/paths[0]).read_text();names=['Cmd_panse_adjustnone','Task_PanFromInitialToTarget'];bodies=[function(s,n) for n in names]
+p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent;paths=['src/battle_anim.c','include/constants/battle_anim.h'];verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json');s=(r/paths[0]).read_text();names=['Cmd_panse_adjustnone','Task_PanFromInitialToTarget'];bodies=[function(s,n, signed_byte=False) for n in names]
 c='''#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

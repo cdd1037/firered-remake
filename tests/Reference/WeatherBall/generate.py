@@ -10,7 +10,7 @@ def module(name,path):
 def build(root,reference,out):
  helper=module('weather_reference',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
  f=module('weather_native_sprite',root/'tests/Game.Presentation.Tests/Reference/generate_fang_vectors.py')
- x=module('weather_extract',root/'tests/Reference/ConfusionKiss/source_extract.py')
+ x=module('weather_extract',root/'tests/Reference/source_extract.py')
  pins=json.loads((HERE/'pinned-inputs.json').read_text());s={}
  for path,digest in pins.items():
   data=(reference/path).read_bytes()

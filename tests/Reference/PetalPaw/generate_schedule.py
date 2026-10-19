@@ -8,7 +8,7 @@ def module(name,path):
 
 def build(root,reference,out,importer=None):
  helper=module('reference_c',root/'tests/Reference/reference_c.py');helper.verify_reference(reference)
- extract=module('source_extract',root/'tests/Reference/CallerPrelude/source_extract.py')
+ extract=module('source_extract',root/'tests/Reference/source_extract.py')
  importer_path=root/'scripts/imports/battle/import-source-elemental-animations.py';imp=types.ModuleType('petal_paw_schedule_importer');imp.__file__=str(importer_path);exec(compile((importer or importer_path).read_text(),str(importer or importer_path),'exec'),imp.__dict__)
  source=(reference/'src/battle_anim.c').read_text();pins=json.loads((Path(__file__).parent/'pinned-inputs.json').read_text())
  for path in ['src/battle_anim.c','data/battle_anim_scripts.s']:

@@ -15,7 +15,7 @@ def source(root):
  for path,blob in PINS.items():
   data=(raw/path).read_bytes()
   if hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()!=blob:raise ValueError('Pinned source differs: '+path)
- base=module('frozen_base',root/'tests/Game.Presentation.Tests/Reference/generate_orbit_spray_vectors.py');x=module('frozen_extract',root/'tests/Reference/Recovery/source_extract.py')
+ base=module('frozen_base',root/'tests/Game.Presentation.Tests/Reference/generate_orbit_spray_vectors.py');x=module('frozen_extract',root/'tests/Reference/source_extract.py')
  with tempfile.TemporaryDirectory() as d:
   p=Path(d)/'source.c';base.build(root,'tasks',p);h=p.read_text().split('static const long long config0')[0]
  h=h.replace('u8 affineMode,matrixNum,shape,size,paletteNum,objMode;', 'u8 affineMode,matrixNum,shape,size,paletteNum,objMode;u8 priority:2;u8 bpp;u16 x,y;')

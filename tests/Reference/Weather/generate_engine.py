@@ -2,10 +2,11 @@
 import argparse,json,re,hashlib,subprocess,sys
 from pathlib import Path
 sys.dont_write_bytecode=True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from source_extract import function,array,macros,identity,COMMIT,verify
 p=argparse.ArgumentParser();p.add_argument('reference',type=Path);a=p.parse_args();r=a.reference;out=Path(__file__).resolve().parent
 paths=['src/battle_anim_water.c','src/battle_anim_fire.c','src/battle_anim_mons.c','src/battle_anim.c','src/sprite.c','src/task.c','src/random.c','include/sprite.h','src/data/battle_anim.h','include/gba/types.h','include/random.h','include/battle_anim.h','src/battle_main.c','data/battle_anim_scripts.s']
-verify(r,paths)
+verify(r,paths, Path(__file__).resolve().parent / 'pinned-inputs.json')
 s={p:(r/p).read_text() for p in paths}
 header=s['include/sprite.h'];types=header[header.index('struct AnimFrameCmd'):header.index('\nenum\n{\n    SUBSPRITES_OFF')]
 oam=s['include/gba/types.h'];types+='\n'+oam[oam.index('struct OamData'):oam.index('#define ST_OAM_HFLIP')]
@@ -14,7 +15,7 @@ names={'src/battle_anim_water.c':['AnimTask_CreateRaindrops','AnimRainDrop','Ani
 funcs=[]
 for path,ns in names.items():
  for n in ns:
-  f=function(s[path],n)
+  f=function(s[path],n, signed_byte=False)
   if n=='Random':f=f.replace('u16 Random(void)','u16 SourceRandom(void)')
   if n=='CreateSprite':f=f.replace('u8 CreateSprite(','u8 SourceCreateSprite(')
   funcs.append(f)
@@ -25,7 +26,7 @@ for n in ['gOamData_AffineOff_ObjNormal_16x32','gOamData_AffineNormal_ObjBlend_3
  m=re.search(r'const struct OamData '+n+r'\s*=\s*\{[\s\S]*?\n\};',s['src/data/battle_anim.h']);arrays+=m[0]+'\n'
 for path,n in [('src/battle_anim_water.c','gRainDropSpriteTemplate'),('src/battle_anim_fire.c','gSunlightRaySpriteTemplate')]:
  m=re.search(r'const struct SpriteTemplate '+n+r'\s*=\s*\{[\s\S]*?\n\};',s[path]);arrays+=m[0]+'\n'
-verify(r,['include/constants/battle_anim.h']);extra=(r/'include/constants/battle_anim.h').read_text();defs=macros([*s.values(),extra],['ISO_RANDOMIZE1','sTransl_InitX','sTransl_InitY','sTransl_DestX','sTransl_DestY','sTransl_Speed','ST_OAM_AFFINE_ON_MASK','ANIM_TAG_RAIN_DROPS','ANIM_TAG_SUNLIGHT'])
+verify(r,['include/constants/battle_anim.h'], Path(__file__).resolve().parent / 'pinned-inputs.json');extra=(r/'include/constants/battle_anim.h').read_text();defs=macros([*s.values(),extra],['ISO_RANDOMIZE1','sTransl_InitX','sTransl_InitY','sTransl_DestX','sTransl_DestY','sTransl_Speed','ST_OAM_AFFINE_ON_MASK','ANIM_TAG_RAIN_DROPS','ANIM_TAG_SUNLIGHT'])
 defs+='\n'+oam[oam.index('#define ST_OAM_HFLIP'):oam.index('struct BgAffineSrcData')]
 c=(out/'engine-prefix.c.in').read_text().replace('@TYPES@',types).replace('@DEFINES@',defs).replace('@PROTOTYPES@',protos).replace('@ARRAYS@',arrays).replace('@FUNCTIONS@','\n'.join(funcs))
 c+='''
