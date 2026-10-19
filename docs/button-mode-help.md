@@ -31,3 +31,27 @@
 ## Bounded desktop check
 
 2026-10-16 13:52–13:55 UTC, existing cloud X11 desktop: Q opened the first-use greeting and accepted the source introduction flag command. Enter opened context topics, How do I do this opened a seven-row question list, Right paged seven and Enter opened a complete item-use answer. Backspace restored the same selected question and scroll; Q closed back to the unchanged field. Text fit the viewport in these observed paths. Native log includes actual SE_HELP_OPEN and SE_HELP_CLOSE dispatch; Dummy is not audible acceptance. Controlled test checkpoint and separate log `/workspace/shared/firered-pc-visual/help-inventory-native-1351.log`; no disk save of synthetic gameplay.
+
+## Summary shoulder routing correction — 2026-10-19
+
+The finite UI audit found that LR shoulders were consumed before live battle and
+Day-Care Summary input, while field/PC Summary already received them. The existing
+shoulder dispatcher now forwards Left/Right to each active Summary's existing
+handler, retaining its identity, exit, Egg and move-detail guards. It introduces
+no second paging rule or application command. Source authority is
+`pokemon_summary_screen.c:1055–1100` (`IsPageFlipInput`) and the normal Summary
+entry in `party_menu.c:3095–3106`.
+
+Replacement, deletion and Reminder candidate screens remain fixed move-selection
+pages and do not gain shoulder paging. Source `PSS_MODE_SELECT_MOVE` and
+`PSS_MODE_FORGET_MOVE` begin on `PSS_PAGE_MOVES_INFO` with locked moves
+(`pokemon_summary_screen.c:1002–1025`). Existing read-only/reordering move-detail
+handlers continue consuming Left/Right without leaving their selection.
+
+Validation: Godot product build passed with zero warnings/errors (23.96s);
+19 button/options/Summary presentation tests passed (118ms), and19 affected
+Application Summary/Day-Care/Help tests passed (8s). These tests exercise existing
+input owners and rules, not CampaignView shoulder routing itself; that integration
+was source/view-wiring reviewed. No executable host shoulder probe or native-window
+pass is claimed. The independent Day-Care Summary detail-entry and source navigation
+differences remain outside this narrow routing correction.

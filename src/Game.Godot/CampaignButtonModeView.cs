@@ -109,10 +109,17 @@ private void ProcessCampaignButtonRepeats(double delta)
     {
         if (_busy || _fade > 0 || NamingScreenActive) return;
         Key key = direction < 0 ? Key.Left : Key.Right;
-        if (_session.State.Pc?.Summary is not null || _fieldMenuMode == "summary")
+        bool battleSummary = _battlePartySummaryPage >= 0 && _battlePartySelection is not null;
+        bool dayCareSummary = DayCareChoosing && _dayCareSummaryPage >= 0;
+        if (battleSummary || _session.State.Pc?.Summary is not null || _fieldMenuMode == "summary" || dayCareSummary)
         {
             using var page = new InputEventKey { Keycode = key, Pressed = true };
-            if (_session.State.Pc?.Summary is not null) StorageSummaryInput(page); else TryFieldMenuInput(page);
+            // Route only an active browsable Summary through its existing input owner.
+            // Move-learning/deletion screens stay on their fixed move-details page.
+            if (battleSummary) BattlePartyInspectionInput(page);
+            else if (_session.State.Pc?.Summary is not null) StorageSummaryInput(page);
+            else if (_fieldMenuMode == "summary") TryFieldMenuInput(page);
+            else DayCarePartyInput(page);
         }
         else if (_fieldMenuMode == "pokedex-habitat")
         {
