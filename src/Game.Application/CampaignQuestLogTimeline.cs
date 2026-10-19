@@ -71,6 +71,7 @@ internal sealed class CampaignQuestLogTimeline
             }
         }
         _captions=captions.ToImmutable();_end=Math.Max(captionEnd,actions.Where(a=>!CampaignQuestLogRecorder.IsCaption(a)).Select(a=>a.StartFrame+a.Frames).DefaultIfEmpty(0).Max());
+        SeedGrass(0);
         Tick(0);
         void Add(string text,CampaignQuestLogAction action)
         {
@@ -127,6 +128,8 @@ internal sealed class CampaignQuestLogTimeline
             if(action.Graphics is not null||action.Spawn is not null)ArtRevision++;
             var initial=action.Spawn??_segmentActors[action.ActorIndex];
             var prior=_actors.GetValueOrDefault(initial.Id)??initial;
+            if(action.Spawn is not null&&!_actors.ContainsKey(initial.Id)&&_fieldBehavior is not null)
+                _grass.QueueSpawn(initial.Id,initial.X,initial.Y,action.StartFrame);
             _moving[initial.Id]=(prior,action.StartFrame,action.Frames,action.SourceAction);
             if(_fieldBehavior is not null&&action.Frames>0&&action.SourceAction is not null)
                 _grass.QueueMovement(initial.Id,prior.X,prior.Y,action.X,action.Y,action.SourceAction,action.Frames,action.StartFrame);
@@ -140,6 +143,11 @@ internal sealed class CampaignQuestLogTimeline
         _jumps.RemoveAll(j=>_frame>=j.Start+j.Cue.Duration+CampaignFieldJumpEffects.LandingLifetimeFrames);
         if(_fieldBehavior is not null)_grass.AdvanceTo(_frame,(x,y)=>_fieldBehavior(Map,Layout,Tiles,x,y),id=>_actors.ContainsKey(id));
     }
+    private void SeedGrass(double frame)
+    {
+        if(_fieldBehavior is null)return;
+        foreach(var actor in _actors.Values.Where(a=>a.Id!="LOCALID_CAMERA"||a.Visible))_grass.QueueSpawn(actor.Id,actor.X,actor.Y,frame);
+    }
     private void SwitchPendingTransition()
     {
         if(_transition is not {Transition:{} transition} action||_transitionSwitched||
@@ -148,6 +156,6 @@ internal sealed class CampaignQuestLogTimeline
         _mapLoadFrame=action.StartFrame+(action.TransitionTiming?.SwitchFrame??0);
         Map=transition.Map;Layout=transition.Layout;Tiles=transition.Tiles.IsDefault?[]:transition.Tiles;FlashLevel=transition.FlashLevel;
         _segmentActors=transition.Actors;_actors.Clear();foreach(var actor in transition.Actors)_actors.Add(actor.Id,actor);
-        _moving.Clear();_jumps.Clear();_grass.Clear();ArtRevision++;
+        _moving.Clear();_jumps.Clear();_grass.Clear();SeedGrass(_mapLoadFrame);ArtRevision++;
     }
 }

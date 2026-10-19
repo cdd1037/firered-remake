@@ -110,6 +110,13 @@ static void GrassActorCallback(struct Sprite *sprite) {
     if (grassAge==2 && grassCase==4) missingActor=1;
     if (grassAge==2 && grassCase==5) grassBehavior=0;
 }
+static void WalkingGrassActorCallback(struct Sprite *sprite) {
+    struct ObjectEvent *o=&gObjectEvents[0];
+    if (grassCase>0 && grassAge==8) ShiftObjectEventCoords(o,0,1);
+    if (grassCase>0 && grassAge==15) ShiftStillObjectEventCoords(o);
+    if (grassCase==2 && grassAge==16) ShiftObjectEventCoords(o,0,0);
+    if (grassCase==2 && grassAge==23) ShiftStillObjectEventCoords(o);
+}
 int main(void) {
     unsigned b,kind; int age;
     for (b=0;b<NUM_METATILE_BEHAVIORS;b++) {
@@ -150,6 +157,24 @@ int main(void) {
         for(grassAge=0;grassAge<20;grassAge++) {
             AnimateSprites();
             printf("C %d %d %d %u %d\n",grassCase,grassAge,gSprites[63].inUse?coverImage:-1,gSprites[63].animEnded,gSprites[63].data[7]);
+        }
+    }
+    for(grassCase=0;grassCase<3;grassCase++) {
+        memset(gSprites,0,sizeof(gSprites));memset(gObjectEvents,0,sizeof(gObjectEvents));
+        missingActor=0;grassBehavior=MB_TALL_GRASS;coverImage=-1;
+        gObjectEvents[0].active=TRUE;gObjectEvents[0].spriteId=0;
+        gSprites[0].inUse=TRUE;gSprites[0].callback=WalkingGrassActorCallback;
+        gSprites[0].anims=dustAnims;gSprites[0].animBeginning=TRUE;gSprites[0].animPaused=TRUE;
+        gSprites[0].x=8;gSprites[0].centerToCornerVecX=-8;gSprites[0].centerToCornerVecY=-16;
+        SetObjectSubpriorityByElevation(3,&gSprites[0],1);
+        gSprites[63].inUse=TRUE;gSprites[63].callback=UpdateTallGrassFieldEffect;
+        gSprites[63].anims=grassAnims;gSprites[63].images=&coverImage;gSprites[63].animBeginning=TRUE;
+        gSprites[63].x=8;gSprites[63].y=8;gSprites[63].centerToCornerVecX=-8;gSprites[63].centerToCornerVecY=-8;
+        gSprites[63].data[0]=3;
+        for(grassAge=0;grassAge<55;grassAge++) {
+            AnimateSprites();
+            printf("W %d %d %d %u %d %d\n",grassCase,grassAge,gSprites[63].inUse?coverImage:-1,
+                gSprites[63].animEnded,gSprites[63].data[7],gSprites[63].inUse?gSprites[63].subpriority:-1);
         }
     }
     missingActor=0;grassBehavior=MB_TALL_GRASS;
@@ -195,8 +220,8 @@ static const union AnimCmd *const grassAnims[]={sAnim_TallGrass};
         source=Path(directory)/'jump_effects.c';exe=Path(directory)/('jump_effects.exe' if os.name=='nt' else 'jump_effects')
         source.write_text(c);compile_c(['cc','-std=c11','-O2',str(source),'-o',str(exe)])
         output=subprocess.check_output([str(exe)],text=True)
-    data={'sourceCommit':COMMIT,'shadowPairs':[],'landings':[],'dust':[],'grassImpact':[],'grassCover':[],'grassPriority':[]}
-    keys={'S':'shadowPairs','L':'landings','D':'dust','J':'grassImpact','C':'grassCover','P':'grassPriority'}
+    data={'sourceCommit':COMMIT,'shadowPairs':[],'landings':[],'dust':[],'grassImpact':[],'grassCover':[],'grassPriority':[],'grassWalking':[]}
+    keys={'S':'shadowPairs','L':'landings','D':'dust','J':'grassImpact','C':'grassCover','P':'grassPriority','W':'grassWalking'}
     for line in output.splitlines():
         tag,*values=line.split();data[keys[tag]].append(list(map(int,values)))
     if len(data['shadowPairs'])!=480 or len(data['landings'])!=240 or len(data['dust'])!=27:
@@ -207,6 +232,17 @@ static const union AnimCmd *const grassAnims[]={sAnim_TallGrass};
         raise ValueError('Incomplete grass source output')
     if [r[1] for r in data['grassImpact']] != [0]*8+[1]*8+[2]*8+[3]*9+[-1]*2:
         raise ValueError('Source callback-before-animation grass impact lifetime differs')
+    if len(data['grassWalking'])!=165:
+        raise ValueError('Incomplete walking grass source output')
+    for scenario in range(3):
+        rows=[r for r in data['grassWalking'] if r[0]==scenario]
+        expected=[1]*10+[2]*10+[3]*10+[4]*10+[0]*(15 if scenario==0 else 11)
+        if scenario>0: expected += [-1]*4
+        if [r[2] for r in rows]!=expected:
+            raise ValueError('Source walking grass callback lifetime differs')
+        alive=55 if scenario==0 else 51
+        if [r[5] for r in rows] != [149]*11+[145]*(alive-11)+[-1]*(55-alive):
+            raise ValueError('Source walking grass callback-before-animation depth differs')
     return data
 
 
@@ -215,6 +251,6 @@ def main():
     parser.add_argument('--reference',type=Path,required=True);parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();data=generate(args.reference)
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(data,separators=(',',':'))+'\n')
-    print('480 source shadow gates; 240 landing selectors; 27 dust, 35 grass impact, 160 cover and 7 priority rows')
+    print('480 source shadow gates; 240 landing selectors; 27 dust, 35 grass impact, 160 cover, 7 priority and 165 walking-grass rows')
 
 if __name__=='__main__':main()

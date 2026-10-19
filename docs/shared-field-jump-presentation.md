@@ -99,8 +99,8 @@ The shared ordinary-jump path now uses both source effects:
   moves the cover behind a southward overlapping actor. The ordinary actor
   ordering remains unchanged outside these insertions.
 
-This is jump-origin cover ownership, not a claim that ordinary walking
-rustle/spawn or every connected-camera field-effect rebase is implemented.
+This initial jump slice provided cover ownership; the normal-step extension below closes ordinary walking
+rustle/spawn. Every connected-camera field-effect rebase is not independently established.
 Existing map reconstruction drops these transient owners. Water-specific
 jump particles remain unadmitted: the bounded imported ledge scan found no
 water destination, and inspected supported movement scripts established no
@@ -130,3 +130,65 @@ Evidence is `/workspace/shared/grass-landing-native/acceptance.json`;
  callback ordinals are source/managed evidence, not a hardware-cycle claim
  or actual sound acceptance. Source outputs/screenshots remain local and
  ignored; no generated tests or assets enter Git.
+
+## Normal step and reconstruction grass (2026-10-19)
+
+The same actor-linked owner now accepts the source spawn and begin-step producers.
+`event_object_movement.c:8088–8097,8443–8466` distinguishes them: an actual
+normal step into tall grass starts images1,2,3,4,0 (10 callbacks each), while a
+fresh object/field reconstruction seeks command4 and starts stationary image0.
+Reconstruction does not invent a walking rustle. Ordinary source walk/run/cycle/
+slide families share the producer; jumps retain their existing landing producer.
+A turn, in-place walk, or unknown movement does not imply a new grass step.
+
+Normal steps create a new instance rather than restarting or deduplicating a
+previous instance on that tile. Only jump landing performs source deduplication.
+The old cover retains current/previous-coordinate ownership, sticky departure,
+and animation-end gating: a walking instance cannot be removed before callback51,
+whereas stationary spawn/landing reaches that boundary at11. Its first command
+uses source depth offset4 through age10 because the callback runs before the
+frame player advances; later commands use0. Terrain replacement and actor removal
+still retire ownership. Hidden active NPCs are legitimate owners; only the source
+hidden camera-object exception suppresses spawning.
+
+Live and recorded actors use the same owner and frame selection. Recap seeds the
+recorded scene actors and each authenticated reconstruction, never current saved
+coordinates. Full-screen menu/battle return uses the existing field ownership
+boundary to reseed stationary covers; Start/Save keep the field clock continuous.
+The immutable return snapshot follows the same cover frames during its fade.
+No new saved field, encounter rule, step, or random draw is introduced.
+
+Depth comparison uses the renderer's available drawn actor geometry. The source
+loop also inspects invisible active object sprites; overlapping invisible-object
+depth influence is not independently closed here. This does not suppress their
+grass lifetime ownership, and the actual tested ordinary route has no such
+object overlap. It is a bounded fidelity limitation, not evidence of broken
+movement or encounters.
+
+Affected managed validation:333 Application cases passed (22s), covering the
+shared grass owner, public Route1 normal step, live/recap equality, dynamic NPC
+identity, jumps and Quest/return regressions. Application and Godot builds had
+zero warnings/errors. The existing portable extracted-C generator adds165 normal
+grass rows (stay/depart/return-before-END), and all earlier rows are unchanged.
+Its generated JSON remains ignored. The ordinary build/test commands were:
+
+```sh
+dotnet build tests/Game.Application.Tests/Game.Application.Tests.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~CampaignFieldGrassLandingEffectTests|FullyQualifiedName~GrassLandingRouteTests|FullyQualifiedName~CampaignFieldJumpEffectTests|FullyQualifiedName~CampaignFieldJumpPoseTests|FullyQualifiedName~QuestLog|FullyQualifiedName~FieldReturn'
+dotnet build src/Game.Godot/Game.Godot.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+```
+
+A bounded actual X11 cloud-window check used the unchanged previous strict
+checkpoint and walked seven normal tiles to Route1(16,5), then normally stepped
+into grass at(16,6). The pre-entry route left encounter grace/RNG unchanged;
+entry did not start battle. Raw captures show the rustle sequence settling into
+persistent cover, Bag cancel returning through field reconstruction, and an
+ordinary step north clearing the old cover. All15 public commands were Accepted.
+Core inspection checked the actual standing, entry, reconstructed and cleared
+images. Evidence: `/workspace/shared/walk-grass-native/`, especially
+`standing-cover.png`, `entry-04.png`, `bag-reconstructed.png`,
+`departed-clear.png`, and `native.log`. Tested Godot4.7.2/.NET10.0.12 MVID:
+`f2b68e24-357c-448d-aec0-acf16bc74744`. The window ran at time-scale0.1 for
+capture; exact callback counts remain source/managed evidence. Dummy audio was
+not audible acceptance. NPC and recorded-timeline combinations are managed
+coverage, not a claim that each was separately watched in the native window.

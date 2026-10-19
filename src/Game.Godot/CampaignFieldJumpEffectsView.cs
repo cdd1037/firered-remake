@@ -22,7 +22,14 @@ public partial class CampaignView
 
     private void SynchronizeFieldJumpEffects(CampaignState? before,CampaignState after,bool normalStep)
     {
-        if(before is null||before.World.Player.MapId!=after.World.Player.MapId){_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;}
+        if(before is null||before.World.Player.MapId!=after.World.Player.MapId||_fieldWarpSynchronizing)
+        { _fieldJumpCues.Clear();ReconstructFieldGrass(after); }
+        else foreach(var actor in after.Actors.Values.Where(a=>a.Active&&(a.LocalId!="LOCALID_CAMERA"||a.Visible)))
+            if(!before.Actors.TryGetValue(actor.LocalId,out var old)||!old.Active)
+            {
+                var origin=_poses.TryGetValue(actor.LocalId,out var pose)?pose.Position:new Vector2(actor.X*16,actor.Y*16);
+                _fieldGrass.QueueSpawn(actor.LocalId,(int)origin.X/16,(int)origin.Y/16,_fieldGrassFrame);
+            }
         if(before is not null&&!normalStep&&before.Motions.SequenceEqual(after.Motions))return;
         foreach(var track in _tracks)
         {
@@ -43,8 +50,33 @@ public partial class CampaignView
         }
     }
 
+    private void SeedFieldGrass(CampaignFieldGrassLandingEffects grass,CampaignState state,bool presented=false)
+    {
+        void Spawn(string id,int x,int y)
+        {
+            if(presented&&_poses.TryGetValue(id,out var pose)){x=(int)pose.Position.X/16;y=(int)pose.Position.Y/16;}
+            grass.QueueSpawn(id,x,y,0);
+        }
+        Spawn(CampaignQuestLogRecorder.PlayerId,state.World.Player.X,state.World.Player.Y);
+        foreach(var actor in state.Actors.Values.Where(a=>a.Active&&(a.LocalId!="LOCALID_CAMERA"||a.Visible)))
+            Spawn(actor.LocalId,actor.X,actor.Y);
+    }
+
+    private void ReconstructFieldGrass(CampaignState state)
+    {
+        _fieldGrass.Clear();_fieldGrassFrame=0;SeedFieldGrass(_fieldGrass,state,true);
+    }
+
+    private IReadOnlyList<CampaignFieldGrassLandingCover> FreshFieldGrass(CampaignState state)
+    {
+        var grass=new CampaignFieldGrassLandingEffects();SeedFieldGrass(grass,state);
+        grass.AdvanceTo(1,(x,y)=>JumpBehavior(state.World.Player.MapId,state.MapLayout,state.MapEdits?.Values??[],x,y),_=>true);
+        return grass.Covers;
+    }
+
     private void AdvanceFieldJumpEffects(double seconds)
     {
+        if(_fieldDisplayReturn.Suspended)return;
         _fieldGrassFrame+=seconds*60;
         _fieldGrass.AdvanceTo(_fieldGrassFrame,(x,y)=>JumpBehavior(_session.State.World.Player.MapId,_session.State.MapLayout,_session.State.MapEdits?.Values??[],x,y),
             id=>id==CampaignQuestLogRecorder.PlayerId||_session.State.Actors.TryGetValue(id,out var actor)&&actor.Active);
@@ -120,9 +152,9 @@ public partial class CampaignView
         foreach(var cover in covers)
         {
             int x=cover.X*16+8,y=cover.Y*16+8;
-            int priority=CampaignFieldGrassLandingEffects.Subpriority(elevation(cover.X,cover.Y),y,16,-(int)camera.Y,0);
+            int priority=CampaignFieldGrassLandingEffects.Subpriority(elevation(cover.X,cover.Y),y,16,-(int)camera.Y,cover.DepthOffset);
             priority=CampaignFieldGrassLandingEffects.AdjustCoverSubpriority(x,y,priority,geometry);
-            paints.Add((x,y,16,0,priority,true));
+            paints.Add((x,y,16,cover.Frame,priority,true));
         }
         foreach(var jump in jumps)
         {

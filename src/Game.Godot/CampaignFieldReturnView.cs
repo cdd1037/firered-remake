@@ -35,6 +35,7 @@ public partial class CampaignView
         if(!_fieldDisplayReturn.Observe(FieldDisplayOwner(),palette))return;
         if(_fieldFogScene is {} old)
             _fieldFogScene=new(old.AnchorCameraX,old.AnchorCameraY);
+        ReconstructFieldGrass(state);
         _fieldReturnSnapshot=CaptureFieldSnapshot(_session.State,new object(),0,true);
         _fieldReturnFrames=0;_fieldReturnProcessed=0;_held=null;_repeat=0;
     }
@@ -49,9 +50,10 @@ public partial class CampaignView
             var camera=OrdinaryFieldCamera(_poses[CampaignQuestLogRecorder.PlayerId].Position);
             if(_fieldFogScene is {} fog)
                 _fieldFogScene=fog.Advance(1,(int)camera.X,(int)camera.Y);
+            AdvanceFieldJumpEffects(1d/60);
             arrival.Advance();_fieldReturnProcessed++;
         }
-        _fieldReturnSnapshot=_fieldReturnSnapshot! with{Fog=_fieldFogScene};
+        _fieldReturnSnapshot=_fieldReturnSnapshot! with{Fog=_fieldFogScene,GrassCovers=_fieldGrass.Covers};
         if(arrival.Complete){_fieldReturnSnapshot=null;_fieldSnapshotReleasePending=true;}
         _held=null;QueueRedraw();return true;
     }
