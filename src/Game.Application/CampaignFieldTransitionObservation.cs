@@ -42,7 +42,7 @@ public sealed record CampaignQuestLogTransitionTiming(FieldTransitionCause Cause
     {
         if((Cause==FieldTransitionCause.StairWarp?DepartureStairBehavior is not (>=0x6c and <=0x6f):DepartureStairBehavior is not null)||
             (Arrival==FieldTransitionArrival.Stair?ArrivalStairBehavior is not (>=0x6c and <=0x6f):ArrivalStairBehavior is not null))return false;
-        if(!Enum.IsDefined(Departure)||Departure!=FieldTransitionDeparture.Immediate&&(Cause!=FieldTransitionCause.PlainWarp||Arrival!=FieldTransitionArrival.Plain))return false;
+        if(!Enum.IsDefined(Departure)||Departure!=FieldTransitionDeparture.Immediate&&(Cause!=FieldTransitionCause.PlainWarp||Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)))return false;
         if(!Enum.IsDefined(Interlude)||Interlude!=FieldTransitionInterlude.None&&
             (Cause is not (FieldTransitionCause.PlainWarp or FieldTransitionCause.NonAnimatedDoor)||Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.NonAnimatedDoor)))return false;
         if(!Enum.IsDefined(ArrivalPalette)||ArrivalPalette!=FieldArrivalPalette.Normal&&Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.Stair))return false;
@@ -143,6 +143,7 @@ public sealed partial class CampaignSession
                  receipt.ArrivalAnchor.Y+1!=receipt.To.Y||receipt.To.Facing!=Direction.South))return false;
         var from=_content.MapDefinition(receipt.From.MapId);
         var to=_content.MapDefinition(receipt.To.MapId);
+        if((from.RequiresFlash||to.RequiresFlash)&&(state.IsCycling||state.IsSurfing))return false;
         if(to.Weather=="WEATHER_SHADE"&&receipt.Arrival is not (FieldTransitionArrival.Plain or FieldTransitionArrival.Stair))return false;
         if((receipt.Cause==FieldTransitionCause.StairWarp||receipt.Arrival==FieldTransitionArrival.Stair)&&
             (from.MapType!="MAP_TYPE_INDOOR"||to.MapType!="MAP_TYPE_INDOOR"))return false;
@@ -164,13 +165,12 @@ public sealed partial class CampaignSession
             _content.Maps[receipt.To.MapId].SourceBehaviorAt(receipt.ArrivalAnchor.X,receipt.ArrivalAnchor.Y)==0x61;
         static bool OrdinaryCave(FieldMapDefinition map)=>map.MapType=="MAP_TYPE_UNDERGROUND"&&
             (map.Weather is "WEATHER_NONE" or "WEATHER_SUNNY");
-        static bool NormalCave(FieldMapDefinition map)=>OrdinaryCave(map)&&!map.RequiresFlash;
         // Same-section underground -> underground has no flash-transition table row.
         // Its ladder step, black fade and stationary arrival use the existing controllers.
         if(forest)return to.MapPreview?.VisitFlag is not null&&!state.IsCycling&&!state.IsSurfing&&receipt.Arrival==FieldTransitionArrival.Plain&&OrdinaryMap(from)&&OrdinaryMap(to);
-        if(caveExit)return NormalCave(from)&&OrdinaryMap(to);
+        if(caveExit)return OrdinaryCave(from)&&OrdinaryMap(to);
         if(caveEnter)return !state.IsCycling&&!state.IsSurfing&&OrdinaryMap(from)&&
-            (NormalCave(to)||interlude==FieldTransitionInterlude.RegionPreview&&OrdinaryMap(to));
+            (OrdinaryCave(to)||interlude==FieldTransitionInterlude.RegionPreview&&OrdinaryMap(to));
         if(ladder)return OrdinaryCave(from)&&OrdinaryCave(to);
         return (receipt.Departure==FieldTransitionDeparture.Immediate||receipt.Cause==FieldTransitionCause.NonAnimatedDoor)&&
             OrdinaryMap(from)&&OrdinaryMap(to);

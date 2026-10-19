@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using FireRed.Tests.Application.WildBattles;
 using Game.Application;
+using Game.Content;
 using Game.Domain;
 using Game.Domain.Events;
 using Game.Domain.Ids;
@@ -394,32 +395,282 @@ public sealed class FlashLadderTransitionTests : WildBattleFixture
         Assert.AreEqual(0, unknown.FlashLevel);
     }
 
-    [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void FlashCaveEntranceAndNorthExitRemainOutsideTheLadderCapability(bool exiting)
+    private void BeginEndpointRecording(CampaignSession session)
     {
-        var session = exiting ? Place(checkpoint.State, FirstFloor, 17, 3) : Place(checkpoint.State, Outside, 8, 20);
         Send(session, new("party_swap", PartyIndex: 1, Choice: 0));
-        var origin = session.State;
-        var warp = content.Maps[origin.World.Player.MapId].FieldWarps[0];
-        Assert.AreEqual(exiting ? (17, 2) : (8, 19), (warp.X, warp.Y));
-        Assert.AreEqual(exiting ? 0x61 : 0x60, content.Maps[origin.World.Player.MapId].SourceBehaviorAt(warp.X, warp.Y));
-        Send(session, new("move", Direction.North));
-        var receipt = session.State.FieldTransition;
-        Assert.IsNotNull(receipt);
-        Assert.AreEqual(exiting ? Outside : FirstFloor, receipt.To.MapId.Value);
-        Assert.AreEqual(exiting ? FieldTransitionCause.PlainWarp : FieldTransitionCause.NonAnimatedDoor, receipt.Cause);
-        Assert.AreEqual(FieldTransitionDeparture.StepOntoWarp, receipt.Departure);
-        Assert.AreEqual(exiting ? FieldTransitionArrival.NonAnimatedDoor : FieldTransitionArrival.Plain, receipt.Arrival);
-        Assert.AreEqual(exiting ? 0 : 4, session.State.FlashLevel);
-        Assert.IsFalse(session.CanPresentFieldTransition(origin, receipt));
+        Assert.AreEqual(CampaignQuestLogEvent.PartyOrder, session.State.QuestLog!.Scenes[^1].Actions[^1].Event);
+        // Finish the public caption on the ordinary clock before the transition.
+        for (ulong frame = 1; frame <= 256; frame++) session.ObserveQuestLogFieldFrame(frame);
+    }
+
+    private CampaignSession ObserveEndpoint(CampaignSession session, CampaignState origin,
+        int steps, int expectedEnd)
+    {
+        var state = session.State;
+        var receipt = state.FieldTransition!;
+        long revision = session.Revision;
+        string unchanged = JsonSerializer.Serialize(state);
+        var expectedRoamer = SourceRoamerRules.Transition(origin.Roamer!, RoamerTransition.Warp,
+            content.CelioRoamerMaps![receipt.To.MapId], origin.World.Rng);
+        Assert.AreEqual(receipt.From, origin.World.Player);
+        Assert.AreEqual(receipt.To, state.World.Player);
+        Assert.AreEqual(origin.World.StepCount + steps, state.World.StepCount);
+        Assert.AreEqual(origin.World.Revision + 1, state.World.Revision);
+        Assert.AreEqual(expectedRoamer.Rng, state.World.Rng);
+        AssertStructure(expectedRoamer.State, state.Roamer, "Only the accepted entry consumes roamer RNG.");
+        AssertStructure(origin.Party, state.Party, "Presentation preserves the party and learned moves.");
+        AssertStructure(origin.Inventory, state.Inventory, "Presentation preserves inventory.");
+        AssertStable(state);
+        Assert.IsTrue(session.CanPresentFieldTransition(origin, receipt));
         Assert.IsFalse(session.CanPresentFieldTransition(receipt));
-        Assert.AreEqual(0, session.FieldTransitionPreviewDuration(origin, receipt));
-        int change = FieldDoorPresentation.MinimumStepDepartureFrames;
-        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change,
-            change + FieldDoorPresentation.ArrivalFrames(receipt.Arrival)));
-        Assert.IsNull(Marker(session.State).TransitionTiming);
+        Assert.IsFalse(session.CanPresentFieldTransition(origin, receipt with { }));
+        Assert.IsFalse(session.CanPresentFieldTransition(origin with { }, receipt));
+        Assert.IsFalse(session.CanPresentFieldTransition(origin with { IsCycling = true }, receipt));
+        Assert.IsFalse(session.CanPresentFieldTransition(origin with { IsSurfing = true }, receipt));
+        var scene = state.QuestLog!.Scenes[^1];
+        var marker = Marker(state);
+        Assert.AreEqual(origin.FlashLevel, scene.FlashLevel);
+        Assert.AreEqual(state.FlashLevel, marker.Transition!.FlashLevel);
+        Assert.IsNull(marker.TransitionTiming);
+        var unknown = new CampaignQuestLogPlayback(new([scene]));
+        unknown.Tick(marker.StartFrame / 60d);
+        Assert.IsNull(unknown.ActiveTransitionTiming);
+        Assert.AreEqual(receipt.To.MapId.Value, unknown.Map);
+        Assert.AreEqual(state.FlashLevel, unknown.FlashLevel);
+
+        // Readiness is explicit. Derive each observed boundary by completing the
+        // existing source-tested controllers, rather than supplying a guessed span.
+        var departureSamples = new List<FieldDoorPresentation.PhaseSample>();
+        if (receipt.Departure == FieldTransitionDeparture.StepOntoWarp)
+        {
+            var departure = new FieldDoorPresentation.StepDeparture();
+            for (int frame = 0; frame < 128 && !departure.Complete; frame++)
+            { departureSamples.Add(departure.Sample); departure.Advance(true); }
+            Assert.IsTrue(departure.Complete);
+        }
+        else
+        {
+            var departure = new FieldWarpPresentation.Departure();
+            for (int frame = 0; frame < 128 && !departure.Complete; frame++)
+            { departureSamples.Add(FieldDoorPresentation.FromPlain(departure.Sample)); departure.Advance(true); }
+            Assert.IsTrue(departure.Complete);
+        }
+        string generated = Path.Combine(TestAssets.Root, "content/generated");
+        var art = GeneratedCaveTransitionArt.Load(generated);
+        var interlude = session.FieldTransitionInterludeFor(receipt);
+        int interludeFrames, wrapper = 0;
+        if (interlude == FieldTransitionInterlude.CavePreviewEnter)
+        {
+            Assert.AreEqual(40, session.FieldTransitionPreviewDuration(origin, receipt));
+            Assert.AreEqual(0, session.FieldTransitionPreviewDuration(state, receipt));
+            var picture = GeneratedMapPreviewCatalog.Load(generated).Find(content.MapDefinition(receipt.To.MapId).RegionMapSection);
+            Assert.IsNotNull(picture);
+            Assert.AreEqual("ROCK TUNNEL", picture.Name);
+            var preview = new FieldCaveTransitionPresentation.CavePreview(art.TransitionPalette,
+                art.WhitePalette, art.BlackPalette, true);
+            byte[] pixels = new byte[picture.Art.Indices.Length * 4];
+            bool sawPicture = false;
+            for (int frame = 0; frame < 256 && !preview.Complete; frame++)
+            {
+                if (preview.Sample.Phase == FieldCaveTransitionPresentation.CavePreviewPhase.Hold && !sawPicture)
+                {
+                    FieldCaveTransitionPresentation.CompositePreviewRgba(picture.Art.Indices.AsSpan(),
+                        picture.Art.Palette.AsSpan(), preview.Sample, pixels);
+                    Assert.IsTrue(pixels.Where((_, i) => i % 4 != 3).Any(value => value != 0));
+                    sawPicture = true;
+                }
+                preview.Advance(true, true, false);
+            }
+            Assert.IsTrue(sawPicture && preview.Complete);
+            Assert.AreEqual(41, preview.Sample.HoldFrames);
+            Assert.AreEqual(97, preview.Frames);
+            wrapper = preview.PreviewFrames;
+            interludeFrames = preview.Frames;
+        }
+        else
+        {
+            Assert.AreEqual(FieldTransitionInterlude.CaveExit, interlude);
+            Assert.AreEqual(0, session.FieldTransitionPreviewDuration(origin, receipt));
+            var exit = new FieldCaveTransitionPresentation.Exit(art.TransitionPalette, art.WhitePalette);
+            for (int frame = 0; frame < 128 && !exit.Complete; frame++) exit.Advance();
+            Assert.IsTrue(exit.Complete);
+            Assert.AreEqual(38, exit.Frames);
+            interludeFrames = exit.Frames;
+        }
+        var arrivalSamples = new List<FieldDoorPresentation.PhaseSample>();
+        if (receipt.Arrival == FieldTransitionArrival.NonAnimatedDoor)
+        {
+            var arrival = new FieldDoorPresentation.NonAnimatedArrival();
+            for (int frame = 0; frame < 128 && !arrival.Complete; frame++)
+            { arrivalSamples.Add(arrival.Sample); arrival.Advance(); }
+            Assert.IsTrue(arrival.Complete);
+            Assert.AreEqual(16, arrival.Sample.WalkPixels);
+        }
+        else
+        {
+            Assert.AreEqual(FieldTransitionArrival.Plain, receipt.Arrival);
+            var arrival = new FieldWarpPresentation.PlainArrival();
+            for (int frame = 0; frame < 128 && !arrival.Complete; frame++)
+            { arrivalSamples.Add(FieldDoorPresentation.FromPlain(arrival.Sample)); arrival.Advance(); }
+            Assert.IsTrue(arrival.Complete);
+        }
+        int change = departureSamples.Count + interludeFrames;
+        int end = change + arrivalSamples.Count;
+        Assert.AreEqual(expectedEnd, end);
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt with { }, change, end, wrapper));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change, end - 1, wrapper));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change, end + 1, wrapper));
+        Assert.IsTrue(session.CompleteFieldTransitionPresentation(receipt, change, end, wrapper));
+        Assert.IsTrue(session.CompleteFieldTransitionPresentation(receipt, change, end, wrapper));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change + 1, end + 1, wrapper));
+        var saved = session.PrepareFieldSave();
+        var recorded = Marker(saved);
+        var timing = recorded.TransitionTiming;
+        Assert.IsNotNull(timing);
+        Assert.AreEqual(receipt.Cause, timing.Cause);
+        Assert.AreEqual(receipt.Departure, timing.EffectiveDeparture);
+        Assert.AreEqual(receipt.Arrival, timing.Arrival);
+        Assert.AreEqual(interlude, timing.Interlude);
+        Assert.AreEqual(wrapper, timing.PreviewFrames);
+        Assert.AreEqual(departureSamples.Count, timing.DepartureEndFrame);
+        Assert.AreEqual(change, timing.SwitchFrame);
+        Assert.AreEqual(end, timing.EndFrame);
+        Assert.AreEqual(receipt.DepartureStep is { } step ? new CampaignQuestLogDoorAnchor(step.X, step.Y) : null,
+            timing.DepartureDoor);
+        Assert.AreEqual(receipt.Arrival == FieldTransitionArrival.NonAnimatedDoor ?
+            new CampaignQuestLogDoorAnchor(receipt.ArrivalAnchor.X, receipt.ArrivalAnchor.Y) : null, timing.ArrivalDoor);
+        Assert.IsNull(CampaignQuestLogRecorder.Validate(saved.QuestLog, content.QuestLogSource, content));
+        Assert.IsNull(session.ValidatePlayerSave(saved));
+        AssertStructure(state with { QuestLog = saved.QuestLog }, saved, "Observation changes only the saved recording projection.");
+        var decoded = SaveCodec.Decode<CampaignState>(SaveCodec.Encode(saved, revision, session.RulesVersion, content.ContentVersion),
+            session.RulesVersion, content.ContentVersion, validate: session.ValidatePlayerSave);
+        var restored = CampaignSession.RestoreCurrent(content, decoded.State, decoded.Generation);
+        AssertStructure(saved, restored.State, "Strict Continue preserves the complete endpoint record and gameplay payload.");
+        Assert.IsFalse(restored.CompleteFieldTransitionPresentation(receipt, change, end, wrapper));
+
+        int replaySwitch = change - timing.PreviewOmittedFrames, replayEnd = end - timing.PreviewOmittedFrames;
+        if (wrapper != 0) Assert.AreEqual(92, replayEnd, "Quest substitutes generic ENTER for the visited preview.");
+        var normalized = timing with { PreviewFrames = 0, SwitchFrame = replaySwitch, EndFrame = replayEnd };
+        var playback = new CampaignQuestLogPlayback(new([restored.State.QuestLog!.Scenes[^1]]));
+        playback.Tick(recorded.StartFrame / 60d);
+        for (int frame = 0; frame < replayEnd; frame++)
+        {
+            Assert.AreEqual(normalized, playback.ActiveTransitionTiming);
+            var expected = frame < replaySwitch ? receipt.From : receipt.To;
+            Assert.AreEqual(expected.MapId.Value, playback.Map);
+            Assert.AreEqual(frame < replaySwitch ? origin.FlashLevel : state.FlashLevel, playback.FlashLevel);
+            var actor = playback.Actors.Single(a => a.Id == CampaignQuestLogRecorder.PlayerId);
+            Assert.AreEqual((expected.X, expected.Y, expected.Facing), (actor.X, actor.Y, actor.Facing));
+            if (frame < departureSamples.Count || frame >= replaySwitch)
+            {
+                var live = frame < departureSamples.Count ? departureSamples[frame] : arrivalSamples[frame - replaySwitch];
+                Assert.AreEqual(live, FieldDoorPresentation.SampleRecorded(timing.Cause, timing.Arrival,
+                    replaySwitch, frame, departureKind: timing.EffectiveDeparture, interludeKind: timing.Interlude));
+            }
+            playback.Tick(1d / 60);
+        }
+        Assert.IsNull(playback.ActiveTransitionTiming);
+        Assert.AreEqual(state.FlashLevel, playback.FlashLevel);
+        Assert.AreSame(state, session.State);
+        Assert.AreEqual(revision, session.Revision);
+        Assert.AreEqual(unchanged, JsonSerializer.Serialize(session.State), "Observation and recap preserve positions, steps, RNG and all committed gameplay.");
+        Assert.IsNull(marker.TransitionTiming);
+        Assert.AreEqual(origin.FlashLevel, restored.State.QuestLog!.Scenes[^1].FlashLevel);
+        Assert.AreEqual(state.FlashLevel, Marker(restored.State).Transition!.FlashLevel);
+        return restored;
+    }
+
+    [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(true, true)]
+    public void PublicVisitedFlashEntrancesAndDarkOrLitExitsPreserveTheirOwnHistory(bool south, bool lit)
+    {
+        int outsideY = south ? 57 : 19, caveX = south ? 18 : 17, caveY = south ? 37 : 2;
+        var cave = new MapId(FirstFloor); var outside = new MapId(Outside);
+        Assert.AreEqual(new FieldWarp(south ? 1 : 0, 8, outsideY, 3, cave, south ? 5 : 0),
+            content.Maps[outside].FieldWarps[south ? 1 : 0]);
+        Assert.AreEqual(new FieldWarp(south ? 5 : 0, caveX, caveY, 3, outside, south ? 1 : 0),
+            content.Maps[cave].FieldWarps[south ? 5 : 0]);
+        Assert.AreEqual(0x60, content.Maps[outside].SourceBehaviorAt(8, outsideY));
+        Assert.AreEqual(south ? 0x65 : 0x61, content.Maps[cave].SourceBehaviorAt(caveX, caveY));
+        Assert.IsTrue(content.MapDefinition(cave).RequiresFlash);
+        var session = Place(WithdrawExistingFlashOwner(), Outside, 8, outsideY + 1);
+        Assert.IsTrue(session.State.Script.Flags.GetValueOrDefault("FLAG_WORLD_MAP_ROCK_TUNNEL_1F"));
+        Assert.AreEqual(0, session.State.FlashLevel);
+        BeginEndpointRecording(session);
+        var origin = session.State;
+        Send(session, new("move", Direction.North));
+        var entrance = session.State.FieldTransition!;
+        Assert.AreEqual(FieldTransitionCause.NonAnimatedDoor, entrance.Cause);
+        Assert.AreEqual(FieldTransitionDeparture.StepOntoWarp, entrance.Departure);
+        Assert.AreEqual(FieldTransitionArrival.Plain, entrance.Arrival);
+        Assert.AreEqual(new TilePosition(outside, 8, outsideY, 3, Direction.North), entrance.DepartureStep);
+        Assert.AreEqual(new TilePosition(cave, caveX, caveY, 3, Direction.North), entrance.To);
+        Assert.AreEqual(entrance.To, entrance.ArrivalAnchor);
+        Assert.AreEqual(4, session.State.FlashLevel);
+        Assert.IsFalse(session.State.Script.Flags.GetValueOrDefault(FieldFlashSourcePresentation.ActiveFlag));
+        session = ObserveEndpoint(session, origin, 1, 161);
+        var entryHistory = session.State.QuestLog!.Scenes[^1];
+        Send(session, new("turn", Direction.South));
+        if (!south)
+        {
+            Send(session, new("move", Direction.South));
+            Assert.AreEqual(new TilePosition(cave, 17, 3, 3, Direction.South), session.State.World.Player);
+            Send(session, new("turn", Direction.North));
+        }
+        if (lit) UseFlash(session);
+        BeginEndpointRecording(session);
+        origin = session.State;
+        Assert.AreEqual(lit ? 0 : 4, origin.FlashLevel);
+        Send(session, new("move", south ? Direction.South : Direction.North));
+        var exit = session.State.FieldTransition!;
+        Assert.AreEqual(FieldTransitionCause.PlainWarp, exit.Cause);
+        Assert.AreEqual(south ? FieldTransitionDeparture.Immediate : FieldTransitionDeparture.StepOntoWarp, exit.Departure);
+        Assert.AreEqual(FieldTransitionArrival.NonAnimatedDoor, exit.Arrival);
+        Assert.AreEqual(south ? null : new TilePosition(cave, 17, 2, 3, Direction.North), exit.DepartureStep);
+        Assert.AreEqual(new TilePosition(outside, 8, outsideY, 3, Direction.South), exit.ArrivalAnchor);
+        Assert.AreEqual(new TilePosition(outside, 8, outsideY + 1, 3, Direction.South), exit.To);
+        Assert.AreEqual(0, session.State.FlashLevel);
+        Assert.IsFalse(session.State.Script.Flags.GetValueOrDefault(FieldFlashSourcePresentation.ActiveFlag),
+            "The public outdoor entry clears committed Flash before any presentation callback.");
+        session = ObserveEndpoint(session, origin, south ? 0 : 1, south ? 103 : 119);
+        Assert.AreEqual(0, entryHistory.FlashLevel);
+        Assert.AreEqual(4, entryHistory.Actions.Single(a => a.Transition is not null).Transition!.FlashLevel,
+            "Using Flash and exiting cannot illuminate the historical entrance.");
+        if (lit)
+        {
+            BeginEndpointRecording(session);
+            origin = session.State;
+            Send(session, new("move", Direction.North));
+            Assert.AreEqual(4, session.State.FlashLevel, "Reentry stays dark after the authenticated outdoor reset.");
+            Assert.IsFalse(session.State.Script.Flags.GetValueOrDefault(FieldFlashSourcePresentation.ActiveFlag));
+            session = ObserveEndpoint(session, origin, 1, 161);
+        }
+        AssertStrictContinue(session);
+    }
+
+    [TestMethod]
+    public void NonFlashMtMoonSteppedExitAlsoRecordsNonAnimatedArrival()
+    {
+        var cave = new MapId("map.mt-moon-b1f"); var outside = new MapId("map.route-4");
+        Assert.AreEqual(new FieldWarp(7, 45, 4, 3, outside, 1), content.Maps[cave].FieldWarps[7]);
+        Assert.AreEqual(0x61, content.Maps[cave].SourceBehaviorAt(45, 4));
+        Assert.AreEqual(0x60, content.Maps[outside].SourceBehaviorAt(32, 5));
+        Assert.AreEqual(new FieldWarp(1, 32, 5, 0, cave, 7), content.Maps[outside].FieldWarps[1]);
+        Assert.AreEqual(3, content.Maps[outside].GetTile(32, 6)!.Elevation);
+        Assert.IsFalse(content.MapDefinition(cave).RequiresFlash);
+        var session = Place(checkpoint.State, cave.Value, 45, 5);
+        BeginEndpointRecording(session);
+        var origin = session.State;
+        Send(session, new("move", Direction.North));
+        var receipt = session.State.FieldTransition!;
+        Assert.AreEqual(FieldTransitionCause.PlainWarp, receipt.Cause);
+        Assert.AreEqual(FieldTransitionDeparture.StepOntoWarp, receipt.Departure);
+        Assert.AreEqual(FieldTransitionArrival.NonAnimatedDoor, receipt.Arrival);
+        Assert.AreEqual(new TilePosition(cave, 45, 4, 3, Direction.North), receipt.DepartureStep);
+        Assert.AreEqual(new TilePosition(outside, 32, 5, 0, Direction.South), receipt.ArrivalAnchor);
+        Assert.AreEqual(new TilePosition(outside, 32, 6, 3, Direction.South), receipt.To);
+        session = ObserveEndpoint(session, origin, 1, 119);
         AssertStrictContinue(session);
     }
 }
