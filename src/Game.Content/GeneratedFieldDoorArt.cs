@@ -39,8 +39,8 @@ public sealed class GeneratedFieldDoorArt
             document.Entries.IsDefault || document.Entries.Any(entry => entry is null ||
                 string.IsNullOrWhiteSpace(entry.Layout) || entry.MetatileId is < 0 or > 1023 ||
                 entry.SoundEffect is not ("SE_DOOR" or "SE_SLIDING_DOOR") ||
-                entry.Width != 16 || entry.Height != 16 || entry.AtlasY < 0 || entry.AtlasY % 48 != 0 ||
-                entry.AtlasY > document.Height - 48) ||
+                entry.Width != 16 || entry.Height is not (16 or 32) || entry.AtlasY < 0 || entry.AtlasY % 48 != 0 ||
+                entry.AtlasY > document.Height - 3 * entry.Height) ||
             document.Entries.Select(entry => (entry.Layout, entry.MetatileId)).Distinct().Count() != document.Entries.Length)
             throw new InvalidDataException("Invalid generated field door art bindings.");
         byte[] png = GeneratedResourceFile.Read(generatedRoot, document.TexturePath);

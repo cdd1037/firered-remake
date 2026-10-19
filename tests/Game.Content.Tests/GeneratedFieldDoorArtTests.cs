@@ -64,6 +64,19 @@ public sealed class GeneratedFieldDoorArtTests
     }
 
     [TestMethod]
+    public void LargeDoorUsesThreeFullHeightStagesAndAllReplacementLayers()
+    {
+        var door = GeneratedFieldDoorArt.Load(Generated).Find("LAYOUT_SSANNE_ROOM1", 0x281);
+        Assert.IsNotNull(door);
+        Assert.AreEqual("SE_DOOR", door.SoundEffect);
+        Assert.AreEqual(16, door.Width);
+        Assert.AreEqual(32, door.Height);
+        for (int frame = 0; frame < 3; frame++)
+            for (int layer = 0; layer < 3; layer++)
+                Assert.AreEqual(new ImageRegion(layer * 16, door.AtlasY + frame * 32, 16, 32), door.FrameRegion(frame, layer));
+    }
+
+    [TestMethod]
     public void LoadsOnlyGeneratedAssetsAndOwnsImmutableBindings()
     {
         string root = Prepare();
@@ -84,6 +97,7 @@ public sealed class GeneratedFieldDoorArtTests
     [DataRow("path")]
     [DataRow("frameSize")]
     [DataRow("outsideAtlas")]
+    [DataRow("largeOutsideAtlas")]
     [DataRow("unalignedAtlas")]
     [DataRow("metatile")]
     [DataRow("sound")]
@@ -101,8 +115,9 @@ public sealed class GeneratedFieldDoorArtTests
             {
                 case "duplicate": entries.Add(entry.DeepClone()); break;
                 case "path": document["texturePath"] = "../door.png"; break;
-                case "frameSize": entry["height"] = 32; break;
+                case "frameSize": entry["height"] = 48; break;
                 case "outsideAtlas": entry["atlasY"] = document["height"]!.GetValue<int>(); break;
+                case "largeOutsideAtlas": entry["height"] = 32; entry["atlasY"] = document["height"]!.GetValue<int>() - 48; break;
                 case "unalignedAtlas": entry["atlasY"] = 1; break;
                 case "metatile": entry["metatileId"] = 1024; break;
                 case "sound": entry["soundEffect"] = "unknown"; break;

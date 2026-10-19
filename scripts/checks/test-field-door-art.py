@@ -25,6 +25,9 @@ PNG = 'graphics/door_anims/pallet.png'
 PALETTE = 'data/tilesets/secondary/pallet_town/palettes/08.pal'
 RECIPE = ROOT / 'scripts/recipes/presentation/field-door-art.json'
 UNUSED_WARP = 'METATILE_VermilionCity_SSAnneWarp'
+SS_ANNE_DOOR = 'METATILE_SSAnne_Door'
+SS_ANNE = 'LAYOUT_SSANNE_1F_CORRIDOR'
+SS_ANNE_PNG = 'graphics/door_anims/ss_anne.png'
 
 
 def source():
@@ -41,24 +44,29 @@ def current_layouts():
             for row in selected}
 
 
-def independent_small_doors():
+def independent_doors():
     """Read original declarations without any importer parser or palette helper."""
     text = (RAW / 'src/field_door.c').read_text()
     labels = (RAW / 'include/constants/metatile_labels.h').read_text()
     result = {}
     for line in text.splitlines():
-        match = re.fullmatch(r'\s*\{(METATILE_\w+),\s*(DOOR_SOUND_\w+),\s*DOOR_SIZE_1x1,\s*(\w+),\s*(\w+)\},', line)
+        match = re.fullmatch(r'\s*\{(METATILE_\w+),\s*(DOOR_SOUND_\w+),\s*DOOR_SIZE_(1x[12]),\s*(\w+),\s*(\w+)\},', line)
         if not match:
             continue
-        name, sound, tiles, palette = match.groups()
+        name, sound, size, tiles, palette = match.groups()
         metatile = int(re.search(r'^#define\s+' + name + r'\s+(0x[\da-fA-F]+)\b', labels, re.M)[1], 16)
         path = re.search(r'\b' + tiles + r'\[\] = INCBIN_U8\("([^"]+)"\)', text)[1]
         numbers = re.search(r'\b' + palette + r'\[\] = \{([^}]+)\}', text)[1]
         result[name] = dict(metatile=metatile, sound={'DOOR_SOUND_NORMAL': 'SE_DOOR', 'DOOR_SOUND_SLIDING': 'SE_SLIDING_DOOR'}[sound],
-                            path=path.replace('.4bpp', '.png'), palettes=[int(x) for x in numbers.split(',')])
+                            height={'1x1': 16, '1x2': 32}[size], path=path.replace('.4bpp', '.png'),
+                            palettes=[int(x) for x in numbers.split(',')])
     if not result:
-        raise AssertionError('No original small-door rows found')
+        raise AssertionError('No original door rows found')
     return result
+
+
+def independent_small_doors():
+    return {name: row for name, row in independent_doors().items() if row['height'] == 16}
 
 
 class OriginalLayout:
@@ -92,31 +100,43 @@ class OriginalLayout:
 
     def rgba(self, door):
         original = Image.open(RAW / door['path'])
-        if original.mode != 'P' or original.size != (16, 48) or original.getextrema()[1] > 15:
-            raise AssertionError('Invalid original small-door sheet')
+        height = door['height']
+        if original.mode != 'P' or original.size != (16, height * 3) or original.getextrema()[1] > 15:
+            raise AssertionError('Invalid original door sheet')
+        if height == 32 and self.primary.crop((0, 0, 8, 8)).getextrema() != (0, 0):
+            raise AssertionError('Large original door requires transparent blank tile')
         pixels = bytearray()
-        for y in range(48):
+        for y in range(height * 3):
             for x in range(48):
                 layer, local_x = divmod(x, 16)
-                quadrant = (y % 16 // 8) * 2 + local_x // 8
+                tile = (y % height // 8) * 2 + local_x // 8
+                if layer == 1 and tile >= 4:
+                    # The lower metatile's unused palette read is out of the
+                    # source array. The verified all-zero tile stays invisible.
+                    pixels.extend((0, 0, 0, 0))
+                    continue
                 index = original.getpixel((local_x, y)) if layer == 0 else self.primary.getpixel((local_x % 8, y % 8))
-                slot = 0 if layer == 2 else door['palettes'][quadrant + layer * 4]
+                slot = 0 if layer == 2 else door['palettes'][tile + layer * 4]
                 pixels.extend((*self.palettes[slot][index], 255 if index else 0))
         return bytes(pixels)
 
 
 class FieldDoorArtTests(unittest.TestCase):
-    def test_recipe_admits_all_real_small_doors_but_not_unused_warp_or_large_doors(self):
+    def test_recipe_admits_real_small_doors_and_normal_large_door_but_not_special_large_doors(self):
         rows = independent_small_doors()
         admitted = json.loads(RECIPE.read_bytes())['metatiles']
         self.assertEqual(len(admitted), len(set(admitted)))
-        self.assertEqual(set(rows) - {UNUSED_WARP}, set(admitted))
+        normal_large = {name for name, row in independent_doors().items()
+                        if row['height'] == 32 and row['sound'] == 'SE_DOOR'}
+        self.assertEqual({SS_ANNE_DOOR}, normal_large)
+        self.assertEqual((set(rows) - {UNUSED_WARP}) | normal_large, set(admitted))
         # The original table documents this reused harbor warp as having no door.
         self.assertIn('warp to enter the SS Anne from the harbor, which has no door.', (RAW / 'src/field_door.c').read_text())
 
     def test_all_styles_and_current_layouts_match_independent_source_rgba_and_sounds(self):
         rows = independent_small_doors()
         del rows[UNUSED_WARP]
+        rows[SS_ANNE_DOOR] = independent_doors()[SS_ANNE_DOOR]
         layouts = {row['id']: row for row in json.loads((RAW / 'data/layouts/layouts.json').read_bytes())['layouts'] if 'id' in row}
         selected = current_layouts()
         document, atlas = unpack(compile_outputs(source(), selected))
@@ -139,11 +159,12 @@ class FieldDoorArtTests(unittest.TestCase):
                     entry = actual[key]
                     self.assertEqual({'layout', 'metatileId', 'soundEffect', 'width', 'height', 'atlasY'}, set(entry))
                     self.assertEqual(door['sound'], entry['soundEffect'])
-                    self.assertEqual((16, 16), (entry['width'], entry['height']))
+                    self.assertEqual((16, door['height']), (entry['width'], entry['height']))
                     self.assertEqual(0, entry['atlasY'] % 48)
                     self.assertGreaterEqual(entry['atlasY'], 0)
-                    self.assertLessEqual(entry['atlasY'] + 48, atlas.height)
-                    self.assertEqual(original.rgba(door), atlas.crop((0, entry['atlasY'], 48, entry['atlasY'] + 48)).tobytes())
+                    end = entry['atlasY'] + door['height'] * 3
+                    self.assertLessEqual(end, atlas.height)
+                    self.assertEqual(original.rgba(door), atlas.crop((0, entry['atlasY'], 48, end)).tobytes())
         self.assertEqual(expected, set(actual))
         self.assertEqual(set(rows), represented)
         self.assertEqual({'SE_DOOR', 'SE_SLIDING_DOOR'}, sounds)
@@ -164,6 +185,100 @@ class FieldDoorArtTests(unittest.TestCase):
         row = source_doors(source())['METATILE_PalletTown_Door']
         self.assertEqual(dict(metatile=0x2a3, height=16, path=PNG,
                               palettes=[8] * 8, sound='SE_DOOR'), row)
+        self.assertEqual(dict(metatile=0x281, height=32, path=SS_ANNE_PNG,
+                              palettes=[7] * 8, sound='SE_DOOR'), source_doors(source())[SS_ANNE_DOOR])
+
+    def test_large_and_small_source_callbacks_share_durations_and_use_correct_tile_offsets(self):
+        text = (RAW / 'src/field_door.c').read_text()
+        for direction in ('Open', 'Close'):
+            tables = {}
+            for size, stride in (('Small', 4), ('Large', 8)):
+                name = 'sDoorAnimFrames_' + direction + size
+                body = re.search(r'\b' + name + r'\[\] = \{(.*?)\n\};', text, re.S)[1]
+                rows = re.findall(r'\{(\d+),\s*([^}]+)\}', body)
+                offsets = ['CLOSED_DOOR_TILES_OFFSET', '0 * TILE_SIZE_4BPP',
+                           str(stride) + ' * TILE_SIZE_4BPP', str(stride * 2) + ' * TILE_SIZE_4BPP']
+                if direction == 'Close':
+                    offsets.reverse()
+                self.assertEqual(offsets, [offset.strip() for _, offset in rows])
+                self.assertEqual([4] * 4, [int(duration) for duration, _ in rows])
+                self.assertRegex(body, r'\{\}\s*$')
+                tables[size] = [duration for duration, _ in rows]
+            self.assertEqual(tables['Small'], tables['Large'])
+        drawing = re.search(r'static void DrawCurrentDoorAnimFrame\([^;]*?\)\n\{.*?\n\}', text, re.S)[0]
+        self.assertIn('DrawDoorMetatileAt(x, y - 1, tiles);', drawing)
+        self.assertIn('BuildDoorTiles(tiles, DOOR_TILE_START + 4, &paletteNums[4]);', drawing)
+        self.assertTrue(drawing.rstrip().endswith('DrawDoorMetatileAt(x, y, tiles);\n}'))
+
+    def test_large_frames_cover_both_metatiles_and_replace_all_layers(self):
+        door = independent_doors()[SS_ANNE_DOOR]
+        layout = next(row for row in json.loads((RAW / 'data/layouts/layouts.json').read_bytes())['layouts']
+                      if row.get('id') == SS_ANNE)
+        original = OriginalLayout(layout)
+        document, atlas = unpack(compile_outputs(source(), {SS_ANNE}, admitted=[SS_ANNE_DOOR]))
+        self.assertEqual([dict(layout=SS_ANNE, metatileId=0x281, soundEffect='SE_DOOR',
+                               width=16, height=32, atlasY=0)], document['entries'])
+        self.assertEqual((48, 96), atlas.size)
+        self.assertEqual(original.rgba(door), atlas.tobytes())
+        for frame in range(3):
+            for layer in range(3):
+                replacement = atlas.crop((layer * 16, frame * 32, (layer + 1) * 16, (frame + 1) * 32))
+                old = Image.new('RGBA', (48, 64), (231, 12, 197, 255))
+                # The anchor is the bottom metatile, so a 32px frame begins one
+                # 16px metatile above it, exactly as DrawCurrentDoorAnimFrame.
+                old.paste(replacement, (16, 32 - 32 + 16))
+                self.assertEqual(replacement.tobytes(), old.crop((16, 16, 32, 48)).tobytes())
+                self.assertEqual((231, 12, 197, 255), old.getpixel((16, 48)))
+                if layer > 0:
+                    self.assertEqual({0}, set(replacement.getchannel('A').tobytes()))
+        self.assertEqual(bytes(16 * 16 * 4), atlas.crop((16, 16, 32, 32)).tobytes())
+
+    def test_mixed_heights_pack_without_overlap_and_keep_small_pixels(self):
+        document, atlas = unpack(compile_outputs(source(), {PALLET, SS_ANNE}, admitted=[PALLET_DOOR, SS_ANNE_DOOR]))
+        self.assertEqual(2, len(document['entries']))
+        ordered = sorted(document['entries'], key=lambda row: row['atlasY'])
+        self.assertEqual((48, 144), atlas.size)
+        self.assertEqual(0, ordered[0]['atlasY'])
+        self.assertEqual(ordered[0]['height'] * 3, ordered[1]['atlasY'])
+        for entry in ordered:
+            label = PALLET_DOOR if entry['height'] == 16 else SS_ANNE_DOOR
+            _, isolated = unpack(compile_outputs(source(), {entry['layout']}, admitted=[label]))
+            self.assertEqual(isolated.tobytes(), atlas.crop((0, entry['atlasY'], 48,
+                                                             entry['atlasY'] + entry['height'] * 3)).tobytes())
+
+    def test_large_door_rejects_nontransparent_primary_tile_and_changed_source_placement(self):
+        src = source()
+        path = 'data/tilesets/primary/general/tiles.png'
+        image = Image.open(io.BytesIO(src.data[path]))
+        image.putpixel((0, 0), 1)
+        data = io.BytesIO()
+        image.save(data, format='PNG')
+        src.data[path] = data.getvalue()
+        with self.assertRaisesRegex(ValueError, 'transparent primary tile 0'):
+            compile_outputs(src, {SS_ANNE}, admitted=[SS_ANNE_DOOR])
+        src = source()
+        src.data['src/field_door.c'] = src.data['src/field_door.c'].replace(
+            b'DrawDoorMetatileAt(x, y - 1, tiles);', b'DrawDoorMetatileAt(x, y - 2, tiles);')
+        with self.assertRaisesRegex(ValueError, 'source door tile placement'):
+            compile_outputs(src, {SS_ANNE}, admitted=[SS_ANNE_DOOR])
+
+    def test_large_admitted_sheet_requires_three_full_indexed_frames_even_outside_its_layout(self):
+        for mutation in ('rgb', 'size', 'index'):
+            with self.subTest(mutation=mutation):
+                image = Image.open(RAW / SS_ANNE_PNG)
+                if mutation == 'rgb':
+                    image = image.convert('RGB')
+                elif mutation == 'size':
+                    image = image.crop((0, 0, 16, 48))
+                else:
+                    image.putpalette([0, 0, 0] * 256)
+                    image.putpixel((0, 0), 16)
+                data = io.BytesIO()
+                image.save(data, format='PNG')
+                src = source()
+                src.data[SS_ANNE_PNG] = data.getvalue()
+                with self.assertRaisesRegex(ValueError, 'indexed 4bpp|three original 16x32 frames'):
+                    compile_outputs(src, {PALLET}, admitted=[SS_ANNE_DOOR])
 
     def test_every_rgba_matches_independent_original_pixels_with_current_map_palettes(self):
         src = source()
@@ -248,8 +363,6 @@ class FieldDoorArtTests(unittest.TestCase):
             (root / PNG).unlink()
             with self.assertRaises(FileNotFoundError):
                 compile_outputs(WorldSource(root), {PALLET}, admitted=[PALLET_DOOR])
-        with self.assertRaisesRegex(ValueError, 'small-door'):
-            compile_outputs(source(), {PALLET}, admitted=['METATILE_SeaCottage_Teleporter_Door'])
         with self.assertRaisesRegex(ValueError, 'no source table row'):
             compile_outputs(source(), {PALLET}, admitted=['METATILE_Missing'])
         with self.assertRaisesRegex(ValueError, 'Empty or duplicate'):
