@@ -13,7 +13,7 @@ class ImpactEmissionImportTests(unittest.TestCase):
  def setUpClass(cls):
   cls.pack=json.loads(imp.build(REFERENCE)[0]);cls.rows={s['moveId']:s for s in cls.pack['scripts']};cls.raw=imp.read_sources(REFERENCE)
  def test_four_complete_roots_have_exact_source_scripts_children_and_load_only_material(self):
-  self.assertTrue({6,65,140,238}<=set(self.rows));self.assertNotIn(348,self.rows)
+  self.assertTrue({6,65,140,238}<=set(self.rows))
   self.assertEqual(['gFlashingHitSplatSpriteTemplate'],self.rows[65]['spriteDependencies']);self.assertEqual(['gBarrageBallSpriteTemplate'],self.rows[140]['spriteDependencies']);self.assertEqual(['whirlwind-lines'],self.rows[65]['materialDependencies'])
   for move,creates,tasks in [(6,3,1),(65,4,2),(140,1,3),(238,4,1)]:
    commands=self.rows[move]['commands'];self.assertEqual(creates,sum(c['op']=='createsprite' for c in commands));self.assertEqual(tasks,sum(c['op']=='createvisualtask' for c in commands));self.assertEqual('end',commands[-1]['op']);self.assertFalse(any(c['op'] in {'call','goto','jumpargeq','jumpifmoveturn','choosetwoturnanim'} for c in commands))

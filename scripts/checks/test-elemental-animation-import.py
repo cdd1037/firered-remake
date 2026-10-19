@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
 from indexed_material_expectations import decode_indexed
+from source_animation_expectations import assert_source_move_identities
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('elemental_import',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
@@ -205,7 +206,7 @@ class ElementalImportTests(unittest.TestCase):
  def test_runtime_pack_and_pixels_regenerate(self):
   data,assets=imp.build(REFERENCE)
   self.assertEqual(data,(ROOT/'content/generated/battle/animations/elemental.json').read_bytes())
-  self.assertEqual({7, 8, 9, 14, 18, 43, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 58, 61, 62, 63, 71, 72, 73, 75, 80, 81, 82, 83, 84, 85, 86, 88, 92, 100, 101, 102, 103, 104, 105, 108, 109, 114, 116, 118, 121, 124, 126, 127, 128, 129, 132, 134, 135, 137, 139, 141, 142, 144, 145, 146, 147, 152, 155, 156, 157, 159, 160, 164, 169, 171, 172, 176, 178, 181, 184, 186, 187, 188, 190, 192, 193, 200, 201, 202, 203, 204, 205, 208, 209, 212, 213, 214, 219, 221, 223, 225, 227, 230, 231, 234, 235, 236, 240, 241, 244, 249, 250, 257, 258, 259, 260, 261, 266, 268, 269, 270, 272, 274, 275, 282, 284, 293, 294, 295, 296, 297, 298, 302, 304, 307, 308, 313, 315, 316, 319, 320, 323, 324, 325, 328, 335, 336, 338, 341, 342, 343, 344, 346, 347, 350, 351, 352},{s['moveId'] for s in json.loads(data)['scripts']})
+  assert_source_move_identities(self,json.loads(data)['scripts'],REFERENCE)
   for name,blob in assets.items():self.assertEqual(blob,(ROOT/('content/generated/battle/animations/elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'content/generated/battle/animations/elemental-'+name+'.rgb555')).read_bytes())
  def test_vortex_shared_callback_and_concatenated_sand_tiles(self):
   data,assets=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
@@ -271,7 +272,7 @@ class ElementalImportTests(unittest.TestCase):
    data=original(reference,path)
    return data.replace(b'Move_ABSORB:\n',b'Move_ABSORB:\n\tunsupported_command 0\n') if path=='data/battle_anim_scripts.s' else data
   with patch.object(imp,'read',side_effect=read):data,_=imp.build(REFERENCE)
-  ids={s['moveId'] for s in json.loads(data)['scripts']};self.assertNotIn(71,ids);self.assertIn(72,ids);self.assertNotIn(120,ids);self.assertNotIn(153,ids);self.assertNotIn(209,ids)
+  ids={s['moveId'] for s in json.loads(data)['scripts']};self.assertNotIn(71,ids);self.assertIn(72,ids);self.assertNotIn(120,ids);self.assertNotIn(153,ids)
  def test_ring_duration_is_unsigned_source_field(self):
   data,_=imp.build(REFERENCE);recipes={r['template']:r for r in json.loads(data)['spriteRecipes']}
   ring=recipes['gSupersonicRingSpriteTemplate'];self.assertEqual(200,ring['affineAnimations'][0][1]['duration']);self.assertEqual([0],ring['loopStarts']);self.assertEqual((16,32),(ring['width'],ring['height']))
@@ -285,7 +286,6 @@ class ElementalImportTests(unittest.TestCase):
  def test_negative_needle_rotation_uses_unsigned_source_byte(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data);recipes={r['template']:r for r in pack['spriteRecipes']}
   self.assertEqual(223,recipes['gLeechLifeNeedleSpriteTemplate']['affineAnimations'][0][0]['rotation'])
-  self.assertFalse({124,188}&{s['moveId'] for s in pack['scripts']},'Out-of-range source sludge animation index is not admitted.')
  def test_ice_sound_task_retains_source_no_priority_abi(self):
   data,_=imp.build(REFERENCE);scripts={s['moveId']:s for s in json.loads(data)['scripts']}
   task=next(c for c in scripts[58]['commands'] if c['op']=='createsoundtask')
@@ -502,7 +502,7 @@ class ElementalImportTests(unittest.TestCase):
 
  def test_voice_roots_share_exact_noise_ring_and_inhale_programs(self):
   data,_=imp.build(REFERENCE);pack=json.loads(data);roots={r['moveId']:r for r in pack['scripts']};recipes={r['template']:r for r in pack['spriteRecipes']}
-  self.assertTrue({45,304,336}<=roots.keys());self.assertNotIn(46,roots)
+  self.assertTrue({45,304,336}<=roots.keys())
   noise=recipes['gRoarNoiseLineSpriteTemplate'];self.assertEqual(('AnimRoarNoiseLine',32,32,False),(noise['callback'],noise['width'],noise['height'],noise['blend']))
   self.assertEqual([[0,16],[32,48]],[[f['tile'] for f in a] for a in noise['animations']]);self.assertEqual([0,0],noise['loopStarts'])
   ring=recipes['gHyperVoiceRingSpriteTemplate'];self.assertEqual(('thin-ring',64,64,True), (ring['asset'],ring['width'],ring['height'],ring['affineDoubleSize']))

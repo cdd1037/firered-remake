@@ -28,6 +28,7 @@ public sealed class NativePresentationImportTests
     [DataRow("test-fire-seed-animation-import.py")]
     [DataRow("test-physical-animation-import.py")]
     [DataRow("test-elemental-animation-import.py")]
+    [DataRow("test-source-animation-expectations.py")]
     [DataRow("test-impact-adapter-animation-import.py")]
     [DataRow("test-projectile-animation-import.py")]
     [DataRow("test-itemfinder-presentation.py")]
