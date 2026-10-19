@@ -20,6 +20,19 @@ public static class FieldSurfSourcePresentation
     // stationary face action before unlocking. Neither jump increments tookStep. The
     // existing stable input model does not retain the source subframe TURN_DIRECTION edge.
     public const int MountCompletedSteps=0,DismountCompletedSteps=0;
+
+    /// <summary>The jump is drawn in the origin map until the correlated completion enters the destination.</summary>
+    public static TilePosition JumpDestination(CampaignSurfEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        if(effect.Origin.MapId==effect.Destination.MapId)return effect.Destination;
+        var (dx,dy)=effect.Destination.Facing switch
+        {
+            Direction.North=>(0,-1),Direction.South=>(0,1),Direction.East=>(1,0),Direction.West=>(-1,0),
+            _=>throw new ArgumentOutOfRangeException(nameof(effect))
+        };
+        return effect.Destination with{MapId=effect.Origin.MapId,X=effect.Origin.X+dx,Y=effect.Origin.Y+dy};
+    }
 }
 
 public sealed partial class CampaignSession
@@ -33,12 +46,20 @@ public sealed partial class CampaignSession
         (SurfWaterBehavior(c.SourceBehavior)&&_content.TerrainAt(p.MapId,p.X,p.Y)==2||SeafoamFieldRules.IsWaterFloor(p.MapId)&&
             (SeafoamFieldRules.Surfable(c.SourceBehavior)||c.SourceBehavior==0x17))&&p.Elevation==1;
     private bool ActorOccupies(CampaignState state,int x,int y,int elevation)=>state.Actors.Values.Any(a=>a.Active&&a.X==x&&a.Y==y&&(a.Elevation==0||elevation==0||a.Elevation==elevation));
+    private bool ActorOccupies(CampaignState state,MapId map,int x,int y,int elevation)=>map==state.World.Player.MapId
+        ?ActorOccupies(state,x,y,elevation)
+        :_content.MapDefinition(map).Actors.Any(a=>a.X==x&&a.Y==y&&(a.HideFlag is "0" or "0x0"||!state.Script.Flags.GetValueOrDefault(a.HideFlag))&&
+            (a.Elevation==0||elevation==0||a.Elevation==elevation));
     private FieldHmCollision SurfFacingCollision(CampaignState state,TilePosition origin,Direction direction,out TilePosition destination,out ConnectedFieldCell? target)
     {
-        var map=EditedFieldMaps(state)[origin.MapId];var (dx,dy)=Delta(direction);int x=origin.X+dx,y=origin.Y+dy;
-        var here=map.CellAt(origin.X,origin.Y)??throw new InvalidDataException("surf_origin_cell_missing");target=map.CellAt(x,y);
-        destination=new(origin.MapId,x,y,target?.Elevation is null or 0 or 15?origin.Elevation:target.Elevation,direction);
-        return FieldHmSourceRules.StrengthTargetCollision(here,target,origin.Elevation,direction,ActorOccupies(state,x,y,origin.Elevation));
+        var maps=EditedFieldMaps(state);var map=maps[origin.MapId];var (dx,dy)=Delta(direction);
+        var here=map.CellAt(origin.X,origin.Y)??throw new InvalidDataException("surf_origin_cell_missing");
+        target=null;destination=origin with{X=origin.X+dx,Y=origin.Y+dy,Facing=direction};
+        if(ConnectedFieldRules.ResolveDestination(origin,direction,maps,out var resolved) is not null)return FieldHmCollision.Impassable;
+        target=resolved!.Cell;
+        destination=new(resolved.MapId,resolved.X,resolved.Y,target.Elevation is 0 or 15?origin.Elevation:target.Elevation,direction);
+        return FieldHmSourceRules.StrengthTargetCollision(here,target,origin.Elevation,direction,
+            ActorOccupies(state,destination.MapId,destination.X,destination.Y,origin.Elevation));
     }
     private string? FieldSurfCommandError(CampaignState state,int index)
     {
@@ -49,7 +70,6 @@ public sealed partial class CampaignSession
         if(!FieldHmSourceRules.Knows(state.Party[index],FieldHmSourceRules.SurfMove))return "field_surf_move_missing";
         if(!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.SurfBadge))return "field_surf_badge_required";
         var collision=SurfFacingCollision(state,state.World.Player,state.World.Player.Facing,out var destination,out var cell);
-        if(cell is null&&_content.ConnectedFieldMaps![state.World.Player.MapId].Connections.Any(c=>c.Direction==state.World.Player.Facing))return "field_surf_connection_mount_not_supported";
         if(cell?.SourceBehavior==FieldHmSourceRules.FastWaterBehavior)return "field_surf_fast_current";
         if(cell is null||!FieldHmSourceRules.FacesSurfableWater(state.World.Player.Elevation,collision,_content.TerrainAt(destination.MapId,destination.X,destination.Y)==2))return "field_surf_not_facing_water";
         if(!SurfRegionAllows(destination))return "field_surf_region_boundary_not_open";
@@ -65,8 +85,9 @@ public sealed partial class CampaignSession
         if(state.IsSurfing)return null;
         int owner=FieldHmSourceRules.FirstPartyMember(state.Party,FieldHmSourceRules.SurfMove);
         if(owner==FieldHmSourceRules.NoPartyMember)return null;
-        var p=state.World.Player;var (dx,dy)=Delta(p.Facing);
-        if(SourceBehavior(state,p.X+dx,p.Y+dy)==FieldHmSourceRules.FastWaterBehavior)
+        var p=state.World.Player;
+        SurfFacingCollision(state,p,p.Facing,out _,out var target);
+        if(target?.SourceBehavior==FieldHmSourceRules.FastWaterBehavior)
             return new(CommandStatus.Accepted,Pump(StartStory(state,"EventScript_CurrentTooFast")));
         if(FieldSurfCommandError(state,owner) is {} error)
             return error is "field_surf_water_mode_unsupported" or "field_surf_region_boundary_not_open"?new(CommandStatus.Rejected,state,error):null;
@@ -120,7 +141,7 @@ public sealed partial class CampaignSession
         if(!state.IsSurfing||command.Kind!="move")return null;
         var origin=state.World.Player with{Facing=command.Direction};
         var collision=SurfFacingCollision(state,origin,command.Direction,out var destination,out var target);
-        if(target is null||!FieldHmSourceRules.CanStopSurfing(true,collision,target.Elevation,ActorOccupies(state,destination.X,destination.Y,3)))return null;
+        if(target is null||!FieldHmSourceRules.CanStopSurfing(true,collision,target.Elevation,ActorOccupies(state,destination.MapId,destination.X,destination.Y,3)))return null;
         // Only already-admitted ordinary shore is exposed. Doors, currents and source
         // special handlers stay explicit boundaries, even if their height is three.
         var validation=ConnectedFieldRules.Complete(state.World with{Player=destination,RulesVersion=ConnectedFieldRules.RulesVersion},
@@ -135,8 +156,12 @@ public sealed partial class CampaignSession
     private CampaignState SurfJump(CampaignState state,CampaignSurfEffect effect)
     {
         string suffix=effect.Destination.Facing switch{Direction.North=>"up",Direction.South=>"down",Direction.West=>"left",_=>"right"};
-        return state with{SurfEffect=effect,World=state.World with{Player=effect.Destination,Revision=checked(state.World.Revision+1)},
-            Motions=[new("LOCALID_PLAYER",[effect.Origin,effect.Destination],[(effect.Phase==FieldSurfSourcePresentation.DismountJump?"jump_special_with_effect_":"jump_special_")+suffix,"step_end"])],PresentationTicks=FieldSurfSourcePresentation.JumpCueFrames,PresentationEffects=[]};
+        // Keep source map edits and actors authoritative while the jump owns input. A connected
+        // destination becomes the world position only after this source-chart jump completes.
+        var jumpDestination=FieldSurfSourcePresentation.JumpDestination(effect);
+        var position=effect.Origin.MapId==effect.Destination.MapId?effect.Destination:effect.Origin;
+        return state with{SurfEffect=effect,World=state.World with{Player=position,Revision=checked(state.World.Revision+1)},
+            Motions=[new("LOCALID_PLAYER",[effect.Origin,jumpDestination],[(effect.Phase==FieldSurfSourcePresentation.DismountJump?"jump_special_with_effect_":"jump_special_")+suffix,"step_end"])],PresentationTicks=FieldSurfSourcePresentation.JumpCueFrames,PresentationEffects=[]};
     }
     private Decision<CampaignState> CompleteFieldSurf(CampaignState state,CampaignCommand command)
     {
@@ -162,15 +187,28 @@ public sealed partial class CampaignSession
         else if(effect.Phase==FieldSurfSourcePresentation.DismountJump)
         {
             var collision=SurfFacingCollision(state,effect.Origin,effect.Destination.Facing,out var destination,out var cell);
-            if(state.IsSurfing||destination!=effect.Destination||cell is null||!FieldHmSourceRules.CanStopSurfing(true,collision,cell.Elevation,ActorOccupies(state,destination.X,destination.Y,3)))
+            if(state.IsSurfing||destination!=effect.Destination||cell is null||!FieldHmSourceRules.CanStopSurfing(true,collision,cell.Elevation,ActorOccupies(state,destination.MapId,destination.X,destination.Y,3)))
                 throw new InvalidDataException("field_surf_dismount_context_changed");
         }
         else throw new InvalidDataException("field_surf_phase");
-        if(state.World.Player!=effect.Destination)throw new InvalidDataException("field_surf_destination_changed");
+        bool connection=effect.Origin.MapId!=effect.Destination.MapId;
+        if(state.World.Player!=(connection?effect.Origin:effect.Destination))throw new InvalidDataException("field_surf_destination_changed");
         // Both original task callbacks install a stationary face action before unlocking.
         // At the admitted stable input boundary no walking counters or encounter are replayed.
         // The source subframe TURN_DIRECTION encounter-only edge is recorded by the C fixture.
-        return new(CommandStatus.Accepted,state with{SurfEffect=null,FieldEffectArguments=null,Script=state.Script with{Locked=false},Motions=[],PresentationTicks=0,PresentationEffects=[]});
+        var next=state with{SurfEffect=null,FieldEffectArguments=null,Script=state.Script with{Locked=false},Motions=[],PresentationTicks=0,PresentationEffects=[]};
+        if(connection)
+        {
+            next=next with{World=next.World with{Player=effect.Destination},
+                Exploration=ResetEncounterModifiers(next.Exploration!),
+                FieldTransition=new(FieldTransitionCause.ConnectedEdge,FieldTransitionDeparture.Immediate,FieldTransitionArrival.Plain,
+                    effect.Origin,effect.Destination,effect.Destination)};
+            // Enter only after releasing the effect: destination scripts, objects, map music and
+            // roamer transfer use the ordinary shared entry path, without a walking-step callback.
+            next=next with{Music=FieldTravelMusic(next)};
+            next=Pump(EnterSurfConnectionMap(next,effect.Destination.Facing));
+        }
+        return new(CommandStatus.Accepted,next);
     }
     private CampaignState EnterSurfConnectionMap(CampaignState state,Direction arrival,bool isWarp=false)
     {

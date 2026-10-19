@@ -36,3 +36,19 @@ dotnet build src/Game.Godot/Game.Godot.csproj --no-restore -v minimal
 - 初次新增 Domain fixture 使用空 table 集合，三行被内容约束正确拒绝；已改为有效表加无鱼地图，而非放松产品验证。
 
 这些是受控站位和合法命令流，不是从新游戏自然取得钓竿并走完路线。未进行本轮原生窗口截图、逐帧画面对照或实际音频验收；未据此声称所有地图位置、海上路线或未加载地图已开放。
+
+## 2026-10-19 跨连接岸边上水／离水
+
+普通连接目的格现在由 `ConnectedFieldRules.ResolveDestination` 统一解析，Surf 与普通步行复用源连接段顺序。碰撞、占位和移动模式准入仍由各自命令负责。固定源 `field_player_avatar.c:1209–1226,568–605` 的两个跳跃均不计走路步数；`event_object_movement.c:4830–4843` 与 `fieldmap.c:574–628,656–716` 提供跨连接位置换算依据。
+
+Surf 跳跃期间保持原地图的位置、对象和编辑状态，表现目的地使用原地图坐标系中的相邻一格；相关完成回调重新验证真实目的地，释放 Surf effect 后走共享地图进入流程。这样不会在跳跃中把骑手／底座拉过整幅目标地图，也不会让目标地图脚本在旧 effect 锁内运行。目标对象、进入脚本、音乐和源 roamer 转移继续执行；没有额外步行、遭遇抽取或步数。完成时记录既有 ConnectedEdge/Immediate/Plain 证据；Quest 使用同一跳跃轨迹和真实地图投影。
+
+验证采用现有真实 HM／徽章／捕获来源的检查点，在 Cinnabar Center 出口受控放置后通过公开移动到北岸两格，分别覆盖交互及 party field-move 入口、32 帧上水、反向离水、水上存读、到达脚本和 Quest 回放。FieldMove 按源规则不能启动新 recap，因此测试先以真实 party_swap 开启记录。没有伪造剧情胜利或新增地图特判。
+
+- 全解决方案构建：0 warning / 0 error，95.35 秒。
+- Domain 连接／SurfFishing：27/27；既有 TreasureBeach／OutcastIsland 公开 Surf 回归：29/29，21 秒。
+- 新增 ConnectedSurfRouteTests：6/6，9 秒，覆盖两条公开往返和四方向显示投影。
+- Godot 4.7.2 / .NET 10.0.12 headless 主场景：8 条命令全部 Accepted，Cinnabar (14,0) → Route21 South (14,49) → Cinnabar (14,0)，相关显示完成回调自然到达，正常关闭，无错误或泄漏警告。
+- 初次外部探针把省略的 null/false JSON 字段当作必填，及初次测试遗漏 Center 南向箭头第二步／recap 启动前提的失败证据保留；只修正夹具，未放松产品断言。
+
+这是源规则、公开命令、严格存读和 headless 主场景证据；原生 GPU 图像、扬声器音频和所有连接地图逐一验收仍未执行。

@@ -20,6 +20,8 @@ public sealed record ConnectedFieldMap(MapId Id, int Width, int Height, Immutabl
     public ConnectedFieldCell? CellAt(int x, int y) => x < 0 || y < 0 || x >= Width || y >= Height ||
         Cells.IsDefault || (long)y * Width + x >= Cells.Length ? null : Cells[y * Width + x];
 }
+/// <summary>One cardinal neighbor resolved through the same source-ordered connection aperture as walking.</summary>
+public sealed record ConnectedFieldDestination(MapId MapId, int X, int Y, ConnectedFieldCell Cell, bool MapChanged);
 public sealed record ConnectedFieldEvent(CommandId CausedByCommandId, ConnectedFieldEventKind Kind,
     TilePosition Before, TilePosition After, int StepsAdded, string Reason);
 public sealed record ConnectedFieldTransition(TransitionStatus Status, WorldSnapshot State,
@@ -96,63 +98,12 @@ public static class ConnectedFieldRules
         {
             Direction.North => (0, -1), Direction.East => (1, 0), Direction.South => (0, 1), _ => (-1, 0)
         };
-        int x = state.Player.X + dx, y = state.Player.Y + dy;
-        var destination = map;
-        bool crosses = x < 0 || y < 0 || x >= map.Width || y >= map.Height;
-        if (crosses)
-        {
-            var candidates = map.Connections.Where(c => c.Direction == intent.Direction).ToArray();
-            // Keep the historical single-edge boundary diagnostics. Segmented sides use
-            // fieldmap.c:GetIncomingConnection's first matching source-order span.
-            ConnectedFieldConnection? connection = candidates.Length == 1 ? candidates[0] : null;
-            if (candidates.Length > 1)
-            {
-                bool horizontal = intent.Direction is Direction.East or Direction.West;
-                int coordinate = horizontal ? state.Player.Y : state.Player.X;
-                int sourceSpan = horizontal ? map.Height : map.Width;
-                foreach (var candidate in candidates)
-                {
-                    int destinationSpan;
-                    if (maps.TryGetValue(candidate.DestinationMapId, out var target) && target is not null)
-                    {
-                        validation = ValidateMap(target, candidate.DestinationMapId);
-                        if (validation is not null) return Fail(validation.Code, validation.Message);
-                        destinationSpan = horizontal ? target.Height : target.Width;
-                    }
-                    else if (candidate.DestinationSpan is int knownSpan) destinationSpan = knownSpan;
-                    else return Fail("connection-destination-missing", candidate.DestinationMapId.Value);
-                    // IsCoordInIncomingConnectingMap deliberately uses an inclusive
-                    // selection bound; the translated aperture below remains strict.
-                    long lower = Math.Max(candidate.Offset, 0);
-                    long upper = Math.Min((long)destinationSpan + candidate.Offset, sourceSpan);
-                    if (coordinate < lower || coordinate > upper) continue;
-                    connection = candidate;
-                    break;
-                }
-            }
-            if (connection is null)
-                return Fail("unloaded-field-exit", "No supported connection is defined for this edge.");
-            if (!maps.TryGetValue(connection.DestinationMapId, out destination) || destination is null)
-                return Fail("connection-destination-missing", connection.DestinationMapId.Value);
-            validation = ValidateMap(destination, connection.DestinationMapId);
-            if (validation is not null) return Fail(validation.Code, validation.Message);
-            // SetPositionFromConnection, followed by CameraMove's final x/y increment. Never clamp an aperture.
-            long tx = intent.Direction switch
-            {
-                Direction.North or Direction.South => (long)x - connection.Offset,
-                Direction.West => destination.Width - 1, _ => 0
-            };
-            long ty = intent.Direction switch
-            {
-                Direction.East or Direction.West => (long)y - connection.Offset,
-                Direction.North => destination.Height - 1, _ => 0
-            };
-            if (tx < 0 || ty < 0 || tx >= destination.Width || ty >= destination.Height)
-                return Fail("connection-aperture-outside", "Translated coordinate is outside the destination map.");
-            x = (int)tx; y = (int)ty;
-        }
-        var front = destination.CellAt(x, y);
-        if (front is null || !ValidCell(front)) return Fail("invalid-connected-target-cell", "Target cell is absent or malformed.");
+        validation = ResolveDestinationCore(state.Player, intent.Direction, maps, map, out var resolved);
+        if (validation is not null) return Fail(validation.Code, validation.Message);
+        int x = resolved!.X, y = resolved.Y;
+        var destination = maps[resolved.MapId];
+        bool crosses = resolved.MapChanged;
+        var front = resolved.Cell;
         // Fixed FireRed GetBikeCollisionAt turns running-disallowed tiles into
         // an ordinary collision before movement; this is not a walkable-tile admission.
         if (biking && front.SourceBehavior == 0x0a) return Blocked("bicycle-terrain-collision");
@@ -198,6 +149,97 @@ public static class ConnectedFieldRules
         int elevation = front.Elevation == 15 ? state.Player.Elevation : front.Elevation;
         return Accepted(ConnectedFieldEventKind.Walked, new(destination.Id, x, y, elevation, intent.Direction), enableSpinTiles && RocketSpinRules.IsArrow(front.SourceBehavior) ? 0 : 1,
             crosses ? "connection-walk-completed" : "walk-completed");
+    }
+
+    /// <summary>
+    /// Resolve a single completed cardinal step without choosing its travel mode. Ordinary walking
+    /// and source field moves share this authority; collision, elevation and object priority remain
+    /// with their respective caller. No state or RNG is changed by resolution.
+    /// </summary>
+    public static Diagnostic? ResolveDestination(TilePosition origin, Direction direction,
+        IReadOnlyDictionary<MapId, ConnectedFieldMap> maps, out ConnectedFieldDestination? result)
+    {
+        ArgumentNullException.ThrowIfNull(origin);
+        ArgumentNullException.ThrowIfNull(maps);
+        result = null;
+        if (!Enum.IsDefined(direction)) return new("invalid-connected-field-command", "A cardinal direction is required.");
+        if (!maps.TryGetValue(origin.MapId, out var map) || map is null)
+            return new("connected-map-missing", origin.MapId.Value);
+        var validation = ValidateMap(map, origin.MapId);
+        if (validation is not null) return validation;
+        if (map.CellAt(origin.X, origin.Y) is null)
+            return new("invalid-connected-current-cell", "Current coordinate is outside the source map.");
+        return ResolveDestinationCore(origin, direction, maps, map, out result);
+    }
+
+    private static Diagnostic? ResolveDestinationCore(TilePosition origin, Direction direction,
+        IReadOnlyDictionary<MapId, ConnectedFieldMap> maps, ConnectedFieldMap map, out ConnectedFieldDestination? result)
+    {
+        result = null;
+        Diagnostic? validation;
+        var (dx, dy) = direction switch
+        {
+            Direction.North => (0, -1), Direction.East => (1, 0), Direction.South => (0, 1), _ => (-1, 0)
+        };
+        int x = origin.X + dx, y = origin.Y + dy;
+        var destination = map;
+        bool crosses = x < 0 || y < 0 || x >= map.Width || y >= map.Height;
+        if (crosses)
+        {
+            var candidates = map.Connections.Where(c => c.Direction == direction).ToArray();
+            // Keep the historical single-edge boundary diagnostics. Segmented sides use
+            // fieldmap.c:GetIncomingConnection's first matching source-order span.
+            ConnectedFieldConnection? connection = candidates.Length == 1 ? candidates[0] : null;
+            if (candidates.Length > 1)
+            {
+                bool horizontal = direction is Direction.East or Direction.West;
+                int coordinate = horizontal ? origin.Y : origin.X;
+                int sourceSpan = horizontal ? map.Height : map.Width;
+                foreach (var candidate in candidates)
+                {
+                    int destinationSpan;
+                    if (maps.TryGetValue(candidate.DestinationMapId, out var target) && target is not null)
+                    {
+                        validation = ValidateMap(target, candidate.DestinationMapId);
+                        if (validation is not null) return validation;
+                        destinationSpan = horizontal ? target.Height : target.Width;
+                    }
+                    else if (candidate.DestinationSpan is int knownSpan) destinationSpan = knownSpan;
+                    else return new("connection-destination-missing", candidate.DestinationMapId.Value);
+                    // IsCoordInIncomingConnectingMap deliberately uses an inclusive
+                    // selection bound; the translated aperture below remains strict.
+                    long lower = Math.Max(candidate.Offset, 0);
+                    long upper = Math.Min((long)destinationSpan + candidate.Offset, sourceSpan);
+                    if (coordinate < lower || coordinate > upper) continue;
+                    connection = candidate;
+                    break;
+                }
+            }
+            if (connection is null)
+                return new("unloaded-field-exit", "No supported connection is defined for this edge.");
+            if (!maps.TryGetValue(connection.DestinationMapId, out destination) || destination is null)
+                return new("connection-destination-missing", connection.DestinationMapId.Value);
+            validation = ValidateMap(destination, connection.DestinationMapId);
+            if (validation is not null) return validation;
+            // SetPositionFromConnection, followed by CameraMove's final x/y increment. Never clamp an aperture.
+            long tx = direction switch
+            {
+                Direction.North or Direction.South => (long)x - connection.Offset,
+                Direction.West => destination.Width - 1, _ => 0
+            };
+            long ty = direction switch
+            {
+                Direction.East or Direction.West => (long)y - connection.Offset,
+                Direction.North => destination.Height - 1, _ => 0
+            };
+            if (tx < 0 || ty < 0 || tx >= destination.Width || ty >= destination.Height)
+                return new("connection-aperture-outside", "Translated coordinate is outside the destination map.");
+            x = (int)tx; y = (int)ty;
+        }
+        var front = destination.CellAt(x, y);
+        if (front is null || !ValidCell(front)) return new("invalid-connected-target-cell", "Target cell is absent or malformed.");
+        result = new(destination.Id, x, y, front, crosses);
+        return null;
     }
 
     internal static Diagnostic? ValidateMap(ConnectedFieldMap map, MapId expected)

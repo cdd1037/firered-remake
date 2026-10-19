@@ -94,9 +94,9 @@ public partial class CampaignView
         var effect = _session.State.SurfEffect;
         int phase = FieldSurfBlobPhase;
         bool jumping = pose.IsJump || effect is not null || SeafoamDismountOrigin is not null;
-        var blobTile = SeafoamDismountOrigin ?? (effect is null ? pose.Position : new Vector2(
-            (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.X : effect.Origin.X) * 16,
-            (effect.Phase == FieldSurfSourcePresentation.MountJump ? effect.Destination.Y : effect.Origin.Y) * 16));
+        var anchor = effect?.Phase == FieldSurfSourcePresentation.MountJump
+            ? FieldSurfSourcePresentation.JumpDestination(effect) : effect?.Origin;
+        var blobTile = SeafoamDismountOrigin ?? (anchor is null ? pose.Position : new Vector2(anchor.X * 16, anchor.Y * 16));
         DrawSurfPose(pose,camera,_session.State.PlayerGender,phase,blobTile,new CampaignFieldMovementPose(0,pose.DrawYOffset,jumping).RiderYOffset(phase),drawPlayer);
         return true;
     }
