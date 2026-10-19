@@ -55,7 +55,7 @@ public static partial class CampaignQuestLogRecorder
 public sealed partial class CampaignSession
 {
     private sealed record TransitionObservation(FieldTransitionReceipt Receipt,CampaignQuestLogScene Scene,
-        CampaignQuestLogAction Marker,CampaignQuestLogTransitionTiming? Timing=null);
+        CampaignQuestLogAction Marker,int MarkerIndex,CampaignQuestLogTransitionTiming? Timing=null);
     private TransitionObservation? _fieldTransitionObservation;
 
     /// <summary>The admitted shared presentation capability, never movement legality.</summary>
@@ -97,7 +97,7 @@ public sealed partial class CampaignSession
     }
 
     // Called once by the owner of a completed live transition. The receipt instance
-    // and last provisional marker authenticate this observation across harmless time
+    // and provisional marker/caption suffix authenticate this observation across harmless time
     // commits. No campaign snapshot, generation, RNG or gameplay state is changed.
     public bool CompleteFieldTransitionPresentation(FieldTransitionReceipt receipt,int switchFrame,int endFrame)
     {
@@ -120,7 +120,7 @@ public sealed partial class CampaignSession
     private static bool ObservationMatches(CampaignState state,TransitionObservation pending)=>
         state.World.Player==pending.Receipt.To&&state.QuestLog is {} log&&!log.Scenes.IsEmpty&&
         ReferenceEquals(log.Scenes[^1],pending.Scene)&&!pending.Scene.Actions.IsEmpty&&
-        ReferenceEquals(pending.Scene.Actions[^1],pending.Marker);
+        ReferenceEquals(pending.Scene.Actions[pending.MarkerIndex],pending.Marker);
 
     // Pure projection: accepted commands publish it through the existing transaction;
     // PrepareFieldSave also sees a completed receipt before another command occurs.
@@ -129,9 +129,18 @@ public sealed partial class CampaignSession
         if(_fieldTransitionObservation is not {Timing:{} timing} pending||!ObservationMatches(state,pending))return state;
         var log=state.QuestLog!;
         var marker=pending.Marker with{Frames=timing.EndFrame,TransitionTiming=timing};
-        var scene=pending.Scene with{Actions=pending.Scene.Actions.SetItem(pending.Scene.Actions.Length-1,marker)};
+        var actions=pending.Scene.Actions.SetItem(pending.MarkerIndex,marker);
+        long shift=(long)timing.EndFrame-pending.Marker.Frames;
+        bool captionFits=true;
+        for(int i=pending.MarkerIndex+1;i<actions.Length;i++)
+        {
+            long start=(long)actions[i].StartFrame+shift;
+            if(start>ushort.MaxValue){captionFits=false;break;}
+            actions=actions.SetItem(i,actions[i] with{StartFrame=(int)start});
+        }
+        var scene=pending.Scene with{Actions=actions};
         var source=(_content as ICampaignQuestLogCatalog)?.QuestLogSource;
-        bool fits=timing.EndFrame<=255&&pending.Marker.StartFrame<=ushort.MaxValue-timing.EndFrame&&
+        bool fits=captionFits&&timing.EndFrame<=255&&pending.Marker.StartFrame<=ushort.MaxValue-timing.EndFrame&&
             CampaignQuestLogRecorder.FitsActions(scene.Actions,source)&&CampaignQuestLogRecorder.VisualMemoryBudget(scene)<=CampaignQuestLogRecorder.VisualMemoryLimit;
         var updated=fits?new CampaignQuestLog(log.Scenes.SetItem(log.Scenes.Length-1,scene)):CampaignQuestLogRecorder.Close(log);
         return state with{QuestLog=updated};
@@ -145,11 +154,27 @@ public sealed partial class CampaignSession
         if(after.FieldTransition is not {} receipt||!SupportsFieldTransitionOrigin(before,receipt)||!SupportsFieldTransition(after,receipt)||
             after.QuestLog is not {} log||log.Scenes.IsEmpty)return;
         var scene=log.Scenes[^1];
-        if(scene.Closed||scene.Actions.IsEmpty||scene.Actions[^1] is not {Transition:{} projection,TransitionTiming:null} marker||
+        if(scene.Closed||scene.Actions.IsEmpty)return;
+        int index=scene.Actions.Length-1;
+        if(scene.Actions[index].Transition is null)index--;
+        if(index<0||scene.Actions[index] is not {Transition:{} projection,TransitionTiming:null} marker||
             projection.Map!=receipt.To.MapId.Value||before.QuestLog?.Scenes.LastOrDefault()?.Actions.Contains(marker)==true)return;
-        // A script/caption/input tail needs a separate source timing contract. This
-        // bounded slice only finalizes a transition that is the transaction's last row.
-        _fieldTransitionObservation=new(receipt,scene,marker);
+        if(index!=scene.Actions.Length-1)
+        {
+            // OnTransition can record the first-arrival caption in the same accepted
+            // command. Source overworld playback cannot display it while warp field
+            // controls are locked. Authenticate the producer payload, then retain its
+            // offset after the provisional marker when observed duration is known.
+            var caption=scene.Actions[^1];
+            var arrival=(_content as ICampaignQuestLogCatalog)?.QuestLogSource is {} source?
+                CampaignQuestLogRecorder.FirstArrival(before,after,source):null;
+            if(arrival is null||caption.StartFrame!=marker.StartFrame+marker.Frames||caption.Arguments.IsDefault||
+                !caption.Arguments.SequenceEqual(arrival.Arguments)||
+                (caption with{StartFrame=arrival.StartFrame,Arguments=arrival.Arguments})!=arrival)return;
+        }
+        // Input, scripted motion, other semantic tails and historical records do not
+        // acquire timing from this bounded observation.
+        _fieldTransitionObservation=new(receipt,scene,marker,index);
     }
 
     private void DiscardUnfinishedFieldTransitionObservation()
