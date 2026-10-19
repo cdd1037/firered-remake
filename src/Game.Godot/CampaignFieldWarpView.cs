@@ -75,6 +75,7 @@ public partial class CampaignView
         if(_fieldWarpSynchronizing||before is null||before.FieldWeather is not null||
             after.FieldTransition is not {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp} receipt||
             receipt.From!=before.World.Player||!_session.TryGetFieldTransitionArrival(before,receipt,out var arrivalState))return false;
+        ResetFieldReturn();
         var owner=new object();
         var animation=new FieldWarpAnimation
         {

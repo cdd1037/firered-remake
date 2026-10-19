@@ -25,6 +25,7 @@ public partial class CampaignView
 
     private void SynchronizeFieldFog(CampaignState? before,CampaignState after)
     {
+        if(before is null||before.World.Player.MapId!=after.World.Player.MapId)ResetFieldReturn();
         if(_fieldWarpSynchronizing)return; // The destination snapshot already owns its exact phase.
         if(!HasFieldFog(after.World.Player.MapId.Value,after.FieldWeather)){_fieldFogScene=null;return;}
         if(_fieldFogScene is null||before is null||before.World.Player.MapId!=after.World.Player.MapId||
@@ -37,7 +38,7 @@ public partial class CampaignView
 
     private void ProcessFieldFog(double delta)
     {
-        if(_fieldFogScene is not {} fog||!_poses.TryGetValue("LOCALID_PLAYER",out var hero))return;
+        if(_fieldDisplayReturn.Suspended||_fieldFogScene is not {} fog||!_poses.TryGetValue("LOCALID_PLAYER",out var hero))return;
         // Weather and fog sprites run before this frame's camera movement.
         var camera=OrdinaryFieldCamera(hero.Position);
         _fieldFogScene=fog.Advance(delta*60,(int)camera.X,(int)camera.Y);

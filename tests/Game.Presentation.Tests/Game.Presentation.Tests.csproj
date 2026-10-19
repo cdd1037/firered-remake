@@ -3,6 +3,7 @@
     <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Application/FieldForestPreviewPresentation.cs" Link="FieldForestPreviewPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldHorizontalFogPresentation.cs" Link="FieldHorizontalFogPresentation.cs" />
+    <Compile Include="../../src/Game.Application/FieldReturnPresentation.cs" Link="FieldReturnPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldShadePresentation.cs" Link="Application/FieldShadePresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldFlashWindowPresentation.cs" Link="Application/FieldFlashWindowPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldWarpPresentation.cs" Link="FieldWarpPresentation.cs" />

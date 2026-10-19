@@ -217,7 +217,7 @@ public partial class CampaignView
                 else { _fieldMenuMode = "party"; _fieldPartyCursor = 0; _partyLastRightSlot = 1; }
                 break;
             case "bag":
-                ResetFieldMenu(); Apply(new("bag_open"));
+                Apply(new("bag_open")); ResetFieldMenu();
                 if (_session.State.ItemMenu is null) { _fieldMenuMode = "start"; _fieldMenuNotice = "The BAG cannot be opened\nhere."; }
                 break;
             case "save":

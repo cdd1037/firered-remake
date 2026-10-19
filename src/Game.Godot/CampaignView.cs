@@ -40,7 +40,7 @@ public partial class CampaignView:Node2D
     private double _repeat,_waitElapsed,_waitDuration,_fade,_fanfareRemaining;
     private long _lastFanfareSequence;
     private bool _busy,_choiceYes=true;
-    private bool FieldPresentationInputLocked=>FieldWarpInputLocked||SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in";
+    private bool FieldPresentationInputLocked=>FieldWarpInputLocked||FieldReturnInputLocked||SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in";
     // Cut's MSGBOX_YESNO uses new_menu_helpers.c's default (21,9), 6x4-tile window.
     // CreateYesNoMenu prints at interior y+2 with FONT_NORMAL's 14-pixel row pitch.
     // Keep other field/script choices at their existing positions.
@@ -279,6 +279,7 @@ public partial class CampaignView:Node2D
         // Keep observing physics play-time ticks, but do not transact while the
         // immutable origin presentation still owns this accepted transition.
         if(ProcessFieldWarpPresentation(delta))return;
+        if(ProcessFieldReturn(delta))return;
         if(!PlayerEntryActive&&!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
         if(ProcessHelpPresentation(delta))return;
         AdvanceInventoryPresentation(delta);
@@ -411,7 +412,8 @@ public partial class CampaignView:Node2D
             GetViewport().SetInputAsHandled();return;
         }
         if(TrySystemScreenshotInput(input))return;
-        if(FieldWarpInputLocked)
+        ObserveFieldDisplayOwner();
+        if(FieldWarpInputLocked||FieldReturnInputLocked)
         {
             if(input is InputEventKey{Pressed:true,Echo:false,Keycode:Key.Escape})RequestQuit();
             _held=null;GetViewport().SetInputAsHandled();return;
@@ -520,13 +522,16 @@ public partial class CampaignView:Node2D
     }
     private bool Apply(CampaignCommand command)
     {
-        if(_quitRequested||_busy||FieldWarpInputLocked)return false;
+        if(_quitRequested||_busy||FieldWarpInputLocked||FieldReturnInputLocked)return false;
         if(!CommitPlayTime(true))return false;
         CommitTrainerTowerTime(true);_busy=true;
         command=CyclingRoadInput(command);
         if(command.Kind=="move")command=command with{RunHeld=_runningShiftHeld};
         _fieldStepAction="walk";
         var before=_session.State;_fieldStepTicks=command.Kind=="cycle_input"?CyclingRoadInputTicks(before,command):command.Kind=="move"?FieldStepTicksForDirection(before,command.Direction):16;var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
+        bool reopenStart=_fieldBagNavigation.Observe(command.Kind,result.Status==CommandStatus.Accepted,
+            _fieldMenuMode,before.ItemMenu?.Origin,result.State.ItemMenu?.Origin);
+        if(reopenStart)_fieldMenuMode="start";
         if(result.Status==CommandStatus.Accepted&&command.Kind is "move" or "cycle_input")
         {
             var timing=CampaignFieldMovementTiming.Resolve(before,command,_catalog,result.State);
@@ -572,6 +577,7 @@ public partial class CampaignView:Node2D
         if(PlayerEntryActive){DrawPlayerEntry();return;}
         if(DrawQuestLogPlayback())return;
         if(DrawFieldWarpPresentation())return;
+        if(DrawFieldReturn())return;
         if(_session.EasyChatEditor is not null){DrawEasyChatEditorScreen();return;}
         if(_session.State.ItemMenu?.Toss?.BattleOwner is not null && DrawBagToss())return;
         if(DrawDiploma())return;
