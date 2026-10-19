@@ -13,14 +13,10 @@ public static class NoncombatFieldMoveRules
 {
     public const string Dig = "pret:MOVE_DIG", Teleport = "pret:MOVE_TELEPORT", SweetScent = "pret:MOVE_SWEET_SCENT",
         SoftBoiled = "pret:MOVE_SOFT_BOILED", MilkDrink = "pret:MOVE_MILK_DRINK";
-    public static string? Label(string move) => move switch
-    {
-        Dig => "DIG", Teleport => "TELEPORT", SweetScent => "SWEET SCENT",
-        SoftBoiled => "SOFTBOILED", MilkDrink => "MILK DRINK", _ => null
-    };
+    public static bool IsSupported(string move) => move is Dig or Teleport or SweetScent or SoftBoiled or MilkDrink;
     public static bool IsHealing(string move) => move is SoftBoiled or MilkDrink;
     public static bool Knows(PartyPokemon member, string move) =>
-        Label(move) is not null && !member.IsEgg && member.Pokemon.Moves.Any(slot => slot.Move.Value == move);
+        IsSupported(move) && !member.IsEgg && member.Pokemon.Moves.Any(slot => slot.Move.Value == move);
     public static bool CanDonate(PartyPokemon member, string move) => IsHealing(move) && Knows(member, move) &&
         member.Pokemon.CurrentHp > member.Pokemon.Stats.MaxHp / 5;
 

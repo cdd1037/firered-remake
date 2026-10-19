@@ -23,18 +23,17 @@ public partial class CampaignView
         "MAP_TYPE_ROUTE" or "MAP_TYPE_TOWN" or "MAP_TYPE_UNDERWATER" or "MAP_TYPE_CITY" or "MAP_TYPE_OCEAN_ROUTE";
     private int? NoncombatShowMonFrame => _session.State.NoncombatFieldEffect?.Phase == "show-mon" ? _noncombatFrame : null;
     private int NoncombatOutdoorParty => NoncombatShowMonFrame is not null && NoncombatOutdoors ? _session.State.NoncombatFieldEffect!.PartyIndex : -1;
-    private static string? NoncombatFieldActionLabel(string move) => NoncombatFieldMoveRules.Label(move);
 
     private void ResetFieldHealingSelection()
     {
         _fieldHealingSource = _fieldHealingTarget = -1; _fieldHealingMove = null;
         _fieldHealingFrames = 0; _fieldHealingSecondSound = false;
     }
-    private bool TryNoncombatFieldAction(string label)
+    private bool TryNoncombatFieldAction(string move)
     {
+        if (!NoncombatFieldMoveRules.IsSupported(move)) return false;
         var mon = _session.State.Party[_fieldPartyCursor];
-        string? move = mon.Pokemon.Moves.Select(slot => slot.Move.Value).FirstOrDefault(id => NoncombatFieldMoveRules.Label(id) == label);
-        if (move is null) return false;
+        if (!NoncombatFieldMoveRules.Knows(mon, move)) return false;
         if (NoncombatFieldMoveRules.IsHealing(move))
         {
             if (!_session.CanUseNoncombatFieldMove(_fieldPartyCursor, move))

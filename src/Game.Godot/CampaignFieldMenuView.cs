@@ -126,21 +126,22 @@ public partial class CampaignView
             var actions=FieldPartyActions();
             FieldMenuMoveCursor(key, ref _fieldPartyAction, actions.Length);
             if (key.Keycode != Key.Enter) return true;
-            if (actions[_fieldPartyAction] == "SUMMARY") { _fieldMenuMode = "summary"; _fieldSummaryPage = 0; ResetOwnedSummarySelection(); }
-            else if (actions[_fieldPartyAction] == "SWITCH")
+            string action = actions[_fieldPartyAction].Id;
+            if (action == "summary") { _fieldMenuMode = "summary"; _fieldSummaryPage = 0; ResetOwnedSummarySelection(); }
+            else if (action == "switch")
             {
                 if (!_session.CanReorderFieldParty) _fieldMenuNotice = "At least two POKéMON are\nneeded to SWITCH positions.";
                 else { _fieldMenuMode = "switch"; _fieldSwapSource = _fieldPartyCursor; }
             }
-            else if(actions[_fieldPartyAction] is "ITEM" or "MAIL") OpenPartyHeldItems();
-            else if(actions[_fieldPartyAction] == "FLY") UseFieldPartyFly();
-            else if(actions[_fieldPartyAction] == "CUT") UseFieldPartyCut();
-            else if(actions[_fieldPartyAction] == "ROCK SMASH") UseFieldPartyRockSmash();
-            else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
-            else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
-            else if(actions[_fieldPartyAction] == "SURF") UseFieldPartySurf();
-            else if(actions[_fieldPartyAction] == "WATERFALL") UseFieldPartyWaterfall();
-            else if(TryNoncombatFieldAction(actions[_fieldPartyAction])) { }
+            else if(action is "item" or "mail") OpenPartyHeldItems();
+            else if(action == "pret:MOVE_FLY") UseFieldPartyFly();
+            else if(action == "pret:MOVE_CUT") UseFieldPartyCut();
+            else if(action == "pret:MOVE_ROCK_SMASH") UseFieldPartyRockSmash();
+            else if(action == "pret:MOVE_FLASH") UseFieldPartyFlash();
+            else if(action == "pret:MOVE_STRENGTH") UseFieldPartyStrength();
+            else if(action == "pret:MOVE_SURF") UseFieldPartySurf();
+            else if(action == "pret:MOVE_WATERFALL") UseFieldPartyWaterfall();
+            else if(TryNoncombatFieldAction(action)) { }
             else _fieldMenuMode = "party";
             return true;
         }
@@ -166,25 +167,14 @@ public partial class CampaignView
     }
 
     // The source lists a known field move before checking its badge/context at selection.
-    private string[] FieldPartyActions()
+    private FieldPartyActionEntry[] FieldPartyActions()
     {
-        if (_fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length && _session.State.Party[_fieldPartyCursor].IsEgg)
-            return ["SUMMARY", "SWITCH", "CANCEL"];
-        var actions=new List<string>{"SUMMARY"};
-        if(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&!_session.State.Party[_fieldPartyCursor].IsEgg)
-            foreach(var move in _session.State.Party[_fieldPartyCursor].Pokemon.Moves)
-                if(move.Move.Value=="pret:MOVE_CUT")actions.Add("CUT");
-                else if(_catalog.FieldFly is not null&&move.Move.Value=="pret:MOVE_FLY")actions.Add("FLY");
-                else if(move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
-                else if(move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
-                else if(move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
-                else if(move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
-                else if(_catalog.FieldRockSmash is not null&&move.Move.Value=="pret:MOVE_ROCK_SMASH")actions.Add("ROCK SMASH");
-                else if(NoncombatFieldActionLabel(move.Move.Value) is {} fieldMoveLabel)actions.Add(fieldMoveLabel);
-        actions.Add("SWITCH");
-        if(_catalog.EarlyShop is not null)actions.Add(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&
-            SourceMailRules.IsMailItem(_session.State.Party[_fieldPartyCursor].HeldItem)?"MAIL":"ITEM");
-        actions.Add("CANCEL");return actions.ToArray();
+        var member = _fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length
+            ? _session.State.Party[_fieldPartyCursor] : null;
+        return CampaignFieldPartyActions.Build(member, MoveName,
+            flyAvailable: _catalog.FieldFly is not null,
+            rockSmashAvailable: _catalog.FieldRockSmash is not null,
+            heldItemsAvailable: _catalog.EarlyShop is not null);
     }
     private int FieldPartyActionTop => 152-FieldPartyActions().Length*16;
     private void UseFieldPartyCut()
@@ -296,7 +286,7 @@ public partial class CampaignView
         {
             var actions=FieldPartyActions();
             _battleSkin.DrawStandardFrame(this, new(152, FieldPartyActionTop-8, 88, actions.Length*16+16));
-            for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(170, FieldPartyActionTop + i * 16), actions[i]);
+            for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, new(170, FieldPartyActionTop + i * 16), actions[i].Label);
             SourceText(_sourceNormal, new(160, FieldPartyActionTop + _fieldPartyAction * 16), "▶");
         }
     }

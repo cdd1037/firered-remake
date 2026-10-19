@@ -16,7 +16,7 @@ public sealed partial class CampaignSession
 
     private string? NoncombatFieldMoveError(CampaignState state, int index, string move)
     {
-        if (NoncombatFieldMoveRules.Label(move) is null) return "field_move_unsupported";
+        if (!NoncombatFieldMoveRules.IsSupported(move)) return "field_move_unsupported";
         if (!IsStableFieldForParty(state)) return "field_move_event_active";
         if (index < 0 || index >= state.Party.Length) return "field_move_party_index_invalid";
         if (!NoncombatFieldMoveRules.Knows(state.Party[index], move)) return "field_move_missing";

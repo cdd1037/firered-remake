@@ -238,4 +238,34 @@ public sealed class NoncombatFieldMoveTests : WildBattleFixture
         var reverse=new SweetScentTimeline(true);frames=0;while(!reverse.Complete&&frames++<100)reverse.Tick();
         Assert.IsTrue(reverse.Complete);Assert.AreEqual(0,reverse.BackgroundCoefficient);
     }
+
+    [TestMethod]
+    [DataRow(NoncombatFieldMoveRules.Dig, "DIG")]
+    [DataRow(NoncombatFieldMoveRules.Teleport, "TELEPORT")]
+    [DataRow(NoncombatFieldMoveRules.SweetScent, "SWEET SCENT")]
+    [DataRow(NoncombatFieldMoveRules.SoftBoiled, "SOFTBOILED")]
+    [DataRow(NoncombatFieldMoveRules.MilkDrink, "MILK DRINK")]
+    public void NoncombatSupportUsesExistingMoveIdsAndRejectsDisplayLabels(string move, string label)
+    {
+        Assert.IsTrue(NoncombatFieldMoveRules.IsSupported(move));
+        Assert.IsFalse(NoncombatFieldMoveRules.IsSupported(label));
+        Assert.IsFalse(NoncombatFieldMoveRules.IsSupported("pret:MOVE_CUT"));
+        Assert.IsFalse(NoncombatFieldMoveRules.IsSupported("pret:MOVE_TACKLE"));
+        Assert.IsFalse(NoncombatFieldMoveRules.IsSupported("summary"));
+    }
+
+    [TestMethod]
+    public void NoncombatCommandRejectsDisplayLabelWithoutChangingPartyOrFieldState()
+    {
+        var state = Place(WithMove(FieldFixture(), 63, NoncombatFieldMoveRules.Teleport), "map.route-1", 1);
+        state = state with { LastHealingLocation = "HEAL_LOCATION_PALLET_TOWN" };
+        var session = Start(state);
+        Assert.IsTrue(session.CanUseNoncombatFieldMove(0, NoncombatFieldMoveRules.Teleport));
+        Assert.IsFalse(session.CanUseNoncombatFieldMove(0, "TELEPORT"));
+        Reject(session, new("field_move", Text: "TELEPORT"), "field_move_unsupported");
+        Assert.IsTrue(NoncombatFieldMoveRules.Knows(session.State.Party[0], NoncombatFieldMoveRules.Teleport));
+        Assert.IsFalse(NoncombatFieldMoveRules.Knows(session.State.Party[0], "TELEPORT"));
+        Assert.IsFalse(NoncombatFieldMoveRules.Knows(session.State.Party[0] with { IsEgg = true }, NoncombatFieldMoveRules.Teleport));
+    }
+
 }

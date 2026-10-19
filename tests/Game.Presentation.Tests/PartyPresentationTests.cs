@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
@@ -73,4 +74,91 @@ public sealed class PartyPresentationTests
         Assert.AreEqual(17,shown.Pokemon.CurrentHp);Assert.AreEqual(0u,shown.Status);
         Assert.AreEqual(owned,shown with { Pokemon=owned.Pokemon,Status=owned.Status });
     }
+
+    [TestMethod]
+    public void FieldActionsKeepCanonicalEnglishNamesAndMoveSlotOrder()
+    {
+        var names = FireRed.Tests.TestAssets.Cached(() => Game.Content.PretMetronomeMoveCatalog.Load(FireRed.Tests.TestAssets.Root)).MoveNames;
+        (string Id, string Label)[] expected =
+        [
+            ("pret:MOVE_CUT", "CUT"), ("pret:MOVE_FLY", "FLY"), ("pret:MOVE_FLASH", "FLASH"),
+            ("pret:MOVE_STRENGTH", "STRENGTH"), ("pret:MOVE_SURF", "SURF"), ("pret:MOVE_WATERFALL", "WATERFALL"),
+            ("pret:MOVE_ROCK_SMASH", "ROCK SMASH"), ("pret:MOVE_DIG", "DIG"), ("pret:MOVE_TELEPORT", "TELEPORT"),
+            ("pret:MOVE_SWEET_SCENT", "SWEET SCENT"), ("pret:MOVE_SOFT_BOILED", "SOFTBOILED"), ("pret:MOVE_MILK_DRINK", "MILK DRINK")
+        ];
+        foreach (var slots in expected.Chunk(4))
+        {
+            var actions = CampaignFieldPartyActions.Build(FieldMember(slots.Select(x => x.Id).ToArray()), id => names[id], true, true, true);
+            CollectionAssert.AreEqual(new[] { "summary" }.Concat(slots.Select(x => x.Id)).Concat(["switch", "item", "cancel"]).ToArray(),
+                actions.Select(x => x.Id).ToArray());
+            CollectionAssert.AreEqual(new[] { "SUMMARY" }.Concat(slots.Select(x => x.Label)).Concat(["SWITCH", "ITEM", "CANCEL"]).ToArray(),
+                actions.Select(x => x.Label).ToArray());
+        }
+    }
+
+    [TestMethod]
+    [DataRow(Game.Domain.World.NoncombatFieldMoveRules.Dig)]
+    [DataRow(Game.Domain.World.NoncombatFieldMoveRules.Teleport)]
+    [DataRow(Game.Domain.World.NoncombatFieldMoveRules.SweetScent)]
+    [DataRow(Game.Domain.World.NoncombatFieldMoveRules.SoftBoiled)]
+    [DataRow(Game.Domain.World.NoncombatFieldMoveRules.MilkDrink)]
+    public void ChangedAndCollidingLabelsCannotChangeActionIdentity(string move)
+    {
+        var text = Game.Content.PresentationTextCatalog.Parse("""
+            {"party.summary":"CANCEL","party.switch":"CANCEL","party.item":"CANCEL","party.mail":"CANCEL","party.cancel":"CANCEL"}
+            """);
+        var member = FieldMember(move, "pret:MOVE_CUT", move);
+        var actions = CampaignFieldPartyActions.Build(member, _ => "CANCEL", true, true, true, text);
+        CollectionAssert.AreEqual(new[] { "summary", move, "pret:MOVE_CUT", move, "switch", "item", "cancel" },
+            actions.Select(x => x.Id).ToArray());
+        Assert.IsTrue(actions.All(x => x.Label == "CANCEL"));
+        Assert.IsTrue(Game.Domain.World.NoncombatFieldMoveRules.Knows(member, actions[1].Id));
+        Assert.IsTrue(Game.Domain.World.NoncombatFieldMoveRules.Knows(member, actions[3].Id));
+        Assert.IsFalse(Game.Domain.World.NoncombatFieldMoveRules.IsSupported(actions[1].Label));
+    }
+
+    [TestMethod]
+    public void FieldActionsKeepIndependentCatalogGatesAndMailSelection()
+    {
+        var member = FieldMember("pret:MOVE_FLY", "pret:MOVE_ROCK_SMASH", "pret:MOVE_SURF", "pret:MOVE_DIG")
+            with { HeldItem = "ITEM_ORANGE_MAIL" };
+        foreach (bool fly in new[] { false, true })
+        foreach (bool rockSmash in new[] { false, true })
+        foreach (bool heldItems in new[] { false, true })
+        {
+            var expected = new List<string> { "summary" };
+            if (fly) expected.Add("pret:MOVE_FLY");
+            if (rockSmash) expected.Add("pret:MOVE_ROCK_SMASH");
+            expected.AddRange(["pret:MOVE_SURF", "pret:MOVE_DIG", "switch"]);
+            if (heldItems) expected.Add("mail");
+            expected.Add("cancel");
+            var actions = CampaignFieldPartyActions.Build(member, id => id.Value, fly, rockSmash, heldItems);
+            CollectionAssert.AreEqual(expected.ToArray(), actions.Select(x => x.Id).ToArray());
+            if (heldItems) Assert.AreEqual("MAIL", actions[^2].Label);
+        }
+    }
+
+    [TestMethod]
+    public void FieldActionsKeepEggMissingMemberAndZeroHpPpBehavior()
+    {
+        var member = FieldMember("pret:MOVE_TACKLE", "pret:MOVE_DIG");
+        member = member with { Pokemon = member.Pokemon with { CurrentHp = 0 } };
+        var actions = CampaignFieldPartyActions.Build(member, id => id.Value, true, true, true);
+        CollectionAssert.AreEqual(new[] { "summary", "pret:MOVE_DIG", "switch", "item", "cancel" }, actions.Select(x => x.Id).ToArray());
+        var egg = CampaignFieldPartyActions.Build(member with { IsEgg = true }, _ => throw new InvalidOperationException("Egg move label lookup"), true, true, true);
+        CollectionAssert.AreEqual(new[] { "summary", "switch", "cancel" }, egg.Select(x => x.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { "SUMMARY", "SWITCH", "CANCEL" }, egg.Select(x => x.Label).ToArray());
+        var missing = CampaignFieldPartyActions.Build(null, _ => throw new InvalidOperationException("Missing member move label lookup"), true, true, true);
+        CollectionAssert.AreEqual(new[] { "summary", "switch", "item", "cancel" }, missing.Select(x => x.Id).ToArray());
+    }
+
+    private static Game.Domain.Pokemon.PartyPokemon FieldMember(params string[] moves)
+    {
+        var pokemon = new Game.Domain.Pokemon.PokemonInstance(new("pret:SPECIES_PIKACHU"), 25, 20, 8000, 123, 456,
+            Game.Domain.Rules.Nature.Hardy, Game.Domain.Pokemon.SixStats.Zero, Game.Domain.Pokemon.SixStats.Zero,
+            new(50, 20, 20, 20, 20, 20), 50, Game.Domain.Pokemon.PokemonGender.Female, 0, "ABILITY_STATIC", 70,
+            moves.Select(id => new Game.Domain.Pokemon.PokemonMoveSlot(new(id), 0, 10)).ToImmutableArray());
+        return new(987, pokemon, "SPARK", "PLAYER", 0, 2, "MAP_PALLET_TOWN", 5, 4, "ITEM_POKE_BALL", "ITEM_NONE");
+    }
+
 }

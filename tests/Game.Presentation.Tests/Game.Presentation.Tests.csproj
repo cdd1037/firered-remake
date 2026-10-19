@@ -44,6 +44,7 @@
     <Compile Include="../../src/Game.Godot/PokedexDetailPresentation.cs" Link="PokedexDetailPresentation.cs" />
     <Compile Include="../../src/Game.Application/SaveOperationResult.cs" Link="SaveOperationResult.cs" />
     <Compile Include="../../src/Game.Godot/CampaignSaveFeedback.cs" Link="CampaignSaveFeedback.cs" />
+    <Compile Include="../../src/Game.Godot/CampaignFieldPartyActions.cs" Link="CampaignFieldPartyActions.cs" />
     <Compile Include="../../src/Game.Godot/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />
     <Compile Include="../../src/Game.Godot/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
     <Compile Include="../../src/Game.Godot/FameCheckerTextPresentation.cs" Link="FameCheckerTextPresentation.cs" />
