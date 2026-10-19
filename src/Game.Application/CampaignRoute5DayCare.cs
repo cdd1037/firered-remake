@@ -99,9 +99,11 @@ public sealed partial class CampaignSession
             decision = No("daycare_event_active"); return true;
         }
         var instruction = DayCareInstruction(state);
-        if (state.Script.Wait?.Kind != StoryWaitKind.PartySelection || instruction is not
+        if (scene.Stage != CampaignRoute5DayCareStage.Party || state.Script.Wait?.Kind != StoryWaitKind.PartySelection || instruction is not
             { Opcode: "waitstate", Source.Path: DayCarePath, Source.Symbol: DayCarePrefix + "TryGiveMon" })
         { decision = No("daycare_callback_context"); return true; }
+        if (TryDecideDayCarePartySummary(state, command, out var summaryDecision))
+        { decision = summaryDecision; return true; }
         int selection = 6;
         if (command.Kind != "daycare_cancel")
         {

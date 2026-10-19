@@ -14,7 +14,11 @@ public partial class CampaignView
         state.Script.Wait?.Kind == StoryWaitKind.PartySelection;
     private bool DayCareChoosing => IsDayCareChoosing(_session?.State);
     private bool DayCareResidentsChoosing => DayCareChoosing && _session.State.DayCareInteraction!.Stage == CampaignRoute5DayCareStage.Residents;
-    private void ResetDayCarePartyPresentation() { _dayCareActionCursor = _dayCareSummaryPage = -1; _partyLastRightSlot = 1; }
+    private void ResetDayCarePartyPresentation()
+    {
+        _dayCareActionCursor = _dayCareSummaryPage = -1; _partyLastRightSlot = 1;
+        ResetOwnedSummarySelection();
+    }
 
     // pret 037335f: party_menu.c:2990,3109,3391,3840,6315; data/party_menu.h:1096,1099.
     // Eggs retain SUMMARY/CANCEL. STORE submits the live identity; the source script,
@@ -34,25 +38,11 @@ public partial class CampaignView
         bool confirm = key.Keycode is Key.Enter or Key.KpEnter or Key.A;
         bool cancel = key.Keycode is Key.Backspace or Key.Escape or Key.B;
         if (confirm || cancel || key.Keycode is Key.Up or Key.Down or Key.Left or Key.Right) SourceSound("SE_SELECT");
+        if (_teachingSummaryNotice is not null)
+        { if (confirm || cancel) _teachingSummaryNotice = null; return true; }
         if (_dayCareSummaryPage >= 0)
-        {
-            if (cancel)
-            {
-                BeginSummaryExit(() => { _dayCareSummaryPage = -1; _dayCareActionCursor = 0; DayCarePartyTransition(); });
-            }
-            else
-            {
-                if (!_session.State.Party[_tutorCursor].IsEgg)
-                {
-                    if (key.Keycode == Key.Left) _dayCareSummaryPage = (_dayCareSummaryPage + 2) % 3;
-                    if (key.Keycode == Key.Right) _dayCareSummaryPage = (_dayCareSummaryPage + 1) % 3;
-                }
-                if (key.Keycode == Key.Up) _tutorCursor = (_tutorCursor + _session.State.Party.Length - 1) % _session.State.Party.Length;
-                if (key.Keycode == Key.Down) _tutorCursor = (_tutorCursor + 1) % _session.State.Party.Length;
-                if (_session.State.Party[_tutorCursor].IsEgg) _dayCareSummaryPage = 0;
-            }
-            return true;
-        }
+            return OwnedPartySummaryInput(key, ref _tutorCursor, ref _dayCareSummaryPage,
+                () => { _dayCareSummaryPage = -1; _dayCareActionCursor = 0; DayCarePartyTransition(); });
         if (_dayCareActionCursor >= 0)
         {
             var actions = DayCarePartyActions();
@@ -65,7 +55,7 @@ public partial class CampaignView
             }
             else if (confirm && actions[_dayCareActionCursor] == "SUMMARY")
             {
-                _dayCareSummaryPage = 0; DayCarePartyTransition();
+                _dayCareSummaryPage = 0; ResetOwnedSummarySelection(); DayCarePartyTransition();
             }
             else if (confirm)
             {
@@ -85,7 +75,9 @@ public partial class CampaignView
     {
         if (DayCareResidentsChoosing) return PointerRows(point, direction, ref _tutorCursor,
             _session.State.DayCareInteraction!.Residents.Length + 1, 96, 8, 136, 14);
-        if (_dayCareSummaryPage >= 0) return false;
+        if (_teachingSummaryNotice is not null) return false;
+        if (_dayCareSummaryPage >= 0)
+            return NavigateOwnedSummaryPointer(point, direction, _session.State.Party[_tutorCursor]);
         if (_dayCareActionCursor >= 0)
             return PointerRows(point, direction, ref _dayCareActionCursor, DayCarePartyActions().Length, 160, DayCareActionTop, 72);
         int row = ServicePartyPointerRow(point);
@@ -99,13 +91,9 @@ public partial class CampaignView
     {
         if (DayCareResidentsChoosing) return MouseSelect(point, ref _tutorCursor,
             _session.State.DayCareInteraction!.Residents.Length + 1, 96, 8, 136, 14);
+        if (_teachingSummaryNotice is not null) return MouseConfirm(point, MouseMessage);
         if (_dayCareSummaryPage >= 0)
-        {
-            if (new Rect2(104, 0, 24, 16).HasPoint(point)) return MouseKey(Key.Left);
-            if (new Rect2(128, 0, 80, 16).HasPoint(point)) return MouseKey(Key.Right);
-            if (new Rect2(208, 0, 32, 16).HasPoint(point)) return MouseKey(Key.Backspace);
-            return false;
-        }
+            return MouseOwnedSummary(point, _session.State.Party[_tutorCursor], _dayCareSummaryPage);
         if (_dayCareActionCursor >= 0)
             return MouseSelect(point, ref _dayCareActionCursor, DayCarePartyActions().Length, 160, DayCareActionTop, 72, 16);
         int row = ServicePartyPointerRow(point);
@@ -118,7 +106,8 @@ public partial class CampaignView
         if (_dayCareSummaryPage >= 0)
         {
             DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
-            DrawPartySummary(_tutorCursor, _dayCareSummaryPage);
+            DrawOwnedSummary(_session.State.Party[_tutorCursor], _dayCareSummaryPage, true);
+            if (_teachingSummaryNotice is not null) ItemMessageBox(_teachingSummaryNotice);
             return;
         }
         // Source strings.c:323 and 314. PKMN's compact glyph is expanded by this

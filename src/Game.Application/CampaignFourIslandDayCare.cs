@@ -91,6 +91,8 @@ public sealed partial class CampaignSession
         if (scene.Stage == CampaignRoute5DayCareStage.Party)
         {
             if (instruction.Source.Symbol != "FourIsland_PokemonDayCare_GiveMonToRaise") { decision = No("daycare_callback_context"); return true; }
+            if (TryDecideDayCarePartySummary(state, command, out var summaryDecision))
+            { decision = summaryDecision; return true; }
             selected = 6; variable = "VAR_0x8004";
             if (command.Kind != "daycare_cancel")
             {

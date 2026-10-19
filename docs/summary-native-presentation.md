@@ -4,7 +4,8 @@ The shared owned Summary renderer now uses the original Info, Skills, Moves,
 Move Details and Egg tilemaps from pret/pokefirered
 `037335f4c725d7c9aecdac87066f2002b4bd7e14`. Field and PC entry points keep their
 existing identity/revision guards and Application-owned move swapping. The
-Day-Care read-only entry uses the same skin without exposing move mutation.
+Route 5 and Four Island Day-Care party callbacks use the same interactive
+normal Summary, including outside-battle move reordering.
 
 ## Resource boundary
 
@@ -144,3 +145,46 @@ The parent reviewed the refreshed native Godot build (MVID `7e167d0f-47b0-4756-a
 - No native errors were observed. The reviewer closed the controlled test without committing a move replacement. This is representative native inspection/reorder/learning-page evidence, not a complete single-player route, all battle layouts, or a native replacement-commit claim.
 
 Review log: `/workspace/shared/firered-summary-visual/native-summary-1652.log`. The previous bounded review exposed the one-second clock defect and is retained separately as `native-summary-1645.log`; it is not counted as a pass.
+
+
+### Normal Summary from Day-Care party callbacks
+
+Route 5 and Four Island share the ordinary Summary interaction, including Moves
+→ A for details, two-stage reordering/cancellation, pointer rows, and bounded
+page/party browsing. Skills/Moves skip Eggs; Info includes them. LR uses the
+existing active-Summary dispatcher. No extra input dispatcher or service-specific
+Summary controller is introduced.
+
+Source: `party_menu.c:3019–3021,3095–3106` selects the Day-Care actions and opens
+`PSS_MODE_NORMAL`; `pokemon_summary_screen.c:1004–1010` clears `lockMovesFlag`,
+and `3589–3618` permits move swapping outside battle/link modes. The previous
+read-only Day-Care restriction was therefore not source behavior.
+
+The existing Route 5 and Four Island actor/source/`waitstate` guards admit only
+the deposit party callback to the shared owned-move transaction. It retains the
+script frame, wait correlation, service object, party identities and RNG. The
+global stable-field gate is unchanged; dialogue, withdrawal/resident selection,
+other services and battle do not inherit this permission. The transaction keeps
+full move slots, identity/revision checks and ownership validation. Deposit and
+cancel alone resume the source script; normal deposit PP restoration still applies.
+
+`DayCareSummaryTests` contains public service-entry, reorder/deposit/Continue,
+cancel, stale/invalid target, Egg, clock-only revision, resident-menu rejection
+and authenticated-callback forgery regressions. Fixtures relocate the existing
+owned checkpoint party without adding badges, wins or synthetic creatures.
+Build, execution and native-window acceptance must be recorded separately; source
+and test additions alone do not claim these gates passed.
+
+
+Verification on 2026-10-19: full solution build passed with zero warnings/errors
+(94.35 seconds); the final DayCareSummary/BattleSummaryLearning Application run
+passed 13/13 (14 seconds), including all 11 new Day-Care cases. Shared Summary
+and FriendshipContact Presentation regressions passed 33/33 (6 seconds).
+The initial Four Island fixture incorrectly stood on the counter, then omitted
+its regional movement-direction initialization. Both failed runs were retained;
+the corrected fixture now uses actual walkable source floor and the existing
+EnterMap→Pump initialization, preserving strict-save, actor and unchanged-RNG
+assertions. No production admission was relaxed. These tests exercise service
+transactions and shared presentation rules; this binary's actual Day-Care
+keyboard/mouse window routing and speaker output have not been visually/audibly
+accepted.

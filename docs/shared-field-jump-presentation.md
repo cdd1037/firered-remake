@@ -6,7 +6,7 @@ The source `event_object_movement.c` regular far/high jump moves one pixel per c
 
 The timeline already retained each SourceAction; it now exposes the shared Y offset alongside position fraction. Recap special jumps also use the discrete alternate-pixel schedule instead of linear interpolation. Surf rider offset is applied to the rider, leaving the blob/world anchor unchanged. Existing recorded durations and gameplay outcomes are unchanged.
 
-This closes displacement/arc presentation only. Direction-reversal animation selection, shadow/landing field effects and the broader special-pose catalog are separate. Ordinary warp fades remain unresolved because destination-only map records do not identify warp versus connected-edge/forced transitions; no fade is inferred from a map change.
+This closes displacement/arc presentation only. Direction-reversal animation selection, shadow/landing field effects and the broader special-pose catalog are separate. New supported transitions now carry producer-owned cause/phase evidence and share the live/recap transition controller; see [ordinary transitions](plain-field-transition-presentation.md). Historical destination-only records still do not identify warp versus connected-edge/forced transitions, so no fade is inferred from those map changes.
 
 ## Verification
 

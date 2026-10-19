@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Game.Domain.Pokemon;
+using Game.Domain.Events;
 
 namespace Game.Application;
 
@@ -140,6 +141,28 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (state.Pc is not null || !IsStableFieldForParty(state)) return No("field_party_event_active");
+        return DecideOwnedPartySummarySwap(state, command);
+    }
+
+    // Both Day-Care callers first authenticate their actor, source waitstate and Party
+    // callback. This narrow admission retains that suspended script; it never pumps
+    // it or changes the field party gate. Resident/withdrawal menus cannot use it.
+    private bool TryDecideDayCarePartySummary(CampaignState state, CampaignCommand command,
+        out Decision<CampaignState> decision)
+    {
+        decision = new(CommandStatus.Rejected, state, "daycare_callback_context");
+        if (command.Kind != "party_summary_swap") return false;
+        if (state.Pc is null && state.DayCareInteraction?.Stage == CampaignRoute5DayCareStage.Party &&
+            state.Script.Wait?.Kind == StoryWaitKind.PartySelection)
+            decision = DecideOwnedPartySummarySwap(state, command);
+        return true;
+    }
+
+    // One transaction changes complete owned move slots for field and authenticated
+    // service Summary. Session.Execute still supplies the expected-revision guard.
+    private Decision<CampaignState> DecideOwnedPartySummarySwap(CampaignState state, CampaignCommand command)
+    {
+        Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("summary_party_index");
         var pokemon = state.Party[command.PartyIndex];
         if (command.TargetInstanceId != pokemon.InstanceId || command.StorageLocation is not null || command.HeldInstanceId is not null)
