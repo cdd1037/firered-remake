@@ -60,9 +60,22 @@ public partial class CampaignView
         return snapshot with{Poses=poses};
     }
 
+    private static FieldSnapshot WithFieldStairPose(FieldSnapshot snapshot,FieldStairPresentation.PhaseSample sample)
+    {
+        var poses=snapshot.Poses.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal);
+        var old=poses[CampaignQuestLogRecorder.PlayerId];
+        poses[CampaignQuestLogRecorder.PlayerId]=new Pose
+        {
+            Position=old.Position,Facing=old.Facing,Visible=old.Visible,
+            Frame=sample.WalkFrame,DrawXOffset=sample.OffsetX,DrawYOffset=sample.OffsetY
+        };
+        // x2/y2 are sprite offsets. The source camera remains on the logical tile.
+        return snapshot with{Poses=poses};
+    }
+
     private void PlayQuestLogTransitionSounds(CampaignQuestLogPlayback playback,int previousScene,double previousFrame)
     {
-        if(playback.ActiveTransitionTiming is not {Cause:Game.Domain.World.FieldTransitionCause.PlainWarp or Game.Domain.World.FieldTransitionCause.AnimatedDoor or Game.Domain.World.FieldTransitionCause.NonAnimatedDoor} timing||previousScene!=playback.SceneIndex)return;
+        if(playback.ActiveTransitionTiming is not {Cause:Game.Domain.World.FieldTransitionCause.PlainWarp or Game.Domain.World.FieldTransitionCause.AnimatedDoor or Game.Domain.World.FieldTransitionCause.NonAnimatedDoor or Game.Domain.World.FieldTransitionCause.StairWarp} timing||previousScene!=playback.SceneIndex)return;
         double elapsed=playback.TransitionElapsedFrames;
         double prior=elapsed-(playback.Frame-previousFrame);
         // Audio cues follow crossed source callback boundaries, never redraws.
@@ -74,11 +87,12 @@ public partial class CampaignView
         bool doorCue=false;
         for(int frame=first;frame<=last;frame++)
         {
-            var sample=FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame);
+            var sample=FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame,timing.DepartureStairBehavior,timing.ArrivalStairBehavior);
             doorCue|=sample.OpenDoorSoundRequested;
             bool exit=timing.Cause==Game.Domain.World.FieldTransitionCause.PlainWarp&&frame==0;
             if(timing.Cause==Game.Domain.World.FieldTransitionCause.NonAnimatedDoor&&frame<timing.SwitchFrame&&sample.MusicFadeRequested)
                 exit=frame==0||!FieldDoorPresentation.SampleRecorded(timing.Cause,timing.Arrival,timing.SwitchFrame,frame-1).MusicFadeRequested;
+            if(timing.Cause==Game.Domain.World.FieldTransitionCause.StairWarp&&frame==1)exit=true;
             if(exit)SourceSound("SE_EXIT");
         }
         var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;

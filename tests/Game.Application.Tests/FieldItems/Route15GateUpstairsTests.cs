@@ -1,11 +1,13 @@
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Text.Json;
 using FireRed.Tests.Application.WildBattles;
 using Game.Application;
 using Game.Domain;
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
+using Game.Domain.Roaming;
 using Game.Domain.World;
 
 namespace FireRed.Tests.Application.FieldItems;
@@ -131,6 +133,194 @@ public sealed class Route15GateUpstairsTests : WildBattleFixture
         session = Continue(session);
         ClimbStairs(session);
         StrictRoundtrip(session);
+    }
+
+    [TestMethod]
+    public void PublicStairsBothWaysPublishAuthenticPresentationReceiptsAndStrictRecordings()
+    {
+        var session = CampaignSession.CreateCurrent(content);
+        Place(session, FieldFixture(), Downstairs, 8, 10, Direction.East);
+        session = Continue(session);
+        Assert.IsTrue(session.CanReorderFieldParty);
+        // Start a real recording through an accepted gameplay event. No scene,
+        // transition marker or presentation observation is injected into the fixture.
+        Send(session, new("party_swap", PartyIndex: 1, Choice: 0));
+        Assert.AreEqual(Downstairs, session.State.QuestLog!.Scenes[^1].Map);
+        Assert.AreEqual(CampaignQuestLogEvent.PartyOrder, session.State.QuestLog.Scenes[^1].Actions.Single().Event);
+
+        var initial = session.State.World;
+        var expectedUp = SourceRoamerRules.Transition(session.State.Roamer!, RoamerTransition.Warp,
+            content.CelioRoamerMaps![new(Upstairs)], initial.Rng);
+        var expectedDown = SourceRoamerRules.Transition(expectedUp.State, RoamerTransition.Warp,
+            content.CelioRoamerMaps![new(Downstairs)], expectedUp.Rng);
+        Send(session, new("move", Direction.East));
+        Assert.AreEqual(new TilePosition(new(Downstairs), 9, 10,
+            content.Maps[new MapId(Downstairs)].GetTile(9, 10)!.Elevation, Direction.East), session.State.World.Player);
+        Assert.IsNull(session.State.FieldTransition);
+        Assert.AreEqual(initial.StepCount + 1, session.State.World.StepCount);
+        Assert.AreEqual(initial.Rng, session.State.World.Rng);
+
+        ObservePublicStair(session, Direction.East, Upstairs, 10, 9, Direction.East, 0);
+        // The source stair first turns the avatar without walking or warping.
+        // The next input takes the reciprocal warp from its actual arrival cell.
+        var upstairs = session.State.World;
+        Send(session, new("move", Direction.West));
+        Assert.AreEqual(upstairs.Player with { Facing = Direction.West }, session.State.World.Player);
+        Assert.IsNull(session.State.FieldTransition);
+        Assert.AreEqual(upstairs.StepCount, session.State.World.StepCount);
+        Assert.AreEqual(upstairs.Rng, session.State.World.Rng);
+        ObservePublicStair(session, Direction.West, Downstairs, 9, 10, Direction.West, 7);
+        Assert.AreEqual(initial.StepCount + 1, session.State.World.StepCount,
+            "Only approaching the lower stair is a gameplay step; neither stair presentation adds one.");
+        Assert.AreEqual(expectedDown.Rng, session.State.World.Rng,
+            "Only the two existing map-entry roamer transitions may consume RNG.");
+        Assert.IsTrue(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(expectedDown.State),
+            JsonSerializer.SerializeToElement(session.State.Roamer)));
+    }
+
+    private void ObservePublicStair(CampaignSession session, Direction direction, string destinationName,
+        int destinationX, int destinationY, Direction arrivalFacing, int musicWait)
+    {
+        var origin = session.State;
+        var from = origin.World.Player;
+        var sourceMap = content.Maps[from.MapId];
+        var sourceWarp = sourceMap.FieldWarps.Single(warp => warp.X == from.X && warp.Y == from.Y);
+        var destination = new MapId(destinationName);
+        var destinationMap = content.Maps[destination];
+        var arrivalWarp = destinationMap.FieldWarps[sourceWarp.DestinationWarpId];
+        Assert.AreEqual(destination, sourceWarp.DestinationMapId);
+        Assert.AreEqual((destinationX, destinationY), (arrivalWarp.X, arrivalWarp.Y));
+        Assert.AreEqual(from.MapId, arrivalWarp.DestinationMapId);
+        Assert.AreEqual(sourceWarp.Index, arrivalWarp.DestinationWarpId);
+        int? departureBehavior = sourceMap.SourceBehaviorAt(from.X, from.Y);
+        int? arrivalBehavior = destinationMap.SourceBehaviorAt(destinationX, destinationY);
+        Assert.IsTrue(departureBehavior is >= 0x6c and <= 0x6f);
+        Assert.IsTrue(arrivalBehavior is >= 0x6c and <= 0x6f);
+        var expectedRoamer = SourceRoamerRules.Transition(origin.Roamer!, RoamerTransition.Warp,
+            content.CelioRoamerMaps![destination], origin.World.Rng);
+
+        Send(session, new("move", direction));
+        var state = session.State;
+        var receipt = state.FieldTransition;
+        Assert.IsNotNull(receipt, "The public stair command must retain its actual accepted receipt.");
+        Assert.AreEqual(FieldTransitionCause.StairWarp, receipt.Cause);
+        Assert.AreEqual(FieldTransitionDeparture.Immediate, receipt.Departure);
+        Assert.AreEqual(FieldTransitionArrival.Stair, receipt.Arrival);
+        Assert.IsNull(receipt.DepartureStep);
+        Assert.AreEqual(from, receipt.From);
+        Assert.AreEqual(new TilePosition(destination, destinationX, destinationY,
+            destinationMap.GetTile(destinationX, destinationY)!.Elevation, arrivalFacing), receipt.To);
+        Assert.AreEqual(new TilePosition(destination, destinationX, destinationY,
+            arrivalWarp.Elevation, arrivalFacing), receipt.ArrivalAnchor);
+        Assert.AreEqual(receipt.To, state.World.Player);
+        Assert.AreEqual(departureBehavior, receipt.DepartureStairBehavior);
+        Assert.AreEqual(arrivalBehavior, receipt.ArrivalStairBehavior);
+        Assert.AreEqual(expectedRoamer.Rng, state.World.Rng,
+            "The accepted warp performs one real roamer transition; presentation must add no draws.");
+        Assert.IsTrue(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(expectedRoamer.State),
+            JsonSerializer.SerializeToElement(state.Roamer)));
+        Assert.AreEqual(origin.World.StepCount, state.World.StepCount);
+        Assert.IsTrue(state.Script.Completed);
+        Assert.IsFalse(state.Script.Locked);
+        Assert.IsNull(state.Script.Wait);
+        Assert.IsTrue(state.EntryPrograms.IsEmpty);
+        Assert.IsNull(state.Dialogue);
+        Assert.IsTrue(state.Motions.IsEmpty);
+        Assert.IsTrue(session.CanPresentFieldTransition(origin, receipt));
+        Assert.IsFalse(session.CanPresentFieldTransition(receipt), "Stairs require their stable walking origin.");
+        Assert.IsFalse(session.CanPresentFieldTransition(origin, receipt with { }));
+        Assert.IsFalse(session.CanPresentFieldTransition(origin with { IsCycling = true }, receipt));
+        Assert.IsFalse(session.CanPresentFieldTransition(origin with { IsSurfing = true }, receipt));
+
+        var marker = state.QuestLog!.Scenes[^1].Actions.Last(action => action.Transition is not null);
+        Assert.IsNull(marker.TransitionTiming);
+        var unobserved = new CampaignQuestLogPlayback(new([state.QuestLog.Scenes[^1]]));
+        unobserved.Tick(marker.StartFrame / 60d);
+        Assert.IsNull(unobserved.ActiveTransitionTiming);
+        Assert.AreEqual(receipt.To.MapId.Value, unobserved.Map,
+            "An authentic unobserved marker remains unknown and switches immediately.");
+        int change = FieldStairPresentation.MinimumDepartureFrames + musicWait;
+        int end = change + FieldStairPresentation.ArrivalFrames;
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt with { }, change, end));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt,
+            FieldStairPresentation.MinimumDepartureFrames - 1,
+            FieldStairPresentation.MinimumDepartureFrames - 1 + FieldStairPresentation.ArrivalFrames));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change, end - 1));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change, end + 1));
+        long revision = session.Revision;
+        var unchanged = JsonSerializer.SerializeToElement(state);
+        Assert.IsTrue(session.CompleteFieldTransitionPresentation(receipt, change, end));
+        Assert.IsTrue(session.CompleteFieldTransitionPresentation(receipt, change, end));
+        Assert.IsFalse(session.CompleteFieldTransitionPresentation(receipt, change + 1, end + 1));
+
+        var saved = session.PrepareFieldSave();
+        var recordedMarker = saved.QuestLog!.Scenes[^1].Actions.Last(action => action.Transition is not null);
+        var timing = recordedMarker.TransitionTiming;
+        Assert.IsNotNull(timing);
+        Assert.AreEqual(receipt.Cause, timing.Cause);
+        Assert.AreEqual(receipt.Arrival, timing.Arrival);
+        Assert.AreEqual(departureBehavior, timing.DepartureStairBehavior);
+        Assert.AreEqual(arrivalBehavior, timing.ArrivalStairBehavior);
+        Assert.IsNull(timing.DepartureDoor);
+        Assert.IsNull(timing.ArrivalDoor);
+        Assert.AreEqual(change, timing.SwitchFrame);
+        Assert.AreEqual(end, timing.EndFrame);
+        Assert.AreEqual(end, recordedMarker.Frames);
+        Assert.IsTrue(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(state with { QuestLog = saved.QuestLog }),
+            JsonSerializer.SerializeToElement(saved)));
+        Assert.IsNull(CampaignQuestLogRecorder.Validate(saved.QuestLog, content.QuestLogSource, content));
+        Assert.IsNull(session.ValidatePlayerSave(saved));
+        var recordedScene = saved.QuestLog.Scenes[^1];
+        int markerIndex = recordedScene.Actions.IndexOf(recordedMarker);
+        foreach (var malformed in new[]
+        {
+            timing with { DepartureStairBehavior = null }, timing with { DepartureStairBehavior = 0x70 },
+            timing with { ArrivalStairBehavior = null }, timing with { ArrivalStairBehavior = 0x70 },
+            timing with { DepartureStairBehavior = departureBehavior!.Value ^ 1 },
+            timing with { ArrivalStairBehavior = arrivalBehavior!.Value ^ 1 },
+            timing with { Cause = FieldTransitionCause.PlainWarp },
+            timing with { Arrival = FieldTransitionArrival.Plain }
+        })
+        {
+            var invalidScene = recordedScene with
+            {
+                Actions = recordedScene.Actions.SetItem(markerIndex, recordedMarker with { TransitionTiming = malformed })
+            };
+            var invalidLog = saved.QuestLog with
+            {
+                Scenes = saved.QuestLog.Scenes.SetItem(saved.QuestLog.Scenes.Length - 1, invalidScene)
+            };
+            Assert.AreEqual("save_quest_log_transition_timing_invalid",
+                CampaignQuestLogRecorder.Validate(invalidLog, content.QuestLogSource, content),
+                "Missing, invalid or wrong-facing stair behavior must not authenticate recorded phases.");
+        }
+        var bytes = SaveCodec.Encode(saved, revision, session.RulesVersion, content.ContentVersion);
+        var decoded = SaveCodec.Decode<CampaignState>(bytes, session.RulesVersion, content.ContentVersion,
+            validate: session.ValidatePlayerSave);
+        var restored = CampaignSession.RestoreCurrent(content, decoded.State, decoded.Generation);
+        Assert.IsTrue(JsonElement.DeepEquals(JsonSerializer.SerializeToElement(saved),
+            JsonSerializer.SerializeToElement(restored.State)));
+        Assert.IsFalse(restored.CompleteFieldTransitionPresentation(receipt, change, end),
+            "Continue preserves recorded timing without inheriting the old live observation owner.");
+
+        var scene = restored.State.QuestLog!.Scenes[^1];
+        var playback = new CampaignQuestLogPlayback(new([scene]));
+        playback.Tick(recordedMarker.StartFrame / 60d);
+        for (int frame = 0; frame < end; frame++)
+        {
+            Assert.AreEqual(timing, playback.ActiveTransitionTiming);
+            var expected = frame < change ? receipt.From : receipt.To;
+            Assert.AreEqual(expected.MapId.Value, playback.Map);
+            var player = playback.Actors.Single(actor => actor.Id == CampaignQuestLogRecorder.PlayerId);
+            Assert.AreEqual((expected.X, expected.Y, expected.Facing), (player.X, player.Y, player.Facing));
+            playback.Tick(1d / 60);
+        }
+        Assert.IsNull(playback.ActiveTransitionTiming);
+        Assert.AreEqual(receipt.To.MapId.Value, playback.Map);
+        Assert.AreSame(state, session.State);
+        Assert.AreEqual(revision, session.Revision);
+        Assert.IsTrue(JsonElement.DeepEquals(unchanged, JsonSerializer.SerializeToElement(session.State)));
+        Assert.IsNull(marker.TransitionTiming, "Save projection must not mutate the committed provisional marker.");
     }
 
     [TestMethod]

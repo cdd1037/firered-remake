@@ -102,7 +102,12 @@ public partial class CampaignView
         {
             bool arrival=playback.TransitionElapsedFrames>=timing.SwitchFrame;
             var anchor=arrival?timing.ArrivalDoor:timing.DepartureDoor;
-            if(anchor is not null)
+            int stairFrame=(int)Math.Floor(playback.TransitionElapsedFrames+1e-7);
+            if(arrival&&timing.ArrivalStairBehavior is {} arrivalStair)
+                snapshot=WithFieldStairPose(snapshot,FieldStairPresentation.SampleArrival(arrivalStair,stairFrame-timing.SwitchFrame));
+            else if(!arrival&&timing.DepartureStairBehavior is {} departureStair)
+                snapshot=WithFieldStairPose(snapshot,FieldStairPresentation.SampleDeparture(departureStair,timing.SwitchFrame,stairFrame));
+            else if(anchor is not null)
             {
                 bool animated=arrival?timing.Arrival==Game.Domain.World.FieldTransitionArrival.AnimatedDoor:
                     timing.Cause==Game.Domain.World.FieldTransitionCause.AnimatedDoor;

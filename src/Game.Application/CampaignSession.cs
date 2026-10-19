@@ -720,7 +720,7 @@ public sealed partial class CampaignSession
         // Every authenticated warp enters here, including ordinary doors whose
         // destination immediately starts an OnFrame scene. Capture the same real
         // arrival boundary before that scene precommits movement or effects.
-        if(!_preflightingStory&&state.FieldTransition is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor} entry&&
+        if(!_preflightingStory&&state.FieldTransition is {Cause:FieldTransitionCause.PlainWarp or FieldTransitionCause.AnimatedDoor or FieldTransitionCause.NonAnimatedDoor or FieldTransitionCause.StairWarp} entry&&
             entry.To==state.World.Player)
         {_fieldWarpEntryReceipt=entry;_fieldWarpEntryArrival=null;}
         if(arrival is not null)state=ApplyCelioRoamerTransition(state,roamerTransition);

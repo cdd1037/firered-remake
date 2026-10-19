@@ -33,7 +33,7 @@ public sealed partial class CampaignSession
         var landing=new TilePosition(destination,x,y,cell.Elevation,facing);
         var receipt=new FieldTransitionReceipt(FieldTransitionCause.PlainWarp,FieldTransitionDeparture.Immediate,
             FieldTransitionReceipt.ArrivalAt(behavior),state.World.Player,landing,anchor)
-        {SuppressMusicFade=state.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC")};
+        {ArrivalStairBehavior=behavior is >=0x6c and <=0x6f?behavior:null,SuppressMusicFade=state.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC")};
         // ScrCmd_warp -> CB2_LoadMap replaces the old context. As before, script
         // warps do not increment walking steps or World.Revision.
         return EnterMap(ResetMapScriptContext(state) with

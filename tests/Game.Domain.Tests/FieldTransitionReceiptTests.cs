@@ -83,6 +83,8 @@ public sealed class FieldTransitionReceiptTests
         Assert.AreEqual(TransitionStatus.Accepted,result.Status,result.Diagnostic?.Code);
         Assert.IsNotNull(result.Presentation);
         Assert.AreEqual(arrival,result.Presentation.Arrival);
+        Assert.AreEqual(arrival==FieldTransitionArrival.Stair?(int?)behavior:null,result.Presentation.ArrivalStairBehavior);
+        Assert.IsNull(result.Presentation.DepartureStairBehavior);
         Assert.AreEqual(arrival,FieldTransitionReceipt.ArrivalAt(behavior));
         Assert.AreEqual(1,result.Presentation.ArrivalAnchor.Y);
         Assert.AreEqual(0,result.Presentation.ArrivalAnchor.Elevation);

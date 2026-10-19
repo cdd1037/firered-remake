@@ -31,7 +31,7 @@ public static partial class FieldDoorPresentation
         bool MusicFadeRequested,bool TeleportTask,bool OpenDoorSoundRequested);
 
     /// <summary>Replays the exact observed transfer; no current audio readiness is consulted.</summary>
-    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames)
+    public static PhaseSample SampleRecorded(FieldTransitionCause cause,FieldTransitionArrival arrivalKind,int switchFrame,int elapsedFrames,int? departureStairBehavior=null,int? arrivalStairBehavior=null)
     {
         int minimum=DepartureFrames(cause);
         _=ArrivalFrames(arrivalKind);
@@ -39,6 +39,8 @@ public static partial class FieldDoorPresentation
         if(elapsedFrames<0)throw new ArgumentOutOfRangeException(nameof(elapsedFrames));
         if(elapsedFrames<switchFrame)
         {
+            if(cause==FieldTransitionCause.StairWarp)return FromPlain(FieldStairPresentation.SampleDeparture(
+                departureStairBehavior??throw new ArgumentException("stair_departure_behavior_missing"),switchFrame,elapsedFrames).Phase);
             if(cause==FieldTransitionCause.AnimatedDoor)
             {
                 var departure=new Departure();
@@ -55,6 +57,8 @@ public static partial class FieldDoorPresentation
             for(int frame=1;frame<=elapsedFrames;frame++)plain.Advance(frame>=switchFrame-1);
             return FromPlain(plain.Sample);
         }
+        if(arrivalKind==FieldTransitionArrival.Stair)return FromPlain(FieldStairPresentation.SampleArrival(
+            arrivalStairBehavior??throw new ArgumentException("stair_arrival_behavior_missing"),elapsedFrames-switchFrame).Phase);
         if(arrivalKind==FieldTransitionArrival.AnimatedDoor)
         {
             var arrival=new AnimatedArrival();
@@ -76,6 +80,7 @@ public static partial class FieldDoorPresentation
 
     public static int DepartureFrames(FieldTransitionCause cause)=>cause switch
     {
+        FieldTransitionCause.StairWarp=>FieldStairPresentation.MinimumDepartureFrames,
         FieldTransitionCause.PlainWarp=>FieldWarpPresentation.MinimumDepartureFrames,
         FieldTransitionCause.AnimatedDoor=>MinimumDepartureFrames,
         FieldTransitionCause.NonAnimatedDoor=>MinimumStepDepartureFrames,
@@ -83,6 +88,7 @@ public static partial class FieldDoorPresentation
     };
     public static int ArrivalFrames(FieldTransitionArrival arrival)=>arrival switch
     {
+        FieldTransitionArrival.Stair=>FieldStairPresentation.ArrivalFrames,
         FieldTransitionArrival.Plain=>FieldWarpPresentation.PlainArrivalFrames,
         FieldTransitionArrival.AnimatedDoor=>AnimatedArrivalFrames,
         FieldTransitionArrival.NonAnimatedDoor=>NonAnimatedArrivalFrames,

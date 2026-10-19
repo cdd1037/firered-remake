@@ -16,6 +16,10 @@ public sealed record FieldTransitionReceipt(FieldTransitionCause Cause, FieldTra
         _=>FieldTransitionArrival.Plain
     };
 
+    // Source metatile facts, captured by the movement producer for stair offsets.
+    public int? DepartureStairBehavior { get; init; }
+    public int? ArrivalStairBehavior { get; init; }
+
     // Script warp captures this flag after its final source commands, before
     // map entry can change it. Null retains ordinary movement's origin policy.
     public bool? SuppressMusicFade { get; init; }

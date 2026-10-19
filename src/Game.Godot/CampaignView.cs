@@ -13,7 +13,7 @@ public partial class CampaignView:Node2D
     private sealed record SpriteAsset(Texture2D Texture,int Width,int Height,int Count,Vector2 Anchor,bool Inanimate);
     private sealed record BorderArt(int Width,int Height,Texture2D Bottom,Texture2D Middle,Texture2D Top);
     private sealed record MapArt(PretWorldMap Source,Texture2D Bottom,Texture2D Middle,Texture2D Top,SpriteAsset Player,Dictionary<string,SpriteAsset> Npcs,BorderArt? Border);
-    private sealed class Pose{public Vector2 Position;public Direction Facing;public bool Visible=true;public int Frame;public int DrawYOffset;public bool IsJump;}
+    private sealed class Pose{public Vector2 Position;public Direction Facing;public bool Visible=true;public int Frame;public int DrawYOffset;public int DrawXOffset;public bool IsJump;}
     private sealed record Clip(Vector2 From,Vector2 To,Direction Facing,double Duration,bool Visible,string Action);
     private sealed class Track{public required string Actor;public required List<Clip> Clips;public double Time;public double Duration=>Clips.Sum(c=>c.Duration);}
     private PretCampaignCatalog _catalog=null!;
@@ -687,7 +687,7 @@ public partial class CampaignView:Node2D
         int idle=asset.Inanimate?0:pose.Facing switch{Direction.South=>0,Direction.North=>1,_=>2};int frame=idle;
         if(pose.Frame>0&&asset.Count>=9){var sequence=pose.Facing switch{Direction.South=>new[]{3,0,4,0},Direction.North=>new[]{5,1,6,1},_=>new[]{7,2,8,2}};frame=sequence[(pose.Frame-1)%4];}
         if(pose.Frame<0)frame=-pose.Frame;
-        frame=Math.Clamp(frame,0,asset.Count-1);var position=pose.Position.Floor()+new Vector2(8,8+pose.DrawYOffset)-asset.Anchor-camera;
+        frame=Math.Clamp(frame,0,asset.Count-1);var position=pose.Position.Floor()+new Vector2(8+pose.DrawXOffset,8+pose.DrawYOffset)-asset.Anchor-camera;
         if(!asset.Inanimate&&pose.Facing==Direction.East){DrawSetTransform(position+new Vector2(asset.Width,0),0,new(-1,1));DrawTextureRectRegion(texture,new(0,0,asset.Width,asset.Height),new(frame*asset.Width,0,asset.Width,asset.Height));DrawSetTransform(Vector2.Zero);}
         else DrawTextureRectRegion(texture,new(position,new Vector2(asset.Width,asset.Height)),new(frame*asset.Width,0,asset.Width,asset.Height));
     }
