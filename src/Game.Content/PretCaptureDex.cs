@@ -62,18 +62,20 @@ public static class PretCaptureDex
                 canonical.Footprint is not { Width: 16, Height: 16 } footprint ||
                 footprint.TexturePath != footprintDirectory + entry.FootprintPath)
                 throw new InvalidDataException("Capture dex art references differ from the shared Pokédex.");
-            entries[id] = entry with
-            {
-                Name = canonical.Name,
-                Category = canonical.Category,
-                DisplayCategory = canonical.DisplayCategory,
-                HeightDisplay = canonical.HeightDisplay,
-                WeightDisplay = canonical.WeightDisplay,
-                Description = canonical.Description,
-                HabitatTitle = canonical.HabitatTitle
-            };
+            entries[id] = WithCanonicalText(entry, pokedexMenu);
         }
         return document with { Entries = entries.ToImmutable() };
+    }
+
+    public static CaptureDexEntry WithCanonicalText(CaptureDexEntry entry, PretPokedexMenu pokedexMenu)
+    {
+        if (!pokedexMenu.Entries.TryGetValue(entry.SourceSpeciesId, out var canonical) ||
+            entry.NationalNumber != canonical.NationalNumber || entry.HeightDecimeters != canonical.HeightDecimeters ||
+            entry.WeightHectograms != canonical.WeightHectograms)
+            throw new InvalidDataException("Capture dex identity or measures differ from the shared Pokédex.");
+        return entry with { Name = canonical.Name, Category = canonical.Category,
+            DisplayCategory = canonical.DisplayCategory, HeightDisplay = canonical.HeightDisplay,
+            WeightDisplay = canonical.WeightDisplay, Description = canonical.Description, HabitatTitle = canonical.HabitatTitle };
     }
 
     /// <summary>Authenticates the independent battle-back JSON before an existing sprite loader reads it.</summary>

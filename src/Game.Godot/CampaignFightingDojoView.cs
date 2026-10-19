@@ -44,7 +44,7 @@ public partial class CampaignView
         foreach (var row in art.Manifest.GetProperty("portraits").EnumerateArray())
             Verify(_forestTrainerPortraits[row.GetProperty("id").GetString()!], row);
         foreach (var entry in art.DexEntries.Values)
-            if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
+            if (_pokedexMenu is null || !_pokedexMenu.HasSameEntryRules(entry))
                 throw new InvalidDataException("Fighting Dojo dex metadata differs from the authenticated source menu.");
         foreach (var row in art.Manifest.GetProperty("footprints").EnumerateArray())
         {

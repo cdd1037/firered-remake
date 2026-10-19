@@ -16,7 +16,7 @@ public partial class CampaignView
         var art = PretStoneEvolutionPresentation.Load(_root, owned.Mechanics.Catalog);
         foreach (var entry in art.DexEntries.Values)
             if (!owned.Catalog.Species.Values.Any(species => species.SourceSpeciesId == entry.SourceSpeciesId) ||
-                _pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
+                _pokedexMenu is null || !_pokedexMenu.HasSameEntryRules(entry))
                 throw new InvalidDataException("Stone evolution owned species or source dex binding differs.");
 
         void VerifyDimensions(Texture2D texture, JsonElement row)

@@ -17,7 +17,7 @@ public sealed class SummaryPresentation
     private readonly ImmutableDictionary<string, string> memos, locations;
     private readonly ImmutableDictionary<string, bool> facing;
     private readonly ImmutableDictionary<string, ImmutableArray<int>> motions;
-    private SummaryPresentation(JsonElement root)
+    private SummaryPresentation(JsonElement root, SourceTextPack pack)
     {
         ImmutableDictionary<string,string> Text(string key) => root.GetProperty(key).EnumerateObject()
             .ToImmutableDictionary(p => p.Name, p => p.Value.GetString() ?? throw new InvalidDataException("Missing Summary text."));
@@ -29,11 +29,15 @@ public sealed class SummaryPresentation
             new[] { "ATrade", "MetInATrade", "FatefulEncounterMet", "Met", "ApparentlyMet", "Hatched", "FatefulEncounterHatched", "ApparentlyFatefulEncounterHatched" }.Any(k => !memos.TryGetValue(k, out var text) || string.IsNullOrWhiteSpace(text)) ||
             motions.Count != 7 || motions.Values.Any(v => v.IsDefaultOrEmpty || v.Sum() != 0))
             throw new InvalidDataException("Incomplete Summary presentation.");
+        Moves = pack.Apply("summary-moves", Moves);
+        Abilities = pack.Apply("summary-abilities", Abilities);
+        memos = pack.Apply("summary-memos", memos, preserveControls: true);
+        locations = pack.Apply("summary-locations", locations);
     }
-    public static SummaryPresentation Load(string root)
+    public static SummaryPresentation Load(string root, SourceTextPack? pack = null)
     {
         using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root,"content/generated/ui/summary-screen/text.json")));
-        return new(document.RootElement);
+        return new(document.RootElement, pack ?? SourceTextPack.Current);
     }
     // DrawTextureRectRegion mirrors UVs for negative widths without shifting the
     // supplied left edge. Keep the native sprite centre at (60,65) / (24,32).

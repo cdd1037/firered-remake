@@ -23,8 +23,6 @@ public partial class CampaignView
             var item = catalog.Items.Single(entry => entry.Id.Value == id);
             if (item.SourceItemSymbol != row.GetProperty("sourceSymbol").GetString() ||
                 item.SourceItemId != row.GetProperty("sourceItemId").GetInt32() ||
-                item.Name != row.GetProperty("name").GetString() ||
-                item.Description != row.GetProperty("description").GetString() ||
                 item.FieldUseFunction != row.GetProperty("fieldUseFunction").GetString() ||
                 item.Pocket != "POCKET_KEY_ITEMS" || document.Items.Any(entry => entry.Id == id))
                 throw new InvalidDataException("Event-ticket UI differs from the authoritative item catalog: " + id);

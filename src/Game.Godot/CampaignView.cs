@@ -643,7 +643,6 @@ public partial class CampaignView:Node2D
         }
         if(!DrawSeviiRubyBraille()&&FieldDialogueVisible&&PresentedFieldText is {} text)
         {
-            text=PewterDisplayText(text);
             _battleSkin.DrawDialogue(this,_fieldScreenFade?.Fade is null?null:FieldDialoguePalette);
             var color=_session.State.Script.Variables.GetValueOrDefault("VAR_TEXT_COLOR") switch{0=>new Color("345077"),1=>new Color("a44756"),_=>new Color("283840")};
             var lines=text.Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(FieldDialogueFont,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);

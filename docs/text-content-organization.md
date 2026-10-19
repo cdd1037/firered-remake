@@ -69,19 +69,11 @@ Domain 不再提供英文字面 Label 作为支持判断；输入、鼠标行数
 新增测试按变体参数化：五种物种包与四区拾取分别共用夹具；三处 JSON 编辑、两处本地
 依赖复制统一使用已有 TestAssets 的两个小助手。保留各测试显式依赖和所有负例。
 
-## 本轮后仍需收敛的边界
+## 当前边界说明
 
-- 其他菜单：养成流程、少量战斗辅助提示和其他源标签仍待按实际消费者收敛；
-  按实际消费者分组迁移。Old Man 动作菜单和换招顺序提示仍可复用已有源符号。
-- 物种显示名与持久化默认昵称仍需分界：`CampaignPokemonContent.SpeciesNames` 参与礼物、
-  捕获、孵化和进化默认改名；不能直接删除昵称字符限制或拿语言覆盖改写保存身份。
-- 早期捕获资源仍包含历史重复显示字段，当前运行时已只消费全图鉴投影；后续导入清理
-  可删除这些存储副本。区域素材的身份、几何、数值验证仍保留。
-- 中文接入尚未实施：当前作者 UI 支持部分覆盖；完整语言选择及原作／名称覆盖流程仍未接入。原作剧情
-  symbol、控制码／分页、占位符，名称说明和作者 UI 三类要分别接入；中文翻译、字体／
-  图片字、排版及真实 IME 需要独立验证。训练师编码姓名与邮件／交换保存身份仍是规则数据。
-
-以上是有依据的后续范围，不表示所有硬编码已消除或全部汉化准备完成。
+早期批次的昵称／原作覆盖待办已由下文独立批次接续。当前剩余范围以文末为准，
+不将历史待办当作仍未实现。训练师编码姓名、邮件作者与词ID属于真实规则／保存身份，
+不能通过显示覆盖改写；中文字体、图片字、排版和真实IME仍需独立工作。
 
 ## 作者 UI 的部分覆盖
 
@@ -92,8 +84,7 @@ Domain 不再提供英文字面 Label 作为支持判断；输入、鼠标行数
 具名参数缺少或增加均明确报错。允许参数重排或重复，但插入值不会再次当控制码解析。
 
 View 在启动时加载一次，将实例传给存档提示、队伍动作和选项表现；无需重新编译即可
-使用本地替换包。覆盖只影响显示，没有存档／动作 ID 改动。此入口目前仅针对已收敛的
-作者 UI，不把原作剧情、战斗控制码或名称表强行塞入同一模板语法。
+使用本地替换包。覆盖只影响显示，没有存档／动作 ID 改动。顶层使用作者UI模板语法；下文的source子目录保留原作控制语法和既有名称ID。
 
 部分覆盖验证：Content 17 项、Presentation 27 项通过；Content／Presentation／Godot 编译
 零警告零错误。真实云窗口用仅五个条目的本地包显示 SETTINGS、DETAILS、NORMAL，未覆盖
@@ -206,24 +197,52 @@ Moves、DETAILS 草稿取消和返回完成，截图人工检查。正常退出 
 仍有效。此验收使用明确指定昵称意图的受控副本，不证明旧档可自动迁移；实音与真实 IME
 仍未验收。
 
-## 本轮有限收尾边界
+## 原作文本与名称的部分覆盖
 
-当前 `FIRERED_TEXT_PACK` 只覆盖七组作者 UI：129 条英文、合计6,737字节。
-原作剧情、战斗及名称说明仍直接读生成目录，不能把它称为完整语言选择机制。
-下一独立覆盖工作应按实际消费者接入，保留现有稳定ID，而非复制全部英文：
+`FIRERED_TEXT_PACK` 顶层仍是七组作者UI（129条英文、6,737字节）；`source/` 下是
+已有生成目录的可选覆盖，没有复制整份英文默认目录。未设置包使用英文，缺少组／条目
+回落原生成值；显式目录不存在、未知组／ID及空值报错。运行时一次选择并读取不可变包，
+更换语言需重新启动；无热重载、版本锁、来源hash或第二份规则目录。
 
-- 剧情：`PretStoryRuntime.TextBank` 与 `Compilation.Menus.Options.Text` 都需按源符号
-  覆盖；只处理 TextBank 会漏掉菜单。保留分页／控制／占位符语义。
-- 战斗：`PretBattleText.Load` 同时供事件分页、菜单与摘要源标签使用。参数现已只在
-  模板扫描时绑定一次，名称字面值不再被二次展开或解释成分页／等待控制。
-- 名称与说明：PokedexMenu、SourceDisplayNames、SharedItemCatalog、MoveCatalog 与
-  SummaryPresentation 各自已有真实目录，应在这些入口按稳定ID覆盖；默认昵称已解耦。
-- 已移除实际重复：Route1／OldMan 名称图及 Story.StarterSpeciesNames 无产品读者；
-  Story.MoveNames 原来仅复制后与 canonical 比较，现直接投影现有目录。Route1 的
-  单字段包装同时取消；训练师个体生成需要的编码名字保留。
-- 仍需按消费者处理的旧显示校验：FossilLab 重复物品文本，FourIsland／SixIsland
-  物品名字等值，Seafoam 名字／阶级英文，以及 Mail 的显示词组／署名布局。邮件作者
-  与词ID还参与持久化身份，不能把翻译写回旧消息；其显示投影应另行接入。
+分组及实际身份：
+
+- `story`：Story.TextBank源symbol；`story-menus`：编译菜单Options.TextSymbol。
+  相同符号的各菜单行一起替换，选项ID／位置／脚本不变。
+- `battle`：原作symbol，贯通事件分页、战斗选择菜单及摘要源UI标签。
+- `species-names`、`species-categories`、`species-descriptions`：既有SourceSpeciesId十进制；
+  `pokedex-ui`：原作UI symbol。默认昵称跟随物种名，自定义昵称保持字面值。
+- `item-names`与`move-names`：现有`pret:ITEM_*`／`pret:MOVE_*`；`type-names`与
+  `ability-names`：源`TYPE_*`／`ABILITY_*`；`nature-names`：既有Nature数值ID；
+  `display-labels`仅现有EggName／NoHeldItem。
+- `item-descriptions`：当前普通目录179项；`machine-descriptions`：现有机器及TM CASE共58项，
+  均使用物品ID。不是全部307项物品说明。
+- `summary-moves`／`summary-abilities`：源MOVE_*／ABILITY_*；`summary-memos`与
+  `summary-locations`：当前摘要目录键。
+
+示例：`source/species-names.json`只需`{"150":"MIND CAT"}`，
+`source/battle.json`可只包含`{"gText_MenuPokemon":"CREATURES"}`（键必须真实存在）。
+任何规则、Encoded字节、价格／效果、存档身份均不在覆盖选择范围。
+
+剧情、菜单、战斗、摘要备忘及图鉴UI保留原控制token、操作数、顺序、分页和控制相邻／
+结尾锚点；实际换行和源转义不混淆，`$`必须处于原终端位置。首版保守保持占位符顺序，
+不猜测控制码重排是否安全。普通剧情先处理原模板控制再单次绑定名字／buffer；战斗模板
+也只扫描一次，插入值不会成为新的控制或另一个参数。
+
+本批同步解除FossilLab、Four／Five／Six Island拾取及区域图鉴组合的显示等值门槛，
+改查现有ID／数值／规则；捕获图鉴共享canonical显示投影，保留区域素材路径。点字窗口
+使用当前剧情文字，素材只检查源label及已有glyph，缺字明确拒绝。Quest袋
+读取canonical物品名称，Teachy TV／Secret Key／事件票据不会因名称替换而拒绝加载。
+
+### 仍未接入的有限文本边界
+
+- 原作专用目录：Trainer姓名／阶级、Mail显示词组、部分养成／辅助提示、特殊菜单
+  （例如FossilLab EXIT）和剩余区域物品说明；它们不自动进入14种编译Story菜单。
+- 图鉴栖息地标题、测量显示、早期素材内无人消费的重复显示字段尚未继续迁移。
+- ForestTrainerPlainPages三个战后／Tower路径接收已组合文字，仍有后置控制处理；
+  完整解决需保留其模板／最终值边界，不能简单删除控制处理。当前新增名称组不包含
+  trainer／Easy Chat文字；不要据此声称所有输入链路已改为单遍。
+- 目录排序仍使用既有源索引，未提供按目标语言重新排序。SourceGameFont不自动提供
+  缺失字形。实际中文翻译、字体／图片、布局、真实IME均未做。
 
 Game Corner 已改用现有 SourceMenuLabelPresentation，取消重复解析器及 NO THANKS
 英文门槛；取消行为始终由行号／127决定。未增加每地图规则或另一文本缓存。
@@ -245,3 +264,16 @@ Route1 7,645→2,753字节，OldMan 5,598→4,448字节，Story 3,372,213→3,36
 项通过；导入工具及三个相关项目编译零警告错误。一次隔离fixture同时替换三个不同阶段
 招式名，当前组合直接跟随canonical，玩法定义和story字节不变。删除105行旧本地名称
 测试，引用与进化负例并入既有GeneratedLearnsetTests；未新增测试目录或生成数据。
+
+原作覆盖批验证：Content 128、Application 29、Presentation 101项通过；相关项目串行
+编译零警告／错误。包括真实Story／Battle／编译菜单部分替换、未知ID和控制边界负例、
+名称与规则分离、三岛拾取、捕获图鉴投影、字面插值及点字label／glyph约束。
+普通剧情新增单遍绑定，点字素材不再拥有第二份显示文字。未重生或提交原始／生成资源。
+
+单次真实云X11窗口显示MINDSTAR默认名、EMBER自定义名及FLAREWING物种栏、SOFT性格，
+SOURCE三页标题／ONWARD、作者INSPECT／RETURN及四行Psychic说明，所抽样内容无裁切。
+附加item／story／story-menu包经过实际启动组装，未声称逐项画面验收。正常退出0，
+五个冻结DLL、检查点和包前后未变；玩法状态仅PlayTime推进，无保存。保留V-Sync和
+crossed_circle光标诊断。窗口发生于后续点字窄修之前；点字仅定向自动验证，非原生验证。
+音频Dummy，未验中文、IME、实际战斗文本或完整剧情。证据保存在工作区外部验收目录，
+截图和状态副本不进入Git。

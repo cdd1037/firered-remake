@@ -20,9 +20,11 @@ public partial class CampaignView
         if (document.Items.Any(i => i.Id == key.Item.Id.Value))
         {
             var existing = document.Items.Single(i => i.Id == key.Item.Id.Value);
-            if (existing.Name != key.Item.Name || existing.Description != key.Description || existing.Icon != assetId ||
+            if (existing.Icon != assetId ||
                 existing.FieldUseFunction != key.Item.FieldUseFunction || !_questPocketTextures.ContainsKey(assetId))
                 throw new InvalidDataException("Cinnabar Secret Key presentation differs.");
+            _questPocketUi = document with { Items = document.Items.Replace(existing,
+                existing with { Name = key.Item.Name, Description = key.Description }) };
             return;
         }
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);

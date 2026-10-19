@@ -17,18 +17,20 @@ public sealed class PretMetronomeMoveCatalog
     public ImmutableDictionary<MoveId, PokemonMoveDefinition> Moves { get; }
     public ImmutableDictionary<MoveId, string> MoveNames { get; }
 
-    private PretMetronomeMoveCatalog(MetronomeMoveDocument document)
+    private PretMetronomeMoveCatalog(MetronomeMoveDocument document, SourceTextPack pack)
     {
         Moves = document.Moves.ToImmutableDictionary(m => m.Id);
         MoveNames = document.MoveNames.ToImmutableDictionary(m => m.Id, m => m.Name);
         Require(Moves.Values.All(SourceMoveDefinitionRules.IsValid), "Invalid move definition.");
         Require(MoveNames.Count == Moves.Count && MoveNames.All(n => Moves.ContainsKey(n.Key) && n.Value.Length > 0),
             "Move names must match move definitions.");
+        var names = pack.Apply("move-names", MoveNames.ToDictionary(pair => pair.Key.Value, pair => pair.Value));
+        MoveNames = MoveNames.ToImmutableDictionary(pair => pair.Key, pair => names[pair.Key.Value]);
     }
 
-    public static PretMetronomeMoveCatalog Load(string projectRoot) => new(
+    public static PretMetronomeMoveCatalog Load(string projectRoot, SourceTextPack? pack = null) => new(
         ContentJson.ParseStrict<MetronomeMoveDocument>(File.ReadAllText(Path.Combine(projectRoot, CatalogRelativePath)),
-            ContentJson.CreateOptions()));
+            ContentJson.CreateOptions()), pack ?? SourceTextPack.Current);
 
     public PokemonCatalog Extend(PokemonCatalog predecessor)
     {

@@ -36,7 +36,7 @@ public static class PretQuestItemUi
         foreach (var ui in doc.Items)
         {
             var item = catalog.Items.Single(x => x.Id.Value == ui.Id);
-            if (item.SourceItemSymbol != ui.SourceSymbol || item.Name != ui.Name || item.FieldUseFunction != ui.FieldUseFunction)
+            if (item.SourceItemSymbol != ui.SourceSymbol || item.FieldUseFunction != ui.FieldUseFunction)
                 throw new InvalidDataException("Quest item UI differs from the authoritative item catalog.");
         }
     }

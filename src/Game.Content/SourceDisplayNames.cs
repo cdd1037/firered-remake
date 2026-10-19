@@ -19,7 +19,7 @@ public sealed class SourceDisplayNames
     private readonly string noHeldItem;
     public string EggName { get; }
 
-    private SourceDisplayNames(SourceDisplayNameDocument document, SharedItemCatalog items, PokemonCatalog pokemon)
+    private SourceDisplayNames(SourceDisplayNameDocument document, SharedItemCatalog items, PokemonCatalog pokemon, SourceTextPack pack)
     {
         if (document.SchemaVersion != 1 || !ValidNames(document.Types, "TYPE_") ||
             !ValidNames(document.Abilities, "ABILITY_") || string.IsNullOrWhiteSpace(document.NoHeldItem) ||
@@ -28,9 +28,14 @@ public sealed class SourceDisplayNames
                 !document.Natures.TryGetValue(((int)nature).ToString(CultureInfo.InvariantCulture), out var name) ||
                 string.IsNullOrWhiteSpace(name)))
             throw new InvalidDataException("display_name_catalog_shape");
-        types = document.Types; abilities = document.Abilities; noHeldItem = document.NoHeldItem;
-        EggName = document.EggName;
-        natures = document.Natures.ToImmutableDictionary(
+        types = pack.Apply("type-names", document.Types);
+        abilities = pack.Apply("ability-names", document.Abilities);
+        var labels = pack.Apply("display-labels", new Dictionary<string, string>
+        {
+            ["NoHeldItem"] = document.NoHeldItem, ["EggName"] = document.EggName
+        });
+        noHeldItem = labels["NoHeldItem"]; EggName = labels["EggName"];
+        natures = pack.Apply("nature-names", document.Natures).ToImmutableDictionary(
             pair => (Nature)int.Parse(pair.Key, CultureInfo.InvariantCulture), pair => pair.Value);
         this.items = items;
         if (pokemon.Species.Values.SelectMany(s => new[] { s.Type1, s.Type2 })
@@ -45,9 +50,9 @@ public sealed class SourceDisplayNames
             pair.Key.Length > prefix.Length && pair.Key.All(c => c is >= 'A' and <= 'Z' or '_') &&
             !string.IsNullOrWhiteSpace(pair.Value));
 
-    public static SourceDisplayNames LoadProject(string root, SharedItemCatalog items, PokemonCatalog pokemon) =>
+    public static SourceDisplayNames LoadProject(string root, SharedItemCatalog items, PokemonCatalog pokemon, SourceTextPack? pack = null) =>
         new(ContentJson.ParseStrict<SourceDisplayNameDocument>(File.ReadAllText(Path.Combine(root, RelativePath)),
-            ContentJson.CreateOptions()), items, pokemon);
+            ContentJson.CreateOptions()), items, pokemon, pack ?? items.TextPack);
 
     public string TypeName(string id) => types.TryGetValue(id, out var name)
         ? name : throw new InvalidDataException("type_display_name_missing: " + id);

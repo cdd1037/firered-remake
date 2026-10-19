@@ -646,8 +646,8 @@ public sealed partial class PretCampaignCatalog
         LoadFieldCut(projectRoot);
         Maps = maps.ToImmutableDictionary(x => x.Key, x => (IFieldMap)x.Value);
         EscapeRoutes = CurrentEscapeRoutes.Create(maps, compiled);
-        _scripts = compiled;
-        _text = bank.ToImmutable();
+        _scripts = SourceTextPack.Current.ApplyMenus(compiled);
+        _text = SourceTextPack.Current.Apply("story", bank, preserveControls: true);
         ContentVersion = version;
         PokemonContent = pokemonContent;
         BattleContent = battleContent;

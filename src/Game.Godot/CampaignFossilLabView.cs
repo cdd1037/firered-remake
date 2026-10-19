@@ -52,7 +52,7 @@ public partial class CampaignView
         foreach (var row in art.Manifest.GetProperty("footprints").EnumerateArray())
             _route22Footprints.Add(row.GetProperty("sourceSpeciesId").GetInt32(), Pixels(row));
         foreach (var entry in art.DexEntries.Values)
-            if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
+            if (_pokedexMenu is null || !_pokedexMenu.HasSameEntryRules(entry))
                 throw new InvalidDataException("Fossil Lab dex metadata differs from the authenticated source menu.");
         _fossilLabArt = art;
         _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);
@@ -67,7 +67,6 @@ public partial class CampaignView
         string id = source.GetProperty("id").GetString()!, assetId = icon.GetProperty("id").GetString()!;
         var item = _catalog.EarlyShop!.Items.Single(i => i.Id.Value == id);
         if (item.SourceItemId != 354 || item.SourceItemSymbol != source.GetProperty("sourceSymbol").GetString() ||
-            item.Name != source.GetProperty("name").GetString() || item.Description != source.GetProperty("description").GetString() ||
             item.FieldUseFunction != source.GetProperty("fieldUseFunction").GetString())
             throw new InvalidDataException("Old Amber bag presentation differs from its admitted item.");
         var document = _questPocketUi ?? throw new InvalidDataException("Old Amber requires the current Key Items pocket.");
@@ -77,7 +76,7 @@ public partial class CampaignView
         _questPocketTextures.Add(assetId, SceneTextures.FromImage(image));
         _questPocketUi = document with
         {
-            Items = document.Items.Add(new(id, item.SourceItemSymbol, item.Name, source.GetProperty("description").GetString()!, assetId, item.FieldUseFunction)),
+            Items = document.Items.Add(new(id, item.SourceItemSymbol, item.Name, item.Description, assetId, item.FieldUseFunction)),
             Assets = document.Assets.Add(new(assetId,icon.GetProperty("texturePath").GetString()!,24,24,position.X,position.Y))
         };
     }
@@ -117,7 +116,7 @@ public partial class CampaignView
         var row = (_fossilLabArt ?? throw new InvalidDataException("Fossil menu source missing.")).Manifest.GetProperty("menus")
             .EnumerateArray().SingleOrDefault(m => m.GetProperty("menuId").GetString() == menu.MenuId);
         if (row.ValueKind == JsonValueKind.Undefined || menu.Left != 0 || menu.Top != 0 ||
-            !menu.Options.SequenceEqual(row.GetProperty("rows").EnumerateArray().Select(r => r.GetString()!)) ||
+            menu.Options.Length != row.GetProperty("rows").GetArrayLength() ||
             _session.State.Script.Wait?.Kind != StoryWaitKind.MenuChoice)
             throw new InvalidDataException("Runtime fossil menu differs from the source.");
     }

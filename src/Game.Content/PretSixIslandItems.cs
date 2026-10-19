@@ -36,20 +36,16 @@ public static partial class PretSixIslandItems
     private static SixIslandItemContent LoadCatalogs(SixIslandItemsDocument document, GamePokemonCatalog pokemon,
         EarlyShopCatalog previousShop, MachineCatalog previousMachines, SharedMachineCatalog? shared = null)
     {
-        foreach (var pickup in document.Pickups)
+        var pickups = document.Pickups.Select(pickup =>
         {
-            var item = previousShop.Items.SingleOrDefault(i => i.Id == pickup.Item)?.Item;
-            if (item is not null)
-            {
-                if (item.SourceItemId != pickup.SourceItemId || item.SourceItemSymbol != pickup.ItemSymbol ||
-                    item.Name != pickup.ItemName || item.Pocket != pickup.Pocket)
-                    throw new InvalidDataException("six_island_pickup_metadata");
-            }
-            else if (previousShop.Items.SingleOrDefault(i => i.Id == pickup.Item) is not {} ordinary ||
-                ordinary.SourceItemId != pickup.SourceItemId || ordinary.SourceItemSymbol != pickup.ItemSymbol ||
-                ordinary.Name != pickup.ItemName || ordinary.Pocket != pickup.Pocket)
+            var item = previousShop.Items.SingleOrDefault(value => value.Id == pickup.Item)?.Item;
+            if (item is null)
                 throw new InvalidDataException("six_island_pickup_item_missing");
-        }
-        return new(document.Items, document.Pickups, previousMachines);
+            if (item.SourceItemId != pickup.SourceItemId || item.SourceItemSymbol != pickup.ItemSymbol ||
+                item.Pocket != pickup.Pocket)
+                throw new InvalidDataException("six_island_pickup_metadata");
+            return pickup with { ItemName = item.Name };
+        }).ToImmutableArray();
+        return new(document.Items, pickups, previousMachines);
     }
 }

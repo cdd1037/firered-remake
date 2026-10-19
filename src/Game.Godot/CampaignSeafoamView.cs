@@ -37,7 +37,7 @@ public partial class CampaignView
             _forestTrainerPortraits.Add("bird-keeper-front", (ImageTexture)Pixels(row));
         }
         foreach (var entry in art.DexEntries.Values)
-            if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
+            if (_pokedexMenu is null || !_pokedexMenu.HasSameEntryRules(entry))
                 throw new InvalidDataException("Seafoam dex metadata differs from the authenticated source menu.");
         _seafoamArt = art;
         _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);

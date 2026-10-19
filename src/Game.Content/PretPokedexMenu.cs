@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -66,7 +67,7 @@ public sealed partial class PretPokedexMenu
     public PokedexMenuTexture OwnedMarker => Document.OwnedMarker;
     public ImmutableDictionary<string, string> UiTexts => Document.UiTexts;
 
-    private PretPokedexMenu(string root, PokedexMenuDocument document)
+    private PretPokedexMenu(string root, PokedexMenuDocument document, SourceTextPack pack)
     {
         _projectRoot = root;
         Document = document;
@@ -89,12 +90,29 @@ public sealed partial class PretPokedexMenu
         ValidateHabitats();
         ValidateAreas();
         ValidateVisuals();
+        ImmutableDictionary<string, string> Text(string group, Func<PokedexMenuEntry, string> select) =>
+            pack.Apply(group, document.Entries.ToDictionary(
+                entry => entry.SourceSpeciesId.ToString(CultureInfo.InvariantCulture), select));
+        var names = Text("species-names", entry => entry.Name);
+        var categories = Text("species-categories", entry => entry.Category);
+        var displayCategories = Text("species-categories", entry => entry.DisplayCategory);
+        var descriptions = Text("species-descriptions", entry => entry.Description);
+        var entries = document.Entries.Select(entry =>
+        {
+            var id = entry.SourceSpeciesId.ToString(CultureInfo.InvariantCulture);
+            return entry with { Name = names[id], Category = categories[id],
+                DisplayCategory = displayCategories[id], Description = descriptions[id] };
+        }).ToImmutableArray();
+        Document = document with { Entries = entries,
+            UiTexts = pack.Apply("pokedex-ui", document.UiTexts, preserveControls: true) };
+        Entries = entries.ToImmutableDictionary(entry => entry.SourceSpeciesId);
+        NationalEntries = entries.ToImmutableSortedDictionary(entry => entry.NationalNumber, entry => entry);
         _textures = document.Entries.SelectMany(e => new[] { e.Portrait,e.Footprint }).OfType<PokedexMenuTexture>()
             .Concat(document.Assets).DistinctBy(a => a.TexturePath)
             .ToImmutableDictionary(a => a.TexturePath, StringComparer.Ordinal);
     }
 
-    public static PretPokedexMenu Load(string projectRoot)
+    public static PretPokedexMenu Load(string projectRoot, SourceTextPack? pack = null)
     {
         var root = Path.GetFullPath(projectRoot);
         const string directory = "content/generated/sprites/pokemon/pokedex-menu/";
@@ -102,8 +120,14 @@ public sealed partial class PretPokedexMenu
         var document = ContentJson.ParseStrict<PokedexMenuDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
         Require(document.SchemaVersion == 4 && !document.Entries.IsDefaultOrEmpty,
             "Pokédex menu format is invalid.");
-        return new(root, document);
+        return new(root, document, pack ?? SourceTextPack.Current);
     }
+
+    /// <summary>Compares source identities and numeric facts; regional readers validate their own art.</summary>
+    public bool HasSameEntryRules(PokedexMenuEntry entry) =>
+        Entries.TryGetValue(entry.SourceSpeciesId, out var expected) &&
+        entry.NationalNumber == expected.NationalNumber && entry.HeightDecimeters == expected.HeightDecimeters &&
+        entry.WeightHectograms == expected.WeightHectograms && entry.Type1 == expected.Type1 && entry.Type2 == expected.Type2;
 
     /// <summary>Reuses this catalog only within the content root that supplied its bytes.</summary>
     public PretPokedexMenu ForProjectRoot(string projectRoot)

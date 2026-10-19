@@ -18,6 +18,9 @@ public partial class CampaignView
     }
 
     private CaptureDexEntry CaptureDexEntry(int species) =>
+        PretCaptureDex.WithCanonicalText(CaptureDexArtEntry(species), _pokedexMenu!);
+
+    private CaptureDexEntry CaptureDexArtEntry(int species) =>
         _pokemonCollectionArt?.CaptureEntries.GetValueOrDefault(species)??GiftEggCaptureDexEntry(species)??_supplementalDex.CaptureEntry(species)??SevenIslandCaptureDexEntry(species)??MewtwoCaptureDexEntry(species)??CelioCaptureDexEntry(species)??FiveIslandCaptureDexEntry(species)??SixIslandCaptureDexEntry(species)??FourIslandCaptureDexEntry(species)??SeviiRubyCaptureDexEntry(species)??_catalog.CinnabarArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SaffronGymArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SilphArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SurfArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SafariArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.FuchsiaRouteArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.EeveeArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SnorlaxArt?.CaptureDexEntries.GetValueOrDefault(species)??TowerCaptureDexEntry(species)??_earlyDex.CaptureEntry(species)??_captureDex!.Entries[species];
 
     private PokedexMenuPage PresentedPokedexPage(int species)

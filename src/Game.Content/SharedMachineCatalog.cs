@@ -41,6 +41,15 @@ public sealed class SharedMachineCatalog
             _current.TmCase.Item.Id.Value != "pret:ITEM_TM_CASE" || string.IsNullOrWhiteSpace(_current.TmCase.Description) ||
             _current.MachineSlots != 58 || _current.KeyItemSlots != 30 || _current.MaximumStack != 999)
             throw new InvalidDataException("machine_current_admission");
+        var descriptions = items.TextPack.Apply("machine-descriptions",
+            document.Machines.Select(definition => definition.Machine).Append(_current.TmCase)
+                .ToDictionary(machine => machine.Item.Id.Value, machine => machine.Description));
+        _machines = _machines.ToImmutableDictionary(pair => pair.Key, pair => pair.Value with
+        {
+            Machine = pair.Value.Machine with { Description = descriptions[pair.Key.Value] }
+        });
+        _current = _current with { TmCase = _current.TmCase with
+            { Description = descriptions[_current.TmCase.Item.Id.Value] } };
     }
     public static SharedMachineCatalog LoadProject(string root) => Projects.GetOrAdd(Path.GetFullPath(root), path =>
         new Lazy<SharedMachineCatalog>(() => LoadProject(path, SharedItemCatalog.LoadProject(path)))).Value;

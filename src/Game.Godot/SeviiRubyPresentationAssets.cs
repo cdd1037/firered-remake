@@ -8,6 +8,19 @@ internal static class SeviiRubyPresentationAssets
 {
     internal const string Base = "content/generated/sprites/pokemon/sevii-ruby/";
 
+    // The story bank owns words; this package supplies only the admitted label and glyph geometry.
+    internal static string BrailleText(JsonElement braille, JsonElement message, string symbol, string? text)
+    {
+        if (message.ValueKind == JsonValueKind.Undefined || message.GetProperty("label").GetString() != symbol ||
+            string.IsNullOrWhiteSpace(text))
+            throw new InvalidDataException("Braille message identity is missing.");
+        var glyphs = braille.GetProperty("glyphs").EnumerateArray()
+            .Select(glyph => glyph.GetProperty("character").GetString()).ToHashSet(StringComparer.Ordinal);
+        if (text.Any(character => !glyphs.Contains(character.ToString())))
+            throw new InvalidDataException("Braille text contains a character outside its glyph catalog.");
+        return text;
+    }
+
     internal static SeviiRubyPresentationData Load(string root)
     {
         var package = PresentationPackage.Load(root, Base, false, "assets");

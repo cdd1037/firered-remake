@@ -126,7 +126,7 @@ public partial class CampaignView
         return FormatTrainerTowerSpeech(frame.Outcome == Game.Domain.WildBattle.WildBattleOutcome.Won ? trainer.SpeechLose : trainer.SpeechWin);
     }
     private string? PresentedFieldText => _trainerTowerSpeechPages.Length > 0
-        ? _trainerTowerSpeechPages[_trainerTowerSpeechPage] : _session.VisibleText;
+        ? _trainerTowerSpeechPages[_trainerTowerSpeechPage] : _session.FormatVisibleText(PewterDisplayText);
     private void SynchronizeTrainerTowerSpeech()
     {
         var dialogue = _session.State.Dialogue;

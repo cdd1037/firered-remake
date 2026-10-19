@@ -5,12 +5,13 @@ namespace Game.Content;
 /// <summary>Imported battle text and presentation control expansion.</summary>
 public static class PretBattleText
 {
-    public static ImmutableSortedDictionary<string,string> Load(string root)
+    public static ImmutableSortedDictionary<string,string> Load(string root, SourceTextPack? pack = null)
     {
         using var stream = File.OpenRead(Path.Combine(root, "content/generated/battle/text.json"));
         var texts = System.Text.Json.JsonSerializer.Deserialize<SortedDictionary<string, string>>(stream)
             ?? throw new InvalidDataException("Battle text catalog is empty.");
-        return texts.ToImmutableSortedDictionary(StringComparer.Ordinal);
+        return (pack ?? SourceTextPack.Current).Apply("battle", texts, preserveControls: true)
+            .ToImmutableSortedDictionary(StringComparer.Ordinal);
     }
     public static ImmutableArray<string> Pages(IReadOnlyDictionary<string,string> source,string symbol,IReadOnlyDictionary<string,string> values)
     {

@@ -27,7 +27,7 @@ public partial class CampaignView
         _storageIcons.Add(new("pret:SPECIES_QWILFISH"), Pixels(art.Manifest.GetProperty("pokemonIcons")[0]));
         _route22Footprints.Add(211, Pixels(art.Manifest.GetProperty("footprints")[0]));
         var entry = art.DexEntries[211];
-        if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[211])
+        if (_pokedexMenu is null || !_pokedexMenu.HasSameEntryRules(entry))
             throw new InvalidDataException("Qwilfish shared presentation inventory differs.");
         _qwilfishArt = art;
         _supplementalDex.AddEntries(art.DexEntries.Values, art.Files);

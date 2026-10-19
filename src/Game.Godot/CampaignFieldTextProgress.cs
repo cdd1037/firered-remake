@@ -16,7 +16,6 @@ public partial class CampaignView
     {
         if(!FieldTextProgressEnabled)return;
         var dialogue=_session.State.Dialogue;var text=PresentedFieldText;
-        if(text is not null)text=PewterDisplayText(text);
         if(dialogue==_fieldPrintedDialogue&&text==_fieldPrintedText)return;
         _fieldPrintedDialogue=dialogue;_fieldPrintedText=text;_fieldTextFrameRemainder=0;_fieldTextHeld=false;_fieldTextNewPress=false;
         int speed=_session.EffectiveOptions.TextSpeed switch{SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1};

@@ -20,7 +20,7 @@ public partial class CampaignView
             var id = new Game.Domain.Ids.SpeciesId("pret:SPECIES_" + entry.Name);
             if (!opponents.Catalog.Species.TryGetValue(id, out var species) || species.SourceSpeciesId != entry.SourceSpeciesId ||
                 _pokedexMenu is null ||
-                entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
+                !_pokedexMenu.HasSameEntryRules(entry))
                 throw new InvalidDataException("Memorial Pillar opponent species or seen-Dex binding differs.");
         }
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())

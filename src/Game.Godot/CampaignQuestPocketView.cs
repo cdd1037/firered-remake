@@ -34,13 +34,13 @@ public partial class CampaignView
                 var oldDirectory=System.IO.Path.Combine(_root,"content/generated/sprites/pokemon/old-man");
                 var oldArt=PretOldManArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(oldDirectory,"old-man-art.json")));
                 var tv=oldArt.TeachyTv;var item=_catalog.QuestItems.Items.Single(x=>x.Id.Value==tv.Id);
-                if(item.SourceItemSymbol!=tv.SourceSymbol||item.Name!=tv.Name||item.FieldUseFunction!=tv.FieldUseFunction)throw new InvalidDataException("Teachy TV presentation differs from source item.");
+                if(item.SourceItemSymbol!=tv.SourceSymbol||item.FieldUseFunction!=tv.FieldUseFunction)throw new InvalidDataException("Teachy TV presentation differs from source item.");
                 var asset=oldArt.Assets.Single(x=>x.Id==tv.Icon);using var image=new Image();
                 if(image.LoadPngFromBuffer(PretOldManArt.ReadTexture(oldDirectory,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8)throw new InvalidDataException("Teachy TV texture pixels differ.");
                 _questPocketTextures.Add(asset.Id,SceneTextures.FromImage(image));
                 // Same source icon window as the existing key item; authenticated extension leaves original assets intact.
                 var icon=document.Assets.Single(x=>x.Id==document.Items.First().Icon);
-                document=document with{Items=document.Items.Add(tv),Assets=document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,icon.X,icon.Y))};
+                document=document with{Items=document.Items.Add(tv with { Name = item.Name }),Assets=document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,icon.X,icon.Y))};
             }
             ExtendMachineQuestPocket(ref document);
             ExtendTownMapQuestPocket(ref document);
@@ -72,7 +72,8 @@ public partial class CampaignView
 
     private int QuestPocketListStart => Math.Max(0, _questPocketCursor - 5);
     private QuestItemUiEntry QuestPocketItem(InventoryStack stack)
-        => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value);
+        => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value) with
+        { Name = _catalog.DisplayNames.ItemName(stack.Item.Value[5..]) };
 
     private InventoryMenuEntry[] QuestPocketActions()
     {

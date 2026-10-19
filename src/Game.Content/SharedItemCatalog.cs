@@ -13,7 +13,8 @@ public sealed record SharedItemDocument(int SchemaVersion,
 public sealed class SharedItemCatalog
 {
     private readonly ImmutableDictionary<ItemId, QuestItemDefinition> _items;
-    private SharedItemCatalog(SharedItemDocument document)
+    internal SourceTextPack TextPack { get; }
+    private SharedItemCatalog(SharedItemDocument document, SourceTextPack pack)
     {
         if (document.SchemaVersion != 1 ||
             document.Items.IsDefault || document.Items.Length != 307)
@@ -26,9 +27,13 @@ public sealed class SharedItemCatalog
                 item.CanToss != (item.Importance == 0) || item.CanGive != (item.Importance == 0) ||
                 item.CanSell != (item.Price != 0)))
             throw new InvalidDataException("item_catalog_definition");
+        TextPack = pack;
+        var names = pack.Apply("item-names", _items.ToDictionary(pair => pair.Key.Value, pair => pair.Value.Name));
+        _items = _items.ToImmutableDictionary(pair => pair.Key,
+            pair => pair.Value with { Name = names[pair.Key.Value] });
     }
-    public static SharedItemCatalog LoadProject(string root) => new(ContentJson.ParseStrict<SharedItemDocument>(
-        File.ReadAllText(Path.Combine(root, "content/generated/data/items.json")), ContentJson.CreateOptions()));
+    public static SharedItemCatalog LoadProject(string root, SourceTextPack? pack = null) => new(ContentJson.ParseStrict<SharedItemDocument>(
+        File.ReadAllText(Path.Combine(root, "content/generated/data/items.json")), ContentJson.CreateOptions()), pack ?? SourceTextPack.Current);
     public QuestItemDefinition Definition(ItemId id) => _items.TryGetValue(id, out var item)
         ? item : throw new InvalidDataException("item_definition_missing: " + id.Value);
     public ImmutableDictionary<ItemId, QuestItemDefinition> Select(IEnumerable<ItemId> ids) =>
