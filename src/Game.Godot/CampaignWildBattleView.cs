@@ -544,9 +544,20 @@ public partial class CampaignView
         if (!_wildPages.IsEmpty)
         {
             if(WildCaptureBallBlocking(b))return;
-            if(WildCurrentEvent(b) is not WildBattleTowerHpEvent {Effect:"curse-cost"} || _wildElapsed>=.4)WildLines(WildMessageSample.Text);
+            var message = WildMessageSample;
+            bool textVisible = WildCurrentEvent(b) is not WildBattleTowerHpEvent {Effect:"curse-cost"} || _wildElapsed>=.4;
+            if (NativeWildMessageEnabled)
+            {
+                DrawNativeBattleText(_nativeWildMessage, LabBattleUiSkin.BattleMessageText,
+                    _battleWhite, _wildArrowPages.Contains(_wildPage)||!message.IsFinal, _wildElapsed, drawText: textVisible);
+            }
+            else
+            {
+                if (textVisible) WildLines(message.Text);
+                if (_wildArrowPages.Contains(_wildPage)||!message.IsFinal) DrawTextCursor(_battleWhite,
+                    LabBattleUiSkin.BattleMessageText, message.Text.Split('\n'), 16, _wildElapsed, true);
+            }
             NotePokemonTowerFluteBattle(b);
-            if (_wildArrowPages.Contains(_wildPage)||!WildMessageSample.IsFinal) DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, WildMessageSample.Text.Split('\n'), 16, _wildElapsed, true);
             return;
         }
         if (b.Phase != CampaignBattlePhase.ChooseMove) return;
@@ -579,7 +590,13 @@ public partial class CampaignView
     private void DrawWildLearning(CampaignWildBattle b)
     {
         var moves = WildRewardRecipient(b).Pokemon.Moves;
-        if (_wildMenu == "learn-intro") { WildLines(WildMessageSample.Text); DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, WildMessageSample.Text.Split('\n'), 16, _wildElapsed, true); return; }
+        if (_wildMenu == "learn-intro")
+        {
+            var message = WildMessageSample;
+            if (NativeWildMessageEnabled) DrawNativeBattleText(_nativeWildMessage, LabBattleUiSkin.BattleMessageText, _battleWhite, true, _wildElapsed);
+            else { WildLines(message.Text); DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, message.Text.Split('\n'), 16, _wildElapsed, true); }
+            return;
+        }
         if (_wildMenu == "learn-moves")
         {
             DrawMoveSelectionSummary("wild:" + b.Id, WildRewardRecipient(b), b.PendingMoves[0].Move, _wildCursor);

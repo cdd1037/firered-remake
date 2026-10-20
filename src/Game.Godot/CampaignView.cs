@@ -126,6 +126,8 @@ public partial class CampaignView:Node2D
                 _questPocketUi=PretQuestItemUi.WithDisplayText(questItems,_catalog.Items,_catalog.Machines.TmCase, _battleText);
             _mapTileArt=CreateMapTileArt();
             InitializeNamingEditor();
+            InitializeFieldText();
+            InitializeBattleDialogText();
             var checkpoint=_startupCheckpoint;
             if(checkpoint.Length>0)
             {
@@ -653,8 +655,7 @@ public partial class CampaignView:Node2D
         if(!DrawSeviiRubyBraille()&&FieldDialogueVisible&&PresentedFieldText is {} text)
         {
             _battleSkin.DrawDialogue(this,_fieldScreenFade?.Fade is null?null:FieldDialoguePalette);
-            var color=_session.State.Script.Variables.GetValueOrDefault("VAR_TEXT_COLOR") switch{0=>new Color("345077"),1=>new Color("a44756"),_=>new Color("283840")};
-            var lines=FieldVisualText(text).Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(FieldDialogueFont,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);
+            DrawFieldDialogueText(FieldDialogueFont);
             if(!TrainerTowerMenuActive&&!SeagallopMenuActive&&FieldTextComplete&&_session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length)
             {
                 int x=FieldChoiceFrameX,y=FieldChoiceTextY,step=FieldChoiceRowHeight;
@@ -667,7 +668,7 @@ public partial class CampaignView:Node2D
                 int width=((int)Math.Max(_sourceNormal.MeasureText(InventorySourceText("gText_Yes")).X,_sourceNormal.MeasureText(InventorySourceText("gText_No")).X)+9)/8+1;
                 _battleSkin.DrawUserFrame(this,new(144,56,width*8+16,48));SourceText(_sourceNormal,new(160,66),InventorySourceText("gText_Yes"));SourceText(_sourceNormal,new(160,80),InventorySourceText("gText_No"));SourceText(_sourceNormal,new(152,_choiceYes?66:80),"▶");
             }
-            else if(FieldVisualContinuationPending||FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawTextCursor(FieldDialogueFont,LabBattleUiSkin.DialogueText,lines,15,_waitElapsed);
+            else if(FieldVisualContinuationPending||FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawFieldDialogueCursor();
         }
         DrawDayCareResidents();DrawSourceGridMenu();DrawSourceMenu();DrawFossilLabMenu();DrawBillPcMenu();DrawBikeShopMenu();DrawRocketElevatorMenu();DrawDepartmentElevatorMenu();DrawRooftopMenu();DrawGameCornerCoinMenu();DrawGameCornerPrizeMenu();DrawSilphElevatorMenu();DrawSeagallopMenu();DrawTrainerTowerMenu();
         if(_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro&&_wildNotice is not null)DrawWildNoticeBox();

@@ -28,6 +28,7 @@ public partial class SourceDialogText : Control
     private int[] _utf16Offsets = [0];
     private string _boundText = "";
     private int _revealed;
+    private Font? _displayFont;
 
     public int VisualPage => _cursor.Page;
     public int PageCount => _cursor.Count;
@@ -72,6 +73,7 @@ public partial class SourceDialogText : Control
         Size = new(width, rows * lineStep);
         _text.Size = new(width, rows * lineStep);
         _text.AddThemeFontOverride("normal_font", font);
+        _displayFont = font;
         _text.AddThemeFontSizeOverride("normal_font_size", fontSize);
         _text.AddThemeConstantOverride("line_separation", lineStep - (int)font.GetHeight(fontSize));
         _text.AutowrapMode = wrap ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off;
@@ -92,6 +94,16 @@ public partial class SourceDialogText : Control
         _text.Size = new(width, Math.Max(rows * lineStep, _text.GetContentHeight() + lineStep));
         _cursor.Reset(_pages.Length);
         BeginPage();
+    }
+
+    /// <summary>Change only palette, not layout. SourceGameFont variants share metrics.</summary>
+    public void SetDisplayFont(SourceGameFont font)
+    {
+        ArgumentNullException.ThrowIfNull(font);
+        if (ReferenceEquals(_displayFont, font.Font)) return;
+        font.PrepareText(_boundText);
+        _text.AddThemeFontOverride("normal_font", font.Font);
+        _displayFont = font.Font;
     }
 
     public void RevealCodepoints(int count)

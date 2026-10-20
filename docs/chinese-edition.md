@@ -138,8 +138,9 @@ Oak no longer uses the manual `SourceMessageCursor`/`ItemMessageBox` text path.
 The scene explicitly hides the child control outside the selected speech branch,
 including portrait fades, the return animation and menus. Its existing pixel
 font owns foreground/shadow colors; this slice does not introduce a second
-font or palette cache. Field, battle, Help and other UI consumers have not yet
-migrated to this control, so their old layout implementation remains in use.
+font or palette cache. The field and ordinary battle consumers described below
+now share this control; Help and other specialized UI still retain their old
+layout implementation.
 
 The affected build passed with no warnings/errors, and 18 focused opening,
 printer and page-state cases passed. An isolated Godot 4.7.2 prototype checked
@@ -155,3 +156,113 @@ to retained text during Nidoran send-out. Both initial runs exited normally
 without errors or leak warnings. A final native retry entered Nidoran send-out,
 immediately returned to the retained message, and successfully confirmed it
 again into the next message; the process exited normally. The prototype's battle-text layout check is not product battle-control acceptance.
+
+
+### Field and ordinary battle surfaces
+
+Map dialogue now binds the same `SourceDialogText`, including the egg-hatch
+message consumer of the field printer. `SourceTextProgress` retains the selected
+slow/mid/fast source cadence, EOS wait and held-button speed-up. A visual page
+advance does not increment the dialogue's semantic page or send a command;
+existing script/choice/automatic-print completion owners remain responsible for
+acknowledgements. Trainer Tower speech identity is retained separately. Braille
+keeps its specialized renderer and clears the ordinary text binding.
+
+`SourceDialogSurface` hosts the control in one retained transparent `SubViewport`
+and composites its texture at the original parent draw position. Thus later
+menus, screens and fades continue to cover text, rather than accidentally
+rendering underneath a direct child control. Viewport size follows the native
+control, filtering is nearest, and every submitted composite explicitly requests
+one cleared render. A rendered regression caught a blank first frame with
+`WhenVisible`; explicit `Once` scheduling fixes it. No viewport or texture is
+created per frame. Palette-only font changes retain page/reveal state and reuse
+the existing `SourceGameFont` variants; no second glyph/layout cache is introduced.
+
+Ordinary single/double battle message windows, tutorial Oak dialogue and the
+single-battle move-learning introduction use the surface. Their established
+instant reveal remains instant. Battle event/source page indices, authoritative
+ACKs and animation/cry/HP gates are unchanged. Notices, party/medicine, capture,
+trainer-shift choices and stats have specialized retained paths and are not
+claimed migrated.
+
+The serial solution build passed with zero warnings/errors. The focused field
+printer/page-cursor run passed 16 cases, including all three text speeds,
+continuation latch retention, EOS readiness and resetting identical text for a
+new semantic owner. The battle-focused regression run passed 42 cases.
+
+Actual Godot 4.7.2/.NET 10.0.12 X11 field acceptance used a fresh new game, not the
+restored legacy checkpoint (which was correctly rejected as unsupported). The
+NES interaction printed both original semantic pages and returned control to the
+field. A separate external test pack expanded only its first message to three
+visual pages: consecutive confirmation revealed the next page without skipping
+it, all visual continuations produced no campaign ACK, then exactly one ACK
+advanced to the original second message and one closed it. A subsequent turn
+command was accepted. The external pack is not a shipped translation change.
+Audio was Dummy; this does not establish actual audio or IME acceptance.
+
+The rendered surface regression checks first-frame ink, clearing previous-page
+pixels during reveal reset, changed next-page pixels, Clear/rebind, resize and
+parent overlay ordering. Run after building the Godot project, from a graphical
+desktop terminal (not headless):
+
+```sh
+source scripts/env.sh
+"$GODOT" --path src/Game.Godot --audio-driver Dummy --script "$PWD/scripts/checks/test-field-dialog-surface.gd"
+```
+
+The test exits nonzero on an assertion failure. Its fallback font tests surface
+lifecycle rather than the Chinese font itself; the product field checks above
+used the actual Fusion Pixel pack. These checks are not a full-game UI pass;
+late-game field branches and the egg-hatch scene have not been replayed in this
+migration slice. The restored archive lacks many unrelated presentation oracle
+fixtures, so an attempted broader presentation suite is not a full-suite pass.
+
+The maintained battle-control probe links the production `SourceGameFont`,
+`SourceDialogText` and `SourceDialogSurface` into a temporary Godot project. It
+requires the built Debug Content/Domain assemblies, generated source font and
+local `zh-Hans` font pack; it neither tracks assets nor modifies a player save.
+Run from a graphical desktop terminal after building the project:
+
+```sh
+python3 scripts/checks/test-battle-dialog-text.py
+```
+
+Use `--output <directory>` to retain build/runtime logs and `render.png` in a
+chosen directory. `--headless` checks layout only and explicitly skips pixels;
+it is not rendering acceptance. The launcher uses `dev env` for the official
+toolchain, disables audio with Dummy, and fails on missing inputs, exceptions,
+nonzero exit, missing completion evidence or failed assertions.
+
+On Godot 4.7.2 / CLR 10.0.12 the actual Fusion Pixel/source bitmap font probe
+passed instant reveal, explicit three-page continuation, same-text reset,
+literal Unicode text, Chinese native wrapping and continuation bounds. X11
+rendering additionally passed nonempty bitmap glyph pixels, changed next-page
+pixels, white palette replacement without resetting reveal/page state,
+exact-width text layout, Clear and parent overlay checks. The exact-width check
+is a layout/ink check, not a per-glyph shadow-overhang oracle. These control tests
+do not claim to exercise campaign command rejection or duplicate-ACK behavior.
+
+The broader Presentation run completed with **1,897 passed, 415 failed and no
+skips (2,312 total)**. Of the failures, 409 require missing oracle fixtures;
+the other six are existing local content/test mismatches outside this migration:
+
+- Claw `GlobalObjectShake` timing expects `(0,4)` but receives `(0,0)`.
+- Claw terrain-operand acceptance differs from the test expectation.
+- `impact` and `small-ember` each contain duplicate indexed/legacy manifest assets.
+- `SpritePaletteGroup.Resolve` returns a cached mutable palette alias.
+- `StorageMoveHelp` expects the old source-keyboard wording rather than the
+  current visible-characters wording.
+
+The relevant tracked inputs are unchanged from HEAD; the historical baseline
+of generated assets is not provable from this archive. This is not a full-suite
+pass, and these unrelated failures were not changed in the dialogue slice.
+
+A fresh-game X11 walkthrough on the same official Godot/CLR build naturally
+reached Oak's lab, chose Bulbasaur and completed the rival tutorial battle in
+five Tackle turns. Native white battle messages and gray Oak tutorial pages
+were legible; HP/animation gates, fainting, 69 EXP, level 6, both stat overlay
+pages, prize text and return to native field dialogue all progressed normally.
+No runtime errors or exceptions were found in the walkthrough log. This used
+Dummy audio and the bedroom entry, not the opening/naming sequence. It does not
+establish ordinary wild/double/capture battle, late-game or audible-cry coverage.
+The final combined focused regression selection passed **55/55 with no skips**.

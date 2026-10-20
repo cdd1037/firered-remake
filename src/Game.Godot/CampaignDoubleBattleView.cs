@@ -418,7 +418,9 @@ public partial class CampaignView
         if(_doublePages.Length>0)
         {
             if(_doubleRewardStats.TryGetValue(_doublePage,out var stats)){DrawDoubleRewardStats(stats.Level,stats.Totals);return;}
-            var message=DoubleMessageSample;DoubleLines(message.Text);DrawTextCursor(_battleWhite,LabBattleUiSkin.BattleMessageText,message.Text.Split('\n'),16,_doubleElapsed,true);
+            var message=DoubleMessageSample;
+            if (NativeDoubleMessageEnabled) DrawNativeBattleText(_nativeDoubleMessage, LabBattleUiSkin.BattleMessageText, _battleWhite, true, _doubleElapsed);
+            else { DoubleLines(message.Text); DrawTextCursor(_battleWhite,LabBattleUiSkin.BattleMessageText,message.Text.Split('\n'),16,_doubleElapsed,true); }
             if(_doubleMenu=="learn-choice")
             { _battleSkin.DrawStandardFrame(this,new(184,64,56,48));SourceText(_battleMenuFont,new(200,72),InventorySourceText("gText_Yes"));SourceText(_battleMenuFont,new(200,88),InventorySourceText("gText_No"));SourceText(_battleMenuFont,new(188,72+16*_doubleCursor),">"); }
             return;

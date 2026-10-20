@@ -278,8 +278,9 @@ public partial class CampaignView
         }
         else if(!_battlePages.IsEmpty)
         {
-            var message=BattleMessageSample;Lines(message.Text);
-            if(_battleArrowPages.Contains(_battlePage)||!message.IsFinal)DrawTextCursor(oak?_sourceNormal:_battleWhite,oak?LabBattleUiSkin.DialogueText:LabBattleUiSkin.BattleMessageText,message.Text.Split('\n'),oak?15:16,_battleElapsed,!oak);
+            var message=BattleMessageSample;
+            DrawNativeBattleText(_nativeBattleMessage, oak?LabBattleUiSkin.DialogueText:LabBattleUiSkin.BattleMessageText,
+                oak?_sourceNormal:_battleWhite, _battleArrowPages.Contains(_battlePage)||!message.IsFinal, _battleElapsed, !oak);
         }
         else if(b.Phase==CampaignBattlePhase.ChooseMove)
         {

@@ -5,7 +5,8 @@ using Godot;
 public partial class CampaignView
 {
     private readonly SourceTextProgress _fieldTextProgress=new();
-    private readonly SourceMessageCursor _fieldMessage = new();
+    private SourceDialogSurface _fieldTextSurface = null!;
+    private SourceDialogText FieldText => _fieldTextSurface.Text;
     private int _fieldPrintedTowerSpeechPage;
     private CampaignDialogue? _fieldPrintedDialogue;
     private string? _fieldPrintedText;
@@ -13,21 +14,32 @@ public partial class CampaignView
     private bool _fieldTextHeld,_fieldTextNewPress;
     private bool FieldTextProgressEnabled=>!SeviiRubyBrailleVisible;
     private bool FieldTextComplete=>!FieldTextProgressEnabled||_fieldPrintedText is null||
-        _fieldTextProgress.Complete&&_fieldMessage.Sample.IsFinal;
+        _fieldTextProgress.Complete&&FieldText.IsFinal;
     private bool FieldVisualContinuationPending=>FieldTextProgressEnabled&&_fieldPrintedText is not null&&
-        _fieldTextProgress.Complete&&!_fieldMessage.Sample.IsFinal;
-    private string FieldVisualText(string complete)=>FieldTextProgressEnabled&&_fieldPrintedText is not null?
-        _fieldMessage.Sample.Text:complete;
-    private string FieldRenderedText(string complete)=>FieldTextProgressEnabled&&_fieldPrintedText is not null?_fieldTextProgress.VisibleText:complete;
+        _fieldTextProgress.Complete&&!FieldText.IsFinal;
+    private void InitializeFieldText()
+    {
+        _fieldTextSurface = new();
+        AddChild(_fieldTextSurface);
+    }
+    private void DrawFieldDialogueText(SourceGameFont font) =>
+        _fieldTextSurface.Draw(this, LabBattleUiSkin.DialogueText, font);
+    private void DrawFieldDialogueCursor() =>
+        _textCursor.Draw(this, (LabBattleUiSkin.DialogueText + FieldText.ContinuationPosition).Floor(),
+            (long)Math.Max(0, _waitElapsed * 60));
     private void SynchronizeFieldText()
     {
-        if(!FieldTextProgressEnabled)return;
+        if(!FieldTextProgressEnabled){FieldText.Clear();_fieldPrintedText=null;return;}
         var dialogue=_session.State.Dialogue;var text=PresentedFieldText;
         if(dialogue==_fieldPrintedDialogue&&text==_fieldPrintedText&&_trainerTowerSpeechPage==_fieldPrintedTowerSpeechPage)return;
         _fieldPrintedDialogue=dialogue;_fieldPrintedText=text;_fieldPrintedTowerSpeechPage=_trainerTowerSpeechPage;_fieldTextFrameRemainder=0;_fieldTextHeld=false;_fieldTextNewPress=false;
         int speed=_session.EffectiveOptions.TextSpeed switch{SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1};
-        var sample=MessageSample(_fieldMessage,(dialogue,_trainerTowerSpeechPage),text??"",_sourceNormal,198);
-        _fieldTextProgress.Reset(sample.Text,speed);
+        if(text is null){FieldText.Clear();return;}
+        string prepared = _sourceNormal.PrepareText(text);
+        FieldText.Visible = true;
+        FieldText.Bind(prepared, _sourceNormal.Font, _sourceNormal.Size, 15, 198,
+            wrap: SourceHelpTextLayout.ContainsCjk(prepared));
+        _fieldTextProgress.Reset(FieldText.CurrentVisualText,speed);
     }
     private void ProcessFieldText(double delta)
     {
@@ -36,6 +48,7 @@ public partial class CampaignView
         int frames=(int)Math.Min(int.MaxValue,Math.Floor(_fieldTextFrameRemainder));if(frames<=0)return;
         _fieldTextFrameRemainder-=frames;
         _fieldTextProgress.AdvanceFrames(frames,_fieldTextHeld,_fieldTextNewPress);_fieldTextNewPress=false;
+        FieldText.RevealCodepoints(_fieldTextProgress.VisibleCodepoints);
         ProcessSourceLeaderIntroAudio();
     }
     // A visual continuation is consumed before field choice owners that intentionally
@@ -57,8 +70,8 @@ public partial class CampaignView
     private bool TryAdvanceFieldVisualMessage()
     {
         if(!FieldVisualContinuationPending)return false;
-        if(!_fieldMessage.TryAdvance())return false;
-        _fieldTextProgress.ContinuePage(_fieldMessage.Sample.Text);
+        if(!FieldText.TryAdvanceVisual(_fieldTextProgress.Complete))return false;
+        _fieldTextProgress.ContinuePage(FieldText.CurrentVisualText);
         _fieldTextHeld=_fieldTextNewPress=false;_held=null;_repeat=0;
         return true;
     }

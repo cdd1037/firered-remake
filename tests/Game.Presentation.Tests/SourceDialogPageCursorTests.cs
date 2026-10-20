@@ -50,4 +50,49 @@ public sealed class SourceDialogPageCursorTests
         printer.ContinuePage("下一页");
         Assert.AreEqual(0, printer.VisibleCodepoints);
     }
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(4)]
+    [DataRow(8)]
+    public void FieldVisualPagesKeepPrinterCadenceAndSemanticReadinessSeparate(int speed)
+    {
+        var cursor = new SourceDialogPageCursor();
+        var printer = new SourceTextProgress();
+        cursor.Reset(3);
+        printer.Reset("第一页\n第二行\n", speed);
+        int semanticPage = 4;
+        for (int visual = 0; visual < 3; visual++)
+        {
+            Assert.IsFalse(cursor.TryAdvanceVisual(printer.Complete));
+            Assert.IsFalse(printer.Complete && cursor.IsFinal);
+            printer.AdvanceFrames(1, false, false);
+            printer.AdvanceFrames(1, true, true);
+            printer.AdvanceFrames(100, true, false);
+            Assert.IsTrue(printer.Complete);
+            Assert.AreEqual(speed > 1, printer.HasPrintBeenSpedUp);
+            Assert.AreEqual(4, semanticPage);
+            if (visual < 2)
+            {
+                Assert.IsFalse(cursor.TryTakeSemanticAcknowledgement(printer.Complete));
+                Assert.IsTrue(cursor.TryAdvanceVisual(printer.Complete));
+                printer.ContinuePage("下一页");
+                Assert.IsFalse(printer.Complete);
+                Assert.AreEqual(0, printer.VisibleCodepoints);
+                Assert.AreEqual(speed > 1, printer.HasPrintBeenSpedUp);
+                Assert.AreEqual(speed, printer.ConfiguredSpeed);
+            }
+        }
+        Assert.IsTrue(printer.Complete && cursor.IsFinal);
+        Assert.IsTrue(cursor.TryTakeSemanticAcknowledgement(printer.Complete));
+        semanticPage++;
+        Assert.IsFalse(cursor.TryTakeSemanticAcknowledgement(printer.Complete));
+        Assert.AreEqual(5, semanticPage);
+        // Repeated identical source pages are new semantic owners, not a cache hit.
+        cursor.Reset(1);
+        printer.Reset("下一页", speed);
+        Assert.IsFalse(printer.Complete);
+        Assert.IsFalse(printer.HasPrintBeenSpedUp);
+        Assert.IsFalse(cursor.Acknowledged);
+    }
+
 }

@@ -174,15 +174,14 @@ public partial class CampaignView
         if (hatch.Stage != CampaignEggHatchStage.Animation && PresentedFieldText is { } text)
         {
             _battleSkin.DrawDialogue(this);
-            string[] lines=FieldRenderedText(text).Split('\n');
-            for(int i=0;i<lines.Length;i++) SourceText(_sourceNormal,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),lines[i]);
+            DrawFieldDialogueText(_sourceNormal);
             if(FieldTextComplete && hatch.Stage==CampaignEggHatchStage.NicknameChoice)
             {
                 _battleSkin.DrawUserFrame(this,new(160,64,64,48));
                 SourceText(_sourceNormal,new(176,74),InventorySourceText("gText_Yes")); SourceText(_sourceNormal,new(176,88),InventorySourceText("gText_No"));
                 SourceText(_sourceNormal,new(168,_choiceYes?74:88),"▶");
             }
-            else if(FieldTextComplete||FieldVisualContinuationPending) DrawTextCursor(_sourceNormal,LabBattleUiSkin.DialogueText,FieldVisualText(text).Split('\n'),15,_waitElapsed);
+            else if(FieldTextComplete||FieldVisualContinuationPending) DrawFieldDialogueCursor();
         }
         if (_fade > 0) DrawRect(new(0,0,240,160),new Color(0,0,0,(float)Math.Clamp(_fade/.16,0,1)));
         return true;
