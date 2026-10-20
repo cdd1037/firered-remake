@@ -630,7 +630,9 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Accepted,CompleteFightingDojoMasterTurn(state,next));
             }
             if(!state.Script.Completed||state.Script.Wait is not null||state.Dialogue is not null)return new(CommandStatus.Rejected,state,"event_active");
-            if(command.Kind=="field_start_menu")return new(CommandStatus.Accepted,state with{Script=state.Script with{Flags=state.Script.Flags.SetItem("FLAG_OPENED_START_MENU",true)}});
+            if(command.Kind=="field_start_menu")return CanOpenFieldMenuIn(state)
+                ?new(CommandStatus.Accepted,state with{Script=state.Script with{Flags=state.Script.Flags.SetItem("FLAG_OPENED_START_MENU",true)}})
+                :new(CommandStatus.Rejected,state,"field_menu_event_active");
             // ProcessPlayerFieldInput resets the selected physical object to player slot 0
             // before choosing a field action. A successful NPC interaction selects its slot below.
             if(state.ObjectSlots is not null&&command.Kind is "move" or "turn" or "cycle_input" or "interact" or "bag_open")

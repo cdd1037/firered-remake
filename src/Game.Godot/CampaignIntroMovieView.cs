@@ -118,22 +118,21 @@ public partial class CampaignView
     }
     private void DrawMovieFight(IntroMovieStage stage, int f)
     {
-        MovieLayer("fight-bg", -_introMovie!.TotalFrames * (stage == IntroMovieStage.Entrance ? 4 : .5f));
-        float nx = 180, ny = 100, gx = 239, gy = 496; int pose = 0, gengarFrame = _introMovie.TotalFrames / 30 % 2;
+        MovieLayer("fight-bg", _introMovie!.FightBackgroundPixelX);
+        float nx = 180, ny = 100, gx = 239, gy = 496; int pose = 0, gengarFrame = _introMovie.GengarFrame;
         if (stage == IntroMovieStage.Entrance)
         {
             int speed = 55, position = 0, gs = 1024, gp = 24 * 256;
             for (int i = 1; i <= f; i++) { if (i >= 40 && speed > 1) speed--; position += speed; if (i >= 40 && gs > 16) gs -= 16; gp += gs; }
             nx = Math.Min(180, position >> 4); gx = Math.Min(239, gp / 256f);
-            if (f >= 16) MovieSprite("grass", 264 - (f - 16) * 8, 96, 0, 32);
         }
         if (stage == IntroMovieStage.Cry) { pose = f < 9 ? 2 : 1; ny += f < 9 ? 3 : f / 2 % 2; }
         if (stage == IntroMovieStage.Swipe)
         {
-            gengarFrame = f < 36 ? 2 : f < 44 ? 3 : 0;
-            int sin = f < 17 ? 64 - f * 2 : f < 33 ? 32 : f < 41 ? 32 + (f - 33) * 8 : 96 - (f - 41) * 8;
-            gx += (float)Math.Cos(sin * Math.PI / 128) * (f < 36 ? 32 : 48);
-            gy -= (f < 36 ? 6 : 32) * (1 - (float)Math.Sin(sin * Math.PI / 128));
+            var swipe = IntroMoviePresentation.GengarSwipeAt(f);
+            gengarFrame = swipe.AnimationFrame;
+            gx += (float)Math.Cos(swipe.SineIndex * Math.PI / 128) * swipe.AmplitudeX;
+            gy -= swipe.AmplitudeY * (1 - (float)Math.Sin(swipe.SineIndex * Math.PI / 128));
             if (f >= 36 && f < 48 && f % 2 == 0)
             { MovieSprite("swipe", 116, 46, f < 44 ? 0 : 1, 64); DrawTextureRectRegion(_introMovieTextures["swipe"], new(116, 110, 32, 16), new(0, f < 44 ? 128 : 144, 32, 16)); }
             if (f >= 32) ApplyMovieRecoil(f - 32, ref nx, ref ny, ref pose);
@@ -153,9 +152,10 @@ public partial class CampaignView
             DrawRect(new(0, 32, 240, 96), new Color(1, 1, 1, white));
         }
         float zoom = stage == IntroMovieStage.Zoom ? 1 + f / 8f : stage == IntroMovieStage.Fade ? 2 : 1;
-        if (stage >= IntroMovieStage.Charge) MovieSprite("gengar-static", 17 - (zoom - 1) * 63, 40 - (zoom - 1) * 63, scale: zoom);
+        if (_introMovie.GengarAsSprite) MovieSprite("gengar-static", 17 - (zoom - 1) * 63, 40 - (zoom - 1) * 63, scale: zoom);
         else MovieLayer("fight-gengar", gx, gy + gengarFrame * 128);
         MovieSprite("nidorino", nx - 32, ny - 32 - (zoom - 1) * 42, pose, 64, zoom);
+        if (_introMovie.FightGrassVisible) MovieSprite("grass", _introMovie.FightGrassX - 32, 96, 0, 32);
         if (stage == IntroMovieStage.Fade) DrawRect(new(0, 0, 240, 160), new Color(0, 0, 0, f / 8f));
     }
     private void ApplyMovieRecoil(int t, ref float x, ref float y, ref int pose)

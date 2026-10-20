@@ -107,9 +107,11 @@ public partial class CampaignView
         // Source subpriority8 wake lies behind the subpriority0 ferry.
         var wake=SeagallopTexture("seagallop-wake",clock.ObjectFade);
         foreach(var row in clock.Wakes.Reverse())
-            DrawTextureRectRegion(wake,new(clock.Eastbound?row.X+16:row.X-16,76,clock.Eastbound?-32:32,32),new(0,row.Frame*32,32,32));
+            DrawTextureRectRegion(wake,new(row.X-16,76,clock.Eastbound?-32:32,32),new(0,row.Frame*32,32,32));
+        // Negative destination width mirrors UVs without moving the left edge.
+        // Both source directions retain the same sprite centre (FerryX,92).
         if(clock.FerryVisible)
-            DrawTextureRect(SeagallopTexture("seagallop-ferry_sprite",clock.ObjectFade),new(clock.Eastbound?clock.FerryX+32:clock.FerryX-32,60,clock.Eastbound?-64:64,64),false);
+            DrawTextureRect(SeagallopTexture("seagallop-ferry_sprite",clock.ObjectFade),new(clock.FerryX-32,60,clock.Eastbound?-64:64,64),false);
         return true;
     }
     private void DisposeFirstSeviiPresentation()

@@ -4,5 +4,6 @@
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
     <Compile Include="../../src/Game.Tooling/CurrentCheckpointConversion.cs" Link="Tooling/CurrentCheckpointConversion.cs" />
     <Compile Include="../../src/Game.Tooling/KnownHatchCountConversion.cs" Link="Tooling/KnownHatchCountConversion.cs" />
+    <Compile Include="../../src/Game.Godot/PokemonLeagueDurableSave.cs" Link="Godot/PokemonLeagueDurableSave.cs" />
   </ItemGroup>
 <ItemGroup><ProjectReference Include="../../tools/import-story/import-story.csproj" /></ItemGroup></Project>

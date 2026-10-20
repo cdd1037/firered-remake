@@ -6,8 +6,11 @@ namespace Game.Content;
 
 public sealed record GamePokemonAdmission(SpeciesId Id, ImmutableArray<PokemonEvolution> Evolutions,
     string? FormScope = null);
-public sealed record GamePokemonAdmissions(int SchemaVersion, ImmutableArray<GamePokemonAdmission> Owned,
-    ImmutableArray<GamePokemonAdmission> Opponents, ImmutableArray<GamePokemonAdmission> TrainerTowerOpponents);
+public sealed record GamePokemonEvolutionOverride(SpeciesId Id, ImmutableArray<PokemonEvolution> Evolutions);
+public sealed record GamePokemonRoster(ImmutableArray<string> Species,
+    ImmutableArray<GamePokemonEvolutionOverride> EvolutionOverrides);
+public sealed record GamePokemonAdmissions(int SchemaVersion, ImmutableArray<GamePokemonAdmission> Definitions,
+    GamePokemonRoster Owned, GamePokemonRoster Opponents, GamePokemonRoster TrainerTowerOpponents);
 public sealed record GameBreedingSpecies(SpeciesId Species, SpeciesId BaseEggSpecies, ImmutableArray<MoveId> EggMoves);
 public sealed record GameBreedingDocument(ImmutableArray<GameBreedingSpecies> Species, ImmutableArray<MoveId> AllMachineMoves);
 
@@ -45,27 +48,56 @@ public static class PretGamePokemonCatalog
         var options = ContentJson.CreateOptions();
         options.Converters.Add(new ExactEnumConverter<PokemonEvolutionMethod>());
         var document = ContentJson.ParseStrict<GamePokemonAdmissions>(json, options);
-        if (document.SchemaVersion != 1) throw new InvalidDataException("game_pokemon_schema");
-        return (Roster(document.Owned), Roster(document.Opponents), Roster(document.TrainerTowerOpponents));
-
-        PokemonCatalog Roster(ImmutableArray<GamePokemonAdmission> admissions)
+        if (document.SchemaVersion != 2) throw new InvalidDataException("game_pokemon_schema");
+        if (document.Definitions.IsDefaultOrEmpty || document.Definitions.Any(row => row is null) ||
+            document.Definitions.Select(row => row.Id).Distinct().Count() != document.Definitions.Length)
+            throw new InvalidDataException("game_pokemon_definitions");
+        var definitions = document.Definitions.ToImmutableDictionary(row => row.Id, row =>
         {
-            if (admissions.IsDefaultOrEmpty || admissions.Any(row => row is null) ||
-                admissions.Select(row => row.Id).Distinct().Count() != admissions.Length)
-                throw new InvalidDataException("game_pokemon_admissions");
-            var species = admissions.Select(row =>
+            var definition = canonical.Project(row.Id, row.Evolutions);
+            if (row.FormScope is not null)
             {
-                var definition = canonical.Project(row.Id, row.Evolutions);
-                if (row.FormScope is not null)
-                {
-                    var form = canonical.GenerationContract.FormStatOverrides.SingleOrDefault(
-                        form => form.Species == row.Id && form.Scope == row.FormScope)
-                        ?? throw new InvalidDataException("game_pokemon_form");
-                    definition = definition with { BaseStats = form.BaseStats };
-                }
-                return definition;
-            }).ToImmutableDictionary(species => species.Id);
-            return mechanics.Catalog with { Species = species };
+                var form = canonical.GenerationContract.FormStatOverrides.SingleOrDefault(
+                    form => form.Species == row.Id && form.Scope == row.FormScope)
+                    ?? throw new InvalidDataException("game_pokemon_form");
+                definition = definition with { BaseStats = form.BaseStats };
+            }
+            return definition;
+        });
+        var used = new HashSet<SpeciesId>();
+        var owned = Roster(document.Owned);
+        var opponents = Roster(document.Opponents);
+        var tower = Roster(document.TrainerTowerOpponents);
+        if (!used.SetEquals(definitions.Keys))
+            throw new InvalidDataException("game_pokemon_unused_definition");
+        return (owned, opponents, tower);
+
+        PokemonCatalog Roster(GamePokemonRoster roster)
+        {
+            if (roster is null || roster.Species.IsDefaultOrEmpty ||
+                roster.Species.Any(string.IsNullOrWhiteSpace) ||
+                roster.Species.Distinct(StringComparer.Ordinal).Count() != roster.Species.Length ||
+                roster.EvolutionOverrides.IsDefault || roster.EvolutionOverrides.Any(row => row is null) ||
+                roster.EvolutionOverrides.Select(row => row.Id).Distinct().Count() != roster.EvolutionOverrides.Length)
+                throw new InvalidDataException("game_pokemon_admissions");
+            var species = ImmutableDictionary.CreateBuilder<SpeciesId, PokemonSpeciesDefinition>();
+            foreach (string reference in roster.Species)
+            {
+                var id = new SpeciesId(reference);
+                if (!definitions.TryGetValue(id, out var definition))
+                    throw new InvalidDataException("game_pokemon_reference");
+                species.Add(id, definition);
+                used.Add(id);
+            }
+            foreach (var projection in roster.EvolutionOverrides)
+            {
+                if (!species.TryGetValue(projection.Id, out var definition) || projection.Evolutions.IsDefault ||
+                    projection.Evolutions.SequenceEqual(definition.Evolutions))
+                    throw new InvalidDataException("game_pokemon_override");
+                var projected = canonical.Project(projection.Id, projection.Evolutions);
+                species[projection.Id] = definition with { Evolutions = projected.Evolutions };
+            }
+            return mechanics.Catalog with { Species = species.ToImmutable() };
         }
     }
 

@@ -128,6 +128,7 @@ private void ProcessCampaignButtonRepeats(double delta)
         }
         else if (_fieldMenuMode == "pokedex-habitat")
         {
+            if (PokedexTransitionActive) return;
             int next = Math.Clamp(_pokedexHabitatPage + direction, 0, _pokedexHabitats[_pokedexHabitatIndex].Pages.Length - 1);
             if (next != _pokedexHabitatPage) { _pokedexHabitatPage = next; _pokedexHabitatSlot = 0; SetPokedexHabitatPage(); SourceSound("SE_SELECT"); }
         }

@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "owned": [
+  "schemaVersion": 2,
+  "definitions": [
     {
       "id": {
         "value": "pret:SPECIES_BULBASAUR"
@@ -1796,665 +1796,10 @@
         "value": "pret:SPECIES_HERACROSS"
       },
       "evolutions": []
-    }
-  ],
-  "opponents": [
-    {
-      "id": {
-        "value": "pret:SPECIES_BULBASAUR"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_IVYSAUR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_IVYSAUR"
-      },
-      "evolutions": [
-        {
-          "level": 32,
-          "target": {
-            "value": "pret:SPECIES_VENUSAUR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VENUSAUR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHARMANDER"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_CHARMELEON"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHARMELEON"
-      },
-      "evolutions": [
-        {
-          "level": 36,
-          "target": {
-            "value": "pret:SPECIES_CHARIZARD"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHARIZARD"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SQUIRTLE"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_WARTORTLE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WARTORTLE"
-      },
-      "evolutions": [
-        {
-          "level": 36,
-          "target": {
-            "value": "pret:SPECIES_BLASTOISE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BLASTOISE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CATERPIE"
-      },
-      "evolutions": [
-        {
-          "level": 7,
-          "target": {
-            "value": "pret:SPECIES_METAPOD"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_METAPOD"
-      },
-      "evolutions": [
-        {
-          "level": 10,
-          "target": {
-            "value": "pret:SPECIES_BUTTERFREE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BUTTERFREE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WEEDLE"
-      },
-      "evolutions": [
-        {
-          "level": 7,
-          "target": {
-            "value": "pret:SPECIES_KAKUNA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KAKUNA"
-      },
-      "evolutions": [
-        {
-          "level": 10,
-          "target": {
-            "value": "pret:SPECIES_BEEDRILL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BEEDRILL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIDGEY"
-      },
-      "evolutions": [
-        {
-          "level": 18,
-          "target": {
-            "value": "pret:SPECIES_PIDGEOTTO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIDGEOTTO"
-      },
-      "evolutions": [
-        {
-          "level": 36,
-          "target": {
-            "value": "pret:SPECIES_PIDGEOT"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIDGEOT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RATTATA"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_RATICATE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RATICATE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SPEAROW"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_FEAROW"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FEAROW"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EKANS"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_ARBOK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ARBOK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIKACHU"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_RAICHU"
-          },
-          "method": "item",
-          "parameter": "ITEM_THUNDER_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RAICHU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SANDSHREW"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_SANDSLASH"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SANDSLASH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORAN_F"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_NIDORINA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORINA"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_NIDOQUEEN"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDOQUEEN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORAN_M"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_NIDORINO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORINO"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_NIDOKING"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDOKING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLEFAIRY"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_CLEFABLE"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLEFABLE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VULPIX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NINETALES"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JIGGLYPUFF"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_WIGGLYTUFF"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WIGGLYTUFF"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ZUBAT"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_GOLBAT"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLBAT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ODDISH"
-      },
-      "evolutions": [
-        {
-          "level": 21,
-          "target": {
-            "value": "pret:SPECIES_GLOOM"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GLOOM"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_VILEPLUME"
-          },
-          "method": "item",
-          "parameter": "ITEM_LEAF_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VILEPLUME"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PARAS"
-      },
-      "evolutions": [
-        {
-          "level": 24,
-          "target": {
-            "value": "pret:SPECIES_PARASECT"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PARASECT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VENONAT"
-      },
-      "evolutions": [
-        {
-          "level": 31,
-          "target": {
-            "value": "pret:SPECIES_VENOMOTH"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VENOMOTH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DIGLETT"
-      },
-      "evolutions": [
-        {
-          "level": 26,
-          "target": {
-            "value": "pret:SPECIES_DUGTRIO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DUGTRIO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MEOWTH"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_PERSIAN"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PERSIAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PSYDUCK"
-      },
-      "evolutions": [
-        {
-          "level": 33,
-          "target": {
-            "value": "pret:SPECIES_GOLDUCK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLDUCK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MANKEY"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_PRIMEAPE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PRIMEAPE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GROWLITHE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ARCANINE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_POLIWAG"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_POLIWHIRL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_POLIWHIRL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_POLIWRATH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ABRA"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_KADABRA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KADABRA"
-      },
-      "evolutions": []
     },
     {
       "id": {
         "value": "pret:SPECIES_ALAKAZAM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MACHOP"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_MACHOKE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MACHOKE"
       },
       "evolutions": []
     },
@@ -2466,666 +1811,7 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_BELLSPROUT"
-      },
-      "evolutions": [
-        {
-          "level": 21,
-          "target": {
-            "value": "pret:SPECIES_WEEPINBELL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WEEPINBELL"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_VICTREEBEL"
-          },
-          "method": "item",
-          "parameter": "ITEM_LEAF_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VICTREEBEL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TENTACOOL"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_TENTACRUEL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TENTACRUEL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GEODUDE"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_GRAVELER"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GRAVELER"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_GOLEM"
-          },
-          "method": "trade"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLEM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PONYTA"
-      },
-      "evolutions": [
-        {
-          "level": 40,
-          "target": {
-            "value": "pret:SPECIES_RAPIDASH"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RAPIDASH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SLOWPOKE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SLOWBRO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGNEMITE"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_MAGNETON"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGNETON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FARFETCHD"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DODUO"
-      },
-      "evolutions": [
-        {
-          "level": 31,
-          "target": {
-            "value": "pret:SPECIES_DODRIO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DODRIO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SEEL"
-      },
-      "evolutions": [
-        {
-          "level": 34,
-          "target": {
-            "value": "pret:SPECIES_DEWGONG"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DEWGONG"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GRIMER"
-      },
-      "evolutions": [
-        {
-          "level": 38,
-          "target": {
-            "value": "pret:SPECIES_MUK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MUK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SHELLDER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLOYSTER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GASTLY"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_HAUNTER"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HAUNTER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_GENGAR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ONIX"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_STEELIX"
-          },
-          "method": "tradeItem",
-          "parameter": "ITEM_METAL_COAT"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DROWZEE"
-      },
-      "evolutions": [
-        {
-          "level": 26,
-          "target": {
-            "value": "pret:SPECIES_HYPNO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HYPNO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KRABBY"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_KINGLER"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KINGLER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VOLTORB"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_ELECTRODE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ELECTRODE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EXEGGCUTE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EXEGGUTOR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CUBONE"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_MAROWAK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAROWAK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HITMONLEE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HITMONCHAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LICKITUNG"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KOFFING"
-      },
-      "evolutions": [
-        {
-          "level": 35,
-          "target": {
-            "value": "pret:SPECIES_WEEZING"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WEEZING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RHYHORN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RHYDON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHANSEY"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TANGELA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KANGASKHAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HORSEA"
-      },
-      "evolutions": [
-        {
-          "level": 32,
-          "target": {
-            "value": "pret:SPECIES_SEADRA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SEADRA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLDEEN"
-      },
-      "evolutions": [
-        {
-          "level": 33,
-          "target": {
-            "value": "pret:SPECIES_SEAKING"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SEAKING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_STARYU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_STARMIE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MR_MIME"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SCYTHER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JYNX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ELECTABUZZ"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TAUROS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGIKARP"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_GYARADOS"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GYARADOS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LAPRAS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DITTO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EEVEE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VAPOREON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JOLTEON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FLAREON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PORYGON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_OMANYTE"
-      },
-      "evolutions": [
-        {
-          "level": 40,
-          "target": {
-            "value": "pret:SPECIES_OMASTAR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_OMASTAR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KABUTO"
-      },
-      "evolutions": [
-        {
-          "level": 40,
-          "target": {
-            "value": "pret:SPECIES_KABUTOPS"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KABUTOPS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_AERODACTYL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SNORLAX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ARTICUNO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ZAPDOS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MOLTRES"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DRATINI"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_DRAGONAIR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DRAGONAIR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DRAGONITE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MEWTWO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SENTRET"
-      },
-      "evolutions": [
-        {
-          "level": 15,
-          "target": {
-            "value": "pret:SPECIES_FURRET"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FURRET"
       },
       "evolutions": []
     },
@@ -3143,12 +1829,6 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_CROBAT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_CHINCHOU"
       },
       "evolutions": []
@@ -3156,87 +1836,6 @@
     {
       "id": {
         "value": "pret:SPECIES_LANTURN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PICHU"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_PIKACHU"
-          },
-          "method": "friendship"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLEFFA"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_CLEFAIRY"
-          },
-          "method": "friendship"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_IGGLYBUFF"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_JIGGLYPUFF"
-          },
-          "method": "friendship"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TOGEPI"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_TOGETIC"
-          },
-          "method": "friendship"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TOGETIC"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NATU"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_XATU"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_XATU"
       },
       "evolutions": []
     },
@@ -3254,12 +1853,6 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_BELLOSSOM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_MARILL"
       },
       "evolutions": []
@@ -3267,38 +1860,6 @@
     {
       "id": {
         "value": "pret:SPECIES_SUDOWOODO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HOPPIP"
-      },
-      "evolutions": [
-        {
-          "level": 18,
-          "target": {
-            "value": "pret:SPECIES_SKIPLOOM"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SKIPLOOM"
-      },
-      "evolutions": [
-        {
-          "level": 27,
-          "target": {
-            "value": "pret:SPECIES_JUMPLUFF"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JUMPLUFF"
       },
       "evolutions": []
     },
@@ -3316,50 +1877,7 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_YANMA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WOOPER"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_QUAGSIRE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_QUAGSIRE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MURKROW"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_MISDREAVUS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_UNOWN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WOBBUFFET"
       },
       "evolutions": []
     },
@@ -3377,81 +1895,7 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_DUNSPARCE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_STEELIX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_QWILFISH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HERACROSS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_URSARING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SLUGMA"
-      },
-      "evolutions": [
-        {
-          "level": 38,
-          "target": {
-            "value": "pret:SPECIES_MAGCARGO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGCARGO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SWINUB"
-      },
-      "evolutions": [
-        {
-          "level": 33,
-          "target": {
-            "value": "pret:SPECIES_PILOSWINE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PILOSWINE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DELIBIRD"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SKARMORY"
       },
       "evolutions": []
     },
@@ -3475,218 +1919,13 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_PHANPY"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_DONPHAN"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DONPHAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_SMEARGLE"
       },
       "evolutions": []
     },
     {
       "id": {
-        "value": "pret:SPECIES_TYROGUE"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_HITMONCHAN"
-          },
-          "method": "levelAttackLessDefense"
-        },
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_HITMONLEE"
-          },
-          "method": "levelAttackGreaterDefense"
-        },
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_HITMONTOP"
-          },
-          "method": "levelAttackEqualDefense"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HITMONTOP"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SMOOCHUM"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_JYNX"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ELEKID"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_ELECTABUZZ"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_MILTANK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BLISSEY"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RAIKOU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ENTEI"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SUICUNE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LARVITAR"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_PUPITAR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PUPITAR"
-      },
-      "evolutions": [
-        {
-          "level": 55,
-          "target": {
-            "value": "pret:SPECIES_TYRANITAR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TYRANITAR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LUGIA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HO_OH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WYNAUT"
-      },
-      "evolutions": [
-        {
-          "level": 15,
-          "target": {
-            "value": "pret:SPECIES_WOBBUFFET"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DEOXYS"
-      },
-      "evolutions": [],
-      "formScope": "firered-ordinary-non-link-stat-read"
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LEDYBA"
-      },
-      "evolutions": [
-        {
-          "level": 18,
-          "target": {
-            "value": "pret:SPECIES_LEDIAN"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LEDIAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SPINARAK"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_ARIADOS"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ARIADOS"
       },
       "evolutions": []
     },
@@ -3701,1328 +1940,10 @@
         "value": "pret:SPECIES_PINSIR"
       },
       "evolutions": []
-    }
-  ],
-  "trainerTowerOpponents": [
-    {
-      "id": {
-        "value": "pret:SPECIES_BULBASAUR"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_IVYSAUR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_IVYSAUR"
-      },
-      "evolutions": [
-        {
-          "level": 32,
-          "target": {
-            "value": "pret:SPECIES_VENUSAUR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VENUSAUR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHARMANDER"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_CHARMELEON"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHARMELEON"
-      },
-      "evolutions": [
-        {
-          "level": 36,
-          "target": {
-            "value": "pret:SPECIES_CHARIZARD"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHARIZARD"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SQUIRTLE"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_WARTORTLE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WARTORTLE"
-      },
-      "evolutions": [
-        {
-          "level": 36,
-          "target": {
-            "value": "pret:SPECIES_BLASTOISE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BLASTOISE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CATERPIE"
-      },
-      "evolutions": [
-        {
-          "level": 7,
-          "target": {
-            "value": "pret:SPECIES_METAPOD"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_METAPOD"
-      },
-      "evolutions": [
-        {
-          "level": 10,
-          "target": {
-            "value": "pret:SPECIES_BUTTERFREE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BUTTERFREE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WEEDLE"
-      },
-      "evolutions": [
-        {
-          "level": 7,
-          "target": {
-            "value": "pret:SPECIES_KAKUNA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KAKUNA"
-      },
-      "evolutions": [
-        {
-          "level": 10,
-          "target": {
-            "value": "pret:SPECIES_BEEDRILL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BEEDRILL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIDGEY"
-      },
-      "evolutions": [
-        {
-          "level": 18,
-          "target": {
-            "value": "pret:SPECIES_PIDGEOTTO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIDGEOTTO"
-      },
-      "evolutions": [
-        {
-          "level": 36,
-          "target": {
-            "value": "pret:SPECIES_PIDGEOT"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIDGEOT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RATTATA"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_RATICATE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RATICATE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SPEAROW"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_FEAROW"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FEAROW"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EKANS"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_ARBOK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ARBOK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PIKACHU"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_RAICHU"
-          },
-          "method": "item",
-          "parameter": "ITEM_THUNDER_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RAICHU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SANDSHREW"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_SANDSLASH"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SANDSLASH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORAN_F"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_NIDORINA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORINA"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_NIDOQUEEN"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDOQUEEN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORAN_M"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_NIDORINO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDORINO"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_NIDOKING"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NIDOKING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLEFAIRY"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_CLEFABLE"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLEFABLE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VULPIX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NINETALES"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JIGGLYPUFF"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_WIGGLYTUFF"
-          },
-          "method": "item",
-          "parameter": "ITEM_MOON_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WIGGLYTUFF"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ZUBAT"
-      },
-      "evolutions": [
-        {
-          "level": 22,
-          "target": {
-            "value": "pret:SPECIES_GOLBAT"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLBAT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ODDISH"
-      },
-      "evolutions": [
-        {
-          "level": 21,
-          "target": {
-            "value": "pret:SPECIES_GLOOM"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GLOOM"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_VILEPLUME"
-          },
-          "method": "item",
-          "parameter": "ITEM_LEAF_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VILEPLUME"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PARAS"
-      },
-      "evolutions": [
-        {
-          "level": 24,
-          "target": {
-            "value": "pret:SPECIES_PARASECT"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PARASECT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VENONAT"
-      },
-      "evolutions": [
-        {
-          "level": 31,
-          "target": {
-            "value": "pret:SPECIES_VENOMOTH"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VENOMOTH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DIGLETT"
-      },
-      "evolutions": [
-        {
-          "level": 26,
-          "target": {
-            "value": "pret:SPECIES_DUGTRIO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DUGTRIO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MEOWTH"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_PERSIAN"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PERSIAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PSYDUCK"
-      },
-      "evolutions": [
-        {
-          "level": 33,
-          "target": {
-            "value": "pret:SPECIES_GOLDUCK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLDUCK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MANKEY"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_PRIMEAPE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PRIMEAPE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GROWLITHE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ARCANINE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_POLIWAG"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_POLIWHIRL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_POLIWHIRL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_POLIWRATH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ABRA"
-      },
-      "evolutions": [
-        {
-          "level": 16,
-          "target": {
-            "value": "pret:SPECIES_KADABRA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KADABRA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ALAKAZAM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MACHOP"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_MACHOKE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MACHOKE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MACHAMP"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BELLSPROUT"
-      },
-      "evolutions": [
-        {
-          "level": 21,
-          "target": {
-            "value": "pret:SPECIES_WEEPINBELL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WEEPINBELL"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_VICTREEBEL"
-          },
-          "method": "item",
-          "parameter": "ITEM_LEAF_STONE"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VICTREEBEL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TENTACOOL"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_TENTACRUEL"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TENTACRUEL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GEODUDE"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_GRAVELER"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GRAVELER"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_GOLEM"
-          },
-          "method": "trade"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLEM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PONYTA"
-      },
-      "evolutions": [
-        {
-          "level": 40,
-          "target": {
-            "value": "pret:SPECIES_RAPIDASH"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RAPIDASH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SLOWPOKE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SLOWBRO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGNEMITE"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_MAGNETON"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGNETON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FARFETCHD"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DODUO"
-      },
-      "evolutions": [
-        {
-          "level": 31,
-          "target": {
-            "value": "pret:SPECIES_DODRIO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DODRIO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SEEL"
-      },
-      "evolutions": [
-        {
-          "level": 34,
-          "target": {
-            "value": "pret:SPECIES_DEWGONG"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DEWGONG"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GRIMER"
-      },
-      "evolutions": [
-        {
-          "level": 38,
-          "target": {
-            "value": "pret:SPECIES_MUK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MUK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SHELLDER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CLOYSTER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GASTLY"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_HAUNTER"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HAUNTER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GENGAR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ONIX"
-      },
-      "evolutions": [
-        {
-          "level": 0,
-          "target": {
-            "value": "pret:SPECIES_STEELIX"
-          },
-          "method": "tradeItem",
-          "parameter": "ITEM_METAL_COAT"
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DROWZEE"
-      },
-      "evolutions": [
-        {
-          "level": 26,
-          "target": {
-            "value": "pret:SPECIES_HYPNO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HYPNO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KRABBY"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_KINGLER"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KINGLER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VOLTORB"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_ELECTRODE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ELECTRODE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EXEGGCUTE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EXEGGUTOR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CUBONE"
-      },
-      "evolutions": [
-        {
-          "level": 28,
-          "target": {
-            "value": "pret:SPECIES_MAROWAK"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAROWAK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HITMONLEE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HITMONCHAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LICKITUNG"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KOFFING"
-      },
-      "evolutions": [
-        {
-          "level": 35,
-          "target": {
-            "value": "pret:SPECIES_WEEZING"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WEEZING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RHYHORN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RHYDON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHANSEY"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TANGELA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KANGASKHAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HORSEA"
-      },
-      "evolutions": [
-        {
-          "level": 32,
-          "target": {
-            "value": "pret:SPECIES_SEADRA"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SEADRA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GOLDEEN"
-      },
-      "evolutions": [
-        {
-          "level": 33,
-          "target": {
-            "value": "pret:SPECIES_SEAKING"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SEAKING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_STARYU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_STARMIE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MR_MIME"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SCYTHER"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JYNX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ELECTABUZZ"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TAUROS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGIKARP"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_GYARADOS"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GYARADOS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LAPRAS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DITTO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_EEVEE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_VAPOREON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JOLTEON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FLAREON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PORYGON"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_AERODACTYL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SNORLAX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ZAPDOS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DRAGONAIR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DRAGONITE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MEWTWO"
-      },
-      "evolutions": []
     },
     {
       "id": {
         "value": "pret:SPECIES_FERALIGATR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SENTRET"
-      },
-      "evolutions": [
-        {
-          "level": 15,
-          "target": {
-            "value": "pret:SPECIES_FURRET"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_FURRET"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LEDIAN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CROBAT"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_CHINCHOU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LANTURN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TOGEPI"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_NATU"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_XATU"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_XATU"
       },
       "evolutions": []
     },
@@ -5034,88 +1955,7 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_BELLOSSOM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SUDOWOODO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_POLITOED"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HOPPIP"
-      },
-      "evolutions": [
-        {
-          "level": 18,
-          "target": {
-            "value": "pret:SPECIES_SKIPLOOM"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SKIPLOOM"
-      },
-      "evolutions": [
-        {
-          "level": 27,
-          "target": {
-            "value": "pret:SPECIES_JUMPLUFF"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_JUMPLUFF"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SUNKERN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SUNFLORA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_YANMA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WOOPER"
-      },
-      "evolutions": [
-        {
-          "level": 20,
-          "target": {
-            "value": "pret:SPECIES_QUAGSIRE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_QUAGSIRE"
       },
       "evolutions": []
     },
@@ -5127,105 +1967,7 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_MISDREAVUS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_UNOWN"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_WOBBUFFET"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_GIRAFARIG"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PINECO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DUNSPARCE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_STEELIX"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_GRANBULL"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_QWILFISH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HERACROSS"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_URSARING"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SLUGMA"
-      },
-      "evolutions": [
-        {
-          "level": 38,
-          "target": {
-            "value": "pret:SPECIES_MAGCARGO"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MAGCARGO"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SWINUB"
-      },
-      "evolutions": [
-        {
-          "level": 33,
-          "target": {
-            "value": "pret:SPECIES_PILOSWINE"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PILOSWINE"
       },
       "evolutions": []
     },
@@ -5237,56 +1979,7 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_DELIBIRD"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_MANTINE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SKARMORY"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HOUNDOUR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HOUNDOOM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_KINGDRA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PHANPY"
-      },
-      "evolutions": [
-        {
-          "level": 25,
-          "target": {
-            "value": "pret:SPECIES_DONPHAN"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DONPHAN"
       },
       "evolutions": []
     },
@@ -5298,108 +1991,718 @@
     },
     {
       "id": {
-        "value": "pret:SPECIES_SMEARGLE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HITMONTOP"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SMOOCHUM"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
         "value": "pret:SPECIES_MAGBY"
       },
       "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_MILTANK"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_BLISSEY"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_RAIKOU"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_ENTEI"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_SUICUNE"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LARVITAR"
-      },
-      "evolutions": [
-        {
-          "level": 30,
-          "target": {
-            "value": "pret:SPECIES_PUPITAR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_PUPITAR"
-      },
-      "evolutions": [
-        {
-          "level": 55,
-          "target": {
-            "value": "pret:SPECIES_TYRANITAR"
-          }
-        }
-      ]
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_TYRANITAR"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_LUGIA"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_HO_OH"
-      },
-      "evolutions": []
-    },
-    {
-      "id": {
-        "value": "pret:SPECIES_DEOXYS"
-      },
-      "evolutions": [],
-      "formScope": "firered-ordinary-non-link-stat-read"
     }
-  ]
+  ],
+  "owned": {
+    "species": [
+      "pret:SPECIES_BULBASAUR",
+      "pret:SPECIES_IVYSAUR",
+      "pret:SPECIES_VENUSAUR",
+      "pret:SPECIES_CHARMANDER",
+      "pret:SPECIES_CHARMELEON",
+      "pret:SPECIES_CHARIZARD",
+      "pret:SPECIES_SQUIRTLE",
+      "pret:SPECIES_WARTORTLE",
+      "pret:SPECIES_BLASTOISE",
+      "pret:SPECIES_CATERPIE",
+      "pret:SPECIES_METAPOD",
+      "pret:SPECIES_BUTTERFREE",
+      "pret:SPECIES_WEEDLE",
+      "pret:SPECIES_KAKUNA",
+      "pret:SPECIES_BEEDRILL",
+      "pret:SPECIES_PIDGEY",
+      "pret:SPECIES_PIDGEOTTO",
+      "pret:SPECIES_PIDGEOT",
+      "pret:SPECIES_RATTATA",
+      "pret:SPECIES_RATICATE",
+      "pret:SPECIES_SPEAROW",
+      "pret:SPECIES_FEAROW",
+      "pret:SPECIES_EKANS",
+      "pret:SPECIES_ARBOK",
+      "pret:SPECIES_PIKACHU",
+      "pret:SPECIES_RAICHU",
+      "pret:SPECIES_SANDSHREW",
+      "pret:SPECIES_SANDSLASH",
+      "pret:SPECIES_NIDORAN_F",
+      "pret:SPECIES_NIDORINA",
+      "pret:SPECIES_NIDOQUEEN",
+      "pret:SPECIES_NIDORAN_M",
+      "pret:SPECIES_NIDORINO",
+      "pret:SPECIES_NIDOKING",
+      "pret:SPECIES_CLEFAIRY",
+      "pret:SPECIES_CLEFABLE",
+      "pret:SPECIES_VULPIX",
+      "pret:SPECIES_NINETALES",
+      "pret:SPECIES_JIGGLYPUFF",
+      "pret:SPECIES_WIGGLYTUFF",
+      "pret:SPECIES_ZUBAT",
+      "pret:SPECIES_GOLBAT",
+      "pret:SPECIES_ODDISH",
+      "pret:SPECIES_GLOOM",
+      "pret:SPECIES_VILEPLUME",
+      "pret:SPECIES_PARAS",
+      "pret:SPECIES_PARASECT",
+      "pret:SPECIES_VENONAT",
+      "pret:SPECIES_VENOMOTH",
+      "pret:SPECIES_DIGLETT",
+      "pret:SPECIES_DUGTRIO",
+      "pret:SPECIES_MEOWTH",
+      "pret:SPECIES_PERSIAN",
+      "pret:SPECIES_PSYDUCK",
+      "pret:SPECIES_GOLDUCK",
+      "pret:SPECIES_MANKEY",
+      "pret:SPECIES_PRIMEAPE",
+      "pret:SPECIES_GROWLITHE",
+      "pret:SPECIES_ARCANINE",
+      "pret:SPECIES_POLIWAG",
+      "pret:SPECIES_POLIWHIRL",
+      "pret:SPECIES_POLIWRATH",
+      "pret:SPECIES_ABRA",
+      "pret:SPECIES_KADABRA",
+      "pret:SPECIES_MACHOP",
+      "pret:SPECIES_MACHOKE",
+      "pret:SPECIES_BELLSPROUT",
+      "pret:SPECIES_WEEPINBELL",
+      "pret:SPECIES_VICTREEBEL",
+      "pret:SPECIES_TENTACOOL",
+      "pret:SPECIES_TENTACRUEL",
+      "pret:SPECIES_GEODUDE",
+      "pret:SPECIES_GRAVELER",
+      "pret:SPECIES_GOLEM",
+      "pret:SPECIES_PONYTA",
+      "pret:SPECIES_RAPIDASH",
+      "pret:SPECIES_SLOWPOKE",
+      "pret:SPECIES_SLOWBRO",
+      "pret:SPECIES_MAGNEMITE",
+      "pret:SPECIES_MAGNETON",
+      "pret:SPECIES_FARFETCHD",
+      "pret:SPECIES_DODUO",
+      "pret:SPECIES_DODRIO",
+      "pret:SPECIES_SEEL",
+      "pret:SPECIES_DEWGONG",
+      "pret:SPECIES_GRIMER",
+      "pret:SPECIES_MUK",
+      "pret:SPECIES_SHELLDER",
+      "pret:SPECIES_CLOYSTER",
+      "pret:SPECIES_GASTLY",
+      "pret:SPECIES_HAUNTER",
+      "pret:SPECIES_ONIX",
+      "pret:SPECIES_DROWZEE",
+      "pret:SPECIES_HYPNO",
+      "pret:SPECIES_KRABBY",
+      "pret:SPECIES_KINGLER",
+      "pret:SPECIES_VOLTORB",
+      "pret:SPECIES_ELECTRODE",
+      "pret:SPECIES_EXEGGCUTE",
+      "pret:SPECIES_EXEGGUTOR",
+      "pret:SPECIES_CUBONE",
+      "pret:SPECIES_MAROWAK",
+      "pret:SPECIES_HITMONLEE",
+      "pret:SPECIES_HITMONCHAN",
+      "pret:SPECIES_LICKITUNG",
+      "pret:SPECIES_KOFFING",
+      "pret:SPECIES_WEEZING",
+      "pret:SPECIES_RHYHORN",
+      "pret:SPECIES_RHYDON",
+      "pret:SPECIES_CHANSEY",
+      "pret:SPECIES_TANGELA",
+      "pret:SPECIES_KANGASKHAN",
+      "pret:SPECIES_HORSEA",
+      "pret:SPECIES_SEADRA",
+      "pret:SPECIES_GOLDEEN",
+      "pret:SPECIES_SEAKING",
+      "pret:SPECIES_STARYU",
+      "pret:SPECIES_STARMIE",
+      "pret:SPECIES_MR_MIME",
+      "pret:SPECIES_SCYTHER",
+      "pret:SPECIES_JYNX",
+      "pret:SPECIES_ELECTABUZZ",
+      "pret:SPECIES_TAUROS",
+      "pret:SPECIES_MAGIKARP",
+      "pret:SPECIES_GYARADOS",
+      "pret:SPECIES_LAPRAS",
+      "pret:SPECIES_DITTO",
+      "pret:SPECIES_EEVEE",
+      "pret:SPECIES_VAPOREON",
+      "pret:SPECIES_JOLTEON",
+      "pret:SPECIES_FLAREON",
+      "pret:SPECIES_PORYGON",
+      "pret:SPECIES_OMANYTE",
+      "pret:SPECIES_OMASTAR",
+      "pret:SPECIES_KABUTO",
+      "pret:SPECIES_KABUTOPS",
+      "pret:SPECIES_AERODACTYL",
+      "pret:SPECIES_SNORLAX",
+      "pret:SPECIES_ARTICUNO",
+      "pret:SPECIES_ZAPDOS",
+      "pret:SPECIES_MOLTRES",
+      "pret:SPECIES_DRATINI",
+      "pret:SPECIES_DRAGONAIR",
+      "pret:SPECIES_DRAGONITE",
+      "pret:SPECIES_MEWTWO",
+      "pret:SPECIES_SENTRET",
+      "pret:SPECIES_FURRET",
+      "pret:SPECIES_CROBAT",
+      "pret:SPECIES_PICHU",
+      "pret:SPECIES_CLEFFA",
+      "pret:SPECIES_IGGLYBUFF",
+      "pret:SPECIES_TOGEPI",
+      "pret:SPECIES_TOGETIC",
+      "pret:SPECIES_NATU",
+      "pret:SPECIES_XATU",
+      "pret:SPECIES_BELLOSSOM",
+      "pret:SPECIES_HOPPIP",
+      "pret:SPECIES_SKIPLOOM",
+      "pret:SPECIES_JUMPLUFF",
+      "pret:SPECIES_YANMA",
+      "pret:SPECIES_WOOPER",
+      "pret:SPECIES_QUAGSIRE",
+      "pret:SPECIES_MURKROW",
+      "pret:SPECIES_UNOWN",
+      "pret:SPECIES_WOBBUFFET",
+      "pret:SPECIES_DUNSPARCE",
+      "pret:SPECIES_STEELIX",
+      "pret:SPECIES_QWILFISH",
+      "pret:SPECIES_SLUGMA",
+      "pret:SPECIES_MAGCARGO",
+      "pret:SPECIES_SWINUB",
+      "pret:SPECIES_PILOSWINE",
+      "pret:SPECIES_DELIBIRD",
+      "pret:SPECIES_SKARMORY",
+      "pret:SPECIES_PHANPY",
+      "pret:SPECIES_DONPHAN",
+      "pret:SPECIES_TYROGUE",
+      "pret:SPECIES_HITMONTOP",
+      "pret:SPECIES_SMOOCHUM",
+      "pret:SPECIES_ELEKID",
+      "pret:SPECIES_BLISSEY",
+      "pret:SPECIES_RAIKOU",
+      "pret:SPECIES_ENTEI",
+      "pret:SPECIES_SUICUNE",
+      "pret:SPECIES_LARVITAR",
+      "pret:SPECIES_PUPITAR",
+      "pret:SPECIES_TYRANITAR",
+      "pret:SPECIES_LUGIA",
+      "pret:SPECIES_HO_OH",
+      "pret:SPECIES_WYNAUT",
+      "pret:SPECIES_DEOXYS",
+      "pret:SPECIES_LEDYBA",
+      "pret:SPECIES_LEDIAN",
+      "pret:SPECIES_SPINARAK",
+      "pret:SPECIES_ARIADOS",
+      "pret:SPECIES_HERACROSS"
+    ],
+    "evolutionOverrides": []
+  },
+  "opponents": {
+    "species": [
+      "pret:SPECIES_BULBASAUR",
+      "pret:SPECIES_IVYSAUR",
+      "pret:SPECIES_VENUSAUR",
+      "pret:SPECIES_CHARMANDER",
+      "pret:SPECIES_CHARMELEON",
+      "pret:SPECIES_CHARIZARD",
+      "pret:SPECIES_SQUIRTLE",
+      "pret:SPECIES_WARTORTLE",
+      "pret:SPECIES_BLASTOISE",
+      "pret:SPECIES_CATERPIE",
+      "pret:SPECIES_METAPOD",
+      "pret:SPECIES_BUTTERFREE",
+      "pret:SPECIES_WEEDLE",
+      "pret:SPECIES_KAKUNA",
+      "pret:SPECIES_BEEDRILL",
+      "pret:SPECIES_PIDGEY",
+      "pret:SPECIES_PIDGEOTTO",
+      "pret:SPECIES_PIDGEOT",
+      "pret:SPECIES_RATTATA",
+      "pret:SPECIES_RATICATE",
+      "pret:SPECIES_SPEAROW",
+      "pret:SPECIES_FEAROW",
+      "pret:SPECIES_EKANS",
+      "pret:SPECIES_ARBOK",
+      "pret:SPECIES_PIKACHU",
+      "pret:SPECIES_RAICHU",
+      "pret:SPECIES_SANDSHREW",
+      "pret:SPECIES_SANDSLASH",
+      "pret:SPECIES_NIDORAN_F",
+      "pret:SPECIES_NIDORINA",
+      "pret:SPECIES_NIDOQUEEN",
+      "pret:SPECIES_NIDORAN_M",
+      "pret:SPECIES_NIDORINO",
+      "pret:SPECIES_NIDOKING",
+      "pret:SPECIES_CLEFAIRY",
+      "pret:SPECIES_CLEFABLE",
+      "pret:SPECIES_VULPIX",
+      "pret:SPECIES_NINETALES",
+      "pret:SPECIES_JIGGLYPUFF",
+      "pret:SPECIES_WIGGLYTUFF",
+      "pret:SPECIES_ZUBAT",
+      "pret:SPECIES_GOLBAT",
+      "pret:SPECIES_ODDISH",
+      "pret:SPECIES_GLOOM",
+      "pret:SPECIES_VILEPLUME",
+      "pret:SPECIES_PARAS",
+      "pret:SPECIES_PARASECT",
+      "pret:SPECIES_VENONAT",
+      "pret:SPECIES_VENOMOTH",
+      "pret:SPECIES_DIGLETT",
+      "pret:SPECIES_DUGTRIO",
+      "pret:SPECIES_MEOWTH",
+      "pret:SPECIES_PERSIAN",
+      "pret:SPECIES_PSYDUCK",
+      "pret:SPECIES_GOLDUCK",
+      "pret:SPECIES_MANKEY",
+      "pret:SPECIES_PRIMEAPE",
+      "pret:SPECIES_GROWLITHE",
+      "pret:SPECIES_ARCANINE",
+      "pret:SPECIES_POLIWAG",
+      "pret:SPECIES_POLIWHIRL",
+      "pret:SPECIES_POLIWRATH",
+      "pret:SPECIES_ABRA",
+      "pret:SPECIES_KADABRA",
+      "pret:SPECIES_ALAKAZAM",
+      "pret:SPECIES_MACHOP",
+      "pret:SPECIES_MACHOKE",
+      "pret:SPECIES_MACHAMP",
+      "pret:SPECIES_BELLSPROUT",
+      "pret:SPECIES_WEEPINBELL",
+      "pret:SPECIES_VICTREEBEL",
+      "pret:SPECIES_TENTACOOL",
+      "pret:SPECIES_TENTACRUEL",
+      "pret:SPECIES_GEODUDE",
+      "pret:SPECIES_GRAVELER",
+      "pret:SPECIES_GOLEM",
+      "pret:SPECIES_PONYTA",
+      "pret:SPECIES_RAPIDASH",
+      "pret:SPECIES_SLOWPOKE",
+      "pret:SPECIES_SLOWBRO",
+      "pret:SPECIES_MAGNEMITE",
+      "pret:SPECIES_MAGNETON",
+      "pret:SPECIES_FARFETCHD",
+      "pret:SPECIES_DODUO",
+      "pret:SPECIES_DODRIO",
+      "pret:SPECIES_SEEL",
+      "pret:SPECIES_DEWGONG",
+      "pret:SPECIES_GRIMER",
+      "pret:SPECIES_MUK",
+      "pret:SPECIES_SHELLDER",
+      "pret:SPECIES_CLOYSTER",
+      "pret:SPECIES_GASTLY",
+      "pret:SPECIES_HAUNTER",
+      "pret:SPECIES_GENGAR",
+      "pret:SPECIES_ONIX",
+      "pret:SPECIES_DROWZEE",
+      "pret:SPECIES_HYPNO",
+      "pret:SPECIES_KRABBY",
+      "pret:SPECIES_KINGLER",
+      "pret:SPECIES_VOLTORB",
+      "pret:SPECIES_ELECTRODE",
+      "pret:SPECIES_EXEGGCUTE",
+      "pret:SPECIES_EXEGGUTOR",
+      "pret:SPECIES_CUBONE",
+      "pret:SPECIES_MAROWAK",
+      "pret:SPECIES_HITMONLEE",
+      "pret:SPECIES_HITMONCHAN",
+      "pret:SPECIES_LICKITUNG",
+      "pret:SPECIES_KOFFING",
+      "pret:SPECIES_WEEZING",
+      "pret:SPECIES_RHYHORN",
+      "pret:SPECIES_RHYDON",
+      "pret:SPECIES_CHANSEY",
+      "pret:SPECIES_TANGELA",
+      "pret:SPECIES_KANGASKHAN",
+      "pret:SPECIES_HORSEA",
+      "pret:SPECIES_SEADRA",
+      "pret:SPECIES_GOLDEEN",
+      "pret:SPECIES_SEAKING",
+      "pret:SPECIES_STARYU",
+      "pret:SPECIES_STARMIE",
+      "pret:SPECIES_MR_MIME",
+      "pret:SPECIES_SCYTHER",
+      "pret:SPECIES_JYNX",
+      "pret:SPECIES_ELECTABUZZ",
+      "pret:SPECIES_TAUROS",
+      "pret:SPECIES_MAGIKARP",
+      "pret:SPECIES_GYARADOS",
+      "pret:SPECIES_LAPRAS",
+      "pret:SPECIES_DITTO",
+      "pret:SPECIES_EEVEE",
+      "pret:SPECIES_VAPOREON",
+      "pret:SPECIES_JOLTEON",
+      "pret:SPECIES_FLAREON",
+      "pret:SPECIES_PORYGON",
+      "pret:SPECIES_OMANYTE",
+      "pret:SPECIES_OMASTAR",
+      "pret:SPECIES_KABUTO",
+      "pret:SPECIES_KABUTOPS",
+      "pret:SPECIES_AERODACTYL",
+      "pret:SPECIES_SNORLAX",
+      "pret:SPECIES_ARTICUNO",
+      "pret:SPECIES_ZAPDOS",
+      "pret:SPECIES_MOLTRES",
+      "pret:SPECIES_DRATINI",
+      "pret:SPECIES_DRAGONAIR",
+      "pret:SPECIES_DRAGONITE",
+      "pret:SPECIES_MEWTWO",
+      "pret:SPECIES_SENTRET",
+      "pret:SPECIES_FURRET",
+      "pret:SPECIES_HOOTHOOT",
+      "pret:SPECIES_NOCTOWL",
+      "pret:SPECIES_CROBAT",
+      "pret:SPECIES_CHINCHOU",
+      "pret:SPECIES_LANTURN",
+      "pret:SPECIES_PICHU",
+      "pret:SPECIES_CLEFFA",
+      "pret:SPECIES_IGGLYBUFF",
+      "pret:SPECIES_TOGEPI",
+      "pret:SPECIES_TOGETIC",
+      "pret:SPECIES_NATU",
+      "pret:SPECIES_XATU",
+      "pret:SPECIES_MAREEP",
+      "pret:SPECIES_FLAAFFY",
+      "pret:SPECIES_BELLOSSOM",
+      "pret:SPECIES_MARILL",
+      "pret:SPECIES_SUDOWOODO",
+      "pret:SPECIES_HOPPIP",
+      "pret:SPECIES_SKIPLOOM",
+      "pret:SPECIES_JUMPLUFF",
+      "pret:SPECIES_SUNKERN",
+      "pret:SPECIES_SUNFLORA",
+      "pret:SPECIES_YANMA",
+      "pret:SPECIES_WOOPER",
+      "pret:SPECIES_QUAGSIRE",
+      "pret:SPECIES_MURKROW",
+      "pret:SPECIES_MISDREAVUS",
+      "pret:SPECIES_UNOWN",
+      "pret:SPECIES_WOBBUFFET",
+      "pret:SPECIES_GIRAFARIG",
+      "pret:SPECIES_PINECO",
+      "pret:SPECIES_DUNSPARCE",
+      "pret:SPECIES_STEELIX",
+      "pret:SPECIES_QWILFISH",
+      "pret:SPECIES_HERACROSS",
+      "pret:SPECIES_URSARING",
+      "pret:SPECIES_SLUGMA",
+      "pret:SPECIES_MAGCARGO",
+      "pret:SPECIES_SWINUB",
+      "pret:SPECIES_PILOSWINE",
+      "pret:SPECIES_DELIBIRD",
+      "pret:SPECIES_SKARMORY",
+      "pret:SPECIES_HOUNDOUR",
+      "pret:SPECIES_HOUNDOOM",
+      "pret:SPECIES_KINGDRA",
+      "pret:SPECIES_PHANPY",
+      "pret:SPECIES_DONPHAN",
+      "pret:SPECIES_SMEARGLE",
+      "pret:SPECIES_TYROGUE",
+      "pret:SPECIES_HITMONTOP",
+      "pret:SPECIES_SMOOCHUM",
+      "pret:SPECIES_ELEKID",
+      "pret:SPECIES_MILTANK",
+      "pret:SPECIES_BLISSEY",
+      "pret:SPECIES_RAIKOU",
+      "pret:SPECIES_ENTEI",
+      "pret:SPECIES_SUICUNE",
+      "pret:SPECIES_LARVITAR",
+      "pret:SPECIES_PUPITAR",
+      "pret:SPECIES_TYRANITAR",
+      "pret:SPECIES_LUGIA",
+      "pret:SPECIES_HO_OH",
+      "pret:SPECIES_WYNAUT",
+      "pret:SPECIES_DEOXYS",
+      "pret:SPECIES_LEDYBA",
+      "pret:SPECIES_LEDIAN",
+      "pret:SPECIES_SPINARAK",
+      "pret:SPECIES_ARIADOS",
+      "pret:SPECIES_SNUBBULL",
+      "pret:SPECIES_PINSIR"
+    ],
+    "evolutionOverrides": [
+      {
+        "id": {
+          "value": "pret:SPECIES_GOLBAT"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_SLOWPOKE"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_RHYHORN"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_CHANSEY"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_DRAGONAIR"
+        },
+        "evolutions": []
+      }
+    ]
+  },
+  "trainerTowerOpponents": {
+    "species": [
+      "pret:SPECIES_BULBASAUR",
+      "pret:SPECIES_IVYSAUR",
+      "pret:SPECIES_VENUSAUR",
+      "pret:SPECIES_CHARMANDER",
+      "pret:SPECIES_CHARMELEON",
+      "pret:SPECIES_CHARIZARD",
+      "pret:SPECIES_SQUIRTLE",
+      "pret:SPECIES_WARTORTLE",
+      "pret:SPECIES_BLASTOISE",
+      "pret:SPECIES_CATERPIE",
+      "pret:SPECIES_METAPOD",
+      "pret:SPECIES_BUTTERFREE",
+      "pret:SPECIES_WEEDLE",
+      "pret:SPECIES_KAKUNA",
+      "pret:SPECIES_BEEDRILL",
+      "pret:SPECIES_PIDGEY",
+      "pret:SPECIES_PIDGEOTTO",
+      "pret:SPECIES_PIDGEOT",
+      "pret:SPECIES_RATTATA",
+      "pret:SPECIES_RATICATE",
+      "pret:SPECIES_SPEAROW",
+      "pret:SPECIES_FEAROW",
+      "pret:SPECIES_EKANS",
+      "pret:SPECIES_ARBOK",
+      "pret:SPECIES_PIKACHU",
+      "pret:SPECIES_RAICHU",
+      "pret:SPECIES_SANDSHREW",
+      "pret:SPECIES_SANDSLASH",
+      "pret:SPECIES_NIDORAN_F",
+      "pret:SPECIES_NIDORINA",
+      "pret:SPECIES_NIDOQUEEN",
+      "pret:SPECIES_NIDORAN_M",
+      "pret:SPECIES_NIDORINO",
+      "pret:SPECIES_NIDOKING",
+      "pret:SPECIES_CLEFAIRY",
+      "pret:SPECIES_CLEFABLE",
+      "pret:SPECIES_VULPIX",
+      "pret:SPECIES_NINETALES",
+      "pret:SPECIES_JIGGLYPUFF",
+      "pret:SPECIES_WIGGLYTUFF",
+      "pret:SPECIES_ZUBAT",
+      "pret:SPECIES_GOLBAT",
+      "pret:SPECIES_ODDISH",
+      "pret:SPECIES_GLOOM",
+      "pret:SPECIES_VILEPLUME",
+      "pret:SPECIES_PARAS",
+      "pret:SPECIES_PARASECT",
+      "pret:SPECIES_VENONAT",
+      "pret:SPECIES_VENOMOTH",
+      "pret:SPECIES_DIGLETT",
+      "pret:SPECIES_DUGTRIO",
+      "pret:SPECIES_MEOWTH",
+      "pret:SPECIES_PERSIAN",
+      "pret:SPECIES_PSYDUCK",
+      "pret:SPECIES_GOLDUCK",
+      "pret:SPECIES_MANKEY",
+      "pret:SPECIES_PRIMEAPE",
+      "pret:SPECIES_GROWLITHE",
+      "pret:SPECIES_ARCANINE",
+      "pret:SPECIES_POLIWAG",
+      "pret:SPECIES_POLIWHIRL",
+      "pret:SPECIES_POLIWRATH",
+      "pret:SPECIES_ABRA",
+      "pret:SPECIES_KADABRA",
+      "pret:SPECIES_ALAKAZAM",
+      "pret:SPECIES_MACHOP",
+      "pret:SPECIES_MACHOKE",
+      "pret:SPECIES_MACHAMP",
+      "pret:SPECIES_BELLSPROUT",
+      "pret:SPECIES_WEEPINBELL",
+      "pret:SPECIES_VICTREEBEL",
+      "pret:SPECIES_TENTACOOL",
+      "pret:SPECIES_TENTACRUEL",
+      "pret:SPECIES_GEODUDE",
+      "pret:SPECIES_GRAVELER",
+      "pret:SPECIES_GOLEM",
+      "pret:SPECIES_PONYTA",
+      "pret:SPECIES_RAPIDASH",
+      "pret:SPECIES_SLOWPOKE",
+      "pret:SPECIES_SLOWBRO",
+      "pret:SPECIES_MAGNEMITE",
+      "pret:SPECIES_MAGNETON",
+      "pret:SPECIES_FARFETCHD",
+      "pret:SPECIES_DODUO",
+      "pret:SPECIES_DODRIO",
+      "pret:SPECIES_SEEL",
+      "pret:SPECIES_DEWGONG",
+      "pret:SPECIES_GRIMER",
+      "pret:SPECIES_MUK",
+      "pret:SPECIES_SHELLDER",
+      "pret:SPECIES_CLOYSTER",
+      "pret:SPECIES_GASTLY",
+      "pret:SPECIES_HAUNTER",
+      "pret:SPECIES_GENGAR",
+      "pret:SPECIES_ONIX",
+      "pret:SPECIES_DROWZEE",
+      "pret:SPECIES_HYPNO",
+      "pret:SPECIES_KRABBY",
+      "pret:SPECIES_KINGLER",
+      "pret:SPECIES_VOLTORB",
+      "pret:SPECIES_ELECTRODE",
+      "pret:SPECIES_EXEGGCUTE",
+      "pret:SPECIES_EXEGGUTOR",
+      "pret:SPECIES_CUBONE",
+      "pret:SPECIES_MAROWAK",
+      "pret:SPECIES_HITMONLEE",
+      "pret:SPECIES_HITMONCHAN",
+      "pret:SPECIES_LICKITUNG",
+      "pret:SPECIES_KOFFING",
+      "pret:SPECIES_WEEZING",
+      "pret:SPECIES_RHYHORN",
+      "pret:SPECIES_RHYDON",
+      "pret:SPECIES_CHANSEY",
+      "pret:SPECIES_TANGELA",
+      "pret:SPECIES_KANGASKHAN",
+      "pret:SPECIES_HORSEA",
+      "pret:SPECIES_SEADRA",
+      "pret:SPECIES_GOLDEEN",
+      "pret:SPECIES_SEAKING",
+      "pret:SPECIES_STARYU",
+      "pret:SPECIES_STARMIE",
+      "pret:SPECIES_MR_MIME",
+      "pret:SPECIES_SCYTHER",
+      "pret:SPECIES_JYNX",
+      "pret:SPECIES_ELECTABUZZ",
+      "pret:SPECIES_TAUROS",
+      "pret:SPECIES_MAGIKARP",
+      "pret:SPECIES_GYARADOS",
+      "pret:SPECIES_LAPRAS",
+      "pret:SPECIES_DITTO",
+      "pret:SPECIES_EEVEE",
+      "pret:SPECIES_VAPOREON",
+      "pret:SPECIES_JOLTEON",
+      "pret:SPECIES_FLAREON",
+      "pret:SPECIES_PORYGON",
+      "pret:SPECIES_AERODACTYL",
+      "pret:SPECIES_SNORLAX",
+      "pret:SPECIES_ZAPDOS",
+      "pret:SPECIES_DRAGONAIR",
+      "pret:SPECIES_DRAGONITE",
+      "pret:SPECIES_MEWTWO",
+      "pret:SPECIES_FERALIGATR",
+      "pret:SPECIES_SENTRET",
+      "pret:SPECIES_FURRET",
+      "pret:SPECIES_LEDIAN",
+      "pret:SPECIES_CROBAT",
+      "pret:SPECIES_CHINCHOU",
+      "pret:SPECIES_LANTURN",
+      "pret:SPECIES_TOGEPI",
+      "pret:SPECIES_NATU",
+      "pret:SPECIES_XATU",
+      "pret:SPECIES_AMPHAROS",
+      "pret:SPECIES_BELLOSSOM",
+      "pret:SPECIES_SUDOWOODO",
+      "pret:SPECIES_POLITOED",
+      "pret:SPECIES_HOPPIP",
+      "pret:SPECIES_SKIPLOOM",
+      "pret:SPECIES_JUMPLUFF",
+      "pret:SPECIES_SUNKERN",
+      "pret:SPECIES_SUNFLORA",
+      "pret:SPECIES_YANMA",
+      "pret:SPECIES_WOOPER",
+      "pret:SPECIES_QUAGSIRE",
+      "pret:SPECIES_ESPEON",
+      "pret:SPECIES_MISDREAVUS",
+      "pret:SPECIES_UNOWN",
+      "pret:SPECIES_WOBBUFFET",
+      "pret:SPECIES_GIRAFARIG",
+      "pret:SPECIES_PINECO",
+      "pret:SPECIES_DUNSPARCE",
+      "pret:SPECIES_STEELIX",
+      "pret:SPECIES_GRANBULL",
+      "pret:SPECIES_QWILFISH",
+      "pret:SPECIES_HERACROSS",
+      "pret:SPECIES_URSARING",
+      "pret:SPECIES_SLUGMA",
+      "pret:SPECIES_MAGCARGO",
+      "pret:SPECIES_SWINUB",
+      "pret:SPECIES_PILOSWINE",
+      "pret:SPECIES_CORSOLA",
+      "pret:SPECIES_DELIBIRD",
+      "pret:SPECIES_MANTINE",
+      "pret:SPECIES_SKARMORY",
+      "pret:SPECIES_HOUNDOUR",
+      "pret:SPECIES_HOUNDOOM",
+      "pret:SPECIES_KINGDRA",
+      "pret:SPECIES_PHANPY",
+      "pret:SPECIES_DONPHAN",
+      "pret:SPECIES_PORYGON2",
+      "pret:SPECIES_SMEARGLE",
+      "pret:SPECIES_HITMONTOP",
+      "pret:SPECIES_SMOOCHUM",
+      "pret:SPECIES_MAGBY",
+      "pret:SPECIES_MILTANK",
+      "pret:SPECIES_BLISSEY",
+      "pret:SPECIES_RAIKOU",
+      "pret:SPECIES_ENTEI",
+      "pret:SPECIES_SUICUNE",
+      "pret:SPECIES_LARVITAR",
+      "pret:SPECIES_PUPITAR",
+      "pret:SPECIES_TYRANITAR",
+      "pret:SPECIES_LUGIA",
+      "pret:SPECIES_HO_OH",
+      "pret:SPECIES_DEOXYS"
+    ],
+    "evolutionOverrides": [
+      {
+        "id": {
+          "value": "pret:SPECIES_GOLBAT"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_SLOWPOKE"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_RHYHORN"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_CHANSEY"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_DRAGONAIR"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_TOGEPI"
+        },
+        "evolutions": []
+      },
+      {
+        "id": {
+          "value": "pret:SPECIES_SMOOCHUM"
+        },
+        "evolutions": []
+      }
+    ]
+  }
 }

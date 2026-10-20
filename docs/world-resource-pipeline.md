@@ -1,39 +1,50 @@
 # Current world resources
 
-The current world is an explicit selection of 395 ordinary maps and 19 real layout variants. `data/world-maps.json` records source names, exceptional stable IDs, layout choices, and presentation differences. Group names organize output packing; they are not predecessor stages. `scripts/lib/world_selection.py` derives repeated IDs and filenames. All source geometry, ordered events, map symbols, tiles, palettes, and graphics are read from the pinned raw tree.
+`data/world-maps.json` is the authored selection of ordinary maps and genuine
+layout variants. It records source names, exceptional stable IDs, layout choices
+and presentation differences. Group names organize output packing, not predecessor
+stages; `scripts/lib/world_selection.py` derives repeated IDs and filenames.
+The compiler reads geometry, ordered events, symbols, tiles, palettes and graphics
+from the pinned raw tree. Do not admit maps by directory enumeration.
 
-## Build
+## Compilation and runtime
 
-```sh
-python scripts/imports/maps/import-world.py --raw content/raw/pokefirered/037335f4 --out content/generated
-python scripts/imports/story/import-early-field-rules.py --raw content/raw/pokefirered/037335f4 --out content/generated
-python scripts/imports/story/import-world-field-rules.py --raw content/raw/pokefirered/037335f4 --out content/generated
-python scripts/imports/story/import-field-services.py --raw content/raw/pokefirered/037335f4 --out content/generated
-python scripts/imports/trainers/import-cinnabar-trainers.py --raw content/raw/pokefirered/037335f4 --out content/generated
-```
+Use `python scripts/imports/rebuild-resources.py world`, or add `--check` for an
+isolated comparison. Input/output flags, dependent field rules and story commands
+are maintained in the [reconstruction guide](resource-reconstruction-guide.md).
+The world target always compiles the whole selected world with its presentation
+resources, not an incremental chain of former regions.
 
-The world command writes the schema-3 compact maps, `maps/world.json`, complete field metatile tables, the map atlas, and the shared overworld sprite catalog. It verifies atlas pixels before removing temporary per-map PNGs. Compact documents retain logical image paths resolved by the atlas. The command always compiles the complete selected world and its presentation resources together. `--check` performs an isolated full conversion and compares final JSON values, PNG pixels, and binary streams.
+It writes the compact maps and `maps/world.json`, complete field metatile tables,
+shared overworld sprites, and [map-render atlases](map-render-atlases.md). Fresh
+map PNGs are checked against the encoded atlas before staging images are removed;
+map documents retain logical image references. Render format and runtime boundaries
+are defined in [resource layout](resource-layout.md).
 
-The field commands compile actual gameplay contracts, encounters, constants and interactive art. They do not render base maps, copy predecessor resources, produce catalogs of prior regions, or persist source script/geometry inventories. There is no historical region preparation step.
+`PretCurrentGame` loads one `PretCurrentWorld` and passes it to feature loaders.
+Only `maps/world.json` selects runtime maps and variants. `PretWorldMapConnections`
+uses the same source-symbol registry. Field-rule/service producers compile their
+actual gameplay contracts and interactive art separately; they do not render base
+maps or copy predecessor catalogs. A map being selected does not prove all of its
+story interactions or natural routes are complete.
 
-## Runtime
+## Real variants and exclusions
 
-`PretCurrentGame` loads one `PretCurrentWorld` and explicitly passes it to feature loaders. Only `maps/world.json` selects current maps and real variants. `PretWorldMapConnections` projects connections through the same source-symbol registry. Presentation reads each map's index binding and uses the shared NPC catalog. The old region catalogs, cumulative catalog chain, separate opening border package, regional NPC inventories and forwarding map import commands have been retired.
+Variants preserve the base MapId, original event header, NPCs and warps while
+selecting a compatible raw layout. Do not merge by MapId alone:
 
-## Selected scope
+- Trainer Tower floors retain single, double and knockout layouts.
+- Seafoam lower floors retain stopped-current layouts.
+- Three Island's Dunsparce tunnel retains its dug-out layout.
 
-The source map-group registry lists 425 names. The existing raw tree contains 414 map headers. These 11 registered names have no retained header and are outside the current single-player selection:
-
-- `BattleColosseum_2P`, `BattleColosseum_4P`, `RecordCorner`
-- `Prototype_SeviiIsle_6`, `Prototype_SeviiIsle_7`, `Prototype_SeviiIsle_8`, `Prototype_SeviiIsle_9`
-- `Route19_UnusedHouse`, `Route23_UnusedHouse`, `Route6_UnusedHouse`, `SevenIsland_UnusedHouse`
-
-Of the retained headers, the following 19 are explicitly unselected, preserving the existing supported world:
-
-- Pokémon Center 2F in Cinnabar, Five Island, Four Island, Fuchsia, Indigo Plateau, One Island, Pewter, Route 4, Saffron, Seven Island, Six Island, Three Island, Two Island, Vermilion and Viridian
-- `TradeCenter`, `UnionRoom`, `SaffronCity_Connection`, `SevenIsland_House_Room2`
-
-No directory enumeration implicitly admits these maps. No missing headers were fabricated or copied from generated resources. Variant selection preserves base MapId/events and explicitly names a compatible raw layout: Trainer Tower double/knockout floors, Seafoam stopped-current floors, and the dug-out Dunsparce tunnel.
+The source registry includes names without retained map headers: Battle Colosseum
+2P/4P, Record Corner, prototype Sevii Isles 6–9, and the unused houses on Routes
+6/19/23 and Seven Island. Missing headers are not fabricated from generated data.
+Other retained-but-unselected headers include Trade Center, Union Room,
+`SaffronCity_Connection`, `SevenIsland_House_Room2`, and Pokémon Center 2F in
+Cinnabar, Five Island, Four Island, Fuchsia, Indigo Plateau, One Island, Pewter,
+Route 4, Saffron, Seven Island, Six Island, Three Island, Two Island, Vermilion and
+Viridian. Selection remains explicit; raw presence alone does not extend scope.
 
 ## Independent verification
 
@@ -45,4 +56,14 @@ python scripts/checks/test-world-field-rules.py
 python scripts/checks/test-pokemon-tower-features.py
 ```
 
-The world oracle independently checks raw block/border binaries, metatile attributes, dimensions, ordered events, script endpoints, and business-sensitive layout differences. An optional temporary `--baseline` captures old consumed final resources for semantic/pixel comparison; it is never a compiler source or a committed historical hash inventory. Migration comparison covered all 414 map documents, 3,296 logical RGBA images through the final atlas, 126 NPC graphics with 1,088 frames, and the walking-player texture. Opening borders were checked against all 20 previous logical border images.
+The world oracle independently decodes raw block/border binaries and metatile
+attributes, and checks dimensions, ordered events, script endpoints and
+business-sensitive layout differences. Selection expansion is shared, but the
+raw decoder and final-atlas unpacker are independent of the compiler. This keeps
+source mistakes detectable instead of only comparing a producer with itself.
+
+Optional `--baseline` reads independently retained prior final resources for
+semantic and full-RGBA comparison, including transparent RGB. It is verification
+input only, never compiler input, a required predecessor package, or a committed
+historical hash inventory. A generated-only repack proves consistency, not
+independent source fidelity. Neither establishes full gameplay or audio acceptance.

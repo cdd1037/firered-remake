@@ -12,22 +12,51 @@ public partial class CampaignView
 {
     private readonly Dictionary<string, Texture2D> _summaryTextures = [];
     private SummaryPresentation? _summaryPresentation;
-    private ulong _summaryPortraitStart, _summaryEntryStart, _summaryExitStart;
+    private double _summaryExitStart;
+    private readonly SummaryPageTransition _summaryPageTransition = new();
     private Action? _summaryExitAction;
     private string? _summaryExitContext;
     private double _summaryClock;
-    private ulong SummaryNow => (ulong)(_summaryClock * 1000);
+    private double SummaryNow => _summaryClock * 1000;
     private string? SummaryContext => _battlePartySummaryPage >= 0 && _battlePartySelection is { } selected ? "battle:" + selected.Context + ":" + selected.InstanceId
         : _session.State.Pc?.Summary is { } pc ? "pc:" + pc.InstanceId
         : _fieldMenuMode == "summary" && _fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length ? "field:" + _session.State.Party[_fieldPartyCursor].InstanceId
         : _session.State.DayCareInteraction is not null && _dayCareSummaryPage >= 0 && _tutorCursor >= 0 && _tutorCursor < _session.State.Party.Length
             ? "daycare:" + _session.State.Party[_tutorCursor].InstanceId : null;
+    private SummaryPageKey? InteractiveSummaryPage => _battlePartySummaryPage >= 0 && _battlePartySelection is { } selected
+        ? new("battle:" + selected.Context, selected.InstanceId, _battlePartySummaryPage, _summaryDetails)
+        : _session.State.Pc?.Summary is { } pc ? new("pc", pc.InstanceId, (int)pc.Page, _summaryDetails)
+        : _fieldMenuMode == "summary" && _fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length
+            ? new("field", _session.State.Party[_fieldPartyCursor].InstanceId, _fieldSummaryPage, _summaryDetails)
+        : _session.State.DayCareInteraction is not null && _dayCareSummaryPage >= 0 && _tutorCursor >= 0 && _tutorCursor < _session.State.Party.Length
+            ? new("daycare", _session.State.Party[_tutorCursor].InstanceId, _dayCareSummaryPage, _summaryDetails) : null;
+    private void BeginSummaryPresentationFrame()
+    {
+        // Help pauses the underlying presentation rather than ending its visit.
+        if (!_help.Active) _summaryPageTransition.BeginFrame();
+    }
+    private void ObserveSummaryPage(SummaryPageKey page)
+    {
+        _summaryPageTransition.Observe(page, SummaryNow);
+        if (_summaryPageTransition.Outgoing is not { } outgoing) _summarySlideFrom = null;
+        else if (_summaryDrawnPage is { } drawn && drawn.Key == outgoing) _summarySlideFrom = drawn;
+    }
+    private bool SummaryInputLocked
+    {
+        get
+        {
+            // Input may arrive before the next process/draw. Observe a preceding
+            // accepted page request now, so a second edge cannot restart its slide.
+            if (InteractiveSummaryPage is { } page) ObserveSummaryPage(page);
+            return SummaryExitActive || _summaryPageTransition.IsEntering(SummaryNow) || _summaryPageTransition.IsSliding(SummaryNow);
+        }
+    }
     private void ResetSummaryPresentation()
     {
         CloseBattlePartySelection(); _moveSelectionStamp = null; ResetBattleMoveOrder();
-        _summaryExitAction = null; _summaryExitContext = null; _summaryPreviousPokemon = null;
-        _summarySlideFrom = null; _summaryClock = 0;
-        _summaryLastDraw = _summarySlideStart = _summaryEntryStart = _summaryPortraitStart = _summaryExitStart = 0;
+        _summaryExitAction = null; _summaryExitContext = null; _summaryDrawnPage = null;
+        _summarySlideFrom = null; _summaryClock = 0; _summaryExitStart = 0;
+        _summaryPageTransition.Reset();
     }
     private bool SummaryExitActive => _summaryExitAction is not null;
     private void BeginSummaryExit(Action close)
@@ -40,15 +69,17 @@ public partial class CampaignView
     private bool ProcessSummaryPresentation(double delta)
     {
         _summaryClock += Math.Max(0, delta);
+        if (InteractiveSummaryPage is { } page) ObserveSummaryPage(page);
         if (_summaryExitAction is not { } close) return false;
         if (_summaryExitContext is null || _summaryExitContext != SummaryContext)
         {
             ResetSummaryPresentation();
             return false;
         }
-        _held = null; if (SummaryNow - _summaryExitStart >= 16 * 1000 / 60)
+        _held = null; if (SummaryPageTransition.ElapsedFrames(SummaryNow, _summaryExitStart) >= 16)
         {
-            _summaryExitAction = null; _summaryPreviousPokemon = null; _summarySlideFrom = null;
+            _summaryExitAction = null; _summaryDrawnPage = null; _summarySlideFrom = null;
+            _summaryPageTransition.Reset();
             close();
         }
         QueueRedraw();
@@ -56,9 +87,9 @@ public partial class CampaignView
     }
     private void DrawSummaryFade()
     {
-        ulong now = SummaryNow;
-        float alpha = SummaryExitActive ? Math.Min(1f, (now - _summaryExitStart) * 60f / 16000f)
-            : Math.Max(0f, 1f - (now - _summaryEntryStart) * 60f / 16000f);
+        double now = SummaryNow;
+        float alpha = SummaryExitActive ? Math.Min(1f, (float)((now - _summaryExitStart) * 60 / 16000))
+            : _summaryPageTransition.EntryAlpha(now);
         if (alpha > 0) DrawRect(new(0, 0, 240, 160), new Color(0, 0, 0, alpha));
     }
     private Texture2D SummaryTexture(string name)
@@ -71,34 +102,23 @@ public partial class CampaignView
         return texture;
     }
     private void LoadSummaryDescriptions() => _summaryPresentation ??= SummaryPresentation.Load(_root);
-    private PartyPokemon? _summaryPreviousPokemon;
-    private int _summaryPreviousPage;
-    private bool _summaryPreviousDetails;
-    private ulong _summaryLastDraw, _summarySlideStart;
-    private (PartyPokemon Pokemon, int Page, bool Details)? _summarySlideFrom;
-    private int _summarySlideDirection;
+    private sealed record SummaryPageContent(SummaryPageKey Key, PartyPokemon Pokemon, bool Interactive, SummaryMoveSelection? Selection);
+    private SummaryPageContent? _summaryDrawnPage, _summarySlideFrom;
     private void DrawNativeSummary(PartyPokemon owned, int page, bool interactive, SummaryMoveSelection? selection = null)
     {
         bool details = selection is not null;
-        ulong now = SummaryNow;
-        if (_summaryPreviousPokemon is null || now - _summaryLastDraw >= 120) _summaryEntryStart = now;
-        if (_summaryPreviousPokemon?.InstanceId != owned.InstanceId || now - _summaryLastDraw >= 120)
-            _summaryPortraitStart = now;
-        if (_summaryPreviousPokemon?.InstanceId == owned.InstanceId && now - _summaryLastDraw < 120 &&
-            (_summaryPreviousPage != page || _summaryPreviousDetails != details))
+        double now = SummaryNow;
+        string owner = InteractiveSummaryPage?.Owner ?? "learning:" + _moveSelectionStamp?.Context;
+        var key = new SummaryPageKey(owner, owned.InstanceId, page, details);
+        ObserveSummaryPage(key);
+        _summaryPageTransition.Present();
+        _summaryDrawnPage = new(key, owned, interactive, selection);
+        int offset = _summaryPageTransition.Offset(now), direction = _summaryPageTransition.Direction;
+        if (_summarySlideFrom is { } previous && _summaryPageTransition.IsSliding(now))
         {
-            _summarySlideFrom = (_summaryPreviousPokemon, _summaryPreviousPage, _summaryPreviousDetails);
-            _summarySlideStart = now;
-            _summarySlideDirection = page > _summaryPreviousPage || details ? 1 : -1;
-        }
-        _summaryPreviousPokemon = owned; _summaryPreviousPage = page; _summaryPreviousDetails = details;
-        _summaryLastDraw = now;
-        int offset = Math.Min(240, (int)((now - _summarySlideStart) * 60 / 1000 + 1) * 60);
-        if (_summarySlideFrom is { } previous && offset < 240)
-        {
-            DrawSetTransform(new Vector2(-offset * _summarySlideDirection, 0));
-            DrawNativeSummaryPage(previous.Pokemon, previous.Page, interactive, previous.Details ? selection ?? new(_summaryMode, _summaryMoveCursor, _summarySwapSource) : null);
-            DrawSetTransform(new Vector2((240 - offset) * _summarySlideDirection, 0));
+            DrawSetTransform(new Vector2(-offset * direction, 0));
+            DrawNativeSummaryPage(previous.Pokemon, previous.Key.Page, previous.Interactive, previous.Selection);
+            DrawSetTransform(new Vector2((240 - offset) * direction, 0));
             DrawNativeSummaryPage(owned, page, interactive, selection);
             DrawSetTransform(Vector2.Zero);
             DrawSummaryFade();
@@ -114,7 +134,7 @@ public partial class CampaignView
         bool details = selection is not null;
         LoadSummaryDescriptions();
         var mon = owned.Pokemon;
-        int portraitFrame = (int)Math.Min(int.MaxValue, (SummaryNow - _summaryPortraitStart) * 60 / 1000);
+        int portraitFrame = _summaryPageTransition.PortraitFrame(SummaryNow);
         int portraitOffset = _summaryPresentation!.PortraitOffset(portraitFrame, mon.CurrentHp, mon.Stats.MaxHp,
             owned.IsEgg, mon.Friendship, owned.Status != 0);
         string skin = owned.IsEgg ? "egg" : details ? "moves_info" : new[] { "info", "skills", "moves" }[page];

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using Game.Domain.Pokemon;
 namespace Game.Application;
 public sealed record SaveEnvelope(int SchemaVersion, string RulesVersion, string ContentVersion, string GameEdition, long Generation, string PayloadHash, JsonElement Payload);
 public sealed record LoadedSave<T>(T State, long Generation, string Source);
@@ -12,11 +14,28 @@ public static class SaveCodec
     // "kind". Decode that unchanged canonical representation in any property order.
     // Player-save admission still belongs to the supplied semantic validator.
     private static readonly JsonSerializerOptions PayloadOptions = new() { AllowOutOfOrderMetadataProperties = true };
+    private static readonly JsonSerializerOptions WritePayloadOptions = CreateWritePayloadOptions();
+    private static JsonSerializerOptions CreateWritePayloadOptions()
+    {
+        var resolver = new DefaultJsonTypeInfoResolver();
+        resolver.Modifiers.Add(type =>
+        {
+            // These three getters are exact projections of other persisted fields.
+            // Scope the omission to save writing: canonical state hashes, content
+            // serialization and raw JSON conversion must retain their contracts.
+            string? derived = type.Type == typeof(SixStats) ? nameof(SixStats.Values)
+                : type.Type == typeof(PokemonInstance) ? nameof(PokemonInstance.IsShiny)
+                : type.Type == typeof(CampaignActor) ? nameof(CampaignActor.Visible) : null;
+            if (derived is not null)
+                type.Properties.Single(property => property.Name == derived).ShouldSerialize = (_, _) => false;
+        });
+        return new() { TypeInfoResolver = resolver };
+    }
     public static byte[] Encode<T>(T state, long generation, string rules, string content)
     {
         ArgumentNullException.ThrowIfNull(state);
         if (generation < 0) throw new ArgumentOutOfRangeException(nameof(generation));
-        var payload = JsonSerializer.SerializeToElement(state);
+        var payload = JsonSerializer.SerializeToElement(state, WritePayloadOptions);
         return CanonicalJson.Encode(new SaveEnvelope(CurrentSchema, rules, content, "firered", generation, CanonicalJson.Hash(payload), payload));
     }
     public static LoadedSave<T> Decode<T>(ReadOnlySpan<byte> bytes, string rules, string content, string source = "memory", Func<T, string?>? validate = null)

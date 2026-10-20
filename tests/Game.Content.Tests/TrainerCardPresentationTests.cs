@@ -11,7 +11,7 @@ public sealed class TrainerCardPresentationTests
         for(int stars=0;stars<=3;stars++)for(int gender=0;gender<2;gender++)foreach(bool back in new[]{false,true})
         {
             string id=card.BackgroundId(back,gender,stars);Assert.AreEqual(240,card.Asset(id).Width);Assert.AreEqual(160,card.Asset(id).Height);
-            Assert.IsTrue(card.ReadAssetTexture(id).Length>100);
+            Assert.IsTrue(card.ReadTexturePage(card.Asset(id).TexturePath).Length>100);
         }
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(()=>card.BackgroundId(false,0,4));
         for(int kind=0;kind<2;kind++)for(int tier=1;tier<=4;tier++)Assert.AreEqual(16,card.Asset($"sticker-{kind}-{tier}").Width);

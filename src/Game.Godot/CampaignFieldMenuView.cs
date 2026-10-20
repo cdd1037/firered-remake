@@ -16,9 +16,7 @@ public partial class CampaignView
     private bool FieldMenuOpen => _fieldMenuMode != "closed";
     private bool CanOpenFieldMenu => _session is not null && !_busy &&
         _fade <= 0 && _fanfareRemaining <= 0 && !_nicknameEdit.Visible &&
-        _tracks.All(t => t.Time >= t.Duration) && _session.State.HealingEffect is null &&
-        _session.State.PlayerVisible && _session.State.HelpContext == "map" &&
-        (_session.ValidatePlayerSave(_session.State) is null || CanOpenSafariFieldMenu);
+        _tracks.All(t => t.Time >= t.Duration) && _session.CanOpenFieldMenu;
 
     // Fixed pret 037335f: start_menu.c:213-224, 279-290; strings.c:18,159-165.
     // Player is the real saved name, not the literal text "PLAYER".
@@ -35,11 +33,13 @@ public partial class CampaignView
         return entries.ToArray();
     }
 
-    private void ResetFieldMenu()
+    private void ResetFieldMenu(bool preserveFieldDirection=false)
     {
         CancelPokedexCry();
+        ResetPokedexTransition();
         _fieldMenuMode = "closed"; _fieldMenuNotice = null; _fieldNoticeCloses = false;
-        _fieldSwapSource = -1; ResetFieldHealingSelection(); ResetOwnedSummarySelection(); _held = null;
+        _fieldSwapSource = -1; ResetFieldHealingSelection(); ResetOwnedSummarySelection();
+        if(!preserveFieldDirection)_held = null;
     }
 
     // Called before the key-only guard so an actual joypad Start works too.

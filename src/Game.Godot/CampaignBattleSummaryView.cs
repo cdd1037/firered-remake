@@ -56,7 +56,7 @@ public partial class CampaignView
     private bool BattlePartyInspectionInput(InputEventKey key)
     {
         if (_battlePartySelection is null) return false;
-        if (!BattlePartySelectionCurrent() || SummaryExitActive) return true;
+        if (!BattlePartySelectionCurrent() || SummaryInputLocked) return true;
         bool back = key.Keycode is Key.Backspace or Key.B;
         bool confirm = key.Keycode is Key.Enter or Key.A or Key.Space;
         if (_battlePartySummaryPage >= 0)

@@ -48,26 +48,6 @@ public partial class CampaignView
         };
     }
 
-    private bool CanOpenSafariFieldMenu
-    {
-        get
-        {
-            var s = _session.State;
-            return s.SafariVisit is { Active: true, Balls: > 0, Steps: > 0 } &&
-                s.Script.Flags.GetValueOrDefault("FLAG_SYS_SAFARI_MODE") && !s.SafariExitPending &&
-                s.Script.Completed && !s.Script.Locked && s.Script.Wait is null && s.Script.Stack.IsEmpty &&
-                s.Script.QuestLogState == 0 && s.EntryPrograms.IsEmpty && s.Dialogue is null && s.SignMessage is null &&
-                s.NameRater is null && s.Nickname is null && s.MonPicture is null && !s.ScreenIsBlack && s.PlayerVisible &&
-                s.PresentationTicks == 0 && s.Motions.IsEmpty && s.ArrivalFacing is null && s.Battle is null &&
-                s.SafariBattle is null && s.WildBattle is null && s.ForestTrainerBattle is null && s.DoubleBattle is null &&
-                s.OldManTutorial is null && s.FieldPoison is null && s.Evolution is null && s.RareCandy is null &&
-                s.EscapeRope is null && s.HealingEffect is null && s.Shop is null && s.ItemMenu is null &&
-                s.Pc is null && !s.PcPoweredOn && s.Fishing is null && s.MoneyBox is null && s.GiftDelivery is null &&
-                s.TownMap is null && s.Repel is null && s.PokeFlute is null && s.CutEffect is null && s.RockSmashEffect is null && s.FlashEffect is null && s.StrengthEffect is null && s.SurfEffect is null &&
-                s.HelpContext == "map";
-        }
-    }
-
     // start_menu.c:128-136, 255-264: source 10x4 stats window and remaining/600.
     private void DrawSafariFieldStats(SourceGameFont? font=null,Func<Texture2D,Texture2D>? palette=null)
     {

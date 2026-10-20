@@ -192,15 +192,18 @@ public partial class CampaignView:Node2D
             return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
         });
     }
-    private void LoadMap(MapId id,bool fade=true)
+    private void LoadMap(MapId id,bool fade=true,bool preserveFieldDirection=false)
     {
         EnsurePlayerGenderArt();
-        ResetFieldMenu();
+        // A connected step keeps physical direction ownership, not stale menus.
+        ResetFieldMenu(preserveFieldDirection);
         // Keep the last submitted canvas frame alive until _Draw clears/replaces it.
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)).Concat(_art is null?[]:[PresentationMapKey(_art.Source.Id)]));
         var next=GetMapArt(id);ReleaseMapEdits();_art=next;
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)));
-        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;ResetFieldDirectionCadence();_fade=fade ? .16 : 0;
+        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;
+        if(!preserveFieldDirection)ResetFieldDirectionCadence();
+        _fade=fade ? .16 : 0;
     }
     private void Synchronize(CampaignState? before,CampaignState after,CampaignState? motionOrigin=null)
     {
@@ -210,14 +213,16 @@ public partial class CampaignView:Node2D
         SynchronizeSourceResultState(before,after);
         SynchronizeSourceMovePresentation();
         bool changed=before is not null&&before.World.Player.MapId!=after.World.Player.MapId;
-        if(changed)LoadMap(after.World.Player.MapId,!_fieldWarpSynchronizing&&!ConnectedFieldTransition(before,after));
+        var connectedOrigin=before is null?null:CampaignFieldMovementTiming.ConnectedStepOrigin(before,after,_catalog.ConnectedFieldMaps);
+        if(changed)LoadMap(after.World.Player.MapId,!_fieldWarpSynchronizing&&!ConnectedFieldTransition(before,after),connectedOrigin is not null);
         ApplyMapEdits(after);
         // Intro page acknowledgements retain the same application motion list. Keep
         // its presentation progress and settled poses instead of starting the walk again.
         bool preserveIntroMotion=!changed&&before?.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} previousIntro&&
             after.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} currentIntro&&
             previousIntro.Id==currentIntro.Id&&before.Motions.SequenceEqual(after.Motions);
-        bool normalStep=before is not null&&!changed&&!_fieldWarpSynchronizing&&(before.World.Player.X!=after.World.Player.X||before.World.Player.Y!=after.World.Player.Y)&&after.Motions.IsEmpty;
+        bool normalStep=before is not null&&!_fieldWarpSynchronizing&&after.Motions.IsEmpty&&
+            (connectedOrigin is not null||!changed&&(before.World.Player.X!=after.World.Player.X||before.World.Player.Y!=after.World.Player.Y));
         if(!preserveIntroMotion)
         {
             _tracks.Clear();
@@ -230,7 +235,9 @@ public partial class CampaignView:Node2D
             player.Position=new(after.World.Player.X*16,after.World.Player.Y*16);player.Facing=after.World.Player.Facing;player.Visible=after.PlayerVisible;player.DrawYOffset=0;player.IsJump=false;
             if(normalStep)
             {
-                var from=new Vector2(before!.World.Player.X*16,before.World.Player.Y*16);var to=player.Position;player.Position=from;
+                var from=connectedOrigin is {} rebased?new Vector2(rebased.X*16,rebased.Y*16):
+                    new Vector2(before!.World.Player.X*16,before.World.Player.Y*16);
+                var to=player.Position;player.Position=from;
                 bool ledge=IsLedgeStep(before,after);
                 if(after.IsCycling&&!ledge)BeginCityCycleStep();
                 _tracks.Add(new(){Actor="LOCALID_PLAYER",Clips=[new(from,to,after.World.Player.Facing,(ledge?CampaignFieldMovementTiming.LedgeFrames:_fieldStepTicks)/60.0,true,ledge?_fieldStepAction:after.IsCycling?(_fieldStepTicks==6?"cycle":"cycle-stairs"):_fieldStepAction)]});
@@ -289,6 +296,7 @@ public partial class CampaignView:Node2D
         if(ProcessFieldWarpPresentation(delta))return;
         if(ProcessFieldReturn(delta))return;
         if(!PlayerEntryActive&&!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
+        ProcessPokedexPresentation(delta);
         if(ProcessHelpPresentation(delta))return;
         AdvanceFieldJumpEffects(delta);
         AdvanceInventoryPresentation(delta);
@@ -576,6 +584,8 @@ public partial class CampaignView:Node2D
         (_session.State.ForestTrainerBattle?.Stage!=CampaignForestTrainerStage.Intro||_tracks.All(t=>t.Time>=t.Duration));
     public override void _Draw()
     {
+        BeginSummaryPresentationFrame();
+        HidePokedexTransitionOverlay();
         // Child controls draw after the parent. Only the selected Oak branch may
         // expose its text; menus, portrait transitions and fades cannot inherit it.
         if (_openingText is not null) _openingText.Visible = false;

@@ -1,82 +1,136 @@
 # 测试组织与运行
 
-保留 MSTest，按产品依赖边界划分项目；项目内按功能拆文件，测试方法和数据行可以独立发现、筛选。公共版本、测试属性和路径辅助源文件由 `Directory.Build.props` 管理，各项目声明自身依赖。普通用例直接调用产品代码。
+MSTest 项目按产品依赖边界划分，项目内按功能组织独立测试方法和数据行。
+公共测试版本、属性与路径辅助源码由 `tests/Directory.Build.props` 管理。
+构建环境见 [README](../README.md)，原生／路线／音频证据口径及最近的有界结果见
+[验证说明](../docs/validation.md)。
 
 | 项目 | 产品依赖与职责 |
 | --- | --- |
-| Game.Domain.Tests | 只引用 Domain：标识、随机数、属性、伤害、基础战斗命令、地图移动、状态校验、成长和捕获 |
-| Game.Battle.Tests | 引用 Content（传递依赖 Domain）：使用真实内容的回合、招式、树果、换人、天气／屏障、残留、场地陷阱、生命周期、训练师策略和蛋工厂 |
-| Game.Application.Tests | 引用 Application、Content：命令与存档协议、工程会话、新游戏／Continue、野战、训练师战、场景脚本和背包接线 |
-| Game.Content.Tests | 只引用 Content：内容契约、序列化、引用校验和原版地图形状转换 |
-| Game.Audio.Tests | 只引用 Game.Audio（按需运行）：合成、PSG、声像、播放控制、回声、音序、叫声和目录 |
-| Game.Presentation.Tests | 引用 Content，并链接纯 C# 表现组件：资源包、图鉴索引、菜单、文本分页、保存反馈与诊断；不加载 Godot 引擎 |
-| Game.ResourceImport.Tests | 无产品程序集依赖：维护的 Python 资源导入检查 |
-| Game.Process.Tests | 引用 Application：新进程之间的状态哈希一致性、存档往返；辅助程序在 Helpers/HashProbe |
+| Game.Domain.Tests | 只引用 Domain：随机数、属性、伤害、基础战斗、地图移动、状态校验、成长与捕获 |
+| Game.Battle.Tests | 引用 Content（传递依赖 Domain）：真实内容回合、招式、换人、天气／屏障、残留、场地、生命周期、AI 与蛋工厂 |
+| Game.Application.Tests | 引用 Application、Content：命令、存档、新游戏／Continue、场景脚本、野战／训练师战及界面事务接线 |
+| Game.Content.Tests | 只引用 Content：内容契约、序列化、引用校验与地图格式转换 |
+| Game.Audio.Tests | 只引用 Audio，按需运行：合成、PSG、声像、播放、回声、音序、叫声与目录 |
+| Game.Presentation.Tests | 引用 Content 并链接纯 C# 表现组件：菜单、文本、时序、资源包和保存反馈；不加载 Godot 引擎 |
+| Game.ResourceImport.Tests | 无产品程序集依赖：维护中的 Python 导入检查 |
+| Game.Process.Tests | 引用 Application：独立冷进程的 canonical 状态哈希与存档往返；辅助程序在 `Helpers/HashProbe` |
 
-Domain 的输入矩阵不依赖内容加载。Battle 使用经过认证的内容验证领域行为，Application 验证会话接线；同一功能出现在不同层时，各自承担不同职责。不会为了每个功能建立一个项目。
-
-`Shared/TestAssets.cs` 只提供仓库／输入路径、缺失生成数据的明确报错、唯一临时目录和内容缓存，以源码链接方式共享。场景夹具留在各功能目录内；没有额外公共测试框架或套件注册表。`Reference/reference_c.py` 供显式参考向量生成器使用，不参与普通测试执行。`Reference/source_extract.py` 是这些生成器共用的独立原作文本提取器；各调用者明确选择自己的输入校验文件，不依赖生产导入器。其快速检查可运行 `python tests/Reference/test_source_extract.py`，不会编译或执行原作 C。
+Domain 不依赖内容加载；Battle 检查真实内容下的规则，Application 检查会话接线。
+相同功能在不同层的测试职责不同，不为每个功能单建项目。各项独立准备状态，
+串行运行，不依赖执行顺序；场景夹具留在功能目录内。
+`Shared/TestAssets.cs` 仅共享输入路径、缺文件报错、唯一临时目录和内容缓存，
+不另建套件注册表或公共测试框架。
 
 ## 运行入口
 
 在仓库根目录执行：
 
 ```powershell
-# 默认七个项目；资源导入检查需要 Python 3。
+# 默认解决方案中的七个测试项目，不含 Audio。
 dotnet test
 
-# 局部修改只运行对应依赖边界。
-dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj
-dotnet test tests/Game.Battle.Tests/Game.Battle.Tests.csproj
-dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj
-
-# 指定项目后发现、筛选具体功能或数据行。
+# 局部修改选择相应项目；先指定项目，再发现或筛选。
 dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj --list-tests
 dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj --filter FullyQualifiedName~RandomnessTests
 dotnet test tests/Game.Battle.Tests/Game.Battle.Tests.csproj --filter 'Name~SelectedMoveCompletesPublicTurn&Name~MOVE_TACKLE'
 dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --filter FullyQualifiedName~StoneEvolutionTests
 
-# 音频不在默认全测中，需要显式指定项目；其余检查也可独立执行。
+# 音频始终显式执行；导入与跨进程检查也可独立运行。
 dotnet test tests/Game.Audio.Tests/Game.Audio.Tests.csproj
 dotnet test tests/Game.ResourceImport.Tests/Game.ResourceImport.Tests.csproj
 dotnet test tests/Game.Process.Tests/Game.Process.Tests.csproj
 
-# 各程序集使用独立报告名，避免相互覆盖。
+# 各程序集独立报告，避免互相覆盖。
 dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/test-results
 ```
 
-`dotnet test` 自带构建，无需先重复 build；`--no-build` 可复用已有产物。共享测试配置或跨边界行为变更运行默认解决方案中的七个项目，涉及音频时再显式运行 `Game.Audio.Tests`；局部改动选择相关项目即可。框架和适配器均使用公共配置中的固定版本，不限制开发 SDK 的功能带或补丁。
+`dotnet test` 自带还原和构建，不需要先执行 `dev env` 或重复 build。
+仅在对应源码已经构建、依赖已还原时使用 `--no-build --no-restore`。
+当前 Linux 云环境须先按 [串行构建](../docs/validation.md#工具与执行) 完成构建，
+再用以上命令的 `--no-build --no-restore` 形式运行。
+共享测试配置或跨边界行为变更应运行默认七项目，音频变更另跑 Audio；
+局部检查不记为全套通过。
 
-筛选时先指定项目：`test.runsettings` 会让空测试项目、空筛选和发现警告报错，因此对整个解决方案使用只命中某一项目的过滤条件，其余项目会报空筛选。`Game`、`Audio`、`ResourceImport` 分类仍可在选定项目内使用。
+`test.runsettings` 将空项目、空筛选和发现警告视为错误。不要把仅命中一个项目的
+筛选条件用于整个解决方案，否则其余项目会正确报空筛选。
+`Game`、`Audio`、`ResourceImport` 分类可在选定项目内使用。
+MSTest 负责发现和 TRX，不使用旧 shell／console 套件调度或手工成功计数。
+354 招式的四个位置为 1,416 个独立数据行；按需音频测试中的 386 种普通叫声
+也独立发现。这些行数不等于完整招式分支或视听验收。
 
-全部 354 招式的四个位置共 1,416 行，按需运行音频测试时，386 种普通叫声也分别发现；Repel、进化石、Everstone 和生命周期变体保留参数化数据行。MSTest 负责结果与 TRX，不再维护手工成功计数或套件级 JSON/XML。普通游戏／音频测试不启动其他测试程序集或音频 CLI。
+普通游戏／音频测试直接调用产品代码，不启动其他测试程序集或音频 CLI。
+只有 Process 项目启动专用 .NET 哈希辅助进程，只有 ResourceImport 项目执行
+`scripts/checks/` 的 Python 检查。默认解释器为 Windows `python`、
+Linux／macOS `python3`，可用 `FIRERED_PYTHON` 覆盖。资源检查需要 Python 3.12
+及 `requirements-dev.txt`；普通 C# 测试不依赖 Python。
 
-仅 `Game.Process.Tests` 启动专用 .NET 辅助进程验证跨进程确定性；仅 `Game.ResourceImport.Tests` 直接调用 `scripts/checks/` 中的 Python 检查。脚本结构与离线物化回归可独立执行 `python scripts/checks/test-script-layout.py`。可用 `FIRERED_PYTHON` 指定 Python。当前测试按原有隔离要求串行运行，各用例独立准备状态，不依赖执行顺序。
+## 输入与存档
 
-## 输入和覆盖边界
+- 内容测试使用本地 `content/generated`；依赖原作输入的导入／参考检查使用
+  `content/raw/pokefirered/037335f4`。测试不下载素材、安装工具或执行上游脚本。
+  资源准备入口见 [scripts](../scripts/README.md) 和
+  [资源再生成](../docs/resource-reconstruction-guide.md)。
+- 音频测试需要 `content/generated/audio/synth/firered.pack` 与同目录
+  `normal-cries.bin`；音频导入另有显式入口，见 [音频说明](../docs/audio.md)。
+- 后期应用／Continue 测试默认读取本地忽略的
+  `checkpoints/current-schema3/controlled-checkpoint.json`，可用
+  `FIRERED_TEST_CHECKPOINT` 指定已单独验证的当前 schema 3 存档。
+  默认路径只是约定，不证明文件存在；缺失必须失败。
+- 新游戏及不依赖后期状态的用例自行创建会话。
+  `CampaignCompositionTests` 验证默认启动、新游戏严格存读／Continue 与公开移动；
+  其检查点用例严格读取上述输入，并确认源字节不变，没有可选命令行转换模式。
+  `GeneratedOnlyCampaignTests` 另验证隔离 generated 资源加载，不代表长路线。
+- 普通测试不转换 schema 1/2，不猜旧昵称或缺失终身孵蛋数。
+  受控夹具的名字、计数、个体和进度只是显式测试输入，不是玩家历史。
+  旧档原件保留，不能冒充当前 Continue 或事件前检查点；离线转换边界见
+  [当前组合](../docs/current-game-composition.md)。
+- 文件系统用例使用唯一 `.toolhome/mstest` 临时目录；TRX 使用标准结果目录或
+  显式 `--results-directory`。失败日志与成功复测分开保留。
 
-- 游戏资源需已在 `content/raw` 和 `content/generated`；导入器读取 `content/raw/pokefirered/037335f4`，测试不下载素材或安装编译器。
-- 音频需要 `content/generated/audio/synth/firered.pack` 和同目录的 `normal-cries.bin`（相对主游戏根目录）。
-- 应用与 Continue 测试默认使用本地忽略的 `checkpoints/current-schema2-20261019/TEST-CONTROLLED-hatch1000.json`，可用 `FIRERED_TEST_CHECKPOINT` 指定已有效的当前 schema2 存档。默认文件已一次性准备为普通旧名字全部保留显式 custom、蛋默认 null、合成孵蛋计数 1000 的受控测试档；它不恢复玩家昵称意图或历史总数。普通测试只严格加载，不执行旧档转换、不补计数。旧 `current-ownership-v3-20261015/continued-checkpoint.json` 原件保留，schema1 不能直接加载。
-- 上述文件是本地测试输入，不在 Git；缺失时请提供有效当前档并设置 `FIRERED_TEST_CHECKPOINT`，不要把旧 schema1 原件作为兼容输入。部分用例另在内存中准备位置、HP、PP、EXP 等受控状态，不代表自然路线重放或历史缺失证明已恢复。
-- 生成的参考数值、逐帧轨迹和验证报告仅存放在本地忽略目录，不纳入 Git；源码、明确语义用例、独立生成器仍受版本控制。手写的 schema 输入和固定源版本清单是测试定义，不是生成结果。
-- 普通测试读取已准备的本地数据，不启动 C 编译器，不自动下载，也不会因缺失数据跳过。缺失时明确失败并给出对应生成命令；先按提示显式准备，再重跑所选测试。不要以当前产品输出重新生成参考期望。
-- 大型动画族的生成器默认选择有明确分支/边界意义的代表案例，保留所选案例初始化到销毁的每一帧。`--full` 在外部输出目录生成完整组合，`FIRERED_SOURCE_VECTOR_DIR` 指向该目录后，同一托管比较器逐值检查全量数据。指定目录缺文件时不得回退到较小本地数据。具体命令与覆盖身份写在对应族的 `tests/Reference` 或 `Game.Presentation.Tests/Reference` 文档中。
-- 全量迁移对照是显式工程检查，不属于每次普通测试；保留的局部规则断言、完整根播放、取消和资源所有权测试照常运行。历史完整证据保留在外部迁移备份，移出索引不重写 Git 历史。
-- 文件系统用例使用唯一的 `.toolhome/mstest` 临时目录；TRX 使用标准结果目录或显式 `--results-directory`。
+## 参考向量与导入检查
 
-72 个依赖已删除 API 的历史项目退休清单见 `docs/test-retirement-20261015.json`，不代表所有历史对照都有一对一替代。功能目录里的旧验收说明仅供历史证据参考，旧 shell／console 命令不再是运行入口。
+生成数值、逐帧轨迹和验证报告只放在本地忽略目录，不纳入 Git；
+手写 schema 输入、源输入清单、语义案例和独立生成器继续受控。
+普通测试读取已准备数据，不隐式编译 C 或重写 golden。
+缺文件必须报错并给出生成命令，按提示显式准备后复测；不能从当前产品输出
+生成参考期望，也不能因缺失输入跳过。
 
-音频离线测试不证明真实声卡输出。历史 `results/phase4/render-coverage.json` 缺失，PCM 历史哈希等价性不在已验证范围；可选 PAN_ORACLE 研究比较也未计入。自然完整剧情、画面对照和实际扬声器输出仍需单独验收。
+`Reference/reference_c.py` 只供显式参考生成器使用，支持已有的 Windows MSVC
+和 Linux C 编译器。`Reference/source_extract.py` 由调用方选择固定输入，
+不依赖生产导入器；其快速检查不编译或运行原作 C：
 
-本次重组与实际验证见 [测试项目整理记录](../docs/test-layout-20261015.md)；之前原生 MSTest 迁移的验证保留在 [迁移记录](../docs/mstest-migration-20261015.md)。
+```sh
+python tests/Reference/test_source_extract.py
+python scripts/checks/test-script-layout.py
+```
 
-## 生成证据治理（2026-10-18）
+大型动画族默认选择有明确语义／边界意义的代表案例，并保留每个案例从初始化
+到销毁的连续逐帧断言，不以稀疏快照替代。具体族的生成入口与范围在
+`tests/Reference` 或 `Game.Presentation.Tests/Reference` 文档中。
+支持全量模式的生成器使用 `--full` 输出至外部目录，再设
+`FIRERED_SOURCE_VECTOR_DIR` 让同一托管比较器逐值检查；指定目录缺文件时
+不得回退到较小本地集合。全量迁移对照是显式工程检查，不是每次普通测试。
+已移出 Git 的历史完整原件保留在外部迁移备份，不改写 Git 历史。
 
-111份生成对照数据与报告（158,372,572字节）退出版本控制，本地文件和外部迁移原件保留。Git中的测试数据仅保留手写schema输入、固定源输入定义和获取来源说明；不以压缩或换扩展名继续跟踪轨迹。
+物理动画导入检查仍完整执行 75 项及独立源突变／blocked／再生成检查；
+其 NativePresentation 包装行预算为 10 分钟，其余同类行为 3 分钟。
+定向开发可选择已有 unittest 方法，不传方法则运行全套：
 
-20个大型族改为显式代表／边界输入，常规本地结果合计16,419,741字节；每个选中案例保留连续逐帧断言。其余生成结果同样忽略，尚未全部缩减组合。完整原始组合由独立生成器显式生成，复用同一托管比较器，迁移全量72/72通过；完整数值与外部原件逐值核对。两个历史单回合snapshot改为明确HP、PP、身份字段和随机调用规则用例，原hash仅留外部迁移对照。
+```sh
+python scripts/checks/test-physical-animation-import.py PhysicalImportTests.test_task_affine_program_is_parsed_as_task_data_not_sprite_affine
+```
 
-同一25类常规筛选：原196例墙钟233.868秒，治理后203例墙钟193.502秒（新增7项用例选择检查，约减少17.25%）。额外Presentation40、Battle83、Domain22、Application154和按需Audio1例通过。解决方案构建0警告0错误。此计时不代表所有测试或真实游戏性能；普通测试不隐式编译C，缺数据的命令提示和指定全量目录禁止回退均有测试。
+正例可共享同次运行的不可变生成字节，但各项自行解码；突变和拒绝场景继续独立构建。
+不能为了缩短时间把完整源导入检查替换为代表输入或删掉失败分支。
 
-物理动画导入检查保留完整 75 项及独立源突变构建，默认资源测试仍全部执行；该套件单独给 10 分钟预算，其他 NativePresentation 检查仍为 3 分钟。普通定向开发可直接选择现有 unittest 方法，例如 `python scripts/checks/test-physical-animation-import.py PhysicalImportTests.test_task_affine_program_is_parsed_as_task_data_not_sprite_affine`；不传方法仍执行全套。正例共享本次运行生成的不可变 JSON 字节，每项自行解码；突变、blocked 与再生成检查继续独立构建。
+## 覆盖限制
+
+72 个引用已删除 API 的历史项目已退休，机器可读原因保留在
+[退休清单](../docs/test-retirement-20261015.json)。这不代表历史对照均有一对一替代；
+各功能目录中的旧验收记录也不自动成为当前可执行入口。
+
+历史 `results/phase4/render-coverage.json` 及旧录音输入 `se_m_toxic.qoa`
+曾缺失，历史 PCM 哈希等价性与可选 PAN_ORACLE 研究对照不在已验证范围。
+离线合成、受控存档、短命令路线和纯 C# 表现测试不能证明实际扬声器、
+原生画面一致、Windows 运行或自然完整剧情。当前尚未验证的范围须与通过结果一起报告。

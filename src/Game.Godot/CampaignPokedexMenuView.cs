@@ -166,7 +166,10 @@ public partial class CampaignView
     }
     private void DrawPokedexMenu()
     {
-        UpdatePokedexTransition();
+        // Child canvas items render after the parent. Other screens (including
+        // Help) must never inherit this screen-copy transform.
+        if (_pokedexPageTurnOverlay is not null)
+            _pokedexPageTurnOverlay.Visible = _pokedexTransitionKind is 1 or 2;
         if(DrawPokedexExtra()){DrawPokedexZoom();return;}
         if(_fieldMenuMode=="pokedex-entry"){DrawPokedexEntry();DrawPokedexZoom();return;}
         if(_fieldMenuMode=="pokedex-order")

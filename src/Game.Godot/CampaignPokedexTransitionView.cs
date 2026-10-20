@@ -3,15 +3,35 @@ using Godot;
 
 public partial class CampaignView
 {
-    private ulong _pokedexTransitionStart;
-    private int _pokedexTransitionKind,_pokedexPendingPage,_pokedexPendingSlot;
+    private readonly PokedexTransitionClock _pokedexTransitionClock = new();
+    private int _pokedexTransitionKind => _pokedexTransitionClock.Kind;
+    private int _pokedexPendingPage,_pokedexPendingSlot;
     private bool _pokedexTurnPageChanged;
     private ColorRect? _pokedexPageTurnOverlay;
     private ShaderMaterial? _pokedexPageTurnMaterial;
     private bool PokedexTransitionActive=>_pokedexTransitionKind!=0;
+    private void HidePokedexTransitionOverlay()
+    {
+        if (_pokedexPageTurnOverlay is not null) _pokedexPageTurnOverlay.Visible = false;
+    }
+    private void ResetPokedexTransition()
+    {
+        _pokedexTransitionClock.Reset();
+        _pokedexTurnPageChanged = false;
+        _pokedexPendingPage = _pokedexPendingSlot = 0;
+        HidePokedexTransitionOverlay();
+    }
+    private void ProcessPokedexPresentation(double delta)
+    {
+        if (!PokedexTransitionActive) return;
+        if (!_fieldMenuMode.StartsWith("pokedex", StringComparison.Ordinal))
+        { ResetPokedexTransition(); return; }
+        _pokedexTransitionClock.Advance(delta, _help.Active);
+        if (!_help.Active) UpdatePokedexTransition();
+    }
     private void DisposePokedexVisualPresentation()
     {
-        _pokedexTransitionKind=0;_pokedexAreaIcon=null;
+        ResetPokedexTransition();_pokedexAreaIcon=null;
         if(_pokedexPageTurnOverlay is not null)
         {_pokedexPageTurnOverlay.Visible=false;_pokedexPageTurnOverlay.QueueFree();_pokedexPageTurnOverlay=null;}
         _pokedexPageTurnMaterial?.Shader?.Dispose();_pokedexPageTurnMaterial?.Dispose();_pokedexPageTurnMaterial=null;
@@ -21,7 +41,7 @@ public partial class CampaignView
         _pokedexPendingPage=page;_pokedexPendingSlot=slot;
         _pokedexTurnPageChanged=false;
         if(direction>0)SourceSound("SE_BALL_TRAY_ENTER");
-        _pokedexTransitionKind=direction<0?1:2;_pokedexTransitionStart=Time.GetTicksMsec();
+        _pokedexTransitionClock.Begin(direction<0?1:2);
         if(_pokedexPageTurnOverlay is null)
         {
             var shader=new Shader {Code="""
@@ -61,16 +81,17 @@ public partial class CampaignView
         var rgb=image.GetPixel(fade.SourceX,fade.SourceY);
         _pokedexPageTurnMaterial.SetShaderParameter("fade_color5",new Vector3(Mathf.Floor(rgb.R*255/8),Mathf.Floor(rgb.G*255/8),Mathf.Floor(rgb.B*255/8)));
         _pokedexPageTurnMaterial.SetShaderParameter("fade_level",0);
-        _pokedexPageTurnOverlay.Visible=true;
+        // Install F0 before the first draw. Only DrawPokedexMenu exposes this child.
+        UpdatePokedexTransition();
     }
     private void BeginPokedexZoom(bool reverse=false)
     {
-        _pokedexTransitionKind=reverse?4:3;_pokedexTransitionStart=Time.GetTicksMsec();
+        _pokedexTransitionClock.Begin(reverse?4:3);
     }
     private void UpdatePokedexTransition()
     {
         if(!PokedexTransitionActive)return;
-        int frame=(int)((Time.GetTicksMsec()-_pokedexTransitionStart)*60/1000);
+        int frame=_pokedexTransitionClock.Frame;
         if(_pokedexTransitionKind<=2)
         {
             var phase=PokedexTurnGeometry.Frame(_pokedexMenu!.Document.Visuals,_pokedexTransitionKind==2,frame);
@@ -80,13 +101,13 @@ public partial class CampaignView
                 _pokedexTurnPageChanged=true;
                 if(_pokedexTransitionKind==1)SourceSound("SE_BALL_TRAY_ENTER");
             }
-            if(phase.Complete){_pokedexPageTurnOverlay!.Visible=false;_pokedexTransitionKind=0;return;}
+            if(phase.Complete){ResetPokedexTransition();return;}
             _pokedexPageTurnMaterial!.SetShaderParameter("columns",_pokedexMenu.Document.Visuals.PageTurnColumns[phase.ColumnPhase].ToArray());
             _pokedexPageTurnMaterial.SetShaderParameter("fade_level",phase.FadeLevel);
         }
         else if(frame>=7)
         {
-            bool opening=_pokedexTransitionKind==3;_pokedexTransitionKind=0;
+            bool opening=_pokedexTransitionKind==3;ResetPokedexTransition();
             _fieldMenuMode=opening?"pokedex-entry":"pokedex-habitat";
             if(opening)PlayPokedexCry();
         }
@@ -94,14 +115,15 @@ public partial class CampaignView
     private void DrawPokedexZoom()
     {
         if(_pokedexTransitionKind is not (3 or 4))return;
-        int frame=Math.Min(6,(int)((Time.GetTicksMsec()-_pokedexTransitionStart)*60/1000));
+        int frame=Math.Min(6,_pokedexTransitionClock.Frame);
         int scale=_pokedexTransitionKind==3?frame:6-frame;
         var slot=_pokedexMenu!.Document.HabitatLayouts[_pokedexList!.Rows.Length-1][_pokedexHabitatSlot];
         var (left,top,width,height,div)=PokedexZoomGeometry.Frame(slot,scale);
         void Tile(int n,int x,int y,bool flip=false)
         {
             var sprite=_pokedexMenu.Document.Visuals.Sprites[PokedexPalette+"/tile/"+n];
-            DrawTextureRectRegion(PokedexTexture(sprite.Texture),new(x*8+(flip?8:0),y*8,flip?-8:8,8),
+            // The source H-flip changes the tile pixels, not its tile coordinate.
+            DrawTextureRectRegion(PokedexTexture(sprite.Texture),new(x*8,y*8,flip?-8:8,8),
                 new(sprite.SourceX,sprite.SourceY,8,8));
         }
         for(int x=left;x<=left+width+1;x++)

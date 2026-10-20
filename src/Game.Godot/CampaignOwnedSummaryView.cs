@@ -94,7 +94,7 @@ public partial class CampaignView
     // browsing, move details, two-stage swap/cancel and the native exit fade.
     private bool OwnedPartySummaryInput(InputEventKey key, ref int partyIndex, ref int page, Action close)
     {
-        if (SummaryExitActive) return true;
+        if (SummaryInputLocked) return true;
         var owned = _session.State.Party[partyIndex];
         if (OwnedMoveDetailsInput(key, owned, partyIndex)) return true;
         bool confirm = key.Keycode is Key.Enter or Key.KpEnter or Key.A;
@@ -113,7 +113,7 @@ public partial class CampaignView
     }
     private bool MouseOwnedSummary(Vector2 point, PartyPokemon owned, int page)
     {
-        if (SummaryExitActive) return true;
+        if (SummaryInputLocked) return true;
         if (_summaryDetails)
         {
             if (!OwnedSummarySelectionIsCurrent(owned)) return true;
@@ -129,7 +129,7 @@ public partial class CampaignView
     }
     private bool NavigateOwnedSummaryPointer(Vector2 point, int direction, PartyPokemon owned)
     {
-        if (SummaryExitActive) return true;
+        if (SummaryInputLocked) return true;
         if (!_summaryDetails) return direction != 0 && new Rect2(8, 26, 224, 110).HasPoint(point) && MouseNavigationKey(direction);
         if (!OwnedSummarySelectionIsCurrent(owned)) return true;
         return PointerRows(point, direction, ref _summaryMoveCursor,

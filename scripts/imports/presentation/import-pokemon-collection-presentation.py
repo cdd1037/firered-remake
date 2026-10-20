@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT
+from game_pokemon_admissions import resolve_admissions
 
 import argparse
 import io
@@ -26,7 +27,7 @@ def convert(recipe, sources, root):
     symbols = [row['symbol'] for row in rows]
     if not rows or len(symbols) != len(set(symbols)):
         raise ValueError('Collection art selection must be nonempty and unique')
-    policy = json.loads(safe(root, 'data/game-pokemon.json').read_bytes())
+    policy = resolve_admissions(json.loads(safe(root, 'data/game-pokemon.json').read_bytes()))
     owned = {row['id']['value'] for row in policy['owned']}
     opponents = {row['id']['value'] for row in policy['opponents']}
     catalog = json.loads(safe(root, 'content/generated/data/pokemon/canonical/catalog.json').read_bytes())

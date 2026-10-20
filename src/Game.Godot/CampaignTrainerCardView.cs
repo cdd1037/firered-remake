@@ -20,8 +20,19 @@ public partial class CampaignView
         var fg=_trainerCard.Layout.StatTextRgb;var shadow=_trainerCard.Layout.StatShadowRgb;
         _trainerCardStatFont=SourceGameFont.Load(System.IO.Path.Combine(_root,"content/generated/ui/font"),
             foreground:Color.Color8(fg[0],fg[1],fg[2]),shadow:Color.Color8(shadow[0],shadow[1],shadow[2]));
+        foreach(var page in _trainerCard.Pages)
+        {
+            var texture=SceneTextures.Texture(Path.Combine(_trainerCard.GeneratedDirectory,page.TexturePath));
+            if(texture.GetWidth()!=page.Width || texture.GetHeight()!=page.Height)
+                throw new InvalidDataException("Trainer Card atlas page dimensions differ.");
+        }
         foreach(var asset in _trainerCard.Assets)
-            _trainerCardTextures.Add(asset.Id,PresentationTexture(_trainerCard.ReadAssetTexture(asset.Id),asset.Width,asset.Height,replicatePalette:true));
+        {
+            var region=asset.Region;
+            _trainerCardTextures.Add(asset.Id,SceneTextures.Texture(
+                Path.Combine(_trainerCard.GeneratedDirectory,asset.TexturePath),
+                region:new Rect2I(region.X,region.Y,region.Width,region.Height)));
+        }
     }
     private void OpenTrainerCard()
     {

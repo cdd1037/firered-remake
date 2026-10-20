@@ -5,6 +5,8 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from game_pokemon_admissions import ROSTERS, resolve_admissions
+from runtime_json import runtime_json_bytes
 
 import argparse
 import json
@@ -22,47 +24,52 @@ METHODS = {
 
 
 def compile_admissions(policy: dict, canonical: dict) -> dict:
-    rosters = ('owned', 'opponents', 'trainerTowerOpponents')
-    if set(policy) != {'schemaVersion', *rosters} or policy['schemaVersion'] != 1:
-        raise ValueError('game_pokemon_schema')
+    resolved = resolve_admissions(policy)
     species = {row['id']['value']: row for row in canonical['species']}
     metadata = {row['id']['value']: row for row in canonical['metadata']}
     forms = {(row['species']['value'], row['scope']) for row in canonical['generationContract']['formStatOverrides']}
-    sets = {}
-    for roster in rosters:
-        rows = policy[roster]
-        ids = [row['id']['value'] for row in rows]
-        if not ids or len(ids) != len(set(ids)) or not set(ids) <= species.keys():
+    def validate(row):
+        id = row['id']['value']
+        if id not in species:
             raise ValueError('game_pokemon_admissions')
-        sets[roster] = set(ids)
+        if 'formScope' in row and (id, row['formScope']) not in forms:
+            raise ValueError('game_pokemon_form')
+        edges = set()
+        for edge in row['evolutions']:
+            if not isinstance(edge, dict) or not {'level', 'target'} <= edge.keys() or \
+                    set(edge) - {'level', 'target', 'method', 'parameter'} or \
+                    not isinstance(edge['target'], dict) or set(edge['target']) != {'value'} or \
+                    not isinstance(edge['target']['value'], str) or \
+                    type(edge['level']) is not int or not isinstance(edge.get('method', 'level'), str) or \
+                    (edge.get('parameter') is not None and not isinstance(edge['parameter'], str)):
+                raise ValueError('game_pokemon_evolution')
+            method = edge.get('method', 'level')
+            target = edge['target']['value']
+            level, parameter = edge['level'], edge.get('parameter')
+            signature = (method, target, level, parameter)
+            if signature in edges or method not in METHODS:
+                raise ValueError('game_pokemon_evolution')
+            edges.add(signature)
+            expected_parameter = str(level) if method.startswith('level') else parameter or '0'
+            if not any(original['method'] == METHODS[method] and original['target']['value'] == target
+                       and original['parameter'] == expected_parameter
+                       for original in metadata[id]['sourceEvolutions']):
+                raise ValueError('game_pokemon_evolution')
+
+    for row in policy['definitions']:
+        validate(row)
+    for roster in ROSTERS:
+        rows = resolved[roster]
+        ids = {row['id']['value'] for row in rows}
         for row in rows:
-            if set(row) - {'id', 'evolutions', 'formScope'} or set(row['id']) != {'value'}:
-                raise ValueError('game_pokemon_reference')
-            id = row['id']['value']
-            if 'formScope' in row and (id, row['formScope']) not in forms:
-                raise ValueError('game_pokemon_form')
-            edges = set()
-            for edge in row['evolutions']:
-                method = edge.get('method', 'level')
-                target = edge['target']['value']
-                level, parameter = edge['level'], edge.get('parameter')
-                if set(edge) - {'level', 'target', 'method', 'parameter'} or target not in sets[roster]:
-                    raise ValueError('game_pokemon_evolution')
-                signature = (method, target, level, parameter)
-                if signature in edges or method not in METHODS:
-                    raise ValueError('game_pokemon_evolution')
-                edges.add(signature)
-                expected_parameter = str(level) if method.startswith('level') else parameter or '0'
-                if not any(original['method'] == METHODS[method] and original['target']['value'] == target
-                           and original['parameter'] == expected_parameter
-                           for original in metadata[id]['sourceEvolutions']):
-                    raise ValueError('game_pokemon_evolution')
-    if not sets['owned'] <= sets['opponents']:
-        raise ValueError('game_pokemon_owned_opponents')
+            validate(row)
+            if any(edge['target']['value'] not in ids for edge in row['evolutions']):
+                raise ValueError('game_pokemon_evolution')
     return policy
 
 
 def compile_breeding(root: Path, policy: dict, canonical: dict) -> dict:
+    owned = resolve_admissions(policy)['owned']
     raw = root / 'content/raw/pokefirered/037335f4'
     egg_text = (raw / 'src/data/pokemon/egg_moves.h').read_text()
     egg_moves = {name: re.findall(r'MOVE_\w+', body) for name, body in
@@ -86,7 +93,7 @@ def compile_breeding(root: Path, policy: dict, canonical: dict) -> dict:
         raise ValueError('breeding_evolution_cycle')
     return {'species': [{'species': row['id'], 'baseEggSpecies': {'value': base_species(row['id']['value'])},
                          'eggMoves': [{'value': 'pret:' + move} for move in egg_moves.get(row['id']['value'][13:], [])]}
-                        for row in policy['owned']],
+                        for row in owned],
             'allMachineMoves': [{'value': 'pret:' + move} for move in all_moves]}
 
 
@@ -100,10 +107,10 @@ def main() -> None:
     output = compile_admissions(policy, canonical)
     path = root / 'content/generated/data/pokemon/game/catalog.json'
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(output, indent=2) + '\n')
+    path.write_bytes(runtime_json_bytes(output))
     breeding = compile_breeding(root, output, canonical)
     (path.parent / 'breeding.json').write_text(json.dumps(breeding, indent=2) + '\n')
-    print('Pokemon admissions: ' + ', '.join(f'{key}={len(output[key])}' for key in ('owned', 'opponents', 'trainerTowerOpponents')))
+    print('Pokemon admissions: ' + ', '.join(f'{key}={len(output[key]["species"])}' for key in ROSTERS))
 
 
 if __name__ == '__main__':

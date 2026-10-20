@@ -12,6 +12,9 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse
 import ui_tiles as pixels
+from presentation_atlas import pack_pages
+from PIL import Image
+import io
 import json
 import os
 import pathlib
@@ -287,15 +290,23 @@ def convert( sources):
                    'PrintTimeOnCard','SetPlayerCardData','SetDataFromTrainerCard','DrawStarsAndBadgesOnCard','CreateTrainerCardTrainerPic']:
         match=re.search(r'^static [^;\n]+ '+symbol+r'\([^;\n]*\)\n\{',code,re.M)
         if match is None: raise ValueError('Missing source function '+symbol)
-    outputs['trainer-card.json']=canonical(dict(schemaVersion=2,
-        assets=assets,texts=texts,layout=layout,rules=rules))
-    outputs['manifest.json']=canonical(dict(schemaVersion=2,
+    atlas_outputs, atlas_rows, pages = pack_pages(
+        [(asset['id'], Image.open(io.BytesIO(outputs[asset['texturePath']])))
+         for asset in assets], 'cards', width=726)
+    # The original logical IDs, geometry, placements and palette pixels survive.
+    # Only exact RGBA duplicates share a region, including RGB under alpha zero.
+    outputs = atlas_outputs
+    assets = [dict(asset, texturePath=row['texturePath'], region=row['region'])
+              for asset, row in zip(assets, atlas_rows)]
+    outputs['trainer-card.json']=canonical(dict(schemaVersion=3,
+        assets=assets,pages=pages,texts=texts,layout=layout,rules=rules))
+    outputs['manifest.json']=canonical(dict(schemaVersion=3,
         inputCount=len(sources),assetCount=len(assets),
         outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
 
 
-def import_content(raw, out, repository=None, lock_path=None):
+def import_content(raw, out, repository=None, lock_path=None, check=False):
     raw,out=safe(raw),safe(out)
     if raw.resolve().is_relative_to(out.resolve()) or out.resolve().is_relative_to(raw.resolve()):
         raise ValueError('Raw and output directories must be disjoint')
@@ -306,6 +317,18 @@ def import_content(raw, out, repository=None, lock_path=None):
     lock=load_lock(lock_path)
     sources=read_sources(lock,raw,repository)
     outputs=convert(sources)
+    document = json.loads(outputs['trainer-card.json'])
+    retired = [safe(out, asset['id'] + '.png') for asset in document['assets']]
+    if any(path.exists() and not path.is_file() for path in retired):
+        raise ValueError('Retired Trainer Card output is not a regular file')
+    if check:
+        for relative, expected in outputs.items():
+            target = safe(out, relative)
+            if not target.is_file() or target.read_bytes() != expected:
+                raise ValueError('Generated Trainer Card differs: ' + relative)
+        if any(path.exists() for path in retired):
+            raise ValueError('Retired standalone Trainer Card PNG remains')
+        return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs),checked=True)
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
@@ -317,6 +340,11 @@ def import_content(raw, out, repository=None, lock_path=None):
         target.parent.mkdir(parents=True,exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
+    # Only this importer's former logical PNG names are retired. Unrelated files
+    # are never inferred from an output directory or an untrusted old manifest.
+    for old in retired:
+        if old.is_file():
+            old.unlink()
     return dict(profile=PROFILE,inputCount=len(sources),outputCount=len(outputs))
 
 
@@ -326,8 +354,9 @@ def main():
     parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/ui/trainer-card')
     parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/recipes/source/fetch-trainer-card.lock.json')
+    parser.add_argument('--check',action='store_true')
     args=parser.parse_args()
-    print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock),sort_keys=True))
+    print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock,args.check),sort_keys=True))
 
 
 if __name__=='__main__': main()

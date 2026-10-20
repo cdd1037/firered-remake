@@ -4,6 +4,7 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from game_pokemon_admissions import resolve_admissions
 
 from item_source import ItemSource
 from item_catalog import inventory_item, item_json
@@ -67,7 +68,7 @@ def generate(reference, dependency):
     canonical = d['content/generated/data/pokemon/canonical/catalog.json']
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     moves = {m['id']['value'][5:]: m for m in d['content/generated/data/services/metronome-moves.json']['moves']}
-    admitted = {row['id']['value'][5:] for row in d['data/game-pokemon.json']['trainerTowerOpponents']}
+    admitted = {row['id']['value'][5:] for row in resolve_admissions(d['data/game-pokemon.json'])['trainerTowerOpponents']}
 
     defs = {}
     for path in ['include/constants/species.h', 'include/constants/moves.h', 'include/constants/items.h',

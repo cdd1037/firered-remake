@@ -35,6 +35,9 @@ public sealed class TanobyCompletionTests : WildBattleFixture
         CollectionAssert.AreEqual(PressOrder.ToArray(), loaded.State.TanobyCompletion!.SwitchBoulderIds.ToArray());
 
         var resumed = CampaignSession.RestoreCurrent(content, loaded.State, loaded.Generation);
+        Assert.IsTrue(resumed.CanOpenFieldMenu, "Permanent puzzle progress must not own the field callback.");
+        Assert.IsTrue(resumed.CanEditOptions);
+        Assert.AreEqual(resumed.State.Party.Length > 1, resumed.CanReorderFieldParty);
         var saved = SaveCodec.Encode(resumed.State, resumed.Revision, resumed.RulesVersion, content.ContentVersion);
         var rewritten = JsonNode.Parse(saved)!;
         Assert.IsFalse(rewritten["Payload"]!["TanobyCompletion"]!.AsObject().ContainsKey("SourceSha256"));

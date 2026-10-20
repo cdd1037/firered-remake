@@ -40,8 +40,9 @@ public partial class CampaignView
             return false;
         }
         var after = _session.State;
-        if (before.World.Player.MapId != after.World.Player.MapId) return true;
-        bool moved = before.World.Player.X != after.World.Player.X || before.World.Player.Y != after.World.Player.Y;
+        bool changedMap = before.World.Player.MapId != after.World.Player.MapId;
+        if (changedMap && CampaignFieldMovementTiming.ConnectedStepOrigin(before,after,_catalog.ConnectedFieldMaps) is null) return true;
+        bool moved = changedMap || before.World.Player.X != after.World.Player.X || before.World.Player.Y != after.World.Player.Y;
         bool moving = slope is null ? command.Kind == "move" : slope.Action == CyclingRoadAction.Move;
         int frames = FieldDirectionCadence.ActionFrames(before.IsCycling, moved, command.Kind == "turn", _fieldStepTicks, slope?.Action);
         _fieldDirections.Complete(true, frames, moving);

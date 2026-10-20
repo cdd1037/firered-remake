@@ -12,6 +12,16 @@ sys.path.insert(0,str(ROOT/'scripts/lib'))
 import ui_tiles
 
 class TrainerCardPhotoImportTests(unittest.TestCase):
+    @staticmethod
+    def asset_pixels(identity):
+        directory = ROOT/'content/generated/ui/trainer-card'
+        document = json.loads((directory/'trainer-card.json').read_bytes())
+        row = next(asset for asset in document['assets'] if asset['id'] == identity)
+        region = row['region']
+        with Image.open(directory/row['texturePath']) as page:
+            return page.convert('RGBA').crop((region['x'], region['y'],
+                region['x']+region['width'], region['y']+region['height'])).tobytes()
+
     def test_source_sticker_pixels_and_star(self):
         raw=Image.open(RAW/'graphics/trainer_card/stickers.png')
         data=raw.tobytes()
@@ -20,11 +30,11 @@ class TrainerCardPhotoImportTests(unittest.TestCase):
                 pal=ui_tiles.palette((RAW/f'graphics/trainer_card/stickers{tier}.pal').read_bytes())
                 expected=bytes(v for y in range(16) for x in range(16)
                     for v in (*pal[data[(kind*16+y)*16+x]],255 if data[(kind*16+y)*16+x] else 0))
-                actual=Image.open(ROOT/f'content/generated/ui/trainer-card/sticker-{kind}-{tier}.png').convert('RGBA').tobytes()
+                actual=self.asset_pixels(f'sticker-{kind}-{tier}')
                 self.assertEqual(expected,actual)
         tiles=ui_tiles.tile_list((RAW/'graphics/trainer_card/tiles.png').read_bytes())
         expected=ui_tiles.rgba(tiles[143],ui_tiles.palette((RAW/'graphics/trainer_card/star.pal').read_bytes()))
-        self.assertEqual(expected,Image.open(ROOT/'content/generated/ui/trainer-card/star.png').convert('RGBA').tobytes())
+        self.assertEqual(expected,self.asset_pixels('star'))
 
     def test_original_printer_payment_tint_flash_and_snapshot_order(self):
         data=json.loads((ROOT/'content/generated/data/story.json').read_text())['Compilation']

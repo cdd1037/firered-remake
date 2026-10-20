@@ -1,10 +1,10 @@
 # 图鉴栖息地、分布与大小
 
-来源仍为 pret/pokefirered 固定提交 `037335f4c725d7c9aecdac87066f2002b4bd7e14`。本轮扩展同一个 `pokedex-menu.json`（schema 4）及 `PretPokedexMenu`，不新增平行物种目录，不改 seen/caught、全国图鉴条件、库存、RNG 或存档。
+来源仍为 pret/pokefirered 固定提交 `037335f4c725d7c9aecdac87066f2002b4bd7e14`。使用同一个 `pokedex-menu.json`（schema 4）及 `PretPokedexMenu`，不新增平行物种目录，不改 seen/caught、全国图鉴条件、库存、RNG 或存档。
 
 ## 栖息地路径
 
-开始菜单 POKéDEX 现在先到目录。九个类别按 `src/data/pokemon/pokedex_categories.h` 的顺序；未解锁类别为横线，不可打开。每页最多四种，只保留已见且当前图鉴范围允许的物种；全部未见的页跳过。原始页组索引与显示页码分开保留，不把不同源页合并。左右在页内选择，到边缘翻到前/后已解锁页；不循环。Enter 打开资料，Backspace 回原页与游标。
+开始菜单 POKéDEX 先到目录。九个类别按 `src/data/pokemon/pokedex_categories.h` 的顺序；未解锁类别为横线，不可打开。每页最多四种，只保留已见且当前图鉴范围允许的物种；全部未见的页跳过。原始页组索引与显示页码分开保留，不把不同源页合并。左右在页内选择，到边缘翻到前/后已解锁页；不循环。Enter 打开资料，Backspace 回原页与游标。
 
 目录末项 SEARCH / NUMERICAL 打开原来的六种排序（全国编号仍受真实条件限制）。数值列表直接进入资料；四种固定搜索结果先进入对应栖息地页，再进入资料。由搜索进入栖息地时，退出恢复原排序、原结果列表与原游标。搜索取消也保留原状态。
 
@@ -18,7 +18,7 @@
 
 A／B／START／方向键 glyph 来自 `sKeypadIcons` 与 `keypad_icons.png`，独立裁切，不重新设计字体。键盘映射仍是 Enter／Backspace／Tab／方向键。当前既有数值列表／搜索排序布局及部分文案保留；此工作不声称整个目录与原作滚动列表逐像素相同。
 
-翻页 shader 逐列使用原 `sDexScreenPageTurnColumns[10][30]`，不做平滑水平缩放代替原 tile-column 变换。右翻先收缩旧页，再换源页并淡入；左翻先淡出旧页，再准备前页展开，转场期间拦截浏览输入。资料展开／收起用原 0–6 级 tile-space 边框几何，末级固定为 (0,2,28,14)，只使用表现时钟，不改变 state／revision／RNG。淡出／淡入使用原 palette[7]、5-bit 整数混色，以及 `palette.c` 的 delta=2、BG/OBJ交替与结束等待所导出的23帧斜坡；每侧表现阶段合计33帧。原状态机的空白帧／零幅度淡变等待未全部逐帧复演，GPU shader 在实际窗口上的渲染、完整原作节奏与视觉验收仍须单独检查，不能以资源像素一致或 headless 检查代替。
+翻页 shader 逐列使用原 `sDexScreenPageTurnColumns[10][30]`，不做平滑水平缩放代替原 tile-column 变换。右翻先收缩旧页，再换源页并淡入；左翻先淡出旧页，再准备前页展开，转场期间拦截浏览输入。资料展开／收起用原 0–6 级 tile-space 边框几何，末级固定为 (0,2,28,14)，只使用表现时钟，不改变 state／revision／RNG。淡出／淡入使用原 palette[7]、5-bit 整数混色，以及 `palette.c` 的 delta=2、BG/OBJ交替与结束等待所导出的23帧斜坡；每侧表现阶段合计33帧。原状态机的空白帧／零幅度淡变等待未全部逐帧复演，受控原生翻页／缩放已单独检查，范围见[验证](validation.md)；这不等于完整原作节奏或所有页面逐像素验收，也不能以资源像素一致或 headless 检查代替。
 
 ## 分布与共享区域图集
 
@@ -28,57 +28,32 @@ A／B／START／方向键 glyph 来自 `sKeypadIcons` 与 `keypad_icons.png`，�
 
 炎帝／雷公／水君先核对源初始伙伴变量。活动位置来自已有 `CampaignSession.State.Roamer` 及 `CelioRoamerMaps`／`MapDefinition` 权威映射；未初始化、被捕获或击败后的 inactive 状态均无标记。读取不推进移动、抽样、RNG 或任何命令。图鉴页在进入分布时构造一次只读投影并缓存；每帧只画已选区域和唯一标记，不重扫物种集合或世界地图。
 
-原八幅区域图、79个区域坐标和七种椭圆遮罩均来自固定源文件。遮罩按原 OBJ-window 合成：前景系数12/16、背景8/16，逐通道以5-bit计算并饱和，不以普通75%透明度近似。`AREA UNKNOWN` 的原88×16椭圆按原灰度4bpp反色规则转换。88幅已解析图像打包为单张256×144 RGBA无损图集 `area-atlas.png`，3105字节；各窗口和标记使用不可变裁切坐标。旧88张独立PNG经完整RGBA一致性检查后移除。地图及遮罩的像素核对不等于整个页面转场、字体、边框与控制图标的原生逐像素验收。
+原八幅区域图、79个区域坐标和七种椭圆遮罩均来自固定源文件。遮罩按原 OBJ-window 合成：前景系数12/16、背景8/16，逐通道以5-bit计算并饱和，不以普通75%透明度近似。`AREA UNKNOWN` 的原88×16椭圆按原灰度4bpp反色规则转换。88幅已解析图像打包为单张256×144 RGBA无损图集 `area-atlas.png`；各窗口和标记使用不可变裁切坐标。地图及遮罩的像素核对不等于整个页面转场、字体、边框与控制图标的原生逐像素验收。
 
 钓鱼采用明确的数组边界修正（见[原作行为改进](original-behavior-improvements.md)）：固定源 `IsSpeciesOnMap` 未定义 BUGFIX 时，把10项钓鱼数组按 `LAND_WILD_COUNT=12` 读取；本项目严格读取 `FISH_WILD_COUNT=10`，超长或短缺源表直接拒绝。本项目不读取越界的第11、12项，也不把无法从钓鱼数组定义取得的内存值导入为分布标记。
 
-## 验证
+## 转场所有权与共享图集约束
 
-`PokedexHabitatTests` 覆盖九类顺序、386种唯一分区、首源页种类顺序、未见页跳过、同页全国门禁、非法 seen/caught 拒绝、捕获大小门禁、原始有符号变换及单/四种页面坐标。Python 导入器已验证重复转换输出相同且与 generated 一致。最终串行全解决方案构建通过，0 warnings／0 errors；当前 `FullyQualifiedName~Pokedex` 内容筛选30/30通过，无失败或跳过。
+翻页和缩放由 process 驱动的 60 Hz 表现时钟推进；Help 暂停时钟，返回后不补算墙钟时间。屏幕复制 `ColorRect` 只在实际图鉴绘制分支可见，不能在 Help 或其他屏幕上继续变换像素。重置／关闭菜单（包括 Tab）立即取消待执行的翻页／缩放回调并隐藏覆盖层。键盘、鼠标和肩键都遵循同一转场锁；HELP、LR、L=A 模式见[输入与 Help](button-mode-help.md)。
 
-分布维护测试 `PokedexAreaTests` 包含8项：源坐标/图集边界、已见未捕获门禁、重复楼层、赠送/化石/静态物种未知区域、逐岛门禁和上下偏移、Altering Cave选择与回退、初始伙伴/活动漫游位置、钓鱼来源与恶意裁切拒绝。这8项已包含在上述30项通过结果内。
+缩放框右边保持源 `DexScreen_DexPageZoomEffectFrame` 的 `left + 1 + width` tile 位置。Godot 负宽度只翻转 UV，不移动矩形原点，不能再给右边框添加 8 像素。Shader 列偏移按实际屏幕跨度换算，不把 8 个逻辑像素当成物理像素。mini-page 四角和类别图标 padding 的源 index 0 必须透明，才能露出底层窗口。
 
-2026-10-16，`python3 scripts/checks/test-pokedex-area-import.py` 5/5通过：八幅地图完整RGBA、全部79个标记遮罩及5-bit混色、原未知区域椭圆、单文件图集可重复生成、FireRed/LeafGreen隔离、九张Altering Cave源表，以及钓鱼第11项/12项尺寸变异拒绝。独立打包前后88幅完整RGBA比对也通过，包括透明像素内RGB。没有以修改golden追随实现。
+`sMenuInfoIcons`／`sKeypadIcons` 的 offset 是 32-byte 4bpp tile 序号，不是 PNG 逐行像素数组的 `offset × 64`。独立检查先打包 4bpp tile-memory，再按 `src/blit.c` 的 nibble-address 公式读取全部属性徽章和控制 glyph；PSYCHIC 的 `0x84` 另固定锚定原 PNG `(32,64)`，防止实现和 oracle 共享错误寻址假设。资源更新后须重启运行窗口，清除已有纹理缓存。
 
-
-同日隔离 Godot probe 以最终产品 DLL 执行27项输入/绘制检查，全部通过且日志无 ERROR／Exception／WARNING：目录→栖息地→资料→分布、资料正文和分布底栏的真实鼠标入口、Tab叫声令牌、未捕获大小隐藏、已捕获变换、数值/搜索返回位置、全国门禁、类别与页边界，以及 state／revision／RNG 不变。使用 Godot 4.7.2 .NET、runtime 10.0.12，product MVID `3bd403b9-1b78-4263-a344-c05e111fbbb9`。显示为 headless，音频为 Dummy，音频进程在本检查中暂停，因此本次不新增PCM或真实声卡输出证据。实际窗口截图与完整原作视觉/转场尚未验收。
-
-复现命令（工程根）：
+## 再生成与验证
 
 ```sh
-source scripts/env.sh
-dotnet test tests/Game.Content.Tests/Game.Content.Tests.csproj --no-build --no-restore \
-  --filter 'FullyQualifiedName~Pokedex' \
-  --logger 'trx;LogFileName=pokedex-habitat-area-final.trx' --results-directory .toolhome/test-results
+python3 scripts/imports/presentation/import-pokedex-menu.py
 python3 scripts/checks/test-pokedex-area-import.py
-dotnet build /tmp/firered-pokedex-habitat-ui/PokedexProbe.csproj -m:1 -nr:false -p:UseSharedCompilation=false
-AUDIT_ROOT="$PWD" FIRERED_AUDIO_BACKEND=synth FIRERED_AUDIO=1 "$GODOT" \
-  --headless --path /tmp/firered-pokedex-habitat-ui --audio-driver Dummy
+python3 scripts/checks/test-pokedex-visual-import.py
 ```
 
-隔离 probe 与日志在 `/tmp/firered-pokedex-habitat-ui/`，不作为运行资源或替代维护测试提交。早先叫声切片的 probe 和失败日志保持在原目录，未覆盖。
+- `PokedexHabitatTests`：源类别／物种唯一分区、原始页顺序、未见跳页、全国门禁、非法 seen/caught 拒绝、捕获大小与有符号变换。
+- `PokedexAreaTests`：源坐标／裁切边界、未知区域、重复楼层、逐岛门禁、Altering Cave、漫游位置和钓鱼边界。
+- `PokedexVisualTests`：双调色板图集、类别／属性、全部页面的 0–6 级缩放几何。
+- `PokedexTransitionClockTests`：四种转场程序、Help 暂停／恢复、关闭／取消、分块无关逻辑时间和非法输入。
+- 两个 Python 检查分别用源像素／tile-memory 验证地图、遮罩、5-bit 混色、未知区域反色、徽章／控制图标、tile H/V 翻转、透明 padding、翻页列和可重复生成；恶意裁切及钓鱼第 11／12 项不能被导入。
 
+导入器支持 `--raw`／`--out` 指定隔离输入输出；它没有 `--check` 参数，字节一致性和独立像素检查由上述维护测试执行。
 
-## 2026-10-16 原生视觉资源补充
-
-`python3 scripts/checks/test-pokedex-visual-import.py` 4/4 通过：属性徽章 tile-memory 偏移／调色板、两套圆形 tilemap 全像素及 H/V 翻转、原控制 glyph 尺寸与完整像素、翻页列向量和 atlas 可重复生成。此检查通过 `PokedexVisualImportTests` 加入普通资源导入测试项目。既有分布导入检查仍为 5/5。
-
-内容项目 `FullyQualifiedName~Pokedex` 32/32 通过（无失败或跳过），新增 `PokedexVisualTests` 覆盖类别／属性／双调色板图集与全部页面位置的 0–6 级缩放边界。日志 `.toolhome/test-results/pokedex-native-visuals.trx`。本次首次整解构建被同时进行中的其他表现文件编译错误阻断，保留 `/tmp/pokedex-native-build.log`，不把该构建称为成功；随后整合构建／原生窗口结论应按实际验证另行记录。新增 145 个视觉裁切共用一张无损图集，运行时仍只读取 generated。
-
-
-新隔离 probe `/tmp/firered-pokedex-native-ui/` 使用已复制的整合产品程序集快照（不回编产品）完成 34 项检查，Godot 4.7.2 .NET／runtime 10.0.12，MVID `75b14c6f-5335-414c-8454-ebc32b26e09f`。覆盖实际共享小图标、资料展开、双向源页翻转与输入抑制，加上先前导航／门禁／state/revision/RNG检查。最终 `run-native-final.log` 无 ERROR／Exception／WARNING；首轮通过检查后出现 fixture 跳过 `_Ready` 导致的控制器事件退订错误，原日志保留，修正 fixture 对称安装生命周期事件后复测通过。显示为 headless，音频为 Dummy 且音频进程暂停，peak=0、frames=0；不提供GPU像素或真实音频证据。随后修正shader列偏移的画布缩放公式（使用实际屏幕跨度，而非8个物理像素），此公式仍须实际窗口验证。该34项结果对应淡变扩展前的程序集；23帧淡变扩展的最新构建／运行结果应另行记录，不追溯覆盖此快照。
-
-最终补充：整合解决方案构建已通过（0 warnings／0 errors，`/tmp/firered-presentations-integrated-build.log`）。最新导入检查为 5/5，新增 mini-page 四角及类别图标 padding 的 source index0 全像素透明度检查；这两类是覆盖底层的窗口，不能把 index0 当不透明调色板颜色。最新图集已原子再生成。以重新复制的程序集 MVID `5518e114-c267-4db6-91cb-3a5359964505`、最新图集执行 `/tmp/firered-pokedex-native-ui/run-fade-alpha-final.log`，34项通过，日志无 ERROR／Exception／WARNING。环境仍是 Godot 4.7.2 .NET、runtime10.0.12、headless、Dummy，peak=0、frames=0；原窗口GPU像素和音频听感边界不变。
-
-最终探针命令（工程根；probe 的 Reference 全部指向独立复制目录，不触发产品回编）：
-
-```sh
-source scripts/env.sh
-dotnet build /tmp/firered-pokedex-native-ui/PokedexProbe.csproj --no-restore \
-  -m:1 -nr:false -p:UseSharedCompilation=false
-AUDIT_ROOT="$PWD" FIRERED_AUDIO_BACKEND=synth FIRERED_AUDIO=1 "$GODOT" \
-  --headless --path /tmp/firered-pokedex-native-ui --audio-driver Dummy
-```
-
-
-原生 Summary 检查发现 Mewtwo 错显 POISON 后修复共享图集：`sMenuInfoIcons`／`sKeypadIcons` 的 offset 是32-byte 4bpp tile序号，不能以 offset×64 索引 PNG 的逐行像素数组。两条导入路径现按 tile 坐标裁切；PSYCHIC 的0x84对应原PNG (32,64)。此前像素检查复用了错误寻址假设，未能发现此错误，不能用此前通过结果为错误图像背书。检查现独立打包4bpp tile-memory，并按固定 `src/blit.c` 的 nibble-address 公式读取，覆盖全部18徽章与13控制 glyph，并另设 PSYCHIC 的明确图像坐标锚点。重新导入后 visual5/5、area5/5通过；放大查看 PSYCHIC 实际字样正确。14:41 的图集替换不改变 C#，运行窗口须重启以清除旧纹理缓存。
+当前实际控制器检查覆盖翻页／缩放的 Help 暂停、覆盖层所有权、退出取消和各肩键适配入口，结果集中在[验证](validation.md)。其受控状态通过严格存档校验，不推进 state／revision／RNG，不创建玩家存档。数值列表／搜索布局、原状态机部分空白帧和零幅度淡变仍是明确的逼近；不是所有消费者、语言、实体控制器、完整自然通关或真实音频验收。

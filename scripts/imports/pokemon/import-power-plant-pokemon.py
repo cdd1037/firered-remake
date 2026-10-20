@@ -6,6 +6,7 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from game_pokemon_admissions import resolve_admissions
 
 from item_source import ItemSource
 from item_catalog import inventory_item, item_json
@@ -219,7 +220,7 @@ def generate(reference,dependency,raw=None):
   return json.loads(b)
  d={p:dep(p) for p in DEPENDENCIES};canonical=d['content/generated/data/pokemon/canonical/catalog.json']
  species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
- owned={row['id']['value'][5:] for row in d['data/game-pokemon.json']['owned']}
+ owned={row['id']['value'][5:] for row in resolve_admissions(d['data/game-pokemon.json'])['owned']}
  need(set(SPECIES) <= owned, 'Power Plant species must be admitted by the current game')
  for s in SPECIES:
   need(not metadata[s]['sourceEvolutions'] and not species[s]['evolutions'],'Terminal added species')

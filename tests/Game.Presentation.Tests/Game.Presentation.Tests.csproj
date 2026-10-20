@@ -24,6 +24,8 @@
     <Compile Include="../../src/Game.Godot/OpeningNidoranPresentation.cs" Link="OpeningNidoranPresentation.cs" />
     <Compile Include="../../src/Game.Godot/OpeningTitlePresentation.cs" Link="OpeningTitlePresentation.cs" />
     <Compile Include="../../src/Game.Godot/NamingScreenPresentation.cs" Link="NamingScreenPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/SummaryPageTransition.cs" Link="SummaryPageTransition.cs" />
+    <Compile Include="../../src/Game.Godot/PokedexTransitionClock.cs" Link="PokedexTransitionClock.cs" />
     <Compile Include="../../src/Game.Godot/OpeningPortraitTransition.cs" Link="OpeningPortraitTransition.cs" />
     <Compile Include="../../src/Game.Godot/ItemfinderPresentation.cs" Link="ItemfinderPresentation.cs" />
     <Compile Include="../../src/Game.Godot/CaptureBallPresentation.cs" Link="CaptureBallPresentation.cs" />

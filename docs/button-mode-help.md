@@ -21,37 +21,20 @@
 - 打开后暂停游戏和表现回调，累计游玩时间继续；共享音频宿主仍继续播放。BGM 在现有 fade/cry gain 上乘 0.5，关闭恢复，不重启曲目。图鉴遵守原作“不额外降低 Help 音量”例外。共享宿主 reset/关闭清除 Help gain；合成算法未改变。
 - 使用现有源字体，问答/描述统一按真实字宽换行；测试穷举生成问答和最长替换姓名，保证字体行距与面板边界。界面是已有字体和绘图部件构成的布局，并非声称逐像素复原原 Help 背景。
 
-## 验证
+## 共享 Summary 路由与绘制锚点
 
-- `Game.Presentation.Tests` 的 `ButtonModeHelpTests` / `OptionEditingTests`：11 项通过，覆盖混合物理来源、模式重映射、断连、菜单层级、分页/中点/延迟、返回游标和全部导入文字边界。
-- `CampaignHelpTests` 检查第一次欢迎标志的单独事务、Save/Continue 与非 HELP 模式拒绝。
-- 实际 Godot 4.7.2 / .NET 10.0.12 的隔离 headless 输入探针验证 `_Input`→`_UnhandledInput`、共享音频宿主、Help 暂停与游玩计时、Diploma held-L=A、鼠标、失焦、断连和命名消费前松开。
-- Headless 使用 Dummy 音频；不代表真实扬声器听感通过。临时探针在工程外，普通项目不包含测试入口或额外运行依赖。
+LR 肩键通过同一个 active-Summary 分派器进入野外、PC、战斗和培育屋已有处理器，保留各自身份、退出、Egg、详情和转场锁。源依据为 `pokemon_summary_screen.c:IsPageFlipInput` 与 `party_menu.c` 的普通 Summary 入口，不新设分页规则或应用命令。学习替换、删除和 Reminder 候选是固定的 move-selection 页面：源 `PSS_MODE_SELECT_MOVE`／`PSS_MODE_FORGET_MOVE` 从 `PSS_PAGE_MOVES_INFO` 开始并锁住 moves，不因肩键增加分页。详情中的 Left/Right 也不离开当前选择。完整访问／淡变契约见[概要](summary-native-presentation.md)。
 
-## Bounded desktop check
+共享绘制遵循源精灵中心，而非给翻转图额外加宽高。Godot 4.7.2 的负尺寸只改变 UV：
 
-2026-10-16 13:52–13:55 UTC, existing cloud X11 desktop: Q opened the first-use greeting and accepted the source introduction flag command. Enter opened context topics, How do I do this opened a seven-row question list, Right paged seven and Enter opened a complete item-use answer. Backspace restored the same selected question and scroll; Q closed back to the unchanged field. Text fit the viewport in these observed paths. Native log includes actual SE_HELP_OPEN and SE_HELP_CLOSE dispatch; Dummy is not audible acceptance. Controlled test checkpoint and separate log `/workspace/shared/firered-pc-visual/help-inventory-native-1351.log`; no disk save of synthetic gameplay.
+- Easy Chat 矩形光标：两个 64×32 精灵中心为共享 X ± 32；右半左上角为共享 X，而非 X + 64。源 `easy_chat_3.c:CreateRedRectangularCursorSpritePair`。
+- Easy Chat 下箭头：中心 Y=156、尺寸 16，故 top=148，不是 164。源 `CreateVerticalScrollArrowSprites`。
+- Fame Checker 下箭头：中心 Y=100，故 top=92 加既有 bounce，不是 108 加 bounce。源 `fame_checker.c:FC_CreateScrollIndicatorArrowPair` 及导入滚动偏移。
 
-## Summary shoulder routing correction — 2026-10-19
+Party 选择器的绘制与命中共用引擎无关几何；Storage 手部和 TM 光盘偏移仍为有意动画。每个共享 `DrawSetTransform` 路径在返回前恢复 identity。原生文字表面保留自己的 viewport／texture，按页面边界裁切，并使用当前行偏移；这些约束不要求替换字体、画布缩放或资源格式。
 
-The finite UI audit found that LR shoulders were consumed before live battle and
-Day-Care Summary input, while field/PC Summary already received them. The existing
-shoulder dispatcher now forwards Left/Right to each active Summary's existing
-handler, retaining its identity, exit, Egg and move-detail guards. It introduces
-no second paging rule or application command. Source authority is
-`pokemon_summary_screen.c:1055–1100` (`IsPageFlipInput`) and the normal Summary
-entry in `party_menu.c:3095–3106`.
+## 验证边界
 
-Replacement, deletion and Reminder candidate screens remain fixed move-selection
-pages and do not gain shoulder paging. Source `PSS_MODE_SELECT_MOVE` and
-`PSS_MODE_FORGET_MOVE` begin on `PSS_PAGE_MOVES_INFO` with locked moves
-(`pokemon_summary_screen.c:1002–1025`). Existing read-only/reordering move-detail
-handlers continue consuming Left/Right without leaving their selection.
+`ButtonModeHelpTests`／`OptionEditingTests` 检查混合物理来源、模式重映射、断连、菜单层级、中点滚动／分页／延迟、返回游标及所有导入文本边界。`CampaignHelpTests` 检查独立欢迎标志事务、Save/Continue 和非 HELP 模式拒绝。实际 `_Input`→`_UnhandledInput` 的适配、共享音频 gain、暂停／计时、鼠标、失焦、断连及命名消费前松开需要独立宿主检查。
 
-Validation: Godot product build passed with zero warnings/errors (23.96s);
-19 button/options/Summary presentation tests passed (118ms), and19 affected
-Application Summary/Day-Care/Help tests passed (8s). These tests exercise existing
-input owners and rules, not CampaignView shoulder routing itself; that integration
-was source/view-wiring reviewed. No executable host shoulder probe or native-window
-pass is claimed. The independent Day-Care Summary detail-entry and source navigation
-differences remain outside this narrow routing correction.
+原生 Help 代表路径、Summary／图鉴转场检查和六种负尺寸纹理／区域像素检查统一记在[验证](validation.md)。源坐标证明与引擎镜像行为证明互相独立。受控路径不覆盖每个实际消费者／实体手柄或完整 Help 背景逐像素一致；Dummy 音频不代表扬声器听感验收。临时探针在工程外，不成为运行入口或依赖。

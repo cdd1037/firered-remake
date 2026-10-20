@@ -7,6 +7,9 @@ public partial class CampaignView
     private readonly Dictionary<string, ImageTexture> _openingTextures = [];
     private readonly List<(string Text, string Portrait, int Message)> _openingPages = [];
     private int _openingPage;
+    // BG2 trainer art and the platform sprites share this source scene offset.
+    // Naming returns at +60; keep it until the outgoing trainer is invisible.
+    private int _openingPortraitOffsetX;
     private OpeningPortraitTransition? _openingPortraitTransition;
     private Action? _openingPortraitCompleted;
     private string _openingNext = "gender";
@@ -57,6 +60,7 @@ public partial class CampaignView
         _openingFrameRemainder += delta * 60;
         int frames = (int)_openingFrameRemainder; _openingFrameRemainder -= frames;
         _openingVisualFrame += frames;
+        if (_entryMode == "rival-choice") _openingPortraitOffsetX = Math.Min(60, _openingVisualFrame * 2);
         if (_openingPortraitTransition is { Complete: false } transition)
         {
             transition.AdvanceFrames(frames);
@@ -181,7 +185,13 @@ public partial class CampaignView
         }
     }
     private void BeginRivalNameChoices()
-    { _entryMode = "rival-choice"; _entryCursor = 0; _openingVisualFrame = 0; }
+    {
+        // Only the first question slides the trainer aside. NO/B and cancellation
+        // redraw the existing choices without replaying that motion.
+        bool repeat = _entryMode is "rival-confirm" or "rival-name";
+        _entryMode = "rival-choice"; _entryCursor = 0;
+        _openingVisualFrame = repeat ? 30 : 0; _openingPortraitOffsetX = repeat ? 60 : 0;
+    }
     private bool OpeningRivalChoiceKey(Key key)
     {
         if (_entryMode != "rival-choice") return false;
@@ -257,6 +267,9 @@ public partial class CampaignView
     private void BeginOpeningSpeech(string next, params (string Symbol, string Portrait)[] messages)
     {
         string? previous = _entryMode == "player-confirm" ? OpeningPlayerPortrait : null;
+        int previousOffsetX = _openingPortraitOffsetX;
+        // RememberRivalsName still belongs to the shifted rival scene.
+        _openingPortraitOffsetX = _entryMode == "rival-confirm" ? 60 : 0;
         bool showPlayer = _entryMode == "gender";
         _openingNidoran = null; _openingPortraitTransition = null; _openingPortraitCompleted = null;
         _openingText.Clear();
@@ -270,7 +283,8 @@ public partial class CampaignView
         if (_openingPages.Count == 0) throw new InvalidDataException("Opening speech has no pages.");
         ResetOpeningPrinter();
         if (previous is not null || showPlayer)
-            _openingPortraitTransition = new(previous, _openingPages[0].Portrait, previous is null ? 0 : 40);
+            _openingPortraitTransition = new(previous, _openingPages[0].Portrait, previous is null ? 0 : 40,
+                previousOffsetX, _openingPortraitOffsetX);
         QueueRedraw();
     }
     private void BeginOakIntroduction() => BeginOpeningSpeech("gender",
@@ -302,7 +316,10 @@ public partial class CampaignView
             {
                 ResetOpeningPrinter(_openingPages[_openingPage].Message == previousMessage);
                 if (previousPortrait != nextPortrait)
-                    _openingPortraitTransition = new(previousPortrait, nextPortrait, 40);
+                {
+                    _openingPortraitTransition = new(previousPortrait, nextPortrait, 40, _openingPortraitOffsetX, 0);
+                    _openingPortraitOffsetX = 0;
+                }
             }
             return;
         }
@@ -317,11 +334,12 @@ public partial class CampaignView
         }
         else { _entryMode = _openingNext; _entryCursor = 0; }
     }
-    private void DrawOpeningPortrait(string portrait, float offset = 0)
+    private void DrawOpeningPortrait(string portrait)
     {
         DrawTexture(_openingTextures["background"], Vector2.Zero);
-        DrawTexture(_openingTextures["platform"], new(72 + offset, 96));
-        DrawTexture(_openingTextures[portrait], portrait == "nidoran-f" ? new(88 + offset, 48) : new(88 + offset, 16));
+        DrawTexture(_openingTextures["platform"], new(72 + _openingPortraitOffsetX, 96));
+        DrawTexture(_openingTextures[portrait], portrait == "nidoran-f"
+            ? new(88 + _openingPortraitOffsetX, 48) : new(88 + _openingPortraitOffsetX, 16));
     }
     private bool DrawOpeningEntry()
     {
@@ -329,9 +347,9 @@ public partial class CampaignView
         if (_openingPortraitTransition is { Complete: false } transition)
         {
             DrawTexture(_openingTextures["background"], Vector2.Zero);
-            if (transition.PlatformVisible) DrawTexture(_openingTextures["platform"], new(72, 96));
+            if (transition.PlatformVisible) DrawTexture(_openingTextures["platform"], new(72 + transition.OffsetX, 96));
             if (transition.Portrait is { } portrait && transition.Alpha > 0)
-                DrawTexture(_openingTextures[portrait], new(88, 16), new Color(1, 1, 1, transition.Alpha));
+                DrawTexture(_openingTextures[portrait], new(88 + transition.OffsetX, 16), new Color(1, 1, 1, transition.Alpha));
             return true;
         }
         if (_entryMode == "title-exit")
@@ -362,7 +380,7 @@ public partial class CampaignView
         }
         if (_entryMode == "rival-choice")
         {
-            DrawOpeningPortrait("rival", Math.Min(60, _openingVisualFrame * 2));
+            DrawOpeningPortrait("rival");
             ItemMessageBox(_opening!.Pages("YourRivalsNameWhatWasIt", _entryPlayerName, _entryRivalName)[0]);
             if (_openingVisualFrame >= 30)
             {

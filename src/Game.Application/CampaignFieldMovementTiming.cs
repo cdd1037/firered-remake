@@ -13,6 +13,42 @@ public readonly record struct CampaignFieldMovementPose(double Fraction,int Draw
 public static class CampaignFieldMovementTiming
 {
     public const int LedgeFrames=32;
+    public static (int X,int Y)? ConnectedStepOrigin(CampaignState before,CampaignState after,
+        IReadOnlyDictionary<Game.Domain.Ids.MapId,ConnectedFieldMap>? maps)=>
+        // Connected Surf mounting/dismounting already finished its own jump.
+        // Entry scripts likewise retain ownership of any authored motion.
+        before.SurfEffect is not null||!after.Motions.IsEmpty?null:
+            ConnectedStepOrigin(before.World.Player,after.World.Player,after.FieldTransition,maps);
+
+    // A connected map loads at the start of a tile step, not after all 16 pixels.
+    // Rebase the old pose into the destination's coordinates so the ordinary
+    // player-following camera retains the same screen origin at that boundary.
+    // Warp receipts, script-moved endpoints and unrelated connections do not qualify.
+    public static (int X,int Y)? ConnectedStepOrigin(TilePosition before,TilePosition after,
+        FieldTransitionReceipt? receipt,IReadOnlyDictionary<Game.Domain.Ids.MapId,ConnectedFieldMap>? maps)
+    {
+        if(receipt is not {Cause:FieldTransitionCause.ConnectedEdge}||
+            receipt.From!=before||receipt.To!=after||before.MapId==after.MapId||
+            maps is null||!maps.TryGetValue(before.MapId,out var source)||
+            !maps.TryGetValue(after.MapId,out var destination)||
+            before.X<0||before.Y<0||before.X>=source.Width||before.Y>=source.Height)return null;
+        foreach(var connection in source.Connections.Where(c=>c.DestinationMapId==after.MapId))
+        {
+            var (dx,dy)=connection.Direction switch
+            {
+                Direction.North=>(0,-1),Direction.South=>(0,1),
+                Direction.West=>(-1,0),Direction.East=>(1,0),
+                _=>(0,0)
+            };
+            var next=ConnectedFieldCoordinates.Resolve(maps,before.MapId,before.X+dx,before.Y+dy);
+            if(next is null||next.Value.Map!=after.MapId||next.Value.X!=after.X||next.Value.Y!=after.Y)continue;
+            var origin=ConnectedFieldCoordinates.Origin(source,destination,connection);
+            if(before.X+dx-origin.X!=after.X||before.Y+dy-origin.Y!=after.Y)continue;
+            return(before.X-origin.X,before.Y-origin.Y);
+        }
+        return null;
+    }
+
     public static CampaignFieldStepTiming Resolve(CampaignState state,CampaignCommand command,ICampaignCatalog? catalog,CampaignState? after=null)
     {
         var p=state.World.Player;var direction=command.Direction;

@@ -237,7 +237,8 @@ public partial class CampaignView
         }
         if(start+4<rows)
         {
-            DrawTextureRectRegion(screen.Texture("easy-chat-scroll-indicator"),new(x-8,164,16,-16),new(0,0,16,16));
+            // Source sprite center Y=156; V-flip retains the same 16px bounds.
+            DrawTextureRectRegion(screen.Texture("easy-chat-scroll-indicator"),new(x-8,148,16,-16),new(0,0,16,16));
             if(words) DrawTextureRectRegion(screen.Texture("easy-chat-start-select-buttons"),new(204,152,32,8),new(0,8,32,8));
         }
     }

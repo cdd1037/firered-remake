@@ -125,7 +125,8 @@ public sealed class SourceMailScreen : IDisposable
         // Source two 64x32 OAMs are centered ±32; the right copy is horizontally flipped.
         var source = new Rect2(0, frame * 32, 64, 32);
         canvas.DrawTextureRectRegion(texture, new(center - new Vector2(64, 16), new Vector2(64, 32)), source);
-        canvas.DrawTextureRectRegion(texture, new(center + new Vector2(64, -16), new Vector2(-64, 32)), source);
+        // Godot's negative width flips UVs while retaining the rectangle origin.
+        canvas.DrawTextureRectRegion(texture, new(center + new Vector2(0, -16), new Vector2(-64, 32)), source);
     }
     public void Dispose()
     {

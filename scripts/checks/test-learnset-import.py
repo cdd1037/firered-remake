@@ -4,6 +4,7 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[2] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from game_pokemon_admissions import resolve_admissions
 
 import importlib.util
 import json
@@ -169,7 +170,7 @@ class LearnsetImportTests(unittest.TestCase):
     def test_late_encounters_use_admitted_canonical_learnsets(self):
         document = json.loads((GENERATED / 'data/pokemon/canonical/catalog.json').read_bytes())
         species = {row['id']['value']: row for row in document['species']}
-        owned = {row['id']['value'] for row in json.loads((ROOT / 'data/game-pokemon.json').read_bytes())['owned']}
+        owned = {row['id']['value'] for row in resolve_admissions(json.loads((ROOT / 'data/game-pokemon.json').read_bytes()))['owned']}
         raw_learnsets = source_learnsets()
         symbols = {'SPECIES_ENTEI', 'SPECIES_RAIKOU', 'SPECIES_SUICUNE', 'SPECIES_MEWTWO'}
         wild = json.loads((RAW / 'src/data/wild_encounters.json').read_bytes())

@@ -22,6 +22,7 @@ public sealed class PretTrainerCard
         .Concat(from kind in Enumerable.Range(0,2) from tier in Enumerable.Range(1,4) select "sticker-"+kind+"-"+tier).ToArray();
     private readonly ImmutableDictionary<string, byte[]> outputBytes;
     public ImmutableArray<TrainerCardAsset> Assets { get; }
+    public ImmutableArray<TrainerCardPage> Pages { get; }
     public TrainerCardLayout Layout { get; }
     public TrainerCardTexts Texts { get; }
     public TrainerCardRules Rules { get; }
@@ -31,10 +32,10 @@ public sealed class PretTrainerCard
     public string TrainerCardSourcePath => Path.Combine(GeneratedDirectory,"trainer-card.json");
     public string ManifestSourcePath => Path.Combine(GeneratedDirectory,"manifest.json");
 
-    private PretTrainerCard(string directory, ImmutableArray<TrainerCardAsset> assets,
+    private PretTrainerCard(string directory, ImmutableArray<TrainerCardAsset> assets, ImmutableArray<TrainerCardPage> pages,
         JsonElement document, ImmutableDictionary<string,byte[]> outputs, IReadOnlyDictionary<string,string> sourceTexts)
     {
-        GeneratedDirectory=directory; Assets=assets; TrainerCard=document; outputBytes=outputs;
+        GeneratedDirectory=directory; Assets=assets; Pages=pages; TrainerCard=document; outputBytes=outputs;
         var options=ContentJson.CreateOptions();
         Layout=ContentJson.ParseStrict<TrainerCardLayout>(document.GetProperty("layout").GetRawText(),options);
         var texts=ContentJson.ParseStrict<TrainerCardTexts>(document.GetProperty("texts").GetRawText(),options);
@@ -68,7 +69,7 @@ public sealed class PretTrainerCard
         }
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
         var m=manifest.RootElement;
-        Require(m.GetProperty("schemaVersion").GetInt32()==2 && m.GetProperty("assetCount").GetInt32()==AssetIds.Length,
+        Require(m.GetProperty("schemaVersion").GetInt32()==3 && m.GetProperty("assetCount").GetInt32()==AssetIds.Length,
             "Trainer Card generated manifest identity differs.");
 
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
@@ -77,21 +78,36 @@ public sealed class PretTrainerCard
             var path=entry.GetProperty("path").GetString()!;
             Require(outputs.TryAdd(path,ReadPinned(directory,path)),"Duplicate Trainer Card output.");
         }
-        Require(outputs.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds.Select(s => s + ".png")
-            .Append("trainer-card.json")),"Trainer Card output inventory differs.");
+        Require(outputs.ContainsKey("trainer-card.json"),"Trainer Card document missing.");
         using var document=JsonDocument.Parse(outputs["trainer-card.json"]);var a=document.RootElement;
-        Require(a.GetProperty("schemaVersion").GetInt32()==2 ,
+        Require(a.GetProperty("schemaVersion").GetInt32()==3 ,
             "Trainer Card document profile differs.");
         var assets=ContentJson.ParseStrict<ImmutableArray<TrainerCardAsset>>(a.GetProperty("assets").GetRawText(),ContentJson.CreateOptions());
-        Require(assets.Length==AssetIds.Length && assets.Select(v=>v.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds),
+        var pages=ContentJson.ParseStrict<ImmutableArray<TrainerCardPage>>(a.GetProperty("pages").GetRawText(),ContentJson.CreateOptions());
+        Require(!pages.IsDefaultOrEmpty && pages.Select(p=>p.TexturePath).Distinct(StringComparer.Ordinal).Count()==pages.Length &&
+            pages.All(p=>p.Width is >0 and <=1024 && p.Height is >0 and <=1024 &&
+                !string.IsNullOrWhiteSpace(p.TexturePath) && Path.GetFileName(p.TexturePath)==p.TexturePath &&
+                p.TexturePath.EndsWith(".png",StringComparison.Ordinal)),
+            "Trainer Card atlas page metadata differs.");
+        Require(outputs.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(pages.Select(p=>p.TexturePath).Append("trainer-card.json")),
+            "Trainer Card output inventory differs.");
+        Require(!assets.IsDefaultOrEmpty && assets.Length==AssetIds.Length &&
+            assets.Select(v=>v.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds),
             "Trainer Card asset inventory differs.");
+        var pageByPath=pages.ToDictionary(p=>p.TexturePath,StringComparer.Ordinal);
         foreach(var asset in assets)
         {
-            Require(asset.Width>0 && asset.Height>0 && (outputs[asset.TexturePath]).Length > 0,
+            Require(asset.Width>0 && asset.Height>0 && asset.TexturePath is not null &&
+                pageByPath.TryGetValue(asset.TexturePath,out var page) &&
+                asset.Region is {} region && region.X>=0 && region.Y>=0 &&
+                region.Width==asset.Width && region.Height==asset.Height &&
+                (long)region.X+region.Width<=page.Width && (long)region.Y+region.Height<=page.Height &&
+                outputs[asset.TexturePath].Length>0,
                 "Trainer Card asset metadata differs.");
-
         }
-        var result=new PretTrainerCard(directory,assets,a.Clone(),outputs.ToImmutable(),sourceTexts??PretBattleText.Load(project));
+        Require(assets.Select(asset=>asset.TexturePath).ToHashSet(StringComparer.Ordinal).SetEquals(pageByPath.Keys),
+            "Trainer Card atlas page has no assets.");
+        var result=new PretTrainerCard(directory,assets,pages,a.Clone(),outputs.ToImmutable(),sourceTexts??PretBattleText.Load(project));
         Require(result.Layout.LogicalWidth==240 && result.Layout.LogicalHeight==160 && result.Layout.FontId==2 &&
             result.Layout.Badges.Length==8 && result.Layout.StatTextRgb.Length==3 && result.Layout.StatShadowRgb.Length==3 && result.Rules.MaximumSupportedStars==3 &&
             result.Rules.StickerVariables.SequenceEqual(new[] { "VAR_HOF_BRAG_STATE", "VAR_EGG_BRAG_STATE" }) &&
@@ -120,7 +136,9 @@ public sealed class PretTrainerCard
         return(Expand(r),Expand(g),Expand(b));
     }
     public TrainerCardAsset Asset(string id) => Assets.Single(a=>a.Id==id);
-    public byte[] ReadAssetTexture(string id) => [..outputBytes[Asset(id).TexturePath]];
+    /// <summary>Encoded page bytes; logical images are the asset's exact atlas region.</summary>
+    public byte[] ReadTexturePage(string texturePath) => Pages.Any(p=>p.TexturePath==texturePath)
+        ? [..outputBytes[texturePath]] : throw new ArgumentException("Unknown Trainer Card page.",nameof(texturePath));
 
     public static string FormatTrainerId(uint trainerId) => (trainerId & 0xffffu).ToString("D5",CultureInfo.InvariantCulture);
     public string FormatMoney(uint money)
@@ -146,7 +164,8 @@ public sealed class PretTrainerCard
 public sealed record TrainerCardPoint(int X,int Y);
 public sealed record TrainerCardRect(int X,int Y,int Width,int Height);
 public sealed record TrainerCardBadge(int Index,string Flag,string AssetId,int X,int Y);
-public sealed record TrainerCardAsset(string Id, string TexturePath, int Width, int Height, int X, int Y);
+public sealed record TrainerCardAsset(string Id, string TexturePath, int Width, int Height, int X, int Y, ImageRegion Region);
+public sealed record TrainerCardPage(string TexturePath, int Width, int Height);
 public sealed record TrainerCardTexts(string Name,string Id,string Money,string Currency,string Pokedex,string Time,
     string Colon,string HallOfFame,string LinkBattles,string Trades,string UnionRoom,string BerryCrush);
 public sealed record TrainerCardLayout(int LogicalWidth,int LogicalHeight,int FontId,int TextColor,int ShadowColor,

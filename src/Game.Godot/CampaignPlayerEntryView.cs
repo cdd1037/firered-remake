@@ -80,7 +80,7 @@ public partial class CampaignView
     private void CancelEntryName()
     {
         bool player=_entryMode=="player-name";CloseNamingScreen();_entryNotice=null;
-        if(player){_entryMode="gender";_entryCursor=_entryGender;}else BeginRivalNameChoices();QueueRedraw();
+        if(player){_entryMode="gender";_entryCursor=_entryGender;_openingPortraitOffsetX=0;}else BeginRivalNameChoices();QueueRedraw();
     }
     private void SubmitPlayerEntryName(string text)
     {
@@ -91,6 +91,9 @@ public partial class CampaignView
         if(!NameTextRules.IsValidTrainerName(text))
         {_entryNotice=FieldMenuText.Get("opening.notice.name-encoding");QueueRedraw();return;}
         bool player=_entryMode=="player-name";CloseNamingScreen();_entryNotice=null;
+        // CB2_ReturnFromNamingScreen restores both trainer and platform at +60
+        // for either identity, not at the centered pre-naming position.
+        _openingPortraitOffsetX=60;
         if(player){_entryPlayerName=text;_entryMode="player-confirm";}
         else{_entryRivalName=text;_entryMode="rival-confirm";}
         _entryCursor=0;

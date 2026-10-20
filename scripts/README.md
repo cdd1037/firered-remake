@@ -71,7 +71,7 @@ connected-field、route1-encounter、route1-whiteout 和 wild-battle 的旧 fetc
 
 ## 重建与验证边界
 
-`imports/rebuild-resources.py` 统一编排明确选择的最终资源目标：world、field-rules、field-services、audio-cues、diploma、help、opening、summary、evolution、capture-balls、overworld-art、party、npc-trade、move-animations。支持 `--raw` / `--out` 与 `--dry-run`。地图由 raw 直接生成最终格式及图集；所有目标支持只读 `--check`；world 在临时空目录生成后做语义／像素比较。旧地域前置编排不再保留。
+`imports/rebuild-resources.py` 只编排显式选择的最终资源。当前目标与参数以 `python scripts/imports/rebuild-resources.py --help` 为准；输入依赖和各目标的重建边界集中维护在[资源再生成](../docs/resource-reconstruction-guide.md)。支持 `--raw` / `--out`、`--dry-run` 和只读 `--check`；world 在临时空目录生成后做独立语义／像素比较，不重放旧地域阶段。
 
 这个入口不假称覆盖所有游戏资源；物品、物种、故事和特殊 UI 的独立入口仍按真实依赖执行。音频 cue 已由源码与现有 pack/叫声库一次生成，pack 与叫声样本本身的重建要求见[资源再生说明](../docs/resource-reconstruction-guide.md)。
 

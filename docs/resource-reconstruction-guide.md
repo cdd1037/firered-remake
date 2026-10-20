@@ -1,113 +1,108 @@
 # 资源导入与再生成
 
-游戏只读取 `content/generated` 和 Godot 自有素材，不读取 pret 仓库或导入配方。
-源码仓库保存代码、必要的选择配置和测试；普通工程包另带本地资源。不要把临时
-报告、Git checkout、SDK、构建缓存或旧阶段产物塞回运行目录。
+运行目录与格式的唯一边界说明见 [资源布局](resource-layout.md)。本文维护真实输入、
+生产入口与恢复限制，不把生成结果、历史证明或前一地区产物冒充原始来源。
 
 ## 原始输入
 
-- `content/raw/pokefirered/037335f4/` 按上游相对路径保存固定输入，revision 为
-  `037335f4c725d7c9aecdac87066f2002b4bd7e14`，来源 `pret/pokefirered`。
-- `content/raw/local/forest-trainer-art/` 是实际使用的三个本地调色板变体，不能
-  用上游默认调色板替换。
-- `src/Game.Godot/Assets/` 中字体和效果素材随普通工程提供。
-- 音频另需现有匹配 `audio/synth/firered.pack` 与 `normal-cries.bin`，见[音频说明](audio.md)。
+- `content/raw/pokefirered/037335f4/` 按上游相对路径保存 `pret/pokefirered` 的固定输入，
+  revision 为 `037335f4c725d7c9aecdac87066f2002b4bd7e14`。缺失文件须来自这个版本，
+  不能用最新分支同名文件替代。
+- `content/raw/local/forest-trainer-art/` 的三个调色板是实际本地变体，不可替换成上游默认值。
+- 输入选择和转换配方位于 `data/`、`scripts/recipes/` 及对应导入工具。部分专用入口仍从
+  固定版本 Git blob 读取，以其实际参数为准；任何入口都不得执行上游仓库脚本。
+- Godot 的字体和效果素材随项目保留；中文 pack 与字体另见 [中文版](chinese-edition.md)。
+- 音频 cue 生成需要已有匹配的 `audio/synth/firered.pack` 与 `normal-cries.bin`。
+  pack 提取需要合法已有的匹配 ROM，不下载 ROM；普通叫声目录还需对应生成后的 `.bin`
+  样本及原始 WAV。现有 raw 未提供完整的 cry `.bin` 输入，详见 [音频](audio.md)。
 
-缺少源文件时，从固定 revision 取得对应路径。不要用最新分支同名文件、旧生成
-JSON 或历史证明文件冒充原始输入。新地图／场景服务编译器直接读取 raw；部分尚未
-迁移的专用入口仍读取固定版本 Git blob，以该入口实际参数为准。转换不执行上游脚本。
-
-`python scripts/imports/source/materialize-source.py --recipe <配方> --offline`
-可以从已有本地输入物化所选源文件；只有显式 `--download` 才联网。
-配方描述真实输入选择与转换差异，不承担每次运行的文件回执功能。
-
-资源由 `.gitignore` 排除；不使用 `git add -f` 绕过。转换能力不代表公开分发授权。
-
-## 工具环境
-
-.NET 10 SDK、Godot 4.7.2 .NET、Python 3 和 Pillow。安装及发现入口见工程 README
-与 `scripts/env.sh`。以下命令从仓库根目录执行：
+原始输入物化默认离线，只有显式 `--download` 才获取缺少的固定版本文件：
 
 ```sh
-source scripts/env.sh
-dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+python scripts/imports/source/materialize-source.py --recipe <配方路径> --offline
 ```
 
-`--no-restore` 要求此前已完成包恢复。音频测试按需单独运行，不进默认全量测试。
+raw、generated 与代表存档不纳入源码 Git；Pokémon 素材不公开上传或分发。恢复前保留
+独立输入与可用资源副本，不要先删掉全部 generated 再尝试重建。项目构建也需要生成的训练家 AI 程序。
 
-## 最终资源编译入口
+## 维护入口
+
+以下命令从仓库根目录执行。工具链安装与构建见 [README](../README.md)，Python 依赖见
+`requirements-dev.txt`。导入工具组织和各族入口见 [scripts](../scripts/README.md)。
 
 ```sh
-# 全部选定地图、真实布局变体、场地瓦片、地图图集及共享 NPC 图集。
+# 当前完整选定地图、真实布局变体、属性表、共享 NPC 图像与地图图集。
 python scripts/imports/rebuild-resources.py world
 
-# 真实场景功能、遇敌、交互图像，以及 NPC 交换／钓竿等服务。
+# 场景规则、遇敌、交互图像，以及城市／NPC 交换／钓竿等服务。
 python scripts/imports/rebuild-resources.py field-rules field-services
 
-# 由源码和现有合成素材生成唯一音频 cue 目录。
+# 由固定源码与现有匹配音频素材生成 cue 目录，不生成 pack 或叫声样本。
 python scripts/imports/rebuild-resources.py audio-cues
 
-# 原版图鉴证书，两张画面和文本／布局数据。
-python scripts/imports/rebuild-resources.py diploma
+# 按需选择界面／表现目标；完整可用目标及参数以 --help 为准。
+python scripts/imports/rebuild-resources.py diploma help quest-log
+python scripts/imports/rebuild-resources.py --help
 
-# 检查而不修改；也可用独立输出目录重建再对照。
-python scripts/imports/rebuild-resources.py world field-rules field-services audio-cues diploma help --check
+# 对已有资源做只读检查；或将 world 完整输出到新的独立目录。
+python scripts/imports/rebuild-resources.py world field-rules field-services --check
 python scripts/imports/rebuild-resources.py world --out /tmp/firered-world-check
 ```
 
-可用 `--raw` 指定原始输入目录，`--out` 指定最终 generated 根。`--dry-run` 校验
-入口和显式音频输入并打印命令，但不保证整个源闭包齐全。任一步失败即停止；不会
-跳过缺失工具而报告成功，也不再依赖旧 services/postgame 地域阶段编排。
+统一入口还支持 `intro-movie`、`opening`、`summary`、`evolution`、`capture-balls`、
+`overworld-art`、`party`、`npc-trade`、`inventory` 和 `move-animations`。各目标支持
+`--check`；`world` 在临时空目录重建后比较 JSON 语义、PNG 全 RGBA 和二进制流。
+`quest-log` 需要输出根内的 `maps/world.json`，可与 `world` 一起选择。音频可用
+`--pack`／`--cries` 显式指定独立输入，否则从输出根查找。
 
-这个入口明确覆盖所列目标，并非全游戏一键冷重建器。共享物品、物种、故事 IR、
-UI 等仍有各自的真实生产入口；不把这些未编排流程隐藏在“全部完成”里。
+`--raw` 指定固定原始输入，`--out` 指定 generated 根，二者不得重叠。`--dry-run`
+仅检查入口及显式音频文件并打印命令，不证明源闭包齐全。执行失败立即停止，不跳过
+缺失工具，也没有隐含的 `all` 或历史地域前置阶段。
 
-### 地图
-
-`data/world-maps.json` 明确选择地图、真实变体与少量命名覆盖，普通字段从源数据
-派生。唯一运行索引是 `content/generated/maps/world.json`。地图身份不依赖加载
-先后或历史区域包。真实变体保留原事件头、NPC 和 warp，只替换对应布局／像素。
-
-统一 world 编译已经在新建空目录验证：414 份地图数据、3296 张逻辑地图／边框
-图像、126 组 NPC 图像的 1088 帧，以及开场玩家图像，与原有最终资源对照一致。
-比较从最终图集裁剪完整 RGBA，不把 PNG 编码差异当成画面变化。
-
-三之岛通路、海沫岛、宝可梦塔等仍按各自真实游戏条件选择变体；普通房屋、门楼、
-火焰山顶与后期区域都由同一地图入口处理，不需要先重放早期开发阶段。
-
-### 游戏数据与故事
+### 共享游戏数据与故事
 
 ```sh
 python scripts/imports/items/import-machine-catalog.py --references-only
 python scripts/imports/items/import-current-items.py
+python scripts/lib/item_icon_exports.py
 python scripts/imports/pokemon/import-game-pokemon.py
 python scripts/imports/presentation/import-pokemon-collection-presentation.py
 python scripts/imports/story/import-story.py
 ```
 
-运行物种定义共享 canonical 目录，真实选择在 `data/game-pokemon.json`；TM/HM
-兼容性共享一份数据，不复制累计地区物种表。物品图标由共享导出工具合入图集。
+当前物种选择和 breeding 由同一入口维护，准入／各 roster 差异见
+[Pokémon 准入格式](pokemon-admission-format.md)。机器兼容性与顺序见
+[共享机器目录](shared-machine-catalog.md)；训练家、物品与专用图像族入口见 scripts 说明。
 
-地图几何与剧情是不同资源：改变可交互对象还需重新编译故事 IR。故事源选择在
-`tools/import-story/recipe.json`；`import-story.py` 使用 PATH 的 .NET，也支持
-`--dotnet`。NPC 赠送、隐藏物品与剧情条件从源事件及脚本解析，不靠地图成功载入
-来证明交互已经实现。
+地图几何与故事是不同资源：改可交互对象不能只重建地图，还须编译相应场景规则和故事 IR。
+故事选择由 `tools/import-story/recipe.json` 维护，`import-story.py` 使用 PATH 的 .NET，
+也支持 `--dotnet`。赠送、隐藏物品和剧情条件从源事件／脚本解析，地图加载成功不证明交互完成。
 
-## 验证与恢复边界
+图鉴证书、HELP、Trainer Card 和各原生 UI 的细节保留在其功能文档，不在本文复制：
+[证书](pokedex-diploma.md)、[HELP](help-content.md)、[Trainer Card](trainer-card-atlas.md)、
+[图像边界](generated-image-assets.md)。
 
-- `scripts/checks/test-world-pipeline-oracle.py` 检查源几何、事件顺序、脚本入口和真实变体。
-- `tests/Game.ResourceImport.Tests` 运行导入行为测试；局部修改只跑相关族，跨读取层
-  修改再跑组合回归。
-- [generated-only 运行验证](generated-only-runtime.md)覆盖独立资源根、新游戏和存档加载。
-- [地图图集](map-render-atlases.md)、[图像素材](generated-image-assets.md)、[共享机器目录](shared-machine-catalog.md)
-  说明对应数据与像素语义。
-- pack 提取及普通叫声样本的完整再生仍有独立输入要求；完整 cue 目录已不依赖旧
-  地区音频配方，不能将二者混为一谈。
+## 验证
 
-导入等价不等于完整游戏自然通关、全部动画视觉验收或扬声器听感验收。阶段清理
-的实际检查范围见[整合记录](script-consolidation.md)。备份恢复重放、Drive 上传
-目前均不作为本轮验证步骤。
+先按 README 完成正常构建，再按变更范围运行：
 
-图鉴证书的独立输入闭包、屏幕块转换与重建检查见 [Pokédex diploma](pokedex-diploma.md)。
+```sh
+python scripts/checks/test-world-pipeline-oracle.py --generated content/generated
+python scripts/checks/test-import-input-closure.py
+dotnet test tests/Game.ResourceImport.Tests/Game.ResourceImport.Tests.csproj --no-build --no-restore
+dotnet test tests/Game.Content.Tests/Game.Content.Tests.csproj --no-build --no-restore
+dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~GeneratedOnlyCampaignTests|FullyQualifiedName~CampaignCompositionTests'
+```
 
-情境 HELP 使用 `python scripts/imports/rebuild-resources.py help` 重建单一 `ui/help/help.json`。原作完整文本、主题／问答顺序、解锁条件和地图分类只在导入时解析；见 [HELP 资源](help-content.md)。
+局部修改只跑对应资源族；跨读取／运行层修改再扩大组合回归。独立源 oracle、旧资源临时
+对照、生成器 `--check` 和 native 像素检查并不等价，见 [world](world-resource-pipeline.md)
+与 [地图图集](map-render-atlases.md)。测试项目与按需音频检查见 [测试说明](../tests/README.md)。
+
+## 尚未闭合的恢复边界
+
+- 统一入口只编排明确列出的目标，不是全游戏一键冷重建器。物品、物种、训练家、故事和
+  特殊 UI 仍有独立输入与依赖；不能因部分检查通过就宣布所有 generated 都可删除。
+- 音频 cue 重建不解决 pack 提取或普通叫声样本的独立输入要求。
+- 双打 UI 原始输入仍缺 `graphics/battle_interface/healthbox_doubles_player.png` 与
+  `healthbox_doubles_opponent.png`，不能把现有双打资源可用说成源端完整再生已通过。
+- 生成一致性不替代完整自然通关、全部原生视觉检查或真实音频输出验收；Dummy 不算听感验收。

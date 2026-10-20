@@ -4,6 +4,7 @@ import sys as _bootstrap_sys
 from pathlib import Path as _BootstrapPath
 _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[3] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
+from game_pokemon_admissions import resolve_admissions
 
 from shared_trainers import trainer_json
 from trainer_import import read_source, selected_trainers
@@ -48,7 +49,7 @@ def generate(reference, dependency):
         data=(dependency/path).read_bytes()
         dependencies.append(dict(path=path));return json.loads(data)
     canonical=dependent('content/generated/data/pokemon/canonical/catalog.json')
-    admissions=dependent('data/game-pokemon.json')
+    admissions=resolve_admissions(dependent('data/game-pokemon.json'))
     opponents={row['id']['value'][5:] for row in admissions['opponents']}
     species={s['id']['value'][5:]:s for s in canonical['species']}
     trainers = selected_trainers(read, ['TRAINER_' + short for short in TRAINERS])

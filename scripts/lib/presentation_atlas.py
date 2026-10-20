@@ -33,6 +33,49 @@ def pack(images, path, width=1024):
     return png(page), rows
 
 
+def pack_pages(images, prefix, width=1024):
+    """Pack a co-owned cohort into bounded pages, sharing only identical RGBA.
+
+    Logical identities and their order remain intact. Page ordering is stable
+    independently of input order, and different transparent RGB remains distinct.
+    """
+    images = list(images)
+    if not images or not isinstance(width, int) or not 3 <= width <= 1024:
+        raise ValueError('Empty atlas cohort or invalid bounded page width')
+    if len({identity for identity, _ in images}) != len(images):
+        raise ValueError('Duplicate atlas identity')
+    unique = {}; aliases = {}
+    for identity, source in sorted(images, key=lambda item: item[0]):
+        if not identity or source.width + 2 > width or source.height + 2 > 1024:
+            raise ValueError('Image exceeds bounded atlas page: ' + identity)
+        image = source.convert('RGBA')
+        key = (image.size, image.tobytes())
+        canonical = unique.setdefault(key, (identity, image))[0]
+        aliases[identity] = canonical
+    ordered = sorted(unique.values(), key=lambda item: (-item[1].height, -item[1].width, item[0]))
+    outputs = {}; pages = []; regions = {}; cohort = []; x = y = 1; shelf = 0
+
+    def finish():
+        path = f'{prefix}-{len(pages):03d}.png'
+        encoded, rows = pack(cohort, path, width)
+        outputs[path] = encoded
+        pages.append(dict(texturePath=path, width=width, height=y + shelf + 1))
+        regions.update((row['id'], row) for row in rows)
+
+    for identity, image in ordered:
+        next_x, next_y, next_shelf = x, y, shelf
+        if next_x + image.width + 1 > width:
+            next_x = 1; next_y += next_shelf + 2; next_shelf = 0
+        if next_y + image.height + 1 > 1024:
+            finish()
+            cohort = []; next_x = next_y = 1; next_shelf = 0
+        cohort.append((identity, image))
+        x = next_x + image.width + 2; y = next_y; shelf = max(next_shelf, image.height)
+    finish()
+    rows = [dict(regions[aliases[identity]], id=identity) for identity, _ in images]
+    return outputs, rows, pages
+
+
 def bake_fame(outputs, manifest):
     base = 'content/generated/ui/fame-checker-presentation/'
     layout = json.loads(outputs['layout.json'])

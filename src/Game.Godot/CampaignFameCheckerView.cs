@@ -240,7 +240,8 @@ public partial class CampaignView
         {
             var arrow=FameTexture(_fameArt.Textures["scroll-arrows"]);var offsets=_fameArt.Layout.GetProperty("scrollArrows");
             if(_fameTop>0){int dy=offsets.GetProperty("upOffsets")[_fameFrame%32].GetInt32();DrawTextureRectRegion(arrow,new(32,18+dy,16,16),new(0,16,16,16));}
-            if(_fameTop+5<_famePeople.Length+1){int dy=offsets.GetProperty("downOffsets")[_fameFrame%32].GetInt32();DrawTextureRectRegion(arrow,new(32,108+dy,16,-16),new(0,16,16,16));}
+            // The down sprite is centered at source Y=100, independent of V-flip.
+            if(_fameTop+5<_famePeople.Length+1){int dy=offsets.GetProperty("downOffsets")[_fameFrame%32].GetInt32();DrawTextureRectRegion(arrow,new(32,92+dy,16,-16),new(0,16,16,16));}
         }
         string help=_fameMode==FameMode.Facts?"help-facts":FamePickLayer||FamePerson is not {HasAnyFacts:true}?"help-pick":"help-main";
         var strip=_fameArt.Textures[help];DrawTexture(FameTexture(strip),new(236-strip.Width,0));

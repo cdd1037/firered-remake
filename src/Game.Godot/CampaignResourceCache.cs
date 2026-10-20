@@ -27,15 +27,15 @@ public sealed class CampaignResourceCache : IDisposable
         public string Name { get; }
         internal Owner(CampaignResourceCache cache, string name) { _cache = cache; Name = name; }
         // Resource files are static for a scene. Share each path and conversion mode across owners.
-        public Texture2D Texture(string path, bool darkened = false) => LoadTexture(path, darkened, false);
+        public Texture2D Texture(string path, bool darkened = false, Rect2I? region = null) => LoadTexture(path, darkened, false, region);
         public Texture2D MapTexture(string logicalPath) => LoadTexture(logicalPath, false, true);
-        private Texture2D LoadTexture(string path, bool darkened, bool mapLayer)
+        private Texture2D LoadTexture(string path, bool darkened, bool mapLayer, Rect2I? region = null)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             string key = Path.GetFullPath(path) + (mapLayer ? ":map-atlas" : "") + (darkened ? ":rgba8-bitrep-dark8-no-mips" : ":rgba8-bitrep-no-mips");
             if (_cache._textures.TryGetValue(key, out var shared))
             {
-                _cache._hits++; Retain(key, shared); return shared.Texture;
+                _cache._hits++; return TextureRegion(path, key, shared, region);
             }
             using var image = mapLayer ? MapAtlasImages.Load(path) : NativeImages.LoadPng(File.ReadAllBytes(path));
             image.Convert(Image.Format.Rgba8); var pixels = image.GetData();
@@ -49,8 +49,8 @@ public sealed class CampaignResourceCache : IDisposable
             using var display = Image.CreateFromData(image.GetWidth(), image.GetHeight(), false, Image.Format.Rgba8, pixels);
             var texture = ImageTexture.CreateFromImage(display);
             var entry = new Entry(texture, pixels.LongLength);
-            _cache._textures.Add(key, entry); Retain(key, entry); _cache._loads++; _cache.ObservePeak();
-            return texture;
+            _cache._textures.Add(key, entry); _cache._loads++; _cache.ObservePeak();
+            return TextureRegion(path, key, entry, region);
         }
         /// <summary>Exact PNG colors, separate from the legacy 5-bit display conversion above.</summary>
         public Texture2D NativeTexture(string path, Rect2I? region = null)
@@ -64,10 +64,16 @@ public sealed class CampaignResourceCache : IDisposable
                 _cache._textures.Add(key, entry); _cache._loads++; _cache.ObservePeak();
             }
             else _cache._hits++;
+            return TextureRegion(path, key, entry, region);
+        }
+
+        private Texture2D TextureRegion(string path, string key, Entry entry, Rect2I? region)
+        {
             Retain(key, entry);
             if (region is not { } rect) return entry.Texture;
             if (rect.Position.X < 0 || rect.Position.Y < 0 || rect.Size.X <= 0 || rect.Size.Y <= 0 ||
-                rect.End.X > entry.Texture.GetWidth() || rect.End.Y > entry.Texture.GetHeight())
+                (long)rect.Position.X + rect.Size.X > entry.Texture.GetWidth() ||
+                (long)rect.Position.Y + rect.Size.Y > entry.Texture.GetHeight())
                 throw new InvalidDataException("Texture region is outside its atlas: " + path);
             string regionKey = key + $":region:{rect.Position.X},{rect.Position.Y},{rect.Size.X},{rect.Size.Y}";
             if (!_cache._textures.TryGetValue(regionKey, out var regionEntry))

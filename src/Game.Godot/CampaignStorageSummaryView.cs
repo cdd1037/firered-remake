@@ -48,7 +48,7 @@ public partial class CampaignView
     }
     private bool StorageSummaryInput(InputEventKey key)
     {
-        _held = null; if (SummaryExitActive) return true;
+        _held = null; if (SummaryInputLocked) return true;
         if (!key.Pressed || key.Echo) return true;
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return true; }
         if (_pcNotice is not null)

@@ -91,7 +91,7 @@
   分属不同阶段；多段剩余数取计划次数而非最终实际次数。详见[替身控制器](substitute-move-controller.md)。
 - Teleport 的逃离文字遗漏已由拥有施放者／招式来源的终止回执修复，确认文字后才进入无声同步；
   Roar／Whirlwind 不借用它的文字。离场姿态与残留精灵独立，真实换人、新动画、取消或退出才释放。
-  修复及其验证边界见[项目审计修复](full-project-audit-repairs.md)。
+  对应验证边界见[验证与限制](validation.md)，具体变更过程由 Git 保留。
 
 ## 共享显示机制与源解释
 

@@ -12,10 +12,9 @@ atlas binding, then an existing cell from the supplied source layout. A missing
 tile fails; there is no global Mart fallback for an unrelated map. Source crops,
 three separate layers, and alpha replacement are preserved.
 
-The old per-region `Try*Patch` rendering functions and three independently
-maintained dispatch paths are removed. Region-specific asset packaging still
-exists; its explicit composition bindings are content wiring, not runtime
-feature switches. This change does not introduce a new generated asset format.
+Explicit composition bindings are content wiring, not runtime feature switches.
+The resolver consumes the existing [map and atlas formats](resource-layout.md#地图格式);
+it does not introduce another generated format or source-parsing path.
 Gameplay checks for allowed coordinates, collision, flags, and changes remain in
 Application. Presentation no longer repeats these using the live save while
 showing a historical projection.
