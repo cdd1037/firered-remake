@@ -8,6 +8,7 @@ using Godot;
 /// The renderer never creates a Pokemon, chooses shard variants or advances gameplay RNG.</summary>
 public partial class CampaignView
 {
+    private readonly HashSet<Key> _eggTextAliasKeys = [];
     private string PresentedOwnedName(PartyPokemon owned) => _catalog.PokemonDisplayName(owned);
     private Texture2D PresentedOwnedIcon(PartyPokemon owned) => owned.IsEgg ? BreedingEggIcon() : PresentedPokemonIcon(owned.Pokemon);
 
@@ -48,7 +49,7 @@ public partial class CampaignView
         if (before is null || before.EggHatch?.InstanceId != after.EggHatch?.InstanceId)
         { _eggHatchElapsed = 0; _eggHatchCueFrame = -1; _eggHatchCryStarted = false; }
         if (before?.EggHatch?.Stage == after.EggHatch?.Stage && before?.EggHatch?.InstanceId == after.EggHatch?.InstanceId) return;
-        _held = null; _repeat = 0; ReleaseFieldTextInput();
+        _held = null; ReleaseFieldTextInput();
         _eggHatchTransitionFrame = Engine.GetProcessFrames();
         if (after.EggHatch is not null) ResetFieldMenu();
         if (after.EggHatch?.Stage == CampaignEggHatchStage.Hatched)
@@ -61,7 +62,7 @@ public partial class CampaignView
     private bool ProcessEggHatchPresentation(double delta)
     {
         if (_session.State.EggHatch is not { } hatch) return false;
-        _held = null; _repeat = 0;
+        _held = null;
         _waitElapsed += delta;
         if (hatch.Stage == CampaignEggHatchStage.Animation && !_busy && !_lastCommandFault)
         {
@@ -90,11 +91,13 @@ public partial class CampaignView
         if (input is InputEventKey { Keycode: Key.F5 or Key.F9 or Key.F12 }) return false;
         if (_eggHatchTransitionFrame == Engine.GetProcessFrames()) { GetViewport().SetInputAsHandled(); return true; }
         if (_session?.State.EggHatch is not { } hatch) return false;
-        _held = null; _repeat = 0;
+        _held = null;
         if (input is InputEventMouseButton { Pressed: true } mouse)
         {
             if (mouse.ButtonIndex is MouseButton.Left or MouseButton.Right)
             {
+                if (mouse.ButtonIndex == MouseButton.Left) _menuMousePressed = true;
+                else _menuRightMousePressed = true;
                 Vector2 point = GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
                 if (hatch.Stage == CampaignEggHatchStage.NicknameChoice && new Rect2(160,64,64,48).HasPoint(point))
                     _choiceYes = point.Y < 88;
@@ -104,7 +107,7 @@ public partial class CampaignView
             GetViewport().SetInputAsHandled(); return true;
         }
         if (input is not InputEventKey keyInput) return true;
-        if (!keyInput.Pressed || keyInput.Echo) { if (!keyInput.Pressed) ReleaseFieldTextInput(); return true; }
+        if (!keyInput.Pressed || keyInput.Echo) return true;
         if (hatch.Stage == CampaignEggHatchStage.Animation) return true;
         if (hatch.Stage == CampaignEggHatchStage.Naming)
         {
@@ -114,11 +117,15 @@ public partial class CampaignView
         }
         bool confirm = keyInput.Keycode is Key.Enter or Key.KpEnter or Key.A;
         bool cancel = keyInput.Keycode is Key.Backspace or Key.Escape or Key.B;
+        if (keyInput.Keycode is Key.A or Key.B or Key.Escape) _eggTextAliasKeys.Add(keyInput.Keycode);
         if ((confirm || cancel) && TryAdvanceFieldVisualMessage())
         { QueueRedraw(); GetViewport().SetInputAsHandled(); return true; }
         if (!FieldTextComplete)
         {
-            if (confirm || cancel) { _fieldTextHeld = true; _fieldTextNewPress = true; }
+            if (confirm || cancel)
+            {
+                _fieldTextInput.Press();
+            }
             return true;
         }
         if (hatch.Stage == CampaignEggHatchStage.Hatched && !EggHatchFanfareComplete) return true;

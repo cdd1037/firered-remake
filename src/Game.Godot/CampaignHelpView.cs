@@ -79,7 +79,7 @@ public partial class CampaignView
             if (!seen && !Apply(new("help_intro_seen"))) { _help.Close(); GetViewport().SetInputAsHandled(); return true; }
             _helpReturnFocus = GetViewport().GuiGetFocusOwner(); _helpReturnFocus?.ReleaseFocus();
             if (NamingScreenActive) _nicknameEdit.Visible = false;
-            _held = null; _repeat = 0; ReleaseFieldTextInput(); ReleaseModalHeldInput();
+            _held = null; ReleaseFieldTextInput(); ReleaseModalHeldInput();
             _helpHeld = CampaignButton.None; _helpRepeat = 0;
             _sourceAudio?.StopSoundEffects();
             _sourceAudio?.SetHelpDucking(!context.Equals("HELPCONTEXT_POKEDEX", StringComparison.Ordinal));

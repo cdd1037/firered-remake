@@ -60,7 +60,7 @@ public partial class CampaignView
             before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage || before?.DayCareInteraction?.Stage != after.DayCareInteraction?.Stage || IsDayCareChoosing(before) != IsDayCareChoosing(after))
         {
             _moveSelectionStamp = null; _teachingSummaryNotice = null;
-            _held = null; _repeat = 0; ReleaseFieldTextInput(); _tutorCursor = 0; _tutorScroll = 0;
+            _held = null; ReleaseFieldTextInput(); _tutorCursor = 0; _tutorScroll = 0;
             ResetDayCarePartyPresentation();
             _tutorTransitionFrame = Engine.GetProcessFrames();
         }
@@ -82,8 +82,7 @@ public partial class CampaignView
     private bool MoveTutorInput(InputEventKey key)
     {
         if (!MoveTutorActive || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed || key.Echo || _fade > 0) return true;
+        _held = null; if (!key.Pressed || key.Echo || _fade > 0) return true;
         if (DayCareChoosing) return DayCarePartyInput(key);
         var scene = Teaching!;
         if (_teachingSummaryNotice is not null)

@@ -190,13 +190,11 @@ public partial class CampaignView
         var menu = _session.State.TrainerTowerMenu!;
         int defaultCursor = menu.SourceSymbol == "MULTICHOICE_ROOFTOP_B1F"
             ? _session.State.TrainerTowerElevator?.MenuDefault ?? throw new InvalidDataException("Tower elevator menu default missing.") : 0;
-        _trainerTowerMenu = new(menu.SourceSymbol, menu.Options, defaultCursor); _trainerTowerMenuWait = wait; _held = null; _repeat = 0;
-    }
+        _trainerTowerMenu = new(menu.SourceSymbol, menu.Options, defaultCursor); _trainerTowerMenuWait = wait; _held = null; }
     private bool TryTrainerTowerInput(InputEventKey key)
     {
         if ((!TrainerTowerMenuActive && !_session.State.TrainerTowerRecordsVisible) || key.Keycode is Key.Escape or Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed) return true;
+        _held = null; if (!key.Pressed) return true;
         if (_session.State.TrainerTowerRecordsVisible)
         {
             if (key.Keycode is Key.Enter or Key.Backspace) { SourceSound("SE_SELECT"); Apply(new("ack")); }

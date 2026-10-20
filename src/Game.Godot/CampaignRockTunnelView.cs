@@ -36,7 +36,7 @@ public partial class CampaignView
     {
         var flash=after.FlashEffect;
         if(flash?.WaitId!=_fieldFlashWait||flash?.Phase!=_fieldFlashPhase){_fieldFlashWait=flash?.WaitId;_fieldFlashPhase=flash?.Phase;_fieldFlashFrames=0;_fieldFlashCry=false;}
-        if(flash is not null){_held=null;_repeat=0;}
+        if(flash is not null){_held=null;}
     }
     private bool ProcessFieldFlashPresentation(double delta)
     {
@@ -47,7 +47,7 @@ public partial class CampaignView
         if(flash.Phase==FieldFlashSourcePresentation.ShowMon&&!_fieldFlashCry&&FieldFlashFrame>=FieldFlashSourcePresentation.PlayerFrameDurations.Sum()+FieldFlashSourcePresentation.IndoorBannerOpenFrames+FieldFlashSourcePresentation.MonSlideInFrames)
         {_fieldFlashCry=true;SourceCry(_session.State.Party[flash.PartyIndex].Pokemon);}
         if(!_busy&&FieldFlashFrame>=duration)Apply(new("field_flash_complete",Text:flash.WaitId));
-        _held=null;_repeat=0;return true;
+        _held=null;return true;
     }
     private void UseFieldPartyFlash()
     {

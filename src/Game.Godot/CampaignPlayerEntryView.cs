@@ -129,7 +129,7 @@ public partial class CampaignView
         _entryMode="closed";_entryNotice=null;CloseNamingScreen();
         _entryFreshFieldFrame=Engine.GetProcessFrames();
         _session=session;ResetPlayTimeHost();_sequence=session.Revision;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;
-        ResetSummaryPresentation();ResetSourceAudio();LoadMap(session.State.World.Player.MapId);Synchronize(null,session.State);_held=null;_repeat=0;
+        ResetSummaryPresentation();ResetSourceAudio();LoadMap(session.State.World.Player.MapId);Synchronize(null,session.State);_held=null;
     }
     private void EntryKey(Key key)
     {
@@ -161,14 +161,8 @@ public partial class CampaignView
         if(_entryMode is "player-name" or "rival-name")return;
         if(_entryMode=="oak-speech")
         {
-            if(key==Key.Enter&&_entryActionFrame!=Engine.GetProcessFrames()){_entryActionFrame=Engine.GetProcessFrames();AdvanceOpeningSpeech();}
-            else if(key==Key.Backspace&&_openingPage>0)
-            {
-                _openingPage--; ResetOpeningPrinter();
-                if(_openingPages[_openingPage].Portrait=="nidoran-f")
-                { _openingNidoran=new(false,_captureBallAssets.Sine); for(int i=0;i<96;i++)_openingNidoran.AdvanceFrame(); }
-                else _openingNidoran=null;
-            }
+            if(key is Key.Enter or Key.Backspace && _entryActionFrame!=Engine.GetProcessFrames())
+            {_entryActionFrame=Engine.GetProcessFrames();AdvanceOpeningSpeech();}
             return;
         }
         if(key is Key.Up or Key.Down)_entryCursor=_entryMode=="menu"
@@ -223,7 +217,8 @@ public partial class CampaignView
             if(!OpeningItemUiSkin.LogicalRect.HasPoint(point))return true;
             if(right)
             {
-                _menuMouseActionFrame=Engine.GetProcessFrames();_entryActionFrame=_menuMouseActionFrame;
+                _menuMouseActionFrame=Engine.GetProcessFrames();
+                if (_entryMode != "oak-speech") _entryActionFrame=_menuMouseActionFrame;
                 if(_entryMode is "player-name" or "rival-name")CancelEntryName();
                 else EntryKey(Key.Backspace);
                 QueueRedraw();GetViewport().SetInputAsHandled();return true;

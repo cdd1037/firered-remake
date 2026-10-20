@@ -35,7 +35,7 @@ public partial class CampaignView
             _fieldRockSmashWait = wait; _fieldRockSmashPhase = effect?.Phase;
             _fieldRockSmashFrames = 0; _fieldRockSmashCry = false;
         }
-        if (effect is not null) { _held = null; _repeat = 0; }
+        if (effect is not null) { _held = null; }
     }
 
     private void ProcessFieldRockSmashPresentation(double delta)

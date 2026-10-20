@@ -53,8 +53,7 @@ public partial class CampaignView
     {
         var owner = _session.State.FameChecker;
         if (ReferenceEquals(owner,_fameOwner)) return;
-        _fameOwner=owner; _fameHeldDirection=null; _fameTextHeld=_fameTextPress=false; _held=null; _repeat=0;
-        if (owner is null) { _famePages=[]; _famePrinter.Reset([],4); return; }
+        _fameOwner=owner; _fameHeldDirection=null; _fameTextHeld=_fameTextPress=false; _held=null; if (owner is null) { _famePages=[]; _famePrinter.Reset([],4); return; }
         _fameArt ??= PretFameCheckerPresentation.Load(_root);
         _famePeople=_session.FameCheckerPeople; _fameMode=FameMode.List;
         _famePerson=_fameTop=_fameFact=_fameFrame=_fameOffset=_fameSlide=_fameInfoFrames=0;
@@ -173,8 +172,7 @@ public partial class CampaignView
             if(_fameClosedFrame!=Engine.GetProcessFrames())return false;
             GetViewport().SetInputAsHandled();return true;
         }
-        _held=null;_repeat=0;
-        if(input is InputEventKey key&&!key.Echo)
+        _held=null;if(input is InputEventKey key&&!key.Echo)
         {
             if(key.Pressed&&key.Keycode == Key.Escape){RequestQuit();return true;}
             FameKey(key.Keycode,key.Pressed);

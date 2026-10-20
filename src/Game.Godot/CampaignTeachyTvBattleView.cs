@@ -31,8 +31,7 @@ public partial class CampaignView
             _teachyBattleVoiceText.Clear(); _teachyBattleRemainder = 0; _teachyBattleSoundSequence = 0; _teachyBattleAHeld = false;
             return;
         }
-        _held = null; _repeat = 0;
-        if (b.SoundSequence != _teachyBattleSoundSequence)
+        _held = null; if (b.SoundSequence != _teachyBattleSoundSequence)
         { _teachyBattleSoundSequence = b.SoundSequence; if (b.Sound is {} sound) SourceSound(sound); }
         string key = $"{b.Ticket}:{b.Stage}:{b.StepIndex}:{b.CurrentStep?.Event.Sequence}:{b.Voiceover.Next}:{b.Voiceover.Pending?.TextSymbol}:{b.SelectingSide}";
         if (_teachyBattleVisualKey != key)
@@ -145,7 +144,7 @@ public partial class CampaignView
                 else _teachyBattleVoiceText.Confirm(pressed);
             }
         }
-        _held = null; _repeat = 0; QueueRedraw(); GetViewport().SetInputAsHandled(); return true;
+        _held = null; QueueRedraw(); GetViewport().SetInputAsHandled(); return true;
     }
 
     // Shared move animation completion uses the same current correlated event as the

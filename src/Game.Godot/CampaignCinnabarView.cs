@@ -61,7 +61,7 @@ public partial class CampaignView
         _cinnabarFallId=fall.PresentationId;_cinnabarFallFrames=0;_cinnabarFallSound=false;_cinnabarLandSound=false;
         // The camera centers the tile at screen80; sprite bottom is 80-anchorY+height.
         var sprite=CurrentPlayerSprite;_cinnabarSpriteBottom=80-(int)sprite.Anchor.Y+sprite.Height;
-        _tracks.Clear();_held=null;_repeat=0;_fade=0;
+        _tracks.Clear();_held=null;_fade=0;
         _poses["LOCALID_PLAYER"].Visible=false;
     }
     private bool ProcessCinnabarPresentation(double delta)
@@ -69,7 +69,7 @@ public partial class CampaignView
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
         _cinnabarDustFrames=Math.Min(24,_cinnabarDustFrames+delta*60);
         if(!CinnabarLanding)return false;
-        _held=null;_repeat=0;_cinnabarFallFrames+=delta*60;var pose=CinnabarFallPose;
+        _held=null;_cinnabarFallFrames+=delta*60;var pose=CinnabarFallPose;
         var player=_poses["LOCALID_PLAYER"];player.Visible=pose.Visible;player.DrawYOffset=pose.OffsetY;player.Frame=0;
         if(pose.FallCue&&!_cinnabarFallSound){_cinnabarFallSound=true;SourceSound("SE_FALL");}
         if(pose.LandingCue&&!_cinnabarLandSound){_cinnabarLandSound=true;SourceSound("SE_M_STRENGTH");_cinnabarDustTile=_session.State.World.Player;_cinnabarDustFrames=pose.LandingFrames;}

@@ -102,8 +102,7 @@ public partial class CampaignView
     {
         if (!SeviiRubyBrailleVisible || _session.State.Script.Wait?.Kind != StoryWaitKind.ButtonPress ||
             key.Keycode is Key.Escape or Key.F12 or Key.F5 or Key.F9) return false;
-        _held = null; _repeat = 0;
-        if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace &&
+        _held = null; if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace &&
             _waitElapsed >= _waitDuration && _tracks.All(t => t.Time >= t.Duration))
             Apply(new("button_press", Text: key.Keycode == Key.Enter ? "A" : "B"));
         return true;

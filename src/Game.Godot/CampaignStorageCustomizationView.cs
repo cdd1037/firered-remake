@@ -67,7 +67,7 @@ public partial class CampaignView
             if (_storageCustomizationKind is not null && kind is null) _storageCustomizationClosedFrame = Engine.GetProcessFrames();
             _storageCustomizationKind = kind; _storageCustomizationCursor = 0;
             _storageCustomizationRevision = _session.Revision;
-            _held = null; _repeat = 0; ReleaseFieldTextInput();
+            _held = null; ReleaseFieldTextInput();
         }
     }
 
@@ -141,8 +141,7 @@ public partial class CampaignView
     {
         if (!StorageCustomizationOverlayActive) return false;
         if (!key.Pressed || key.Echo) return true;
-        _held = null; _repeat = 0;
-        if (_pcNotice is not null) { if (key.Keycode is Key.Enter or Key.Backspace or Key.B) _pcNotice = null; return true; }
+        _held = null; if (_pcNotice is not null) { if (key.Keycode is Key.Enter or Key.Backspace or Key.B) _pcNotice = null; return true; }
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return true; }
         if (StorageBoxNaming)
         {

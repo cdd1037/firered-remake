@@ -32,7 +32,7 @@ public partial class CampaignView
     {
         ResetQuestLogPlayback();
         _questLogPlayback=_session.State.QuestLog is {} log?new(log,_session.State.PlayerName,_catalog.QuestLogSource,CampaignQuestLogRecorder.SavedScene(_session.State,_catalog.QuestLogSource),(map,layout,tiles,x,y)=>JumpBehavior(new(map),layout,tiles,x,y)):null;
-        _held=null;_repeat=0;ResetPlayTimeHost();QueueRedraw();
+        _held=null;ResetPlayTimeHost();QueueRedraw();
     }
     private void ResetQuestLogPlayback()
     {
@@ -41,7 +41,7 @@ public partial class CampaignView
     private void FinishQuestLogPlayback()
     {
         if(_questLogPlayback?.SavedGameVisible==true)_fieldFogScene=_questFogScene;
-        ResetQuestLogPlayback();_held=null;_repeat=0;ResetCampaignButtonInput();QueueRedraw();
+        ResetQuestLogPlayback();_held=null;ResetCampaignButtonInput();QueueRedraw();
         // Map/session/poses were never replaced, so Continue resumes the exact saved field.
     }
     private void DisposeQuestLogPresentation()

@@ -29,7 +29,7 @@ public partial class CampaignView
             _mailScreenKey = key; _mailCursor = 0; _partyLastRightSlot = 1;
             _mailPartyIds = pending?.Phase == CampaignMailPhase.MailboxGive ? _session.State.Party.Select(p => p.InstanceId).ToArray() : [];
         }
-        if (MailScreen) { _held = null; _repeat = 0; }
+        if (MailScreen) { _held = null; }
     }
     private CampaignCommand PartyMailCommand(string kind, int? choice = null)
     {

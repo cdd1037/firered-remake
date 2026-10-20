@@ -95,7 +95,7 @@ public partial class CampaignView
         if(_session.State.Battle is not {} b){_battlePresentationKey=null;_battleNotice=null;_battleMenu="actions";return;}
         var key=$"{b.Id}:{b.Phase}:{b.State.EventSequence}:{b.EventIndex}:{b.PageIndex}";
         if(_battlePresentationKey==key)return;
-        _battlePresentationKey=key;_battleElapsed=0;_battlePage=0;_battlePages=[];_battleOakPages.Clear();_battleArrowPages.Clear();_battleNotice=null;_oakNotice=false;_battleStatsTotals=false;
+        _battlePresentationKey=key;_battleElapsed=0;_battlePage=0;_battlePages=[];_battleOakPages.Clear();_battleArrowPages.Clear();_battleSourceContinuations.Clear();_battleNotice=null;_oakNotice=false;_battleStatsTotals=false;
         if(b.Phase==CampaignBattlePhase.ChooseMove)return;
         var pages=ImmutableArray.CreateBuilder<string>();
         void Source(string symbol,params (string Key,string Value)[] values)
@@ -105,7 +105,7 @@ public partial class CampaignView
             if(oak)for(int i=0;i<added.Length;i++)_battleOakPages.Add(pages.Count+i);
             bool finalWait=_battleText[symbol].EndsWith("\\p",StringComparison.Ordinal)||_battleText[symbol].EndsWith("\\l",StringComparison.Ordinal)||_battleText[symbol].Contains("{PAUSE_UNTIL_PRESS}",StringComparison.Ordinal);
             for(int i=0;i<added.Length;i++)if(i+1<added.Length||finalWait)_battleArrowPages.Add(pages.Count+i);
-            pages.AddRange(added);
+            AppendBattleSourcePages(pages, added, _battleSourceContinuations);
         }
         if(b.Phase==CampaignBattlePhase.Events)
         {

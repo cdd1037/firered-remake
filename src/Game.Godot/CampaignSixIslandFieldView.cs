@@ -44,7 +44,7 @@ public partial class CampaignView
             _sixIslandShakeSequence=shake.Sequence; _sixIslandShakeFrames=0;
             SourceSound("SE_M_STRENGTH"); // ShakeScreen itself plays this in addition to the preceding script cue.
         }
-        if (SixIslandFieldLocked) { _held=null; _repeat=0; }
+        if (SixIslandFieldLocked) { _held=null; }
     }
 
     private int SixIslandCutPartyIndex()
@@ -60,7 +60,7 @@ public partial class CampaignView
         if (!double.IsFinite(delta) || delta<0) throw new ArgumentOutOfRangeException(nameof(delta));
         _sixIslandShakeFrames=Math.Min(37,_sixIslandShakeFrames+delta*60);
         if (!SixIslandFieldLocked) return false;
-        _held=null; _repeat=0; _sixIslandFieldFrames+=delta*60;
+        _held=null; _sixIslandFieldFrames+=delta*60;
         var state=_session.State;
         if (state.RuinValleyCut is {} cut)
         {

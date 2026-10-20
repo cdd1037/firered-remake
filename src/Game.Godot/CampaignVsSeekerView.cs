@@ -79,7 +79,7 @@ public partial class CampaignView
             if (!_vsSeekerIdle.TryGetValue(actor.LocalId, out var idle) || idle.Movement != actor.MovementType)
                 _vsSeekerIdle[actor.LocalId] = new() { Movement = actor.MovementType };
         var previous = before?.VsSeekerEffect; var current = after.VsSeekerEffect;
-        if (current is not null) { _held = null; _repeat = 0; ReleaseFieldTextInput(); }
+        if (current is not null) { _held = null; ReleaseFieldTextInput(); }
         if (previous is null && current is not null) _vsSeekerFrameRemainder = 0;
         if (previous?.Phase == "scan")
         {
@@ -141,8 +141,7 @@ public partial class CampaignView
                 state.DoubleBattle is not null || state.Shop is not null || state.Pc is not null || state.FameChecker is not null || state.SlotMachine is not null;
             AdvanceVsSeekerActors(delta * 60, frozen); return false;
         }
-        _held = null; _repeat = 0;
-        if (state.VsSeekerEffect.Phase == "message")
+        _held = null; if (state.VsSeekerEffect.Phase == "message")
         {
             AdvanceVsSeekerActors(delta * 60, true);
             _vsSeekerMessageElapsed += delta; _vsSeekerTextRemainder += delta * 60;
@@ -184,8 +183,7 @@ public partial class CampaignView
                 _session.State.DoubleBattle is not null) return false;
             _held = null; Apply(new("use_registered")); QueueRedraw(); GetViewport().SetInputAsHandled(); return true;
         }
-        _held = null; _repeat = 0;
-        bool confirm = input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Enter or Key.Backspace } ||
+        _held = null; bool confirm = input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Enter or Key.Backspace } ||
             input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left or MouseButton.Right } ||
             input is InputEventJoypadButton { Pressed: true, ButtonIndex: JoyButton.A or JoyButton.B };
         bool release = input is InputEventKey { Pressed: false, Keycode: Key.Enter or Key.Backspace } ||

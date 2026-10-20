@@ -10,6 +10,11 @@ public partial class CampaignView
     private CampaignButton _buttonObservedPhysical;
     private int _shoulderRepeatDirection;
     private double _shoulderRepeat;
+    // Sample the combined owners every printer frame. Releasing A must not release B,
+    // another A device, L=A, or a still-held pointer confirmation.
+    private bool TextSpeedButtonHeld => (_buttons.Held & (CampaignButton.A | CampaignButton.B)) != 0 ||
+        _menuMousePressed || _menuRightMousePressed ||
+        (_session?.State.EggHatch is not null && _eggTextAliasKeys.Count != 0);
     private bool NormalizedAHeld => (_buttons.Held & CampaignButton.A) != 0;
 
     // Q/W were audited against all non-text key handlers: neither was bound.
@@ -137,7 +142,7 @@ private void ProcessCampaignButtonRepeats(double delta)
     }
     private void ReleaseNormalizedConfirm()
     {
-        ReleaseFieldTextInput(); _fameTextHeld = _fameTextPress = false;
+        ReleaseFieldTextInput(); _openingTextInput.Clear(); _fameTextHeld = _fameTextPress = false;
         _teachyFieldConfirm = false; _teachyBattleAHeld = false;
         _teachyFieldText.ReleaseInput(); _teachyBattleVoiceText.ReleaseInput();
         _diplomaConfirmKeys.Remove(Key.Enter); _diplomaConfirmKeys.Remove(Key.KpEnter);
@@ -151,13 +156,13 @@ private void ProcessCampaignButtonRepeats(double delta)
         if ((edge.Released & CampaignButton.A) != 0) ReleaseNormalizedConfirm();
     }
     private void ResetCampaignButtonInput(bool preserveHeld=false)
-    { if(!preserveHeld)_buttons.Reset(); _buttonObservedEvent = 0; ReleaseNormalizedConfirm(); _helpHeld = CampaignButton.None; }
+    { if(!preserveHeld)_buttons.Reset(); _eggTextAliasKeys.Clear(); _buttonObservedEvent = 0; ReleaseNormalizedConfirm(); _helpHeld = CampaignButton.None; }
     private void OnCampaignJoyConnectionChanged(long device, bool connected)
     {
         if (connected) return;
         _storageRectangleAnchor = null;
         var edge = _buttons.Disconnect((int)device);
         if ((edge.Released & CampaignButton.A) != 0) ReleaseNormalizedConfirm();
-        _held = null; _repeat = 0; _helpHeld = CampaignButton.None;
+        _held = null; _helpHeld = CampaignButton.None;
     }
 }

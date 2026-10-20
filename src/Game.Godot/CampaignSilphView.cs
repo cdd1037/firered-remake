@@ -44,7 +44,7 @@ public partial class CampaignView
         if (before.World.Player != pad.From || after.World.Player != pad.To)
             throw new InvalidDataException("Silph pad presentation endpoints differ.");
         _silphPad = new() { Pad = pad, Origin = before };
-        _held = null; _repeat = 0; _tracks.Clear(); _fade = 0;
+        _held = null; _tracks.Clear(); _fade = 0;
         return true;
     }
     private bool ProcessSilphPresentation(double delta)
@@ -52,8 +52,7 @@ public partial class CampaignView
         if (!double.IsFinite(delta) || delta < 0) throw new ArgumentOutOfRangeException(nameof(delta));
         if (_silphPad is { } animation)
         {
-            _held = null; _repeat = 0;
-            animation.Frames += delta * 60;
+            _held = null; animation.Frames += delta * 60;
             int frame = (int)Math.Floor(animation.Frames + 1e-7);
             if (animation.Phase == "step" && frame >= 16)
             { animation.Frames = animation.Frames - 16 + 1; animation.Phase = "out"; SourceSound("SE_WARP_IN"); }
@@ -73,7 +72,7 @@ public partial class CampaignView
             }
             QueueRedraw(); return true;
         }
-        if (SilphElevatorMenuActive) { _held = null; _repeat = 0; _silphMenuFrames += delta * 60; QueueRedraw(); return true; }
+        if (SilphElevatorMenuActive) { _held = null; _silphMenuFrames += delta * 60; QueueRedraw(); return true; }
         if (_session.State.World.Player.MapId == SilphElevatorId && _silphElevatorDistance > 0)
         {
             _silphElevatorTicks = Math.Min(_silphElevatorDuration, _silphElevatorTicks + delta * 60);
@@ -111,8 +110,7 @@ public partial class CampaignView
     private bool TrySilphInput(InputEventKey key)
     {
         if (!SilphElevatorMenuActive || key.Keycode is Key.Escape or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed || key.Echo || !SilphElevatorMenuVisible) return true;
+        _held = null; if (!key.Pressed || key.Echo || !SilphElevatorMenuVisible) return true;
         if (key.Keycode is Key.Up or Key.Down)
         {
             var next = SilphSourcePresentation.MoveMenu(_silphMenuScroll, _silphMenuRow, key.Keycode == Key.Down);

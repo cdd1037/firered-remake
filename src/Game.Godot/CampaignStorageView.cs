@@ -47,7 +47,7 @@ public partial class CampaignView
         SynchronizeStorageItemPrompt();
         SynchronizeStorageReleasePrompt();
         SynchronizeStorageCustomization();
-        if(view is not null){_held=null;_repeat=0;}
+        if(view is not null){_held=null;}
         if(view==CampaignPcView.Deposit)_pcCursor=Math.Clamp(_pcCursor,0,_session.State.Party.Length);
     }
     private void StorageAction(CampaignCommand command,string? successSymbol=null,string? name=null)

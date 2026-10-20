@@ -18,7 +18,7 @@ public partial class CampaignView
         var pending = _session.State.Repel;
         if (pending?.WaitId == _repelWaitId) return;
         _repelWaitId = pending?.WaitId; _repelWaitElapsed = 0;
-        if (pending is not null) { _held = null; _repeat = 0; ReleaseFieldTextInput(); }
+        if (pending is not null) { _held = null; ReleaseFieldTextInput(); }
     }
 
     private bool ProcessRepelPresentation(double delta)
@@ -38,8 +38,7 @@ public partial class CampaignView
     {
         if (_session.State.Repel is not { } pending) return false;
         if (key.Keycode is Key.Escape or Key.F12 or Key.F5 or Key.F9) return false;
-        _held = null; _repeat = 0;
-        if (pending.Phase == CampaignRepelPhase.UseSound) return true;
+        _held = null; if (pending.Phase == CampaignRepelPhase.UseSound) return true;
         if (FieldTextInput(key)) return true;
         if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace &&
             FieldTextComplete && _tracks.All(t => t.Time >= t.Duration))

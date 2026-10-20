@@ -4,5 +4,27 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <AssemblyName>Game.Godot</AssemblyName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' and '$(Configuration)' == 'ExportRelease'">
+    <FireRedTrimmedExport>true</FireRedTrimmedExport>
+  </PropertyGroup>
+  <!-- Conservative reflection roots; framework code is still genuinely linked. -->
+  <PropertyGroup Condition="'$(FireRedTrimmedExport)' == 'true'">
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <SelfContained>true</SelfContained>
+    <_EnableConsumingManagedCodeFromNativeHosting>true</_EnableConsumingManagedCodeFromNativeHosting>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2026;IL2057;IL2067;IL2070;IL2072;IL2075;IL2091</WarningsNotAsErrors>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(FireRedTrimmedExport)' == 'true'">
+    <TrimmerRootDescriptor Include="$(MSBuildProjectDirectory)/TrimReflectionRoots.xml" />
+    <TrimmerRootAssembly Include="GodotSharp;Game.Godot;Game.Application;Game.Content;Game.Domain;Game.Audio;System.Collections;System.Collections.Immutable" />
+  </ItemGroup>
+  <!-- Godot is a native-hosted library, not an executable with a managed Main. -->
+  <Target Name="RootGodotNativeHostedLibrary" AfterTargets="PrepareForILLink" Condition="'$(FireRedTrimmedExport)' == 'true'">
+    <ItemGroup><TrimmerRootAssembly Update="@(IntermediateAssembly)" RootMode="All" /></ItemGroup>
+  </Target>
   <ItemGroup><ProjectReference Include="../Game.Audio/Game.Audio.csproj"/><ProjectReference Include="../Game.Application/Game.Application.csproj"/><ProjectReference Include="../Game.Content/Game.Content.csproj"/></ItemGroup>
 </Project>

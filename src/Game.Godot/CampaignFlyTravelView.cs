@@ -35,15 +35,14 @@ public partial class CampaignView
                     FieldCutSourcePresentation.PlayerFrameDurations.Sum()) : null;
             if (_fieldFlyTravel is not null) _fade = 0;
         }
-        if (fly is not null) { _held = null; _repeat = 0; }
+        if (fly is not null) { _held = null; }
     }
 
     private bool ProcessFieldFlyTravelPresentation(double delta)
     {
         if (_fieldFlyTravel is not {} travel || _session.State.FlyEffect is not {} fly) return false;
         if (!double.IsFinite(delta) || delta < 0) throw new ArgumentOutOfRangeException(nameof(delta));
-        _held = null; _repeat = 0;
-        _fieldFlyTickRemainder += delta * 60;
+        _held = null; _fieldFlyTickRemainder += delta * 60;
         while (_fieldFlyTickRemainder + 1e-7 >= 1 && !travel.Complete)
         {
             _fieldFlyTickRemainder -= 1;

@@ -21,13 +21,11 @@ public partial class CampaignView
             if(current.SourceMenu!=source.SourceMenu||!current.Options.SequenceEqual(source.Options))throw new InvalidDataException("Ferry menu changed within one source wait.");
             return;
         }
-        _seagallopMenu=new(source.SourceMenu,source.Options);_seagallopMenuWaitId=id;_held=null;_repeat=0;
-    }
+        _seagallopMenu=new(source.SourceMenu,source.Options);_seagallopMenuWaitId=id;_held=null;}
     private bool TrySeagallopMenuInput(InputEventKey key)
     {
         if(!SeagallopMenuActive||key.Keycode is Key.Escape or Key.F12 or Key.F5 or Key.F9)return false;
-        _held=null;_repeat=0;
-        if(!key.Pressed||!SeagallopMenuReady)return true;
+        _held=null;if(!key.Pressed||!SeagallopMenuReady)return true;
         var menu=_seagallopMenu??throw new InvalidDataException("Ferry menu missing.");
         if(key.Keycode is Key.Up or Key.Down)
         {if(menu.Move(key.Keycode==Key.Up?-1:1))SourceSound("SE_SELECT");}

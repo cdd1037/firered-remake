@@ -130,7 +130,7 @@ public sealed partial class CampaignSession
         if(!_content.SupportsRegionalFlavor(before.MapId)&&!turn&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&map.SourceBehaviorAt(x,y)==0x84)
         {
             var sign=_content.MapDefinition(map.Id).BackgroundTriggers.FirstOrDefault(z=>z.X==x&&z.Y==y);
-            if(sign is not null)return new(CommandStatus.Accepted,Pump(StartStory(state,sign.ScriptId)));
+            if(sign is not null)return new(CommandStatus.Accepted,Pump(StartBackgroundStory(state,sign)));
         }
         var here=map.SourceBehaviorAt(before.X,before.Y);var front=map.SourceBehaviorAt(x,y);
         if(turn&&here is >=0x60 and <=0x71)

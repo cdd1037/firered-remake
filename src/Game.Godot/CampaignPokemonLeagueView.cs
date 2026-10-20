@@ -111,8 +111,7 @@ public partial class CampaignView
             _leagueRequestId=c.RequestId;_leagueRecordWaitId=after.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?after.Script.Wait?.CorrelationId:null;_leagueRecordElapsed=0;_leagueRecordTick=-1;
         }
         if(_leagueStage==c.Stage)return;
-        _leagueStage=c.Stage;_leagueElapsed=0;_leagueActionFrame=Engine.GetProcessFrames();_held=null;_repeat=0;
-        if(c.Stage==CampaignPokemonLeagueCompletionStage.AwaitingSave)
+        _leagueStage=c.Stage;_leagueElapsed=0;_leagueActionFrame=Engine.GetProcessFrames();_held=null;if(c.Stage==CampaignPokemonLeagueCompletionStage.AwaitingSave)
         {_leagueSaveAttempted=false;_leagueOverwritePrompt=false;_leagueOverwriteYes=false;}
         if(c.Stage==CampaignPokemonLeagueCompletionStage.DisplayingHallOfFame){_leagueDisplayCue=-1;_hallConfetti=new(unchecked((uint)c.ChallengeNumber));SourceSound("SE_SAVE");}
         if(c.Stage==CampaignPokemonLeagueCompletionStage.Credits)
@@ -190,7 +189,7 @@ public partial class CampaignView
         }
         if(c.Stage==CampaignPokemonLeagueCompletionStage.ResetRequested)
         {
-            ResetPlayTimeHost();ResetSourceAudio();_held=null;_repeat=0;_tracks.Clear();CloseNamingScreen();
+            ResetPlayTimeHost();ResetSourceAudio();_held=null;_tracks.Clear();CloseNamingScreen();
             if(_entrySource is null)InitializePlayerEntry("",force:true);else ReadEntrySave();
             _entryActionFrame=Engine.GetProcessFrames();
             Write("pokemonLeagueReturnToEntry",new{verifiedContinue=_entrySave is not null,originalTitleMovieImplemented=false});return true;

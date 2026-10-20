@@ -247,7 +247,7 @@ def verify_p0():
 
 def main():
  args=sys.argv[1:]
- if not args or args in (['-h'],['--help']):return output({'commands':['doctor','env [--json]','setup','build','test','probe','run [current-checkpoint.json]','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
+ if not args or args in (['-h'],['--help']):return output({'commands':['doctor','env [--json]','setup','build','test','probe','run [current-checkpoint.json]','export linux','export windows','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
  if args==['doctor']:return doctor()
  if args in (['env'],['env','--json']):
   exported={key:ENV[key] for key in ('FIRERED_TOOLCHAIN_ROOT','FIRERED_DOTNET','FIRERED_GODOT_NUGET_SOURCE','DOTNET_ROOT','GODOT','DOTNET_CLI_HOME','NUGET_PACKAGES','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','DOTNET_NOLOGO','DOTNET_CLI_TELEMETRY_OPTOUT','DOTNET_MULTILEVEL_LOOKUP')}
@@ -261,6 +261,10 @@ def main():
  if args==['probe']:return probe()
  if args and args[0]=='run':return play(args[1:])
  if args==['export','linux']:return export()
+ if args==['export','windows']:
+  sys.path.insert(0,str(ROOT/'scripts/lib'))
+  from windows_export import export_windows
+  return output(export_windows(ROOT,ENV,run,GODOT))
  if args==['verify','p0']:return verify_p0()
  if args[0] in ['content','scenario','save','convert-current-checkpoint']:
   run([DOTNET,'run','--project','src/Game.Tooling','--no-build','--',*args],'tooling-last.log');return 0

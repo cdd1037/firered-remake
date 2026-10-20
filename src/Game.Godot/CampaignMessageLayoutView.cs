@@ -17,24 +17,24 @@ public partial class CampaignView
         {
             bool oak = _battleOakPages.Contains(_battlePage);
             if (NativeBattleMessageEnabled)
-                return NativeBattleSample(_nativeBattleMessage, (_battlePresentationKey, _battlePages, _battlePage),
-                    _battlePages[_battlePage], oak ? _sourceNormal : _battleWhite, oak ? 198 : 212, oak ? 15 : 16);
+                return NativeBattleSample(_nativeBattleMessage, new(_battlePresentationKey, _battlePages, _battlePage),
+                    _battlePages[_battlePage], oak ? _sourceNormal : _battleWhite, oak ? 198 : 212, oak ? 15 : 16, _battleSourceContinuations);
             return MessageSample(_battleMessage, (_battlePresentationKey, _battlePages, _battlePage),
                 _battlePages[_battlePage], oak ? _sourceNormal : _battleWhite, oak ? 198 : 212);
         }
     }
     private SourceMessageSample WildMessageSample => NativeWildMessageEnabled
-        ? NativeBattleSample(_nativeWildMessage, (_wildPresentationKey, _wildPages, _wildPage), _wildPages[_wildPage], _battleWhite, 212, 16)
+        ? NativeBattleSample(_nativeWildMessage, new(_wildPresentationKey, _wildPages, _wildPage), _wildPages[_wildPage], _battleWhite, 212, 16, _wildSourceContinuations)
         : MessageSample(_wildMessage,
         (_wildPresentationKey, _wildPages, _wildPage), _wildPages[_wildPage], _battleWhite, 212);
     private SourceMessageSample DoubleMessageSample => NativeDoubleMessageEnabled
-        ? NativeBattleSample(_nativeDoubleMessage, (_doubleKey, _doublePages, _doublePage), _doublePages[_doublePage], _battleWhite, 212, 16)
+        ? NativeBattleSample(_nativeDoubleMessage, new(_doubleKey, _doublePages, _doublePage), _doublePages[_doublePage], _battleWhite, 212, 16, _doubleSourceContinuations)
         : MessageSample(_doubleMessage,
         (_doubleKey, _doublePages, _doublePage), _doublePages[_doublePage], _battleWhite, 212);
     private bool TryAdvanceBattleVisualMessage()
-    { if (_battlePages.IsEmpty) return false; _ = BattleMessageSample; return NativeBattleMessageEnabled ? AdvanceNativeBattleVisual(_nativeBattleMessage) : _battleMessage.TryAdvance(); }
+    { if (_battlePages.IsEmpty || _session.State.Battle is { Phase: Game.Application.CampaignBattlePhase.Results } battle && battle.Pages[battle.PageIndex].Kind == "stats") return false; _ = BattleMessageSample; return NativeBattleMessageEnabled ? AdvanceNativeBattleVisual(_nativeBattleMessage) : _battleMessage.TryAdvance(); }
     private bool TryAdvanceWildVisualMessage()
-    { if (_wildPages.IsEmpty) return false; _ = WildMessageSample; return NativeWildMessageEnabled ? AdvanceNativeBattleVisual(_nativeWildMessage) : _wildMessage.TryAdvance(); }
+    { if (_wildPages.IsEmpty || PresentedWildBattle is {} battle && WildStatsPage(battle)) return false; _ = WildMessageSample; return NativeWildMessageEnabled ? AdvanceNativeBattleVisual(_nativeWildMessage) : _wildMessage.TryAdvance(); }
     private bool TryAdvanceDoubleVisualMessage()
     { if (_doublePages.IsEmpty) return false; _ = DoubleMessageSample; return NativeDoubleMessageEnabled ? AdvanceNativeBattleVisual(_nativeDoubleMessage) : _doubleMessage.TryAdvance(); }
     private readonly SourceMessageCursor _battleNoticeMessage = new(), _wildNoticeMessage = new(),

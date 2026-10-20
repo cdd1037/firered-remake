@@ -35,8 +35,7 @@ public partial class CampaignView
             _slotRenderer ??= new(_slotArt, _catalog.GameCornerSlots!.Rules);
             _slotCallback = slot.CallbackId; _slotFrameTime = 0; _slotHeld = 0;
             _slotFairy = "neutral"; _slotFairySince = slot.Frame; _slotDrawFrame = -1;_slotDisplayBet=0;_slotMessage=null;
-            _held = null; _repeat = 0;
-        }
+            _held = null; }
         // Tilemap lights change only when UPDATE_LINE_LIGHTS runs. A wallet refund on Quit
         // does not clear that tilemap before the exit fade.
         if(slot.Phase==CampaignSlotPhase.Betting)_slotDisplayBet=slot.Bet;

@@ -30,13 +30,11 @@ public partial class CampaignView
         var list = menu.Definition.ListLayout;
         _sourceMenu = new(menu.Definition.Options.Select(o => o.Text), menu.Left, menu.Top, menu.DefaultChoice,
             list?.VisibleRows, list?.HeightTiles);
-        _sourceMenuWait = wait; _held = null; _repeat = 0;
-    }
+        _sourceMenuWait = wait; _held = null; }
     private bool TrySourceMenuInput(InputEventKey key)
     {
         if (!SourceMenuActive || key.Keycode is Key.Escape or Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed || !SourceMenuReady) return true;
+        _held = null; if (!key.Pressed || !SourceMenuReady) return true;
         if (key.Keycode is Key.Up or Key.Down)
         { if (_sourceMenu!.Move(key.Keycode == Key.Up ? -1 : 1)) SourceSound("SE_SELECT"); }
         else if (key.Keycode == Key.Enter || key.Keycode == Key.Backspace && !SourceMenu!.IgnoreB)

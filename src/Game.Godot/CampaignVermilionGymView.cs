@@ -90,7 +90,7 @@ public partial class CampaignView
         string? wait=after.CutEffect is null?null:after.CutEffect.WaitId??after.Script.Wait?.CorrelationId;
         if(wait!=_fieldCutWait||before?.CutEffect?.Phase!=after.CutEffect?.Phase)
         { _fieldCutWait=wait;_fieldCutFrames=0;_fieldCutCry=false; }
-        if(after.CutEffect is not null){_held=null;_repeat=0;}
+        if(after.CutEffect is not null){_held=null;}
     }
 
     private void ProcessFieldCutPresentation(double delta)

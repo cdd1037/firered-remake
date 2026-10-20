@@ -46,8 +46,7 @@ public partial class CampaignView
             ResetSummaryPresentation();
             return false;
         }
-        _held = null; _repeat = 0;
-        if (SummaryNow - _summaryExitStart >= 16 * 1000 / 60)
+        _held = null; if (SummaryNow - _summaryExitStart >= 16 * 1000 / 60)
         {
             _summaryExitAction = null; _summaryPreviousPokemon = null; _summarySlideFrom = null;
             close();

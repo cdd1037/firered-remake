@@ -19,11 +19,12 @@ public partial class CampaignView
     public override void _Input(InputEvent input)
     {
         ObserveCampaignButtonInput(input);
+        if (input is InputEventKey { Pressed: false } released) _eggTextAliasKeys.Remove(released.Keycode);
         if (_startupReady && TryNamingJoypadInput(input)) return;
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false })
-        { _menuMousePressed = false; _fieldTextHeld=false; }
+        { _menuMousePressed = false; }
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false })
-        { _menuRightMousePressed = false; _fieldTextHeld = false; }
+        { _menuRightMousePressed = false; }
     }
 
     private bool TryMenuMouseInput(InputEvent input)
@@ -87,7 +88,7 @@ public partial class CampaignView
             // the wheel sends only Up/Down to an explicitly recognized visible list.
             int direction = !wheel ? 0 : mouse!.ButtonIndex == MouseButton.WheelUp ? -1 : 1;
             if (NavigateMenuPointer(point, direction))
-            { _held = null; _repeat = 0; QueueRedraw(); GetViewport().SetInputAsHandled(); }
+            { _held = null; QueueRedraw(); GetViewport().SetInputAsHandled(); }
             return true;
         }
         if (right)

@@ -179,9 +179,11 @@ created per frame. Palette-only font changes retain page/reveal state and reuse
 the existing `SourceGameFont` variants; no second glyph/layout cache is introduced.
 
 Ordinary single/double battle message windows, tutorial Oak dialogue and the
-single-battle move-learning introduction use the surface. Their established
-instant reveal remains instant. Battle event/source page indices, authoritative
-ACKs and animation/cry/HP gates are unchanged. Notices, party/medicine, capture,
+single-battle move-learning introduction use the surface. They use the shared
+progressive printer at saved 8/4/1 source speed, with logical held A/B acceleration
+and source-string continuation metadata (see [battle text](battle-text-progress.md)).
+Battle event/source page indices, authoritative ACKs and animation/cry/HP gates
+remain owned by their existing consumers. Notices, party/medicine, capture,
 trainer-shift choices and stats have specialized retained paths and are not
 claimed migrated.
 

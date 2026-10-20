@@ -93,7 +93,7 @@ public partial class CampaignView
         if (!wasPresenting && presenting) { _npcTradeAudioFrame=-1;_npcTradeIncomingCry=false;_npcTradeLoggedPhase=null; }
         if (wasChoosing != choosing || wasPresenting != presenting)
         {
-            _held = null; _repeat = 0; ReleaseFieldTextInput();
+            _held = null; ReleaseFieldTextInput();
             _fade = 16.0 / 60;
             if (wasChoosing && !choosing || wasPresenting && !presenting)
                 _npcTradeClosedFrame = Engine.GetProcessFrames();
@@ -105,8 +105,7 @@ public partial class CampaignView
     private bool NpcTradeInput(InputEventKey key)
     {
         if ((!NpcTradeChoosing && !NpcTradePresenting) || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        // Source final A acknowledgement is allowed only after the whole visual sequence.
+        _held = null; // Source final A acknowledgement is allowed only after the whole visual sequence.
         // No key can cancel, finish early, select a second row or reach the field.
         if (NpcTradePresenting)
         {

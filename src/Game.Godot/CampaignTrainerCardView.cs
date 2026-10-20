@@ -38,7 +38,7 @@ public partial class CampaignView
         {
             _trainerCardFlipFromBack=_trainerCardBack;_trainerCardFlipFrames=0;SourceSound("SE_CARD_FLIP");
         }
-        else if(key.Keycode is Key.Enter or Key.Backspace)_fieldMenuMode="start";
+        else if(key.Keycode is Key.Enter or Key.Backspace)ReturnFieldMenu(Game.Application.FieldReturnPresentation.MenuScreen.TrainerCard);
         return true;
     }
     private void ProcessTrainerCardPresentation(double delta)

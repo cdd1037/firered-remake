@@ -25,7 +25,7 @@ public partial class CampaignView
         if (wasChoosing != choosing) _fade = 16.0 / 60;
         if (wasChoosing != choosing || wasNaming != naming)
         {
-            _held = null; _repeat = 0; ReleaseFieldTextInput();
+            _held = null; ReleaseFieldTextInput();
             if (wasChoosing && !choosing || wasNaming && !naming) _nameRaterClosedFrame = Engine.GetProcessFrames();
         }
     }
@@ -35,8 +35,7 @@ public partial class CampaignView
     private bool NameRaterInput(InputEventKey key)
     {
         if (!NameRaterChoosing && !NameRaterNaming || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed || key.Echo || _fade > 0) return true;
+        _held = null; if (!key.Pressed || key.Echo || _fade > 0) return true;
         if (NameRaterNaming)
         {
             if (key.Keycode is Key.Enter or Key.KpEnter) SubmitNameRaterNicknameFromView(_nicknameEdit.Text);

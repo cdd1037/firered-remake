@@ -31,7 +31,7 @@ public partial class CampaignView
         }
         if (_easyChatComposerPhase != draft?.Phase)
         { _easyChatComposerPhase = draft?.Phase; _easyChatConfirm = 1; _easyChatBrowseMode = 0; }
-        if (draft is not null) { _held = null; _repeat = 0; }
+        if (draft is not null) { _held = null; }
     }
     private bool EasyChatAction(string kind, int? choice = null, int quantity = 0)
     {

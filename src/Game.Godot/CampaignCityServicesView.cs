@@ -113,8 +113,7 @@ public partial class CampaignView
         {_fishingFrameRemainder=0;_fishingPoseFrames=0;}
         if(after.Fishing is {} fishing)
         {
-            _held=null;_repeat=0;
-            if(before?.Fishing?.State.SourceStep!=fishing.State.SourceStep&&fishing.State.SourceStep is 2 or 9 or 14)
+            _held=null;if(before?.Fishing?.State.SourceStep!=fishing.State.SourceStep&&fishing.State.SourceStep is 2 or 9 or 14)
                 _fishingPoseFrames=0;
         }
     }
@@ -165,8 +164,7 @@ public partial class CampaignView
     {
         if(_session?.State.Fishing is not {} fishing)return false;
         if(input is InputEventKey {Keycode:Key.Escape or Key.F12})return false;
-        _held=null;_repeat=0;
-        Key? confirm=input switch
+        _held=null;Key? confirm=input switch
         {
             InputEventKey {Echo:false,Keycode:Key.Enter or Key.Backspace} key=>key.Keycode,
             InputEventMouseButton {Pressed:true,ButtonIndex:MouseButton.Left}=>Key.Enter,

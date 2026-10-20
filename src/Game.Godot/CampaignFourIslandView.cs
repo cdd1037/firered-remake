@@ -98,7 +98,7 @@ public partial class CampaignView
     {
         string? id = after.FourIslandMovement?.Movement.PendingPresentationId.Value;
         if (id != _fourIslandMovementId) { _fourIslandMovementId=id; _fourIslandFrames=0; _fourIslandCry=false; }
-        if (id is not null) { _held=null; _repeat=0; }
+        if (id is not null) { _held=null; }
     }
     private int FourIslandShowMonPartyIndex()
     {
@@ -113,8 +113,7 @@ public partial class CampaignView
         if (!double.IsFinite(delta) || delta < 0) throw new ArgumentOutOfRangeException(nameof(delta));
         int duration = _session.State.PresentationTicks;
         if (duration <= 0) throw new InvalidDataException("Four Island presentation duration missing.");
-        _fourIslandFrames=Math.Min(duration,_fourIslandFrames+delta*60); _held=null; _repeat=0;
-        if (FourIslandShowMon && !_fourIslandCry && FourIslandFrame >= FieldFlashSourcePresentation.PlayerFrameDurations.Sum()+FieldFlashSourcePresentation.IndoorBannerOpenFrames+FieldFlashSourcePresentation.MonSlideInFrames)
+        _fourIslandFrames=Math.Min(duration,_fourIslandFrames+delta*60); _held=null; if (FourIslandShowMon && !_fourIslandCry && FourIslandFrame >= FieldFlashSourcePresentation.PlayerFrameDurations.Sum()+FieldFlashSourcePresentation.IndoorBannerOpenFrames+FieldFlashSourcePresentation.MonSlideInFrames)
         { _fourIslandCry=true; SourceCry(_session.State.Party[FourIslandShowMonPartyIndex()].Pokemon); }
         if (!_busy && FourIslandFrame >= duration && _tracks.All(t => t.Time+1e-9 >= t.Duration))
             Apply(new("four_island_field_ack",Text:pending.Movement.PendingPresentationId.Value));
@@ -151,8 +150,7 @@ public partial class CampaignView
     {
         if (_session.State.Script.Wait?.Kind != StoryWaitKind.ButtonPress ||
             _session.State.Dialogue?.TextSymbol != "FourIsland_IcefallCave_Back_Text_LoreleiWellDeepFreezeYou" || key.Keycode is Key.Escape or Key.F12 or Key.F5 or Key.F9) return false;
-        _held = null; _repeat = 0;
-        if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace && FieldTextComplete &&
+        _held = null; if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace && FieldTextComplete &&
             _waitElapsed >= _waitDuration && _tracks.All(t => t.Time >= t.Duration))
             Apply(new("button_press", Text: key.Keycode == Key.Enter ? "A" : "B"));
         return true;

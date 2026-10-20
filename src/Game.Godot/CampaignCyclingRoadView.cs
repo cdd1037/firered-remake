@@ -15,20 +15,14 @@ public partial class CampaignView
         CyclingRoadRules.Resolve(state.BicycleSlope, state.World.Player.Facing,
             command.Text == "idle" ? null : command.Direction, command.Choice == 1).Ticks;
 
-    private bool ProcessCyclingRoadPull(double delta)
+    private bool ProcessCyclingRoadPull()
     {
-        if (!CyclingRoadSlope || _held is not null || !_session.State.Script.Completed ||
-            _session.State.Script.Wait is not null || _session.State.Dialogue is not null || _busy ||
-            _runningShiftHeld && !_session.State.BicycleSlope)
+        if (!CyclingRoadSlope || _held is not null || _fieldDirections.IdlePullFailed ||
+            !_session.State.Script.Completed || _session.State.Script.Wait is not null ||
+            _session.State.Dialogue is not null || _busy || _runningShiftHeld && !_session.State.BicycleSlope)
             return false;
-        var command = new CampaignCommand("cycle_input", Choice: _runningShiftHeld ? 1 : 0, Text: "idle");
-        _repeat += delta;
-        if (_repeat >= CyclingRoadInputTicks(_session.State, command) / 60.0 &&
-            _tracks.All(t => t.Time >= t.Duration))
-        {
-            _repeat = 0;
-            Apply(command);
-        }
+        if (FieldDirectionReady)
+            ApplyFieldDirection(new("cycle_input", Choice: _runningShiftHeld ? 1 : 0, Text: "idle"));
         return true;
     }
 }

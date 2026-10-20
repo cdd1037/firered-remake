@@ -88,8 +88,7 @@ public partial class CampaignView
         if (_storageHand.Active) return true;
         if (StorageRectangleInput(key)) return true;
         if (!key.Pressed || key.Echo) return true;
-        _held = null; _repeat = 0;
-        if (_pcNotice is not null)
+        _held = null; if (_pcNotice is not null)
         {
             if (key.Keycode is Key.Enter or Key.Backspace or Key.B) _pcNotice = null;
             return true;

@@ -52,7 +52,7 @@ public partial class CampaignView
         if(before?.SurfEffect is {Phase:FieldSurfSourcePresentation.DismountJump} landed && effect is null &&
             after.World.Player == landed.Destination && _catalog.SourceMaps[after.World.Player.MapId].SourceBehaviorAt(after.World.Player.X,after.World.Player.Y) == 0)
         { _fieldSurfLanding = after.World.Player; _fieldSurfLandingFrames = 0; }
-        if (effect is not null) { _held = null; _repeat = 0; }
+        if (effect is not null) { _held = null; }
     }
 
     private bool ProcessFieldSurfPresentation(double delta)
@@ -72,8 +72,7 @@ public partial class CampaignView
         if (show && !_fieldSurfCry && FieldSurfFrame >= FieldCutSourcePresentation.PlayerFrameDurations.Sum() +
             FieldCutSourcePresentation.OutdoorBannerOpenFrames + FieldCutSourcePresentation.MonSlideInFrames)
         { _fieldSurfCry = true; SourceCry(_session.State.Party[effect.PartyIndex].Pokemon); }
-        _held = null; _repeat = 0;
-        if (!_busy && FieldSurfFrame >= duration && _tracks.All(t => t.Time + 1e-9 >= t.Duration))
+        _held = null; if (!_busy && FieldSurfFrame >= duration && _tracks.All(t => t.Time + 1e-9 >= t.Duration))
             Apply(new("field_surf_complete", Text: effect.WaitId));
         return true;
     }

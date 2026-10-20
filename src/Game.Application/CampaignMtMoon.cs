@@ -48,7 +48,7 @@ public sealed partial class CampaignSession
             if(state.BattledTrainers.Contains("pret:"+a[0]))next=state with{Script=state.Script with{Stack=state.Script.Stack.SetItem(state.Script.Stack.Length-1,new(a[1],0))}};
             return true;
         }
-        if(effect.Opcode=="copyobjectxytoperm")
+        if(effect.Opcode=="copyobjectxytoperm"&&effect.Source.Path=="data/maps/MtMoon_B2F/scripts.inc")
         {
             if(effect.Source.Path!="data/maps/MtMoon_B2F/scripts.inc"||a.Length!=1||a[0]!="LOCALID_MIGUEL"||!state.Actors.TryGetValue(a[0],out var actor)||!actor.Active)throw new InvalidDataException("mtmoon_copy_actor_context_invalid");
             next=state with{Actors=state.Actors.SetItem(actor.LocalId,actor with{TemplateX=actor.X,TemplateY=actor.Y})};return true;

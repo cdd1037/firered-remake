@@ -50,7 +50,7 @@ public partial class CampaignView
         if(_firstSeviiPresentation is null||before is null||before.World.Player!=after.World.Player)
             throw new InvalidDataException("First-Sevii ferry presentation context differs.");
         _seagallopId=voyage.PresentationId;_seagallopClock=new(voyage.Origin,voyage.Destination);_seagallopRemainder=0;
-        _held=null;_repeat=0;_tracks.Clear();_fade=0;
+        _held=null;_tracks.Clear();_fade=0;
         Write("seagallopBegin",new{id=_seagallopId,voyage.Origin,voyage.Destination,voyage.To,
             clock=SeagallopSourcePresentation.FramesPerSecond,audioEnabled=_sourceAudio is not null,audioFaulted=_audioFaulted,physicalAudioVerified=false});
     }
@@ -59,7 +59,7 @@ public partial class CampaignView
         if(_session.State.Seagallop is null)return false;
         if(!double.IsFinite(delta)||delta<0)throw new ArgumentOutOfRangeException(nameof(delta));
         var clock=_seagallopClock??throw new InvalidDataException("Ferry clock missing.");
-        _held=null;_repeat=0;_seagallopRemainder+=delta*SeagallopSourcePresentation.FramesPerSecond;
+        _held=null;_seagallopRemainder+=delta*SeagallopSourcePresentation.FramesPerSecond;
         while(_seagallopRemainder>=1&&_session.State.Seagallop is not null)
         {
             _seagallopRemainder-=1;

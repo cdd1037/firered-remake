@@ -32,7 +32,7 @@ public sealed partial class CampaignSession
         next=state;        var a=effect.Args;
         bool handles=effect.Opcode is "showmoneybox" or "hidemoneybox" or "updatemoneybox" or "checkmoney" or "removemoney" or "checkplayergender" ||
             effect.Opcode=="givemon"&&a[0]=="SPECIES_MAGIKARP";
-        if(!handles)return false;
+        if(!handles||effect.Source.Path!="data/maps/Route4_PokemonCenter_1F/scripts.inc")return false;
         if(!InMagikarpScript(state))throw new InvalidDataException("magikarp_effect_context_invalid");
         int Value(string token)=>int.TryParse(token,out int n)?n:state.Script.Variables.TryGetValue(token,out int v)?v:_content.TryConstant(token,out int c)?c:throw new InvalidDataException("magikarp_operand_unknown: "+token);
         CampaignState SetResult(int value)=>state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",value)}};

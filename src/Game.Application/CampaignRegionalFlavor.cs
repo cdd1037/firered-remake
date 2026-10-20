@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
     }
 
     private CampaignState StartBackgroundStory(CampaignState state, FieldBackgroundTrigger background) =>
-        StartStory(_content.SupportsRegionalFlavor(state.World.Player.MapId) ? RegionalFacing(state) : state, background.ScriptId);
+        StartStory(RegionalFacing(state), background.ScriptId);
 
     // Source TrySetUpWalkIntoSignpostScript is distinct from the A lookup: a
     // scripted signpost ignores BG facing but still matches coordinates/elevation.

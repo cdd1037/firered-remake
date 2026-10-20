@@ -14,7 +14,7 @@ public partial class CampaignView
     private bool HandleRunningShift(InputEvent input)
     {
         if (input is not InputEventKey { PhysicalKeycode: Key.Shift } key) return false;
-        if (!key.Echo) _runningShiftHeld = key.Pressed;
+        if (!key.Echo) { _runningShiftHeld = key.Pressed; _fieldDirections.ResetIdlePullFailure(); }
         return true;
     }
 

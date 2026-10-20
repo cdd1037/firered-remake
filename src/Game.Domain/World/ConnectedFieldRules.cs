@@ -109,6 +109,12 @@ public static class ConnectedFieldRules
         if (biking && front.SourceBehavior == 0x0a) return Blocked("bicycle-terrain-collision");
         if (front.SourceBehavior == 0x69 && intent.Direction == Direction.North && state.Player.Facing == Direction.North)
             return Fail("field-warp-handler-required", "Dispatch the north-facing front door before ordinary walking.");
+        // Source 0x80..0xa3 are counter/sign/furniture interaction metatiles,
+        // not movement programs. GetCollisionAtCoords rejects their solid tiles
+        // before A-button interaction dispatch. Keep this bounded to source-known
+        // interaction types: unknown and passable unsupported cells still fault.
+        if (front.Collision != 0 && front.SourceBehavior is >= 0x80 and <= 0xa3)
+            return Blocked("collision");
         if (!(surfing && front.SourceBehavior is 0x10 or 0x15) && !WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f) &&
             !(enableCardinalLedges && front.SourceBehavior is >=0x38 and <=0x3a))
             return Fail(BehaviorFault(front.SourceBehavior), $"Target source behavior 0x{front.SourceBehavior:x2}.");

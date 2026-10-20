@@ -145,7 +145,7 @@ public partial class CampaignView
     {
         if (_session.State.NoncombatFieldEffect is not { Phase: not "confirm" } effect) return false;
         SynchronizeNoncombatFieldPresentation(_session.State);
-        _held = null; _repeat = 0; _noncombatTicks += delta * 60;
+        _held = null; _noncombatTicks += delta * 60;
         int duration = NoncombatOutdoors ? FieldCutSourcePresentation.ShowMonCueFrames : FieldFlashSourcePresentation.ShowMonCueFrames;
         while (_noncombatTicks + 1e-7 >= 1)
         {

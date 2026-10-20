@@ -82,8 +82,7 @@ public partial class CampaignView
     {
         SynchronizeEvolutionView();
         if (_session.State.Evolution is not { } scene) return;
-        _held = null; _repeat = 0;
-        _evolutionFanfare = Math.Max(0, _evolutionFanfare - delta);
+        _held = null; _evolutionFanfare = Math.Max(0, _evolutionFanfare - delta);
         if (_evolutionAnimation is { Animating: true } animation && !_busy && !_lastCommandFault)
         {
             var before = animation.Phase;

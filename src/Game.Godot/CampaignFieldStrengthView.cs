@@ -30,7 +30,7 @@ public partial class CampaignView
             _fieldStrengthWait = strength?.WaitId; _fieldStrengthPhase = strength?.Phase;
             _fieldStrengthFrames = 0; _fieldStrengthCry = false;
         }
-        if (strength is not null) { _held = null; _repeat = 0; }
+        if (strength is not null) { _held = null; }
     }
 
     // Runs after shared motion tracks advance, so a callback cannot settle a boulder early.
@@ -44,8 +44,7 @@ public partial class CampaignView
         if (showMon && !_fieldStrengthCry && FieldStrengthFrame >=
             FieldFlashSourcePresentation.PlayerFrameDurations.Sum() + FieldFlashSourcePresentation.IndoorBannerOpenFrames + FieldFlashSourcePresentation.MonSlideInFrames)
         { _fieldStrengthCry = true; SourceCry(_session.State.Party[strength.PartyIndex].Pokemon); }
-        _held = null; _repeat = 0;
-        if (!_busy && FieldStrengthFrame >= duration && _tracks.All(t => t.Time + 1e-9 >= t.Duration))
+        _held = null; if (!_busy && FieldStrengthFrame >= duration && _tracks.All(t => t.Time + 1e-9 >= t.Duration))
         {
             if (!showMon) Apply(new("field_strength_complete", Text: strength.WaitId));
             else if (_session.State.Script.Wait is { Kind: StoryWaitKind.Presentation } wait &&

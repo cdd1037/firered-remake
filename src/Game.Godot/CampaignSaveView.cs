@@ -67,8 +67,7 @@ public partial class CampaignView
     {
         if (result.Status == SaveOperationStatus.OverwriteRequired) return;
         string message = CampaignSaveFeedback.Message(_saveText, result, _session.State.PlayerName);
-        _status = message; _held = null; _repeat = 0;
-        if (FieldMenuOpen) _fieldMenuNotice = message;
+        _status = message; _held = null; if (FieldMenuOpen) _fieldMenuNotice = message;
         else if (_session.State.Battle is not null) _battleNotice = message;
         else if (PresentedWildBattle is not null) _wildNotice = message;
         else if (DoubleBattleVisible) _doubleNotice = message;

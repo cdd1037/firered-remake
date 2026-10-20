@@ -126,8 +126,7 @@ public partial class CampaignView
     private bool StorageItemInput(InputEventKey key)
     {
         if (!key.Pressed || key.Echo) return true;
-        _held = null; _repeat = 0;
-        bool back = key.Keycode is Key.Backspace or Key.B;
+        _held = null; bool back = key.Keycode is Key.Backspace or Key.B;
         if (_pcNotice is not null) { if (back || key.Keycode == Key.Enter) _pcNotice = null; return true; }
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return true; }
         if (_storageItemInfo is not null)

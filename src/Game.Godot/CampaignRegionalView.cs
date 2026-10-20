@@ -20,6 +20,6 @@ public partial class CampaignView
         }
         if(dismiss){_regionalServiceNotice=null;_regionalServiceNoticeDismissedFrame=Engine.GetProcessFrames();}
         if(input is InputEventKey {Keycode:Key.F12})return false;
-        _held=null;_repeat=0;QueueRedraw();GetViewport().SetInputAsHandled();return true;
+        _held=null;QueueRedraw();GetViewport().SetInputAsHandled();return true;
     }
 }

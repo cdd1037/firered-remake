@@ -110,7 +110,7 @@ public partial class CampaignView
         _namingBinding = binding;
         if (!_namingScreen!.Open(binding.Context)) return;
         _namingGridActive = false; _namingFrameRemainder = 0;
-        _held = null; _repeat = 0; ReleaseFieldTextInput();
+        _held = null; ReleaseFieldTextInput();
         // Native IME/editor columns count scalars. Domain rules own the 7/8/10 text-element limits.
         _nicknameEdit.MaxLength = NameTextRules.MaximumScalarCount;
         _sourceNormal.EnsureGlyphs(binding.Context.InitialText);
@@ -128,7 +128,7 @@ public partial class CampaignView
         _namingBinding = null; _namingScreen?.Close(); _namingGridActive = false; _namingFrameRemainder = 0;
         _namingGlyphUnavailable = false;
         _nicknameEdit.Visible = false; _nicknameEdit.ReleaseFocus();
-        _held = null; _repeat = 0; ReleaseFieldTextInput();
+        _held = null; ReleaseFieldTextInput();
     }
 
     private void SynchronizeNamingScreen(CampaignState? before, CampaignState after)
@@ -308,7 +308,7 @@ public partial class CampaignView
                 if (NamingScreenActive && !_nicknameEdit.HasFocus()) { _nicknameEdit.GrabFocus(); _nicknameEdit.Edit(); }
             }
         }
-        _held = null; _repeat = 0; GetViewport().SetInputAsHandled(); return true;
+        _held = null; GetViewport().SetInputAsHandled(); return true;
     }
 
     private bool NamingPointer(Vector2 point)

@@ -5,7 +5,7 @@ public partial class CampaignView
 {
     private PretOpeningPresentation? _opening;
     private readonly Dictionary<string, ImageTexture> _openingTextures = [];
-    private readonly List<(string Text, string Portrait)> _openingPages = [];
+    private readonly List<(string Text, string Portrait, int Message)> _openingPages = [];
     private int _openingPage;
     private OpeningPortraitTransition? _openingPortraitTransition;
     private Action? _openingPortraitCompleted;
@@ -16,7 +16,7 @@ public partial class CampaignView
     private SourceDialogText _openingText = null!;
     private double _openingFrameRemainder;
     private int _openingVisualFrame, _guidePage;
-    private bool _openingSpeedUp;
+    private readonly SourceTextInput _openingTextInput = new();
     private OpeningExitPresentation? _openingExit;
     private OpeningNidoranPresentation? _openingNidoran;
     private int _titleExitFrame, _guideExitFrame;
@@ -104,21 +104,22 @@ public partial class CampaignView
                 }
                 if (_entryMode == "oak-speech" && (_openingNidoran is null || _openingNidoran.Returning || _openingNidoran.Frame >= 32))
                 {
-                    _openingPrinter.AdvanceFrames(1, _openingSpeedUp, _openingSpeedUp);
+                    _openingTextInput.Advance(_openingPrinter, 1, TextSpeedButtonHeld);
                     _openingText.RevealCodepoints(_openingPrinter.VisibleCodepoints);
                 }
             }
         }
     }
-    private void ResetOpeningPrinter()
+    private void ResetOpeningPrinter(bool continuation = false)
     {
-        _openingSpeedUp = false;
+        _openingTextInput.Clear();
         int speed = (_entrySave?.State.Options ?? Game.Domain.Options.SourceGameOptions.Defaults).TextSpeed switch
         { Game.Domain.Options.SourceTextSpeed.Slow => 8, Game.Domain.Options.SourceTextSpeed.Mid => 4, _ => 1 };
         string text = _sourceNormal.PrepareText(_openingPages[_openingPage].Text);
         _openingText.Bind(text, _sourceNormal.Font,
             _sourceNormal.Size, 15, 198, wrap: SourceHelpTextLayout.ContainsCjk(text));
-        _openingPrinter.Reset(_openingText.CurrentVisualText, speed);
+        if (continuation) _openingPrinter.ContinuePage(_openingText.CurrentVisualText);
+        else _openingPrinter.Reset(_openingText.CurrentVisualText, speed);
         _openingText.RevealCodepoints(0);
     }
     private bool OpeningGuideKey(Key key)
@@ -260,8 +261,12 @@ public partial class CampaignView
         _openingNidoran = null; _openingPortraitTransition = null; _openingPortraitCompleted = null;
         _openingText.Clear();
         _openingPages.Clear(); _openingPage = 0; _openingNext = next; _entryMode = "oak-speech"; _entryCursor = 0;
-        foreach (var (symbol, portrait) in messages)
-            foreach (string text in _opening!.Pages(symbol, _entryPlayerName, _entryRivalName)) _openingPages.Add((text, portrait));
+        for (int message = 0; message < messages.Length; message++)
+        {
+            var (symbol, portrait) = messages[message];
+            foreach (string text in _opening!.Pages(symbol, _entryPlayerName, _entryRivalName))
+                _openingPages.Add((text, portrait, message));
+        }
         if (_openingPages.Count == 0) throw new InvalidDataException("Opening speech has no pages.");
         ResetOpeningPrinter();
         if (previous is not null || showPlayer)
@@ -274,16 +279,17 @@ public partial class CampaignView
     private void AdvanceOpeningSpeech()
     {
         if (_openingPortraitTransition is { Complete: false }) return;
-        if (!_openingPrinter.Complete) { _openingSpeedUp = true; return; }
+        if (!_openingPrinter.Complete) { _openingTextInput.Press(); return; }
         if (_openingNidoran is { Returning: false, Complete: false }) return;
         if (_openingNidoran is { Returning: false } && _sourceAudio?.Snapshot().Cry is { Playing: true }) return;
         if (_openingText.TryAdvanceVisual(_openingPrinter.Complete))
         {
             _openingPrinter.ContinuePage(_openingText.CurrentVisualText);
-            _openingSpeedUp = false;
+            _openingTextInput.Clear();
             return;
         }
         if (!_openingText.TryTakeSemanticAcknowledgement(_openingPrinter.Complete)) return;
+        int previousMessage = _openingPages[_openingPage].Message;
         string previousPortrait = _openingPages[_openingPage].Portrait;
         if (++_openingPage < _openingPages.Count)
         {
@@ -294,7 +300,7 @@ public partial class CampaignView
             { _openingNidoran = new(true, _captureBallAssets.Sine); _entryMode = "oak-return"; }
             else
             {
-                ResetOpeningPrinter();
+                ResetOpeningPrinter(_openingPages[_openingPage].Message == previousMessage);
                 if (previousPortrait != nextPortrait)
                     _openingPortraitTransition = new(previousPortrait, nextPortrait, 40);
             }

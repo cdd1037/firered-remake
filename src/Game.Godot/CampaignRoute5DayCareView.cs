@@ -28,7 +28,7 @@ public partial class CampaignView
         _session.State.Party[_tutorCursor].IsEgg, _summaryPartyText.Label);
     private void DayCarePartyTransition()
     {
-        _held = null; _repeat = 0; ReleaseFieldTextInput();
+        _held = null; ReleaseFieldTextInput();
         _tutorTransitionFrame = Engine.GetProcessFrames();
     }
 

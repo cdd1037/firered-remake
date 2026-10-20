@@ -38,7 +38,7 @@ public partial class CampaignView
             _diplomaConfirmJoypads.Clear();
             _diplomaMouseConfirm = Input.IsMouseButtonPressed(MouseButton.Left);
             _diplomaPresentation!.Open(NormalizedAHeld || _diplomaConfirmKeys.Count > 0 || _diplomaConfirmJoypads.Count > 0 || _diplomaMouseConfirm);
-            _held = null; _repeat = 0; ReleaseFieldTextInput(); ResetFieldMenu();
+            _held = null; ReleaseFieldTextInput(); ResetFieldMenu();
         }
         else if (after.Diploma is null && before?.Diploma is not null)
         {
@@ -55,8 +55,7 @@ public partial class CampaignView
     private bool ProcessDiplomaPresentation(double delta)
     {
         if (!DiplomaActive) return false;
-        _held = null; _repeat = 0;
-        if (!_busy && !_lastCommandFault)
+        _held = null; if (!_busy && !_lastCommandFault)
         {
             bool finished = _sourceAudio is null || _audioFaulted || _sourceAudio.Snapshot().FanfareToken is null;
             _diplomaPresentation!.Advance(delta, finished);
@@ -70,8 +69,7 @@ public partial class CampaignView
         bool closingFrame = _diplomaClosedFrame == Engine.GetProcessFrames();
         if (!DiplomaActive && !closingFrame) return false;
         if (input is InputEventKey { Keycode: Key.F12 }) return false;
-        _held = null; _repeat = 0;
-        if (DiplomaActive)
+        _held = null; if (DiplomaActive)
         {
             bool confirm = false, echo = false;
             if (input is InputEventKey key && key.Keycode is Key.Enter or Key.KpEnter or Key.A)

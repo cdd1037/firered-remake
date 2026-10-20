@@ -49,7 +49,7 @@ public partial class CampaignView
         }
         if(_fieldMenuMode=="pokedex-contents")
         {
-            if(key.Keycode==Key.Backspace)_fieldMenuMode="start";
+            if(key.Keycode==Key.Backspace)ReturnFieldMenu(Game.Application.FieldReturnPresentation.MenuScreen.Pokedex);
             else if(key.Keycode==Key.Up)_pokedexContentsCursor=Math.Max(0,_pokedexContentsCursor-1);
             else if(key.Keycode==Key.Down)_pokedexContentsCursor=Math.Min(_pokedexHabitats.Length,_pokedexContentsCursor+1);
             else if(key.Keycode==Key.R)OpenPokedexOrderMenu();

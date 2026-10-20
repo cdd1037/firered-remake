@@ -15,7 +15,7 @@ public partial class CampaignView
         bool wasChoosing = before?.SizeRecord?.Stage == CampaignSizeRecordStage.Party;
         bool choosing = after.SizeRecord?.Stage == CampaignSizeRecordStage.Party;
         if (wasChoosing == choosing) return;
-        _held = null; _repeat = 0; ReleaseFieldTextInput(); _fade = 16.0 / 60;
+        _held = null; ReleaseFieldTextInput(); _fade = 16.0 / 60;
         if (choosing) { _sizeRecordCursor = 0; _partyLastRightSlot = 1; }
         else _sizeRecordClosedFrame = Engine.GetProcessFrames();
     }
@@ -25,8 +25,7 @@ public partial class CampaignView
     private bool SizeRecordInput(InputEventKey key)
     {
         if (!SizeRecordChoosing || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed || key.Echo || _fade > 0) return true;
+        _held = null; if (!key.Pressed || key.Echo || _fade > 0) return true;
         int count = _session.State.Party.Length + 1;
         if (NativePartyMove(key.Keycode, ref _sizeRecordCursor, count - 1)) { }
         else if (key.Keycode is Key.Backspace or Key.Escape) Apply(new("size_record_cancel"));

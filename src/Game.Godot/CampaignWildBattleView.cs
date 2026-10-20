@@ -174,7 +174,7 @@ public partial class CampaignView
         _held = null;
         var key = $"{b.Id}:{b.Phase}:{b.State.EventSequence}:{b.EventIndex}:{b.PageIndex}:{b.PendingMoves.Length}:{b.Capture?.Stage}:{b.Replacement}:{b.ActivePartyIndex}:{b.RewardPartyIndex}:{_session.State.ForestTrainerBattle?.Stage}:{_session.State.ForestTrainerBattle?.TrainerEventIndex}";
         if (_wildPresentationKey == key) return;
-        _wildPresentationKey = key; _wildElapsed = 0; _wildPage = 0; _wildPages = []; _wildArrowPages.Clear();
+        _wildPresentationKey = key; _wildElapsed = 0; _wildPage = 0; _wildPages = []; _wildArrowPages.Clear(); _wildSourceContinuations.Clear();
         _wildNotice = null; _wildNoticeReturn = null; _wildStatsTotals = false; _wildMenu = "actions"; _wildCursor = 0;_wildMedicineItem=null;
         if (b.Capture is not null) return;
         if (b.Phase == CampaignBattlePhase.ChooseMove) { if(b.Replacement is null && !ForestTrainerShiftPending && SourceBattleForcedMoveSlot(b) is not null)SelectWildMoveMenu(b); SynchronizeForestTrainerChoice(); return; }
@@ -186,7 +186,7 @@ public partial class CampaignView
             bool finalWait = _battleText[symbol].EndsWith("\\p", StringComparison.Ordinal) ||
                 _battleText[symbol].EndsWith("\\l", StringComparison.Ordinal) || _battleText[symbol].Contains("{PAUSE_UNTIL_PRESS}", StringComparison.Ordinal);
             for (int i = 0; i < added.Length; i++) if (i + 1 < added.Length || finalWait) _wildArrowPages.Add(pages.Count + i);
-            pages.AddRange(added);
+            AppendBattleSourcePages(pages, added, _wildSourceContinuations);
         }
         if (b.Phase == CampaignBattlePhase.Events)
         {
@@ -284,7 +284,7 @@ public partial class CampaignView
                     {
                         var added = SourceTrainerPresentationModel.ScrollResultPages(TrainerTowerBattleSpeech(b.PageIndex) ?? page.Text).ToArray();
                         for (int i = 0; i + 1 < added.Length; i++) _wildArrowPages.Add(pages.Count + i);
-                        pages.AddRange(added);
+                        AppendBattleSourcePages(pages, added, _wildSourceContinuations);
                     }
                     else pages.Add(page.Text);
                     break;
@@ -349,7 +349,7 @@ public partial class CampaignView
             _wildCursor = WildRewardRecipient(b).Pokemon.Moves.Length; return;
         }
         var values = new[] { ("B_BUFF1", _catalog.PokemonDisplayName(WildRewardRecipient(b))), ("B_BUFF2", MoveName(b.PendingMoves[0].Move)) };
-        _wildPages = [.. WildSourcePages("sText_TryToLearnMove1", values), .. WildSourcePages("sText_TryToLearnMove2", values), .. WildSourcePages("sText_TryToLearnMove3", values)];
+        _wildPages = JoinBattleSourcePages(_wildSourceContinuations, WildSourcePages("sText_TryToLearnMove1", values), WildSourcePages("sText_TryToLearnMove2", values), WildSourcePages("sText_TryToLearnMove3", values));
         _wildPage = 0; _wildElapsed = 0; _wildMenu = "learn-intro"; _wildCursor = 0;
     }
     private bool WildLearningInput(InputEventKey key)

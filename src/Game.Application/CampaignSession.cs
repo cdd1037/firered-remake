@@ -659,7 +659,7 @@ public sealed partial class CampaignSession
                 if(!_content.SupportsRegionalFlavor(before.MapId)&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&map.SourceBehaviorAt(x,y)==0x84)
                 {
                     var sign=_content.MapDefinition(map.Id).BackgroundTriggers.FirstOrDefault(z=>z.X==x&&z.Y==y);
-                    if(sign is not null)return new(CommandStatus.Accepted,Pump(StartStory(state,sign.ScriptId)));
+                    if(sign is not null)return new(CommandStatus.Accepted,Pump(StartBackgroundStory(state,sign)));
                 }
                 var movement=FieldMovementRules.Move(state.World,new(new("field:"+state.World.Revision),state.World.Revision,command.Direction),_content.Maps);
                 if(movement.Status!=TransitionStatus.Accepted)return new(movement.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,movement.Diagnostic?.Code);
@@ -904,7 +904,6 @@ public sealed partial class CampaignSession
             if(TryApplyMtMoonEffect(state,effect,out var mtMoonState)){state=mtMoonState;continue;}
             if(TryApplyBillEffect(state,effect,out var billState)){state=billState;continue;}
             if(TryApplyWallTownMapEffect(state,effect,out var wallMapState)){state=wallMapState;continue;}
-            if(TryApplyRegionalDialogueEffect(state,effect,out var regionalDialogueState)){state=regionalDialogueState;continue;}
             if(TryApplyRegionalTeaEffect(state,effect,out var teaState)){state=teaState;continue;}
             if(TryApplyFightingDojoEffect(state,effect,out var dojoState)){state=dojoState;continue;}
             if(TryApplyRegionalGiftEffect(state,effect,out var regionalGiftState)){state=regionalGiftState;continue;}
@@ -927,6 +926,7 @@ public sealed partial class CampaignSession
             if(TryApplyPewterGymEffect(state,effect,out var gymState)){state=gymState;continue;}
             if(TryApplyParcelEffect(state,effect,out var parcelState)){state=parcelState;continue;}
             if(TryApplyScriptInventoryEffect(state,effect,out var inventoryScriptState)){state=inventoryScriptState;continue;}
+            if(TryApplySharedFieldScriptEffect(state,effect,out var sharedFieldState)){state=sharedFieldState;continue;}
             switch(effect.Opcode)
             {
                 case "multichoice":case "multichoicedefault":

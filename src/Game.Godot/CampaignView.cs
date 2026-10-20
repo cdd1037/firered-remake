@@ -36,8 +36,7 @@ public partial class CampaignView:Node2D
     private SourceUiCorrections _uiCorrections=null!;
     private SourceTextCursor _textCursor=null!;
     private MapArt _art=null!;
-    private Direction? _held;
-    private double _repeat,_waitElapsed,_waitDuration,_fade,_fanfareRemaining;
+    private double _waitElapsed,_waitDuration,_fade,_fanfareRemaining;
     private long _lastFanfareSequence;
     private bool _busy,_choiceYes=true;
     private bool FieldPresentationInputLocked=>FieldWarpInputLocked||FieldReturnInputLocked||SeafoamFieldLocked||SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.RockSmashEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null||_session?.State.FlyEffect?.Phase is "out" or "in";
@@ -146,6 +145,7 @@ public partial class CampaignView:Node2D
     // These resources are constructed directly, not borrowed from SceneTextures.
     private void DisposeCorePresentation()
     {
+        ResetFieldReturn();
         ResetFieldWarpPresentation();
         DisposeQuestLogPresentation();
         DisposeInventoryPresentation();
@@ -200,7 +200,7 @@ public partial class CampaignView:Node2D
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)).Concat(_art is null?[]:[PresentationMapKey(_art.Source.Id)]));
         var next=GetMapArt(id);ReleaseMapEdits();_art=next;
         MapCache.SetPins(_drawMapPins.Append(PresentationMapKey(id)));
-        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;_held=null;_repeat=0;_fade=fade ? .16 : 0;
+        _poses.Clear();_tracks.Clear();_fieldJumpCues.Clear();_fieldGrass.Clear();_fieldGrassFrame=0;ResetFieldDirectionCadence();_fade=fade ? .16 : 0;
     }
     private void Synchronize(CampaignState? before,CampaignState after,CampaignState? motionOrigin=null)
     {
@@ -282,6 +282,7 @@ public partial class CampaignView:Node2D
     {
         if(_quitRequested||_startupExited)return;
         if(!_startupReady){ProcessStartup();return;}
+        _fieldDirections.Advance(delta);
         if(TickQuestLogPlayback(delta))return;
         // Keep observing physics play-time ticks, but do not transact while the
         // immutable origin presentation still owns this accepted transition.
@@ -319,12 +320,12 @@ public partial class CampaignView:Node2D
         ProcessCenterHealing(delta);
         _fanfareRemaining=Math.Max(0,_fanfareRemaining-delta);
         if(_fade>0){_fade=Math.Max(0,_fade-delta);QueueRedraw();return;}
-        if(_session.EasyChatEditor is not null){_held=null;_repeat=0;QueueRedraw();return;}
+        if(_session.EasyChatEditor is not null){_held=null;QueueRedraw();return;}
         if(MoveTutorActive||DaisyGroomingChoosing||SizeRecordChoosing||NameRaterChoosing||NpcTradeChoosing||_regionalServiceNotice is not null){QueueRedraw();return;}
         if(ProcessRocketSpin(delta)){QueueRedraw();return;}
         if(ProcessFishingPresentation(delta)){QueueRedraw();return;}
         if(ProcessRegionalSignWalkaway(delta)){QueueRedraw();return;}
-        ProcessFieldText(delta);if(ProcessEggHatchPresentation(delta))return;ProcessFieldCutPresentation(delta);ProcessFieldRockSmashPresentation(delta);ProcessRocketPresentation(delta);ProcessDepartmentPresentation(delta);
+        ProcessBattleText(delta);ProcessFieldText(delta);if(ProcessEggHatchPresentation(delta))return;ProcessFieldCutPresentation(delta);ProcessFieldRockSmashPresentation(delta);ProcessRocketPresentation(delta);ProcessDepartmentPresentation(delta);
         if(ProcessFieldFlashPresentation(delta)){QueueRedraw();return;}
         if(ProcessRepelPresentation(delta)){QueueRedraw();return;}
         if(_session.State.OldManTutorial is not null){ProcessOldManPresentation(delta);QueueRedraw();return;}
@@ -364,10 +365,9 @@ public partial class CampaignView:Node2D
             bool rendered=FieldTextComplete&&wait.Kind==StoryWaitKind.MessagePrinting&&(_session.State.Dialogue is null||_session.State.Dialogue.Page+1==_session.State.Dialogue.Pages.Length);
             if((wait.Kind==StoryWaitKind.Presentation||rendered)&&SourceAudioWaitReady()){Apply(new("ack"));QueueRedraw();return;}
         }
-        if(ProcessCyclingRoadPull(delta)){QueueRedraw();return;}
+        if(ProcessCyclingRoadPull()){QueueRedraw();return;}
         ObserveQuestLogFieldStep();
-        if(_held is {} direction&&_session.State.Script.Completed&&_session.State.Script.Wait is null)
-        {_repeat+=delta;if(_repeat>=FieldStepTicksForDirection(_session.State,direction)/60.0&&_tracks.All(t=>t.Time>=t.Duration)){_repeat=0;Apply(new("move",direction));}}
+        ProcessFieldDirection();
         QueueRedraw();
     }
     private async void RequestQuit()
@@ -382,7 +382,7 @@ public partial class CampaignView:Node2D
         DisposeHelpPresentation();
         ResetSourceMoveAnimation("quit");
         CommitPlayTime(true);
-        _quitRequested=true;_held=null;_repeat=0;ResetPlayTimeHost();
+        _quitRequested=true;_held=null;ResetPlayTimeHost();
         SetPhysicsProcess(false);
         SetProcess(false);SetProcessUnhandledInput(false);
         var tree=GetTree();
@@ -410,7 +410,7 @@ public partial class CampaignView:Node2D
         if(what==(int)NotificationWMCloseRequest){RequestQuit();return;}
         if(!_startupReady||_quitRequested||_startupExited)return;
         if(what==(int)NotificationWMWindowFocusOut || what==(int)NotificationApplicationFocusOut)
-        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();ResetVsSeekerInput();ReleaseModalHeldInput();ReleaseDiplomaInput();ResetCampaignButtonInput();_storageRectangleAnchor=null;}
+        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ReleaseBattleTextInput();ResetRegionalSignInput();ResetVsSeekerInput();ReleaseModalHeldInput();ReleaseDiplomaInput();ResetCampaignButtonInput();_storageRectangleAnchor=null;}
     }
     public override void _UnhandledInput(InputEvent input)
     {
@@ -486,6 +486,7 @@ public partial class CampaignView:Node2D
         if(_session.State.RareCandy is not null&&RareCandyInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Evolution is not null&&TryEvolutionInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.SafariBattle is not null&&SafariBattleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
+        if(BattleTextInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Evolution is null&&DoubleBattleVisible&&DoubleBattleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Evolution is null&&(ForestTrainerCombatVisible||_session.State.WildBattle is not null)&&WildBattleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Battle is not null&&BattleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
@@ -510,8 +511,7 @@ public partial class CampaignView:Node2D
         var d=key.Keycode switch{Key.Up=>(Direction?)Direction.North,Key.Down=>Direction.South,Key.Left=>Direction.West,Key.Right=>Direction.East,_=>null};
         if(d is {} direction)
         {
-            if(key.Pressed){_held=direction;_repeat=0;if(_session.State.Script.Completed&&_tracks.All(t=>t.Time>=t.Duration))Apply(new(_session.State.World.Player.Facing!=direction?"turn":"move",direction));}
-            else if(_held==direction)_held=null;
+            FieldDirectionInput(direction,key.Pressed);
         }
         else if(key.Pressed)
         {
@@ -535,6 +535,7 @@ public partial class CampaignView:Node2D
     private bool Apply(CampaignCommand command)
     {
         if(_quitRequested||_busy||FieldWarpInputLocked||FieldReturnInputLocked)return false;
+        using var departingBagPage = command.Kind == "menu_back" && _fieldBagNavigation.FromStart && _session.State.ItemMenu is { Origin: "bag", View: "bag" } ? CaptureMenuReturnPage() : null;
         if(!CommitPlayTime(true))return false;
         CommitTrainerTowerTime(true);_busy=true;
         command=CyclingRoadInput(command);
@@ -557,14 +558,15 @@ public partial class CampaignView:Node2D
         else Write("command",_diagnostics.Payload(new{command,status=result.Status.ToString(),result.Error,result.Revision},()=>new{command,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),state=result.State}));
         if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);if(ConnectedFieldTransition(before,result.State))_session.CompleteFieldTransitionPresentation(result.State.FieldTransition!,0,1);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
         else if(result.Error=="sevii_first_visit_not_yet_available")
-        {_regionalServiceNotice=FieldMenuText.Get("notice.one-island-unavailable");_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
+        {_regionalServiceNotice=FieldMenuText.Get("notice.one-island-unavailable");_held=null;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
         else if(result.Error=="seagallop_destination_not_yet_available")
-        {_regionalServiceNotice=FieldMenuText.Get("notice.island-travel-unavailable");_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
+        {_regionalServiceNotice=FieldMenuText.Get("notice.island-travel-unavailable");_held=null;_lastCommandFault=false;_status=result.Error;}
         else if(result.Error=="npc_trade_access_boundary_not_open")
-        {_regionalServiceNotice=FieldMenuText.Get("notice.passage-unavailable");_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
-        else if(result.Error?.StartsWith("regional_service_unavailable: ",StringComparison.Ordinal)==true){_regionalServiceNotice=result.Error[30..];_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
+        {_regionalServiceNotice=FieldMenuText.Get("notice.passage-unavailable");_held=null;_lastCommandFault=false;_status=result.Error;}
+        else if(result.Error?.StartsWith("regional_service_unavailable: ",StringComparison.Ordinal)==true){_regionalServiceNotice=result.Error[30..];_held=null;_lastCommandFault=false;_status=result.Error;}
         else if(result.Status==CommandStatus.Fault){_lastCommandFault=true;_blockedAutomaticWait=before.Script.Wait?.CorrelationId;_status="未接入或故障："+result.Error;_held=null;/* authoritative state is unchanged; let the player choose a different valid action */}
         else _status=result.Error??"操作被拒绝";
+        if (reopenStart && departingBagPage is not null) BeginMenuReturn(FieldReturnPresentation.MenuScreen.Bag, departingBagPage);
         _busy=false;
         return result.Status==CommandStatus.Accepted;
     }

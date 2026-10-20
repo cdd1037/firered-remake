@@ -39,7 +39,7 @@ public partial class CampaignView
     {
         CancelPokedexCry();
         _fieldMenuMode = "closed"; _fieldMenuNotice = null; _fieldNoticeCloses = false;
-        _fieldSwapSource = -1; ResetFieldHealingSelection(); ResetOwnedSummarySelection(); _held = null; _repeat = 0;
+        _fieldSwapSource = -1; ResetFieldHealingSelection(); ResetOwnedSummarySelection(); _held = null;
     }
 
     // Called before the key-only guard so an actual joypad Start works too.
@@ -71,7 +71,7 @@ public partial class CampaignView
     {
         if(!CanOpenFieldMenu||!Apply(new("field_start_menu")))return;
         _fieldMenuMode = "start"; _fieldMenuCursor = Math.Clamp(_fieldMenuCursor, 0, FieldMenuEntries().Length - 1);
-        _held = null; _repeat = 0;
+        _held = null;
     }
 
     private bool TryFieldMenuInput(InputEventKey key)
@@ -80,7 +80,7 @@ public partial class CampaignView
         if (key.Keycode is Key.Escape or Key.F12) return false;
         // Save/load use their established handler and validation after the overlay closes.
         if (key.Keycode is Key.F5 or Key.F9) { if (key.Pressed) ResetFieldMenu(); return false; }
-        _held = null; _repeat = 0;
+        _held = null;
         if (!key.Pressed || key.Echo || _busy || _fade > 0) return true;
         if(_fieldMenuMode!="trainer-card" && key.Keycode is (Key.Up or Key.Down or Key.Left or Key.Right or Key.Enter or Key.Backspace))SourceSound("SE_SELECT");
         if (_fieldMenuNotice is not null)
@@ -98,7 +98,8 @@ public partial class CampaignView
         if (key.Keycode == Key.Backspace)
         {
             if (_fieldMenuMode == "start") ResetFieldMenu();
-            else if (_fieldMenuMode is "party" or "save-confirm" or "save-overwrite") _fieldMenuMode = "start";
+            else if (_fieldMenuMode == "party") ReturnFieldMenu(Game.Application.FieldReturnPresentation.MenuScreen.Party);
+            else if (_fieldMenuMode is "save-confirm" or "save-overwrite") _fieldMenuMode = "start";
             else { _fieldMenuMode = "party"; _fieldSwapSource = -1; }
             return true;
         }
@@ -152,7 +153,9 @@ public partial class CampaignView
         if (key.Keycode != Key.Enter) return true;
         if (_fieldPartyCursor == _session.State.Party.Length)
         {
-            _fieldMenuMode = _fieldMenuMode == "switch" ? "party" : "start"; _fieldSwapSource = -1;
+            if (_fieldMenuMode == "switch") _fieldMenuMode = "party";
+            else ReturnFieldMenu(Game.Application.FieldReturnPresentation.MenuScreen.Party);
+            _fieldSwapSource = -1;
             _fieldPartyCursor = Math.Max(0, _session.State.Party.Length - 1); return true;
         }
         if (_fieldMenuMode == "switch")
@@ -258,6 +261,8 @@ public partial class CampaignView
         if (_fieldMenuMode is "start" or "save-confirm" or "save-overwrite")
         {
             var entries = FieldMenuEntries();
+            // Finish lazy atlas uploads before earlier label draws retain its texture.
+            font.EnsureGlyphs(string.Concat(entries.Select(entry=>entry.Label))+"▶");
             DrawSafariFieldStats(font,palette);
             // Source new_menu_helpers.c:666-672, plus the surrounding 8px frame.
             _battleSkin.DrawUserFrame(this, new(168, 0, 72, entries.Length * 16 + 8),palette);

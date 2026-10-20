@@ -11,7 +11,7 @@ public partial class CampaignView
     private CampaignDialogue? _fieldPrintedDialogue;
     private string? _fieldPrintedText;
     private double _fieldTextFrameRemainder;
-    private bool _fieldTextHeld,_fieldTextNewPress;
+    private readonly SourceTextInput _fieldTextInput = new();
     private bool FieldTextProgressEnabled=>!SeviiRubyBrailleVisible;
     private bool FieldTextComplete=>!FieldTextProgressEnabled||_fieldPrintedText is null||
         _fieldTextProgress.Complete&&FieldText.IsFinal;
@@ -32,14 +32,18 @@ public partial class CampaignView
         if(!FieldTextProgressEnabled){FieldText.Clear();_fieldPrintedText=null;return;}
         var dialogue=_session.State.Dialogue;var text=PresentedFieldText;
         if(dialogue==_fieldPrintedDialogue&&text==_fieldPrintedText&&_trainerTowerSpeechPage==_fieldPrintedTowerSpeechPage)return;
-        _fieldPrintedDialogue=dialogue;_fieldPrintedText=text;_fieldPrintedTowerSpeechPage=_trainerTowerSpeechPage;_fieldTextFrameRemainder=0;_fieldTextHeld=false;_fieldTextNewPress=false;
+        bool continuation = _fieldTextProgress.Complete && _fieldPrintedDialogue is {} previous && dialogue is not null &&
+            previous.TextSymbol == dialogue.TextSymbol && previous.Pages == dialogue.Pages &&
+            dialogue.Page == previous.Page + 1 && _trainerTowerSpeechPage == _fieldPrintedTowerSpeechPage;
+        _fieldPrintedDialogue=dialogue;_fieldPrintedText=text;_fieldPrintedTowerSpeechPage=_trainerTowerSpeechPage;_fieldTextFrameRemainder=0;_fieldTextInput.Clear();
         int speed=_session.EffectiveOptions.TextSpeed switch{SourceTextSpeed.Slow=>8,SourceTextSpeed.Mid=>4,_=>1};
         if(text is null){FieldText.Clear();return;}
         string prepared = _sourceNormal.PrepareText(text);
         FieldText.Visible = true;
         FieldText.Bind(prepared, _sourceNormal.Font, _sourceNormal.Size, 15, 198,
             wrap: SourceHelpTextLayout.ContainsCjk(prepared));
-        _fieldTextProgress.Reset(FieldText.CurrentVisualText,speed);
+        if (continuation) _fieldTextProgress.ContinuePage(FieldText.CurrentVisualText);
+        else _fieldTextProgress.Reset(FieldText.CurrentVisualText,speed);
     }
     private void ProcessFieldText(double delta)
     {
@@ -47,7 +51,7 @@ public partial class CampaignView
         _fieldTextFrameRemainder+=delta*60;
         int frames=(int)Math.Min(int.MaxValue,Math.Floor(_fieldTextFrameRemainder));if(frames<=0)return;
         _fieldTextFrameRemainder-=frames;
-        _fieldTextProgress.AdvanceFrames(frames,_fieldTextHeld,_fieldTextNewPress);_fieldTextNewPress=false;
+        _fieldTextInput.Advance(_fieldTextProgress, frames, TextSpeedButtonHeld);
         FieldText.RevealCodepoints(_fieldTextProgress.VisibleCodepoints);
         ProcessSourceLeaderIntroAudio();
     }
@@ -72,16 +76,16 @@ public partial class CampaignView
         if(!FieldVisualContinuationPending)return false;
         if(!FieldText.TryAdvanceVisual(_fieldTextProgress.Complete))return false;
         _fieldTextProgress.ContinuePage(FieldText.CurrentVisualText);
-        _fieldTextHeld=_fieldTextNewPress=false;_held=null;_repeat=0;
+        _fieldTextInput.Clear();_held=null;
         return true;
     }
     private bool FieldTextInput(InputEventKey key)
     {
         if(key.Keycode is not (Key.Enter or Key.Backspace))return false;
-        if(!key.Pressed){_fieldTextHeld=false;return false;}
+        if(!key.Pressed)return false;
         if(!FieldTextProgressEnabled||!FieldDialogueVisible||FieldTextComplete)return false;
         if(!key.Echo&&TryAdvanceFieldVisualMessage())return true;
-        _fieldTextHeld=true;_fieldTextNewPress=true;_held=null;return true;
+        _fieldTextInput.Press();_held=null;return true;
     }
-    private void ReleaseFieldTextInput(){_fieldTextHeld=false;_fieldTextNewPress=false;}
+    private void ReleaseFieldTextInput()=>_fieldTextInput.Clear();
 }

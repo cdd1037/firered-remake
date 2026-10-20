@@ -54,8 +54,7 @@ public partial class CampaignView
     private bool ProcessTeachyTvFieldPresentation(double delta)
     {
         if (TeachyField is null) return false;
-        _held = null; _repeat = 0;
-        if (!double.IsFinite(delta) || delta < 0) throw new ArgumentOutOfRangeException(nameof(delta));
+        _held = null; if (!double.IsFinite(delta) || delta < 0) throw new ArgumentOutOfRangeException(nameof(delta));
         _teachyFieldRemainder += Math.Min(delta, .25) * 60;
         int frames = (int)Math.Min(60, Math.Floor(_teachyFieldRemainder + 1e-9));
         _teachyFieldRemainder -= frames;
@@ -78,8 +77,7 @@ public partial class CampaignView
     private bool TryTeachyTvFieldInput(InputEvent input)
     {
         if (TeachyField is not {} field) return false;
-        _held = null; _repeat = 0;
-        if (input is InputEventKey key && !key.Echo)
+        _held = null; if (input is InputEventKey key && !key.Echo)
         {
             if (key.Pressed && key.Keycode == Key.Escape) { RequestQuit(); return true; }
             if (key.Keycode is Key.Enter or Key.Z) TeachyTvFieldButton(true, key.Pressed, field);

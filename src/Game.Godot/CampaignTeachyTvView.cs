@@ -26,7 +26,7 @@ public partial class CampaignView
         _teachyTvPresentation.Synchronize(_session.TeachyTvCatalog!, scene?.Playback,
             _session.EffectiveOptions.TextSpeed switch { SourceTextSpeed.Slow => 8, SourceTextSpeed.Mid => 4, _ => 1 });
         if (wasActive && scene is null) _teachyTvClosedFrame = Engine.GetProcessFrames();
-        if (scene is not null) { _held = null; _repeat = 0; }
+        if (scene is not null) { _held = null; }
     }
     private void FlushTeachyTvRequests()
     {
@@ -61,8 +61,7 @@ public partial class CampaignView
             if (_teachyTvClosedFrame != Engine.GetProcessFrames()) return false;
             GetViewport().SetInputAsHandled(); return true;
         }
-        _held = null; _repeat = 0;
-        if (input is InputEventKey key && !key.Echo)
+        _held = null; if (input is InputEventKey key && !key.Echo)
         {
             if (key.Pressed && key.Keycode == Key.Escape) { RequestQuit(); return true; }
             var button = TeachyTvButtonForKey(key.Keycode);

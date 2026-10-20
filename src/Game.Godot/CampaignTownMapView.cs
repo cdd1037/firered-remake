@@ -87,8 +87,7 @@ public partial class CampaignView
             var projected = FlyMapActive ? InitializeFlyMap() : WallTownMapActive ? InitializeWallTownMap() : InitializeFirstSeviiTownMap(p.MapId.Value, p.X, p.Y);
             _townMapPlayer = _townMapCursor = new(projected.X, projected.Y);
             _townMapElapsed = 0; _townMapSnap = 0; _townMapNotice = null;
-            _townMapMoving = false; _townMapHeld = null; _held = null; _repeat = 0;
-        }
+            _townMapMoving = false; _townMapHeld = null; _held = null; }
         if (!active && _townMapWasActive)
         {
             _townMapHeld = null; _townMapMoving = false; _townMapNotice = null; _townMapSwitchMenu = false;
@@ -139,8 +138,7 @@ public partial class CampaignView
     {
         if (!TownMapActive) return false;
         if (key.Keycode is Key.Escape or Key.F5 or Key.F9 or Key.F12) return false;
-        _held = null; _repeat = 0;
-        Vector2I? direction = key.Keycode switch
+        _held = null; Vector2I? direction = key.Keycode switch
         { Key.Up => Vector2I.Up, Key.Down => Vector2I.Down, Key.Left => Vector2I.Left, Key.Right => Vector2I.Right, _ => null };
         if (!key.Pressed) { if (direction == _townMapHeld) _townMapHeld = null; return true; }
         if (_townMapNotice is not null)

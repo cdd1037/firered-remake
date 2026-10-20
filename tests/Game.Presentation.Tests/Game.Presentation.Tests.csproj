@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <Compile Include="../../src/Game.Godot/FieldDirectionCadence.cs" Link="FieldDirectionCadence.cs" />
     <Compile Include="../../src/Game.Godot/PokemonTowerPresentationModel.cs" Link="PokemonTowerPresentationModel.cs" />
     <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Application/FieldForestPreviewPresentation.cs" Link="FieldForestPreviewPresentation.cs" />
@@ -57,6 +58,8 @@
     <Compile Include="../../src/Game.Godot/CampaignFieldPartyActions.cs" Link="CampaignFieldPartyActions.cs" />
     <Compile Include="../../src/Game.Godot/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />
     <Compile Include="../../src/Game.Godot/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
+    <Compile Include="../../src/Game.Godot/SourceTextInput.cs" Link="SourceTextInput.cs" />
+    <Compile Include="../../src/Game.Godot/SourceBattleTextPrinter.cs" Link="SourceBattleTextPrinter.cs" />
     <Compile Include="../../src/Game.Godot/FameCheckerTextPresentation.cs" Link="FameCheckerTextPresentation.cs" />
     <Compile Include="../../src/Game.Godot/SlotMachineVisualPresentation.cs" Link="SlotMachineVisualPresentation.cs" />
     <Compile Include="../../src/Game.Godot/TeachyTvPresentation.cs" Link="TeachyTvPresentation.cs" />

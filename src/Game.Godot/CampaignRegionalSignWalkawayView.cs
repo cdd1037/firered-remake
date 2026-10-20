@@ -22,8 +22,7 @@ public partial class CampaignView
             if (before.SignMessage is { Cancelable: true })
             {
                 _regionalSignClosedFrame = Engine.GetProcessFrames();
-                _held = null; _repeat = 0;
-            }
+                _held = null; }
             ResetRegionalSignInput();
             return;
         }
@@ -34,8 +33,7 @@ public partial class CampaignView
             _regionalSignHeld = _held;
             _regionalSignFrameTime = 0;
         }
-        _held = null; _repeat = 0;
-    }
+        _held = null; }
 
     private bool TryRegionalSignDirectionInput(InputEvent input)
     {
@@ -53,8 +51,7 @@ public partial class CampaignView
             if (key.Pressed) _regionalSignHeld = direction;
             else if (_regionalSignHeld == direction) _regionalSignHeld = null;
         }
-        _held = null; _repeat = 0;
-        return true;
+        _held = null; return true;
     }
 
     // Called from the existing Start/Tab handler before its stable-field gate.

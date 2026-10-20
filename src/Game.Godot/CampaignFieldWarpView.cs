@@ -107,7 +107,7 @@ public partial class CampaignView
             if(animation.ArrivalArt is null)return false;
         }
         _fieldWarp=animation;
-        _held=null;_repeat=0;_tracks.Clear();_fade=0;ResetCampaignButtonInput(preserveHeld:animation.Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview);
+        _held=null;_tracks.Clear();_fade=0;ResetCampaignButtonInput(preserveHeld:animation.Interlude is FieldTransitionInterlude.CavePreviewEnter or FieldTransitionInterlude.RegionPreview);
         if(animation.DoorDeparture is null&&animation.StepDeparture is null&&animation.StairDeparture is null){BeginFieldWarpMusicFade(animation);SourceSound("SE_EXIT");}
         Write("fieldWarpPresentation",new{phase="departure",cause=receipt.Cause.ToString(),from=receipt.From,to=receipt.To,animation.WaitForMusic});
         return true;
@@ -134,7 +134,7 @@ public partial class CampaignView
         // Its VBlank timer continues while field input is locked. Retain the
         // elapsed frames; the ordinary clock path commits after release.
         ObserveTrainerTowerTime(delta);
-        _held=null;_repeat=0;animation.Frames+=delta*60;
+        _held=null;animation.Frames+=delta*60;
         int frame=(int)Math.Floor(animation.Frames+1e-7);
         while(animation.ProcessedFrames<frame)
         {
@@ -246,7 +246,7 @@ public partial class CampaignView
                 _fieldWarpSynchronizing=true;
                 try{Synchronize(animation.Origin,_session.State,animation.ArrivalState);}
                 finally{_fieldWarpSynchronizing=false;}
-                _held=null;_repeat=0;ResetCampaignButtonInput();
+                _held=null;ResetCampaignButtonInput();
                 break;
             }
         }

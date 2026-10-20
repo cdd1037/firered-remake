@@ -78,9 +78,12 @@ public partial class CampaignView
         // Original OptionMenu_ProcessInput closes and commits on either A or B from any row.
         if(key.Keycode is Key.Enter or Key.Backspace)
         {
-           bool accepted = Apply(new CampaignCommand("options_save"){Options=_optionsDraft});
-            if(accepted)_fieldMenuMode="start";
-            else _fieldMenuNotice=OptionsText.Get("notice.apply-failed");
+            ReturnFieldMenu(FieldReturnPresentation.MenuScreen.Options,()=>
+            {
+                bool accepted=Apply(new CampaignCommand("options_save"){Options=_optionsDraft});
+                if(!accepted)_fieldMenuNotice=OptionsText.Get("notice.apply-failed");
+                return accepted;
+            });
         }
         return true;
     }

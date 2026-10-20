@@ -35,7 +35,7 @@ public partial class CampaignView
     {
         string? id = after.SeafoamMovement?.Movement.PendingPresentationId.Value;
         if (id != _seafoamMovementId) { _seafoamMovementId = id; _seafoamMovementFrames = 0; }
-        if (SeafoamFieldLocked) { _held = null; _repeat = 0; }
+        if (SeafoamFieldLocked) { _held = null; }
     }
     private bool ProcessSeafoamCurrentPresentation(double delta)
     {
@@ -44,8 +44,7 @@ public partial class CampaignView
         int duration = pending.Phase == SeafoamMovementPhase.SurfDismount ? FieldSurfSourcePresentation.JumpCueFrames : _session.State.PresentationTicks;
         if (duration <= 0) throw new InvalidDataException("Seafoam current presentation duration missing.");
         _seafoamMovementFrames = Math.Min(duration, _seafoamMovementFrames + delta * 60);
-        _held = null; _repeat = 0;
-        ProcessFieldSurfPresentation(delta);
+        _held = null; ProcessFieldSurfPresentation(delta);
         if (!_busy && _seafoamMovementFrames + 1e-7 >= duration && _tracks.All(t => t.Time + 1e-9 >= t.Duration))
             Apply(new("seafoam_field_ack", Text: pending.PendingPresentationId.Value));
         return true;

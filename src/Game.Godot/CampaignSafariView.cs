@@ -85,8 +85,7 @@ public partial class CampaignView
             _safariPresentationKey = null; _safariBattleId = null; _safariNotice = null;
             _safariPages = []; _safariCursor = 0; _safariTextPage = 0; return;
         }
-        _held = null; _repeat = 0;
-        string key = $"{battle.Id}:{battle.State.BattleTurnCounter}:{battle.Phase}:{battle.PageIndex}:{battle.Capture?.Stage}:{battle.Capture?.MessagePage}";
+        _held = null; string key = $"{battle.Id}:{battle.State.BattleTurnCounter}:{battle.Phase}:{battle.PageIndex}:{battle.Capture?.Stage}:{battle.Capture?.MessagePage}";
         if (_safariPresentationKey == key) return;
         bool entering = _safariBattleId != battle.Id;
         _safariPresentationKey = key; _safariBattleId = battle.Id;
@@ -113,8 +112,7 @@ public partial class CampaignView
     private bool SafariBattleInput(InputEventKey key)
     {
         if (key.Keycode is Key.Escape or Key.F12) return false;
-        _held = null; _repeat = 0;
-        if (!key.Pressed || key.Echo || _busy) return true;
+        _held = null; if (!key.Pressed || key.Echo || _busy) return true;
         if (key.Keycode is Key.F5 or Key.F9)
         { _safariNotice = FieldMenuText.Get("safari.notice.save-load"); return true; }
         var battle = _session.State.SafariBattle!;

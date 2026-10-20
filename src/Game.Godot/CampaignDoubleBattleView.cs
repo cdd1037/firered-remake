@@ -104,26 +104,27 @@ public partial class CampaignView
         _doubleOpening=b.Id!=_doubleOpenedBattleId&&b.Stage==CampaignDoubleBattleStage.Combat&&b.Frame.Turn==0&&b.EventIndex==0&&b.PlayerSelections.IsEmpty;
         if(_doubleOpening)_doubleOpenedBattleId=b.Id;
         _doubleRewardStats.Clear();
+        _doubleSourceContinuations.Clear();
         _doubleKey=key;_doublePage=0;_doubleElapsed=0;_doubleNotice=null;_doublePages=[];_doubleCursor=0;
         _doubleMenu=b.LearningPending?"learn-intro":b.ReplacementSlot is not null?"party":"actions";
         if (b.Stage==CampaignDoubleBattleStage.Finished)
-        { if(b.FinishPageIndex<b.FinishPages.Length)_doublePages=SourceTrainerPresentationModel.ScrollResultPages(TrainerTowerBattleSpeech(b.FinishPageIndex) ?? b.FinishPages[b.FinishPageIndex]).ToImmutableArray();return; }
+        { if(b.FinishPageIndex<b.FinishPages.Length)_doublePages=JoinBattleSourcePages(_doubleSourceContinuations, SourceTrainerPresentationModel.ScrollResultPages(TrainerTowerBattleSpeech(b.FinishPageIndex) ?? b.FinishPages[b.FinishPageIndex]).ToImmutableArray());return; }
         if(b.LearningPending)
         {
             CaptureMoveSelection("double:" + b.Id, DoubleLearningPokemon(b), b.Frame.Rewards!.Pending!.Moves[0].Move);
             var pending=b.Frame.Rewards!.Pending!;string name=_catalog.PokemonDisplayName(_session.State.Party[pending.Recipient.Index]);
-            _doublePages=DoubleSource("sText_TryToLearnMove1",("B_BUFF1",name),("B_BUFF2",MoveName(pending.Moves[0].Move)))
-                .AddRange(DoubleSource("sText_TryToLearnMove2",("B_BUFF1",name)))
-                .AddRange(DoubleSource("sText_TryToLearnMove3",("B_BUFF2",MoveName(pending.Moves[0].Move))));
+            _doublePages=JoinBattleSourcePages(_doubleSourceContinuations, DoubleSource("sText_TryToLearnMove1",("B_BUFF1",name),("B_BUFF2",MoveName(pending.Moves[0].Move))),
+                DoubleSource("sText_TryToLearnMove2",("B_BUFF1",name)),
+                DoubleSource("sText_TryToLearnMove3",("B_BUFF2",MoveName(pending.Moves[0].Move))));
             return;
         }
-        if(_doubleOpening)_doublePages=DoubleSource("sText_Trainer1WantsToBattle").AddRange(DoubleSource("sText_Trainer1SentOutTwoPkmn")).AddRange(DoubleSource("sText_GoTwoPkmn"));
+        if(_doubleOpening)_doublePages=JoinBattleSourcePages(_doubleSourceContinuations, DoubleSource("sText_Trainer1WantsToBattle"), DoubleSource("sText_Trainer1SentOutTwoPkmn"), DoubleSource("sText_GoTwoPkmn"));
         else if(b.CurrentEvent is {} e)_doublePages=DoubleEventPages(b,e);
     }
     private ImmutableArray<string> DoubleEventPages(CampaignDoubleBattle b,SourceBattleEvent e)
     {
         var pages=ImmutableArray.CreateBuilder<string>();
-        void Source(string symbol,params (string Key,string Value)[] values)=>pages.AddRange(DoubleSource(symbol,values));
+        void Source(string symbol,params (string Key,string Value)[] values)=>AppendBattleSourcePages(pages, DoubleSource(symbol,values), _doubleSourceContinuations);
         void Atk(string symbol,BattlerSlot actor)=>Source(symbol,("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(actor)));
         void Def(string symbol,BattlerSlot target)=>Source(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(target)));
         if (DoubleExtendedEventDisplay(b,e) is {} display)
@@ -371,7 +372,7 @@ public partial class CampaignView
         {
             case 0:
                 if(SourceFourActionTurns.RequiresStruggle(_catalog.PresetDoublePokemon!,b.Frame,new(actor)))
-                {_doubleMenu="struggle";_doublePages=DoubleSource("sText_PkmnHasNoMovesLeft",("B_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(new(actor))));_doublePage=0;_doubleElapsed=0;}
+                {_doubleMenu="struggle";_doublePages=JoinBattleSourcePages(_doubleSourceContinuations, DoubleSource("sText_PkmnHasNoMovesLeft",("B_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(new(actor)))));_doublePage=0;_doubleElapsed=0;}
                 else {_doubleMenu="moves";_doubleCursor=0;}
                 break;
             case 1:OpenDoubleBag();break;
