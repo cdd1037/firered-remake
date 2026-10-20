@@ -19,15 +19,14 @@ public static partial class SourceMailRules
         return false;
     }
 
-    /// <summary>Structural source representation only. Content-specific authentication owns known
-    /// messages, charmap decoding and Easy Chat vocabulary; raw species/words keep the u16 domain.</summary>
+    /// <summary>Structural live representation. Content-specific authentication owns known
+    /// messages and Easy Chat vocabulary; species/words keep the u16 domain.</summary>
     public static string? ValidateMessage(SourceMailMessage? message)
     {
         if (message is null) return "mail_message_missing";
+        if (!Enum.IsDefined(message.Origin)) return "mail_origin";
         if (message.Words.IsDefault || message.Words.Length != 9) return "mail_word_count";
-        if (message.AuthorName is null) return "mail_author_name";
-        if (message.AuthorNameBytes.IsDefault || message.AuthorNameBytes.Length != 8) return "mail_author_bytes";
-        if (message.TrainerIdBytes.IsDefault || message.TrainerIdBytes.Length != 4) return "mail_trainer_bytes";
+        if (!NameTextRules.IsValidTrainerName(message.AuthorName)) return "mail_author_name";
         if (ItemSymbol(message.ItemId) is null) return "mail_item";
         return null;
     }

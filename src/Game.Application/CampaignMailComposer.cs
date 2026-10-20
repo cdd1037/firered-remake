@@ -67,7 +67,7 @@ public sealed partial class CampaignSession
         if (edit.Outcome == SourceEasyChatEditOutcome.Cancel)
             return new(CommandStatus.Accepted, state with { MailComposer = null });
         if (ValidateCampaignInventory(state.Inventory) is {} invalid) return No(invalid);
-        var author = SourceMailComposerRules.CreateAuthor(_content.MailComposer!, state.PlayerName, state.TrainerId);
+        var author = SourceMailComposerRules.CreateAuthor(state.PlayerName, state.TrainerId);
         var result = SourceMailComposerRules.Give(_content.EarlyShop!, _content.MailComposer!, EasyChatSelection(state),
             state.Inventory!, state.Mail ?? SourceMailState.Empty, state.Party, draft.PartyIndex,
             draft.ItemId, draft.Words, author, draft.ReplaceConfirmed, _content.Machines, draft.Origin);

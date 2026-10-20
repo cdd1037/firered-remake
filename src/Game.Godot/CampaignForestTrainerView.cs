@@ -44,7 +44,7 @@ public partial class CampaignView
         _held = null;
         if (_wildNotice is not null)
         {
-            if (key.Pressed && key.Keycode is Key.Enter or Key.Backspace) _wildNotice = null;
+            if (key.Pressed && !key.Echo && key.Keycode is Key.Enter or Key.Backspace) { if(TryAdvanceWildNotice())return true;_wildNotice = null; }
             return true;
         }
         if (key.Pressed && !key.Echo && key.Keycode == Key.Enter &&
@@ -131,6 +131,14 @@ public partial class CampaignView
             return true;
         }
         if (!ForestTrainerShiftPending) return false;
+        if (!WildMessageSample.IsFinal)
+        {
+            if (key.Keycode == Key.Enter && _wildElapsed > .1) TryAdvanceWildVisualMessage();
+            // B remains the existing semantic decline on the final source prompt.
+            else if (key.Keycode == Key.Backspace && _wildPage + 1 == _wildPages.Length)
+                ApplyWildChoice(new("trainer_shift", Choice: 0));
+            return true;
+        }
         if (_wildPage + 1 < _wildPages.Length)
         {
             if (key.Keycode == Key.Enter && _wildElapsed > .1) { _wildPage++; _wildElapsed = 0; }
@@ -148,16 +156,16 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 160), Colors.Black);
         _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
         if (battle.Replacement == CampaignReplacementStage.Select)
-        { DrawCaptureParty(battle, true); if(_wildNotice is not null)DrawNativePartyMessage(_wildNotice); }
+        { DrawCaptureParty(battle, true); if(_wildNotice is not null){var notice=WildNoticeSample;DrawNativePartyMessage(notice.Text);DrawMessageContinuation(notice,_sourceNormal,new(8,120),16,_wildElapsed);} }
         else
         {
             var mon = WildDisplayPlayer(battle); var asset = SingleBattleArt(battle,WildBattleSide.Player,mon);
             DrawTexture(asset.Texture, asset.Position); DrawWildHealth(mon, WildBattleSide.Player, mon.CurrentHp);
-            _battleSkin.DrawBattleMessage(this); WildLines(_wildPages[_wildPage]);
-            if (_wildPage + 1 == _wildPages.Length) DrawCaptureYesNo();
-            else DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, _wildPages[_wildPage].Split('\n'), 16, _wildElapsed, true);
+            _battleSkin.DrawBattleMessage(this); WildLines(WildMessageSample.Text);
+            if (_wildPage + 1 == _wildPages.Length && WildMessageSample.IsFinal) DrawCaptureYesNo();
+            else DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, WildMessageSample.Text.Split('\n'), 16, _wildElapsed, true);
         }
-        if (_wildNotice is not null) ItemMessageBox(_wildNotice);
+        if (_wildNotice is not null) DrawWildNoticeBox();
         return true;
     }
     private bool ForestTrainerOpening(CampaignWildBattle battle) => _session.State.ForestTrainerBattle is not null &&

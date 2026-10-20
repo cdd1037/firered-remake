@@ -186,7 +186,7 @@ public partial class CampaignView
                 if (capture.Stage == CampaignCaptureStage.NicknameChoice) DrawCaptureYesNo();
                 else DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, text.Split('\n'), 16, _wildElapsed, true);
             }
-            if (_wildNotice is not null) ItemMessageBox(_wildNotice);
+            if (_wildNotice is not null) DrawWildNoticeBox();
             return true;
         }
         if (battle.Phase == CampaignBattlePhase.ChooseMove && battle.Replacement is { } replacement)
@@ -202,7 +202,7 @@ public partial class CampaignView
                 DrawTexture(asset.Texture, asset.Position); DrawWildHealth(battle.DisplayOpponent, Game.Domain.WildBattle.WildBattleSide.Opponent, battle.DisplayOpponent.CurrentHp);
                 _battleSkin.DrawBattleMessage(this); WildLines(string.Join('\n', WildSourcePages("sText_UseNextPkmn"))); DrawCaptureYesNo();
             }
-            if (_wildNotice is not null) ItemMessageBox(_wildNotice);
+            if (_wildNotice is not null) DrawWildNoticeBox();
             return true;
         }
         if (battle.Phase != CampaignBattlePhase.ChooseMove || _wildMenu is not ("bag" or "bag-actions")) return false;
@@ -212,7 +212,7 @@ public partial class CampaignView
     private void DrawCaptureYesNo()
     {
         _battleSkin.DrawStandardFrame(this, new(184, 64, 56, 48));
-        SourceText(_sourceNormal, new(200, 72), "YES"); SourceText(_sourceNormal, new(200, 88), "NO");
+        SourceText(_sourceNormal, new(200, 72), InventorySourceText("gText_Yes")); SourceText(_sourceNormal, new(200, 88), InventorySourceText("gText_No"));
         SourceText(_sourceNormal, new(188, 72 + _wildCursor * 16), "▶");
     }
 
@@ -245,7 +245,7 @@ public partial class CampaignView
                 ItemLines(_sourceWhite, OpeningItemUiSkin.DescriptionText, item.Description);
             }
             else ItemLines(_sourceWhite, OpeningItemUiSkin.DescriptionText, stacks.IsEmpty && _captureBagPocket == 2
-                ? "There are no POKé BALLS\nin the BAG." : _itemSkin.Text("gText_CloseBag"));
+                ? _inventoryText.Get("notice.no-poke-balls") : _itemSkin.Text("gText_CloseBag"));
         }
         if (_wildMenu == "bag-actions" && selected < stacks.Length)
         {
@@ -254,13 +254,13 @@ public partial class CampaignView
             var name = _captureBagPocket == 0 || _captureBerries ? SingleBattleItemName(stacks[selected].Item) : QuestPocketItem(stacks[selected]).Name;
             ItemLines(_sourceNormal, OpeningItemUiSkin.BagSelectedText, _itemSkin.FormatText("gText_Var1IsSelected", name));
         }
-        if (_wildNotice is not null) ItemMessageBox(_wildNotice);
+        if (_wildNotice is not null) DrawWildNoticeBox();
     }
 
     private void DrawCaptureParty(CampaignWildBattle battle, bool selecting, bool cancellable = false)
     {
         var party=PresentedBattlePlayerParty;
-        DrawNativeParty(party,selecting?_wildCursor:-1,_wildMenu=="medicine-target"?"Use on which POKéMON?":"Choose a POKéMON.",
+        DrawNativeParty(party,selecting?_wildCursor:-1,_wildMenu=="medicine-target"?SourceMenuLabelPresentation.Plain(_battleText, "gText_UseOnWhichPokemon"):_summaryPartyText.ChoosePrompt,
             cancel:cancellable,displayed:i=>i==battle.ActivePartyIndex
                 ? PartyPresentationAssets.Displayed(party[i],battle.DisplayPlayer,ForestDisplayedStatus(battle,WildBattleSide.Player))
                 : party[i]);
@@ -300,7 +300,7 @@ public partial class CampaignView
             new((int)((layout.DescriptionCenterWidth - descriptionWidth) / 2), layout.DescriptionY + i * (layout.DescriptionLineHeight + layout.DescriptionLineSpacing)),
             lines[i], layout.DescriptionLetterSpacing);
         const string footer = "NEXT";
-        var footerWidth = _captureDexFooter.Font.GetStringSize(footer, fontSize: _captureDexFooter.Size).X;
+        var footerWidth = _captureDexFooter.MeasureText(footer).X;
         SourceText(_captureDexFooter, new(layout.FooterRightX - footerWidth, layout.FooterY), footer);
     }
 }

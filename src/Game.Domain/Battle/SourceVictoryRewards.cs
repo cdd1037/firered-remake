@@ -118,8 +118,7 @@ public static class SourceVictoryRewards
     // suppress EXP Share, Lucky Egg, Macho Brace or Soothe Bell, whereas real consumption does.
     private static string HeldItem(WildBattleCalledPartyMember member) => WildBattleSourcePartyEffects.PersistentHeldItem(member);
     private static bool SupportsHeldItem(PokemonCatalog catalog, string item) => item is "ITEM_EXP_SHARE" or "ITEM_LUCKY_EGG" or "ITEM_MACHO_BRACE" or "ITEM_SOOTHE_BELL" || SourceBattleAdmission.SupportsHeldItem(catalog, item);
-    private static bool ValidName(string? value) => !string.IsNullOrEmpty(value) && value.Length <= 7 &&
-        value.Any(c => c != ' ') && value.All(PokemonStateValidator.NicknameAlphabet.Contains);
+    private static bool ValidName(string? value) => NameTextRules.IsValidTrainerName(value);
     private static bool ValidRegion(string? value) => value is not null && value.Length is > 7 and <= 128 &&
         value.StartsWith("MAPSEC_", StringComparison.Ordinal) && value[7..].All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c) || c == '_');
 }

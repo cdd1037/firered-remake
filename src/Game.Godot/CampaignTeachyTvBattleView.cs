@@ -17,7 +17,7 @@ public partial class CampaignView
     private string? _teachyBattleVisualKey, _teachyBattleVoiceSymbol;
     private readonly TeachyTvTextPresentation _teachyBattleVoiceText = new();
     private TeachyTvNormalPaletteClock? _teachyBattlePalette;
-    private double _teachyBattleRemainder;
+    private double _teachyBattleRemainder, _teachyBattleEventVisualElapsed;
     private int _teachyBattleSoundSequence, _teachyBattleVoicePhase;
     private bool _teachyBattleAHeld, _teachyBattleVoiceHealthbox;
     private ulong _teachyBattleExitFrame = ulong.MaxValue;
@@ -37,7 +37,7 @@ public partial class CampaignView
         string key = $"{b.Ticket}:{b.Stage}:{b.StepIndex}:{b.CurrentStep?.Event.Sequence}:{b.Voiceover.Next}:{b.Voiceover.Pending?.TextSymbol}:{b.SelectingSide}";
         if (_teachyBattleVisualKey != key)
         {
-            _teachyBattleVisualKey = key; _wildElapsed = 0;
+            _teachyBattleVisualKey = key; _wildElapsed = 0; _teachyBattleEventVisualElapsed = 0;
             if (b.Voiceover.Pending is {} voice && _teachyBattleVoiceSymbol != voice.TextSymbol)
             {
                 _teachyBattleVoiceSymbol = voice.TextSymbol;
@@ -65,7 +65,7 @@ public partial class CampaignView
         if (TeachyBattle is null) return false;
         if (ProcessCommittedMoveAnimation(delta)) { QueueRedraw(); return true; }
         SynchronizeTeachyTvBattle();
-        _wildElapsed += delta; _teachyBattleRemainder = Math.Min(_teachyBattleRemainder + delta, .25);
+        _wildElapsed += delta; _teachyBattleEventVisualElapsed += delta; _teachyBattleRemainder = Math.Min(_teachyBattleRemainder + delta, .25);
         while (_teachyBattleRemainder >= 1d / 60 && TeachyBattle is {} b)
         {
             _teachyBattleRemainder -= 1d / 60;
@@ -99,8 +99,9 @@ public partial class CampaignView
             if (b.Stage == CampaignTeachyTvBattleStage.Events)
             {
                 double pause = b.CurrentStep?.Event is SourcePokedudeCaughtEvent ? 127d / 60 : _wildPages.IsEmpty ? .45 : 64d / 60;
-                if (_wildElapsed < pause) break;
-                if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; }
+                if (_teachyBattleEventVisualElapsed < pause) break;
+                if (TryAdvanceWildVisualMessage()) { _teachyBattleEventVisualElapsed = 0; break; }
+                if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; _teachyBattleEventVisualElapsed = 0; }
                 else AcknowledgeWildAttackText();
                 break;
             }

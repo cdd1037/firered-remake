@@ -85,7 +85,7 @@ public sealed class SeviiRubySpeciesDisplayNameTests
             original.Opponents.Catalog, original.TrainerTowerOpponents.Catalog);
         var error = Assert.ThrowsExactly<InvalidDataException>(() =>
         {
-            if (campaignContent) Validate(Original.GamePokemon, new(owned, Original.PokemonContent.NicknameCharacters));
+            if (campaignContent) Validate(Original.GamePokemon, new(owned));
             else Validate(owned, Original.PokemonContent);
         });
         Assert.AreEqual("sevii_ruby_composition_scope", error.Message);

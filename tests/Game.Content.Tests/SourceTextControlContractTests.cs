@@ -25,14 +25,17 @@ public sealed class SourceTextControlContractTests
     [DataRow("Hello\nNext$", "你好\n下一页$")]
     [DataRow("Hello{PLAY_BGM}{MUS_LEVEL_UP}$", "你好{PLAY_BGM}{MUS_LEVEL_UP}$")]
     [DataRow("ITEM{CLEAR_TO 0x65}{FONT_SMALL}1,000", "物品{CLEAR_TO 0x65}{FONT_SMALL}1,000")]
+    [DataRow("{PLAYER} and {RIVAL}$", "{RIVAL} 与 {PLAYER}$")]
+    [DataRow("First\nSecond$", "一\\n二$")]
+    [DataRow("First\\nSecond$", "第一第二$")]
+    [DataRow("First\\pSecond\\nThird$", "一\\n二\\p三$")]
+    [DataRow("Do what with {PKMN}?", "要对宝可梦做什么？")]
+    [DataRow("Use {PLUS}.", "使用十字键。")]
     public void TranslatedProseRetainsSourceControlStructure(string original, string replacement) =>
         Assert.AreEqual(replacement, Apply(original, replacement));
 
     [TestMethod]
-    [DataRow("{PLAYER} and {RIVAL}$", "{RIVAL} 与 {PLAYER}$")]
-    [DataRow("First\\pSecond\\nThird$", "一\\n二\\p三$")]
     [DataRow("First\\lSecond$", "一\\n二$")]
-    [DataRow("First\nSecond$", "一\\n二$")]
     [DataRow("Hello{PLAY_BGM}{MUS_LEVEL_UP}$", "你好{PLAY_BGM}{MUS_LEVEL_UP}再见$")]
     [DataRow("Hello{PLAY_BGM}{MUS_LEVEL_UP}$", "你好{PLAY_BGM} {MUS_LEVEL_UP}$")]
     [DataRow("Hello{PAUSE 60}$", "你好{PAUSE 61}$")]
@@ -42,6 +45,9 @@ public sealed class SourceTextControlContractTests
     [DataRow("Hello$", "你好{")]
     [DataRow("Hello$", "你好}$")]
     [DataRow("Hello$", "你好\r$")]
+    [DataRow("{PLAYER} and {RIVAL}$", "{PLAYER} 与 {PLAYER}$")]
+    [DataRow("{PLAYER}\\p{RIVAL}$", "{RIVAL}\\p{PLAYER}$")]
+    [DataRow("First\\pSecond$", "第一第二$")]
     public void ChangedControlsAndAnchorsAreRejected(string original, string replacement) =>
         Assert.ThrowsExactly<InvalidDataException>(() => Apply(original, replacement));
 }

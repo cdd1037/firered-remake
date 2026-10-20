@@ -23,14 +23,10 @@ public sealed record StarterChoiceDefinition(int Index,int SourceSpeciesId,int R
 public sealed record CampaignPokemonContent
 {
     public GamePokemonCatalog Pokemon { get; init; }
-    public string NicknameCharacters { get; init; }
-    public CampaignPokemonContent(GamePokemonCatalog pokemon, string nicknameCharacters)
+    public CampaignPokemonContent(GamePokemonCatalog pokemon)
     {
         ArgumentNullException.ThrowIfNull(pokemon);
-        if (nicknameCharacters is null || nicknameCharacters.Length != PokemonStateValidator.NicknameAlphabet.Length ||
-            !nicknameCharacters.ToHashSet().SetEquals(PokemonStateValidator.NicknameAlphabet))
-            throw new ArgumentException("pokemon_nickname_alphabet");
-        Pokemon = pokemon; NicknameCharacters = nicknameCharacters;
+        Pokemon = pokemon;
     }
     public PokemonCatalog Catalog => Pokemon.Catalog;
     public ImmutableArray<StarterChoiceDefinition> StarterChoices{get;init;}=[];
@@ -43,22 +39,21 @@ public sealed record CampaignPokemonContent
 }
 public static class PokemonNicknameRules
 {
-    public static string? Validate(string input,string allowedCharacters)
+    public static string? Validate(string input)
     {
-        if(input is null||input.Length>10)return "nickname_length";
-        if(input.Any(c=>!allowedCharacters.Contains(c,StringComparison.Ordinal)))return "nickname_character_unsupported";
+        if (input is null || !NameTextRules.IsWithinLength(input, NameTextRules.NicknameLength)) return "nickname_length";
+        if (!NameTextRules.HasValidCharacters(input)) return "nickname_character_unsupported";
         return null;
     }
-    // Stored custom names must contain at least one non-space source-keyboard character.
-    // Display labels are not constrained by this ten-byte naming-screen contract.
+    // Null means the current species label. A stored custom name is always a nonblank literal.
     public static bool IsValidCustomNickname(string? value) => value is null ||
-        value.Any(c => c != ' ') && Validate(value, PokemonStateValidator.NicknameAlphabet) is null;
+        NameTextRules.IsValidName(value, NameTextRules.NicknameLength);
 
     // The input buffer starts empty. Blank input preserves nullable naming intent; every
     // nonblank submission is literal, even when it equals the current species display name.
-    public static string? Apply(string? originalCustomNickname,string input,string allowedCharacters)
+    public static string? Apply(string? originalCustomNickname, string input)
     {
-        var error=Validate(input,allowedCharacters);if(error is not null)throw new ArgumentException(error);
-        return input.All(c=>c==' ')?originalCustomNickname:input;
+        var error = Validate(input); if (error is not null) throw new ArgumentException(error);
+        return string.IsNullOrWhiteSpace(input) ? originalCustomNickname : input;
     }
 }

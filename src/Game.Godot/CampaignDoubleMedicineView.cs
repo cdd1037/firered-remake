@@ -139,7 +139,9 @@ public partial class CampaignView
             for(int i=0;i<moves.Length;i++)
             {SourceText(_battleMoveFont,new(24,10+16*i),MoveName(moves[i].Move));SourceText(_sourceSmall,new(167,11+16*i),$"{moves[i].CurrentPp}/{moves[i].MaximumPp}");}
             SourceText(_battleMoveFont,new(24,10+16*moves.Length),InventoryActionLabel(InventoryMenuAction.Cancel));SourceText(_battleMenuFont,new(10,10+16*_doubleCursor),">");
-            DoubleLines(_doubleNotice??SourceMenuLabelPresentation.Plain(_battleText, "gText_RestoreWhichMove"));return true;
+            DoubleLines(_doubleNotice is not null?DoubleNoticeSample.Text:SourceMenuLabelPresentation.Plain(_battleText, "gText_RestoreWhichMove"));
+            if(_doubleNotice is not null)DrawMessageContinuation(DoubleNoticeSample,_battleWhite,LabBattleUiSkin.BattleMessageText,16,_doubleElapsed,true);
+            return true;
         }
         var medicine=battle.CurrentEvent as SourceMedicineAppliedEvent;
         bool playerTarget=medicine is not null&&(medicine.TargetSide??BattleSide.Player)==BattleSide.Player;
@@ -156,9 +158,10 @@ public partial class CampaignView
             });
         if(medicine is not null || _doubleNotice is not null)
         {
-            string text=_doubleNotice??_doublePages[_doublePage];
-            DrawNativePartyMessage(text);
-            if(medicine is not null&&_doubleNotice is null)DrawTextCursor(_sourceNormal,new(8,120),text.Split('\n'),16,_doubleElapsed,true);
+            var message=_doubleNotice is not null?DoubleNoticeSample:DoubleMessageSample;
+            DrawNativePartyMessage(message.Text);
+            if(medicine is not null&&_doubleNotice is null||!message.IsFinal)
+                DrawTextCursor(_sourceNormal,new(8,120),message.Text.Split('\n'),16,_doubleElapsed,true);
         }
         return true;
     }
@@ -191,6 +194,6 @@ public partial class CampaignView
             _itemSkin.DrawStandardFrame(this,OpeningItemUiSkin.BagSelectedFrame);
             ItemLines(_sourceNormal,OpeningItemUiSkin.BagSelectedText,_itemSkin.FormatText("gText_Var1IsSelected",SingleBattleItemName(stacks[selected].Item)));
         }
-        if(_doubleNotice is not null)ItemMessageBox(_doubleNotice);
+        if(_doubleNotice is not null)DrawDoubleNoticeBox();
     }
 }

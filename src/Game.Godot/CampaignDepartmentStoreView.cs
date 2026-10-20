@@ -17,7 +17,7 @@ public partial class CampaignView
     private bool DepartmentElevatorMenuVisible=>DepartmentElevatorMenuActive&&FieldTextComplete&&
         _session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length;
     private int DepartmentElevatorMenuWidth=>(((int)DepartmentElevatorRows.Max(row=>
-        _sourceNormal.Font.GetStringSize(SourceMenuLabelPresentation.Plain(_battleText,row),fontSize:_sourceNormal.Size).X)+9)/8+1)*8;
+        _sourceNormal.MeasureText(SourceMenuLabelPresentation.Plain(_battleText,row)).X)+9)/8+1)*8;
     private bool DepartmentElevatorAnimating=>_departmentElevatorDistance>0&&
         _session?.State.World.Player.MapId.Value==DepartmentElevatorMapId&&_departmentElevatorTicks<_departmentElevatorDuration;
     private int DepartmentElevatorWindowPhase
@@ -107,7 +107,7 @@ public partial class CampaignView
             int sourceFloor=_session.State.Script.Variables.GetValueOrDefault("VAR_0x8005");
             var floorDefinition=_catalog.DepartmentStoreElevatorFloors.Single(f=>f.SourceFloorValue==sourceFloor);
             string floor=SourceMenuLabelPresentation.Plain(_battleText,"gText_"+(5-floorDefinition.MenuIndex)+"F");
-            float width=_sourceNormal.Font.GetStringSize(floor,fontSize:_sourceNormal.Size).X;
+            float width=_sourceNormal.MeasureText(floor).X;
             SourceText(_sourceNormal,new(232-width,24),floor);
         }
         if(!DepartmentElevatorMenuVisible)return;

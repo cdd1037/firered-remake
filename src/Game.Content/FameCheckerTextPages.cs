@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 using Game.Domain.Events;
+using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
@@ -167,7 +168,7 @@ public static class FameCheckerTextPages
     private static void ValidateName(string name, string parameter)
     {
         ArgumentNullException.ThrowIfNull(name, parameter);
-        if (name.Length is 0 or > MaximumNameLength || name.Any(char.IsControl))
+        if (NameTextRules.TextElementCount(name) is 0 or > MaximumNameLength || name.Any(char.IsControl))
             throw new ArgumentException("Name must be bounded plain text without control characters.", parameter);
         ValidateUnicode(name, parameter);
     }

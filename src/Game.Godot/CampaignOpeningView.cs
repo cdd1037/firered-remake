@@ -13,12 +13,23 @@ public partial class CampaignView
     private readonly OpeningTitlePresentation _openingTitle = new();
     private readonly OpeningTitleRevealPresentation _openingTitleReveal = new();
     private readonly SourceTextProgress _openingPrinter = new();
+    private SourceDialogText _openingText = null!;
     private double _openingFrameRemainder;
     private int _openingVisualFrame, _guidePage;
     private bool _openingSpeedUp;
     private OpeningExitPresentation? _openingExit;
     private OpeningNidoranPresentation? _openingNidoran;
     private int _titleExitFrame, _guideExitFrame;
+    // Five authored rows, the actual source-font height, and the frame's 8px
+    // bottom border must all fit. Round only the frame to complete source tiles.
+    private Rect2 RivalNameChoiceBounds
+    {
+        get
+        {
+            int requiredHeight = (16 - 8) + 4 * 16 + _sourceNormal.GlyphHeight + 8;
+            return new(8, 8, 112, Math.Max(88, (requiredHeight + 7) / 8 * 8));
+        }
+    }
     private string? OpeningAudioContext => PlayerEntryActive ? "opening:" + _entryMode : null;
     private string? OpeningSourceMusic => _entryMode switch
     {
@@ -86,12 +97,16 @@ public partial class CampaignView
                 if (_openingNidoran is { Complete: false } mon)
                 {
                     mon.AdvanceFrame();
-                    if (!mon.Returning && mon.Frame == 32) SourceCrySymbol("SPECIES_NIDORAN_F");
+                    if (!mon.Returning && mon.Frame == 32)
+                    { ResetOpeningPrinter(); SourceCrySymbol("SPECIES_NIDORAN_F"); }
                     if (mon.Returning && mon.Frame == 44) SourceSound("SE_BALL_TRADE");
                     if (mon.Returning && mon.Complete) { _entryMode = "oak-speech"; _openingNidoran = null; ResetOpeningPrinter(); }
                 }
                 if (_entryMode == "oak-speech" && (_openingNidoran is null || _openingNidoran.Returning || _openingNidoran.Frame >= 32))
+                {
                     _openingPrinter.AdvanceFrames(1, _openingSpeedUp, _openingSpeedUp);
+                    _openingText.RevealCodepoints(_openingPrinter.VisibleCodepoints);
+                }
             }
         }
     }
@@ -100,7 +115,11 @@ public partial class CampaignView
         _openingSpeedUp = false;
         int speed = (_entrySave?.State.Options ?? Game.Domain.Options.SourceGameOptions.Defaults).TextSpeed switch
         { Game.Domain.Options.SourceTextSpeed.Slow => 8, Game.Domain.Options.SourceTextSpeed.Mid => 4, _ => 1 };
-        _openingPrinter.Reset(_openingPages[_openingPage].Text, speed);
+        string text = _sourceNormal.PrepareText(_openingPages[_openingPage].Text);
+        _openingText.Bind(text, _sourceNormal.Font,
+            _sourceNormal.Size, 15, 198, wrap: SourceHelpTextLayout.ContainsCjk(text));
+        _openingPrinter.Reset(_openingText.CurrentVisualText, speed);
+        _openingText.RevealCodepoints(0);
     }
     private bool OpeningGuideKey(Key key)
     {
@@ -221,6 +240,8 @@ public partial class CampaignView
 
     private void InitializeOpeningPresentation()
     {
+        _openingText = new() { Position = LabBattleUiSkin.DialogueText, Visible = false };
+        AddChild(_openingText);
         InitializeIntroMoviePresentation();
         EnsureNamingPresentation();
         _openingGuideFont = SourceGameFont.Load(Path.Combine(_root, "content/generated/ui/font"), foreground: Colors.White, shadow: Color.Color8(74, 82, 107));
@@ -237,6 +258,7 @@ public partial class CampaignView
         string? previous = _entryMode == "player-confirm" ? OpeningPlayerPortrait : null;
         bool showPlayer = _entryMode == "gender";
         _openingNidoran = null; _openingPortraitTransition = null; _openingPortraitCompleted = null;
+        _openingText.Clear();
         _openingPages.Clear(); _openingPage = 0; _openingNext = next; _entryMode = "oak-speech"; _entryCursor = 0;
         foreach (var (symbol, portrait) in messages)
             foreach (string text in _opening!.Pages(symbol, _entryPlayerName, _entryRivalName)) _openingPages.Add((text, portrait));
@@ -255,17 +277,27 @@ public partial class CampaignView
         if (!_openingPrinter.Complete) { _openingSpeedUp = true; return; }
         if (_openingNidoran is { Returning: false, Complete: false }) return;
         if (_openingNidoran is { Returning: false } && _sourceAudio?.Snapshot().Cry is { Playing: true }) return;
+        if (_openingText.TryAdvanceVisual(_openingPrinter.Complete))
+        {
+            _openingPrinter.ContinuePage(_openingText.CurrentVisualText);
+            _openingSpeedUp = false;
+            return;
+        }
+        if (!_openingText.TryTakeSemanticAcknowledgement(_openingPrinter.Complete)) return;
         string previousPortrait = _openingPages[_openingPage].Portrait;
         if (++_openingPage < _openingPages.Count)
         {
-            ResetOpeningPrinter();
             string nextPortrait = _openingPages[_openingPage].Portrait;
             if (previousPortrait != "nidoran-f" && nextPortrait == "nidoran-f")
                 _openingNidoran = new(false, _captureBallAssets.Sine);
             else if (previousPortrait == "nidoran-f" && nextPortrait != "nidoran-f")
             { _openingNidoran = new(true, _captureBallAssets.Sine); _entryMode = "oak-return"; }
-            else if (previousPortrait != nextPortrait)
-                _openingPortraitTransition = new(previousPortrait, nextPortrait, 40);
+            else
+            {
+                ResetOpeningPrinter();
+                if (previousPortrait != nextPortrait)
+                    _openingPortraitTransition = new(previousPortrait, nextPortrait, 40);
+            }
             return;
         }
         if (_openingNext == "start") { _openingExit = new(); _entryMode = "oak-exit"; }
@@ -328,7 +360,7 @@ public partial class CampaignView
             ItemMessageBox(_opening!.Pages("YourRivalsNameWhatWasIt", _entryPlayerName, _entryRivalName)[0]);
             if (_openingVisualFrame >= 30)
             {
-                _battleSkin.DrawStandardFrame(this, new(8, 8, 112, 88));
+                _battleSkin.DrawStandardFrame(this, RivalNameChoiceBounds);
                 SourceText(_sourceNormal, new(24, 16), _opening.Texts["gOtherText_NewName"]);
                 for (int i = 0; i < 4; i++) SourceText(_sourceNormal, new(24, 32 + i * 16), _opening.RivalNames[i]);
                 SourceText(_sourceNormal, new(10, 16 + _entryCursor * 16), "▶");
@@ -352,7 +384,15 @@ public partial class CampaignView
                 if (_openingNidoran.BackgroundFlash > 0) DrawRect(new(0, 0, 240, 160), new Color(1, 1, 1, _openingNidoran.BackgroundFlash));
                 DrawOpeningNidoran();
             }
-            if (_entryMode == "oak-speech") ItemMessageBox(_openingNidoran is { Returning: false, Frame: < 32 } ? _opening!.Pages("ThisWorld", _entryPlayerName, _entryRivalName)[0] : _openingPrinter.VisibleText);
+            if (_entryMode == "oak-speech")
+            {
+                bool retained = _openingNidoran is { Returning: false, Frame: < 32 };
+                _battleSkin.DrawDialogue(this);
+                _openingText.Visible = true;
+                if (!retained && _openingPrinter.Complete && !_openingText.IsFinal)
+                    _textCursor.Draw(this, (LabBattleUiSkin.DialogueText + _openingText.ContinuationPosition).Floor(),
+                        _openingVisualFrame, false);
+            }
             return true;
         }
         if (_entryMode is "player-confirm" or "rival-confirm")

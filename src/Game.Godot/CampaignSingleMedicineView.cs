@@ -74,7 +74,9 @@ public partial class CampaignView
         for(int i=0;i<moves.Length;i++)
         {SourceText(_battleMoveFont,new(24,10+16*i),MoveName(moves[i].Move));SourceText(_sourceSmall,new(167,11+16*i),$"{moves[i].CurrentPp}/{moves[i].MaximumPp}");}
         SourceText(_battleMoveFont,new(24,10+16*moves.Length),InventoryActionLabel(InventoryMenuAction.Cancel));SourceText(_battleMenuFont,new(10,10+16*_wildCursor),">");
-        WildLines(_wildNotice??SourceMenuLabelPresentation.Plain(_battleText, "gText_RestoreWhichMove"));return true;
+        WildLines(_wildNotice is not null?WildNoticeSample.Text:SourceMenuLabelPresentation.Plain(_battleText, "gText_RestoreWhichMove"));
+        if(_wildNotice is not null)DrawMessageContinuation(WildNoticeSample,_battleWhite,LabBattleUiSkin.BattleMessageText,16,_wildElapsed,true);
+        return true;
     }
     private void DrawSingleBattleItemList(ImmutableArray<InventoryStack> stacks,int selected)
     {

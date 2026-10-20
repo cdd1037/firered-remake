@@ -236,7 +236,7 @@ public static partial class CampaignQuestLogRecorder
             string owner=SpeciesId(noncombat.SourceSpeciesId);
             if(noncombat.Move=="pret:MOVE_DIG")return Event(CampaignQuestLogEvent.FieldMove,"UsedDigInLocation",owner,source?.MapName(noncombat.Origin.MapId.Value)??map);
             if(noncombat.Move=="pret:MOVE_TELEPORT"&&noncombat.Destination is {} destination)
-                return Event(CampaignQuestLogEvent.FieldMove,"UsedTeleportToLocation",owner,source?.MapName(destination.MapId.Value)??Location(destination.MapId.Value),destination.MapId.Value=="map.pallet-town"?source?.Texts["Home"]??"home":"POKéMON CENTER");
+                return Event(CampaignQuestLogEvent.FieldMove,"UsedTeleportToLocation",owner,source?.MapName(destination.MapId.Value)??Location(destination.MapId.Value),destination.MapId.Value=="map.pallet-town"?source?.Texts["Home"]??"home":catalog?.TextPages("gText_PokemonCenter").FirstOrDefault()??"POKéMON CENTER");
             if(noncombat.Move=="pret:MOVE_SWEET_SCENT")return Event(CampaignQuestLogEvent.FieldMove,"UsedSweetScent",owner);
         }
         if(command.Kind=="field_heal"&&command.PartyIndex>=0&&command.PartyIndex<before.Party.Length&&command.PartyIndex<after.Party.Length&&

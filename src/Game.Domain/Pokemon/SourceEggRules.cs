@@ -178,8 +178,7 @@ public static class SourceEggRules
     private static void ValidateTrainer(SourceEggTrainer trainer, string location, int metGame)
     {
         ArgumentNullException.ThrowIfNull(trainer);
-        if (string.IsNullOrEmpty(trainer.Name) || trainer.Name.Length > 7 || trainer.Name.All(c => c == ' ') ||
-            trainer.Name.Any(c => !PokemonStateValidator.NicknameAlphabet.Contains(c)) || trainer.Gender is not (0 or 1) ||
+        if (!NameTextRules.IsValidTrainerName(trainer.Name) || trainer.Gender is not (0 or 1) ||
             trainer.Language is not (1 or 2 or 3 or 4 or 5 or 7)) throw new ArgumentException("egg_trainer");
         if (location is null || location.Length > 128 || !location.StartsWith("MAPSEC_", StringComparison.Ordinal) ||
             location.Length <= 7 || location[7..].Any(c => !char.IsAsciiLetterUpper(c) && !char.IsAsciiDigit(c) && c != '_'))

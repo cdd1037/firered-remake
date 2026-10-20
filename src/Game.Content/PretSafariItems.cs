@@ -60,7 +60,7 @@ public sealed class PretSafariItems
         }
         foreach(var m in machines.NewMachines)
         {
-            SafariSource.Require(m.Machine==doc.Items.Single(i=>i.Metadata.Item.Id==m.Machine.Item.Id).Metadata&&m.Compatibility.Length==110&&
+            SafariSource.Require(m.Machine.Item==doc.Items.Single(i=>i.Metadata.Item.Id==m.Machine.Item.Id).Metadata.Item&&m.Compatibility.Length==110&&
                 m.Compatibility.Select(c=>c.Species).Distinct().Count()==110&&m.Compatibility.Select(c=>c.SourceSpeciesId).SequenceEqual(m.Compatibility.Select(c=>c.SourceSpeciesId).Order()),"Safari newHM metadata differs.");
         }
         SafariSource.Require(machines.NewMachines[0] is {Move.Value:"pret:MOVE_SURF",SourceMoveId:57,MovePp:15}&&

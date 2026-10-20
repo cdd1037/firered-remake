@@ -22,6 +22,14 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task ImageIo() => Run("test-image-io.py");
     [TestMethod]
+    public Task ChineseFontMasks() => Run("test-cjk-font.py");
+    [TestMethod]
+    public async Task ChineseSourceText()
+    {
+        await Run("test-source-text-collector.py");
+        await Run("test-chinese-catalogs.py");
+    }
+    [TestMethod]
     public Task ImporterPngSemantics() => Run("test-importer-png-semantics.py");
     [TestMethod]
     public Task SharedItemUiImports() => Run("test-item-ui-library-imports.py");

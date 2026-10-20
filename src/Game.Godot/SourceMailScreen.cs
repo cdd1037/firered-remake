@@ -51,7 +51,7 @@ public sealed class SourceMailScreen : IDisposable
             for (int c = 0; c < 3; c++) pixels[i + c] = color[c];
         }
         using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, pixels);
-        var cache = new Vector2I(font.Size, 0); font.Font.SetTextureImage(0, cache, 1, image);
+        var cache = new Vector2I(font.Size, 0); int textureIndex = font.AddGlyphTexture(image);
         foreach (var glyph in _content.EasyChat.GetProperty("specialGlyphs").EnumerateArray())
         {
             int codepoint = glyph.GetProperty("codepoint").GetInt32();
@@ -59,7 +59,7 @@ public sealed class SourceMailScreen : IDisposable
             font.Font.SetGlyphOffset(0, cache, codepoint, new(0, -font.Size));
             font.Font.SetGlyphSize(0, cache, codepoint, new(16, 14));
             font.Font.SetGlyphUVRect(0, cache, codepoint, new(glyph.GetProperty("x").GetInt32(), 0, 16, 14));
-            font.Font.SetGlyphTextureIdx(0, cache, codepoint, 1);
+            font.Font.SetGlyphTextureIdx(0, cache, codepoint, textureIndex);
         }
     }
     public static string PrepareText(SourceGameFont font, string text)

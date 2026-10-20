@@ -1,4 +1,5 @@
 using Game.Application;
+using Game.Domain.Events;
 using Game.Domain.Pokemon;
 using Game.Domain.World;
 using Godot;
@@ -37,12 +38,12 @@ public partial class CampaignView
         if (NoncombatFieldMoveRules.IsHealing(move))
         {
             if (!_session.CanUseNoncombatFieldMove(_fieldPartyCursor, move))
-            { _fieldMenuMode = "party"; _fieldMenuNotice = "Not enough HP…"; return true; }
+            { _fieldMenuMode = "party"; _fieldMenuNotice = SourceMenuLabelPresentation.Plain(_battleText, "gText_NotEnoughHp"); return true; }
             _fieldHealingSource = _fieldPartyCursor; _fieldHealingSourceIdentity = mon.InstanceId;
             _fieldHealingMove = move; _fieldMenuMode = "field-heal"; return true;
         }
         if (!Apply(new("field_move", Text: move, PartyIndex: _fieldPartyCursor) { TargetInstanceId = mon.InstanceId }))
-        { _fieldMenuMode = "party"; _fieldMenuNotice = "Can't use that here."; return true; }
+        { _fieldMenuMode = "party"; _fieldMenuNotice = FieldMenuText.Get("notice.cannot-use-here"); return true; }
         if (_session.State.NoncombatFieldEffect!.Phase == "confirm")
         { _fieldMoveConfirmChoice = 0; _fieldMenuMode = "field-move-confirm"; }
         else ResetFieldMenu();
@@ -76,7 +77,7 @@ public partial class CampaignView
         _fieldHealingBeforeSource = donor.Pokemon.CurrentHp; _fieldHealingBeforeTarget = target.Pokemon.CurrentHp;
         if (!Apply(new("field_heal", Text: _fieldHealingMove, PartyIndex: _fieldHealingSource, Choice: _fieldPartyCursor)
             { TargetInstanceId = target.InstanceId }))
-        { _fieldMenuNotice = "This can't be used on\nthat POKéMON."; return true; }
+        { _fieldMenuNotice = string.Join('\n', SourceBattleText.Pages(_battleText, "gText_CantBeUsedOnPkmn", new Dictionary<string, string>(StringComparer.Ordinal))); return true; }
         _fieldHealingTarget = _fieldPartyCursor;
         _fieldHealingDonated = _fieldHealingBeforeSource - _session.State.Party[_fieldHealingSource].Pokemon.CurrentHp;
         _fieldHealingRestored = _session.State.Party[_fieldHealingTarget].Pokemon.CurrentHp - _fieldHealingBeforeTarget;
@@ -91,7 +92,8 @@ public partial class CampaignView
         { _fieldHealingSecondSound = true; SourceSound("SE_USE_ITEM"); }
         if (_fieldHealingFrames < _fieldHealingDonated + _fieldHealingRestored) return;
         string name = _catalog.PokemonDisplayName(_session.State.Party[_fieldHealingTarget]);
-        _fieldMenuNotice = $"{name}'s HP was restored\nby {_fieldHealingRestored} point(s).";
+        _fieldMenuNotice = string.Join('\n', SourceBattleText.Pages(_battleText, "gText_PkmnHPRestoredByVar2",
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["STR_VAR_1"] = name, ["STR_VAR_2"] = _fieldHealingRestored.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
         _fieldMenuMode = "party"; ResetFieldHealingSelection();
     }
     private PartyPokemon DisplayedFieldHealingMember(int index)
@@ -109,10 +111,11 @@ public partial class CampaignView
         string section = _catalog.MapDefinition(destination.MapId).RegionMapSection;
         string name = _catalog.FlyMapPresentation.Regions.SelectMany(region => region.Cells).FirstOrDefault(cell => cell.SectionId == section)?.Name ??
             throw new InvalidDataException("field_move_destination_name_missing");
-        DrawNativePartyMessage(effect.Move == NoncombatFieldMoveRules.Dig
-            ? $"Want to escape from here and return\nto {name}?" : $"Want to return to the healing spot\nused last in {name}?");
+        DrawNativePartyMessage(string.Join('\n', SourceBattleText.Pages(_battleText,
+            effect.Move == NoncombatFieldMoveRules.Dig ? "gText_EscapeFromHereAndReturnTo" : "gText_ReturnToHealingSpot",
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["STR_VAR_1"] = name })));
         _battleSkin.DrawStandardFrame(this, new(176, 64, 64, 48));
-        SourceText(_sourceNormal, new(192, 72), "YES"); SourceText(_sourceNormal, new(192, 88), "NO");
+        SourceText(_sourceNormal, new(192, 72), InventorySourceText("gText_Yes")); SourceText(_sourceNormal, new(192, 88), InventorySourceText("gText_No"));
         SourceText(_sourceNormal, new(182, 72 + _fieldMoveConfirmChoice * 16), "▶");
     }
     private bool TryNoncombatFieldInput(InputEvent input)

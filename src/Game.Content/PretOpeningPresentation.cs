@@ -87,9 +87,8 @@ public sealed class PretOpeningPresentation
         var names = rivalNameSymbols.Append("gNameChoice_Red").Append("gNameChoice_Leaf")
             .Distinct(StringComparer.Ordinal).ToImmutableDictionary(symbol => symbol, symbol => texts[symbol], StringComparer.Ordinal);
         names = selected.Apply("opening-names", names);
-        if (names.Values.Any(name => string.IsNullOrWhiteSpace(name) || name.Length > 7 ||
-            name.Any(character => !PokemonStateValidator.NicknameAlphabet.Contains(character))))
-            throw new InvalidDataException("Opening name suggestions violate the existing name encoding contract.");
+        if (names.Values.Any(name => !NameTextRules.IsValidTrainerName(name)))
+            throw new InvalidDataException("Opening name suggestions violate the literal trainer name contract.");
         texts = texts.SetItems(names);
         var source = battleText ?? PretBattleText.Load(root, selected);
         string Title(NamingScreenTemplate template) => source.TryGetValue(template.TitleSymbol, out var title) &&

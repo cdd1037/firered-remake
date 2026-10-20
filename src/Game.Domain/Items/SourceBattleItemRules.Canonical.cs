@@ -32,8 +32,7 @@ internal static partial class SourceBattleItemRules
             }
             if (SourcePokemonValidator.ValidatePermanent(mechanics, owned.Pokemon) is { } error) return error;
             if (owned.InstanceId <= 0 || !identities.Add(owned.InstanceId)) return "source_item_duplicate_identity";
-            bool Name(string value, int max) => !string.IsNullOrEmpty(value) && value.Length <= max &&
-                value.Any(c => c != ' ') && value.All(PokemonStateValidator.NicknameAlphabet.Contains);
+            bool Name(string value, int max) => NameTextRules.IsValidName(value, max);
             bool Symbol(string value, string prefix) => value is not null && value.StartsWith(prefix, StringComparison.Ordinal) &&
                 value.Length > prefix.Length && value[prefix.Length..].All(c => c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_');
             if (!PokemonNicknameRules.IsValidCustomNickname(owned.CustomNickname) || !Name(owned.OriginalTrainerName,7) || owned.OriginalTrainerGender is not (0 or 1) ||

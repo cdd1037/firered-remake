@@ -114,6 +114,8 @@ public partial class CampaignView
         }
         bool confirm = keyInput.Keycode is Key.Enter or Key.KpEnter or Key.A;
         bool cancel = keyInput.Keycode is Key.Backspace or Key.Escape or Key.B;
+        if ((confirm || cancel) && TryAdvanceFieldVisualMessage())
+        { QueueRedraw(); GetViewport().SetInputAsHandled(); return true; }
         if (!FieldTextComplete)
         {
             if (confirm || cancel) { _fieldTextHeld = true; _fieldTextNewPress = true; }
@@ -180,7 +182,7 @@ public partial class CampaignView
                 SourceText(_sourceNormal,new(176,74),InventorySourceText("gText_Yes")); SourceText(_sourceNormal,new(176,88),InventorySourceText("gText_No"));
                 SourceText(_sourceNormal,new(168,_choiceYes?74:88),"▶");
             }
-            else if(FieldTextComplete) DrawTextCursor(_sourceNormal,LabBattleUiSkin.DialogueText,text.Split('\n'),15,_waitElapsed);
+            else if(FieldTextComplete||FieldVisualContinuationPending) DrawTextCursor(_sourceNormal,LabBattleUiSkin.DialogueText,FieldVisualText(text).Split('\n'),15,_waitElapsed);
         }
         if (_fade > 0) DrawRect(new(0,0,240,160),new Color(0,0,0,(float)Math.Clamp(_fade/.16,0,1)));
         return true;

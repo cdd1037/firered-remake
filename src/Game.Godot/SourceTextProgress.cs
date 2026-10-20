@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 /// <summary>
 /// Presentation-only adapter for one already-expanded Unicode field-dialogue page.
@@ -16,6 +17,7 @@ public sealed class SourceTextProgress
     private int _visibleLength;
 
     public string VisibleText => _text[.._visibleLength];
+    public int VisibleCodepoints { get; private set; }
     /// <summary>Unicode text elements emitted, excluding LF. Not a UTF-16 length or ROM glyph ID count.</summary>
     public int VisibleGlyphs { get; private set; }
     /// <summary>True after the implicit page-end/EOS is processed, including its cadence wait.</summary>
@@ -64,7 +66,7 @@ public sealed class SourceTextProgress
             previous = offset;
         }
         _text = text; _elementOffsets = offsets; _repeatControlOffsets = controls;
-        _nextElement = _nextControl = _visibleLength = VisibleGlyphs = 0;
+        _nextElement = _nextControl = _visibleLength = VisibleGlyphs = VisibleCodepoints = 0;
     }
 
     /// <summary>
@@ -114,6 +116,7 @@ public sealed class SourceTextProgress
 
             int start = _elementOffsets[_nextElement++];
             _visibleLength = _nextElement < _elementOffsets.Length ? _elementOffsets[_nextElement] : _text.Length;
+            foreach (var rune in _text.AsSpan(start, _visibleLength - start).EnumerateRunes()) VisibleCodepoints++;
             if (_text[start] == '\n')
                 continue; // RENDER_REPEAT re-enters the delay branch within THIS frame.
 

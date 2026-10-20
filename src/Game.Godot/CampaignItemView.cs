@@ -11,7 +11,6 @@ public partial class CampaignView
     private string InventoryActionLabel(InventoryMenuAction action) => action == InventoryMenuAction.Deposit
         ? _inventoryText.Get("action.deposit") : InventorySourceText(InventoryMenuPresentation.SourceSymbol(action));
     private bool _itemPopup,_itemQuantityOpen;
-    private string? _itemNotice;
     private string? _itemMenuKey;
     private string ItemText(string symbol) => CampaignSourceText.Bind(
         string.Join("\n", _catalog.TextPages(symbol)), token => token switch
@@ -36,6 +35,7 @@ public partial class CampaignView
         if(menu is { View:"withdraw" or "deposit" })_itemCursor=Math.Min(_itemCursor,(menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks).Length);
         if(menu is not null)_held=null;
         if(menu is { Origin:"bag", View:"bag" } or { Origin:"bag", View:"message", ReturnView:"bag" })_questPocket=menu.Pocket;
+        if(menu?.View!="message")_itemAckMessage.Clear();
         SynchronizeBagToss();
         SynchronizeMail();
     }
@@ -104,7 +104,7 @@ public partial class CampaignView
     }
     private void DrawItemMenu()
     {
-        if(_session.State.ItemMenu is {Origin:"registered",View:"message"}){ItemMessageBox(_session.VisibleItemMessage!);return;}
+        if(_session.State.ItemMenu is {Origin:"registered",View:"message"}){DrawItemAckMessageBox();return;}
         if(DrawMailScreen())return;
         if(DrawHeldItemScreen())return;
         var menu=_session.State.ItemMenu!;var view=menu.View=="message"?menu.ReturnView:menu.View;
@@ -114,9 +114,11 @@ public partial class CampaignView
             _battleSkin.DrawUserFrame(this,new(0,0,view=="top"?120:128,64));
             for(int i=0;i<symbols.Length;i++)ItemLabel(new(16,10+i*16),ItemText(symbols[i]));ItemLabel(new(8,10+_itemCursor*16),"▶");
             string prompt=view=="top"?ItemText("gText_WhatWouldYouLikeToDo"):ItemText(_itemCursor switch{0=>"gText_TakeOutItemsFromThePC",1=>"gText_StoreItemsInThePC",_=>"gText_GoBackToThePreviousMenu"});
-            ItemMessageBox(menu.View=="message"?_session.VisibleItemMessage!:prompt);
+            if(menu.View=="message")DrawItemAckMessageBox();else ItemMessageBox(prompt);
         }
-        else DrawItemList(menu.DisplayInventory??_session.State.Inventory!,view,_itemCursor,menu.View=="message"?_session.VisibleItemMessage:null,_itemPopup||_itemQuantityOpen);
+        else DrawItemList(menu.DisplayInventory??_session.State.Inventory!,view,_itemCursor,menu.View=="message"?ItemAckMessageSample.Text:null,_itemPopup||_itemQuantityOpen);
+        if(menu.View=="message"&&view is not ("top" or "storage"))
+            DrawMessageContinuation(ItemAckMessageSample,_sourceNormal,OpeningItemUiSkin.PcResultText,14,_waitElapsed);
         if(_itemPopup)
         {
             var labels=ItemActions().Select(action => action.Label).ToArray();
@@ -125,7 +127,7 @@ public partial class CampaignView
         if(_itemQuantityOpen)ItemMessageBox(ItemText(view=="withdraw"?"gText_WithdrawHowMany":"gText_DepositHowManyStrVars1")+"   × "+_itemQuantity);
         if(_fieldMedicineTargetOpen){if(MtMoonTargetActive)DrawMtMoonTargets();else DrawFieldMedicineTargets();}
         DrawInventoryMove();
-        if(_itemNotice is not null)ItemMessageBox(_itemNotice);
+        if(_itemNotice is not null)DrawItemNotice();
         NotePokemonTowerFluteMessage();
     }
     private void DrawItemActionPopup(bool pc,string[] labels,int selected,string? itemName=null,bool fieldBag=false)

@@ -20,25 +20,14 @@ def read(path):
     return (RAW / path).read_text(encoding='utf-8')
 
 def assemble_texts(paths):
-    bank = {}
-    for path in paths:
-        label, value = None, ''
-        for line in read(path).splitlines():
-            line = line.strip()
-            match = re.fullmatch(r'([A-Za-z_][A-Za-z0-9_]*):{1,2}(?:\s*@.*)?', line)
-            if match:
-                label, value = match[1], ''
-                continue
-            if label and (line.startswith('.string') or line.startswith('.braille')):
-                part = re.fullmatch(r'\.(?:string|braille)\s+"(.*)"', line)
-                if not part:
-                    raise ValueError('Unsupported text directive: ' + label)
-                value += part[1]
-                if value.endswith('$'):
-                    if label in bank:
-                        raise ValueError('Duplicate source text: ' + label)
-                    bank[label], label = value, None
-    return bank
+    from source_text_collector import collect_declarations
+    collection = collect_declarations(RAW, paths=paths, exclude_symbols={})
+    diagnostics = collection.diagnostics
+    if diagnostics['issues'] or diagnostics['conflicts'] or diagnostics['unknownConditions']:
+        raise ValueError('Ambiguous source text declarations: ' + str(diagnostics))
+    if any(not value.endswith('$') for value in collection.texts.values()):
+        raise ValueError('Unterminated story text declaration')
+    return collection.texts
 
 def constants(symbols):
     values = json.loads((ROOT / 'content/generated/data/constants.json').read_text())

@@ -351,7 +351,7 @@ public partial class CampaignView
             if (displayed.IsEgg) DrawTexture(BreedingEggShell(), new(8, 16));
             else if (_battleArt.TryGetValue((PresentedRenderSpecies(displayed.Pokemon), "front", displayed.Pokemon.IsShiny), out var art))
                 DrawTexture(art.Texture, new(8, 16));
-            SourceText(_sourceSmall, new(6, 88), PresentedOwnedName(displayed));
+            SourceScrollingText(_sourceSmall, new(6, 88), PresentedOwnedName(displayed), 72);
             if (!displayed.IsEgg)
             {
                 SourceText(_sourceSmall, new(6, 102), (_catalog.SourceSpeciesName(displayed.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));

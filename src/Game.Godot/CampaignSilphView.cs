@@ -31,7 +31,7 @@ public partial class CampaignView
     private bool SilphElevatorAnimating => _silphElevatorDistance > 0 && _silphElevatorTicks + 1e-8 < _silphElevatorDuration &&
         _session?.State.World.Player.MapId == SilphElevatorId;
     private bool SilphInputLocked => _session?.State.SilphPad is not null || _silphPad is not null || SilphElevatorAnimating;
-    private int SilphMenuWidth => (((int)SilphFloorSymbols.Max(symbol => _sourceNormal.Font.GetStringSize(SourceMenuLabelPresentation.Plain(_battleText, symbol), fontSize: _sourceNormal.Size).X) + 9) / 8 + 1) * 8;
+    private int SilphMenuWidth => (((int)SilphFloorSymbols.Max(symbol => _sourceNormal.MeasureText(SourceMenuLabelPresentation.Plain(_battleText, symbol)).X) + 9) / 8 + 1) * 8;
     private Vector2 SilphCameraOffset => !SilphElevatorAnimating ? Vector2.Zero :
         new(0, _silphElevatorTicks < 3 ? 0 : ((int)Math.Floor(_silphElevatorTicks / 3) % 2 == 0 ? 1 : -1));
 
@@ -135,7 +135,7 @@ public partial class CampaignView
             int floor = _session.State.Script.Variables.GetValueOrDefault("VAR_0x8005");
             if (floor is < 4 or > 14) throw new InvalidDataException("Silph current floor differs.");
             string label = SourceMenuLabelPresentation.Plain(_battleText, SilphFloorSymbols[14 - floor]);
-            SourceText(_sourceNormal, new(232 - _sourceNormal.Font.GetStringSize(label, fontSize: _sourceNormal.Size).X, 24), label);
+            SourceText(_sourceNormal, new(232 - _sourceNormal.MeasureText(label).X, 24), label);
         }
         if (!SilphElevatorMenuVisible) return;
         _battleSkin.DrawUserFrame(this, new(0, 0, SilphMenuWidth + 16, 112));

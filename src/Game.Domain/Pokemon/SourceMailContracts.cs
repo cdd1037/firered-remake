@@ -4,10 +4,16 @@ using Game.Domain.Items;
 
 namespace Game.Domain.Pokemon;
 
-/// <summary>The complete live source Mail payload. Raw fields retain their source order and encoding.
-/// AuthorName is a display label, not a replacement for the eight original name bytes.</summary>
-public sealed record SourceMailMessage(ImmutableArray<ushort> Words, string AuthorName,
-    ImmutableArray<byte> AuthorNameBytes, ImmutableArray<byte> TrainerIdBytes, ushort Species, ushort ItemId)
+// Acquisition validation must distinguish the fixed NPC letter even if a player has the
+// same literal name/ID and composes identical words on identical stationery.
+public enum SourceMailOrigin { PlayerAuthored, NpcTrade }
+
+/// <summary>Live Mail payload. The literal author name and full trainer ID are the sole author
+/// identity; Easy Chat words and species/item IDs retain their gameplay meanings.</summary>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record SourceMailMessage(ImmutableArray<ushort> Words, [property: JsonRequired] string AuthorName,
+    [property: JsonRequired] uint AuthorTrainerId, ushort Species, ushort ItemId,
+    [property: JsonRequired] SourceMailOrigin Origin)
 {
     [JsonIgnore]
     public string ItemSymbol => SourceMailRules.ItemSymbol(ItemId) ?? "ITEM_NONE";

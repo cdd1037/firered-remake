@@ -27,8 +27,7 @@ public static class SourceGiftEggRules
         if (species != Togepi || !metadata.Species.TryGetValue(species, out var row) || row.Breeding.EggCycles != 10)
             throw new ArgumentException("gift_egg_species");
         if (nextInstanceId <= 0 || nextInstanceId == long.MaxValue) throw new ArgumentOutOfRangeException(nameof(nextInstanceId));
-        if (string.IsNullOrEmpty(trainer.Name) || trainer.Name.Length > 7 || trainer.Name.All(c => c == ' ') ||
-            trainer.Name.Any(c => !PokemonStateValidator.NicknameAlphabet.Contains(c)) || trainer.Gender is not (0 or 1) ||
+        if (!NameTextRules.IsValidTrainerName(trainer.Name) || trainer.Gender is not (0 or 1) ||
             trainer.Language is not (1 or 2 or 3 or 4 or 5 or 7)) throw new ArgumentException("gift_egg_trainer");
         if (metGame is not (1 or 2 or 3 or 4 or 5 or 7 or 8 or 10 or 11 or 12 or 15))
             throw new ArgumentException("gift_egg_met_game");

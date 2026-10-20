@@ -181,11 +181,10 @@ public sealed partial class CampaignSession
         if (command.Kind == "nickname" && capture.Stage == CampaignCaptureStage.Naming)
         {
             if (command.Text is null) return new(CommandStatus.Rejected, state, "nickname_text_required");
-            var alphabet = _content.PokemonContent!.NicknameCharacters;
-            var error = PokemonNicknameRules.Validate(command.Text, alphabet);
+            var error = PokemonNicknameRules.Validate(command.Text);
             if (error is not null) return new(CommandStatus.Rejected, state, error);
             return new(CommandStatus.Accepted, DeliverSafariCapture(state,
-                PokemonNicknameRules.Apply(null, command.Text, alphabet)));
+                PokemonNicknameRules.Apply(null, command.Text)));
         }
         return new(CommandStatus.Rejected, state, "capture_presentation_pending");
     }

@@ -31,7 +31,7 @@ public static class PretVictoryRoadItems
             machines.Machines.Select(m => m.Machine.Item.Id).SequenceEqual(new ItemId[] { new("pret:ITEM_TM02"), new("pret:ITEM_TM07"), new("pret:ITEM_TM37"), new("pret:ITEM_TM50") }) , "Victory Road machine scope differs.");
         foreach (var machine in machines.Machines)
         {
-            SafariSource.Require(machine.Machine == items.Items.Single(i => i.Item.Id == machine.Machine.Item.Id) &&
+            SafariSource.Require(machine.Machine.Item == items.Items.Single(i => i.Item.Id == machine.Machine.Item.Id).Item &&
                 machine.Compatibility.Length == 115 && machine.Compatibility.Select(c => c.Species).Distinct().Count() == 115,
                 "Victory Road machine metadata differs.");
         }

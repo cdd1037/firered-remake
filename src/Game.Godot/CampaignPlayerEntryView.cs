@@ -87,7 +87,8 @@ public partial class CampaignView
         if(_entryMode is not ("player-name" or "rival-name")||_entrySubmitFrame==Engine.GetProcessFrames())return;
         _entrySubmitFrame=Engine.GetProcessFrames();
         _entryActionFrame=_entrySubmitFrame;
-        if(text.Length is <1 or >7||!text.Any(c=>c!=' ')||text.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))
+        if(!NamingGlyphPreflight(text))return;
+        if(!NameTextRules.IsValidTrainerName(text))
         {_entryNotice=FieldMenuText.Get("opening.notice.name-encoding");QueueRedraw();return;}
         bool player=_entryMode=="player-name";CloseNamingScreen();_entryNotice=null;
         if(player){_entryPlayerName=text;_entryMode="player-confirm";}
@@ -235,7 +236,7 @@ public partial class CampaignView
                 foreach(var (name,index) in new[]{(PretMainMenuSource.ContinueWindow,0),(PretMainMenuSource.NewGameWindow,1)})
                 {var region=_entrySource!.SelectionRegions[name];if(new Rect2(region.Left,region.Top,region.Width,region.Height).HasPoint(point)){selected=index;break;}}
             }
-            else if(_entryMode=="rival-choice"&&_openingVisualFrame>=30&&new Rect2(8,8,112,88).HasPoint(point))
+            else if(_entryMode=="rival-choice"&&_openingVisualFrame>=30&&RivalNameChoiceBounds.HasPoint(point))
                 selected=Math.Clamp((int)((point.Y-16)/16),0,4);
             else if(_entryMode is "player-confirm" or "rival-confirm"&&new Rect2(8,8,64,48).HasPoint(point))
                 selected=Math.Clamp((int)((point.Y-16)/16),0,1);

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Game.Domain;
 using Game.Domain.Events;
 using Game.Domain.Ids;
+using Game.Domain.Pokemon;
 using Game.Domain.World;
 namespace Game.Application;
 public sealed record ReferenceWorldState(WorldSnapshot World, DialogueCursor? Dialogue, string PlayerName, string RivalName);
@@ -30,7 +31,7 @@ public sealed class ReferenceWorldSession
     {
         if(state.World is null)return "world_missing";
         var error=WorldRules.ValidateState(state.World,_map);if(error is not null)return error.Code;
-        if(state.PlayerName is null||state.RivalName is null||state.PlayerName.Length is <1 or >7||state.RivalName.Length is <1 or >7)return "name_invalid";
+        if(!NameTextRules.IsValidTrainerName(state.PlayerName)||!NameTextRules.IsValidTrainerName(state.RivalName))return "name_invalid";
         if(state.Dialogue is not null)return "save_event_active";
         return null;
     }

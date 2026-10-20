@@ -33,6 +33,12 @@
     <Compile Include="../../src/Game.Godot/SourceScanlineState.cs" Link="Animations/SourceScanlineState.cs" />
     <Compile Include="../../src/Game.Godot/CampaignButtonInput.cs" Link="CampaignButtonInput.cs" />
     <Compile Include="../../src/Game.Godot/SourceHelpPresentation.cs" Link="SourceHelpPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/SourceNameGlyphs.cs" Link="SourceNameGlyphs.cs" />
+    <Compile Include="../../src/Game.Godot/SourceMessageLayout.cs" Link="SourceMessageLayout.cs" />
+    <Compile Include="../../src/Game.Godot/SourceCompactTextLayout.cs" Link="SourceCompactTextLayout.cs" />
+    <Compile Include="../../src/Game.Godot/SourceDialogPageCursor.cs" Link="SourceDialogPageCursor.cs" />
+    <Compile Include="../../src/Game.Godot/SourceMessageCursor.cs" Link="SourceMessageCursor.cs" />
+    <Compile Include="../../src/Game.Godot/SourceFixedWindowTextLayout.cs" Link="SourceFixedWindowTextLayout.cs" />
     <Compile Include="../../src/Game.Godot/CampaignOptionEditing.cs" Link="CampaignOptionEditing.cs" />
     <Compile Include="../../src/Game.Godot/CampaignOptionPresentation.cs" Link="CampaignOptionPresentation.cs" />
     <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />

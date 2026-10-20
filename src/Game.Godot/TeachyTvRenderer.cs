@@ -125,14 +125,12 @@ public sealed class TeachyTvRenderer : IDisposable
     {
         // Cached source font atlas provides exact glyph pixels; clip each region instead of a viewport allocation.
         var font = _dialogue.Font; var size = new Vector2I(_dialogue.Size,0);
-        if (!_textures.TryGetValue("dialogue-atlas",out var texture))
-        { using var atlas = font.GetTextureImage(0,size,0); _textures.Add("dialogue-atlas",texture=ImageTexture.CreateFromImage(atlas)); }
         float x = position.X;
         foreach (var rune in _dialogue.PrepareText(text).EnumerateRunes())
         {
             var uv=font.GetGlyphUVRect(0,size,rune.Value); var glyphSize=font.GetGlyphSize(0,size,rune.Value);
             float y0=Math.Max(position.Y,top), y1=Math.Min(position.Y+glyphSize.Y,bottom);
-            if(y1>y0) canvas.DrawTextureRectRegion(texture,new(x,y0,glyphSize.X,y1-y0),new(uv.Position.X,uv.Position.Y+y0-position.Y,glyphSize.X,y1-y0));
+            if(y1>y0) canvas.DrawTextureRectRegion(_dialogue.GlyphTexture(rune.Value),new(x,y0,glyphSize.X,y1-y0),new(uv.Position.X,uv.Position.Y+y0-position.Y,glyphSize.X,y1-y0));
             x+=font.GetGlyphAdvance(0,_dialogue.Size,rune.Value).X;
         }
     }

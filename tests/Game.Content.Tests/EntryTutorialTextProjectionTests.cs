@@ -87,6 +87,21 @@ public sealed class EntryTutorialTextProjectionTests
     }
 
     [TestMethod]
+    [DataRow("小茂")]
+    [DataRow("𠮷𠮷𠮷𠮷𠮷𠮷𠮷")]
+    [DataRow("e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301")]
+    public void PresetSuggestionsAcceptUnicodeTextElementNames(string name)
+    {
+        using var output = TestAssets.TemporaryOutput();
+        var actual = PretOpeningPresentation.Load(TestAssets.Root,
+            Pack(output.Path, "opening-names", "gNameChoice_Green", name), Battle);
+        Assert.AreEqual(name, actual.RivalNames[0]);
+        Assert.IsTrue(Game.Domain.Pokemon.NameTextRules.IsValidTrainerName(actual.RivalNames[0]));
+        Assert.ThrowsExactly<InvalidDataException>(() => PretOpeningPresentation.Load(TestAssets.Root,
+            Pack(output.Path, "opening-names", "gNameChoice_Green", "一二三四五六七八"), Battle));
+    }
+
+    [TestMethod]
     public void HelpTextProjectionKeepsProgressionAndBindsPlayerAndPcNamesOnce()
     {
         using var output = TestAssets.TemporaryOutput();

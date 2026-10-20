@@ -53,7 +53,7 @@ public sealed class PretStorageCustomization
         var result = new PretStorageCustomization(document.RootElement.Clone(), outputs.ToImmutable(), sourceTexts ?? PretBattleText.Load(root));
         Require(result.Wallpapers.Length == PokemonStorageCustomizationRules.WallpaperCount && result.Categories.Length == 4 &&
             result.Assets.Length == 42 && result.Document.GetProperty("boxNameLength").GetInt32() == PokemonStorageCustomizationRules.BoxNameLength &&
-            result.Document.GetProperty("boxNameAlphabet").GetString()!.ToHashSet().SetEquals(PokemonStorageCustomizationRules.BoxNameAlphabet),
+            result.Document.GetProperty("boxNameAlphabet").GetString()!.ToHashSet().SetEquals(PokemonStateValidator.NicknameAlphabet),
             "Customization rules disagree with original source");
         for (int box = 0; box < PokemonStorageState.BoxCount; box++)
             Require(result.Document.GetProperty("defaultNames")[box].GetString() == PokemonStorageCustomizationRules.DefaultBoxName(box) &&

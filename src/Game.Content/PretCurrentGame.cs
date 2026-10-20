@@ -224,7 +224,7 @@ public sealed partial class PretCampaignCatalog
         var fieldPickups = PretEarlyPickups.Load(projectRoot);
         var storyRuntime = PretStoryRuntime.Load(projectRoot);
 
-        var pokemonContent = new CampaignPokemonContent(gamePokemon, storyRuntime.NicknameCharacters)
+        var pokemonContent = new CampaignPokemonContent(gamePokemon)
         { AllowSleepStatus = true, AllowFreezeStatus = true, AllowToxicStatus = true };
 
         var oldMan = PretOldManTutorial.LoadContent(canonicalPokemon, File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/pokemon/route1/catalog.json"), Encoding.UTF8), File.ReadAllText(Path.Combine(projectRoot, "content/generated/data/services/old-man-tutorial.json"), Encoding.UTF8), battleText: battleTexts);

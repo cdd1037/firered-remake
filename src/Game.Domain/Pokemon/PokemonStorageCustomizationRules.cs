@@ -13,7 +13,7 @@ public sealed record PokemonStorageCustomizationResult(PokemonStorageCustomizati
     public bool Succeeded => Outcome != PokemonStorageCustomizationOutcome.Rejected;
 }
 
-/// <summary>Pinned original box naming, wallpaper selection and four-bit markings. These are committed
+/// <summary>Literal box naming, original wallpaper selection and four-bit markings. These are committed
 /// values only: keyboard/menu drafts and Cancel/B belong to the caller and never mutate these owners.</summary>
 public static class PokemonStorageCustomizationRules
 {
@@ -21,7 +21,6 @@ public static class PokemonStorageCustomizationRules
     public const int WallpaperCount = 16;
     public const int DefaultWallpaperCount = 4;
     public const int Circle = 1, Square = 2, Triangle = 4, Heart = 8;
-    public const string BoxNameAlphabet = PokemonStateValidator.NicknameAlphabet;
 
     public static string DefaultBoxName(int boxIndex)
     {
@@ -41,15 +40,15 @@ public static class PokemonStorageCustomizationRules
         => storage.Boxes[boxIndex].WallpaperId ?? DefaultWallpaperId(boxIndex);
 
     public static string? ValidateNameInput(string? name)
-        => name is null || name.Length > BoxNameLength ? "storage_box_name_length"
-            : name.Any(c => !BoxNameAlphabet.Contains(c, StringComparison.Ordinal)) ? "storage_box_name_character" : null;
+        => name is null || !NameTextRules.IsWithinLength(name, BoxNameLength) ? "storage_box_name_length"
+            : !NameTextRules.HasValidCharacters(name) ? "storage_box_name_character" : null;
 
     internal static string? ValidateBoxMetadata(PokemonStorageBox box)
     {
         if (box.Name is { } name)
         {
             if (ValidateNameInput(name) is { } error) return error;
-            if (name.All(c => c == ' ')) return "storage_box_name_blank";
+            if (string.IsNullOrWhiteSpace(name)) return "storage_box_name_blank";
         }
         return box.WallpaperId is < 0 or >= WallpaperCount ? "storage_wallpaper_id" : null;
     }
@@ -62,7 +61,7 @@ public static class PokemonStorageCustomizationRules
     {
         if (BoxError(content, party, storage, cursor, boxIndex) is { } error) return Reject(party, storage, cursor, error);
         if (ValidateNameInput(name) is { } invalid) return Reject(party, storage, cursor, new(invalid));
-        if (name!.All(c => c == ' ')) return new(PokemonStorageCustomizationOutcome.BoxNamed, party, storage, cursor);
+        if (string.IsNullOrWhiteSpace(name)) return new(PokemonStorageCustomizationOutcome.BoxNamed, party, storage, cursor);
         string? value = name == DefaultBoxName(boxIndex) ? null : name;
         var box = storage.Boxes[boxIndex];
         return new(PokemonStorageCustomizationOutcome.BoxNamed, party,

@@ -14,7 +14,6 @@ public partial class CampaignView
     private readonly Dictionary<string, Texture2D> _fameTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<(int,int), SourceGameFont> _fameFonts = [];
     private readonly FameCheckerTextPresentation _famePrinter = new();
-    private readonly Dictionary<SourceGameFont, ImageTexture> _fameFontAtlases = [];
     private ImmutableArray<FameCheckerPersonView> _famePeople = [];
     private ImmutableArray<FameCheckerTextPage> _famePages = [];
     private CampaignFameChecker? _fameOwner;
@@ -277,25 +276,19 @@ public partial class CampaignView
     private void DrawFameMessageText(SourceGameFont font,Vector2 position,string text)
     {
         var size=new Vector2I(font.Size,0);
-        if(!_fameFontAtlases.TryGetValue(font,out var atlas))
-        {
-            using var image=font.Font.GetTextureImage(0,size,0);
-            atlas=ImageTexture.CreateFromImage(image);_fameFontAtlases.Add(font,atlas);
-        }
         var window=new Rect2(16,120,208,32);
         foreach(var glyph in font.PrepareText(text).EnumerateRunes())
         {
             var uv=font.Font.GetGlyphUVRect(0,size,glyph.Value);
             var destination=new Rect2(position,uv.Size);
             var clipped=destination.Intersection(window);
-            if(clipped.HasArea())DrawTextureRectRegion(atlas,clipped,new Rect2(uv.Position+clipped.Position-position,clipped.Size));
+            if(clipped.HasArea())DrawTextureRectRegion(font.GlyphTexture(glyph.Value),clipped,new Rect2(uv.Position+clipped.Position-position,clipped.Size));
             position.X+=font.Font.GetGlyphAdvance(0,font.Size,glyph.Value).X;
         }
     }
     private void DisposeFameCheckerPresentation()
     {
         _fameTextures.Clear();_fameImages?.Dispose();_fameImages=null;
-        foreach(var atlas in _fameFontAtlases.Values)atlas.Dispose();_fameFontAtlases.Clear();
         foreach(var font in _fameFonts.Values)font.Dispose();_fameFonts.Clear();
         _fameBase=_fameOverlay=null;_fameArt=null;_fameOwner=null;
     }

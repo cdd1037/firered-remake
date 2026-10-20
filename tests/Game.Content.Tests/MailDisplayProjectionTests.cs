@@ -26,7 +26,7 @@ public sealed class MailDisplayProjectionTests
         var original = Composer.Catalog;
         Assert.AreEqual(original, actual with { Words = original.Words, Texts = original.Texts,
             Templates = original.Templates, ProfileDefinition = original.ProfileDefinition,
-            Groups = original.Groups, Alphabetical = original.Alphabetical, NameCharacters = original.NameCharacters });
+            Groups = original.Groups, Alphabetical = original.Alphabetical });
         Assert.AreEqual(original.Words.Count, actual.Words.Count);
         foreach (var (id, word) in original.Words)
         {
@@ -35,7 +35,6 @@ public sealed class MailDisplayProjectionTests
         }
         CollectionAssert.AreEqual(original.ProfileDefinition!.DefaultWords.ToArray(), actual.ProfileDefinition!.DefaultWords.ToArray());
         CollectionAssert.AreEqual(original.ProfileDefinition!.SpecialPhrase.ToArray(), actual.ProfileDefinition!.SpecialPhrase.ToArray());
-        CollectionAssert.AreEquivalent(original.NameCharacters.ToArray(), actual.NameCharacters.ToArray());
         var selection = new SourceEasyChatSelection(gameClear, nationalDex, ImmutableHashSet.Create(63, 410));
         CollectionAssert.AreEqual(SourceEasyChatRules.SelectableGroups(original, selection).Select(g => g.Id).ToArray(),
             SourceEasyChatRules.SelectableGroups(actual, selection).Select(g => g.Id).ToArray());
@@ -246,6 +245,8 @@ public sealed class MailDisplayProjectionTests
         Assert.IsTrue(lines.All(line => line.X == 32));
         Assert.AreEqual((replace ? "By " : "From ") + "DONTAE", presentation.SourceText.Text("gText_From") + message.AuthorName);
         Assert.AreSame(message, npc.Message);
+        Assert.AreEqual(36728u, message.AuthorTrainerId);
+        Assert.AreEqual(SourceMailOrigin.NpcTrade, message.Origin);
         Assert.IsNull(SourceMailRules.ValidateMessage(message));
         Assert.IsNull(SourceEasyChatRules.ValidateWords(catalog, message.Words, true));
     }

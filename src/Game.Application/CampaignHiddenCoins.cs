@@ -39,7 +39,7 @@ public sealed partial class CampaignSession
         {
             if (!(collecting || refused) || !instruction.Args.SequenceEqual(new[] { "STR_VAR_2", "STDSTRING_COINS" }))
                 throw new InvalidDataException("hidden_coins_name_source");
-            next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", "COINS") }; return true;
+            next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", string.Join("", _content.TextPages("gText_Coins_2"))) }; return true;
         }
         if (!collecting || context.InventoryAdded || !state.Script.Flags.GetValueOrDefault(GameCornerCoinSource.CaseFlag))
             throw new InvalidDataException("hidden_coins_credit_context");

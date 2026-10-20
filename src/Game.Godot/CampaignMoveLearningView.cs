@@ -3,7 +3,7 @@ using Game.Domain.Pokemon;
 
 public partial class CampaignView
 {
-    private const string UnsupportedLearningText = "Effect not implemented.\nChoose DECLINE to continue.";
+    private string UnsupportedLearningText => _summaryText.Get("notice.learning-unsupported");
 
     private bool MoveLearningUnavailable(MoveId move) =>
         !PokemonMoveRules.IsLearningSupported(_catalog.PokemonContent!.Catalog, move);

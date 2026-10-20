@@ -58,6 +58,7 @@ public partial class CampaignView
     private bool SubmitNameRaterNicknameFromView(string text)
     {
         if (!NameRaterNaming) return false;
+        if (!NamingGlyphPreflight(text)) return true;
         var target = _session.State.NameRater!.Target!;
         Apply(new("nickname", Text: text) { TargetInstanceId = target.InstanceId });
         return true;

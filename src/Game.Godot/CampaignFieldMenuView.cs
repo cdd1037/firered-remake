@@ -261,7 +261,7 @@ public partial class CampaignView
             DrawSafariFieldStats(font,palette);
             // Source new_menu_helpers.c:666-672, plus the surrounding 8px frame.
             _battleSkin.DrawUserFrame(this, new(168, 0, 72, entries.Length * 16 + 8),palette);
-            for (int i = 0; i < entries.Length; i++) SourceText(font, new(184, 8 + i * 15), entries[i].Label);
+            for (int i = 0; i < entries.Length; i++) SourceScrollingText(font, new(184, 8 + i * 15), entries[i].Label, 48);
             SourceText(font, new(176, 8 + _fieldMenuCursor * 15), "▶");
             if (_fieldMenuMode is "save-confirm" or "save-overwrite")
             {

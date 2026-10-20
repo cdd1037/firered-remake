@@ -30,7 +30,6 @@ public sealed class PretNpcTradeMail
 {
     public const string ResourceId = "firered-npc-trade-mail-v1";
     public static ItemId FabMailId { get; } = new("pret:ITEM_FAB_MAIL");
-    public NpcTradeMailPayload Dontae { get; }
     public SourceMailMessage Message { get; }
     public ImmutableArray<NpcTradeMailWord> Words { get; }
     public NpcTradeMailReadLayout ReadLayout { get; }
@@ -46,10 +45,10 @@ public sealed class PretNpcTradeMail
         ImmutableArray<NpcTradeMailWord> words, NpcTradeMailReadLayout layout,
         ImmutableArray<NpcTradeMailAsset> assets, ImmutableArray<NpcTradeMailText> texts, NpcTradeItemsDocument items)
     {
-        Dontae = dontae;
-        // StringCopy defines seven bytes; canonical saves initialize the spare buffer byte to EOS.
-        Message = new(dontae.Words, dontae.AuthorName, dontae.AuthorNameBytes.Add(255),
-            dontae.AuthorTrainerIdBytes, dontae.SourceSpeciesId, dontae.SourceItemId);
+        // Load authenticated the original byte metadata. Runtime ownership uses its numeric
+        // trainer identity and literal name; it does not retain a second byte authority.
+        Message = new(dontae.Words, dontae.AuthorName, dontae.AuthorTrainerId,
+            dontae.SourceSpeciesId, dontae.SourceItemId, SourceMailOrigin.NpcTrade);
         if (SourceMailRules.ValidateMessage(Message) is {} error) throw new InvalidDataException(error);
         Words = words; ReadLayout = layout; Assets = assets; Items = items;
         TextSources = texts; Texts = texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);

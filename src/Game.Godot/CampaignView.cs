@@ -453,6 +453,7 @@ public partial class CampaignView:Node2D
         if(ConsumedRepelDismissalFrame(input)){GetViewport().SetInputAsHandled();return;}
         if(TryRegionalSignDirectionInput(input)){GetViewport().SetInputAsHandled();return;}
         if(TryMenuMouseInput(input))return;
+        if(SilphElevatorMenuActive&&input is InputEventKey silphContinuation&&TryFieldVisualContinuationInput(silphContinuation)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(SilphElevatorMenuActive&&input is InputEventKey silphKey&&TrySilphInput(silphKey)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(SilphElevatorMenuActive&&input is not InputEventKey {Keycode:Key.Escape or Key.F12}){GetViewport().SetInputAsHandled();return;}
         if(_session?.EasyChatEditor is not null && input is InputEventKey editorKey &&
@@ -466,6 +467,7 @@ public partial class CampaignView:Node2D
         if(DaisyGroomingInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(SizeRecordInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(NameRaterInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
+        if(TryFieldVisualContinuationInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(TryTrainerTowerInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(TrySeagallopMenuInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(TryTownMapInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
@@ -473,6 +475,7 @@ public partial class CampaignView:Node2D
         if(TryFieldMenuInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.OldManTutorial is not null&&TryOldManInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Shop is not null&&ShopInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
+        if(TryItemVisualContinuationInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.ItemMenu is not null&&BagTossInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.ItemMenu is not null&&MachineInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.ItemMenu is not null&&!_fieldMedicineTargetOpen&&TryQuestPocketInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
@@ -569,6 +572,9 @@ public partial class CampaignView:Node2D
         (_session.State.ForestTrainerBattle?.Stage!=CampaignForestTrainerStage.Intro||_tracks.All(t=>t.Time>=t.Duration));
     public override void _Draw()
     {
+        // Child controls draw after the parent. Only the selected Oak branch may
+        // expose its text; menus, portrait transitions and fades cannot inherit it.
+        if (_openingText is not null) _openingText.Visible = false;
         ResetFieldFogCanvas();
         if(_quitRequested||_startupExited)return;
         if(!_startupReady)
@@ -648,7 +654,7 @@ public partial class CampaignView:Node2D
         {
             _battleSkin.DrawDialogue(this,_fieldScreenFade?.Fade is null?null:FieldDialoguePalette);
             var color=_session.State.Script.Variables.GetValueOrDefault("VAR_TEXT_COLOR") switch{0=>new Color("345077"),1=>new Color("a44756"),_=>new Color("283840")};
-            var lines=text.Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(FieldDialogueFont,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);
+            var lines=FieldVisualText(text).Split('\n');var visibleLines=FieldRenderedText(text).Split('\n');for(int i=0;i<visibleLines.Length;i++)SourceText(FieldDialogueFont,LabBattleUiSkin.DialogueText+new Vector2(0,i*15),visibleLines[i]);
             if(!TrainerTowerMenuActive&&!SeagallopMenuActive&&FieldTextComplete&&_session.State.Script.Wait?.Kind==StoryWaitKind.Choice&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length)
             {
                 int x=FieldChoiceFrameX,y=FieldChoiceTextY,step=FieldChoiceRowHeight;
@@ -658,13 +664,13 @@ public partial class CampaignView:Node2D
             }
             else if(!SourceMenuActive&&!SourceGridMenuActive&&!FossilLabMenuActive&&!TrainerTowerMenuActive&&!SeagallopMenuActive&&!BikeShopMenuActive&&!BillPcMenuActive&&!RocketElevatorMenuActive&&!DepartmentElevatorMenuActive&&!RooftopMenuActive&&!GameCornerCoinMenuActive&&!GameCornerPrizeMenuActive&&!SilphElevatorMenuActive&&FieldTextComplete&&_session.State.Script.Wait?.Kind==StoryWaitKind.MenuChoice&&_session.State.Dialogue?.Page+1==_session.State.Dialogue?.Pages.Length)
             {
-                int width=((int)Math.Max(_sourceNormal.Font.GetStringSize(InventorySourceText("gText_Yes"),fontSize:_sourceNormal.Size).X,_sourceNormal.Font.GetStringSize(InventorySourceText("gText_No"),fontSize:_sourceNormal.Size).X)+9)/8+1;
+                int width=((int)Math.Max(_sourceNormal.MeasureText(InventorySourceText("gText_Yes")).X,_sourceNormal.MeasureText(InventorySourceText("gText_No")).X)+9)/8+1;
                 _battleSkin.DrawUserFrame(this,new(144,56,width*8+16,48));SourceText(_sourceNormal,new(160,66),InventorySourceText("gText_Yes"));SourceText(_sourceNormal,new(160,80),InventorySourceText("gText_No"));SourceText(_sourceNormal,new(152,_choiceYes?66:80),"▶");
             }
-            else if(FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawTextCursor(FieldDialogueFont,LabBattleUiSkin.DialogueText,lines,15,_waitElapsed);
+            else if(FieldVisualContinuationPending||FieldTextComplete&&(_session.State.Script.Wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.ButtonPress||_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro||_session.State.DoubleBattle?.Stage==CampaignDoubleBattleStage.Intro||_session.State.Repel?.Phase==CampaignRepelPhase.WoreOff))DrawTextCursor(FieldDialogueFont,LabBattleUiSkin.DialogueText,lines,15,_waitElapsed);
         }
         DrawDayCareResidents();DrawSourceGridMenu();DrawSourceMenu();DrawFossilLabMenu();DrawBillPcMenu();DrawBikeShopMenu();DrawRocketElevatorMenu();DrawDepartmentElevatorMenu();DrawRooftopMenu();DrawGameCornerCoinMenu();DrawGameCornerPrizeMenu();DrawSilphElevatorMenu();DrawSeagallopMenu();DrawTrainerTowerMenu();
-        if(_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro&&_wildNotice is not null)ItemMessageBox(_wildNotice);
+        if(_session.State.ForestTrainerBattle?.Stage==CampaignForestTrainerStage.Intro&&_wildNotice is not null)DrawWildNoticeBox();
         if(_lastCommandFault||_status.StartsWith("starter_",StringComparison.Ordinal))
         {DrawRect(new(2,137,236,21),new Color("741e2b"));DrawString(_font,new(6,147),FieldMenuText.Get("diagnostic.event-not-committed"),fontSize:8,modulate:Colors.White);DrawString(_font,new(6,156),FieldMenuText.Get("diagnostic.error-log"),fontSize:7,modulate:Colors.White);}
         if(_session.State.ScreenIsBlack)DrawRect(new(0,0,240,160),SourceScreenFadeColor);

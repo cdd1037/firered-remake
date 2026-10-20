@@ -54,7 +54,8 @@ public partial class CampaignView
             DrawTextureRectRegion(PresentedOwnedIcon(owned),new(icon,new(32,32)),new(0,0,32,32));
             if(owned.HeldItem!="ITEM_NONE" && !string.IsNullOrEmpty(owned.HeldItem))
                 PartyAtlas(new(icon+new Vector2(16,22),new(8,8)),new(112,SourceMailRules.IsMailItem(owned.HeldItem)?872:864,8,8));
-            SourceText(_sourceSmallWhite,origin+(main?new Vector2(24,11):new Vector2(22,3)),PresentedOwnedName(owned));
+            SourceScrollingText(_sourceSmallWhite,origin+(main?new Vector2(24,11):new Vector2(22,3)),
+                PresentedOwnedName(owned),main?52:label is not null?53:owned.IsEgg?114:64);
             if(label is not null)SourceText(_sourceSmallWhite,origin+(main?new Vector2(12,34):new Vector2(77,4)),label);
             if(owned.IsEgg)continue;
             Vector2 level=origin+(main?new Vector2(32,20):new Vector2(32,12));

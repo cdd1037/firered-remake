@@ -16,7 +16,7 @@ internal sealed partial class FieldForestPreviewLayer : Node2D
         if(!ShowName||TextFont is not {} font)return;
         DrawRect(new(0,0,104,16),WindowColor);
         string text=font.PrepareText(Label);
-        int width=(int)font.Font.GetStringSize(text,fontSize:font.Size).X;
+        int width=(int)font.MeasureText(text).X;
         DrawString(font.Font,new((104-width)/2,2+font.Baseline),text,fontSize:font.Size);
     }
 }

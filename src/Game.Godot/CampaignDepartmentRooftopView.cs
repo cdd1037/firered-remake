@@ -23,7 +23,7 @@ public partial class CampaignView
         _session.State.Dialogue?.Page + 1 == _session.State.Dialogue?.Pages.Length;
     private int RooftopLeft => RooftopMenu?.Vending == true ? 96 : 0;
     private int RooftopWidth => RooftopMenu?.Vending == true ? 144 :
-        (((int)RooftopMenu!.Rows.Max(row => _sourceNormal.Font.GetStringSize(row, fontSize: _sourceNormal.Size).X) + 9) / 8 + 1) * 8 + 16;
+        (((int)RooftopMenu!.Rows.Max(row => _sourceNormal.MeasureText(row).X) + 9) / 8 + 1) * 8 + 16;
     private void SynchronizeRooftopMenu()
     {
         string? wait = RooftopMenuActive ? _session.State.Script.Wait!.CorrelationId : null;

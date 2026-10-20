@@ -75,21 +75,17 @@ public static class NameRaterRules
     }
 
     public static NameRaterRenameResult Rename(ImmutableArray<PartyPokemon> party, NameRaterTarget? target,
-        uint playerTrainerId, string playerName, string? input, string alphabet)
+        uint playerTrainerId, string playerName, string? input)
     {
         NameRaterRenameResult Reject(string error) => new(party, error);
         if (target is null) return Reject("name_rater_not_pending");
-        // The supported alphabet is already authenticated in CampaignPokemonContent. Do not
-        // silently extend this boundary when an adapter supplies a different character list.
-        if (alphabet is null || alphabet.Length != PokemonStateValidator.NicknameAlphabet.Length ||
-            !alphabet.ToHashSet().SetEquals(PokemonStateValidator.NicknameAlphabet)) return Reject("name_rater_alphabet_unsupported");
         if (input is null) return Reject("nickname_text_required");
-        var error = PokemonNicknameRules.Validate(input, alphabet);
+        var error = PokemonNicknameRules.Validate(input);
         if (error is not null) return Reject(error);
         error = Begin(party, target.PartyIndex, target.InstanceId, playerTrainerId, playerName, out var current);
         if (error is not null) return Reject(error);
         if (!string.Equals(target.OriginalCustomNickname, current!.OriginalCustomNickname, StringComparison.Ordinal)) return Reject("name_rater_original_name_changed");
-        var name = PokemonNicknameRules.Apply(target.OriginalCustomNickname, input, alphabet);
+        var name = PokemonNicknameRules.Apply(target.OriginalCustomNickname, input);
         bool changed = !string.Equals(name, target.OriginalCustomNickname, StringComparison.Ordinal);
         // Blank input preserves nullable intent; explicitly typing a default species name
         // creates a custom name. Application owns the separate source display-buffer comparison.

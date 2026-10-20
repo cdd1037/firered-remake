@@ -70,7 +70,7 @@ public partial class CampaignView
             : _wildTerrain;
     }
     private Texture2D CurrentWildBattleTerrain => TeachyBattle is not null ? _wildTerrain : WildBattleTerrainForMap(_session.State.World.Player.MapId);
-    private string? _wildPresentationKey, _wildNotice, _wildNoticeReturn;
+    private string? _wildPresentationKey, _wildNoticeReturn;
     private string _wildMenu = "actions";
     private ImmutableArray<string> _wildPages = [];
     private readonly HashSet<int> _wildArrowPages = [];
@@ -304,33 +304,33 @@ public partial class CampaignView
             _wildPages.IsEmpty && _wildElapsed >= .45 && (WildCurrentEvent(b) is
                 WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || SourceTrainerSilentEvent(b) || SnorlaxSilentEvent(b) || PokemonTowerSilentEvent(b) || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
     }
-    private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
+    private string WildCommandError() => _lastCommandFault ? _summaryText.Get("notice.battle-step-not-committed") : _status switch
     {
         "hm_move_cannot_be_forgotten" => HmCannotForgetText,
         "pokemon_learning_effect_unsupported" => UnsupportedLearningText,
-        "wild_battle_switch_rooted" or "wild_battle_switch_mean_look" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
+        "wild_battle_switch_rooted" or "wild_battle_switch_mean_look" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => string.Join('\n', WildSourcePages("gText_PkmnCantSwitchOut", ("STR_VAR_1", WildName(WildBattleSide.Player)))),
         "wild_battle_switch_arena_trap" or "route11_trainer_switch_arena_trap" => string.Join('\n',WildSourcePages("gText_PkmnsXPreventsSwitching",("B_BUFF1",WildName(WildBattleSide.Opponent)),("B_LAST_ABILITY",_catalog.DisplayNames.AbilityName("ABILITY_ARENA_TRAP")))),
         "wild_battle_run_arena_trap" => string.Join('\n',WildSourcePages("sText_PreventsEscape",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(WildBattleSide.Opponent)),("B_SCR_ACTIVE_ABILITY",_catalog.DisplayNames.AbilityName("ABILITY_ARENA_TRAP")))),
         "wild_battle_run_rooted" or "wild_battle_run_binding" or "wild_battle_run_mean_look" => string.Join('\n',WildSourcePages("sText_CantEscape2")),
         "trainer_battle_cannot_run" => string.Join('\n', WildSourcePages("sText_NoRunningFromTrainers")),
         "trainer_battle_cannot_capture" => string.Join('\n', WildSourcePages("sText_DontBeAThief")),
-        "wild_battle_player_move_pp_empty" => "This move has no PP left.",
-        "wild_battle_player_move_disabled" => "That move is disabled.",
-        "wild_battle_player_rollout_locked" => "The current move must\nfinish first.",
-        "wild_battle_player_move_effect_unsupported" => "This move's effect is not\nimplemented yet.",
-        "wild_battle_opponent_move_effect_unsupported" => "The wild move's effect is\nnot implemented yet.",
+        "wild_battle_player_move_pp_empty" => _summaryText.Get("notice.battle-move-no-pp"),
+        "wild_battle_player_move_disabled" => _summaryText.Get("notice.battle-move-disabled"),
+        "wild_battle_player_rollout_locked" => _summaryText.Get("notice.battle-move-must-finish"),
+        "wild_battle_player_move_effect_unsupported" => _summaryText.Get("notice.battle-move-effect-unsupported"),
+        "wild_battle_opponent_move_effect_unsupported" => _summaryText.Get("notice.battle-opponent-move-effect-unsupported"),
         "potion_no_effect" or "medicine_no_effect" => ItemText("gText_WontHaveEffect"),
-        "medicine_not_in_bag" => "There are none left\nin the BAG.",
-        "battle_medicine_target_identity" => "Choose the target again.",
-        "potion_not_in_bag" => "There are no POTIONS\nin the BAG.",
-        "capture_no_poke_ball" or "capture_ball_not_in_bag" or "ball_not_in_bag" or "poke_ball_not_in_bag" => "There are no POKé BALLS\nin the BAG.",
+        "medicine_not_in_bag" => _inventoryText.Get("notice.none-left"),
+        "battle_medicine_target_identity" => _inventoryText.Get("notice.choose-target-again"),
+        "potion_not_in_bag" => _inventoryText.Get("notice.no-potions"),
+        "capture_no_poke_ball" or "capture_ball_not_in_bag" or "ball_not_in_bag" or "poke_ball_not_in_bag" => _inventoryText.Get("notice.no-poke-balls"),
         "storage_full" => PcText("gText_BoxFull"),
-        "storage_delivery_unsupported" => "Your party has six POKéMON.\nPC delivery is not available yet.",
-        "capture_profile_unsupported" or "capture_not_enabled" or "capture_ball_unsupported" or "wild_capture_unsupported" => "This capture is not supported.\nNo BALL was used.",
-        "replacement_member_invalid" or "wild_replacement_fainted" or "wild_replacement_invalid" or "wild_replacement_target_invalid" => "Choose a living POKéMON\nthat is not already in battle.",
-        "nickname_length" => "Use a name of up to\n10 characters.",
-        "nickname_character_unsupported" => "That character is not\navailable in this game.",
-        _ => "That action is not available\nright now."
+        "storage_delivery_unsupported" => _storageText.Get("notice.capture-delivery-unavailable"),
+        "capture_profile_unsupported" or "capture_not_enabled" or "capture_ball_unsupported" or "wild_capture_unsupported" => _inventoryText.Get("notice.capture-unavailable"),
+        "replacement_member_invalid" or "wild_replacement_fainted" or "wild_replacement_invalid" or "wild_replacement_target_invalid" => _summaryText.Get("notice.battle-replacement-required"),
+        "nickname_length" => FieldMenuText.Get("naming.notice.length", ("limit", "10")),
+        "nickname_character_unsupported" => FieldMenuText.Get("naming.notice.character-unavailable"),
+        _ => _summaryText.Get("notice.battle-choice-unavailable")
     };
     private bool ApplyWildChoice(CampaignCommand command)
     {
@@ -359,6 +359,7 @@ public partial class CampaignView
         {
             if (key.Keycode == Key.Enter && _wildElapsed > .1)
             {
+                if (TryAdvanceWildVisualMessage()) return true;
                 if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; }
                 else { _wildMenu = "learn-moves"; _wildCursor = 0; _wildPages = []; }
             }
@@ -410,6 +411,7 @@ public partial class CampaignView
         {
             if (key.Keycode is Key.Enter or Key.Backspace)
             {
+                if (TryAdvanceWildNotice()) return true;
                 _wildNotice = null;
                 if (_wildNoticeReturn is { } target) { _wildMenu = target; if(target is not ("medicine-target" or "medicine-move"))_wildCursor = 0; _wildNoticeReturn = null; }
             }
@@ -427,6 +429,7 @@ public partial class CampaignView
                 WildCurrentEvent(b) is WildBattleWeatherDamageEvent or WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent or WildBattleTowerHpEvent ? .45 : .1))
             {
                 if (WildStatsPage(b) && !_wildStatsTotals) { _wildStatsTotals = true; _wildElapsed = 0; Write("wildBattleStatsPage", new { page = 2 }); }
+                else if (TryAdvanceWildVisualMessage()) return true;
                 else if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; Write("wildBattlePage", new { key = _wildPresentationKey, page = _wildPage }); }
                 else if (b.Phase == CampaignBattlePhase.Results && b.PageIndex + 1 >= b.Pages.Length && !b.PendingMoves.IsEmpty) BeginWildMoveLearning();
                 else if (!_wildPages.IsEmpty || b.Phase == CampaignBattlePhase.Results) AcknowledgeWildAttackText();
@@ -495,8 +498,9 @@ public partial class CampaignView
         if (DrawCaptureWildOverlay(b)) return;
         if (b.Phase == CampaignBattlePhase.ChooseMove && _wildMenu is "bag" or "bag-actions" && _session.State.Inventory is { } inventory)
         {
-            DrawItemList(inventory, "bag", _wildMenu == "bag-actions" ? 0 : _wildCursor, _wildNotice);
+            DrawItemList(inventory, "bag", _wildMenu == "bag-actions" ? 0 : _wildCursor, _wildNotice is null ? null : WildNoticeSample.Text);
             if (_wildMenu == "bag-actions") DrawItemActionPopup(false, [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")], _wildCursor);
+            if (_wildNotice is not null) DrawMessageContinuation(WildNoticeSample,_sourceNormal,OpeningItemUiSkin.PcResultText,14,_wildElapsed);
             return;
         }
         DrawRect(new(0, 0, 240, 160), Colors.Black); _battleSkin.DrawBackground(this);DrawTexture(CurrentWildBattleTerrain,Vector2.Zero);
@@ -527,28 +531,30 @@ public partial class CampaignView
         if (_wildMenu is "party" or "medicine-target")
         {
             DrawWildParty(b);
-            if(_wildNotice is not null)DrawNativePartyMessage(_wildNotice);
-            else if(!_wildPages.IsEmpty)DrawNativePartyMessage(_wildPages[_wildPage]);
+            if(_wildNotice is not null)
+            {var notice=WildNoticeSample;DrawNativePartyMessage(notice.Text);DrawMessageContinuation(notice,_sourceNormal,new(8,120),16,_wildElapsed);}
+            else if(!_wildPages.IsEmpty)DrawNativePartyMessage(WildMessageSample.Text);
             return;
         }
-        if (_wildNotice is not null) { WildLines(_wildNotice); return; }
+        if (_wildNotice is not null)
+        {var notice=WildNoticeSample;WildLines(notice.Text);DrawMessageContinuation(notice,_battleWhite,LabBattleUiSkin.BattleMessageText,16,_wildElapsed,true);return;}
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) { DrawWildLearning(b); return; }
         if (WildStatsPage(b)) { DrawWildStats(b, (WildRewardLevelEvent)b.Pages[b.PageIndex].Reward!); return; }
         if(_sourceResultContinuation is not null&&!_sourceResultCompleted)return;
         if (!_wildPages.IsEmpty)
         {
             if(WildCaptureBallBlocking(b))return;
-            if(WildCurrentEvent(b) is not WildBattleTowerHpEvent {Effect:"curse-cost"} || _wildElapsed>=.4)WildLines(_wildPages[_wildPage]);
+            if(WildCurrentEvent(b) is not WildBattleTowerHpEvent {Effect:"curse-cost"} || _wildElapsed>=.4)WildLines(WildMessageSample.Text);
             NotePokemonTowerFluteBattle(b);
-            if (_wildArrowPages.Contains(_wildPage)) DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, _wildPages[_wildPage].Split('\n'), 16, _wildElapsed, true);
+            if (_wildArrowPages.Contains(_wildPage)||!WildMessageSample.IsFinal) DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, WildMessageSample.Text.Split('\n'), 16, _wildElapsed, true);
             return;
         }
         if (b.Phase != CampaignBattlePhase.ChooseMove) return;
-        if (_wildMenu == "medicine-target") WildLines("Use on which POKéMON?");
-        else if (_wildMenu == "party") WildLines("Choose a POKéMON.");
+        if (_wildMenu == "medicine-target") WildLines(SourceMenuLabelPresentation.Plain(_battleText, "gText_UseOnWhichPokemon"));
+        else if (_wildMenu == "party") WildLines(_summaryPartyText.ChoosePrompt);
         else if (_wildMenu == "actions")
         {
-            _battleSkin.DrawActionMenu(this); WildLines(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore), _session.State.PlayerName));
+            _battleSkin.DrawActionMenu(this); DrawCompactBattlePrompt(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore), _session.State.PlayerName));
             var labels = _battleSelectionText.ActionLabels;
             for (int i = 0; i < labels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), labels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, _wildCursor);
@@ -556,7 +562,7 @@ public partial class CampaignView
         else
         {
             _battleSkin.DrawMoveMenu(this);
-            if (SourceBattleRequiresStruggle(b)) { SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(0), "STRUGGLE"); _uiCorrections.DrawSelectionCursor(this, true, 0); return; }
+            if (SourceBattleRequiresStruggle(b)) { SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(0), MoveName(new("pret:MOVE_STRUGGLE"))); _uiCorrections.DrawSelectionCursor(this, true, 0); return; }
             var moves = b.State.Player.Pokemon.Moves;
             for (int i = 0; i < 4; i++) SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(i), i < moves.Length ? MoveName(moves[i].Move) : "-");
             _wildCursor = Math.Clamp(_wildCursor, 0, moves.Length - 1);
@@ -573,16 +579,17 @@ public partial class CampaignView
     private void DrawWildLearning(CampaignWildBattle b)
     {
         var moves = WildRewardRecipient(b).Pokemon.Moves;
-        if (_wildMenu == "learn-intro") { WildLines(_wildPages[_wildPage]); DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, _wildPages[_wildPage].Split('\n'), 16, _wildElapsed, true); return; }
+        if (_wildMenu == "learn-intro") { WildLines(WildMessageSample.Text); DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, WildMessageSample.Text.Split('\n'), 16, _wildElapsed, true); return; }
         if (_wildMenu == "learn-moves")
         {
             DrawMoveSelectionSummary("wild:" + b.Id, WildRewardRecipient(b), b.PendingMoves[0].Move, _wildCursor);
             return;
         }
         WildLines(_wildLearningSlot < 0 ? string.Join('\n', WildSourcePages("sText_StopLearningMove", ("B_BUFF2", MoveName(b.PendingMoves[0].Move))))
-            : "Forget " + MoveName(moves[_wildLearningSlot].Move) + "\nand learn " + MoveName(b.PendingMoves[0].Move) + "?");
+            : _summaryText.Get("prompt.learning-replace", ("forgottenMove", MoveName(moves[_wildLearningSlot].Move)),
+                ("newMove", MoveName(b.PendingMoves[0].Move))));
         _battleSkin.DrawStandardFrame(this, new(184, 64, 56, 48));
-        SourceText(_sourceNormal, new(200, 72), "YES"); SourceText(_sourceNormal, new(200, 88), "NO");
+        SourceText(_sourceNormal, new(200, 72), InventorySourceText("gText_Yes")); SourceText(_sourceNormal, new(200, 88), InventorySourceText("gText_No"));
         SourceText(_sourceNormal, new(188, 72 + _wildCursor * 16), "▶");
     }
     private void DrawWildStats(CampaignWildBattle b, WildRewardLevelEvent level)
@@ -617,13 +624,10 @@ public partial class CampaignView
         _battleSkin.DrawHealthbox(this, player, hp, mon.Stats.MaxHp, bar,
             showHpLabel: ForestHealthShowsHpLabel(PresentedWildBattle!, side));
         var name = player ? LabBattleUiSkin.PlayerName : LabBattleUiSkin.OpponentName;
-        SourceText(_healthFont, name, WildName(side));
-        if (mon.Gender != PokemonGender.Genderless && (player || TowerOpponentAppearance()?.ShowGender != false))
-        {
-            float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText(WildName(side)), fontSize: _healthFont.Size).X;
-            SourceText(mon.Gender == PokemonGender.Female ? _healthFemale : _healthMale, name + new Vector2(width, 0), mon.Gender == PokemonGender.Female ? "♀" : "♂");
-        }
         var levelOrigin = (player ? LabBattleUiSkin.PlayerLevelWindow : LabBattleUiSkin.OpponentLevelWindow) + new Vector2(5 * (3 - mon.Level.ToString().Length), 0);
+        bool showGender = mon.Gender != PokemonGender.Genderless && (player || TowerOpponentAppearance()?.ShowGender != false);
+        DrawHealthName(_healthFont, showGender ? mon.Gender == PokemonGender.Female ? _healthFemale : _healthMale : null,
+            name, WildName(side), mon.Gender, levelOrigin.X);
         SourceText(_healthFont, levelOrigin, _healthFont.LevelPrefix + mon.Level);
         if (player) { SourceText(_healthFont, LabBattleUiSkin.PlayerCurrentHpText, hp.ToString().PadLeft(3) + "/"); SourceText(_healthFont, LabBattleUiSkin.PlayerMaximumHpText, mon.Stats.MaxHp.ToString().PadLeft(3)); }
         DrawForestHealthStatus(PresentedWildBattle!, side);

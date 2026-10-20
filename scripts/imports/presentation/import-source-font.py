@@ -64,6 +64,11 @@ def character_map(text):
         chars[char] = int(match[1], 16)
     if chars.get('é') != 0x1B or chars.get('¥') != 0xB7 or chars.get('?') != 0xAC or len(chars) != 146:
         raise ValueError('English character profile differs')
+    # Help exposes this source symbol as Unicode; keep its original pixels and
+    # face-specific advance rather than asking a supplemental CJK font for it.
+    if not re.search(r'^CIRCLE_DOT\s*=\s*F9 15\s*$', text, re.M):
+        raise ValueError('Source CIRCLE_DOT mapping differs')
+    chars['⊙'] = 0x115
     return chars
 
 
@@ -129,7 +134,7 @@ def convert(lock, sources):
     for name, cell_width, columns, height in FACES:
         source = decode_indices(sources[f'graphics/fonts/latin_{name}.png'], 512 if name == 'normal' else 256)
         advances = widths(text, name.title())
-        # Keep only explicitly mapped English glyphs in a compact atlas; no Japanese/extra symbols.
+        # Keep explicitly used Latin and display symbols in a compact atlas.
         glyphs = sorted(set(chars.values()))
         atlas_height = ((len(glyphs) + 15) // 16) * 16
         rgba = bytearray(256 * atlas_height * 4)

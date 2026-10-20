@@ -12,7 +12,7 @@ public sealed class SourceEasyChatEditorTests
         new SourceEasyChatWord(1, 1, 0, "FIRST", "FIRST", true),
         new SourceEasyChatWord(2, 1, 1, "SECOND", "SECOND", true),
         new SourceEasyChatWord(3, 1, 2, "LOCKED", "LOCKED", false)
-    }.ToImmutableDictionary(w => w.Value), [], ImmutableDictionary<string, byte>.Empty, 0, 21, 410, 201);
+    }.ToImmutableDictionary(w => w.Value), [], 0, 21, 410, 201);
     private static readonly SourceEasyChatSelection Selection = new(false, false, []);
     private static SourceEasyChatEditResult Apply(SourceEasyChatEditState state, int count, SourceEasyChatEditAction action,
         int? choice = null, int word = 0) => SourceEasyChatEditRules.Apply(Catalog, Selection, state, count, action, choice, word);

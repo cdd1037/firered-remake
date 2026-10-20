@@ -24,7 +24,7 @@ public sealed class PatternBushCollectionTests
         var machines = SharedMachineCatalog.LoadProject(TestAssets.Root);
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics,
             PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades, machines);
-        var content = new CampaignPokemonContent(game, PokemonStateValidator.NicknameAlphabet);
+        var content = new CampaignPokemonContent(game);
         return new(canonical, content, machines);
     });
 

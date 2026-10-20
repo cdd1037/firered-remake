@@ -28,12 +28,13 @@ public partial class CampaignView
     private int _battlePage,_battleCursor;
     private double _battleElapsed;
     private string _battleMenu="actions";
-    private string? _battleNotice;
     private string? _battleNoticeReturn;
     private void LoadBattlePresentation()
     {
         _battleSelectionText=new(_battleText);
-        _summaryPartyText=new(_battleText);
+        _summaryPartyText=new(_battleText,
+            text=>_sourceNormal.MeasureText(text).X,
+            text=>_sourceSmall.MeasureText(text).X);
         _growthText=new(_battleText);
         var ui=System.IO.Path.Combine(_root,"content/generated/ui/lab-battle-ui");_battleSkin=LabBattleUiSkin.Load(ui);_battleDarkSkin=LabBattleUiSkin.Load(ui,8);
         var fonts=System.IO.Path.Combine(_root,"content/generated/ui/font");
@@ -156,12 +157,13 @@ public partial class CampaignView
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
         if(!key.Pressed)return true;_held=null;
         var b=_session.State.Battle!;
-        if(_battleNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace){_battleNotice=null;if(_battleNoticeReturn is {} target){_battleMenu=target;_battleCursor=0;_battleNoticeReturn=null;}}return true;}
+        if(_battleNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace){if(TryAdvanceBattleNotice())return true;_battleNotice=null;if(_battleNoticeReturn is {} target){_battleMenu=target;_battleCursor=0;_battleNoticeReturn=null;}}return true;}
         if(b.Phase!=CampaignBattlePhase.ChooseMove)
         {
             if(key.Keycode==Key.Enter&&_battleElapsed>.10)
             {
                 if(b.Phase==CampaignBattlePhase.Results&&b.Pages[b.PageIndex].Kind=="stats"&&!_battleStatsTotals){_battleStatsTotals=true;_battleElapsed=0;Write("battleStatsPage",new{page=2});return true;}
+                if(TryAdvanceBattleVisualMessage())return true;
                 if(_battlePage+1<_battlePages.Length){_battlePage++;_battleElapsed=0;Write("battlePage",new{key=_battlePresentationKey,page=_battlePage});}else if(!_battlePages.IsEmpty||b.Phase==CampaignBattlePhase.Results)Apply(new("ack"));}
             return true;
         }
@@ -221,7 +223,7 @@ public partial class CampaignView
     {
         var b=_session.State.Battle!;
         if(b.Phase==CampaignBattlePhase.ChooseMove&&_battleMenu is "bag" or "bag-actions"&&_session.State.Inventory is {} inventory)
-        {DrawItemList(inventory,"bag",_battleMenu=="bag-actions"?0:_battleCursor,_battleNotice);if(_battleMenu=="bag-actions")DrawItemActionPopup(false,[_itemSkin.Text("gOtherText_Use"),_itemSkin.Text("gFameCheckerText_Cancel")],_battleCursor);return;}
+        {DrawItemList(inventory,"bag",_battleMenu=="bag-actions"?0:_battleCursor,_battleNotice is null?null:BattleNoticeSample.Text);if(_battleMenu=="bag-actions")DrawItemActionPopup(false,[_itemSkin.Text("gOtherText_Use"),_itemSkin.Text("gFameCheckerText_Cancel")],_battleCursor);if(_battleNotice is not null)DrawMessageContinuation(BattleNoticeSample,_sourceNormal,OpeningItemUiSkin.PcResultText,14,_battleElapsed);return;}
         bool oak=_battleNotice is not null?_oakNotice:_battleOakPages.Contains(_battlePage);
         DrawRect(new(0,0,240,160),Colors.Black);var skin=oak?_battleDarkSkin:_battleSkin;skin.DrawBackground(this);
         foreach(var (side,mon) in new[]{(FirstBattleSide.Opponent,b.DisplayOpponent),(FirstBattleSide.Player,b.DisplayPlayer)})
@@ -251,15 +253,17 @@ public partial class CampaignView
             DrawNativeParty([PartyPresentationAssets.Displayed(b.OwnedBefore,shown,b.OwnedBefore.Status)],
                 b.Phase==CampaignBattlePhase.ChooseMove?_battleCursor:0,
                 _battleMenu=="medicine-target"?SourceMenuLabelPresentation.Plain(_battleText,"gText_UseOnWhichPokemon"):_summaryPartyText.ChoosePrompt,cancel:b.Phase==CampaignBattlePhase.ChooseMove);
-            if(_battleNotice is not null)DrawNativePartyMessage(_battleNotice);
+            if(_battleNotice is not null)
+            {var notice=BattleNoticeSample;DrawNativePartyMessage(notice.Text);DrawMessageContinuation(notice,_sourceNormal,new(8,120),16,_battleElapsed);}
             else if(!_battlePages.IsEmpty)
             {
-                DrawNativePartyMessage(_battlePages[_battlePage]);
-                if(_battleArrowPages.Contains(_battlePage))DrawTextCursor(_sourceNormal,new(8,120),_battlePages[_battlePage].Split('\n'),16,_battleElapsed,true);
+                DrawNativePartyMessage(BattleMessageSample.Text);
+                if(_battleArrowPages.Contains(_battlePage)||!BattleMessageSample.IsFinal)DrawTextCursor(_sourceNormal,new(8,120),BattleMessageSample.Text.Split('\n'),16,_battleElapsed,true);
             }
             return;
         }
-        if(_battleNotice is not null)Lines(_battleNotice);
+        if(_battleNotice is not null)
+        {var notice=BattleNoticeSample;Lines(notice.Text);DrawMessageContinuation(notice,oak?_sourceNormal:_battleWhite,oak?LabBattleUiSkin.DialogueText:LabBattleUiSkin.BattleMessageText,oak?15:16,_battleElapsed,!oak);}
         else if(b.Phase==CampaignBattlePhase.Results&&b.Pages[b.PageIndex] is {Kind:"stats",Reward:LabBattleLevelEvent level})
         {
             Lines(string.Join('\n',BattleSourcePages("sText_PkmnGrewToLv",("B_BUFF1",_catalog.PokemonDisplayName(b.OwnedBefore)),("B_BUFF2",level.After.ToString()))));
@@ -274,8 +278,8 @@ public partial class CampaignView
         }
         else if(!_battlePages.IsEmpty)
         {
-            Lines(_battlePages[_battlePage]);
-            if(_battleArrowPages.Contains(_battlePage))DrawTextCursor(oak?_sourceNormal:_battleWhite,oak?LabBattleUiSkin.DialogueText:LabBattleUiSkin.BattleMessageText,_battlePages[_battlePage].Split('\n'),oak?15:16,_battleElapsed,!oak);
+            var message=BattleMessageSample;Lines(message.Text);
+            if(_battleArrowPages.Contains(_battlePage)||!message.IsFinal)DrawTextCursor(oak?_sourceNormal:_battleWhite,oak?LabBattleUiSkin.DialogueText:LabBattleUiSkin.BattleMessageText,message.Text.Split('\n'),oak?15:16,_battleElapsed,!oak);
         }
         else if(b.Phase==CampaignBattlePhase.ChooseMove)
         {
@@ -283,7 +287,7 @@ public partial class CampaignView
             else if(_battleMenu=="party")Lines(_summaryPartyText.ChoosePrompt);
             else if(_battleMenu=="actions")
             {
-                _battleSkin.DrawActionMenu(this);Lines(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore),_session.State.PlayerName));
+                _battleSkin.DrawActionMenu(this);DrawCompactBattlePrompt(_battleSelectionText.ActionPrompt(_catalog.PokemonDisplayName(b.OwnedBefore),_session.State.PlayerName));
                 var labels=_battleSelectionText.ActionLabels;for(int i=0;i<4;i++)SourceText(_battleMenuFont,LabBattleUiSkin.ActionText(i),labels[i]);
                 _uiCorrections.DrawSelectionCursor(this,false,_battleCursor);
             }
@@ -322,14 +326,9 @@ public partial class CampaignView
         int exp=max==min?0:(int)Math.Clamp((long)(mon.Experience-min)*64/(max-min),0,64);
         skin.DrawHealthbox(this,player,hp,mon.Stats.MaxHp,exp);
         var name=player?LabBattleUiSkin.PlayerName:LabBattleUiSkin.OpponentName;
-        SourceText(font,name,BattleName(side));
-        if(mon.Gender!=PokemonGender.Genderless)
-        {
-            var genderFont=mon.Gender==PokemonGender.Female?(dark?_healthDarkFemale:_healthFemale):(dark?_healthDarkMale:_healthMale);
-            float width=font.Font.GetStringSize(font.PrepareText(BattleName(side)),fontSize:font.Size).X;
-            SourceText(genderFont,name+new Vector2(width,0),mon.Gender==PokemonGender.Female?"♀":"♂");
-        }
         var levelOrigin=(player?LabBattleUiSkin.PlayerLevelWindow:LabBattleUiSkin.OpponentLevelWindow)+new Vector2(5*(3-mon.Level.ToString().Length),0);
+        var genderFont=mon.Gender==PokemonGender.Genderless?null:mon.Gender==PokemonGender.Female?(dark?_healthDarkFemale:_healthFemale):(dark?_healthDarkMale:_healthMale);
+        DrawHealthName(font,genderFont,name,BattleName(side),mon.Gender,levelOrigin.X);
         SourceText(font,levelOrigin,font.LevelPrefix+mon.Level);
         if(player)
         {

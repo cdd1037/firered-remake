@@ -13096,6 +13096,16 @@
       "path": "src/strings.c",
       "symbol": "gText_GiveToWhichPokemon",
       "terminate": true
+    },
+    {
+      "path": "src/strings.c",
+      "symbol": "gText_Coins_2",
+      "terminate": true
+    },
+    {
+      "path": "src/strings.c",
+      "symbol": "gText_PokemonCenter",
+      "terminate": true
     }
   ]
 }

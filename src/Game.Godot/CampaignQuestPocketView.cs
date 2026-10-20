@@ -235,12 +235,14 @@ public partial class CampaignView
             // Reuse the existing Bag result panel; its left edge leaves the
             // selected key-item icon visible instead of covering it.
             _itemSkin.DrawStandardFrame(this, OpeningItemUiSkin.PcResultFrame);
-            ItemLines(_sourceNormal, OpeningItemUiSkin.PcResultText, _session.VisibleItemMessage!);
+            var message=ItemAckMessageSample;
+            ItemLines(_sourceNormal, OpeningItemUiSkin.PcResultText, message.Text);
+            DrawMessageContinuation(message,_sourceNormal,OpeningItemUiSkin.PcResultText,14,_waitElapsed);
             NotePokemonTowerFluteMessage();
         }
         DrawInventoryMove();
         if (_questPocketNotice is not null) ItemMessageBox(_questPocketNotice);
-        if (_itemNotice is not null) ItemMessageBox(_itemNotice);
+        if (_itemNotice is not null) DrawItemNotice();
         return true;
     }
 }

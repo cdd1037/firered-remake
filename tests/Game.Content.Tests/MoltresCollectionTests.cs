@@ -22,7 +22,7 @@ public sealed class MoltresCollectionTests
         var game = PretGamePokemonCatalog.Load(TestAssets.Root, canonical, mechanics,
             PretNpcTrades.Load(PretCurrentWorld.Load(TestAssets.Root), mechanics.Catalog).Trades, machines);
         var dex = PretPokedexMenu.Load(TestAssets.Root);
-        var content = new CampaignPokemonContent(game, PokemonStateValidator.NicknameAlphabet);
+        var content = new CampaignPokemonContent(game);
         return new(canonical, content, machines, dex);
     });
 

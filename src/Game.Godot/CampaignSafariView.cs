@@ -191,14 +191,10 @@ public partial class CampaignView
             if(SafariCaptureBallPlayback() is {} playback)DrawCaptureTargetFrame(sprite.Texture,sprite.Position,playback.Sample(SafariCaptureBallTick),playback.Ball,playback.TargetBlend(SafariCaptureBallTick));
             else DrawTexture(sprite.Texture, sprite.Position);
             _battleSkin.DrawHealthbox(this, false, target.CurrentHp, target.Stats.MaxHp);
-            SourceText(_healthFont, LabBattleUiSkin.OpponentName, (_catalog.SourceSpeciesName(target.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));
-            if (target.Gender != PokemonGender.Genderless)
-            {
-                float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText((_catalog.SourceSpeciesName(target.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing."))), fontSize: _healthFont.Size).X;
-                SourceText(target.Gender == PokemonGender.Female ? _healthFemale : _healthMale,
-                    LabBattleUiSkin.OpponentName + new Vector2(width, 0), target.Gender == PokemonGender.Female ? "♀" : "♂");
-            }
-            SourceText(_healthFont, LabBattleUiSkin.OpponentLevelWindow + new Vector2(5 * (3 - target.Level.ToString().Length), 0), _healthFont.LevelPrefix + target.Level);
+            var levelOrigin = LabBattleUiSkin.OpponentLevelWindow + new Vector2(5 * (3 - target.Level.ToString().Length), 0);
+            DrawHealthName(_healthFont, target.Gender == PokemonGender.Genderless ? null : target.Gender == PokemonGender.Female ? _healthFemale : _healthMale,
+                LabBattleUiSkin.OpponentName, _catalog.SourceSpeciesName(target.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing."), target.Gender, levelOrigin.X);
+            SourceText(_healthFont, levelOrigin, _healthFont.LevelPrefix + target.Level);
         }
         if(SafariCaptureBallPlayback() is {} ballPlayback)DrawCapturePlayback(ballPlayback,SafariCaptureBallTick);
         // Source wording/counter, using the shared source frame until the dedicated Safari healthbox is imported.
@@ -208,7 +204,7 @@ public partial class CampaignView
         _battleSkin.DrawBattleMessage(this);
         if (battle.Capture is null && battle.Phase == CampaignBattlePhase.ChooseMove)
         {
-            _battleSkin.DrawActionMenu(this); WildLines(_battleSelectionText.SafariPrompt(_session.State.PlayerName));
+            _battleSkin.DrawActionMenu(this); DrawCompactBattlePrompt(_battleSelectionText.SafariPrompt(_session.State.PlayerName));
             var labels = _battleSelectionText.SafariActionLabels;
             for (int i = 0; i < labels.Length; i++) SourceText(_battleMenuFont, LabBattleUiSkin.ActionText(i), labels[i]);
             _uiCorrections.DrawSelectionCursor(this, false, _safariCursor);

@@ -130,6 +130,7 @@ public partial class CampaignView
     private bool SubmitStorageBoxNameFromView(string text)
     {
         if (!StorageBoxNaming) return false;
+        if (!NamingGlyphPreflight(text)) return true;
         if (_pcNotice is not null) { _pcNotice = null; QueueRedraw(); return true; }
         if (StorageCustomizationIsCurrent())
             StorageCustomizationAction(new("storage_box_name", Text: text) { StorageBoxIndex = _session.State.Pc!.Customization!.BoxIndex });
@@ -252,8 +253,8 @@ public partial class CampaignView
         DrawTexture(_storageCustomizationTextures[wallpaper.AssetId], new(80, 16));
         DrawTexture(_storageAssets["box-arrow-left"], new(88, 20)); DrawTexture(_storageAssets["box-arrow-right"], new(224, 20));
         string name = StorageBoxName(storage.CurrentBox);
-        float width = _storageTitleFont!.Font.GetStringSize(_storageTitleFont.PrepareText(name), fontSize: _storageTitleFont.Size).X;
-        SourceText(_storageTitleFont, new(160 - (int)width / 2, 20), name);
+        float width = _storageTitleFont!.MeasureText(name).X;
+        SourceScrollingText(_storageTitleFont, new(160 - (int)Math.Min(width, 104) / 2, 20), name, 104);
         if (_storageTitleSelected) DrawRect(StorageBoxTitleRect, new Color("fff4b8"), filled: false);
     }
 
@@ -270,7 +271,7 @@ public partial class CampaignView
         {
             ItemMessageBox(PcText("gText_JumpToWhichBox"));
             _battleSkin.DrawUserFrame(this, new(88, 56, 144, 48));
-            SourceText(_sourceNormal, new(104, 70), "◀"); SourceText(_sourceNormal, new(120, 70), StorageBoxName(_storageJumpBox));
+            SourceText(_sourceNormal, new(104, 70), "◀"); SourceScrollingText(_sourceNormal, new(120, 70), StorageBoxName(_storageJumpBox), 92);
             SourceText(_sourceNormal, new(216, 70), "▶"); return;
         }
         var modal = _session.State.Pc!.Customization;

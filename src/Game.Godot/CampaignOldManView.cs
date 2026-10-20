@@ -1,4 +1,5 @@
 using Game.Domain.Events;
+using Game.Domain.Pokemon;
 using Game.Domain.Items;
 using System.Text;
 using Game.Application;
@@ -218,9 +219,8 @@ public partial class CampaignView
             }
             _battleSkin.DrawHealthbox(this, false, weedle.CurrentHp, weedle.Stats.MaxHp);
             string name = PresentedBattleSpeciesName(weedle.SourceSpeciesId);
-            SourceText(_healthFont, LabBattleUiSkin.OpponentName, name);
-            float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText(name), fontSize: _healthFont.Size).X;
-            SourceText(_healthMale, LabBattleUiSkin.OpponentName + new Vector2(width, 0), "♂");
+            DrawHealthName(_healthFont, _healthMale, LabBattleUiSkin.OpponentName, name, PokemonGender.Male,
+                LabBattleUiSkin.OpponentLevelWindow.X + 10);
             SourceText(_healthFont, LabBattleUiSkin.OpponentLevelWindow + new Vector2(10, 0), _healthFont.LevelPrefix + "5");
         }
         if (kind is OldManTutorialEventKind.ThrowPokeBall or OldManTutorialEventKind.BallShake or OldManTutorialEventKind.Caught)
@@ -236,7 +236,8 @@ public partial class CampaignView
         else _battleSkin.DrawBattleMessage(this);
         var lines = _oldManText.Split('\n');
         if (lines.Length > 2) throw new InvalidDataException("Old Man battle text exceeds source two-line window.");
-        for (int i = 0; i < lines.Length; i++) SourceText(_battleWhite, LabBattleUiSkin.BattleMessageText + new Vector2(0, i * 16), lines[i]);
+        if (actions) DrawCompactBattlePrompt(_oldManText);
+        else for (int i = 0; i < lines.Length; i++) SourceText(_battleWhite, LabBattleUiSkin.BattleMessageText + new Vector2(0, i * 16), lines[i]);
         if (kind == OldManTutorialEventKind.ReturnToField)
             DrawRect(new(0, 0, 240, 160), new Color(0, 0, 0, (float)Math.Clamp(_oldManElapsed * 60 / OldManReturnAdapterTicks, 0, 1)));
     }

@@ -56,6 +56,7 @@ public partial class CampaignView
 
     private void SubmitCampaignNickname(string text)
     {
+        if(!NamingGlyphPreflight(text))return;
         if(SubmitStorageBoxNameFromView(text))return;
         if(SubmitNameRaterNicknameFromView(text))return;
         if (CaptureNamingActive && _wildNotice is not null) { _wildNotice = null; QueueRedraw(); return; }

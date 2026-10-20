@@ -66,7 +66,7 @@ public sealed class PretMailComposer
             !profile.SpecialPhrase.IsDefault && profile.SpecialPhrase.Length == templates["profile"].WordCount &&
             profile.DefaultWords.Concat(profile.SpecialPhrase).All(words.ContainsKey), "Easy Chat profile phrases differ.");
         var catalog = new SourceEasyChatCatalog(document.Groups, words, document.Alphabetical,
-            contracts.NameCharacters, contracts.SeenPokemonGroup, contracts.NationalPokemonGroup, contracts.DeoxysSpecies, contracts.UnownSpecies)
+            contracts.SeenPokemonGroup, contracts.NationalPokemonGroup, contracts.DeoxysSpecies, contracts.UnownSpecies)
             { Texts = texts, Templates = templates, ProfileDefinition = profile };
         var selectedPack = pack ?? SourceTextPack.Current;
         var labels = selectedPack.Apply("easy-chat-groups", document.Groups.ToDictionary(group => group.Symbol, group => group.Name)

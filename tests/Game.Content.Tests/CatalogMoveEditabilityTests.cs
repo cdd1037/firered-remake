@@ -74,7 +74,6 @@ public sealed class CatalogMoveEditabilityTests
         foreach (var (id, name) in names) Assert.AreEqual(name, edited.BattleContent.MoveNames[id]);
         foreach (var (id, move) in original.GamePokemon.Catalog.Moves)
             Assert.IsTrue(PretMetronomeMoveCatalog.DefinitionsEqual(move, edited.GamePokemon.Catalog.Moves[id]));
-        Assert.AreEqual(original.PokemonContent.NicknameCharacters, edited.PokemonContent.NicknameCharacters);
         CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(TestAssets.Root, "content/generated/data/story.json")),
             File.ReadAllBytes(Path.Combine(output.Path, "content/generated/data/story.json")));
     }

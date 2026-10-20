@@ -246,8 +246,8 @@ public partial class CampaignView
                 }
             }
         }
-        if (_session.State.ItemMenu.View == "message") ItemMessageBox(_session.VisibleItemMessage!);
-        if (_itemNotice is not null) ItemMessageBox(_itemNotice);
+        if (_session.State.ItemMenu.View == "message") DrawItemAckMessageBox();
+        if (_itemNotice is not null) DrawItemNotice();
         return true;
     }
 }

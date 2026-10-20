@@ -6,7 +6,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-/// <summary>Battle input supplied by the party owner. Names are decoded source names without EOS.
+/// <summary>Battle input supplied by the party owner. Names are literal Unicode names.
 /// Mew and Deoxys follow the same ownership/badge rules as every other species.</summary>
 public sealed record SourceObedienceMember(PartyMemberKey Key, string OriginalTrainerName);
 public sealed record SourceObedienceContext(uint PlayerTrainerId, string PlayerTrainerName, byte BadgeMask,
@@ -67,7 +67,7 @@ public static class SourceObedienceRules
     internal static string? Validate(SourceObedienceContext? context, ImmutableArray<WildBattleCalledPartyMember> party)
     {
         if (context is null) return null;
-        static bool Name(string? name) => name is not null && name.Length <= 7 && name.All(PokemonStateValidator.NicknameAlphabet.Contains);
+        static bool Name(string? name) => NameTextRules.IsValidTrainerName(name);
         if (!Name(context.PlayerTrainerName) || context.PlayerParty.IsDefault || party.IsDefault ||
             context.PlayerParty.Length != party.Length || context.PlayerParty.Any(m => m is null ||
                 m.Key.Side != BattleSide.Player || m.Key.Index < 0 || m.Key.Index >= party.Length || !Name(m.OriginalTrainerName)) ||

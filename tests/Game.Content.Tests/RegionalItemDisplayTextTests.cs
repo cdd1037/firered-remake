@@ -128,6 +128,29 @@ public sealed class RegionalItemDisplayTextTests
             ? "Saffron Gym item scope differs." : "Saffron Gym item declaration differs.", error.Message);
     }
 
+    [TestMethod]
+    [DataRow("safari", "pret:ITEM_HM03")]
+    [DataRow("victory-road", "pret:ITEM_TM02")]
+    public void MachineValidationDoesNotDependOnRegionalDescription(string region, string id)
+    {
+        using var output = TestAssets.TemporaryOutput();
+        string directory = region == "safari" ? "content/generated/data/items/safari/" :
+            "content/generated/data/regions/victory-road/";
+        TestAssets.CopyFiles(output.Path, new[] { ItemsPath, "content/generated/data/machines.json",
+            directory + "items.json", directory + "machines.json", "content/generated/sprites/items.png" });
+        TestAssets.EditJson(output.Path, directory + "items.json", data =>
+        {
+            var row = data["items"]!.AsArray().Select(item => region == "safari" ? item!["metadata"]! : item!)
+                .Single(item => item["item"]!.GetValue<string>() == id);
+            row["description"] = "用于不同地区的中文说明。";
+        });
+        var regional = region == "safari"
+            ? PretSafariItems.LoadProject(output.Path).Items.Single(item => item.Metadata.Item.Id.Value == id).Metadata
+            : PretVictoryRoadItems.LoadProject(output.Path).Items.Items.Single(item => item.Item.Id.Value == id);
+        Assert.AreEqual("用于不同地区的中文说明。", regional.Description);
+        Assert.AreEqual(SharedMachineCatalog.LoadProject(output.Path).Definition(new(id)).Machine.Item, regional.Item);
+    }
+
     private static void Prepare(string root)
     {
         TestAssets.CopyFiles(root, new[]

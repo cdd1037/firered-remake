@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """One reproducible entry point. Never install, relax a gate, or rewrite golden results implicitly."""
+import argparse
 import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex, tempfile, selectors, time, signal, errno
 ROOT=pathlib.Path(__file__).resolve().parent
 LOCK=json.loads((ROOT/'toolchain.lock.json').read_text(encoding='utf-8'))
@@ -109,10 +110,19 @@ def probe():
 
 
 def play(arguments):
- if len(arguments)>1:raise ValueError('Usage: python dev run [current-checkpoint.json]')
+ parser=argparse.ArgumentParser(prog='dev run')
+ parser.add_argument('--language',choices=['en','zh-Hans'],default='en')
+ parser.add_argument('checkpoint',nargs='?')
+ selected=parser.parse_args(arguments)
  extra={'FIRERED_PROJECT_ROOT':str(ROOT),'FIRERED_CAMPAIGN_CHECKPOINT':''}
- if arguments:
-  checkpoint=pathlib.Path(arguments[0]).resolve()
+ if selected.language=='zh-Hans':
+  pack=ROOT/'content/generated/localization/zh-Hans'
+  if not (pack/'font/cjk-font.json').is_file():
+   raise FileNotFoundError('Generate Chinese text and font first; see docs/chinese-edition.md')
+  extra['FIRERED_TEXT_PACK']=str(pack)
+ else:extra['FIRERED_TEXT_PACK']=''
+ if selected.checkpoint:
+  checkpoint=pathlib.Path(selected.checkpoint).resolve()
   if not checkpoint.is_file():raise FileNotFoundError(checkpoint)
   extra['FIRERED_CAMPAIGN_CHECKPOINT']=str(checkpoint)
  # Ordinary play uses the OS user-data directory, never the build tool's XDG cache.

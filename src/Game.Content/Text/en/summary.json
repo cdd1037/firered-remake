@@ -16,5 +16,12 @@
   "notice.battle-no-target": "There is no available\ntarget.",
   "prompt.battle-target-self": "Choose a target:\nSELF {pokemon}",
   "prompt.battle-target-ally": "Choose a target:\nALLY {pokemon}",
-  "prompt.battle-target-foe": "Choose a target:\nFOE {pokemon}"
+  "prompt.battle-target-foe": "Choose a target:\nFOE {pokemon}",
+  "notice.learning-unsupported": "Effect not implemented.\nChoose CANCEL to continue.",
+  "prompt.learning-replace": "Forget {forgottenMove}\nand learn {newMove}?",
+  "notice.battle-move-disabled": "That move is disabled.",
+  "notice.battle-move-must-finish": "The current move must\nfinish first.",
+  "notice.battle-move-effect-unsupported": "This move's effect is not\nimplemented yet.",
+  "notice.battle-opponent-move-effect-unsupported": "The wild move's effect is\nnot implemented yet.",
+  "notice.battle-replacement-required": "Choose a living POKéMON\nthat is not already in battle."
 }

@@ -199,6 +199,33 @@ public sealed class EggFactoryTests
     }
 
     [TestMethod]
+    [DataRow("小智")]
+    [DataRow("𠮷𠮷𠮷𠮷𠮷𠮷𠮷")]
+    [DataRow("e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301")]
+    [DataRow("👩🏽‍🚀")]
+    public void UnicodeTrainerNamesDoNotSeedEggCreationOrHatching(string name)
+    {
+        var unicode = trainer with { Name = name };
+        var source = SourceEggRules.Receive(content, metadata, parents, nextId, trainer, "MAPSEC_FOUR_ISLAND", 4, new(17));
+        var actual = SourceEggRules.Receive(content, metadata, parents, nextId, unicode, "MAPSEC_FOUR_ISLAND", 4, new(17));
+        Assert.AreEqual(JsonSerializer.Serialize(source.Egg with { OriginalTrainerName = name }), JsonSerializer.Serialize(actual.Egg));
+        Assert.AreEqual(source.Rng, actual.Rng);
+        CollectionAssert.AreEqual(source.Trace.ToArray(), actual.Trace.ToArray());
+        Assert.IsNull(PokemonStateValidator.ValidateParty(content, actual.Egg));
+        var normalHatch = SourceEggRules.Hatch(content, source.Egg, trainer, "MAPSEC_FOUR_ISLAND", source.Rng);
+        var unicodeHatch = SourceEggRules.Hatch(content, actual.Egg, unicode, "MAPSEC_FOUR_ISLAND", actual.Rng);
+        Assert.AreEqual(JsonSerializer.Serialize(normalHatch.Pokemon with { OriginalTrainerName = name }), JsonSerializer.Serialize(unicodeHatch.Pokemon));
+        Assert.AreEqual(normalHatch.Rng, unicodeHatch.Rng);
+        CollectionAssert.AreEqual(normalHatch.Trace.ToArray(), unicodeHatch.Trace.ToArray());
+        Assert.IsNull(PokemonStateValidator.ValidateParty(content, unicodeHatch.Pokemon));
+        var normalGift = SourceGiftEggRules.GiveEgg(content, metadata, SourceGiftEggRules.Togepi, nextId, trainer, 4, new(17));
+        var unicodeGift = SourceGiftEggRules.GiveEgg(content, metadata, SourceGiftEggRules.Togepi, nextId, unicode, 4, new(17));
+        Assert.AreEqual(JsonSerializer.Serialize(normalGift.Egg with { OriginalTrainerName = name }), JsonSerializer.Serialize(unicodeGift.Egg));
+        Assert.AreEqual(normalGift.Rng, unicodeGift.Rng);
+        CollectionAssert.AreEqual(normalGift.Trace.ToArray(), unicodeGift.Trace.ToArray());
+    }
+
+    [TestMethod]
     public void InvalidRequests()
     {
         Throws(() => SourceEggRules.Receive(content, metadata, parents with { OffspringPersonality = 0 }, nextId, trainer, "MAPSEC_FOUR_ISLAND", 4, new(0)), "missing pending egg rejected");

@@ -58,7 +58,8 @@ internal sealed class SourceSummaryText
     internal ImmutableArray<string> EggOriginLines(bool fateful, bool currentOwner, int metGame, bool giftEgg) =>
         _eggOriginLines[fateful ? 0 : metGame is not (4 or 5) || !currentOwner ? 1 : giftEgg ? 2 : 3];
 
-    internal SourceSummaryText(IReadOnlyDictionary<string, string> source)
+    internal SourceSummaryText(IReadOnlyDictionary<string, string> source,
+        Func<string, float>? measureNormal = null, Func<string, float>? measureSmall = null)
     {
         string Plain(string symbol, bool pokemonGlyph = false, string? prefix = null)
         {
@@ -97,21 +98,28 @@ internal sealed class SourceSummaryText
         _pick = Plain("gText_PokeSum_Controls_Pick", prefix: "{DPAD_UPDOWN}");
         _place = Plain("gPCText_Place");
         _switch = Plain("gText_Switch2");
-        ImmutableArray<string> Lines(string symbol, int count)
+        ImmutableArray<string> Lines(string symbol, int count, int width, Func<string, float>? measure)
         {
             if (!source.TryGetValue(symbol, out var value) || string.IsNullOrWhiteSpace(value))
                 throw new InvalidDataException("Missing Summary egg text: " + symbol);
             var pages = SourceBattleText.Pages(source, symbol, ImmutableDictionary<string, string>.Empty);
             if (pages.Length != 1) throw new InvalidDataException("Unsupported Summary egg pages: " + symbol);
             var lines = pages[0].Split('\n').ToImmutableArray();
-            if (lines.Length != count || lines.Any(string.IsNullOrWhiteSpace))
+            if (lines.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidDataException("Unsupported Summary egg lines: " + symbol);
+            // Ordinary LF is a layout boundary, not an ACK. The Chinese edition can
+            // use fewer authored rows; every displayed glyph must still fit this window.
+            if (SourceHelpTextLayout.ContainsCjk(pages[0]))
+                return SourceFixedWindowTextLayout.Create(pages[0], width, count,
+                    measure ?? throw new InvalidDataException("Summary egg font measurement missing: " + symbol));
+            if (lines.Length != count)
                 throw new InvalidDataException("Unsupported Summary egg lines: " + symbol);
             return lines;
         }
-        _eggHatchLines = [Lines("gText_PokeSum_EggHatch_AlmostReady", 3), Lines("gText_PokeSum_EggHatch_Soon", 3),
-            Lines("gText_PokeSum_EggHatch_SomeTime", 3), Lines("gText_PokeSum_EggHatch_LongTime", 3)];
-        _eggOriginLines = [Lines("gText_PokeSum_EggOrigin_NicePlace", 2), Lines("gText_PokeSum_EggOrigin_Trade", 2),
-            Lines("gText_PokeSum_EggOrigin_TravelingMan", 2), Lines("gText_PokeSum_EggOrigin_DayCare", 2)];
+        _eggHatchLines = [Lines("gText_PokeSum_EggHatch_AlmostReady", 3, 113, measureNormal), Lines("gText_PokeSum_EggHatch_Soon", 3, 113, measureNormal),
+            Lines("gText_PokeSum_EggHatch_SomeTime", 3, 113, measureNormal), Lines("gText_PokeSum_EggHatch_LongTime", 3, 113, measureNormal)];
+        _eggOriginLines = [Lines("gText_PokeSum_EggOrigin_NicePlace", 2, 224, measureSmall), Lines("gText_PokeSum_EggOrigin_Trade", 2, 224, measureSmall),
+            Lines("gText_PokeSum_EggOrigin_TravelingMan", 2, 224, measureSmall), Lines("gText_PokeSum_EggOrigin_DayCare", 2, 224, measureSmall)];
     }
 
     internal string Label(SummaryPartyAction action) => _labels[action];

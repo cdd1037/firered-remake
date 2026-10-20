@@ -48,26 +48,26 @@ public sealed class SaveRecoveryTests : ProtocolFixture
         Throws(() => SaveCodec.Decode<Counter>(Encoding.UTF8.GetBytes(b), "r1", "different"));
     }
 
-    [TestMethod]
-    public void save_schema_one_is_rejected_before_payload_admission()
+    [TestMethod, DataRow(1), DataRow(2)]
+    public void old_save_schema_is_rejected_before_payload_admission(int schema)
     {
         var payload = JsonSerializer.SerializeToElement(new Counter(8));
-        byte[] old = CanonicalJson.Encode(new SaveEnvelope(1, "r1", "c1", "firered", 4,
+        byte[] old = CanonicalJson.Encode(new SaveEnvelope(schema, "r1", "c1", "firered", 4,
             CanonicalJson.Hash(payload), payload));
         bool validatorCalled = false;
         var error = Assert.ThrowsExactly<InvalidDataException>(() => SaveCodec.Decode<Counter>(old, "r1", "c1",
             validate: _ => { validatorCalled = true; return null; }));
         Assert.AreEqual("save_schema_unsupported", error.Message);
-        Assert.IsFalse(validatorCalled, "Old nickname identity cannot be admitted by a payload validator.");
+        Assert.IsFalse(validatorCalled, "Old nickname or Mail identity cannot be admitted by a payload validator.");
         Assert.AreEqual(SaveOperationStatus.IncompatibleVersion,
             SaveOperationResult.Failure(SaveOperation.Load, error).Status);
     }
 
-    [TestMethod]
-    public void save_schema_one_primary_and_backup_are_preserved_when_loading_fails()
+    [TestMethod, DataRow(1), DataRow(2)]
+    public void old_save_primary_and_backup_are_preserved_when_loading_fails(int schema)
     {
         var payload = JsonSerializer.SerializeToElement(new Counter(8));
-        byte[] old = CanonicalJson.Encode(new SaveEnvelope(1, "r", "c", "firered", 4,
+        byte[] old = CanonicalJson.Encode(new SaveEnvelope(schema, "r", "c", "firered", 4,
             CanonicalJson.Hash(payload), payload));
         var fs = new MemoryStorage();
         fs.Files["s"] = old.ToArray();

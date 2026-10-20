@@ -1,0 +1,3 @@
+{
+  "SwappedHeldItemFromPC": "从电脑中拿出{STR_VAR_1}，\n交给{STR_VAR_2}，并把它\n原先携带的{STR_VAR_3}放入包中。"
+}

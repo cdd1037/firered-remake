@@ -1,2 +1,4 @@
 # Validated image tooling dependency; no platform-specific wheel hashes.
 Pillow==12.3.0
+# Native pixel-font cmap/metrics import; no runtime dependency.
+fonttools==4.61.1

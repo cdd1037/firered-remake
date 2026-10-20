@@ -24,7 +24,7 @@ public sealed class OwnedNicknameLifecycleTests
     {
         foreach (string method in new[] { "level", "item" })
             foreach (int language in new[] { 1, 2, 3 })
-                foreach (string? nickname in new[] { null, method == "level" ? "BULBASAUR" : "PIKACHU", "PETAL" })
+                foreach (string? nickname in new[] { null, method == "level" ? "BULBASAUR" : "PIKACHU", "PETAL", "妙蛙种子" })
                     yield return [method, language, nickname];
     }
 
@@ -65,11 +65,13 @@ public sealed class OwnedNicknameLifecycleTests
     [DataRow(null, null)]
     [DataRow("BULBASAUR", null)]
     [DataRow("PETAL", null)]
+    [DataRow("妙蛙种子", null)]
+    [DataRow("👩🏽‍🚀👩🏽‍🚀👩🏽‍🚀", null)]
     [DataRow("0123456789", null)]
     [DataRow("", "party_nickname")]
     [DataRow("   ", "party_nickname")]
     [DataRow("01234567890", "party_nickname")]
-    [DataRow("改名", "party_nickname")]
+    [DataRow("名\t字", "party_nickname")]
     public void PartyAndStorageUseTheSameStrictNullableCustomNameBoundary(string? nickname, string? expected)
     {
         var owned = Owned("BULBASAUR", 16, nickname);

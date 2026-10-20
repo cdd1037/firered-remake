@@ -16,6 +16,7 @@ public static class PokemonStateValidator
 {
     // Each character is one byte in the pinned English source charmap. This is not a UTF-8 byte limit.
     // naming_screen.c:378-397; global.h:63-64; charmap.txt:67-145 (037335f4c725d7c9aecdac87066f2002b4bd7e14).
+    // Authenticated original on-screen keyboard, not the live literal-name validator.
     public const string NicknameAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?/-♂♀…“”‘'";
 
     /// <summary>
@@ -255,7 +256,6 @@ public static class PokemonStateValidator
         if (content is null) return "pokemon_content_missing";
         var error = ValidateCatalog(content.Catalog);
         if (error is not null) return error;
-        if (content.NicknameCharacters is null) return "pokemon_content_invalid";
         return null;
     }
 
@@ -268,8 +268,7 @@ public static class PokemonStateValidator
         return NpcTradePokemonOriginRules.ValidateParty(catalog, owned);
     }
 
-    private static bool ValidName(string? value, int maximumBytes) => !string.IsNullOrEmpty(value) &&
-        value.Length <= maximumBytes && value.Any(c => c != ' ') && value.All(NicknameAlphabet.Contains);
+    private static bool ValidName(string? value, int maximumLength) => NameTextRules.IsValidName(value, maximumLength);
 
     private static bool ValidSymbol(string? value, string prefix) => value is not null && value.Length <= 128 &&
         value.StartsWith(prefix, StringComparison.Ordinal) && value.Length > prefix.Length &&

@@ -94,8 +94,8 @@ public sealed partial class CampaignSession
             state.Script.Variables.GetValueOrDefault("VAR_0x8004", -1) != target.PartyIndex ||
             state.TextBuffers.GetValueOrDefault("STR_VAR_2") != originalName ||
             state.TextBuffers.GetValueOrDefault("STR_VAR_3") != originalName) return Reject("name_rater_nickname_context");
-        var content = _content.PokemonContent ?? throw new InvalidDataException("pokemon_content_missing");
-        var rename = NameRaterRules.Rename(state.Party, target, state.TrainerId, state.PlayerName, command.Text, content.NicknameCharacters);
+        _ = _content.PokemonContent ?? throw new InvalidDataException("pokemon_content_missing");
+        var rename = NameRaterRules.Rename(state.Party, target, state.TrainerId, state.PlayerName, command.Text);
         if (!rename.Accepted) return Reject(rename.Error!);
         return new(CommandStatus.Accepted, state with { Party = rename.Party, Nickname = naming with { Submitted = true },
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", PokemonName(rename.Party[target.PartyIndex])), ScreenIsBlack = false, PresentationTicks = 16,

@@ -1,3 +1,4 @@
+using System.Text;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Events;
@@ -13,9 +14,11 @@ public partial class CampaignView
     private NamingScreenPresentation? _namingScreen;
     private NamingScreenBinding? _namingBinding;
     private bool _namingGridActive;
+    private bool _namingGlyphUnavailable;
     private double _namingFrameRemainder;
     private ulong _namingSubmitFrame = ulong.MaxValue, _namingClosedFrame = ulong.MaxValue;
     private SourceGameFont? _namingKeyboardFont, _namingGuideFont;
+    private SourceNameEntryLayout _namingEntryLayout;
     private bool NamingScreenActive => _namingBinding is not null;
 
     private void EnsureNamingPresentation()
@@ -36,7 +39,8 @@ public partial class CampaignView
 
     private void InitializeNamingEditor()
     {
-        _nicknameEdit = new LineEdit { Visible = false, PlaceholderText = "", CaretBlink = true, KeepEditingOnTextSubmit = true };
+        _nicknameEdit = new LineEdit { Visible = false, PlaceholderText = "", CaretBlink = true, KeepEditingOnTextSubmit = true,
+            CaretMidGrapheme = false, BackspaceDeletesCompositeCharacterEnabled = true };
         _nicknameEdit.AddThemeFontOverride("font", _sourceNormal.Font);
         _nicknameEdit.AddThemeFontSizeOverride("font_size", _sourceNormal.Size);
         var style = new StyleBoxFlat { BgColor = Colors.Transparent, ContentMarginLeft = 4, ContentMarginRight = 0, ContentMarginTop = 0, ContentMarginBottom = 0 };
@@ -50,6 +54,7 @@ public partial class CampaignView
         _nicknameEdit.AddThemeColorOverride("caret_color", Color.Color8(66, 66, 66));
         _nicknameEdit.AddThemeColorOverride("selection_color", Color.Color8(173, 206, 247));
         _nicknameEdit.AddThemeConstantOverride("outline_size", 0);
+        _nicknameEdit.TextChanged += text => { NamingGlyphPreflight(text); UpdateNamingEditorLayout(); };
         _nicknameEdit.TextSubmitted += SubmitNamingScreen;
         _nicknameEdit.GuiInput += NamingEditorGuiInput;
         AddChild(_nicknameEdit);
@@ -106,10 +111,12 @@ public partial class CampaignView
         if (!_namingScreen!.Open(binding.Context)) return;
         _namingGridActive = false; _namingFrameRemainder = 0;
         _held = null; _repeat = 0; ReleaseFieldTextInput();
-        _nicknameEdit.MaxLength = _namingScreen.MaxChars;
-        _nicknameEdit.Position = new(_namingScreen.EntryX - 4, _opening!.NamingLayout.EntryY - 2);
-        _nicknameEdit.Size = new(_namingScreen.MaxChars * _opening.NamingLayout.EntryCellWidth + 8, 18);
+        // Native IME/editor columns count scalars. Domain rules own the 7/8/10 text-element limits.
+        _nicknameEdit.MaxLength = NameTextRules.MaximumScalarCount;
+        _sourceNormal.EnsureGlyphs(binding.Context.InitialText);
         _nicknameEdit.Text = binding.Context.InitialText;
+        UpdateNamingEditorLayout();
+        NamingGlyphPreflight(_nicknameEdit.Text);
         _nicknameEdit.Visible = !_help.Active;
         if (!_help.Active) { _nicknameEdit.GrabFocus(); _nicknameEdit.Edit(); }
         if (binding.Context.IsOpening) _nicknameEdit.SelectAll();
@@ -119,6 +126,7 @@ public partial class CampaignView
     {
         if (_namingBinding is not null) _namingClosedFrame = Engine.GetProcessFrames();
         _namingBinding = null; _namingScreen?.Close(); _namingGridActive = false; _namingFrameRemainder = 0;
+        _namingGlyphUnavailable = false;
         _nicknameEdit.Visible = false; _nicknameEdit.ReleaseFocus();
         _held = null; _repeat = 0; ReleaseFieldTextInput();
     }
@@ -138,9 +146,37 @@ public partial class CampaignView
     private void ProcessNamingPresentation(double delta)
     {
         if (!NamingScreenActive) return;
+        UpdateNamingEditorLayout();
         _namingFrameRemainder += delta * 60;
         int frames = (int)_namingFrameRemainder; _namingFrameRemainder -= frames;
         _namingScreen!.AdvanceFrames(frames);
+    }
+
+    private bool NamingGlyphPreflight(string text)
+    {
+        _namingGlyphUnavailable = !SourceNameGlyphs.CanRender(text,
+            codepoint => _sourceNormal.Supports(codepoint) && _sourceSmall.Supports(codepoint));
+        QueueRedraw();
+        return !_namingGlyphUnavailable;
+    }
+
+    private void UpdateNamingEditorLayout()
+    {
+        if (!NamingScreenActive) return;
+        var grid = _namingScreen!; var layout = _opening!.NamingLayout;
+        // The native editor owns selection, caret, composition and overflow scrolling.
+        // Preflight its direct FontFile use, including the platform's exposed IME preedit.
+        string composition = _nicknameEdit.HasFocus() && OS.GetName() == "macOS" ? DisplayServer.ImeGetText() : "";
+        _sourceNormal.EnsureGlyphs(_nicknameEdit.Text + composition);
+        float measured = _sourceNormal.MeasureText(_nicknameEdit.Text).X + _sourceNormal.MeasureText(composition).X;
+        bool showGender = grid.Template.AddGenderIcon && _namingBinding!.Context.Gender != PokemonGender.Genderless;
+        bool female = _namingBinding!.Context.Gender == PokemonGender.Female;
+        float genderWidth = showGender ? (female ? _healthFemale : _healthMale).MeasureText(female ? "♀" : "♂").X : 0;
+        _namingEntryLayout = SourceCompactTextLayout.NameEntry(measured, grid.MaxChars * layout.EntryCellWidth,
+            grid.EntryX, layout.GenderX, genderWidth);
+        _nicknameEdit.Scale = new(_namingEntryLayout.Scale, 1);
+        _nicknameEdit.Position = new(grid.EntryX - 4 * _namingEntryLayout.Scale, layout.EntryY - 2);
+        _nicknameEdit.Size = new(_namingEntryLayout.SourceWidth + 8, 18);
     }
 
     private void SubmitNamingScreen(string text)
@@ -173,11 +209,16 @@ public partial class CampaignView
                 int from = _nicknameEdit.GetSelectionFromColumn();
                 _nicknameEdit.DeleteText(from, _nicknameEdit.GetSelectionToColumn()); _nicknameEdit.CaretColumn = from;
             }
-            if (key.Action == NamingScreenAction.Insert) _nicknameEdit.InsertTextAtCaret(key.Character.ToString());
+            if (key.Action == NamingScreenAction.Insert)
+            {
+                _sourceNormal.EnsureGlyphs(key.Character.ToString());
+                _nicknameEdit.InsertTextAtCaret(key.Character.ToString());
+            }
             else if (!selected && _nicknameEdit.CaretColumn > 0)
             {
                 int caret = _nicknameEdit.CaretColumn;
-                _nicknameEdit.DeleteText(caret - 1, caret); _nicknameEdit.CaretColumn = caret - 1;
+                int previous = _nicknameEdit.GetPreviousCompositeCharacterColumn(caret);
+                _nicknameEdit.DeleteText(previous, caret); _nicknameEdit.CaretColumn = previous;
             }
         }
         else if (key.Action == NamingScreenAction.Submit) SubmitNamingScreen(_nicknameEdit.Text);
@@ -212,6 +253,8 @@ public partial class CampaignView
     private void NamingEditorGuiInput(InputEvent input)
     {
         if (!NamingScreenActive || _help.Active) return;
+        if (input is InputEventKey { Unicode: > 0 } typed)
+            _sourceNormal.EnsureGlyphs(char.ConvertFromUtf32((int)typed.Unicode));
         if (input is InputEventKey key && NamingGridKey(key)) { _nicknameEdit.AcceptEvent(); return; }
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Right } mouse)
         {
@@ -282,16 +325,25 @@ public partial class CampaignView
         var grid = _namingScreen!; var template = grid.Template; var layout = _opening!.NamingLayout;
         DrawRect(new(0, 0, 240, 160), Colors.White);
         DrawTexture(_openingTextures["naming-background"], Vector2.Zero);
-        SourceText(_sourceNormal, new(layout.TitleX, layout.TitleY), grid.Title);
+        SourceFittedText(_sourceNormal, new(layout.TitleX, layout.TitleY), grid.Title, 200 - layout.TitleX);
         DrawNamingTargetIcon(template, grid.VisualFrame);
         if (template.AddGenderIcon && _namingBinding!.Context.Gender != PokemonGender.Genderless)
         {
             bool female = _namingBinding.Context.Gender == PokemonGender.Female;
-            SourceText(female ? _healthFemale : _healthMale, new(layout.GenderX, layout.GenderY), female ? "♀" : "♂");
+            SourceText(female ? _healthFemale : _healthMale, new(_namingEntryLayout.GenderX, layout.GenderY), female ? "♀" : "♂");
         }
         DrawTexture(_openingTextures["naming-input-arrow"], new(grid.EntryX - 9 + grid.ArrowOffsetX, 52));
+        // Convert the native scalar column only for the decorative underscore. The editor
+        // continues to own cursor movement, selection, deletion and IME composition.
+        int prefixLength = 0, scalarColumn = 0;
+        foreach (var rune in _nicknameEdit.Text.EnumerateRunes())
+        {
+            if (scalarColumn++ >= _nicknameEdit.CaretColumn) break;
+            prefixLength += rune.Utf16SequenceLength;
+        }
+        int textElementColumn = NameTextRules.TextElementCount(_nicknameEdit.Text[..prefixLength]);
         for (int i = 0; i < grid.MaxChars; i++)
-            DrawTexture(_openingTextures["naming-underscore"], new(grid.EntryX - 1 + i * layout.EntryCellWidth, 56 + (i == _nicknameEdit.CaretColumn ? grid.UnderscoreOffsetY : 0)));
+            DrawTexture(_openingTextures["naming-underscore"], new(grid.EntryX - 1 + i * layout.EntryCellWidth, 56 + (i == textElementColumn ? grid.UnderscoreOffsetY : 0)));
         foreach (var layer in grid.Layers(_captureBallAssets.Sine)) DrawNamingKeyboardLayer(layer.Page, layer.OffsetY);
         string button = new[] { "upper", "lower", "others" }[grid.PageButtonPage];
         DrawTexture(_openingTextures["naming-page-button-" + button], new(188, 75));
@@ -311,8 +363,9 @@ public partial class CampaignView
             NamingEscapeBehavior.KeepOriginal => FieldMenuText.Get("naming.hint.keep"),
             _ => FieldMenuText.Get("naming.hint.delete")
         };
-        SourceText(_namingGuideFont!, new(4, 1), hint);
-        if (_namingBinding.Context.IsOpening && _entryNotice is not null) ItemMessageBox(_entryNotice);
+        SourceFittedText(_namingGuideFont!, new(4, 1), hint, 232);
+        if (_namingGlyphUnavailable) ItemMessageBox(FieldMenuText.Get("naming.notice.character-unavailable"));
+        else if (_namingBinding.Context.IsOpening && _entryNotice is not null) ItemMessageBox(_entryNotice);
         else if (StorageBoxNaming && _pcNotice is not null) ItemMessageBox(_pcNotice);
         else if (CaptureNamingActive && (_session.State.SafariBattle is not null ? _safariNotice : _wildNotice) is {} notice) ItemMessageBox(notice);
         else if (_status.StartsWith("nickname_", StringComparison.Ordinal) || _status.StartsWith("name_rater_", StringComparison.Ordinal))

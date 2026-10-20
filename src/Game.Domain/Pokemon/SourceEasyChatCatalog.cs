@@ -11,7 +11,7 @@ public sealed record SourceEasyChatAlphabeticalGroup(int Id, string Name,
     ImmutableArray<ImmutableArray<ushort>> Alternatives);
 public sealed record SourceEasyChatCatalog(ImmutableArray<SourceEasyChatGroup> Groups,
     ImmutableDictionary<ushort, SourceEasyChatWord> Words, ImmutableArray<SourceEasyChatAlphabeticalGroup> Alphabetical,
-    ImmutableDictionary<string, byte> NameCharacters, int SeenPokemonGroup, int NationalPokemonGroup,
+    int SeenPokemonGroup, int NationalPokemonGroup,
     int DeoxysSpecies, int UnownSpecies)
 {
     public ImmutableDictionary<string, SourceEasyChatTemplate> Templates { get; init; } = ImmutableDictionary<string, SourceEasyChatTemplate>.Empty;
@@ -20,7 +20,7 @@ public sealed record SourceEasyChatCatalog(ImmutableArray<SourceEasyChatGroup> G
 }
 /// <summary>SeenSpeciesIds contains original internal SPECIES_* numbers, not National Dex numbers.</summary>
 public sealed record SourceEasyChatSelection(bool GameClear, bool NationalDex, ImmutableHashSet<int> SeenSpeciesIds);
-public sealed record SourceMailAuthor(string Name, ImmutableArray<byte> NameBytes, ImmutableArray<byte> TrainerIdBytes);
+public sealed record SourceMailAuthor(string Name, uint TrainerId);
 
 /// <summary>Original selection rules from easy_chat.c. Selection unlocks are intentionally separate
 /// from persisted/received message validity. FireRed swaps the Pokémon group numeric constants.</summary>

@@ -5,22 +5,17 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private bool IsAuthenticatedReceivedMail(SourceMailMessage? message) =>
-        message is not null && _content.NpcTradeMailMessage is {} source &&
+        message is { Origin: SourceMailOrigin.NpcTrade } && _content.NpcTradeMailMessage is {} source &&
         SourceMailRules.ValidateMessage(message) is null && CanonicalJson.Hash(message) == CanonicalJson.Hash(source);
 
     private bool IsValidCampaignMailMessage(CampaignState state, SourceMailMessage? message)
     {
         if (IsAuthenticatedReceivedMail(message)) return true;
-        if (message is null || _content.MailComposer is not {} catalog ||
+        if (message is not { Origin: SourceMailOrigin.PlayerAuthored } || _content.MailComposer is not {} catalog ||
             SourceMailComposerRules.ValidateMessage(catalog, message) is not null ||
             SourceEasyChatRules.ValidateWords(catalog, message.Words, requireNonempty: true) is not null) return false;
-        try
-        {
-            var author = SourceMailComposerRules.CreateAuthor(catalog, state.PlayerName, state.TrainerId);
-            return message.AuthorName == author.Name && message.AuthorNameBytes.SequenceEqual(author.NameBytes) &&
-                message.TrainerIdBytes.SequenceEqual(author.TrainerIdBytes);
-        }
-        catch (ArgumentException) { return false; }
+        return string.Equals(message.AuthorName, state.PlayerName, StringComparison.Ordinal) &&
+            message.AuthorTrainerId == state.TrainerId;
     }
 
     private string? ValidateCampaignMail(CampaignState state)

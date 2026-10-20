@@ -103,6 +103,11 @@ public partial class CampaignView
             return true;
         }
 
+        // Pending field visual pages still own the message area while menus are hidden.
+        // Dispatch through the same normalized key path; never select an invisible choice.
+        if (FieldVisualContinuationAcceptsInput && MouseMessage.HasPoint(point))
+        { MouseKey(); QueueRedraw(); GetViewport().SetInputAsHandled(); return true; }
+
         bool acted = _session.EasyChatEditor is not null ? EasyChatEditorMouse(point, null) : _session.State.Evolution is { Stage: CampaignEvolutionStage.LearnMove } ? MouseEvolutionLearning(point) : SourceMenuActive ? MouseSourceMenu(point) : SourceGridMenuActive ? MouseSourceGridMenu(point) : TrainerTowerMenuActive || _session.State.TrainerTowerRecordsVisible ? MouseTrainerTower(point) : MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NpcTradeChoosing || NpcTradePresenting ? MouseNpcTrade(point) : DaisyGroomingChoosing ? MouseDaisyGrooming(point) : SizeRecordChoosing ? MouseSizeRecord(point) : NameRaterChoosing ? MouseNameRater(point) : GameCornerPrizeMenuActive ? MouseGameCornerPrizeMenu(point) : GameCornerCoinMenuActive ? MouseGameCornerCoinMenu(point) : RooftopMenuActive ? MouseRooftopMenu(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
             : TownMapActive ? MouseTownMap(point)
             : FieldMenuOpen ? MouseFieldMenu(point)
@@ -318,7 +323,7 @@ public partial class CampaignView
                 return PointerNativeParty(point, direction, ref _wildCursor, _session.State.Party.Length,cancel:false);
             if (battle.Replacement == CampaignReplacementStage.UseNext) return PointerYesNo(point, direction, ref _wildCursor);
             if (ForestTrainerShiftPending)
-                return _wildPage + 1 == _wildPages.Length && PointerYesNo(point, direction, ref _wildCursor);
+                return _wildPage + 1 == _wildPages.Length && WildMessageSample.IsFinal && PointerYesNo(point, direction, ref _wildCursor);
         }
         if (battle.Phase == CampaignBattlePhase.ChooseMove && SourceBattleForcedMoveSlot(battle) is {} forced) { _wildCursor=forced; return false; }
         if (_wildMenu == "learn-moves") return NavigateMoveSelectionSummary(point, direction, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length);
@@ -480,7 +485,7 @@ public partial class CampaignView
                 return MouseNativeParty(point, ref _wildCursor, _session.State.Party.Length,cancel:false);
             if (battle.Replacement == CampaignReplacementStage.UseNext) return MouseYesNo(point, ref _wildCursor);
             if (ForestTrainerShiftPending)
-                return _wildPage + 1 < _wildPages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _wildCursor);
+                return _wildPage + 1 < _wildPages.Length || !WildMessageSample.IsFinal ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _wildCursor);
         }
         if (battle.Phase == CampaignBattlePhase.ChooseMove && SourceBattleForcedMoveSlot(battle) is {} forced)
         { _wildCursor=forced; return MouseConfirm(point,new Rect2(LabBattleUiSkin.MoveText(forced)-new Vector2(8,0),new Vector2(72,16))); }

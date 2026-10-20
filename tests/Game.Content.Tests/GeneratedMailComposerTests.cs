@@ -74,7 +74,7 @@ public sealed class GeneratedMailComposerTests
                 File.WriteAllText(Path.Combine(output, "contracts.json"), contracts.ToJsonString());
             }
             Write(); var loaded = PretMailComposer.Load(root).Catalog;
-            Assert.AreEqual(count - 1, loaded.Words.Count); Assert.AreEqual(2, loaded.NameCharacters.Count);
+            Assert.AreEqual(count - 1, loaded.Words.Count);
             Assert.IsFalse(loaded.Words.ContainsKey((ushort)value));
             var members = catalog["groups"]![0]!["wordValues"]!.AsArray(); members.Add(value); Write();
             Assert.ThrowsExactly<InvalidDataException>(() => PretMailComposer.Load(root));

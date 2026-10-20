@@ -34,7 +34,7 @@ public static class SourcePokedudeBattle
             return Fail("pokedude_party_definition");
         if (party.Count(p => p.Side == BattleSide.Opponent) != 1 || party.Count(p => p.Side == BattleSide.Player) is < 1 or > 2)
             return Fail("pokedude_party_sides");
-        if (string.IsNullOrEmpty(playerName) || !playerName.Any(c => c != ' ') || playerName.Length > 7 || !playerName.All(PokemonStateValidator.NicknameAlphabet.Contains) ||
+        if (!NameTextRules.IsValidTrainerName(playerName) ||
             string.IsNullOrEmpty(currentRegion) || !currentRegion.StartsWith("MAPSEC_", StringComparison.Ordinal))
             return Fail("pokedude_player_metadata");
         if (party.Any(p => mechanics.Catalog.Species[p.Species].GenderRatio switch {

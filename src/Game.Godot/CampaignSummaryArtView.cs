@@ -233,7 +233,14 @@ public partial class CampaignView
                     SourceText(_sourceNormal, new(57, 71), move.Accuracy == 0 ? "---" : move.Accuracy.ToString());
                     string description = _summaryPresentation.Moves.GetValueOrDefault(move.Id.Value.Replace("pret:", ""), "");
                     var lines = description.Split('\n');
-                    for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(7, 98 + i * 13), lines[i]);
+                    bool chinese = SourceHelpTextLayout.ContainsCjk(description);
+                    if (chinese && lines.Length > 4)
+                        throw new InvalidDataException("Summary move description exceeds its four-row window.");
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        if (chinese) SourceFittedText(_sourceNormal, new(7, 98 + i * 13), lines[i], 113);
+                        else SourceText(_sourceNormal, new(7, 98 + i * 13), lines[i]);
+                    }
                 }
             }
         }

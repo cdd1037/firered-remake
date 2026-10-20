@@ -400,7 +400,7 @@ public sealed partial class CampaignSession
         if(s.PlayerGender is <0 or >1||s.PresentationTicks!=0||!s.Motions.IsEmpty||s.ArrivalFacing is not null)return "save_unstable_presentation";
         if(s.Script.Variables.Keys.Any(k=>!k.StartsWith("VAR_",StringComparison.Ordinal))||s.Script.Flags.Keys.Any(k=>!k.StartsWith("FLAG_",StringComparison.Ordinal)))return "save_script_identity_invalid";
         if(s.SeenSpecies.Any(x=>!_content.IsValidPokedexSourceSpecies(x))||!s.CaughtSpecies.IsSubsetOf(s.SeenSpecies))return "save_pokedex_invalid";
-        if(s.TextBuffers.Any(k=>k.Key is not ("STR_VAR_1" or "STR_VAR_2" or "STR_VAR_3")||k.Value is null||k.Value.Length>(_content.QuestItems is null?10:k.Key=="STR_VAR_1"?31:19)))return "save_text_buffer_invalid";
+        if(s.TextBuffers.Any(k=>k.Key is not ("STR_VAR_1" or "STR_VAR_2" or "STR_VAR_3")||k.Value is null||NameTextRules.TextElementCount(k.Value)>(_content.QuestItems is null?10:k.Key=="STR_VAR_1"?31:19)))return "save_text_buffer_invalid";
         var definitions=_content.MapDefinition(map.Id).Actors;
         if(s.Actors.Count!=definitions.Length)return "save_actor_count_invalid";
         foreach(var d in definitions)
@@ -428,7 +428,7 @@ public sealed partial class CampaignSession
     }
     private string SpeciesName(int species) => _content.SourceSpeciesName(species) ?? throw new InvalidDataException("species_name_missing");
     private string PokemonName(PartyPokemon pokemon) => _content.PokemonDisplayName(pokemon);
-    private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
+    private static bool ValidTrainerName(string? name)=>NameTextRules.IsValidTrainerName(name);
     private string? ValidateStarterProgress(CampaignState state)
     {
         if(_content.PokemonContent is not {} content)return state.Party.IsEmpty?null:"save_pokemon_content_missing";
@@ -584,9 +584,9 @@ public sealed partial class CampaignSession
             {
                 if(state.Nickname is not {Submitted:false} naming||state.Script.Wait is not {Kind:StoryWaitKind.Nickname} wait)return new(CommandStatus.Rejected,state,"nickname_not_pending");
                 if(command.Text is null)return new(CommandStatus.Rejected,state,"nickname_text_required");
-                var content=_content.PokemonContent??throw new InvalidDataException("pokemon_content_missing");
-                var error=PokemonNicknameRules.Validate(command.Text,content.NicknameCharacters);if(error is not null)return new(CommandStatus.Rejected,state,error);
-                var name=PokemonNicknameRules.Apply(naming.OriginalCustomNickname,command.Text,content.NicknameCharacters);
+                _ = _content.PokemonContent??throw new InvalidDataException("pokemon_content_missing");
+                var error=PokemonNicknameRules.Validate(command.Text);if(error is not null)return new(CommandStatus.Rejected,state,error);
+                var name=PokemonNicknameRules.Apply(naming.OriginalCustomNickname,command.Text);
                 if(naming.BoxAddress is not null)return SubmitBoxGiftNickname(state,naming,wait,name);
                 var mon=state.Party[naming.PartyIndex];
                 // Resume the existing field context. EnterMap would wrongly clear the starter branch's temp variables.

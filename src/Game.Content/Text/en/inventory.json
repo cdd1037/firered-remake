@@ -28,5 +28,8 @@
   "notice.choose-target-again": "Choose the target again.",
   "notice.double-use-unavailable": "This item's double-battle\nuse is not available yet.",
   "notice.item-unavailable": "That item can't be used\nright now.",
-  "notice.battle-use-not-implemented": "This item's battle use is\nnot implemented yet."
+  "notice.battle-use-not-implemented": "This item's battle use is\nnot implemented yet.",
+  "notice.no-poke-balls": "There are no POKé BALLS\nin the BAG.",
+  "notice.no-potions": "There are no POTIONS\nin the BAG.",
+  "notice.capture-unavailable": "This capture is not supported.\nNo BALL was used."
 }

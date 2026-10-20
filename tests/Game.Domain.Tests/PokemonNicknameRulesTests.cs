@@ -10,8 +10,6 @@ namespace FireRed.Tests.Domain;
 [TestClass, TestCategory("Game")]
 public sealed class PokemonNicknameRulesTests
 {
-    private const string Alphabet = PokemonStateValidator.NicknameAlphabet;
-
     // Name Rater needs ownership identity, not a display-name catalog.
     private static PartyPokemon Owned(string? customNickname)
     {
@@ -36,6 +34,9 @@ public sealed class PokemonNicknameRulesTests
     [DataRow(null, "   ", null, false)]
     [DataRow(null, "BULBASAUR", "BULBASAUR", true)]
     [DataRow(null, "Bloom", "Bloom", true)]
+    [DataRow(null, "妙蛙种子", "妙蛙种子", true)]
+    [DataRow("旧名", "👩🏽‍🚀", "👩🏽‍🚀", true)]
+    [DataRow(null, "e\u0301", "e\u0301", true)]
     [DataRow(null, " X ", " X ", true)]
     [DataRow("BULBASAUR", "", "BULBASAUR", false)]
     [DataRow("BULBASAUR", "BULBASAUR", "BULBASAUR", false)]
@@ -45,13 +46,13 @@ public sealed class PokemonNicknameRulesTests
     public void SubmissionPreservesNullableIntentAndEveryNonblankLiteral(string? before, string input,
         string? expected, bool changed)
     {
-        Assert.AreEqual(expected, PokemonNicknameRules.Apply(before, input, Alphabet));
+        Assert.AreEqual(expected, PokemonNicknameRules.Apply(before, input));
         ImmutableArray<PartyPokemon> party = [Owned(before)];
         Assert.IsNull(NameRaterRules.Begin(party, 0, 1, 42, "RED", out var target));
         Assert.IsNotNull(target);
         Assert.AreEqual(before, target.OriginalCustomNickname);
 
-        var result = NameRaterRules.Rename(party, target, 42, "RED", input, Alphabet);
+        var result = NameRaterRules.Rename(party, target, 42, "RED", input);
         Assert.IsTrue(result.Accepted, result.Error);
         Assert.AreEqual(before, result.OriginalCustomNickname);
         Assert.AreEqual(expected, result.FinalCustomNickname);
@@ -71,7 +72,7 @@ public sealed class PokemonNicknameRulesTests
         ImmutableArray<PartyPokemon> party = [Owned(before)];
         Assert.IsNull(NameRaterRules.Begin(party, 0, 1, 42, "RED", out var target));
         var stale = party.SetItem(0, party[0] with { CustomNickname = current });
-        var result = NameRaterRules.Rename(stale, target, 42, "RED", "NEW NAME", Alphabet);
+        var result = NameRaterRules.Rename(stale, target, 42, "RED", "NEW NAME");
         Assert.AreEqual("name_rater_original_name_changed", result.Error);
         Assert.IsTrue(stale.Equals(result.Party));
     }
@@ -85,7 +86,7 @@ public sealed class PokemonNicknameRulesTests
     [DataRow("", false)]
     [DataRow("          ", false)]
     [DataRow("01234567890", false)]
-    [DataRow("改名", false)]
+    [DataRow("改名", true)]
     [DataRow("A\nB", false)]
     public void StoredCustomNameValidationIsSeparateFromDefaultDisplayNames(string? name, bool valid)
     {
@@ -98,13 +99,13 @@ public sealed class PokemonNicknameRulesTests
     [TestMethod]
     [DataRow(null, "nickname_text_required")]
     [DataRow("01234567890", "nickname_length")]
-    [DataRow("改名", "nickname_character_unsupported")]
+    [DataRow("名{字}", "nickname_character_unsupported")]
     [DataRow("A\tB", "nickname_character_unsupported")]
     public void RejectedInputCannotChangeNamingIntent(string? input, string expectedError)
     {
         ImmutableArray<PartyPokemon> party = [Owned(null)];
         Assert.IsNull(NameRaterRules.Begin(party, 0, 1, 42, "RED", out var target));
-        var result = NameRaterRules.Rename(party, target, 42, "RED", input, Alphabet);
+        var result = NameRaterRules.Rename(party, target, 42, "RED", input);
         Assert.AreEqual(expectedError, result.Error);
         Assert.IsTrue(party.Equals(result.Party));
     }
@@ -113,6 +114,8 @@ public sealed class PokemonNicknameRulesTests
     [DataRow(null)]
     [DataRow("BULBASAUR")]
     [DataRow("PETAL")]
+    [DataRow("妙蛙种子")]
+    [DataRow("👩🏽‍🚀")]
     public void SerializationRequiresExplicitNullableIntentAndNeverInfersOldNames(string? name)
     {
         var owned = Owned(name);
@@ -147,4 +150,23 @@ public sealed class PokemonNicknameRulesTests
         Assert.AreEqual(expectedError, NameRaterRules.Begin([owned], 0, 1, 42, "RED", out var target));
         Assert.IsNull(target);
     }
+    [TestMethod]
+    [DataRow("小智")]
+    [DataRow("𠮷")]
+    [DataRow("e\u0301")]
+    [DataRow("👩🏽‍🚀")]
+    public void UnicodeOtUsesActualLiteralNameAndFullTrainerId(string trainer)
+    {
+        var owned = Owned(null) with { OriginalTrainerName = trainer };
+        Assert.IsNull(NameRaterRules.Begin([owned], 0, 1, 42, trainer, out var target));
+        var renamed = NameRaterRules.Rename([owned], target, 42, trainer, "新名字");
+        Assert.IsTrue(renamed.Accepted, renamed.Error);
+        Assert.AreEqual(trainer, renamed.Party[0].OriginalTrainerName);
+        Assert.AreEqual("name_rater_foreign_id", NameRaterRules.Begin([owned], 0, 1, 42 + 65536, trainer, out _));
+        Assert.AreEqual("name_rater_foreign_name", NameRaterRules.Begin([owned], 0, 1, 42, trainer + "甲", out _));
+        Assert.IsFalse(Game.Domain.Battle.SourceObedienceRules.IsOtherTrainer(42, trainer, 42, trainer + "甲"),
+            "The source obedience rule intentionally compares an OT prefix.");
+        Assert.IsTrue(Game.Domain.Battle.SourceObedienceRules.IsOtherTrainer(42, trainer, 42 + 65536, trainer));
+    }
+
 }

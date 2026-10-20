@@ -15,8 +15,8 @@ public partial class CampaignView
         var menu = GameCornerPrizeMenu ?? throw new InvalidDataException("prize_menu_missing");
         float width = 0;
         foreach (var text in menu.MenuLabels.Select(SourceMenuLabelPresentation.Parse))
-            width = Math.Max(width, text.SuffixX is {} offset ? offset + _sourceSmall.Font.GetStringSize(text.Suffix!, fontSize: _sourceSmall.Size).X :
-                _sourceNormal.Font.GetStringSize(text.Label, fontSize: _sourceNormal.Size).X);
+            width = Math.Max(width, text.SuffixX is {} offset ? offset + _sourceSmall.MeasureText(text.Suffix!).X :
+                _sourceNormal.MeasureText(text.Label).X);
         int tiles = ((int)width + 9) / 8 + 1;
         int left = Math.Min(menu.Kind == "items" ? 10 : 11, 28 - tiles);
         if (left < 0 || tiles < 1) throw new InvalidDataException("prize_menu_width");

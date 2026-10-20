@@ -166,14 +166,14 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this,new(0,0,240,160));
         var storage=_session.State.Storage!;var slots=storage.Boxes[storage.CurrentBox].Slots;
         if(pc.View==CampaignPcView.Deposit)
-        {DrawTexture(_storageAssets["box-arrow-left"],new(8,4));SourceText(_sourceNormal,new(92,5),StorageBoxName(storage.CurrentBox));DrawTexture(_storageAssets["box-arrow-right"],new(220,4));SourceText(_sourceSmall,new(80,144),_storageText.Get("help.home-box"));SourceText(_sourceNormal,new(184,142),PcText("gPCText_Cancel"));if(_storageTitleSelected)DrawRect(StorageBoxTitleRect,new Color("fff4b8"),filled:false);}
+        {DrawTexture(_storageAssets["box-arrow-left"],new(8,4));SourceScrollingText(_sourceNormal,new(92,5),StorageBoxName(storage.CurrentBox),120);DrawTexture(_storageAssets["box-arrow-right"],new(220,4));SourceText(_sourceSmall,new(80,144),_storageText.Get("help.home-box"));SourceText(_sourceNormal,new(184,142),PcText("gPCText_Cancel"));if(_storageTitleSelected)DrawRect(StorageBoxTitleRect,new Color("fff4b8"),filled:false);}
         if(pc.View==CampaignPcView.Deposit)
         {
             for(int i=0;i<_session.State.Party.Length;i++)
             {
                 var owned=_session.State.Party[i];
                 DrawTextureRectRegion(PresentedOwnedIcon(owned),new(18,24+i*16,16,16),new(0,0,32,32));
-                SourceText(_sourceNormal,new(36,24+i*16),PresentedOwnedName(owned));
+                SourceScrollingText(_sourceNormal,new(36,24+i*16),PresentedOwnedName(owned),76);
                 if(!owned.IsEgg){SourceText(_sourceSmall,new(114,26+i*16),$"Lv{owned.Pokemon.Level}   {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(owned,new(208,26+i*16));}
             }
             SourceText(_sourceNormal,new(18,24+_session.State.Party.Length*16),PcText("gPCText_Cancel"));SourceText(_sourceNormal,new(6,24+_pcCursor*16),"▶");
@@ -194,7 +194,7 @@ public partial class CampaignView
             {
                 if(selected.IsEgg) DrawTexture(BreedingEggShell(),new(8,16));
                 else if(_battleArt.TryGetValue((PresentedRenderSpecies(selected.Pokemon),"front",selected.Pokemon.IsShiny),out var art))DrawTexture(art.Texture,new(8,16));
-                SourceText(_sourceSmall,new(6,88),PresentedOwnedName(selected));
+                SourceScrollingText(_sourceSmall,new(6,88),PresentedOwnedName(selected),72);
                 if(!selected.IsEgg){SourceText(_sourceSmall,new(6,102),(_catalog.SourceSpeciesName(selected.Pokemon.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")));SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");}
             }
             SourceText(_sourceSmall,new(6,132),$"{slots.Count(p=>p is not null)}/30 P{_session.State.Party.Length}");
@@ -207,7 +207,7 @@ public partial class CampaignView
             {
                 var mon=_session.State.Party[i];
                 DrawTextureRectRegion(PresentedOwnedIcon(mon),new(12,10+i*20,16,16),new(0,0,32,32));
-                SourceText(_sourceNormal,new(30,10+i*20),PresentedOwnedName(mon));
+                SourceScrollingText(_sourceNormal,new(30,10+i*20),PresentedOwnedName(mon),78);
                 if(!mon.IsEgg){SourceText(_sourceSmall,new(110,12+i*20),$"Lv{mon.Pokemon.Level}  {mon.Pokemon.CurrentHp}/{mon.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(mon,new(210,12+i*20));}
             }
             SourceText(_sourceNormal,new(8,142),PcText("gPCText_Cancel"));

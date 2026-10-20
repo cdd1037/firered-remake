@@ -7,7 +7,7 @@
   "notice.empty-slot": "There is no POKéMON in this slot.",
   "notice.action-failed": "This action could not be completed.\nChoose another option or go back.",
   "notice.box-changed": "The selected BOX has changed.\nPlease choose it again.",
-  "notice.name-characters": "Use up to 8 source keyboard characters.",
+  "notice.name-characters": "Use up to 8 visible characters.",
   "notice.selection-changed": "The selection has changed.\nPlease choose it again.",
   "notice.deposit-withdraw-menu": "Use DEPOSIT or WITHDRAW from\nthe storage menu for this option.",
   "notice.item-selection-changed": "The selected POKéMON or item changed.\nPlease choose again.",
@@ -27,5 +27,6 @@
   "help.hold-enter": "HOLD ENTER",
   "help.space-multi": "SPACE: MULTI",
   "help.space-single": "SPACE: SINGLE",
-  "help.item-back": "ENTER / B: BACK"
+  "help.item-back": "ENTER / B: BACK",
+  "notice.capture-delivery-unavailable": "Your party has six POKéMON.\nPC delivery is not available yet."
 }

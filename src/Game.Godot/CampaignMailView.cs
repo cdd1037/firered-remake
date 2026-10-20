@@ -153,7 +153,7 @@ public partial class CampaignView
                 CampaignMailPhase.EraseAttached => "gText_MailMessageWillBeLost", _ => "gText_MessageWillBeLost" }));
         }
         if (pending?.Phase == CampaignMailPhase.Message) ItemMessageBox(MailText(pending.MessageSymbol!));
-        if (_itemNotice is not null) ItemMessageBox(_itemNotice);
+        if (_itemNotice is not null) DrawItemNotice();
         return true;
     }
     private void DrawMailRows(string[] labels, int x, int y, int step = 16, int start = 0)

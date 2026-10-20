@@ -11,25 +11,10 @@ public enum MailStationeryOrigin { Bag, Pc }
 
 public static class SourceMailComposerRules
 {
-    public static SourceMailAuthor CreateAuthor(SourceEasyChatCatalog catalog, string name, uint trainerId)
+    public static SourceMailAuthor CreateAuthor(string name, uint trainerId)
     {
-        var bytes = EncodeName(catalog, name);
-        return new(name, bytes, [(byte)trainerId, (byte)(trainerId >> 8), (byte)(trainerId >> 16), (byte)(trainerId >> 24)]);
-    }
-
-    private static ImmutableArray<byte> EncodeName(SourceEasyChatCatalog catalog, string name)
-    {
-        if (string.IsNullOrWhiteSpace(name) || name.Length > 7) throw new ArgumentException("mail_author_name", nameof(name));
-        var bytes = Enumerable.Repeat((byte)255, 8).ToArray();
-        for (int index = 0; index < name.Length; index++)
-        {
-            if (!catalog.NameCharacters.TryGetValue(name[index].ToString(), out byte value))
-                throw new ArgumentException("mail_author_character", nameof(name));
-            bytes[index] = value;
-        }
-        // Original GiveMailToMon pads names shorter than six, then writes EOS. Spare byte is canonically EOS.
-        for (int index = name.Length; index <= 5; index++) bytes[index] = 0;
-        return bytes.ToImmutableArray();
+        if (!NameTextRules.IsValidTrainerName(name)) throw new ArgumentException("mail_author_name", nameof(name));
+        return new(name, trainerId);
     }
 
     public const int UnownMailSpeciesBase = 30000;
@@ -64,17 +49,12 @@ public static class SourceMailComposerRules
         if (SourceEasyChatRules.ValidateWords(catalog, words, requireNonempty: true) is { } invalid) return No(invalid);
         if (words.Any(w => w != SourceEasyChatRules.BlankWord && !SourceEasyChatRules.IsSelectable(catalog, selection, w)))
             return No("mail_word_locked");
-        if (author is null || author.TrainerIdBytes.IsDefault || author.TrainerIdBytes.Length != 4) return No("mail_trainer_bytes");
-        try
-        {
-            if (author.NameBytes.IsDefault || !author.NameBytes.SequenceEqual(EncodeName(catalog, author.Name))) return No("mail_author_bytes");
-        }
-        catch (ArgumentException) { return No("mail_author_name"); }
+        if (author is null || !NameTextRules.IsValidTrainerName(author.Name)) return No("mail_author_name");
         var pokemon = party[partyIndex];
         if (!catalog.Words.Values.Any(w => (w.Group == catalog.SeenPokemonGroup || w.Group == catalog.NationalPokemonGroup) &&
             w.Index == pokemon.Pokemon.SourceSpeciesId)) return No("mail_species");
-        var message = new SourceMailMessage(words, author.Name, author.NameBytes, author.TrainerIdBytes,
-            MailSpecies(catalog, pokemon.Pokemon.SourceSpeciesId, pokemon.Pokemon.Personality), itemId);
+        var message = new SourceMailMessage(words, author.Name, author.TrainerId,
+            MailSpecies(catalog, pokemon.Pokemon.SourceSpeciesId, pokemon.Pokemon.Personality), itemId, SourceMailOrigin.PlayerAuthored);
         var attach = SourceMailRules.AttachReceived(state, party.SetItem(partyIndex, pokemon with { HeldItem = "ITEM_NONE" }), partyIndex, message);
         if (!attach.Succeeded) return No(attach.Error!);
         return new(attach.State, attach.Party, prepared.State, true, null);

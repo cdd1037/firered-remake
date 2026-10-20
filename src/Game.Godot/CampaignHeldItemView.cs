@@ -116,7 +116,7 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(164, 58 + _heldChoice * 17), "▶");
             if (_heldExchange) ItemMessageBox(_inventoryText.Get("prompt.exchange", ("item", InventoryName(_heldGiveItem!.Value))));
         }
-        if (_itemNotice is not null) ItemMessageBox(_itemNotice);
+        if (_itemNotice is not null) DrawItemNotice();
         return true;
     }
     private bool HeldItemMouse(Vector2 point, int? direction = null)
