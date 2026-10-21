@@ -108,7 +108,7 @@ public sealed class BattleTextPrinterTests
     {
         string source = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignBattleDialogText.cs"));
         string pagination = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignMessageLayoutView.cs"));
-        string view = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignView.cs"));
+        string view = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/App/CampaignView.cs"));
         Assert.IsTrue(source.Contains("NativeWildMessageEnabled => TeachyBattle is null", StringComparison.Ordinal),
             "Teachy TV auto-ACK runs before ordinary battle processing and must keep its legacy event renderer.");
         string tutorial = pagination.Split("private bool TryAdvanceBattleVisualMessage()", StringSplitOptions.None)[1]

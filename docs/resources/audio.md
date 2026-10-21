@@ -5,7 +5,7 @@
 ## 目录与入口
 
 - `src/Game.Audio/`：序列、PCM/PSG、叫声、资源格式的唯一运行实现
-- `src/Game.Godot/SynthSourceAudioPlayer.cs`：主游戏 Godot PCM 主机与场景 cue 绑定
+- `src/Game.Godot/Audio/SynthSourceAudioPlayer.cs`：主游戏 Godot PCM 主机与场景 cue 绑定
 - `tools/AudioTool/`：pack 提取、离线 WAV 渲染、性能测量
 - `scripts/imports/audio/build-cue-catalog.py`：由固定源码与 pack 一次生成完整运行 cue 目录
 - `scripts/imports/audio/build-cry-catalog.py`：直接生成普通叫声目录

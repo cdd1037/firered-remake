@@ -13,6 +13,8 @@
 - `Game.Godot`：输入、显示、音频与平台适配，组合 Application、Content 和 Audio。
 - `Game.Tooling`：引用 Application/Content 的显式开发命令，不是玩家运行入口。
 
+Godot 子项目的目录职责、主场景和测试链接方式见[表现层目录说明](../src/Game.Godot/README.md)。
+
 Domain 仍内嵌生成的训练家 AI 程序，因此没有产品 `ProjectReference` 不等于构建无需生成输入。工具链固定为 Godot 4.7.2 .NET / `net10.0` / 实际 .NET 10 宿主；环境入口见[工程 README](../README.md)。
 
 当前只有一份完整游戏组合，由 `PretCampaignCatalog.LoadCurrent` 加载。创建/恢复绑定同一目录；恢复不再次执行剧情或消费 RNG。不保留历史地区开关、前驱目录链或多套物种/机器投影，真实徽章、剧情和图鉴解锁仍按玩家状态判断。见[组合与启动](current-game-composition.md)。

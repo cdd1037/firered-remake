@@ -180,7 +180,7 @@ public sealed class ItemTransferReceiptPresentationTests
         // CampaignView requires Godot and is intentionally not linked into this
         // pure Presentation project. This is a source-routing guard, not a claim
         // to have executed the native doubles view or its ACK loop.
-        string source = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignDoubleEventMessages.cs"));
+        string source = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/Battle/Views/CampaignDoubleEventMessages.cs"));
         string compact = Regex.Replace(Regex.Replace(source, @"//[^\r\n]*", ""), @"\s+", "");
         Assert.IsTrue(compact.Contains("caseSourceHeldItemRecycledEventx:returnSourceTrainerPresentationModel.RecycledItem(DoublePrefixed(x.Actor),x.Item,DoubleItem);", StringComparison.Ordinal));
         Assert.IsTrue(compact.Contains("caseSourceHeldItemsSwappedEventx:returnSourceTrainerPresentationModel.SwappedItems(DoublePrefixed(x.Actor),DoublePrefixed(x.Target),x.ActorItemBefore,x.TargetItemBefore,DoubleItem);", StringComparison.Ordinal));

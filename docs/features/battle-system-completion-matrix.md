@@ -25,7 +25,7 @@
 
 不再维护另一份逐招／逐特性 JSON 状态表。数值身份、效果和目标来自实际内容目录；
 规则准入来自 [SourceBattleKernel.SupportsRecipe](../../src/Game.Domain/Battle/SourceBattleKernel.cs)；
-是否存在可播放脚本由[规范资源解析器](../../src/Game.Godot/SourceBattleAnimation.Resources.cs)判断。
+是否存在可播放脚本由[规范资源解析器](../../src/Game.Godot/Battle/Animation/Core/SourceBattleAnimation.Resources.cs)判断。
 没有第二份地区／招式支持白名单，也不以历史总数作为资源运行门禁。
 
 | 责任 | 当前所有者与维护检查 | 不能扩大为 |
@@ -33,7 +33,7 @@
 | 命令、回合、换人、残留 | [共享 Frame](../../src/Game.Domain/Battle/SourceBattleFrame.cs)、[生命周期测试](../../tests/Game.Battle.Tests/Lifecycle/BattleLifecycleTests.cs)、[残留测试](../../tests/Game.Battle.Tests/Residuals/EndTurnResidualTests.cs) | 全部招式／特性／物品组合或所有特殊模式 |
 | AI、训练家与捕获 | [AI 策略](../../tests/Game.Battle.Tests/TrainerPolicy/TrainerPolicyTests.cs)、[训练家接入](../../tests/Game.Application.Tests/TrainerBattles/TrainerBattleTests.cs)、[野生捕获](../../tests/Game.Application.Tests/WildBattles/WildCaptureTests.cs) | 自然完整主线和每个训练家分支验收 |
 | 调用、回执与结果时序 | [分派契约](animation-dispatch-architecture.md)、[专属入口](../../src/Game.Application/CampaignMoveAnimationDispatch.cs)、[通用入口](../../src/Game.Application/CampaignGeneralAnimationDispatch.cs) | 由最终 Frame 猜测成功、PP、目标或动画参数 |
-| 图层、材质与逐帧执行 | [背景／窗口／扫描线契约](../resources/source-animation-backgrounds.md)、[动画运行时](../../src/Game.Godot/SourceBattleAnimation.cs)、[完整资源合成检查](../../tests/Game.Presentation.Tests/SourceAnimationResourceTests.cs) | 原生 GPU、任意并发寄存器所有者或硬件周期一致 |
+| 图层、材质与逐帧执行 | [背景／窗口／扫描线契约](../resources/source-animation-backgrounds.md)、[动画运行时](../../src/Game.Godot/Battle/Animation/Core/SourceBattleAnimation.cs)、[完整资源合成检查](../../tests/Game.Presentation.Tests/SourceAnimationResourceTests.cs) | 原生 GPU、任意并发寄存器所有者或硬件周期一致 |
 | 当前组合与玩家保存 | [组合测试](../../tests/Game.Application.Tests/Campaign/CampaignCompositionTests.cs)、[generated-only 测试](../../tests/Game.Application.Tests/Campaign/GeneratedOnlyCampaignTests.cs) | 可在活动战斗中存档或已重放历史通关路线 |
 
 ## 调用与回执契约

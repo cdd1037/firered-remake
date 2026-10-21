@@ -2,6 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Game.Application/Game.Application.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
-    <Compile Include="../../src/Game.Godot/PokemonLeagueDurableSave.cs" Link="Godot/PokemonLeagueDurableSave.cs" />
+    <Compile Include="../../src/Game.Godot/App/Persistence/PokemonLeagueDurableSave.cs" Link="Godot/PokemonLeagueDurableSave.cs" />
   </ItemGroup>
 <ItemGroup><ProjectReference Include="../../tools/import-story/import-story.csproj" /></ItemGroup></Project>

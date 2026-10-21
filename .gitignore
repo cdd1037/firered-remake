@@ -9,7 +9,7 @@
 .build/
 .runtime-tmp/
 *.user
-src/Game.Godot/*.cs.uid
+src/Game.Godot/**/*.cs.uid
 
 # Runtime assets and local data stay in the engineering package, not Git.
 /content/raw/

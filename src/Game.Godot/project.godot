@@ -2,7 +2,7 @@ config_version=5
 [application]
 ; Keep this identity stable: existing user:// saves use this directory.
 config/name="FireRed Remake — Engineering Probe"
-run/main_scene="res://Bootstrap.tscn"
+run/main_scene="res://App/Bootstrap.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 [display]
 window/size/viewport_width=240

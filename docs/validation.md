@@ -22,6 +22,39 @@ dotnet restore FireRed.Current.slnx --disable-parallel --source C:/home/game_dev
 
 源码检查另发现 `SourceTextPack` 和 `PresentationTextCatalog` 的调用仍存在，但当前受控源码缺少其定义。这个观察与首个编译错误分开记录，尚不能视为完整编译错误清单。相关功能说明见[内容与本地化](current-content-composition.md#文本与本地化)。
 
+## Godot 目录整理（2026-10-21）
+
+在源码基线 `c9e970af` 上整理 `Game.Godot`。441 个 C# 文件按职责移动，文件内容逐一做 SHA-256 比较并保持一致；主场景移至 `App/Bootstrap.tscn`，相关路径和子目录 UID 忽略规则同步更新。目录职责见[Godot 说明](../src/Game.Godot/README.md)。
+
+环境诊断再次确认 SDK 10.0.402 和 Godot 4.7.2 .NET。移动前后分别执行以下 MSBuild 查询，Godot 的 441 项编译输入和表现测试的 502 项编译输入在路径映射后完全一致，包含测试的虚拟链接名称：
+
+```powershell
+dotnet msbuild src/Game.Godot/Game.Godot.csproj -getItem:Compile
+dotnet msbuild tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj -getItem:Compile
+```
+
+表现测试原有两个缺失链接仍存在：`CampaignOptionPresentation.cs` 和 `CampaignFieldPartyActions.cs`，仅更新了对应目录，未删除引用或声称已恢复定义。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| Godot 编辑器扫描与资源导入 | 退出 0，扫描 441 个脚本，日志无 ERROR；未启动玩家游戏 |
+| 交换场景源码路径检查 | `test_no_raw_runtime_or_transaction_side_effect`，1 项通过 |
+| 交换场景完整导入检查 | 2 项中 1 项失败；再生成 JSON 使用 CRLF，现有资源使用 LF，字节比较不一致；未修改生成资源或参考期望 |
+| Godot 项目构建，移动前后各一次 | 均失败于同一 NU1301 路径问题，各 0 警告、6 错误 |
+| 表现测试定向执行 | 被 NU1301 阻塞，未进入测试执行，不计为通过 |
+
+实际命令：
+
+```powershell
+& C:/home/game_developer/godot/godot.cmd --headless --editor --path src/Game.Godot --import --quit
+python scripts/checks/test-npc-trade-scene-import.py
+python scripts/checks/test-npc-trade-scene-import.py TradeImportTests.test_no_raw_runtime_or_transaction_side_effect
+dotnet build src/Game.Godot/Game.Godot.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false --filter 'FullyQualifiedName~BattleTextPrinterTests|FullyQualifiedName~SourceTextInputTests|FullyQualifiedName~ItemTransferReceiptPresentationTests'
+```
+
+本地日志位于忽略目录 `evidence/godot-layout-*`。编译输入查询和编辑器导入不代表完整构建、真实游戏宿主 CLR、玩家流程或实际音频验收；既有构建问题仍需单独修复。
+
 ## 工具与执行
 
 要求官方 Godot 4.7.2 .NET、稳定 .NET 10 SDK（至少 10.0.100）、目标 `net10.0` 和实际 .NET 10 游戏宿主。Python 仅用于开发辅助和离线转换，不决定游戏规则。

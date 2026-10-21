@@ -42,7 +42,7 @@
 - 原生侧服务：照片打印机的原50元收费、四色选择、队伍图标快照与存读已接通，训练家卡背面读取固定快照、既有贴纸与已知名人堂时间；不伪造历史时间或多人记录。图鉴证书、徽章话题列表、博物馆化石图片、Daisy评级／梳理与设计师普通条件对白已接通。见[训练家卡及照片](features/trainer-card-and-photo-printer.md)。
 - 图鉴：九类栖息地、原页面分组、分布与捕获后大小比较已接入；遵守全国图鉴、访问岛屿、变化洞窟表和活动游走位置。非数值搜索接入栖息地页；叫声仍为详情自动播放及START重播。分类装饰底图、分布页小图标／属性标志、原按键图标与翻页／缩放／调色过渡已接入，源像素与有界运行检查已完成；不宣称所有状态逐像素或逐帧一致。见[栖息地与分布](features/pokedex-habitats-and-area.md)。
 - 菜单：训练家卡背面与支持的单机星级颜色、PC多只矩形选择已实现；普通单／双打选招阶段的Berry Pouch丢弃已接入，共用数量／确认／结果事务且不消耗回合；不用于狩猎或教程。矩形移动采用一次原子事务、保留空洞与个体身份，持有期间禁止退出和保存。见[PC矩形移动](features/pc-rectangle-move.md)。
-- 设置：[Options](../src/Game.Godot/CampaignOptionsView.cs)已支持文字速度、战斗动画、SHIFT／SET、单声道／立体声和边框；已接入启动、Continue、读档与提交后的实际应用，键盘／鼠标窗口操作已做有界检查，见[设置应用](features/battle-scene-sound-options.md)。Button Mode的HELP／LR／L=A已接共享输入所有权、情境帮助及原专用翻页语义；Help暂停底层回调但继续游玩时钟，保留实际音量恢复和输入释放。见[按键与帮助](features/button-mode-help.md)。地图鼠标移动／寻路后置，已有菜单鼠标和键盘操作保留。
+- 设置：[Options](../src/Game.Godot/UI/Menus/CampaignOptionsView.cs)已支持文字速度、战斗动画、SHIFT／SET、单声道／立体声和边框；已接入启动、Continue、读档与提交后的实际应用，键盘／鼠标窗口操作已做有界检查，见[设置应用](features/battle-scene-sound-options.md)。Button Mode的HELP／LR／L=A已接共享输入所有权、情境帮助及原专用翻页语义；Help暂停底层回调但继续游玩时钟，保留实际音量恢复和输入释放。见[按键与帮助](features/button-mode-help.md)。地图鼠标移动／寻路后置，已有菜单鼠标和键盘操作保留。
 - 单机通信进化替代：方向已批准，具体服务仍待讨论；不预设NPC、地点、费用、消耗或入口。
 
 ## 已实现的功能补全

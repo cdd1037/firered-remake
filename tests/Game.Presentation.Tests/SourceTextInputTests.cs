@@ -111,15 +111,15 @@ public sealed class SourceTextInputTests
     public void FieldAndOakConsumersUseSharedHeldSampleAndOneShotInput()
     {
         string Read(string name) => File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot", name));
-        string field = Read("CampaignFieldTextProgress.cs"), oak = Read("CampaignOpeningView.cs");
+        string field = Read("UI/Text/CampaignFieldTextProgress.cs"), oak = Read("UI/Opening/CampaignOpeningView.cs");
         StringAssert.Contains(field, "_fieldTextInput.Advance(_fieldTextProgress, frames, TextSpeedButtonHeld)");
         StringAssert.Contains(field, "previous.Pages == dialogue.Pages");
         StringAssert.Contains(field, "dialogue.Page == previous.Page + 1");
         StringAssert.Contains(field, "if (continuation) _fieldTextProgress.ContinuePage");
         StringAssert.Contains(oak, "_openingTextInput.Advance(_openingPrinter, 1, TextSpeedButtonHeld)");
         StringAssert.Contains(oak, "ResetOpeningPrinter(_openingPages[_openingPage].Message == previousMessage)");
-        StringAssert.Contains(Read("CampaignPlayerEntryView.cs"), "if(key is Key.Enter or Key.Backspace && _entryActionFrame");
-        StringAssert.Contains(Read("CampaignPlayerEntryView.cs"), "if (_entryMode != \"oak-speech\") _entryActionFrame");
+        StringAssert.Contains(Read("UI/Opening/CampaignPlayerEntryView.cs"), "if(key is Key.Enter or Key.Backspace && _entryActionFrame");
+        StringAssert.Contains(Read("UI/Opening/CampaignPlayerEntryView.cs"), "if (_entryMode != \"oak-speech\") _entryActionFrame");
         Assert.IsFalse(oak.Contains("_openingSpeedUp", StringComparison.Ordinal));
         Assert.IsFalse(field.Contains("_fieldTextHeld", StringComparison.Ordinal));
     }

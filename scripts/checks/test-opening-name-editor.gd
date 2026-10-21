@@ -12,7 +12,7 @@ func fail(message: String):
  quit(1)
 
 func run():
- var scene = load("res://Bootstrap.tscn").instantiate()
+ var scene = load("res://App/Bootstrap.tscn").instantiate()
  root.add_child(scene)
  var edit: LineEdit
  var deadline = Time.get_ticks_msec() + 30000

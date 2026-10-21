@@ -26,7 +26,7 @@ class TradeImportTests(unittest.TestCase):
         self.assertIn('AllocZeroed',body);self.assertNotIn('isCableTrade = TRUE',body)
         self.assertIn('else if (JOY_NEW(A_BUTTON))',source)
     def test_no_raw_runtime_or_transaction_side_effect(self):
-        source=(ROOT/'src/Game.Godot/CampaignNpcTradeView.cs').read_text()
+        source=(ROOT/'src/Game.Godot/UI/Pokemon/CampaignNpcTradeView.cs').read_text()
         draw=source.split('private bool DrawNpcTrade()')[1]
         self.assertNotIn('Apply(',draw);self.assertNotIn('content/raw',source)
         self.assertIn('NpcTradeSceneTimeline.ReadyFrame',source)

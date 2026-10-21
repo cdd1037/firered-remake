@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <Compile Include="../../src/Game.Godot/FieldDirectionCadence.cs" Link="FieldDirectionCadence.cs" />
-    <Compile Include="../../src/Game.Godot/PokemonTowerPresentationModel.cs" Link="PokemonTowerPresentationModel.cs" />
+    <Compile Include="../../src/Game.Godot/Field/FieldDirectionCadence.cs" Link="FieldDirectionCadence.cs" />
+    <Compile Include="../../src/Game.Godot/World/Regions/PokemonTowerPresentationModel.cs" Link="PokemonTowerPresentationModel.cs" />
     <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../src/Game.Application/FieldForestPreviewPresentation.cs" Link="FieldForestPreviewPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldHorizontalFogPresentation.cs" Link="FieldHorizontalFogPresentation.cs" />
@@ -13,60 +13,60 @@
     <Compile Include="../../src/Game.Application/FieldStairPresentation.cs" Link="FieldStairPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldDoorPresentation.cs" Link="FieldDoorPresentation.cs" />
     <Compile Include="../../src/Game.Application/FieldDoorPresentation.Steps.cs" Link="FieldDoorPresentation.Steps.cs" />
-    <Compile Include="../../src/Game.Godot/SourceMusicFade.cs" Link="SourceMusicFade.cs" />
-    <Compile Include="../../src/Game.Godot/QuestLogPalettePresentation.cs" Link="QuestLogPalettePresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />
-    <Compile Include="../../src/Game.Godot/SourceBattleHpPresentation.cs" Link="SourceBattleHpPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Audio/SourceMusicFade.cs" Link="SourceMusicFade.cs" />
+    <Compile Include="../../src/Game.Godot/QuestLog/QuestLogPalettePresentation.cs" Link="QuestLogPalettePresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Presentation/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Presentation/SourceBattleHpPresentation.cs" Link="SourceBattleHpPresentation.cs" />
     <Compile Include="../../src/Game.Application/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
     <Compile Include="../../src/Game.Application/CampaignWeatherContinuationPresentation.cs" Link="CampaignWeatherContinuationPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/StorageMoveHelpPresentation.cs" Link="StorageMoveHelpPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
-    <Compile Include="../../src/Game.Godot/OpeningNidoranPresentation.cs" Link="OpeningNidoranPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/OpeningTitlePresentation.cs" Link="OpeningTitlePresentation.cs" />
-    <Compile Include="../../src/Game.Godot/NamingScreenPresentation.cs" Link="NamingScreenPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SummaryPageTransition.cs" Link="SummaryPageTransition.cs" />
-    <Compile Include="../../src/Game.Godot/PokedexTransitionClock.cs" Link="PokedexTransitionClock.cs" />
-    <Compile Include="../../src/Game.Godot/OpeningPortraitTransition.cs" Link="OpeningPortraitTransition.cs" />
-    <Compile Include="../../src/Game.Godot/ItemfinderPresentation.cs" Link="ItemfinderPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/CaptureBallPresentation.cs" Link="CaptureBallPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/EvolutionScenePresentation.cs" Link="EvolutionScenePresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SourceBattleAnimation*.cs" Exclude="../../src/Game.Godot/SourceBattleAnimationAudioAdapter.cs" Link="Animations/%(Filename)%(Extension)" />
-    <Compile Include="../../src/Game.Godot/SourceBattleFormCatalog.cs" Link="Animations/SourceBattleFormCatalog.cs" />
-    <Compile Include="../../src/Game.Godot/SourceBattleFrameComposer.cs" Link="Animations/SourceBattleFrameComposer.cs" />
-    <Compile Include="../../src/Game.Godot/SourceScanlineState.cs" Link="Animations/SourceScanlineState.cs" />
-    <Compile Include="../../src/Game.Godot/CampaignButtonInput.cs" Link="CampaignButtonInput.cs" />
-    <Compile Include="../../src/Game.Godot/SourceHelpPresentation.cs" Link="SourceHelpPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SourceNameGlyphs.cs" Link="SourceNameGlyphs.cs" />
-    <Compile Include="../../src/Game.Godot/SourceMessageLayout.cs" Link="SourceMessageLayout.cs" />
-    <Compile Include="../../src/Game.Godot/SourceCompactTextLayout.cs" Link="SourceCompactTextLayout.cs" />
-    <Compile Include="../../src/Game.Godot/SourceDialogPageCursor.cs" Link="SourceDialogPageCursor.cs" />
-    <Compile Include="../../src/Game.Godot/SourceMessageCursor.cs" Link="SourceMessageCursor.cs" />
-    <Compile Include="../../src/Game.Godot/SourceFixedWindowTextLayout.cs" Link="SourceFixedWindowTextLayout.cs" />
-    <Compile Include="../../src/Game.Godot/CampaignOptionEditing.cs" Link="CampaignOptionEditing.cs" />
-    <Compile Include="../../src/Game.Godot/CampaignOptionPresentation.cs" Link="CampaignOptionPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Inventory/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Storage/StorageMoveHelpPresentation.cs" Link="StorageMoveHelpPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/World/Regions/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Opening/OpeningNidoranPresentation.cs" Link="OpeningNidoranPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Opening/OpeningTitlePresentation.cs" Link="OpeningTitlePresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Naming/NamingScreenPresentation.cs" Link="NamingScreenPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Pokemon/SummaryPageTransition.cs" Link="SummaryPageTransition.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Pokedex/PokedexTransitionClock.cs" Link="PokedexTransitionClock.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Opening/OpeningPortraitTransition.cs" Link="OpeningPortraitTransition.cs" />
+    <Compile Include="../../src/Game.Godot/Field/ItemfinderPresentation.cs" Link="ItemfinderPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Capture/CaptureBallPresentation.cs" Link="CaptureBallPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Pokemon/EvolutionScenePresentation.cs" Link="EvolutionScenePresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Animation/**/SourceBattleAnimation*.cs" Exclude="../../src/Game.Godot/Audio/SourceBattleAnimationAudioAdapter.cs" Link="Animations/%(Filename)%(Extension)" />
+    <Compile Include="../../src/Game.Godot/Battle/Animation/Core/SourceBattleFormCatalog.cs" Link="Animations/SourceBattleFormCatalog.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Animation/Core/SourceBattleFrameComposer.cs" Link="Animations/SourceBattleFrameComposer.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Animation/Core/SourceScanlineState.cs" Link="Animations/SourceScanlineState.cs" />
+    <Compile Include="../../src/Game.Godot/Input/CampaignButtonInput.cs" Link="CampaignButtonInput.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Menus/SourceHelpPresentation.cs" Link="SourceHelpPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Rendering/Fonts/SourceNameGlyphs.cs" Link="SourceNameGlyphs.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceMessageLayout.cs" Link="SourceMessageLayout.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceCompactTextLayout.cs" Link="SourceCompactTextLayout.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceDialogPageCursor.cs" Link="SourceDialogPageCursor.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceMessageCursor.cs" Link="SourceMessageCursor.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceFixedWindowTextLayout.cs" Link="SourceFixedWindowTextLayout.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Menus/CampaignOptionEditing.cs" Link="CampaignOptionEditing.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Menus/CampaignOptionPresentation.cs" Link="CampaignOptionPresentation.cs" />
     <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
-    <Compile Include="../../src/Game.Godot/*PresentationAssets.cs" Link="PresentationAssets/%(Filename)%(Extension)" />
-    <Compile Include="../../src/Game.Godot/DiplomaPresentation.cs" Link="DiplomaPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/PresentationPackage.cs" Link="PresentationPackage.cs" />
-    <Compile Include="../../src/Game.Godot/PresentationDexIndex.cs" Link="PresentationDexIndex.cs" />
-    <Compile Include="../../src/Game.Godot/SourceMenuLabelPresentation.cs" Link="SourceMenuLabelPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SourceBattleSelectionText.cs" Link="SourceBattleSelectionText.cs" />
-    <Compile Include="../../src/Game.Godot/SourceVerticalMenuPresentation.cs" Link="SourceVerticalMenuPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/TrainerTowerPresentationModel.cs" Link="TrainerTowerPresentationModel.cs" />
-    <Compile Include="../../src/Game.Godot/PokedexDetailPresentation.cs" Link="PokedexDetailPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Resources/PresentationAssets/*PresentationAssets.cs" Link="PresentationAssets/%(Filename)%(Extension)" />
+    <Compile Include="../../src/Game.Godot/UI/Pokedex/DiplomaPresentation.cs" Link="DiplomaPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Resources/PresentationPackage.cs" Link="PresentationPackage.cs" />
+    <Compile Include="../../src/Game.Godot/Resources/PresentationDexIndex.cs" Link="PresentationDexIndex.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Menus/SourceMenuLabelPresentation.cs" Link="SourceMenuLabelPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Presentation/SourceBattleSelectionText.cs" Link="SourceBattleSelectionText.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Menus/SourceVerticalMenuPresentation.cs" Link="SourceVerticalMenuPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/World/Regions/TrainerTowerPresentationModel.cs" Link="TrainerTowerPresentationModel.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Pokedex/PokedexDetailPresentation.cs" Link="PokedexDetailPresentation.cs" />
     <Compile Include="../../src/Game.Application/SaveOperationResult.cs" Link="SaveOperationResult.cs" />
-    <Compile Include="../../src/Game.Godot/CampaignSaveFeedback.cs" Link="CampaignSaveFeedback.cs" />
-    <Compile Include="../../src/Game.Godot/CampaignFieldPartyActions.cs" Link="CampaignFieldPartyActions.cs" />
-    <Compile Include="../../src/Game.Godot/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />
-    <Compile Include="../../src/Game.Godot/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
-    <Compile Include="../../src/Game.Godot/SourceTextInput.cs" Link="SourceTextInput.cs" />
-    <Compile Include="../../src/Game.Godot/SourceBattleTextPrinter.cs" Link="SourceBattleTextPrinter.cs" />
-    <Compile Include="../../src/Game.Godot/FameCheckerTextPresentation.cs" Link="FameCheckerTextPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/SlotMachineVisualPresentation.cs" Link="SlotMachineVisualPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/TeachyTvPresentation.cs" Link="TeachyTvPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/TeachyTvTextPresentation.cs" Link="TeachyTvTextPresentation.cs" />
-    <Compile Include="../../src/Game.Godot/EasyChatEditorNavigation.cs" Link="EasyChatEditorNavigation.cs" />
+    <Compile Include="../../src/Game.Godot/App/Persistence/CampaignSaveFeedback.cs" Link="CampaignSaveFeedback.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Pokemon/CampaignFieldPartyActions.cs" Link="CampaignFieldPartyActions.cs" />
+    <Compile Include="../../src/Game.Godot/Diagnostics/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Text/SourceTextInput.cs" Link="SourceTextInput.cs" />
+    <Compile Include="../../src/Game.Godot/Battle/Presentation/SourceBattleTextPrinter.cs" Link="SourceBattleTextPrinter.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Services/FameCheckerTextPresentation.cs" Link="FameCheckerTextPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/GameCorner/SlotMachineVisualPresentation.cs" Link="SlotMachineVisualPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/TeachyTv/TeachyTvPresentation.cs" Link="TeachyTvPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/TeachyTv/TeachyTvTextPresentation.cs" Link="TeachyTvTextPresentation.cs" />
+    <Compile Include="../../src/Game.Godot/UI/Profile/EasyChatEditorNavigation.cs" Link="EasyChatEditorNavigation.cs" />
   </ItemGroup>
 </Project>
