@@ -11,7 +11,7 @@
 - `content/raw/local/forest-trainer-art/` 的三个调色板是实际本地变体，不可替换成上游默认值。
 - 输入选择和转换配方位于 `data/`、`scripts/recipes/` 及对应导入工具。部分专用入口仍从
   固定版本 Git blob 读取，以其实际参数为准；任何入口都不得执行上游仓库脚本。
-- Godot 的字体和效果素材随项目保留；中文 pack 与字体另见 [中文版](chinese-edition.md)。
+- Godot 的字体和效果素材保存在本地项目中，不随源码 Git 提交；语言包缺口与现有字形支持见[本地化状态](../current-content-composition.md#文本与本地化)。
 - 音频 cue 生成需要已有匹配的 `audio/synth/firered.pack` 与 `normal-cries.bin`。
   pack 提取需要合法已有的匹配 ROM，不下载 ROM；普通叫声目录还需对应生成后的 `.bin`
   样本及原始 WAV。现有 raw 未提供完整的 cry `.bin` 输入，详见 [音频](audio.md)。
@@ -27,8 +27,8 @@ raw、generated 与代表存档不纳入源码 Git；Pokémon 素材不公开上
 
 ## 维护入口
 
-以下命令从仓库根目录执行。工具链安装与构建见 [README](../README.md)，Python 依赖见
-`requirements-dev.txt`。导入工具组织和各族入口见 [scripts](../scripts/README.md)。
+以下命令从仓库根目录执行。工具链安装与构建见 [README](../../README.md)，Python 依赖见
+`requirements-dev.txt`。导入工具组织和各族入口见 [scripts](../../scripts/README.md)。
 
 ```sh
 # 当前完整选定地图、真实布局变体、属性表、共享 NPC 图像与地图图集。
@@ -71,7 +71,7 @@ python scripts/imports/story/import-story.py
 ```
 
 当前物种选择和 breeding 由同一入口维护，准入／各 roster 差异见
-[Pokémon 准入格式](pokemon-admission-format.md)。机器兼容性与顺序见
+[Pokémon 准入格式](../current-content-composition.md#宝可梦准入)。机器兼容性与顺序见
 [共享机器目录](shared-machine-catalog.md)；训练家、物品与专用图像族入口见 scripts 说明。
 
 地图几何与故事是不同资源：改可交互对象不能只重建地图，还须编译相应场景规则和故事 IR。
@@ -79,7 +79,7 @@ python scripts/imports/story/import-story.py
 也支持 `--dotnet`。赠送、隐藏物品和剧情条件从源事件／脚本解析，地图加载成功不证明交互完成。
 
 图鉴证书、HELP、Trainer Card 和各原生 UI 的细节保留在其功能文档，不在本文复制：
-[证书](pokedex-diploma.md)、[HELP](help-content.md)、[Trainer Card](trainer-card-atlas.md)、
+[证书](../features/pokedex-diploma.md)、[HELP](../features/help-content.md)、[Trainer Card](../features/trainer-card-and-photo-printer.md#resources-and-checks)、
 [图像边界](generated-image-assets.md)。
 
 ## 验证
@@ -96,7 +96,7 @@ dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --no-buil
 
 局部修改只跑对应资源族；跨读取／运行层修改再扩大组合回归。独立源 oracle、旧资源临时
 对照、生成器 `--check` 和 native 像素检查并不等价，见 [world](world-resource-pipeline.md)
-与 [地图图集](map-render-atlases.md)。测试项目与按需音频检查见 [测试说明](../tests/README.md)。
+与 [地图图集](map-render-atlases.md)。测试项目与按需音频检查见 [测试说明](../../tests/README.md)。
 
 ## 尚未闭合的恢复边界
 

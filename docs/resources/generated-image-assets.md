@@ -53,13 +53,13 @@ source sheets retain their required geometry. Map tile pages use their own
   state combination or move pixel operations into gameplay rules.
 - Trainer Tower portraits and character variants reference the owning packages.
   Trainer Card has its own bounded cohort and display/flip rules, documented in
-  [Trainer Card atlas](trainer-card-atlas.md), not a global UI registry.
+  [Trainer Card atlas](../features/trainer-card-and-photo-printer.md#resources-and-checks), not a global UI registry.
 
 Shared overworld regeneration is included in `rebuild-resources.py world` or the
 `overworld-art` target. Other producers and their input limits are maintained in
 [resource reconstruction](resource-reconstruction-guide.md) and
-[scripts](../scripts/README.md). Edited field tiles use the same resolver across
-live and historical views; see [metatile presentation](shared-metatile-presentation.md).
+[scripts](../../scripts/README.md). Edited field tiles use the same resolver across
+live and historical views; see [metatile presentation](../features/shared-metatile-presentation.md).
 
 ## Verification boundaries
 

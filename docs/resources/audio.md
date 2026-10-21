@@ -5,7 +5,7 @@
 ## 目录与入口
 
 - `src/Game.Audio/`：序列、PCM/PSG、叫声、资源格式的唯一运行实现
-- `src/Game.Godot/SynthSourceAudioPlayer.cs`：主游戏 Godot PCM 主机与场景 cue 接线
+- `src/Game.Godot/SynthSourceAudioPlayer.cs`：主游戏 Godot PCM 主机与场景 cue 绑定
 - `tools/AudioTool/`：pack 提取、离线 WAV 渲染、性能测量
 - `scripts/imports/audio/build-cue-catalog.py`：由固定源码与 pack 一次生成完整运行 cue 目录
 - `scripts/imports/audio/build-cry-catalog.py`：直接生成普通叫声目录
@@ -96,7 +96,7 @@ python3 scripts/imports/audio/build-cue-catalog.py --check
 
 入口默认读取固定 raw 版本中的 songs.h、song_table.inc、species.h、sound.c，以及现有 pack 和 normal-cries.bin。歌曲 ID/播放器来自源常量/表并与 pack 对照；地址/优先级来自包内歌曲头；fanfare 计数直接来自 sound.c。循环标记通过包内 M4A 指令控制流、running status 和 pattern 栈推导，现有 MIDI 的循环 marker 另行交叉核对。raw 缺少部分 MIDI，不影响完整歌曲控制流检查。
 
-目前输出 345 首歌曲与 386 个物种各两种叫声，共 1117 个 cue。mode 1 的 CRY_<species>_DOUBLES 在宿主按需从已有普通物种 binding 派生，不另存重复元数据、不修改目录；PlayDoublesCry 遵循原作 PlayCry_ByMode 的无 BGM ducking 语义。开场 Nidorino 使用 pan 63，详见 [开场电影](intro-movie.md)。MUS_DUMMY 是停止哨兵；MUS_RS_VS_TRAINER 含当前 Core 未实现的 MEMACC 指令，明确不注册。其它未知指令、越界地址或缺失来源会失败，不猜测循环。该入口不读取任何旧 cue JSON，也不以复制旧中间目录作为权威输入。
+目前输出 345 首歌曲与 386 个物种各两种叫声，共 1117 个 cue。mode 1 的 CRY_<species>_DOUBLES 在宿主按需从已有普通物种 binding 派生，不另存重复元数据、不修改目录；PlayDoublesCry 遵循原作 PlayCry_ByMode 的无 BGM ducking 语义。开场 Nidorino 使用 pan 63，详见 [开场电影](../features/intro-movie.md)。MUS_DUMMY 是停止哨兵；MUS_RS_VS_TRAINER 含当前 Core 未实现的 MEMACC 指令，明确不注册。其它未知指令、越界地址或缺失来源会失败，不猜测循环。该入口不读取任何旧 cue JSON，也不以复制旧中间目录作为权威输入。
 
 地区音频 CLI、配方及累加 manifests 已删除。normal-cries.bin 的独立原始样本再生边界仍见下节；此入口不重建 pack 或修改 DSP。
 
@@ -109,7 +109,7 @@ python3 scripts/imports/audio/build-cry-catalog.py \
   --output /absolute/path/to/normal-cries.bin
 ```
 
-输入目录需要 species/Hoenn cry 常量、cry ID 表、cry/direct-sound 声明、对应生成后的 `.bin` 样本和原始 `.wav`。工具直接读取这些输入，对照 pack 内的音色与资产，检查解码样本/guard 与源 WAV，然后写出目录；无需旧 inventory JSON、ELF、map 或阶段报告。它不执行上游构建。普通工程的 raw 树带有源 WAV，但没有生成后的 cry `.bin`；因此目前没有宣称整条目录冷重建已完成。现有 catalog 保持不变。
+输入目录需要 species/Hoenn cry 常量、cry ID 表、cry/direct-sound 声明、对应生成后的 `.bin` 样本和原始 `.wav`。工具直接读取这些输入，对照 pack 内的音色与资产，检查解码样本/guard 与源 WAV，然后写出目录；无需旧 inventory JSON、ELF、map 或阶段报告。它不执行上游构建。项目本地的 raw 目录带有源 WAV，但没有生成后的 cry `.bin`；因此目前没有宣称整条目录冷重建已完成。现有 catalog 保持不变。
 
 工具单元测试使用人工构造的小样本；全物种运行测试使用现有 canonical pair。二者都不能替代缺失原始构建输入的完整再生成验收。
 

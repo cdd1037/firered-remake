@@ -118,7 +118,7 @@ def play(arguments):
  if selected.language=='zh-Hans':
   pack=ROOT/'content/generated/localization/zh-Hans'
   if not (pack/'font/cjk-font.json').is_file():
-   raise FileNotFoundError('Generate Chinese text and font first; see docs/chinese-edition.md')
+   raise FileNotFoundError('Generate Chinese text and font first; see docs/current-content-composition.md#文本与本地化')
   extra['FIRERED_TEXT_PACK']=str(pack)
  else:extra['FIRERED_TEXT_PACK']=''
  if selected.checkpoint:
@@ -247,7 +247,7 @@ def verify_p0():
 
 def main():
  args=sys.argv[1:]
- if not args or args in (['-h'],['--help']):return output({'commands':['doctor','env [--json]','setup','build','test','probe','run [current-checkpoint.json]','export linux','export windows','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
+ if not args or args in (['-h'],['--help']):return output({'commands':['doctor','env [--json]','setup','build','test','probe','run [current-checkpoint.json]','export linux','export windows','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/current-game-composition.md#诊断与旧入口.'})
  if args==['doctor']:return doctor()
  if args in (['env'],['env','--json']):
   exported={key:ENV[key] for key in ('FIRERED_TOOLCHAIN_ROOT','FIRERED_DOTNET','FIRERED_GODOT_NUGET_SOURCE','DOTNET_ROOT','GODOT','DOTNET_CLI_HOME','NUGET_PACKAGES','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','DOTNET_NOLOGO','DOTNET_CLI_TELEMETRY_OPTOUT','DOTNET_MULTILEVEL_LOOKUP')}

@@ -1,5 +1,7 @@
 # Deterministic rule contracts and fixtures
 
+Historical engineering-core contract. The console runner, 77-test result, and profile descriptions below belong to the early implementation, not the maintained MSTest suite or current campaign. See [current architecture](../architecture.md) and [test entry points](../../tests/README.md).
+
 ## Status and scope
 
 This is a small executable engineering core, not a complete Gen III battle simulator or a playable FireRed content slice. The profile IDs are `fr-single-v0` and `fr-grid-v0`. These deliberately distinguish the harness from a future compatibility-complete rule version.

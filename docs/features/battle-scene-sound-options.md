@@ -25,7 +25,7 @@ dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --no-buil
 dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --no-build --no-restore --filter FullyQualifiedName~OptionEditingTests
 ```
 
-另外使用临时隔离 Godot 4.7.2 / .NET 10.0.12 主机检查，18 项断言通过：调用真实共享设置方法和真实 `SynthSourceAudioPlayer`，MONO/STEREO 各产生 5120 个有限非零帧，逐帧核对左右平均／原样立体声，切换设置不重启播放。该检查使用 Dummy 驱动，只验证配置与 PCM 通道；不等同真实发声验收。临时探针不随普通工程交付。
+另外使用临时隔离 Godot 4.7.2 / .NET 10.0.12 主机检查，18 项断言通过：调用真实共享设置方法和真实 `SynthSourceAudioPlayer`，MONO/STEREO 各产生 5120 个有限非零帧，逐帧核对左右平均／原样立体声，切换设置不重启播放。该检查使用 Dummy 驱动，只验证配置与 PCM 通道；不等同真实发声验收。临时探针不纳入源码交付。
 
 
 ## Native window check

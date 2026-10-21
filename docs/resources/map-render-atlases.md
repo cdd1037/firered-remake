@@ -36,7 +36,7 @@ layers when entering a map. Native decoding occurs before the existing display
 color conversion. The bounded layer cache and dynamic patches remain; there is no
 node per tile. Packing does not by itself lower active-map GPU memory or improve
 frame rate. Edited-tile lookup is documented in
-[metatile presentation](shared-metatile-presentation.md).
+[metatile presentation](../features/shared-metatile-presentation.md).
 
 ## Standalone maintenance and checks
 

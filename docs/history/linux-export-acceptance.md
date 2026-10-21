@@ -1,5 +1,7 @@
 # Linux package acceptance (2026-10-19)
 
+Historical package validation. These results apply to the 2026-10-19 export and do not validate later source revisions. See [current build and platform status](../validation.md).
+
 The maintained `python dev export linux` path exported the current game using the
 existing official Godot4.7.2 mono Linux templates and installed .NET10 SDK. The
 missing template archive alone was restored from the reviewed official release

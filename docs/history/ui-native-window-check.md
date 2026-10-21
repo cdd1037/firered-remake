@@ -1,5 +1,7 @@
 # Bounded native window checks — 2026-10-16
 
+Historical validation record; not a current build or full UI acceptance result. See [current validation](../validation.md).
+
 Godot 4.7.2 stable Mono native Linux window, 1364×1024 desktop, 240×160 game viewport at 4×. Audio driver Dummy: no audible-output claim. Existing built product used without rebuilding or editing product code.
 
 Only labelled, strictly valid synthetic-Hatch-1000 fixture branches were loaded; original checkpoint untouched. No in-game save was requested. Screens were inspected through native desktop screenshots during the run.

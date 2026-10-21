@@ -1,4 +1,6 @@
-# First content batch: bounded native visual check
+# Content window checks — 2026-10-16
+
+Historical validation record. The observations below apply to the recorded build and controlled inputs. For current build status and verification limits, see [validation](../validation.md).
 
 Checked 2026-10-16, 12:55–13:03 UTC, in the dot cloud Linux desktop using CUA/Sky input and screenshots of the running Godot 4.7.2 application. This is a native visual/interaction smoke check, not pixel parity, full campaign replay, or audible verification.
 

@@ -5,7 +5,7 @@
 - House1：原作 House4 室内、Beauty (3,4)、纪录牌 (9,1)、出口 (3,7)，连接水之小径 warp 0。赫拉克罗斯大小服务使用共享队伍选择、实例身份校验、原作 PID/IV 尺寸算法与原作脚本分支，奖励巢穴球。
 - House2：原作 House3 室内、Man (7,4)、出口 (4,7)，连接水之小径 warp 1。只有邻居量身高的原作对话，没有额外赠送或服务。
 - 共用 `PokemonSizeRecordRules` 与 `CampaignSizeRecord` 接入原鲤鱼王和新赫拉克罗斯；键盘和鼠标共用同一选队界面。纪录使用原 u16 脚本变量，交互结束后的正常 Save/Continue 保存纪录和标记。
-- 满包行为的明确获批变更与仍保持的鲤鱼王兼容行为见 [原作行为改进](original-behavior-improvements.md)。
+- 满包行为的明确获批变更与仍保持的鲤鱼王兼容行为见 [原作行为改进](../original-behavior-improvements.md)。
 
 验证由 `PokemonSizeRecordRulesTests`、`WaterPathSizeRecordTests`、`WaterPathHouseContentTests` 与 `WaterPathHouseImportTests`覆盖；受控测试不代表从新游戏自然重走七岛全流程。原生窗口/声音验收没有由这些测试替代。
 

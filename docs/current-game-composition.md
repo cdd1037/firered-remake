@@ -38,4 +38,12 @@ GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游�
 
 现有 generation-57604 历史样本为 schema 1／campaign-v3，保持原文件不变，不能作为当前 Continue 基线。当前新游戏初始化真实统计，并继续使用正常 Save／Continue、checksum、primary／backup／staging 与候选文件指纹边界。移除转换功能不改变格式或版本号，也不压缩存档。
 
-历史 runtime/profile/升级路由已退休。不要依据旧报告重建这些系统；当前回归入口是[测试说明](../tests/README.md)。
+历史 runtime/profile/升级路由已移除。不要依据旧报告重建这些系统；当前回归入口是[测试说明](../tests/README.md)。
+
+## 诊断与旧入口
+
+正常游戏只有当前组合。旧地区 profile、历史会话工厂和逐阶段升级路由已移除，不应从旧报告恢复为启动前提。
+
+`probe` 和 `harness` 是明确标记的工程夹具；其成功不代表当前游戏内容或自然路线通过。旧来源证明日志也不构成启动前提。
+
+维护测试按八个项目组织，其中音频按需显式运行，见[测试说明](../tests/README.md)。被移除用例的原因保留在[历史测试清单](history/test-retirement-20261015.json)。研究所首战等专用规则仍有独立边界，不能把旧启动入口的移除理解为所有规则已经统一。

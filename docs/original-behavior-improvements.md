@@ -18,7 +18,7 @@
 - 固定原作 `wild_pokemon_area.c` 的 `IsSpeciesOnMap` 在未定义 `BUGFIX` 时，以 `LAND_WILD_COUNT`（12）遍历只有 `FISH_WILD_COUNT`（10）项的钓鱼数组，存在越界读取；源码自身提供了正确长度的修正分支。
 - 重制版离线导入只使用10个已定义钓鱼条目，不复制越界内存内容。这依据用户允许在开发中修复明确问题的总体方向处理，未单独声称用户批准过这一具体条目。
 - 修正范围仅是图鉴分布数据读取；钓鱼概率、可遇物种与实际遇敌规则不变。未据源码越界推定特定 ROM 上必然出现哪些错误标记。
-- 验证：源表数量／第11、12项变异拒绝及代表钓鱼分布测试。见[图鉴说明](pokedex-habitats-and-area.md)。
+- 验证：源表数量／第11、12项变异拒绝及代表钓鱼分布测试。见[图鉴说明](features/pokedex-habitats-and-area.md)。
 - 来源：[固定原作查询](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/wild_pokemon_area.c)。
 
 ## 已实现：战斗招式换位后的 Mimic PP 归属（2026-10-16）

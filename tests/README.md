@@ -77,9 +77,9 @@ Linux／macOS `python3`，可用 `FIRERED_PYTHON` 覆盖。资源检查需要 Py
 - 内容测试使用本地 `content/generated`；依赖原作输入的导入／参考检查使用
   `content/raw/pokefirered/037335f4`。测试不下载素材、安装工具或执行上游脚本。
   资源准备入口见 [scripts](../scripts/README.md) 和
-  [资源再生成](../docs/resource-reconstruction-guide.md)。
+  [资源再生成](../docs/resources/resource-reconstruction-guide.md)。
 - 音频测试需要 `content/generated/audio/synth/firered.pack` 与同目录
-  `normal-cries.bin`；音频导入另有显式入口，见 [音频说明](../docs/audio.md)。
+  `normal-cries.bin`；音频导入另有显式入口，见 [音频说明](../docs/resources/audio.md)。
 - 后期应用／Continue 测试默认读取本地忽略的
   `checkpoints/current-schema3/controlled-checkpoint.json`，可用
   `FIRERED_TEST_CHECKPOINT` 指定已单独验证的当前 schema 3 存档。
@@ -134,7 +134,7 @@ python scripts/checks/test-physical-animation-import.py PhysicalImportTests.test
 ## 覆盖限制
 
 72 个引用已删除 API 的历史项目已退休，机器可读原因保留在
-[退休清单](../docs/test-retirement-20261015.json)。这不代表历史对照均有一对一替代；
+[退休清单](../docs/history/test-retirement-20261015.json)。这不代表历史对照均有一对一替代；
 各功能目录中的旧验收记录也不自动成为当前可执行入口。
 
 历史 `results/phase4/render-coverage.json` 及旧录音输入 `se_m_toxic.qoa`

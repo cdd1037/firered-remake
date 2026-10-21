@@ -4,9 +4,9 @@
 
 ## 最终目标
 
-Godot 4.7.2 .NET / net10.0、AI-first 工程，完成英文 FireRed revision 0 的关都主线、地图和剧情、正常单机可到达的七岛及通关后玩法，并能保存、退出和恢复。简体中文为独立表现层。兼容模式保持已确认的原版规则；修正或便利功能使用显式规则版本，不默默改变基线。
+使用 Godot 4.7.2 .NET / net10.0，完成英文 FireRed revision 0 的关都主线、地图和剧情、正常单机可到达的七岛及通关后玩法，并能保存、退出和恢复。简体中文为独立表现层。兼容模式保持已确认的原版规则；修正或便利功能使用显式规则版本，不默默改变基线。
 
-“完整单机”是原版正常单机可达功能与分支的完成，不是把仓库里的所有数据无条件开放。完整完成率尚未测量；原始地图数量不能代替可达分母。每条下面的条目都是待实施要求，不表示当前工程已经可玩。
+“完整单机”是原版正常单机可达功能与分支的完成，不是把仓库里的所有数据无条件开放。整体完成率尚未测量；原始地图数量不能代替玩家实际可达的验收范围。下列条目是验收要求，具体实现状态见[功能状态](first-clear-remaining-scope.md)。
 
 ## 1. 必做内容
 
@@ -49,18 +49,18 @@ NPC 交换是正常单机服务；它与真实玩家通信交换分开。图鉴�
 
 早期玩家可反复练级，因此可达成长、延迟进化、招式、特性、天气和道具依赖必须展开。禁止隐藏等级上限、跳过原版可发生的进化、无声忽略未实现招式。满队捕获、PC 边界、研究所特殊失败、教程隔离、连续升级、取消学招/进化、战败、中毒行走、背包满补领和奖励幂等均进入验收。
 
-首徽章通过后继续按同一整体目标开发，不再把完整关都或七岛视为未决定的产品范围。P0 未通过时仍不得批量导入。
+首徽章通过后继续按同一整体目标开发，不再把完整关都或七岛视为未决定的产品范围。P0 的真实音频输出仍未验收；按当前授权继续逐地区开发和检查，不能用 Dummy 音频结果关闭该项。
 
 ## 5. 完成的证据定义
 
-每个地图、事件、规则、资源和服务都需 stableId、固定 sourceRef、可达条件、依赖、实现状态和测试证据。全流程以正常操作完成，无编辑器补 flag、人工修档或隐藏调试跳关。可达闭包中零未解释悬空引用、未知操作码和占位行为；未完成项明确列出。
+每个地图、事件、规则、资源和服务都应有稳定身份、可达条件、依赖、实现状态和对应测试。固定来源与转换追溯由导入工具维护，不为运行数据增加逐项历史指纹或证明字段。全流程以正常操作完成，无编辑器补 flag、人工修档或隐藏调试跳关。可达闭包中零未解释悬空引用、未知操作码和占位行为；未完成项明确列出。
 
 全游戏验收至少覆盖三种初始伙伴和相应后期分支、合法剧情顺序变化、全部徽章/联盟/七岛关键状态、保存重载、长期成长与收集条件。不会要求普通单机玩家完成本就依赖通信的满图鉴或额外小游戏星；必须保留原版真实判定并清楚区分“逻辑已实现”与“单份单机存档可达”。
 
-## Language target and selected Chinese resource
+## 语言目标
 
-Chinese is a final delivery target. The user selected Xzonn/PretFRLG chinese commit `a04f63173ca5fcf9c2db18ee223cf057c7f232c0` as the later text basis; a user-supplied Chinese ROM is not required for that route. Current priority remains complete gameplay and comparison with the original English game. Only independently extracted, reviewed text/terminology may be imported; original pret rules remain authoritative, including EXP distribution. See [the decision](first-clear-remaining-scope.md#中文与规则决定) and `scripts/recipes/config/localization-zh-Hans.source.json`. Source choice does not mean Chinese menus, dialogue, fonts, line layout or name input are already implemented.
+简体中文是最终目标语言，固定文本来源为 Xzonn/PretFRLG `a04f63173ca5fcf9c2db18ee223cf057c7f232c0`，不要求用户提供中文 ROM。仅使用独立审阅的文本和术语，玩法规则仍以 pret 为准，包括经验分配。来源选择不等于中文覆盖、字形、分页或输入已验收；当前实现缺口见[本地化状态](current-content-composition.md#文本与本地化)。
 
-## Input parity follow-up (2026-10-08)
+## 输入要求
 
-Add mouse clicks to stable dialogue choices, menus, bag/party screens and battle options while retaining keyboard controls. Mouse input must reuse current commands and validation, respect presentation/modal locks and prevent click-through or repeated confirmation. Map click movement/pathfinding follows after map behavior is stable; this does not interrupt the current forest/badge work.
+对话选项、菜单、背包、队伍和战斗操作应同时保留键盘与鼠标入口。鼠标复用同一命令和校验，遵守模态状态、演出锁定、防穿透及防重复确认规则。地图点击移动和寻路仍属后置范围；既有菜单输入的实现与验证见[功能状态](first-clear-remaining-scope.md)。

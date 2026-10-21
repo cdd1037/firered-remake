@@ -9,7 +9,7 @@ internal static class TestAssets
     public static string Root { get; } = FindRoot();
     public static string Checkpoint => GeneratedFile(
         Environment.GetEnvironmentVariable("FIRERED_TEST_CHECKPOINT") ?? "checkpoints/current-schema3/controlled-checkpoint.json",
-        "Provide a separately validated schema-3 checkpoint via FIRERED_TEST_CHECKPOINT; see docs/chinese-edition.md. Old saves are not inferred or converted by tests.");
+        "Provide a separately validated schema-3 checkpoint via FIRERED_TEST_CHECKPOINT; see docs/save-storage.md. Old saves are not inferred or converted by tests.");
     public static string Source => Path.Combine(Root, "content/raw/pokefirered/037335f4");
 
     public static string GeneratedFile(string path, string generationCommand)

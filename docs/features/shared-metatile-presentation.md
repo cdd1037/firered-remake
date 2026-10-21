@@ -13,7 +13,7 @@ tile fails; there is no global Mart fallback for an unrelated map. Source crops,
 three separate layers, and alpha replacement are preserved.
 
 Explicit composition bindings are content wiring, not runtime feature switches.
-The resolver consumes the existing [map and atlas formats](resource-layout.md#地图格式);
+The resolver consumes the existing [map and atlas formats](../resources/resource-layout.md#地图格式);
 it does not introduce another generated format or source-parsing path.
 Gameplay checks for allowed coordinates, collision, flags, and changes remain in
 Application. Presentation no longer repeats these using the live save while

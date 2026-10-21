@@ -1,9 +1,11 @@
-# FireRed 普通工程
+# FireRed Remake
 
-以 Godot/.NET 实现的单机 FireRed 研究工程。仓库根目录是开发入口，解决方案为 `FireRed.Current.slnx`，Godot 工程为 `src/Game.Godot/project.godot`。完整目标包含关都主线、可达后期与单机支线，不以首枚徽章或测试数量代表完成。
+使用 Godot 4.7.2 .NET 和 C# 开发的 FireRed 单机重制项目。目标包括关都主线、正常单机可达的七岛、通关后玩法与支线。仓库根目录是开发入口，解决方案为 `FireRed.Current.slnx`，Godot 工程为 `src/Game.Godot/project.godot`。
+
+当前源码存在构建阻塞，最近一次检查见[验证记录](docs/validation.md#最近一次检查)。下列命令是维护入口，不表示当前版本已通过构建或全游戏验收。
 
 - [文档导航](docs/README.md)：按开发、功能、资源和验证查找说明。
-- [当前实现与剩余范围](docs/first-clear-remaining-scope.md)：区分已接通、未验证与明确后置的功能。
+- [功能状态](docs/first-clear-remaining-scope.md)：区分已接入、未验证与明确后置的功能。
 - [当前架构](docs/architecture.md) / [质量与维护](docs/project-quality-review.md) / [实施顺序](docs/implementation-roadmap.md)。
 
 ## 环境与构建
@@ -17,7 +19,7 @@ dotnet build FireRed.Current.slnx
 dotnet test FireRed.Current.slnx
 ```
 
-直接命令使用标准 NuGet 还原，无需先运行 `dev env`；首次还原需要网络。默认测试中的资源导入检查使用 Python 3.12 和 `requirements-dev.txt` 的依赖，普通 C# 测试不依赖 Python。测试所需的本地资源及检查点须事先准备，缺失时明确失败，详见[测试说明](tests/README.md)。
+直接命令使用标准 NuGet 还原，无需先运行 `dev env`；首次还原需要网络。源码仓库不包含构建和运行所需的全部转换资源，须先准备本地输入，见[资源再生成](docs/resources/resource-reconstruction-guide.md)。默认测试中的资源导入检查使用 Python 3.12 和 `requirements-dev.txt` 的依赖，普通 C# 测试不依赖 Python。测试使用的资源和受控测试存档缺失时明确失败，详见[测试说明](tests/README.md)。
 
 可选开发工具：`python dev doctor` 诊断环境，`python dev build` 配置本机 Godot NuGet 来源并构建。Windows 可用 `.\dev.cmd build`，Linux 可用 `./dev build`。这些辅助入口需要 Python，不自动安装工具。
 
@@ -42,7 +44,7 @@ dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false -p:UseSharedCompil
 ```sh
 python dev build
 python dev run
-# 可选：显式加载经验证的当前检查点
+# 可选：显式加载当前格式的受控测试存档
 python dev run /path/to/current-checkpoint.json
 # 音频测试不属于默认七项目测试，按需单独执行
 dotnet test tests/Game.Audio.Tests/Game.Audio.Tests.csproj
@@ -55,20 +57,20 @@ dotnet test tests/Game.Audio.Tests/Game.Audio.Tests.csproj
 ## 文件与资源边界
 
 - `src/`：游戏模块，包含游戏与工具共用的 `Game.Audio` 合成器。
-- `tools/`、`scripts/`：开发与离线导入工具，见 [scripts 说明](scripts/README.md)及[音频说明](docs/audio.md)。
+- `tools/`、`scripts/`：开发与离线导入工具，见 [scripts 说明](scripts/README.md)及[音频说明](docs/resources/audio.md)。
 - `tests/`、`docs/`：测试和维护文档。
-- `content/raw/`、`content/generated/`：本地原始输入与转换资源，不纳入源码 Git。
-- `checkpoints/`：本地代表档和受控测试档，不纳入 Git；用 `FIRERED_TEST_CHECKPOINT` 指定已验证的当前 schema 3 输入。
+- `content/raw/`、`content/generated/`：本地原始输入与转换资源，不纳入 Git。
+- `checkpoints/`：本地受控测试存档和历史样本，不纳入 Git；用 `FIRERED_TEST_CHECKPOINT` 指定当前 schema 3 测试输入。
 
-运行只读取 `content/generated` 及 Godot 自身字体/效果素材，不解析原作 C/ASM、raw、配方或 source-lock。generated 的完整冷重建尚未闭合，不能当作可随时删除的缓存。保留必要私有资源，参见[运行资源边界](docs/resource-layout.md)与[再生成说明](docs/resource-reconstruction-guide.md)。不得用 `git add -f` 将素材、存档或生成证据塞进源码仓库，也不公开上传或分发原作素材。
+运行只读取 `content/generated` 及 Godot 自身字体/效果素材，不解析原作 C/ASM、raw、配方或 source-lock。generated 的完整冷重建尚不完整，不能当作可随时删除的缓存。保留必要私有资源，参见[运行资源边界](docs/resources/resource-layout.md)与[再生成说明](docs/resources/resource-reconstruction-guide.md)。不得用 `git add -f` 将素材、存档或生成证据塞进源码仓库，也不公开上传或分发原作素材。
 
-中文使用固定 Xzonn 文本来源与稀疏覆盖，标题及替换图片保留原版。准备本地 pack 后可运行 `python dev run --language zh-Hans`，详见[中文版](docs/chinese-edition.md)。
+简体中文是目标语言，文本来源、现有字体布局和待恢复的语言包实现见[本地化状态](docs/current-content-composition.md#文本与本地化)。现存 `--language` 参数不能单独证明语言包可用。
 
-## 当前验收与交付限制
+## 当前验证边界
 
 - P0 的真实音频输出尚未验收。Dummy/headless、离线 PCM 或测试通过不能关闭此缺口。
-- Linux 正常启动与独立包的有限 Save/Continue 流程有既有证据；Windows 尚未实测。已有导出证据不覆盖随后源码变更，本轮不导出游戏包，GitHub 操作继续暂停；每个完成验证的大批次提供仅含源码的 Drive 归档，不包含素材、存档或生成资源。将来导出需匹配的官方模板，详见[Linux 导出验收](docs/linux-export-acceptance.md)。
+- Linux 正常启动与独立包有历史 Save/Continue 记录；Windows 游戏启动与独立包尚未验收。历史导出不覆盖后续源码。导出需要匹配的官方模板，见[Linux 导出记录](docs/history/linux-export-acceptance.md)和[平台状态](docs/validation.md#windows)。
 - 原生窗口仅验证了所记录的代表场景，不代表完整自然通关、所有 UI 状态、逐帧一致或实际帧率。当前回归与原生覆盖统一见[验证与限制](docs/validation.md)。
 - 存档保持可读 schema 3 JSON，支持 Unicode 身份与昵称；正常 Continue 拒绝 schema 1/2 和不匹配版本，不自动迁移、不猜测缺失的终身孵蛋数，也不覆盖旧档。generation-57604 历史样本不是当前 Continue 或自然后期验收基线。格式与备份契约见[存档说明](docs/save-storage.md)。
 
-源码版本以 Git 为准。开发工具链、NuGet/编译缓存、日志和测试探针不随普通工程包分发；私有资源与存档另有明确边界。
+源码版本以 Git 为准。开发工具链、NuGet/编译缓存、日志和测试探针不属于源码交付内容；本地素材与存档单独管理。

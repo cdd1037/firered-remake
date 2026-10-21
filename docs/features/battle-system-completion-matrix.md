@@ -7,11 +7,11 @@
 ## 当前范围与权威
 
 - 普通单打与预置双打使用同一四位置规则内核。354 个招式身份有规则准入；
-  [AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)
+  [AllMoveRecipeTests](../../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)
   从实际目录为每招四个出战位置产生 1,416 行受控公共回合用例。
   测试定义存在不等于本次重新执行，也不证明全部交互、随机分支或自然获得途径。
 - 76 个有效特性身份已准入，不含 NONE 和未使用的 CACOPHONY。
-  特性身份闭包由[规范宝可梦目录](../src/Game.Content/PretCanonicalPokemonCatalog.cs)校验；
+  特性身份闭包由[规范宝可梦目录](../../src/Game.Content/PretCanonicalPokemonCatalog.cs)校验；
   身份准入不能替代入场、复制、天气、免疫和残留的情境验证。
 - 专属招式程序为 352 个；Nature Power、Mirror Move 按原作转入经认证的叶招式，
   合计覆盖 354 个身份。转发不虚增独立根，也不保证所有上下文均可播放。
@@ -21,20 +21,20 @@
   不计入招式根或上述 10 个通用程序。
 - Safari、游走、实验室教程／脚本遭遇和 Trainer Tower 有各自的应用所有者；
   普通内核的结果不能代替这些模式的全部分支。动态 Enigma 内容、玩家通信、外部 e-Reader、
-  原版存档互换等不由普通单机战斗闭包证明。中文和其他延后范围见[当前范围与规则决定](first-clear-remaining-scope.md)。
+  原版存档互换等不由普通单机战斗闭包证明。中文和其他延后范围见[当前范围与规则决定](../first-clear-remaining-scope.md)。
 
 不再维护另一份逐招／逐特性 JSON 状态表。数值身份、效果和目标来自实际内容目录；
-规则准入来自 [SourceBattleKernel.SupportsRecipe](../src/Game.Domain/Battle/SourceBattleKernel.cs)；
-是否存在可播放脚本由[规范资源解析器](../src/Game.Godot/SourceBattleAnimation.Resources.cs)判断。
+规则准入来自 [SourceBattleKernel.SupportsRecipe](../../src/Game.Domain/Battle/SourceBattleKernel.cs)；
+是否存在可播放脚本由[规范资源解析器](../../src/Game.Godot/SourceBattleAnimation.Resources.cs)判断。
 没有第二份地区／招式支持白名单，也不以历史总数作为资源运行门禁。
 
 | 责任 | 当前所有者与维护检查 | 不能扩大为 |
 | --- | --- | --- |
-| 命令、回合、换人、残留 | [共享 Frame](../src/Game.Domain/Battle/SourceBattleFrame.cs)、[生命周期测试](../tests/Game.Battle.Tests/Lifecycle/BattleLifecycleTests.cs)、[残留测试](../tests/Game.Battle.Tests/Residuals/EndTurnResidualTests.cs) | 全部招式／特性／物品组合或所有特殊模式 |
-| AI、训练家与捕获 | [AI 策略](../tests/Game.Battle.Tests/TrainerPolicy/TrainerPolicyTests.cs)、[训练家接线](../tests/Game.Application.Tests/TrainerBattles/TrainerBattleTests.cs)、[野生捕获](../tests/Game.Application.Tests/WildBattles/WildCaptureTests.cs) | 自然完整主线和每个训练家分支验收 |
-| 调用、回执与结果时序 | [分派契约](animation-dispatch-architecture.md)、[专属入口](../src/Game.Application/CampaignMoveAnimationDispatch.cs)、[通用入口](../src/Game.Application/CampaignGeneralAnimationDispatch.cs) | 由最终 Frame 猜测成功、PP、目标或动画参数 |
-| 图层、材质与逐帧执行 | [背景／窗口／扫描线契约](source-animation-backgrounds.md)、[动画运行时](../src/Game.Godot/SourceBattleAnimation.cs)、[完整资源合成检查](../tests/Game.Presentation.Tests/SourceAnimationResourceTests.cs) | 原生 GPU、任意并发寄存器所有者或硬件周期一致 |
-| 当前组合与玩家保存 | [组合测试](../tests/Game.Application.Tests/Campaign/CampaignCompositionTests.cs)、[generated-only 测试](../tests/Game.Application.Tests/Campaign/GeneratedOnlyCampaignTests.cs) | 可在活动战斗中存档或已重放历史通关路线 |
+| 命令、回合、换人、残留 | [共享 Frame](../../src/Game.Domain/Battle/SourceBattleFrame.cs)、[生命周期测试](../../tests/Game.Battle.Tests/Lifecycle/BattleLifecycleTests.cs)、[残留测试](../../tests/Game.Battle.Tests/Residuals/EndTurnResidualTests.cs) | 全部招式／特性／物品组合或所有特殊模式 |
+| AI、训练家与捕获 | [AI 策略](../../tests/Game.Battle.Tests/TrainerPolicy/TrainerPolicyTests.cs)、[训练家接入](../../tests/Game.Application.Tests/TrainerBattles/TrainerBattleTests.cs)、[野生捕获](../../tests/Game.Application.Tests/WildBattles/WildCaptureTests.cs) | 自然完整主线和每个训练家分支验收 |
+| 调用、回执与结果时序 | [分派契约](animation-dispatch-architecture.md)、[专属入口](../../src/Game.Application/CampaignMoveAnimationDispatch.cs)、[通用入口](../../src/Game.Application/CampaignGeneralAnimationDispatch.cs) | 由最终 Frame 猜测成功、PP、目标或动画参数 |
+| 图层、材质与逐帧执行 | [背景／窗口／扫描线契约](../resources/source-animation-backgrounds.md)、[动画运行时](../../src/Game.Godot/SourceBattleAnimation.cs)、[完整资源合成检查](../../tests/Game.Presentation.Tests/SourceAnimationResourceTests.cs) | 原生 GPU、任意并发寄存器所有者或硬件周期一致 |
+| 当前组合与玩家保存 | [组合测试](../../tests/Game.Application.Tests/Campaign/CampaignCompositionTests.cs)、[generated-only 测试](../../tests/Game.Application.Tests/Campaign/GeneratedOnlyCampaignTests.cs) | 可在活动战斗中存档或已重放历史通关路线 |
 
 ## 调用与回执契约
 
@@ -91,13 +91,13 @@
   分属不同阶段；多段剩余数取计划次数而非最终实际次数。详见[替身控制器](substitute-move-controller.md)。
 - Teleport 的逃离文字遗漏已由拥有施放者／招式来源的终止回执修复，确认文字后才进入无声同步；
   Roar／Whirlwind 不借用它的文字。离场姿态与残留精灵独立，真实换人、新动画、取消或退出才释放。
-  对应验证边界见[验证与限制](validation.md)，具体变更过程由 Git 保留。
+  对应验证边界见[验证与限制](../validation.md)，具体变更过程由 Git 保留。
 
 ## 共享显示机制与源解释
 
 源语义依赖固定 `037335f4c725d7c9aecdac87066f2002b4bd7e14` 的 C／ASM／图像。
 以下是维护约束，不是增加另一份程序准入表；具体回调向量、边界与完整根组合保留在
-[Presentation 测试](../tests/Game.Presentation.Tests)及[独立源生成器](../tests/Reference)。
+[Presentation 测试](../../tests/Game.Presentation.Tests)及[独立源生成器](../../tests/Reference)。
 
 ### 调度、控制流与所有权
 
@@ -141,7 +141,7 @@
 - 扫描线使用两个 960-word buffer、显式 DMA bank、延迟停止、逐行 alpha／偏移及先采样后裁剪。
   首行 dirty 写与 VBlank 使用明确帧阶段模型；源 VCOUNT 160／161 的实际周期边界未由控制流证明。
   行 1–159 和终止传输遵循所选 bank，不能称作 CPU 周期级原机一致。
-  详细所有权与限制见[背景／窗口说明](source-animation-backgrounds.md)。
+  详细所有权与限制见[背景／窗口说明](../resources/source-animation-backgrounds.md)。
 
 ### 特殊结果仍由共享契约表达
 
@@ -180,8 +180,8 @@ signed16 累加和源端点，无额外 63 夹限。源向量、host PCM 和真�
 ## 原作边界与已批准差异
 
 既有概率、Protect、Conversion 2、双打 KO 补位、王者之证、AI 与服从决定继续以
-[当前规则决定](first-clear-remaining-scope.md#中文与规则决定)为准；本文不授予新改法。
-[原作行为改进](original-behavior-improvements.md)分别保存来源、授权层级和独立策略测试：
+[当前规则决定](../first-clear-remaining-scope.md#中文与规则决定)为准；本文不授予新改法。
+[原作行为改进](../original-behavior-improvements.md)分别保存来源、授权层级和独立策略测试：
 
 - Hyper Beam 只在七个合法帧中拒绝采样选择，拒绝 65534／65535；反向叫声插值使用合法端点。
 - Magnitude 使用明确的 16 槽脚本寄存器，但每条创建命令仍最多八个 operands；不是原内存布局证明。
@@ -198,7 +198,7 @@ Rain pan 和 Sunny Day actor-relative 副本在该边缘可不同。原 C 定义
 
 ## Metronome、获得途径与未完验证
 
-[原始调用选择器](../src/Game.Domain/WildBattle/WildBattleSourceCallers.cs)是实际候选权威。
+[原始调用选择器](../../src/Game.Domain/WildBattle/WildBattleSourceCallers.cs)是实际候选权威。
 保留旧清单的三个覆盖类别，防止删除逐招 JSON 后把规则准入误读为 Metronome 可达：
 
 - 336 个 direct 选择。
@@ -239,7 +239,7 @@ Sequence9 在 127317→127903ms 播放 34 帧，两次 `acknowledged=false`。�
 
 真实非 Dummy 输出仍是独立未完成门禁。Host PCM、source pan／cry 向量、headless Draw／ready、
 干净退出和场地的其他原生样本都不能代替实际扬声器验证。其他素材／场景验收见
-[当前范围](first-clear-remaining-scope.md)和[完整审计的当前剩余项](nonlocalized-single-player-completion-audit.md)。
+[当前范围](../first-clear-remaining-scope.md)和[完整审计的当前剩余项](../history/nonlocalized-single-player-completion-audit.md)。
 
 源证据需要保留以下出处与纠错边界：
 
@@ -258,28 +258,34 @@ Sequence9 在 127317→127903ms 播放 34 帧，两次 `acknowledged=false`。�
   不能把它写成 leak-check 通过。缺本地 fixture 的失败不等于 skip，也不能以之前另一快照的全套
   结果充当当前全套通过；逐批修复／复测和失败记录保留在 Git 历史与原外部日志。
 - raw、generated、逐帧 oracle 和验证报告均为本地／外部忽略输入，不强塞进 Git，也不公开素材。
-  [测试说明](../tests/README.md)规定显式独立生成、缺输入失败、完整目录禁止回退及代表用例每帧比较。
+  [测试说明](../../tests/README.md)规定显式独立生成、缺输入失败、完整目录禁止回退及代表用例每帧比较。
   普通测试不启动 C 编译器，不据产品实现重写 golden。整个 generated 仍不能视作可随意删除的缓存。
 
 ## 维护检查入口
 
 按改动选择对应边界，不为文档整理重跑所有数值或声卡测试：
 
-- 规则／公共回合：[AllMoveRecipeTests](../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)、
-  [Switching](../tests/Game.Battle.Tests/Switching/SwitchingTests.cs)、[Items](../tests/Game.Battle.Tests/Items/BerryItemTests.cs)。
-- 调用与结果：[Application WildBattles](../tests/Game.Application.Tests/WildBattles)、
-  [共享测试资源身份](../tests/Game.Application.Tests/AnimationDispatchFixture.cs)。
-- VM／场景／素材：[SharedAnimationCommandTests](../tests/Game.Presentation.Tests/SharedAnimationCommandTests.cs)、
-  [SourceAnimationResourceTests](../tests/Game.Presentation.Tests/SourceAnimationResourceTests.cs)、
-  [SpriteOamPhaseTests](../tests/Game.Presentation.Tests/SpriteOamPhaseTests.cs)、
-  [SourceTaskTraversalTests](../tests/Game.Presentation.Tests/SourceTaskTraversalTests.cs)、
-  [VisualRandomTests](../tests/Game.Presentation.Tests/VisualRandomTests.cs)。
-- 命名程序／替身：[NamedGeneralAnimationTests](../tests/Game.Presentation.Tests/NamedGeneralAnimationTests.cs)、
-  [NamedGeneralSourceOracleTests](../tests/Game.Presentation.Tests/NamedGeneralSourceOracleTests.cs)、
-  [SubstituteMoveControllerTests](../tests/Game.Presentation.Tests/SubstituteMoveControllerTests.cs)、
-  [SubstituteSwapAnimationTests](../tests/Game.Presentation.Tests/SubstituteSwapAnimationTests.cs)。
-- 导入及原像素：[资源工具说明](../scripts/README.md)、[维护导入检查](../tests/Game.ResourceImport.Tests)；
-  音频只在涉及它时显式运行[音频测试项目](../tests/Game.Audio.Tests)，仍不表示实际输出验收。
+- 规则／公共回合：[AllMoveRecipeTests](../../tests/Game.Battle.Tests/Turns/AllMoveRecipeTests.cs)、
+  [Switching](../../tests/Game.Battle.Tests/Switching/SwitchingTests.cs)、[Items](../../tests/Game.Battle.Tests/Items/BerryItemTests.cs)。
+- 调用与结果：[Application WildBattles](../../tests/Game.Application.Tests/WildBattles)、
+  [共享测试资源身份](../../tests/Game.Application.Tests/AnimationDispatchFixture.cs)。
+- VM／场景／素材：[SharedAnimationCommandTests](../../tests/Game.Presentation.Tests/SharedAnimationCommandTests.cs)、
+  [SourceAnimationResourceTests](../../tests/Game.Presentation.Tests/SourceAnimationResourceTests.cs)、
+  [SpriteOamPhaseTests](../../tests/Game.Presentation.Tests/SpriteOamPhaseTests.cs)、
+  [SourceTaskTraversalTests](../../tests/Game.Presentation.Tests/SourceTaskTraversalTests.cs)、
+  [VisualRandomTests](../../tests/Game.Presentation.Tests/VisualRandomTests.cs)。
+- 命名程序／替身：[NamedGeneralAnimationTests](../../tests/Game.Presentation.Tests/NamedGeneralAnimationTests.cs)、
+  [NamedGeneralSourceOracleTests](../../tests/Game.Presentation.Tests/NamedGeneralSourceOracleTests.cs)、
+  [SubstituteMoveControllerTests](../../tests/Game.Presentation.Tests/SubstituteMoveControllerTests.cs)、
+  [SubstituteSwapAnimationTests](../../tests/Game.Presentation.Tests/SubstituteSwapAnimationTests.cs)。
+- 导入及原像素：[资源工具说明](../../scripts/README.md)、[维护导入检查](../../tests/Game.ResourceImport.Tests)；
+  音频只在涉及它时显式运行[音频测试项目](../../tests/Game.Audio.Tests)，仍不表示实际输出验收。
 
 新内容应进入同一调用、资源、场景和结果所有权。具体回调差异保留在其实现、源生成器与语义断言中，
 不再以追加“第 N 根／本批全绿”的文档段落建立第二份运行权威。
+
+## 特性验证
+
+早期逐特性缺口表属于旧内核阶段，不再作为当前任务清单。修改特性须验证触发时机、持有者与目标、单/双打交互、失败条件和 RNG 消耗。定义存在、输入被允许或回合能结束，都不等于全部交互已验证。
+
+保留独立原版 C 数值向量和针对性行为用例；不按旧白名单数量限制当前特性，也不恢复已移除的单打执行器或阶段证明。

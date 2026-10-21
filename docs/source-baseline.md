@@ -1,8 +1,8 @@
 # 参考源基线与接入约束
 
-核查日期：2026-10-08 UTC。状态：P0 期间的只读来源研究，尚未导入可玩内容。
+初次核查：2026-10-08 UTC；文档整理：2026-10-21。固定来源仍用于离线研究和导入。下列“初次核查”结果只描述当时的取证范围，不表示当前项目仍停留在未导入内容阶段。
 
-本文件与 `scripts/recipes/config/source.json` 冻结研究依据；它们不能证明游戏已实现、工具链已通过或素材已获得再分发许可。产品最终范围见 [scope.md](scope.md)，实施门禁见 [implementation-roadmap.md](implementation-roadmap.md)。第一徽章仅为首个完整玩家流程里程碑。
+本文件与 `scripts/recipes/config/source.json` 冻结研究依据；它们不能证明游戏已实现、工具链已通过或素材已获得再分发许可。产品最终范围见 [scope.md](scope.md)，开发顺序见 [implementation-roadmap.md](implementation-roadmap.md)。第一徽章仅为首个完整玩家流程里程碑。
 
 ## 1. 唯一参考版本
 
@@ -23,7 +23,7 @@
 
 README 同时列出 LeafGreen、revision 1 和 Switch/revision 10。它们的存在不授权混用数据或修复行为。今后更换版本必须另建 source lock、列出差异、更新内容版本并重跑相关规则与场景。`master` 只可用于发现更新，不能成为构建时移动依赖。
 
-## 2. 此次确实验证了什么
+## 2. 初次来源核查记录
 
 - 从 GitHub 维护仓库核验 commit 及其 tree。完整 recursive tree 返回 `truncated=false`，包含 11,434 个树/文件条目；这个数量不是资源数量或游戏覆盖分母。
 - 按固定提交只读取得 77 份文本参考文件，并逐一核对 Git blob SHA-1 与固定 tree。另计算原始文本字节 SHA-256。可复核结果全部记录在 source lock，不把文本内容打包进工程。
@@ -46,7 +46,7 @@ source lock 中 `evidenceFiles` 的含义是“字节来源验证”，不是“
 | 其中有 id 的布局记录 | 365 个 | 可包含共享或残留布局，不等于地图数 |
 | 其中空对象槽位 | 18 个 | 不能压缩数组后让原始位置编号漂移 |
 
-组中包含联机设施、配信岛屿、废弃原型；布局中还有沿用的旧资源。物种、训练家和遭遇表也有非本版、不可达或残留项。未来实现分母必须由固定版本、剧情条件和玩家能力约束下的可达闭包生成。目前 `eligibleSinglePlayerMaps`、规则数、脚本数和完成率均为 `null`，表示尚未测量。
+组中包含联机设施、配信岛屿、废弃原型；布局中还有沿用的旧资源。物种、训练家和遭遇表也有非本版、不可达或残留项。验收范围应根据固定版本、剧情条件和玩家能力确定，不能直接使用目录数量。初次核查未测量 `eligibleSinglePlayerMaps`、规则数、脚本数或完成率；当前实现见[功能状态](first-clear-remaining-scope.md)。
 
 目录证据：[地图组](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/map_groups.json)、[布局目录](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/layouts.json)。
 
@@ -88,7 +88,7 @@ source lock 中 `evidenceFiles` 的含义是“字节来源验证”，不是“
 
 `map.bin` 的格子是 u16：低 10 位 metatile ID，中间 2 位碰撞，高 4 位高度。布局中的边界宽高也必须读取。真新镇为 24×20；tree 中 map.bin 为 960 字节，border 为 2×2、8 字节，仅在元数据层面符合 u16 尺寸。
 
-FireRed 的 `metatile_attributes.bin` 由 INCBIN_U32 引用。`src/fieldmap.c` 中行为掩码为 `0x000001ff`，terrain 位于 9–13 位，encounter type 位于 24–26 位，layer type 位于 29–30 位。必须保留完整 32 位属性和已命名/未命名字段，不套用其他作品的 16 位属性或把碰撞等同于行为。实际小端读取、metatile 层组合、tile 翻转/调色板和 primary/secondary 分界仍需 P0 后的解析夹具与真渲染对照。
+FireRed 的 `metatile_attributes.bin` 由 INCBIN_U32 引用。`src/fieldmap.c` 中行为掩码为 `0x000001ff`，terrain 位于 9–13 位，encounter type 位于 24–26 位，layer type 位于 29–30 位。必须保留完整 32 位属性和已命名/未命名字段，不套用其他作品的 16 位属性或把碰撞等同于行为。这些格式约束用于离线转换和独立检查；当前地图管线及其验证范围见[世界资源](resources/world-resource-pipeline.md)和[地图图集](resources/map-render-atlases.md)。
 
 证据：[global.fieldmap.h](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/global.fieldmap.h)、[fieldmap.c](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/fieldmap.c)、[metatiles.h](https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/tilesets/metatiles.h)。
 
@@ -106,13 +106,13 @@ JSON parser 不会自动处理 C 宏、条件编译或脚本 opcode。遭遇模�
 | --- | --- | --- |
 | pret 文本源码 | 固定版本只读研究、记录事实和 sourceRef；本次不把全文并入产品 | 游戏源代码/数据再分发未清权 |
 | 上游工具 | 阅读实现和本地许可；此阶段未编译/执行 | 如后续引入，按具体组件许可及依赖逐项核查 |
-| 原游戏图像、对白、声音、商标 | 建立外部来源记录；P0 使用自制测试资源 | 未公开上传，未视为获得授权 |
+| 原游戏图像、对白、声音、商标 | 来源记录与本地离线转换；运行仅消费转换资源 | 不公开上传，未视为获得再分发授权 |
 | 简体中文、字体与自制替代素材 | 单独记录作者/来源、许可版本和使用范围 | 许可核验后才纳入交付清单 |
 | 合法原版行为记录 | 后续用于规则对照，记录采样版本与取得依据 | 不附带 ROM，不默认公开原始素材 |
 
-## 6. sourceRef 与后续接入合同
+## 6. 导入工具的来源记录
 
-每个未来内容项至少保留：
+离线工具按实际输入和转换需要保留以下信息；这些要求不应变成运行时逐项证明表：
 
 - 项目 `stableId`，内容类型，源符号/source ID。
 - repository、完整 commit、相对文件路径、符号；行范围可辅助阅读，不能独自作为身份。
@@ -123,12 +123,11 @@ JSON parser 不会自动处理 C 宏、条件编译或脚本 opcode。遭遇模�
 
 项目稳定 ID 与源 numeric ID 分开，存档只依赖稳定 ID。译名不参与 ID、规则比较或训练家 personality 生成。未知 opcode、special、宏、flags、图块及缺字都返回含路径/符号的诊断；没有无声占位。
 
-### P0 通过后的最小接入顺序
+### 内容接入流程
 
-1. 验证 lock 对应 commit/tree；在产品目录外建只读来源缓存，按白名单抓取所需文件并比对 hash。拒绝路径逃逸、未解析 include 和来源漂移。
-2. 先锁定 IR schema 与稳定 ID，写坏数据、条件分支、重复 ID 和缺失引用夹具。采用本项目可审计解析器；不执行上游脚本，也不需要 ROM。
-3. 一次只接入一张地图、一个物种和一段脚本。地图所需依赖可以读取，但尚未宣称其他区域可玩。
-4. 两次冷生成的规范化产物字节一致，输出 sourceRef 与依赖清单。此时再验证 tile/碰撞/事件/文本真实表现，不能以静态编译替代。
-5. 建立首徽章可达闭包，再按区域增量扩展至完整单机目标。每批先列缺失机制，再导入内容；每次变动都保留保存/回放兼容决策。
+1. 按固定版本和显式输入选择读取本地来源，校验来源身份和路径边界，不执行上游脚本。
+2. 通过共享转换器生成运行资源，未知语法、重复 ID 和缺失引用须报错。
+3. 独立比较规则值、地图语义、事件和像素；检查范围须对应实际输出，不以目录数量或静态编译代替。
+4. 通过当前内容组合加载，验证真实玩法入口、保存恢复及受影响的表现。
 
-当前停止线：只交付清单和来源证据。上述接入器、全游戏分母和规则一致性验证均待实施；P0 未通过时不批量扩内容。
+来源路径、hash 和转换配方留在工具层。按共享机制逐地区开发并验证，真实音频的 P0 缺口单独记录。现有重建能力与限制见[资源再生成](resources/resource-reconstruction-guide.md)。
