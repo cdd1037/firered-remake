@@ -2,23 +2,23 @@
   <ItemGroup>
     <Compile Include="../../src/Game.Godot/Field/FieldDirectionCadence.cs" Link="FieldDirectionCadence.cs" />
     <Compile Include="../../src/Game.Godot/World/Regions/PokemonTowerPresentationModel.cs" Link="PokemonTowerPresentationModel.cs" />
-    <Compile Include="../../src/Game.Application/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
-    <Compile Include="../../src/Game.Application/FieldForestPreviewPresentation.cs" Link="FieldForestPreviewPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldHorizontalFogPresentation.cs" Link="FieldHorizontalFogPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldScreenFadePresentation.cs" Link="FieldScreenFadePresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldReturnPresentation.cs" Link="FieldReturnPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldShadePresentation.cs" Link="Application/FieldShadePresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldFlashWindowPresentation.cs" Link="Application/FieldFlashWindowPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldWarpPresentation.cs" Link="FieldWarpPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldStairPresentation.cs" Link="FieldStairPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldDoorPresentation.cs" Link="FieldDoorPresentation.cs" />
-    <Compile Include="../../src/Game.Application/FieldDoorPresentation.Steps.cs" Link="FieldDoorPresentation.Steps.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldCaveTransitionPresentation*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldForestPreviewPresentation.cs" Link="FieldForestPreviewPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldHorizontalFogPresentation.cs" Link="FieldHorizontalFogPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldScreenFadePresentation.cs" Link="FieldScreenFadePresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldReturnPresentation.cs" Link="FieldReturnPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldShadePresentation.cs" Link="Application/FieldShadePresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldFlashWindowPresentation.cs" Link="Application/FieldFlashWindowPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldWarpPresentation.cs" Link="FieldWarpPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldStairPresentation.cs" Link="FieldStairPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldDoorPresentation.cs" Link="FieldDoorPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Field/Transitions/FieldDoorPresentation.Steps.cs" Link="FieldDoorPresentation.Steps.cs" />
     <Compile Include="../../src/Game.Godot/Audio/SourceMusicFade.cs" Link="SourceMusicFade.cs" />
     <Compile Include="../../src/Game.Godot/QuestLog/QuestLogPalettePresentation.cs" Link="QuestLogPalettePresentation.cs" />
     <Compile Include="../../src/Game.Godot/Battle/Presentation/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />
     <Compile Include="../../src/Game.Godot/Battle/Presentation/SourceBattleHpPresentation.cs" Link="SourceBattleHpPresentation.cs" />
-    <Compile Include="../../src/Game.Application/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
-    <Compile Include="../../src/Game.Application/CampaignWeatherContinuationPresentation.cs" Link="CampaignWeatherContinuationPresentation.cs" />
+    <Compile Include="../../src/Game.Application/Battle/Animation/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
+    <Compile Include="../../src/Game.Application/Battle/Animation/CampaignWeatherContinuationPresentation.cs" Link="CampaignWeatherContinuationPresentation.cs" />
     <Compile Include="../../src/Game.Godot/UI/Inventory/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />
     <Compile Include="../../src/Game.Godot/UI/Storage/StorageMoveHelpPresentation.cs" Link="StorageMoveHelpPresentation.cs" />
     <Compile Include="../../src/Game.Godot/World/Regions/PokemonLeagueScenePresentation.cs" Link="PokemonLeagueScenePresentation.cs" />
@@ -56,7 +56,7 @@
     <Compile Include="../../src/Game.Godot/UI/Menus/SourceVerticalMenuPresentation.cs" Link="SourceVerticalMenuPresentation.cs" />
     <Compile Include="../../src/Game.Godot/World/Regions/TrainerTowerPresentationModel.cs" Link="TrainerTowerPresentationModel.cs" />
     <Compile Include="../../src/Game.Godot/UI/Pokedex/PokedexDetailPresentation.cs" Link="PokedexDetailPresentation.cs" />
-    <Compile Include="../../src/Game.Application/SaveOperationResult.cs" Link="SaveOperationResult.cs" />
+    <Compile Include="../../src/Game.Application/Persistence/SaveOperationResult.cs" Link="SaveOperationResult.cs" />
     <Compile Include="../../src/Game.Godot/App/Persistence/CampaignSaveFeedback.cs" Link="CampaignSaveFeedback.cs" />
     <Compile Include="../../src/Game.Godot/UI/Pokemon/CampaignFieldPartyActions.cs" Link="CampaignFieldPartyActions.cs" />
     <Compile Include="../../src/Game.Godot/Diagnostics/CampaignDiagnostics.cs" Link="CampaignDiagnostics.cs" />

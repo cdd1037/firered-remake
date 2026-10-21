@@ -37,4 +37,4 @@ Continue 拒绝 schema 1/2、不匹配版本和缺失必要统计的状态。离
 
 generation-57604 样本是历史输入，不能作为当前 Continue 基线。测试中的合成计数仅用于受控夹具，不能补写玩家历史。缺失输入应报错，不能跳过后称为通过。
 
-实现入口：[编码与存储服务](../src/Game.Application/SaveCodec.cs)、[玩家存读操作](../src/Game.Application/PlayerSaveOperations.cs)、[错误结果](../src/Game.Application/SaveOperationResult.cs)。检查命令和输入要求见[测试说明](../tests/README.md)。
+实现入口：[编码与存储服务](../src/Game.Application/Persistence/SaveCodec.cs)、[玩家存读操作](../src/Game.Application/Persistence/PlayerSaveOperations.cs)、[错误结果](../src/Game.Application/Persistence/SaveOperationResult.cs)。检查命令和输入要求见[测试说明](../tests/README.md)。

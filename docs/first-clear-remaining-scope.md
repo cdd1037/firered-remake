@@ -56,7 +56,7 @@
 
 ## 表现尚未完整还原
 
-- [专属动画分派](../src/Game.Application/CampaignMoveAnimationDispatch.cs)当前352个实际脚本与2个经认证转发身份已覆盖354种招式身份；10个命名通用程序包括天气持续、延迟命中与真气拳预备。此前309／354及45种未接入的表述已过时。身份与目录覆盖不等于全部控制器前后奏、结果文字、情境组合或原生视听一致；源证据和各批验证见[战斗矩阵](features/battle-system-completion-matrix.md)。
+- [专属动画分派](../src/Game.Application/Battle/Animation/CampaignMoveAnimationDispatch.cs)当前352个实际脚本与2个经认证转发身份已覆盖354种招式身份；10个命名通用程序包括天气持续、延迟命中与真气拳预备。此前309／354及45种未接入的表述已过时。身份与目录覆盖不等于全部控制器前后奏、结果文字、情境组合或原生视听一致；源证据和各批验证见[战斗矩阵](features/battle-system-completion-matrix.md)。
 - 成功Teleport的源逃离结果页已接入并完成定向验证；替身后的本体显示／招式／恢复包装也已由共享控制器接入，包含自然Baton Pass→Ditto变身、multi-hit与Scene Off。原生逐帧／实际扬声器验收仍独立，不能把先前发现记录当作当前未修缺口。前方Spinda斑点仍未实现，但未建立当前普通单机可达入口。见[逃离结果](features/move-escape-presentation.md)与[替身控制器](features/substitute-move-controller.md)。
 - 已接入原片头流程、动态标题、大木介绍及命名网格、进化／捕获／孵化／狩猎与NPC交换演出、Summary及队伍原生美术。部分精确时序与剩余界面验收仍未关闭；晃晃斑PID斑点未实现，但当前单机可达名册未包含该物种。各项实现／验证边界见专门文档。
 - 名人堂背景混色、纸屑、排布、边框与过渡，以及片尾地图镜头、原放大图与人物变体已进一步接入；仍待代表性原生画面对照，不能据构建成功宣称逐帧一致。人物收集器滚动／控制码时序、老虎机调色／退出消息已补入并通过源数据向量检查，代表性原生抽查尚未完成，见[人物收集器与老虎机](features/fame-and-slot-presentation.md)。探宝器已接入原箭头／星光图像与25帧脉冲、定点移动、音效和延迟确认，已完成代表性原生窗口检查，见[itemfinder表现](features/itemfinder-presentation.md)。

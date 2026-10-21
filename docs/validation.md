@@ -55,6 +55,34 @@ dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --no-re
 
 本地日志位于忽略目录 `evidence/godot-layout-*`。编译输入查询和编辑器导入不代表完整构建、真实游戏宿主 CLR、玩家流程或实际音频验收；既有构建问题仍需单独修复。
 
+## Application 目录整理（2026-10-21）
+
+在源码基线 `500620b4` 上整理 Application 的 324 个 C# 文件，逐一比较 SHA-256，内容保持一致。类型、命名空间、项目依赖、运行资源和存档格式均未改动。目录职责见[应用层说明](../src/Game.Application/README.md)。
+
+`python dev doctor` 确认 SDK 10.0.402 和 Godot `4.7.2.stable.mono.official.ed1daf0bf`。这是开发工具可用性检查，未核验实际游戏宿主 CLR。
+
+移动前后分别执行以下查询，对比经路径映射后的完整文件集合和测试 `Link` 元数据；路径派生目录及文件时间不作为等价比较条件：
+
+```powershell
+dotnet msbuild src/Game.Application/Game.Application.csproj -getItem:Compile,EmbeddedResource
+dotnet msbuild tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj -getItem:Compile,EmbeddedResource
+dotnet msbuild tests/Game.Application.Tests/Game.Application.Tests.csproj -getItem:Compile,EmbeddedResource
+```
+
+Application 324 项、Presentation 测试 502 项、Application 测试 300 项编译输入在路径映射后一致，测试虚拟链接名保持不变。三个查询项目的嵌入资源输入均为 0 项，移动前后一致。
+
+实际构建及资源检查命令：
+
+```powershell
+dotnet build src/Game.Application/Game.Application.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+python scripts/checks/test-teaching-catalog-imports.py
+python scripts/imports/story/import-move-tutors.py --check
+```
+
+构建在移动前后均失败于 Domain 的 `World/CampaignCatalog.cs(47,20)`：缺少 `OrdinaryTrainerCatalog`，CS0246，各 0 警告、1 错误；未进入 Application 的完整编译。教学资源检查 5 项通过；招式教学导入器只读检查退出 0，33 个输出、1029877 字节一致，绑定代码检查使用新路径 `Services/CampaignMoveTutorBindings.cs`。
+
+MSBuild 查询和构建日志位于本地忽略目录 `evidence/application-content-layout-*`。本次未执行 .NET 测试、玩家流程、导出或音频验收；编译输入等价和 Python 检查不能替代完整构建。Godot 整理记录中的既有缺失测试链接仍未修复。
+
 ## 工具与执行
 
 要求官方 Godot 4.7.2 .NET、稳定 .NET 10 SDK（至少 10.0.100）、目标 `net10.0` 和实际 .NET 10 游戏宿主。Python 仅用于开发辅助和离线转换，不决定游戏规则。

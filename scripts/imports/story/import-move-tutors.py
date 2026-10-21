@@ -124,7 +124,7 @@ def main():
             data=read(src,f.get('bytes'))
         rows.append((output/rel,data))
     files = {f['path']: data for f, (_, data) in zip(lock['files'], rows, strict=True)}
-    rows.append((ROOT/'src/Game.Application/CampaignMoveTutorBindings.cs', actor_bindings(files)))
+    rows.append((ROOT/'src/Game.Application/Services/CampaignMoveTutorBindings.cs', actor_bindings(files)))
     rows.append((ROOT/'content/generated/data/services/move-tutors.json', catalog(files, lock['commit'])))
     for path,data in rows:
         if a.check:
