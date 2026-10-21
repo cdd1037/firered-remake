@@ -83,6 +83,22 @@ python scripts/imports/story/import-move-tutors.py --check
 
 MSBuild 查询和构建日志位于本地忽略目录 `evidence/application-content-layout-*`。本次未执行 .NET 测试、玩家流程、导出或音频验收；编译输入等价和 Python 检查不能替代完整构建。Godot 整理记录中的既有缺失测试链接仍未修复。
 
+## Content 目录整理（2026-10-21）
+
+Content 的 374 个 C# 文件按职责归档，逐一比较 SHA-256，内容保持一致；比较基线为 `500620b4`。类型、命名空间、项目依赖和运行资源均未改动。目录职责见[内容层说明](../src/Game.Content/README.md)，工具环境与验证限制同[Application 记录](#application-目录整理2026-10-21)。
+
+移动前后分别执行：
+
+```powershell
+dotnet msbuild src/Game.Content/Game.Content.csproj -getItem:Compile,EmbeddedResource
+dotnet msbuild tests/Game.Content.Tests/Game.Content.Tests.csproj -getItem:Compile,EmbeddedResource
+dotnet build src/Game.Content/Game.Content.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+```
+
+Content 的 374 项和 Content 测试的 121 项编译输入在路径映射后一致，无遗漏或重复。两个项目的嵌入资源输入均为 0 项，移动前后一致；保留 `Text/en/*.json` 规则，未据此声称文本资源完整。
+
+构建在移动前后均失败于同一 Domain `OrdinaryTrainerCatalog` 缺失错误，CS0246，各 0 警告、1 错误；未进入 Content 的完整编译。日志位于 `evidence/application-content-layout-*`。本次未执行 .NET 测试或游戏验收，未修改生成资源和参考期望。
+
 ## 工具与执行
 
 要求官方 Godot 4.7.2 .NET、稳定 .NET 10 SDK（至少 10.0.100）、目标 `net10.0` 和实际 .NET 10 游戏宿主。Python 仅用于开发辅助和离线转换，不决定游戏规则。

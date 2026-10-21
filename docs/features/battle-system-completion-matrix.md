@@ -11,7 +11,7 @@
   从实际目录为每招四个出战位置产生 1,416 行受控公共回合用例。
   测试定义存在不等于本次重新执行，也不证明全部交互、随机分支或自然获得途径。
 - 76 个有效特性身份已准入，不含 NONE 和未使用的 CACOPHONY。
-  特性身份闭包由[规范宝可梦目录](../../src/Game.Content/PretCanonicalPokemonCatalog.cs)校验；
+  特性身份闭包由[规范宝可梦目录](../../src/Game.Content/Catalogs/Pokemon/PretCanonicalPokemonCatalog.cs)校验；
   身份准入不能替代入场、复制、天气、免疫和残留的情境验证。
 - 专属招式程序为 352 个；Nature Power、Mirror Move 按原作转入经认证的叶招式，
   合计覆盖 354 个身份。转发不虚增独立根，也不保证所有上下文均可播放。

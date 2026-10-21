@@ -11,7 +11,7 @@
 
 ## 宝可梦准入
 
-[`PretGamePokemonCatalog`](../src/Game.Content/PretGamePokemonCatalog.cs) 读取 `content/generated/data/pokemon/game/catalog.json`，当前资源 schema 为 2，与存档 schema 3 是不同的版本。
+[`PretGamePokemonCatalog`](../src/Game.Content/Catalogs/Pokemon/PretGamePokemonCatalog.cs) 读取 `content/generated/data/pokemon/game/catalog.json`，当前资源 schema 为 2，与存档 schema 3 是不同的版本。
 
 `Definitions` 描述准入物种的稳定 ID、进化和可选 `FormScope`；基础属性与形态差异从 canonical 定义解析。`Owned`、`Opponents` 和 `TrainerTowerOpponents` 分别给出有序用途列表及明确的进化覆盖。读取器拒绝空定义、重复 ID、无效形态和不完整引用。
 

@@ -13,7 +13,7 @@
 - `Game.Godot`：输入、显示、音频与平台适配，组合 Application、Content 和 Audio。
 - `Game.Tooling`：引用 Application/Content 的显式开发命令，不是玩家运行入口。
 
-子项目目录职责见[应用层说明](../src/Game.Application/README.md)和[表现层说明](../src/Game.Godot/README.md)；各页同时记录编译输入、资源路径或测试链接的维护要求。
+子项目目录职责见[应用层说明](../src/Game.Application/README.md)、[内容层说明](../src/Game.Content/README.md)和[表现层说明](../src/Game.Godot/README.md)；各页同时记录编译输入、资源路径或测试链接的维护要求。
 
 Domain 仍内嵌生成的训练家 AI 程序，因此没有产品 `ProjectReference` 不等于构建无需生成输入。工具链固定为 Godot 4.7.2 .NET / `net10.0` / 实际 .NET 10 宿主；环境入口见[工程 README](../README.md)。
 
