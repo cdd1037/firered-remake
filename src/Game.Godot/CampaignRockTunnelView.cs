@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Ids;
@@ -89,24 +90,24 @@ public partial class CampaignView
         int xMon=slide<FieldFlashSourcePresentation.MonSlideInFrames?Math.Max(120,320-slide*20):exit<0?120:120-exit*20;
         var mon=_session.State.Party[partyIndex].Pokemon;DrawTexture(_battleArt[(PresentedRenderSpecies(mon),"front",mon.IsShiny)].Texture,new(xMon-32,48));
     }
-    private ForestMessage? RockTunnelWildMessage(WildBattleEvent current)=>current switch
+    private ForestMessage? RockTunnelWildMessage(SourceBattleEvent current)=>current switch
     {
-        WildBattleProtectAttemptEvent=>new(""),
-        WildBattleMtMoonVolatileEvent {Volatile:"protect",Reason:"move"} p=>new("sText_PkmnProtectedItself2",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(p.Side))),
-        WildBattleMtMoonVolatileEvent {Volatile:"endure",Reason:"move"} p=>new("sText_PkmnBracedItself",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(p.Side))),
-        WildBattleMtMoonVolatileEvent {Volatile:"endure",Reason:"endured"} e=>new("sText_PkmnEnduredHit",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleMoveFailedEvent {Reason:"protected"} p=>new("sText_PkmnProtectedItself",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(p.Target))),
-        WildBattleMoveFailedEvent {Reason:"protect-failed" or "already-reflecting" or "already-sandstorm"}=>new("sText_ButItFailed"),
-        WildBattleMtMoonVolatileEvent {Volatile:"reflect",Reason:"move"} r=>new("sText_PkmnRaisedDef",("B_ATK_PREFIX2",SourceTrainerPresentationModel.SidePrefix(_battleText,r.Side==WildBattleSide.Player,2)),("B_CURRENT_MOVE",MoveName(new("pret:MOVE_REFLECT")))),
-        WildBattleMtMoonVolatileEvent {Volatile:"reflect",Reason:"expired"} r=>new("sText_PkmnsXWoreOff",("B_ATK_PREFIX1",SourceTrainerPresentationModel.SidePrefix(_battleText,r.Side==WildBattleSide.Player,1)),("B_BUFF1",MoveName(new("pret:MOVE_REFLECT")))),
-        WildBattleMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"move"}=>new("sText_SandstormBrewed"),
-        WildBattleMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"countdown"}=>new("sText_SandstormRages"),
-        WildBattleMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"expired"}=>new("sText_SandstormSubsided"),
-        WildBattleWeatherDamageEvent {Weather:"sandstorm"} w=>new("sText_PkmnBuffetedBySandstorm",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(w.Side))),
-        WildBattleMtMoonVolatileEvent {Volatile:"identified"} i=>new("sText_PkmnIdentified",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Side==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Side))),
-        WildBattleHeldItemSurvivalEvent i=>new("sText_PkmnHungOnWithX",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",_catalog.DisplayNames.ItemName(i.Item))),
-        WildBattleHeldItemKnockedOffEvent i=>new("sText_PkmnKnockedOff",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Actor)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",_catalog.DisplayNames.ItemName(i.Item))),
-        WildBattleHeldItemStolenEvent i=>new("sText_PkmnStoleItem",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Actor)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",_catalog.DisplayNames.ItemName(i.Item))),
+        SourceProtectAttemptEvent=>new(""),
+        SourceMtMoonVolatileEvent {Volatile:"protect",Reason:"move"} p=>new("sText_PkmnProtectedItself2",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(p.Side))),
+        SourceMtMoonVolatileEvent {Volatile:"endure",Reason:"move"} p=>new("sText_PkmnBracedItself",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(p.Side))),
+        SourceMtMoonVolatileEvent {Volatile:"endure",Reason:"endured"} e=>new("sText_PkmnEnduredHit",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceMoveFailedEvent {Reason:"protected"} p=>new("sText_PkmnProtectedItself",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(p.Target))),
+        SourceMoveFailedEvent {Reason:"protect-failed" or "already-reflecting" or "already-sandstorm"}=>new("sText_ButItFailed"),
+        SourceMtMoonVolatileEvent {Volatile:"reflect",Reason:"move"} r=>new("sText_PkmnRaisedDef",("B_ATK_PREFIX2",SourceTrainerPresentationModel.SidePrefix(_battleText,r.Side.Side==BattleSide.Player,2)),("B_CURRENT_MOVE",MoveName(new("pret:MOVE_REFLECT")))),
+        SourceMtMoonVolatileEvent {Volatile:"reflect",Reason:"expired"} r=>new("sText_PkmnsXWoreOff",("B_ATK_PREFIX1",SourceTrainerPresentationModel.SidePrefix(_battleText,r.Side.Side==BattleSide.Player,1)),("B_BUFF1",MoveName(new("pret:MOVE_REFLECT")))),
+        SourceMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"move"}=>new("sText_SandstormBrewed"),
+        SourceMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"countdown"}=>new("sText_SandstormRages"),
+        SourceMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"expired"}=>new("sText_SandstormSubsided"),
+        SourceWeatherDamageEvent {Weather:"sandstorm"} w=>new("sText_PkmnBuffetedBySandstorm",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(w.Side))),
+        SourceMtMoonVolatileEvent {Volatile:"identified"} i=>new("sText_PkmnIdentified",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Side.Side==BattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Side))),
+        SourceHeldItemSurvivalEvent i=>new("sText_PkmnHungOnWithX",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",_catalog.DisplayNames.ItemName(i.Item))),
+        SourceHeldItemKnockedOffEvent i=>new("sText_PkmnKnockedOff",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Actor)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",_catalog.DisplayNames.ItemName(i.Item))),
+        SourceHeldItemStolenEvent i=>new("sText_PkmnStoleItem",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Actor)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",_catalog.DisplayNames.ItemName(i.Item))),
         _=>null
     };
     private bool RockTunnelSilentEvent(CampaignWildBattle b)=>WildCurrentEvent(b) is {} e&&RockTunnelWildMessage(e) is {Symbol.Length:0};

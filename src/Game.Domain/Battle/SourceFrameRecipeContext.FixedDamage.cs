@@ -7,7 +7,7 @@ internal sealed partial class FrameRecipeContext
     // Damage zero is independent of MOVE_RESULT_NO_EFFECT (level-one Psywave and
     // False Swipe/Endure at one HP). Retain that distinction through datahpupdate.
     private bool? fixedDamageNoEffect;
-    internal override int FixedDamageApply(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move,
+    internal int FixedDamageApply(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move,
         int damage, bool critical, int percent, bool immune)
     {
         fixedDamageNoEffect = immune;

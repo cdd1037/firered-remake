@@ -22,13 +22,13 @@ public partial class CampaignView
         if(DoubleBattleVisible&&after.DoubleBattle is {} d)
         {
             id=d.Id;frame=d.Frame;count=4;batch=d.Events.IsEmpty?default:(d.Events[0].Sequence,d.Events[^1].Sequence,d.Events.Length);
-            started=d.Events.FirstOrDefault() is SourceStartedEvent;
+            started=d.Events.Any(e=>e is SourceStartedEvent);
             if(before?.DoubleBattle is {} old&&old.Id==id)previous=old.Frame;
         }
         else if(PresentedWildBattle is {} b)
         {
             id=b.Id;frame=b.Frame;count=2;batch=b.Events.IsEmpty?default:(b.Events[0].Sequence,b.Events[^1].Sequence,b.Events.Length);
-            started=b.Events.FirstOrDefault() is WildBattleStartedEvent;
+            started=b.Events.Any(e=>e is SourceStartedEvent);
             var old=before?.ForestTrainerBattle?.Presentation??before?.WildBattle;
             if(old?.Id==id)previous=old.Frame;
         }

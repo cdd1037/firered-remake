@@ -4,14 +4,11 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal virtual SourceObedienceContext? ObedienceContext => null;
-    internal virtual PartyMemberKey ObedienceMember(BattlerSlot slot) => new(slot.Side, 0);
-    internal virtual bool ObedienceMultiTurn(BattlerSlot slot) => Get(slot).CalledTurnState?.Lock is { Kind: not WildBattleCalledLockKind.Recharge };
 
     // Cmd_attackcanceler calls this AFTER move-blocking abilities and the no-PP guard.
-    // The same owner is used by singles and four-slot storage adapters.
+    // The canonical owner handles both single and double battles.
     internal SourceObedienceDecision CheckObedience(PokemonCatalog catalog, string purpose)
     {
         SetPreparedInvocation(Invocation! with { Flags = Invocation!.Flags & ~WildBattleInvocationFlags.AllowNoPp });

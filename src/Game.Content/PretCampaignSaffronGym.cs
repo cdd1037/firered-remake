@@ -13,9 +13,8 @@ public sealed partial class PretCampaignCatalog
     public PretSaffronGymArt? SaffronGymArt{get;}
     public PretSaffronGymRegion SaffronGymRegion{get;}
     private ImmutableArray<SilphWarpPad> SaffronGymWarpPads=>SaffronGymRegion is null?[]:SaffronGymRegion.NewMaps[new("map.saffron-city-gym")].FieldWarps.Where(w=>w.DestinationMapId.Value=="map.saffron-city-gym").Select(w=>new SilphWarpPad(new("map.saffron-city-gym"),w.Index,w.X,w.Y,w.Elevation,w.DestinationMapId,w.DestinationWarpId)).ToImmutableArray();
-    public SaffronGymTrainerCatalogContent? SaffronGymTrainers{get;}
+    public OrdinaryTrainerCatalog? SaffronGymTrainers{get;}
     public PretSaffronGymItemsDocument? SaffronGymItems{get;}
-    SaffronGymTrainerCatalog? ICampaignCatalog.SaffronGymTrainerParties=>SaffronGymTrainers is {} t?new(t.Trainers,t.Battles):null;
     public bool SupportsTeleportPads(MapId map)=>SilphRegion!.NewMaps.ContainsKey(map)&&map.Value.StartsWith("map.silph-co-",StringComparison.Ordinal)||
         map.Value=="map.saffron-city-gym"&&SaffronGymRegion!.NewMaps.ContainsKey(map);
 

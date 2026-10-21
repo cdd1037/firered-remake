@@ -23,7 +23,7 @@ public sealed class VoiceMoveAnimationDispatchTests
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
         new("voice", new("test"), "test", new(), CampaignDoubleBattleStage.Combat, events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("voice", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index, null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("voice", null!, new(), events, index, null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant Mon(string species, string name)
     {

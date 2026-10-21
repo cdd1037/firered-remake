@@ -13,14 +13,11 @@ namespace FireRed.Tests.Application.WildBattles;
 [TestClass, TestCategory("Game")]
 public sealed class TripleKickAnimationDispatchTests
 {
+    private static readonly DirectHitAnimationContract Contract = new("triple-kick", 167, Id("TRIPLE_KICK"), 10, DirectHitOwnership.EachHit, 3, 3);
     private static readonly MoveId Kick = Id("TRIPLE_KICK");
     private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
-        new("triple-kick", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
-            events, index, [], [], 0, 0, [], [], [], [], 0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
-        new("triple-kick", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index = 0) => Contract.Double(events, index);
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 0) => Contract.Single(events, index);
     private static CampaignMoveAnimationDecision At(ImmutableArray<SourceBattleEvent> events, int index) =>
         AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
@@ -39,51 +36,15 @@ public sealed class TripleKickAnimationDispatchTests
         events.Add(new SourceMultiHitEvent(0, 7, a, t, Kick, 3, actual));
         return Number(events);
     }
-    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string reason)
-    {
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(At(events, index).Dispatch, $"{reason}: event {index}.");
-            if (events[index] is SourceMoveUsedEvent)
-                Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch,
-                    "Triple Kick must never acquire an extra attack-text animation.");
-        }
-    }
+    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string reason) =>
+        Contract.AssertDenied(events, reason, singles: false);
     private static void AssertDispatches(ImmutableArray<SourceBattleEvent> events, int actor, int target, int expectedHits)
     {
         Assert.IsTrue(expectedHits is >= 1 and <= 3);
         Assert.AreEqual(expectedHits, Hits(events).Length);
         var summary = events.OfType<SourceMultiHitEvent>().Single();
         Assert.AreEqual(3, summary.PlannedHits); Assert.AreEqual(expectedHits, summary.ActualHits);
-        var attack = events.OfType<SourceAttackStringEvent>().Single();
-        var pp = events.OfType<SourcePpCommandEvent>().Single();
-        string before = JsonSerializer.Serialize(events);
-        int ordinal = 0;
-        for (int index = 0; index < events.Length; index++)
-        {
-            var decision = At(events, index);
-            if (events[index] is not (SourceHpChangedEvent or SourceSubstituteDamagedEvent))
-            {
-                Assert.IsNull(decision.Dispatch, events[index].GetType().Name);
-                if (events[index] is SourceMoveUsedEvent)
-                    Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
-                continue;
-            }
-            Assert.IsNotNull(decision.Dispatch, decision.Reason);
-            Assert.AreEqual("triple-kick", decision.Dispatch.BattleId);
-            Assert.AreEqual(167, decision.Dispatch.SourceMoveId);
-            Assert.AreEqual(actor, decision.Dispatch.Actor.Value); Assert.AreEqual(target, decision.Dispatch.Target.Value);
-            Assert.AreEqual(events[index].Sequence, decision.Dispatch.Sequence);
-            Assert.AreEqual(events[index].Sequence, decision.Dispatch.ResultSequence);
-            Assert.AreEqual(attack.Sequence, decision.Dispatch.AttackSequence);
-            Assert.AreEqual(pp.Sequence, decision.Dispatch.PpSequence);
-            Assert.AreEqual((byte)ordinal++, decision.Dispatch.MoveTurn);
-            Assert.AreEqual(events[index] is SourceSubstituteDamagedEvent, decision.Dispatch.HitsSubstitute);
-            Assert.IsFalse(decision.Dispatch.AcknowledgesCurrentReceipt);
-            Assert.AreEqual(decision, At(events, index), "Projection cannot consume the authoritative receipt.");
-        }
-        Assert.AreEqual(expectedHits, ordinal);
-        Assert.AreEqual(before, JsonSerializer.Serialize(events), "Projection cannot mutate event history.");
+        Contract.AssertDispatches(events, actor, target);
     }
 
     [TestMethod]

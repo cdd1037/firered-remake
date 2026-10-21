@@ -1,5 +1,4 @@
 using Game.Domain.Battle;
-using Game.Domain.WildBattle;
 
 namespace Game.Application;
 
@@ -12,8 +11,6 @@ public static class CampaignWeatherContinuationPresentation
     private sealed record Row(long Sequence, int Turn, string Kind, int Slot = -1, string Weather = "",
         int Before = 0, int After = 0, string Reason = "");
 
-    public static CampaignWeatherContinuation? At(IReadOnlyList<WildBattleEvent> events, int index) =>
-        Match(events.Select(Read).ToArray(), index, 2);
     public static CampaignWeatherContinuation? At(IReadOnlyList<SourceBattleEvent> events, int index) =>
         Match(events.Select(Read).ToArray(), index, 4);
 
@@ -57,11 +54,6 @@ public static class CampaignWeatherContinuationPresentation
     private static Row Read(SourceBattleEvent e) => e switch {
         SourceMtMoonVolatileEvent x => new(x.Sequence, x.Turn, "timer", x.Side.Value, x.Volatile, x.Before, x.After, x.Reason),
         SourceWeatherContinuedEvent x => new(x.Sequence, x.Turn, "continuation", x.Controller.Value, x.Weather),
-        _ => new(e.Sequence, e.Turn, "boundary")
-    };
-    private static Row Read(WildBattleEvent e) => e switch {
-        WildBattleMtMoonVolatileEvent x => new(x.Sequence, x.Turn, "timer", (int)x.Side, x.Volatile, x.Before, x.After, x.Reason),
-        WildBattleWeatherContinuedEvent x => new(x.Sequence, x.Turn, "continuation", (int)x.Controller, x.Weather),
         _ => new(e.Sequence, e.Turn, "boundary")
     };
 }

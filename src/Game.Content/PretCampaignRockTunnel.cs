@@ -9,11 +9,10 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretRockTunnelRegion RockTunnelRegion { get; }
     public PokemonPresentationPackage? RockTunnelPokemon { get; }
     public PretRockTunnelItemsDocument? RockTunnelItems { get; }
     public PretRockTunnelEncounters? RockTunnelEncounters { get; }
-    public RockTunnelTrainerCatalog? RockTunnelTrainers { get; }
+    public OrdinaryTrainerCatalog? RockTunnelTrainers { get; }
 
     private static IEnumerable<FieldPickupDefinition> RockTunnelPickupDefinitions(
         PretRockTunnelItemsDocument items,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)

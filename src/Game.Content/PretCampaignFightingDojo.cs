@@ -11,7 +11,7 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public PretFightingDojoRegion FightingDojoRegion { get; }
-    public FightingDojoTrainerCatalog FightingDojoTrainers { get; }
+    public OrdinaryTrainerCatalog FightingDojoTrainers { get; }
 
     private static void ValidateFightingDojoComposition(PretFightingDojoRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,PretStoryCompilation scripts)
     {

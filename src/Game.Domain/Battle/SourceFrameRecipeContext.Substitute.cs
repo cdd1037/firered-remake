@@ -4,7 +4,7 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override void SubstituteClearsBinding(BattlerSlot actor)
+    internal void SubstituteClearsBinding(BattlerSlot actor)
     {
         var cell = Frame.Get(actor);
         // The frame encodes WrappedBy only while wrapping is live. Source's stale

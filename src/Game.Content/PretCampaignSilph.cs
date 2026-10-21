@@ -13,9 +13,8 @@ public sealed partial class PretCampaignCatalog
     public const string SilphContentProfile="firered-silph-campaign-v1";
     public PretSilphRegion SilphRegion { get; }
     public PretSilphItemsDocument? SilphItems { get; }
-    public SilphTrainerCatalogContent? SilphTrainers { get; }
+    public OrdinaryTrainerCatalog? SilphTrainers { get; }
     public PretSilphArt? SilphArt { get; }
-    SilphTrainerCatalog? ICampaignCatalog.SilphTrainerParties=>SilphTrainers is {} t?new(t.Trainers,t.Battles):null;
     public ImmutableArray<SilphWarpPad> SilphWarpPads=>(SilphRegion?.WarpPads??[]).AddRange(SaffronGymWarpPads);
     public ImmutableArray<SilphDoorDefinition> SilphDoors=>SilphRegion?.Doors??[];
     public ImmutableArray<CampaignSilphElevatorFloor> SilphElevatorFloors=>SilphRegion?.ElevatorFloors??[];

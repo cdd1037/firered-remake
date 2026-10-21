@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Content;
 using Game.Domain.Capture;
 using Game.Domain.Items;
@@ -188,10 +189,10 @@ public partial class CampaignView
         _rocketSpinTicks=Math.Min(_rocketSpinDurationTicks,_rocketSpinTicks+delta*60);
         ApplyRocketSpinPose(pending,(int)Math.Floor(_rocketSpinTicks+1e-8));return true;
     }
-    private ForestMessage? RocketHideoutWildMessage(WildBattleEvent current)=>current switch
+    private ForestMessage? RocketHideoutWildMessage(SourceBattleEvent current)=>current switch
     {
-        WildBattleMoveFailedEvent {Reason:"not-first-turn"}=>new("sText_ButItFailed"),
-        WildBattleAbilityPreventedEvent {Ability:"ABILITY_INNER_FOCUS"} ability=>new("sText_PkmnsXPreventsFlinching",
+        SourceMoveFailedEvent {Reason:"not-first-turn"}=>new("sText_ButItFailed"),
+        SourceAbilityPreventedEvent {Ability:"ABILITY_INNER_FOCUS"} ability=>new("sText_PkmnsXPreventsFlinching",
             ("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(ability.Target)),("B_EFF_ABILITY",_catalog.DisplayNames.AbilityName(ability.Ability))),
         _=>null
     };

@@ -7,7 +7,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-/// <summary>Typed canonical events. Shared hooks consume positions; singles conversion occurs only at a boundary.</summary>
+/// <summary>Typed canonical events. Shared rules and presentation consume the same positional receipts.</summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
 [JsonDerivedType(typeof(SourceObedienceEvent), "obedience")]
 [JsonDerivedType(typeof(SourceRewardAppliedEvent), "SourceRewardAppliedEvent")]
@@ -170,7 +170,12 @@ public sealed record SourceEndedEvent(long Sequence, int Turn, WildBattleOutcome
     // forced expulsion retain their own receipts and never acquire this page.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceMoveEscapeReceipt? MoveEscape { get; init; }
 }
-public sealed record SourceFaintedEvent(long Sequence, int Turn, BattlerSlot Side) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceFaintFriendshipReceipt(PartyMemberKey Member, int Before, int After);
+public sealed record SourceFaintedEvent(long Sequence, int Turn, BattlerSlot Side) : SourceBattleEvent(Sequence, Turn)
+{
+    /// <summary>Permanent player-party friendship already applied by this faint command, including a clamped zero delta.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceFaintFriendshipReceipt? Friendship { get; init; }
+}
 public sealed record SourceFlinchEvent(long Sequence, int Turn, BattlerSlot Side, bool Applied) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceFocusEnergyEvent(long Sequence, int Turn, BattlerSlot Side) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceFocusPunchLostEvent(long Sequence, int Turn, BattlerSlot Actor, int PhysicalDamage, int SpecialDamage) : SourceBattleEvent(Sequence, Turn);
@@ -275,126 +280,6 @@ public sealed record SourceWeatherContinuedEvent(long Sequence, int Turn, Battle
 public sealed record SourceWeatherDamageEvent(long Sequence, int Turn, BattlerSlot Side, string Weather, int HpBefore, int HpAfter, int Damage) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceYawnEvent(long Sequence, int Turn, BattlerSlot Side, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
 
-/// <summary>Fail-closed migration boundary: unknown future legacy events do not silently lose routing.</summary>
-public static class SourceBattleEventAdapter
-{
-    public static WildBattleEvent Export(SourceBattleEvent value) => value switch {
-        SourceOrderEvent x when x.Order.Length == 2 => new WildBattleOrderEvent(x.Sequence, x.Turn, x.Phase, Side(x.Order[0]), Side(x.Order[1])),
-        SourcePlayerReplacedEvent x when x.Slot.Value == 0 => new WildBattlePlayerReplacedEvent(x.Sequence, x.Turn, Body(x.Previous), Body(x.Replacement)),
-        SourcePlayerSwitchedEvent x when x.Slot.Value == 0 => new WildBattlePlayerSwitchedEvent(x.Sequence, x.Turn, Body(x.Previous), Body(x.Replacement)),
-        SourceReplacementRequiredEvent x when x.Slot.Value == 0 => new WildBattleReplacementRequiredEvent(x.Sequence, x.Turn),
-        SourcePermanentWeatherChangedEvent x => new WildBattlePermanentWeatherChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Ability, x.Before, x.After),
-        SourceAbilityRecoveredEvent x => new WildBattleAbilityRecoveredEvent(x.Sequence, x.Turn, Side(x.Side), x.Ability, x.HpBefore, x.HpAfter, x.Recovered),
-        SourceAbilityActivatedEvent x => new WildBattleAbilityActivatedEvent(x.Sequence, x.Turn, Side(x.Side), x.Ability),
-        SourceAbilityDamageEvent x => new WildBattleAbilityDamageEvent(x.Sequence, x.Turn, Side(x.Holder), Side(x.Target), x.TriggeringMove, x.Ability, x.HpBefore, x.HpAfter, x.Damage),
-        SourceAbilityPreventedEvent x => new WildBattleAbilityPreventedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Ability),
-        SourceActionBlockedEvent x => new WildBattleActionBlockedEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.Status),
-        SourceAttackStringEvent x => new WildBattleAttackStringEvent(x.Sequence, x.Turn, Side(x.Actor), x.ChosenMove, x.CurrentMove),
-        SourceBallThrownEvent x => new WildBattleBallThrownEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Ball),
-        SourceBindingChangedEvent x => new WildBattleBindingChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason) { Move = x.Move },
-        SourceBindingDamageEvent x => new WildBattleBindingDamageEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Remaining),
-        SourceCalledBeatUpMemberEvent x => new WildBattleCalledBeatUpMemberEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.PartyIndex, x.Species),
-        SourceCalledDelayedEvent x => new WildBattleCalledDelayedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Before, x.After, x.Reason, x.SourcePartyIndex),
-        SourceCalledMoveTransitionEvent x => new WildBattleCalledMoveTransitionEvent(x.Sequence, x.Turn, ExportInvocation(x.Invocation)),
-        SourceMoveTargetResolvedEvent x => new WildBattleMoveTargetResolvedEvent(x.Sequence, x.Turn, Side(x.Actor), x.CurrentMove,
-            Side(x.PriorTarget), Side(x.Target), x.Reason),
-        SourceCalledOverlayChangedEvent x => new WildBattleCalledOverlayChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.Before, x.After),
-        SourceCalledPartyChangedEvent x => new WildBattleCalledPartyChangedEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.PartyIndex, x.Reason, x.Before, x.After) { SourceSlot = x.SourceSlot is {} source ? Side(source) : null, TransientMoveSlots = x.TransientMoveSlots },
-        SourceCalledPartySwitchRequiredEvent x => new WildBattleCalledPartySwitchRequiredEvent(x.Sequence, x.Turn, ExportPending(x.Pending)),
-        SourceCalledPartySwitchedEvent x => new WildBattleCalledPartySwitchedEvent(x.Sequence, x.Turn, Side(x.Side), x.OutgoingIndex, x.IncomingIndex, x.Kind),
-        SourceCalledSpikesChangedEvent x => new WildBattleCalledSpikesChangedEvent(x.Sequence, x.Turn, LegacyPartySide(x.Side), x.Before, x.After),
-        SourceCallerSelectionEvent x => new WildBattleCallerSelectionEvent(x.Sequence, x.Turn, Side(x.Actor), x.Caller, x.Result, x.CandidateSourceMoveIds, x.RngCursor),
-        SourceCaptureResultEvent x => new WildBattleCaptureResultEvent(x.Sequence, x.Turn, x.Ball, x.Outcome, x.Branch, x.Calculation, x.ChecksPassed, x.AnimationCode),
-        SourceConfusionChangedEvent x => new WildBattleConfusionChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
-        SourceConfusionSelfHitEvent x => new WildBattleConfusionSelfHitEvent(x.Sequence, x.Turn, Side(x.Side), x.SelectedMove, x.HpBefore, x.HpAfter, x.Damage, x.RandomPercent),
-        SourceCriticalHitEvent x => new WildBattleCriticalHitEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target)),
-        SourceDefenseCurledEvent x => new WildBattleDefenseCurledEvent(x.Sequence, x.Turn, Side(x.Side)),
-        SourceDisableChangedEvent x => new WildBattleDisableChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.Before, x.After, x.Reason),
-        SourceDrainEvent x => new WildBattleDrainEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.DamageDealt, x.HpBefore, x.HpAfter, x.Restored),
-        SourceEffectivenessEvent x => new WildBattleEffectivenessEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Effectiveness),
-        SourceEncoreChangedEvent x => new WildBattleEncoreChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Slot, x.Before, x.After, x.Reason),
-        SourceEndedEvent x => new WildBattleEndedEvent(x.Sequence, x.Turn, x.Outcome) {
-            MoveEscape = x.MoveEscape is { } escaped ? new(Side(escaped.Actor), escaped.Move) : null },
-        SourceFaintedEvent x => new WildBattleFaintedEvent(x.Sequence, x.Turn, Side(x.Side)),
-        SourceFlinchEvent x => new WildBattleFlinchEvent(x.Sequence, x.Turn, Side(x.Side), x.Applied),
-        SourceFocusEnergyEvent x => new WildBattleFocusEnergyEvent(x.Sequence, x.Turn, Side(x.Side)),
-        SourceFocusPunchLostEvent x => new WildBattleFocusPunchLostEvent(x.Sequence, x.Turn, Side(x.Actor), x.PhysicalDamage, x.SpecialDamage),
-        SourceFocusPunchPreparedEvent x => new WildBattleFocusPunchPreparedEvent(x.Sequence, x.Turn, Side(x.Actor), x.ChosenSlot, x.PartyIndex),
-        SourceForcedOutEvent x => new WildBattleForcedOutEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.TrainerBattle),
-        SourceGrudgePpEvent x => new WildBattleGrudgePpEvent(x.Sequence, x.Turn, Side(x.Fainted), Side(x.Attacker), x.Move, x.ChosenSlot, x.Before),
-        SourceHeldItemHealEvent x => new WildBattleHeldItemHealEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item, x.DamageReceipt, x.HpBefore, x.HpAfter, x.HpRestored),
-        SourceHeldItemConsumedEvent x => new WildBattleHeldItemConsumedEvent(x.Sequence, x.Turn, Side(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored) { PpRecovery = x.PpRecovery, StatChanges = x.StatChanges, FocusEnergyRaised = x.FocusEnergyRaised, Flavor = x.Flavor },
-        SourceHeldItemSurvivalEvent x => new WildBattleHeldItemSurvivalEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item),
-        SourceDamageAdjustedEvent x => new WildBattleDamageAdjustedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
-        SourceHeldItemKnockedOffEvent x => new WildBattleHeldItemKnockedOffEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
-        SourceHeldItemStolenEvent x => new WildBattleHeldItemStolenEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
-        SourceHeldItemRecycledEvent x => new WildBattleHeldItemRecycledEvent(x.Sequence, x.Turn, Side(x.Actor), x.Move, x.Item),
-        SourceHeldItemsSwappedEvent x => new WildBattleHeldItemsSwappedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.ActorItemBefore, x.TargetItemBefore),
-        SourceHpChangedEvent x => new WildBattleHpChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter, PreparedAnimationPower = x.PreparedAnimationPower, PreparedAnimationWeather = x.PreparedAnimationWeather },
-        SourceInfatuationBlockedEvent x => new WildBattleInfatuationBlockedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Source), x.Move),
-        SourceInfatuationChangedEvent x => new WildBattleInfatuationChangedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Before), Side(x.After), x.Reason),
-        SourceIngrainHealEvent x => new WildBattleIngrainHealEvent(x.Sequence, x.Turn, Side(x.Side), x.HpBefore, x.HpAfter, x.Restored),
-        SourceLeechSeedChangedEvent x => new WildBattleLeechSeedChangedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Before), Side(x.After), x.Reason),
-        SourceLeechSeedDrainEvent x => new WildBattleLeechSeedDrainEvent(x.Sequence, x.Turn, Side(x.DrainedSide), Side(x.ReceivingSide), x.HpBefore, x.HpAfter, x.ReceiverHpBefore, x.ReceiverHpAfter, x.Damage, x.Restored),
-        SourceMagicCoatPressurePpEvent x => new WildBattleMagicCoatPressurePpEvent(x.Sequence, x.Turn, Side(x.PressuringActor), Side(x.Reflector), x.Slot, x.Before, x.After),
-        SourceMagicCoatEvent x => new WildBattleMagicCoatEvent(x.Sequence, x.Turn, Side(x.OriginalActor), Side(x.Reflector), x.Move),
-        SourceMagnitudeEvent x => new WildBattleMagnitudeEvent(x.Sequence, x.Turn, Side(x.Actor), x.Magnitude, x.Power),
-        SourceMedicineAppliedEvent x => new WildBattleMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter) { Actor = Side(x.Actor), TargetSide = x.TargetSide is { } target ? (WildBattleSide)target : null, PpRecovery = x.PpRecovery, FriendshipBefore = x.FriendshipBefore, FriendshipAfter = x.FriendshipAfter },
-        SourceMoveCopiedEvent x => new WildBattleMoveCopiedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.CopiedMove, x.MoveSlot, x.Permanent, x.Replacement),
-        SourceMoveFailedEvent x => new WildBattleMoveFailedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Reason),
-        SourceMoveMissedEvent x => new WildBattleMoveMissedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move),
-        SourceMoveSnatchedEvent x => new WildBattleMoveSnatchedEvent(x.Sequence, x.Turn, Side(x.OriginalActor), Side(x.Snatcher), x.Move, Side(x.EffectTarget)),
-        SourceMoveUsedEvent x => new WildBattleMoveUsedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Slot, x.Move, x.PpBefore, x.PpAfter),
-        SourceMtMoonVolatileEvent x => new WildBattleMtMoonVolatileEvent(x.Sequence, x.Turn, Side(x.Side), x.Volatile, x.Before, x.After, x.Reason),
-        SourceMultiHitEvent x => new WildBattleMultiHitEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.PlannedHits, x.ActualHits),
-        SourcePayDayEvent x => new WildBattlePayDayEvent(x.Sequence, x.Turn, Side(x.Actor), x.Before, x.After),
-        SourcePokeFluteEvent x => new WildBattlePokeFluteEvent(x.Sequence, x.Turn, x.Phase, x.PlayerPartyIndices, x.OpponentPartyIndices),
-        SourcePotionRecoveredEvent x => new WildBattlePotionRecoveredEvent(x.Sequence, x.Turn, Side(x.Side), x.HpBefore, x.HpAfter, x.HpRestored),
-        SourcePpCommandEvent x => new WildBattlePpCommandEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.PpSlot, x.ChosenMove, x.CurrentMove, x.Before, x.After, x.CommandCost, x.RngCursor) { PpOwner = Side(x.PpOwner) },
-        SourceProtectAttemptEvent x => new WildBattleProtectAttemptEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.Before, x.After, x.Threshold, x.Roll, x.NotLastAction, x.Succeeded),
-        SourcePursuitInterceptedEvent x => new WildBattlePursuitInterceptedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.SwitchingSide), x.Slot),
-        SourceRecoilEvent x => new WildBattleRecoilEvent(x.Sequence, x.Turn, Side(x.Actor), x.Move, x.HpBefore, x.HpAfter, x.Damage),
-        SourceRecoveredEvent x => new WildBattleRecoveredEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.HpBefore, x.HpAfter, x.Recovered),
-        SourceRolloutChangedEvent x => new WildBattleRolloutChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
-        SourceRootsChangedEvent x => new WildBattleRootsChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Rooted, x.Reason),
-        SourceRoamerRunEvent x => new WildBattleRoamerRunEvent(x.Sequence, x.Turn, x.Escaped),
-        SourceRunAttemptEvent x => new WildBattleRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped) { EscapingItem = x.EscapingItem },
-        SourceSelfDestructEvent x => new WildBattleSelfDestructEvent(x.Sequence, x.Turn, Side(x.Actor), x.Move, x.HpBefore),
-        SourceSleepTalkEvent x => new WildBattleSleepTalkEvent(x.Sequence, x.Turn, Side(x.Side), x.CalledSlot, x.CalledMove),
-        SourceSnatchPressurePpEvent x => new WildBattleSnatchPressurePpEvent(x.Sequence, x.Turn, Side(x.PressuringActor), Side(x.Snatcher), x.Slot, x.Before, x.After),
-        SourceSnatchReadyEvent x => new WildBattleSnatchReadyEvent(x.Sequence, x.Turn, Side(x.Actor), x.ActionOrderIndex),
-        SourceSpiteEvent x => new WildBattleSpiteEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Slot, x.PpBefore, x.PpAfter, x.RolledReduction),
-        SourceStartedEvent x => new WildBattleStartedEvent(x.Sequence, x.Turn),
-        SourceStatAtMaximumEvent x => new WildBattleStatAtMaximumEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Stat),
-        SourceStatAtMinimumEvent x => new WildBattleStatAtMinimumEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Stat),
-        SourceStatChangedEvent x => new WildBattleStatChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Stat, x.Before, x.After),
-        SourceStatusChangedEvent x => new WildBattleStatusChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
-        SourceStatusDamageEvent x => new WildBattleStatusDamageEvent(x.Sequence, x.Turn, Side(x.Side), x.Status, x.HpBefore, x.HpAfter, x.Damage),
-        SourceSubstituteDamagedEvent x => new WildBattleSubstituteDamagedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent) { PreparedBasePower = x.PreparedBasePower, PreparedFuryCutterCounter = x.PreparedFuryCutterCounter, PreparedAnimationPower = x.PreparedAnimationPower, PreparedAnimationWeather = x.PreparedAnimationWeather },
-        SourceTowerBallDodgedEvent x => new WildBattleTowerBallDodgedEvent(x.Sequence, x.Turn, x.Ball),
-        SourceTowerGhostActionEvent x => new WildBattleTowerGhostActionEvent(x.Sequence, x.Turn, Side(x.Side), x.StringId),
-        SourceTowerHpEvent x => new WildBattleTowerHpEvent(x.Sequence, x.Turn, Side(x.Side), x.Effect, x.HpBefore, x.HpAfter, x.Damage),
-        SourceTowerVolatileEvent x => new WildBattleTowerVolatileEvent(x.Sequence, x.Turn, Side(x.Side), x.Effect, x.Applied, x.Reason),
-        SourceObedienceEvent x => new WildBattleObedienceEvent(x.Sequence, x.Turn, Side(x.Actor), x.AttemptedMove, x.Decision),
-        SourceTransformedEvent x => new WildBattleTransformedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.OriginalSpecies, x.AppearanceSpecies, x.AppearancePersonality, x.AppearanceOriginalTrainerId, x.BattleView),
-        SourceTurnReadyEvent x => new WildBattleTurnReadyEvent(x.Sequence, x.Turn, x.RandomTurnNumber),
-        SourceWeatherContinuedEvent x => new WildBattleWeatherContinuedEvent(x.Sequence, x.Turn, Side(x.Controller), x.Weather),
-        SourceWeatherDamageEvent x => new WildBattleWeatherDamageEvent(x.Sequence, x.Turn, Side(x.Side), x.Weather, x.HpBefore, x.HpAfter, x.Damage),
-        SourceYawnEvent x => new WildBattleYawnEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
-        _ => throw new NotSupportedException("Canonical event has no lossless singles representation: " + value.GetType().Name)
-    };
-    private static WildBattleSide Side(BattlerSlot slot) => slot.Value < 2 ? (WildBattleSide)slot.Value
-        : throw new NotSupportedException("Four-position events require their own presentation.");
-    private static WildBattleSide? Side(BattlerSlot? slot) => slot is { } s ? Side(s) : null;
-    private static WildBattleSide LegacyPartySide(BattleSide side) => Enum.IsDefined(side) ? (WildBattleSide)(int)side
-        : throw new ArgumentOutOfRangeException(nameof(side));
-    private static WildBattleMoveInvocation ExportInvocation(SourceMoveInvocation x) => new(Side(x.Actor), x.ChosenSlot, x.PpSlot,
-        x.OriginalChosenMove, x.ChosenMove, x.CurrentMove, x.CalledMove, Side(x.Target), x.CancellerPhase, x.Flags) { PpOwner = Side(x.PpOwner) };
-    private static WildBattleCalledPendingSwitch ExportPending(SourcePendingSwitch x) => new(Side(x.Slot), x.Kind, x.LegalPartyIndices,
-        x.Invocation is { } invocation ? ExportInvocation(invocation) : null);
-    private static WildBattleCombatant Body(SourceCombatantSnapshot snapshot) => SourceBattleReadProjection.Combatant(snapshot.Body, snapshot.Registers);
-}
-
 /// <summary>Canonical publication hook. No move mechanics or damage arithmetic is duplicated here.</summary>
 public static class SourceBattleEventHooks
 {
@@ -419,6 +304,14 @@ public static class SourceBattleEventHooks
             return "source_event_target_resolution";
         if (value is SourceOrderEvent order && (order.Order.IsDefault || order.Order.Length != frame.BattlerCount ||
             order.Order.Distinct().Count() != frame.BattlerCount)) return "source_event_order_shape";
+        if (value is SourceFaintedEvent { Friendship: { } faintFriendship } faint &&
+            (faint.Side.Side != BattleSide.Player || faint.Side.Value >= frame.BattlerCount ||
+             faintFriendship.Member.Side != BattleSide.Player || frame.Get(faint.Side).Member != faintFriendship.Member ||
+             frame.Get(faint.Side).Body?.Pokemon.CurrentHp != 0 || faintFriendship.Before is < 0 or > 255 ||
+             faintFriendship.After < 0 || faintFriendship.After > faintFriendship.Before ||
+             faintFriendship.Member.Index >= frame.Party(BattleSide.Player).Members.Length ||
+             frame.Party(BattleSide.Player).Members[faintFriendship.Member.Index].Pokemon.Friendship != faintFriendship.After))
+            return "source_event_faint_friendship";
         if (value is SourceCalledSpikesChangedEvent spikes && !Enum.IsDefined(spikes.Side) ||
             value is SourceCalledPartyChangedEvent party && (!Enum.IsDefined(party.Side) || party.PartyIndex < 0 || party.PartyIndex >= frame.Party(party.Side).Members.Length) ||
             value is SourceCalledBeatUpMemberEvent contributor && (!Enum.IsDefined(contributor.Side) || contributor.PartyIndex < 0 || contributor.PartyIndex >= frame.Party(contributor.Side).Members.Length))

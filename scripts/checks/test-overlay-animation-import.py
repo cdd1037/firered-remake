@@ -34,7 +34,14 @@ class OverlayImportTests(unittest.TestCase):
  def test_overlay_pack_deduplicates_source_loads_without_flattening_or_map_rewrites(self):
   self.assertEqual({'schemaVersion','basePalette','terrains','moves','overlays'},set(self.background))
   self.assertTrue({'scary-face-player','scary-face-opponent','fog'}<=set(self.overlays))
-  for row in self.overlays.values():self.assertEqual({'id','tiles','tilemap','palette','paletteBank'},set(row));self.assertEqual(8,row['paletteBank']);self.assertEqual(2048,len(self.block(row,'tilemap')));self.assertEqual(32,len(self.block(row,'palette')))
+  for row in self.overlays.values():
+   size=row.get('screenSize',0);self.assertIn(size,(0,1));self.assertEqual({'id','tiles','tilemap','palette','paletteBank'}|({'screenSize'} if size else set()),set(row));self.assertEqual(8,row['paletteBank']);self.assertEqual(2048*(size+1),len(self.block(row,'tilemap')));self.assertEqual(32,len(self.block(row,'palette')))
+   # Every screenblock entry must reference actual tiles and a source palette bank.
+   entries=struct.unpack('<'+'H'*(len(self.block(row,'tilemap'))//2),self.block(row,'tilemap'))
+   self.assertTrue(all((entry&1023)*32<len(self.block(row,'tiles')) and entry>>12 in (0,1,8) for entry in entries))
+  for identity in ('surf-player','surf-opponent','muddy-water-player','muddy-water-opponent'):
+   row=self.overlays[identity];self.assertEqual(1,row['screenSize'])
+   self.assertEqual(bg.read(REFERENCE,'graphics/battle_anims/backgrounds/water_'+identity.rsplit('-',1)[1]+'.bin'),self.block(row,'tilemap'))
   a,b=self.overlays['scary-face-player'],self.overlays['scary-face-opponent'];self.assertEqual(a['tiles'],b['tiles']);self.assertEqual(a['palette'],b['palette']);self.assertNotEqual(a['tilemap'],b['tilemap'])
   self.assertEqual(8192,len(self.block(a,'tiles')));self.assertEqual(2048,len(self.block(self.overlays['fog'],'tiles')))
   for id,stem in [('scary-face-player','scary_face_player'),('scary-face-opponent','scary_face_opponent'),('fog','fog')]:self.assertEqual(bg.read(REFERENCE,'graphics/battle_anims/backgrounds/'+stem+'.bin'),self.block(self.overlays[id],'tilemap'))

@@ -1,7 +1,6 @@
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
 namespace Game.Application;
 
@@ -43,9 +42,9 @@ public sealed partial class CampaignSession
     private string? ValidateCeruleanProgress(CampaignState state)
     {
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET");
-        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==CeruleanTrainerPartyFactory.Misty.Value&&h.Outcome==WildBattleOutcome.Won);
+        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId=="pret:TRAINER_LEADER_MISTY"&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_MISTY")!=won)return "save_misty_badge_history_mismatch";
-        if(won&&(!state.BattledTrainers.Contains(CeruleanTrainerPartyFactory.Diana.Value)||!state.BattledTrainers.Contains(CeruleanTrainerPartyFactory.Luis.Value)))return "save_misty_trainer_flags_missing";
+        if(won&&(!state.BattledTrainers.Contains("pret:TRAINER_PICNICKER_DIANA")||!state.BattledTrainers.Contains("pret:TRAINER_SWIMMER_MALE_LUIS")))return "save_misty_trainer_flags_missing";
         bool got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM03_FROM_MISTY");
         int quantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],MistyMachine);
         if(got&&!won||!got&&quantity!=0||quantity>1)return "save_misty_tm_reward_mismatch";

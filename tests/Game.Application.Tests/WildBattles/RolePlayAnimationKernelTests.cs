@@ -20,7 +20,7 @@ public sealed class RolePlayAnimationKernelTests
     }
     private static CampaignMoveAnimationDecision Project(ImmutableArray<SourceBattleEvent> events,int index,bool single,bool result=false,SourceBattleScene scene=SourceBattleScene.On)
     {
-        if(single){var b=Envelope.Single(events,index) with{SourceEvents=[]};return result?AnimationDispatchFixture.AtResult(b,true,scene):AnimationDispatchFixture.AtAttackText(b,true,scene);}
+        if(single){var b=Envelope.Single(events,index);return result?AnimationDispatchFixture.AtResult(b,true,scene):AnimationDispatchFixture.AtAttackText(b,true,scene);}
         return result?AnimationDispatchFixture.AtResult(Envelope.Double(events,index),scene):AnimationDispatchFixture.AtAttackText(Envelope.Double(events,index),scene);
     }
     private static void Deny(ImmutableArray<SourceBattleEvent> events,bool single)

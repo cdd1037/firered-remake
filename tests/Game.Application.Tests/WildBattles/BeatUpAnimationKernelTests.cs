@@ -136,10 +136,13 @@ public sealed class BeatUpAnimationKernelTests
             var result=Envelope.Resolve(frame);Assert.AreEqual(2,result.Events.OfType<SourcePpCommandEvent>().Single().CommandCost);Shared.Check(result,single);
             if(!single)continue;
             var hits=Envelope.Hits(result.Events);int at=result.Events.IndexOf(hits[1]);var exported=Shared.Single(result.Events,at);
-            Assert.IsTrue(exported.SourceEvents.IsEmpty);Assert.AreEqual(3,exported.Events.OfType<WildBattleCalledBeatUpMemberEvent>().Count());
+            // The sole event stream carries the original contributor receipts, without a mirrored backchannel.
+            Assert.AreEqual(result.Events,exported.Events);
+            for(int i=0;i<result.Events.Length;i++)Assert.AreSame(result.Events[i],exported.Events[i]);
+            Assert.AreEqual(3,exported.Events.OfType<SourceCalledBeatUpMemberEvent>().Count());
             Assert.AreEqual((byte)1,AnimationDispatchFixture.AtResult(exported,true,SourceBattleScene.On).Dispatch!.MoveTurn);
-            var member=exported.Events.OfType<WildBattleCalledBeatUpMemberEvent>().First();int mi=exported.Events.IndexOf(member);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(exported with{Events=exported.Events.SetItem(mi,member with{Side=WildBattleSide.Opponent})},true,SourceBattleScene.On).Dispatch);
+            var member=exported.Events.OfType<SourceCalledBeatUpMemberEvent>().First();int mi=exported.Events.IndexOf(member);
+            Assert.IsNull(AnimationDispatchFixture.AtResult(exported with{Events=exported.Events.SetItem(mi,member with{Side=BattleSide.Opponent})},true,SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtResult(exported with{Events=exported.Events.RemoveAt(mi)},true,SourceBattleScene.On).Dispatch);
         }
     }

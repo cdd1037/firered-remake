@@ -89,8 +89,7 @@ public sealed class PreparedAnimationPowerReceiptTests
     private static CampaignMoveAnimationDispatch Cue(ImmutableArray<SourceBattleEvent> events,bool single)
     {
         int at=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single());
-        // Singles intentionally discard canonical rows, exercising exported
-        // receipts and their normalization rather than the canonical shortcut.
+        // Both layouts consume the same canonical receipt identities through their envelopes.
         var decision=single?AnimationDispatchFixture.AtAttackText(Change.Single(events,at),true,SourceBattleScene.On):
             AnimationDispatchFixture.AtAttackText(Envelope.Double(events,at),SourceBattleScene.On);
         Assert.IsNotNull(decision.Dispatch,decision.Reason);return decision.Dispatch;
@@ -121,8 +120,8 @@ public sealed class PreparedAnimationPowerReceiptTests
                 damage=Math.Max(1,damage*h.Percent/100);Assert.AreEqual(damage,h.Damage);Assert.AreEqual(damage,calculated.Damage);
                 if(single)
                 {
-                    var exported=SourceBattleEventAdapter.Export(hit);Assert.AreEqual(expectedAnimationPower,exported switch{
-                        WildBattleHpChangedEvent e=>e.PreparedAnimationPower,WildBattleSubstituteDamagedEvent e=>e.PreparedAnimationPower,_=>null});
+                    var exported=OverlayHitAnimationKernelFixture.Single([hit], 0).Events[0];Assert.AreEqual(expectedAnimationPower,exported switch{
+                        SourceHpChangedEvent e=>e.PreparedAnimationPower,SourceSubstituteDamagedEvent e=>e.PreparedAnimationPower,_=>null});
                 }
             }
             Assert.AreEqual((ushort)expectedAnimationPower,Cue(result.Events,single).MovePower);

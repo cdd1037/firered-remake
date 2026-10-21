@@ -2,12 +2,9 @@ using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasFieldUtilityRecipe(string effect) => effect is "EFFECT_PAY_DAY" or "EFFECT_RAPID_SPIN" or "EFFECT_TELEPORT" or "EFFECT_UPROAR";
-    internal abstract int PayDayMoney { get; set; }
-    internal abstract void ClearRapidSpinLinks(BattlerSlot actor);
-    internal virtual bool UproarLocked(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock?.Kind == WildBattleCalledLockKind.Uproar;
     internal bool SharedUproarPreventsSleep(BattlerSlot actor) => WildBattleEffective.Ability(Get(actor)) != "ABILITY_SOUNDPROOF" && ActiveSlots.Any(UproarLocked);
     internal void SharedUproarWake(BattlerSlot actor)
     {
@@ -67,7 +64,7 @@ internal abstract partial class SourceRecipeContext
         int spikes = SpikesLayers(actor.Side);
         if (spikes > 0) { SetSpikesLayers(actor.Side, 0); Add(n => new SourceCalledSpikesChangedEvent(n, Turn, actor.Side, spikes, 0)); }
     }
-    internal virtual bool TeleportBlocked(PokemonCatalog catalog, BattlerSlot actor)
+    internal bool TeleportBlocked(PokemonCatalog catalog, BattlerSlot actor)
     {
         var body = Get(actor);
         if (body.HeldItem == "ITEM_SMOKE_BALL" || WildBattleEffective.Ability(body) == "ABILITY_RUN_AWAY") return false;
@@ -76,5 +73,4 @@ internal abstract partial class SourceRecipeContext
         if (WildBattleEffective.HasType(catalog, body, "TYPE_STEEL") && ActiveSlots.Any(s => s != actor && WildBattleEffective.Ability(Get(s)) == "ABILITY_MAGNET_PULL")) return true;
         return body.BindTurnsRemaining > 0 || body.Rooted || MeanLookSource(actor) is not null;
     }
-    internal virtual void TeleportEscape() => ForceSwitchEscape();
 }

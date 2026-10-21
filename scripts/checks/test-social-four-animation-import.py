@@ -5,6 +5,7 @@ sys.dont_write_bytecode=True
 import argparse,importlib.util,io,json,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
+from indexed_material_expectations import assert_preserved_materials, dependent_roots
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--reference',type=Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--generated',type=Path,default=ROOT/'content/generated/battle/animations');p.add_argument('--previous',type=Path);a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
@@ -26,8 +27,8 @@ class SocialFourImportTests(unittest.TestCase):
   def read(reference,name):
    value=original(reference,name);return value.replace(old,new) if name==path else value
   with patch.object(producer,'read',side_effect=read):return producer.build(a.reference)
- def test_complete_dependency_difference_is_exactly_four_roots(self):
-  old={r['moveId']:r for r in self.previous['scripts']};self.assertEqual(ROOTS,set(self.roots)-set(old));self.assertEqual(set(old),set(self.roots)-ROOTS)
+ def test_complete_dependency_difference_matches_command_and_raw_child_closure(self):
+  old={r['moveId']:r for r in self.previous['scripts']};affected=dependent_roots(self.pack,templates=NAMES);self.assertTrue(ROOTS<=affected);self.assertEqual(affected,set(self.roots)-set(old));self.assertEqual(set(old),set(self.roots)-affected)
   for key,value in old.items():self.assertEqual(value,self.roots[key])
   oldrecipes={r['template']:r for r in self.previous['spriteRecipes']};self.assertEqual(NAMES,set(self.recipes)-set(oldrecipes))
   for name,recipe in oldrecipes.items():self.assertEqual(recipe,self.recipes[name])
@@ -39,9 +40,9 @@ class SocialFourImportTests(unittest.TestCase):
   self.assertEqual([(-12,8,4),(20,-20,4),(-8,12,4)],[(c['x'],c['y'],c['duration']) for c in self.pack['taskAffinePrograms']['sAffineAnims_Torment'][:-1]])
  def test_missing_raw_child_recipe_or_task_closes_torment(self):
   with patch.object(imp,'TEMPLATES',{k:v for k,v in imp.TEMPLATES.items() if k!='gThoughtBubbleSpriteTemplate'}):data,_=imp.build(a.reference)
-  self.assertEqual(set(self.roots)-{259,269},{r['moveId'] for r in json.loads(data)['scripts']})
+  self.assertEqual(set(self.roots)-dependent_roots(self.pack,templates={'gThoughtBubbleSpriteTemplate'}),{r['moveId'] for r in json.loads(data)['scripts']})
   with patch.object(imp,'TASKS',imp.TASKS-{'AnimTask_TormentAttacker'}):data,_=imp.build(a.reference)
-  self.assertEqual(set(self.roots)-{259},{r['moveId'] for r in json.loads(data)['scripts']})
+  self.assertEqual(set(self.roots)-dependent_roots(self.pack,tasks={'AnimTask_TormentAttacker'}),{r['moveId'] for r in json.loads(data)['scripts']})
  def test_finger_assets_use_registered_shared_finger_palette(self):
   with Image.open(io.BytesIO(imp.read(a.reference,'graphics/battle_anims/sprites/finger.png'))) as source:palette=source.getpalette()[:48]
   colors=[sum((palette[3*i+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
@@ -65,11 +66,7 @@ class SocialFourImportTests(unittest.TestCase):
   old=json.loads((baseline/'elemental.json').read_bytes())
   for row in old['scripts']:self.assertEqual(row,self.roots[row['moveId']])
   for row in old['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
-  for group in ['assets','indexedAssets']:
-   for row in old[group]:
-    self.assertIn(row,self.pack[group])
-    for field in ['path','indicesPath','palettePath']:
-     if field in row:self.assertEqual((baseline/row[field]).read_bytes(),self.pixels[row[field].removeprefix('elemental-').removesuffix('.rgb555')])
+  assert_preserved_materials(self,old,self.pack,baseline,self.pixels,'elemental-')
   m=json.loads((baseline/'backgrounds/manifest.json').read_bytes());atlas=(baseline/'backgrounds/atlas.bin').read_bytes();current=json.loads(self.background['manifest.json']);newatlas=self.background['atlas.bin'];self.assertEqual(block(atlas,m['basePalette']),block(newatlas,current['basePalette']))
   for group in ['terrains','moves','overlays']:
    new={r['id']:r for r in current[group]}

@@ -3,13 +3,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasResidualStatusRecipe(string effect) => effect is "EFFECT_LEECH_SEED" or "EFFECT_INGRAIN";
-    internal abstract BattlerSlot? LeechSeedSource(BattlerSlot target);
-    internal abstract void SetLeechSeedSource(BattlerSlot target, BattlerSlot actor);
-    internal virtual bool LeechSeedSandstorm => SandstormTurnsRemaining > 0;
-    internal virtual bool LeechSeedAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
+    internal bool LeechSeedAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
         !(Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) &&
         (CalledSureHit(actor, target) || !BillUnderground(actor, target, move) && EarlyPartyAccuracy(actor, target, move, purpose, false, LeechSeedSandstorm));
 

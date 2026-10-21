@@ -2,6 +2,7 @@
 import argparse,importlib.util,json,re,sys,unittest
 from pathlib import Path
 from unittest.mock import patch
+from indexed_material_expectations import dependent_roots
 sys.dont_write_bytecode=True
 ROOT=Path(__file__).resolve().parents[2]
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--reference',type=Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--generated',type=Path,default=ROOT/'content/generated/battle/animations');a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
@@ -18,7 +19,7 @@ class ExpulsionImportTests(unittest.TestCase):
   before={r['template']:r for r in self.old['spriteRecipes']};after={r['template']:r for r in self.pack['spriteRecipes']};self.assertEqual({'gWhirlwindLineSpriteTemplate'},set(after)-set(before))
   for k,row in before.items():self.assertEqual(row,after[k])
   for k,row in self.old['subroutines'].items():self.assertEqual(row,self.pack['subroutines'][k])
-  self.assertEqual({'SetPsychicBackground','UnsetPsychicBackground'},set(self.pack['subroutines'])-set(self.old['subroutines']))
+  needed={c['args'][0] for row in self.pack['scripts'] for c in row['commands'] if c['op']=='call'};self.assertTrue({'SetPsychicBackground','UnsetPsychicBackground'}<=needed);self.assertTrue(needed<=set(self.pack['subroutines']));self.assertTrue(set(self.old['subroutines'])<=set(self.pack['subroutines']))
   self.assertEqual(self.oldpixels,self.pixels);self.assertEqual(self.old['assets'],self.pack['assets']);self.assertEqual(self.old['indexedAssets'],self.pack['indexedAssets'])
   for k,row in self.old['taskAffinePrograms'].items():self.assertEqual(row,self.pack['taskAffinePrograms'][k])
   self.assertEqual({'sAffineAnim_Teleport'},set(self.pack['taskAffinePrograms'])-set(self.old['taskAffinePrograms']))

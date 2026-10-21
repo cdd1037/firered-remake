@@ -5,7 +5,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
 
         internal static readonly WildBattleStat[] SourceStatOrder = [WildBattleStat.Attack, WildBattleStat.Defense,

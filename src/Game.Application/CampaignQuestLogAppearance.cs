@@ -19,6 +19,7 @@ public static partial class CampaignQuestLogRecorder
     }
     private static string? ValidateAppearance(CampaignQuestLogScene scene,ICampaignCatalog? catalog=null)
     {
+        if(catalog is not null&&!catalog.Maps.ContainsKey(new(scene.Map)))return "save_quest_log_map_invalid";
         if(scene.FlashLevel is {} level&&(level is not (0 or FieldFlashSourcePresentation.MaximumLevel)||
             level!=0&&catalog is not null&&(!catalog.Maps.ContainsKey(new(scene.Map))||!catalog.MapDefinition(new(scene.Map)).RequiresFlash)))return "save_quest_log_flash_level_invalid";
         if(scene.Layout is {} layout&&!Identifier(layout))return "save_quest_log_layout_invalid";

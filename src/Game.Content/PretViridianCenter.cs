@@ -27,8 +27,6 @@ public sealed class PretViridianCenter
         Constants = constants; SourceUiTexts = uiTexts;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => PretViridianRegion.MapIdFromSourceSymbol(symbol);
-
     public static PretViridianCenter Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

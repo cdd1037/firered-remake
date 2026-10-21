@@ -150,12 +150,12 @@ public static partial class CampaignMoveAnimationPresentation
         // with NO_ANIMATIONS. Only this current MoveUsed can opt in; an eventual
         // called leaf never enables the caller prelude or an unrelated receipt.
         if(scene!=SourceBattleScene.On&&(scene!=SourceBattleScene.Off||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||
-            battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent current||
+            battle.Events[battle.EventIndex] is not SourceMoveUsedEvent current||
             Definition(current.Move,moves)?.Effect is not("EFFECT_TRANSFORM" or "EFFECT_SUBSTITUTE")))
             return new(null,"animations-disabled");
         if(battle.Phase!=CampaignBattlePhase.Events || battle.EventIndex<0 || battle.EventIndex>=battle.Events.Length)
             return new(null,"not-attack-text");
-        return AtAttackText(new(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,
+        return AtAttackText(new(battle.Id,battle.Events.ToArray(),battle.EventIndex,2,
             ()=>CampaignStatAnimationPresentation.GroupedMoveResultSequence(battle,true,moves:moves),
             index=>CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=index},true,moves:moves)),moves,supports);
     }

@@ -26,8 +26,8 @@ public sealed class ImpactAdapterMoveAnimationDispatchTests
         new("impact-adapter-moves", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("impact-adapter-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("impact-adapter-moves", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant NaturalMon(string species, int level, string name, uint personality = 0)
     {

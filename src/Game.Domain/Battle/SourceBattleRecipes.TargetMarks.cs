@@ -3,12 +3,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasTargetMarkRecipe(string effect) => effect is "EFFECT_LOCK_ON" or "EFFECT_FORESIGHT";
-    internal abstract void SetSureHit(BattlerSlot target, BattlerSlot actor);
-    internal virtual bool TargetMarkSandstorm => SandstormTurnsRemaining > 0;
-    internal virtual bool TargetMarkAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
+    internal bool TargetMarkAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
         !(Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) &&
         EarlyPartyAccuracy(actor, target, move, purpose, false, TargetMarkSandstorm);
 

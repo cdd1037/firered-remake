@@ -105,9 +105,9 @@ public sealed class ControlPowerAnimationKernelTests
                     : AnimationDispatchFixture.AtAttackText(Envelope.Double(events, ui), SourceBattleScene.On, definitions.SetItem(Move(id), wrong)).Dispatch);
             if (single)
             {
-                var battle = Envelope.Single(events, ui); Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle with { SourceEvents = [] }, true, SourceBattleScene.On).Dispatch);
-                WildBattleEvent altered = battle.Events[at] switch { WildBattleInfatuationChangedEvent x => x with { After = null },
-                    WildBattleMtMoonVolatileEvent x => x with { After = 0 }, _ => throw new InvalidOperationException() };
+                var battle = Envelope.Single(events, ui); Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch);
+                SourceBattleEvent altered = battle.Events[at] switch { SourceInfatuationChangedEvent x => x with { After = null },
+                    SourceMtMoonVolatileEvent x => x with { After = 0 }, _ => throw new InvalidOperationException() };
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(at, altered) }, true, SourceBattleScene.On).Dispatch);
             }
         }
@@ -277,9 +277,9 @@ public sealed class ControlPowerAnimationKernelTests
                 Assert.AreEqual(SourceFlailPower(hp, maximum), Prepared(hit)); Assert.AreEqual(substitute, hit is SourceSubstituteDamagedEvent);
                 Shared.Check(result, id, single, hit); int index = Array.FindIndex(result.Events.ToArray(), e => e is SourceMoveUsedEvent);
                 Assert.AreEqual(Prepared(hit), (int?)Project(result.Events, index, single).Dispatch!.MovePower);
-                var exported = SourceBattleEventAdapter.Export(hit);
-                Assert.AreEqual(Prepared(hit), exported switch { WildBattleHpChangedEvent x => x.PreparedBasePower,
-                    WildBattleSubstituteDamagedEvent x => x.PreparedBasePower, _ => throw new InvalidOperationException() });
+                var exported = OverlayHitAnimationKernelFixture.Single([hit], 0).Events[0];
+                Assert.AreEqual(Prepared(hit), exported switch { SourceHpChangedEvent x => x.PreparedBasePower,
+                    SourceSubstituteDamagedEvent x => x.PreparedBasePower, _ => throw new InvalidOperationException() });
             }
         }
     }
@@ -299,11 +299,11 @@ public sealed class ControlPowerAnimationKernelTests
             foreach (int? invalid in new int?[] { null, -1, 0, 1, 19, 21, 199, 201, 255 }) Deny(events.SetItem(at, WithPrepared(hit, invalid)), single);
             if (single)
             {
-                var battle = Envelope.Single(events, usedAt); WildBattleEvent wrong = battle.Events[at] switch {
-                    WildBattleHpChangedEvent x => x with { PreparedBasePower = null },
-                    WildBattleSubstituteDamagedEvent x => x with { PreparedBasePower = null }, _ => throw new InvalidOperationException() };
+                var battle = Envelope.Single(events, usedAt); SourceBattleEvent wrong = battle.Events[at] switch {
+                    SourceHpChangedEvent x => x with { PreparedBasePower = null },
+                    SourceSubstituteDamagedEvent x => x with { PreparedBasePower = null }, _ => throw new InvalidOperationException() };
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(at, wrong) }, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(200, (int?)AnimationDispatchFixture.AtAttackText(battle with { SourceEvents = [] }, true, SourceBattleScene.On).Dispatch!.MovePower);
+                Assert.AreEqual(200, (int?)AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch!.MovePower);
             }
         }
     }

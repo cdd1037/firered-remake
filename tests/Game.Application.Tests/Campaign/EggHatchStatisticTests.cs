@@ -143,18 +143,18 @@ public sealed class EggHatchStatisticTests
     {
         var state = Egg(true);
         state = state with { GameStats = state.GameStats!.Remove(Stat) };
-        Assert.AreEqual("save_hatched_egg_count_missing_migration_required", Invoke("ValidateHatchedEggCount", state));
-        // This state is explicitly controlled current-schema test input. Removing
-        // its synthetic total tests the statistic boundary without admitting an
-        // old nickname schema or claiming a recovered lifetime count.
-        var loaded = CurrentCampaignFixture.Checkpoint;
-        var missing = loaded.State with { GameStats = loaded.State.GameStats?.Remove(Stat) };
-        Assert.AreEqual("save_hatched_egg_count_missing_migration_required", session.ValidatePlayerSave(missing));
-        Assert.ThrowsExactly<InvalidDataException>(() => CampaignSession.RestoreCurrent(CurrentCampaignFixture.Catalog, missing, loaded.Generation));
-        var currentBytes = SaveCodec.Encode(missing, loaded.Generation, session.RulesVersion, CurrentCampaignFixture.Catalog.ContentVersion);
+        Assert.AreEqual("save_hatched_egg_count_missing", Invoke("ValidateHatchedEggCount", state));
+        // Explicitly remove the real new-game statistic from a controlled current
+        // state. No historical player checkpoint or inferred lifetime total is used.
+        var missing = session.State with { GameStats = session.State.GameStats!.Remove(Stat) };
+        Assert.AreEqual("save_hatched_egg_count_missing", session.ValidatePlayerSave(missing));
+        Assert.ThrowsExactly<InvalidDataException>(() => CampaignSession.RestoreCurrent(CurrentCampaignFixture.Catalog, missing, session.Revision));
+        var currentBytes = SaveCodec.Encode(missing, session.Revision, session.RulesVersion, CurrentCampaignFixture.Catalog.ContentVersion);
+        var originalBytes = currentBytes.ToArray();
         var result = PlayerSaveOperations.Load(() => SaveCodec.Decode<CampaignState>(currentBytes,
             session.RulesVersion, CurrentCampaignFixture.Catalog.ContentVersion, validate: session.ValidatePlayerSave));
-        Assert.AreEqual(SaveOperationStatus.MigrationRequired, result.Result.Status);
+        Assert.AreEqual(SaveOperationStatus.InvalidData, result.Result.Status);
         Assert.AreEqual(SaveFileOutcome.Preserved, result.Result.Files);
+        CollectionAssert.AreEqual(originalBytes, currentBytes);
     }
 }

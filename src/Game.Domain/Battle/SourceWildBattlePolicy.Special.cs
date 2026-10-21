@@ -37,11 +37,11 @@ public static partial class SourceWildBattlePolicy
             { EventIsland: { } origin } => EventIslandPokemonFactory.SourceInitialInstance(owned, origin, mon),
             { SevenIsland: { } origin } => SevenIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
             { CeruleanCave: { } origin } => CeruleanCaveWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
-            { FiveIsland: { } origin } => FiveIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
-            { SixIsland: { } origin } => SixIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
-            { FourIsland: { } origin } => FourIslandWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
-            { SeviiRuby: { } origin } => SeviiRubyWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
-            { VictoryRoad: { } origin } => VictoryRoadWildPokemonFactory.SourceInitialInstance(owned, origin, mon),
+            { FiveIsland: { } origin } => FiveIslandWildBattleContract.IsRuntimeKind(origin.Kind) && FiveIslandWildBattleContract.Matches(origin, mon) && CanonicalWildPokemonFactory.IsInitialInstance(owned, mon),
+            { SixIsland: { } origin } => SixIslandWildBattleContract.IsRuntimeKind(origin.Kind) && SixIslandWildBattleContract.Matches(origin, mon) && CanonicalWildPokemonFactory.IsInitialInstance(owned, mon),
+            { FourIsland: { } origin } => FourIslandWildBattleContract.Matches(origin, mon) && CanonicalWildPokemonFactory.IsInitialInstance(owned, mon),
+            { SeviiRuby: { } origin } => SeviiRubyWildBattleContract.Matches(origin, mon) && CanonicalWildPokemonFactory.IsInitialInstance(owned, mon),
+            { VictoryRoad: { } origin } => VictoryRoadWildBattleContract.Matches(origin, mon) && CanonicalWildPokemonFactory.IsInitialInstance(owned, mon),
             { FirstSeviiWild: true } => FirstSeviiWildPokemonFactory.WildSpecies.Contains(mon.Species),
             _ => context.ScriptedSnorlax || context.TowerBattleKind is not null
         };

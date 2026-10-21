@@ -10,7 +10,7 @@ TWISTER=[[120,70,5,70,30,1,0],[115,55,6,60,25,1,0],[115,60,7,60,30,1,0],[115,55,
 CONFIGS=[TWISTER,TWISTER,[[1,0,0,90,10,0,0],[0,0,0,1,0,1,0],[1,32767,-32768,1,1,0,0],[0,-32768,32767,2,3,1,0],[1,3,-4,4,2,1,0]],[[p,i,x,y,0,q,0] for p,i,x,y,q in [(p,i,-8 if i%2==0 else 8,-12 if i<2 else 12,1-p) for p in [0,1] for i in range(4)]]+[[0,0,32767,-32768,0,1,0],[1,3,-32768,32767,0,0,0]],[[p,x,y,n,d,0,h] for p in range(4) for h in [0,1] for x,y,n,d in [(3,0,12,1),(-2,4,3,0),(32767,-32768,2,1),(-32768,32767,1,0)]]]
 SPRITE_COLUMNS=['slot','x','y','x2','y2','invisible','tile','hflip','vflip','subpriority','priority','objMode','frameIndex','frameDelay','frameEnded']+['data'+str(i) for i in range(8)]
 STATE_COLUMNS=['tick','visualCount','activeTask','liveSprites']+['taskData'+str(i) for i in range(7)]
-EXTRA_HASH={'src/battle_anim_rock.c':'13d82c078ffcbe648c81f1fbeeead1a2e74be1d680d30dfdb8df992034f93021','src/battle_anim_mon_movement.c':'ce72119ff5d658784180bae2e171fae2affa45077e9a1d5e2d55a2caf1ce628c'}
+EXTRA_HASH={'src/battle_anim_rock.c':'bdc03fca6247a71a2a8d1094378544bcb6f3459be892bb48e92780da54f71767','src/battle_anim_mon_movement.c':'ce72119ff5d658784180bae2e171fae2affa45077e9a1d5e2d55a2caf1ce628c'}
 def module(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 def build(root,reference):

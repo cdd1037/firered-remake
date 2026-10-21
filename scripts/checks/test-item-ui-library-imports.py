@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_tree, write_files
 from unittest.mock import patch
 
 sys.dont_write_bytecode = True
@@ -50,10 +51,7 @@ def convert(name, lock, data):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             raw, output = root / 'raw', root / 'generated' / name
-            for relative, content in data.items():
-                target = raw / relative
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(content)
+            write_files(raw, data)
             module.convert(raw, output)
             return {path.relative_to(output).as_posix() if path.is_relative_to(output)
                     else 'content/generated/' + path.relative_to(output.parent).as_posix(): path.read_bytes()
@@ -201,21 +199,17 @@ class ItemUiLibraryImportTests(unittest.TestCase):
             self.assertEqual(0, built.returncode, built.stderr)
             self.assertFalse((output / 'pokemon-tower-item-contracts.json').exists())
 
-            def snapshot():
-                return {path.relative_to(generated).as_posix(): (path.read_bytes(), path.stat().st_mtime_ns)
-                        for path in generated.rglob('*') if path.is_file()}
-
             for packed in (False, True):
                 with self.subTest(packed=packed):
                     if packed:
                         pack_project(generated=generated)
-                    before = snapshot()
+                    before = snapshot_tree(generated)
                     checked = subprocess.run(command + ['--check'], capture_output=True, text=True)
                     self.assertEqual(0, checked.returncode, checked.stderr)
                     self.assertTrue(json.loads(checked.stdout)['checked'])
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(generated))
 
-            original_bytes = {path: state[0] for path, state in snapshot().items()}
+            original_bytes = {path: state[0] for path, state in snapshot_tree(generated).items()}
             for mutation in ('pickup', 'pixels', 'manifest'):
                 with self.subTest(mutation=mutation):
                     for path, content in original_bytes.items():
@@ -237,11 +231,11 @@ class ItemUiLibraryImportTests(unittest.TestCase):
                         else:
                             document['pickups'][0]['quantity'] += 1
                         path.write_text(json.dumps(document))
-                    before = snapshot()
+                    before = snapshot_tree(generated)
                     checked = subprocess.run(command + ['--check'], capture_output=True, text=True)
                     self.assertNotEqual(0, checked.returncode)
                     self.assertIn('differ', checked.stderr)
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(generated))
 
     def test_tower_cli_rejects_source_output_overlap_before_writes(self):
         script = PROJECT_ROOT / 'scripts/imports/items/import-pokemon-tower-items.py'
@@ -270,34 +264,27 @@ class ItemUiLibraryImportTests(unittest.TestCase):
             raw, output = root / 'raw', root / 'generated/data/items/pokemon-tower'
             recipe = root / 'tower.json'
             recipe.write_text(json.dumps(lock))
-            for path, content in data.items():
-                target = raw / path
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(content)
+            write_files(raw, data)
             self.assertFalse((raw / 'include/constants/items.h').exists())
-
-            def snapshot():
-                return {path.relative_to(root).as_posix(): (path.read_bytes(), path.stat().st_mtime_ns)
-                        for path in root.rglob('*') if path.is_file()}
 
             with patch.object(Path, 'open', isolated_open), \
                  patch.object(item_catalog, 'definitions', side_effect=AssertionError('Ambient item definitions requested')), \
                  patch.object(item_catalog, 'item_definition', side_effect=AssertionError('Ambient item definition requested')):
                 module = load('pokemon-tower-items')
                 with patch.object(module, 'ROOT', root / 'unavailable-project'):
-                    before = snapshot()
+                    before = snapshot_tree(root)
                     expected = module.outputs(data)
                     self.assertEqual(original_data, data)
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(root))
 
                     report = module.run(raw, output, lock_path=recipe)
                     self.assertFalse(report['checked'])
                     for path, content in expected.items():
                         self.assertEqual(content, (output / path).read_bytes(), path)
                     expected_before = expected.copy()
-                    before = snapshot()
+                    before = snapshot_tree(root)
                     self.assertTrue(module.run(raw, output, lock_path=recipe, check=True)['checked'])
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(root))
 
                     reference, empty_raw = root / 'reference', root / 'unmaterialized-raw'
                     reference.mkdir()
@@ -310,12 +297,12 @@ class ItemUiLibraryImportTests(unittest.TestCase):
                         calls.append(path)
                         return data[path]
 
-                    before = snapshot()
+                    before = snapshot_tree(root)
                     with patch.object(module.subprocess, 'check_output', side_effect=pinned_git):
                         self.assertTrue(module.run(empty_raw, output, reference, recipe, check=True)['checked'])
                     self.assertEqual([entry['path'] for entry in lock['files']], calls)
                     self.assertFalse(empty_raw.exists())
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(root))
                     self.assertEqual(original_data, data)
                     self.assertEqual(expected_before, expected)
 

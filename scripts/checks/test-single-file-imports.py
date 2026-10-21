@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_tree, write_files
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -118,13 +119,7 @@ class SingleFileImportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary)
             raw = project / 'raw'
-            for name in paths:
-                target = raw / name
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes((source / name).read_bytes())
-            def snapshot():
-                return {str(path.relative_to(project)): (path.read_bytes(), path.stat().st_mtime_ns)
-                        for path in project.rglob('*') if path.is_file()}
+            write_files(raw, {name: (source / name).read_bytes() for name in paths})
             for region in module.ICONS:
                 with self.subTest(region=region):
                     output = project / ('generated/data/machine-learning/' + region + '.json')
@@ -134,26 +129,26 @@ class SingleFileImportTests(unittest.TestCase):
                     def invoke(*arguments):
                         return subprocess.run(command + list(arguments), cwd=temporary,
                                               capture_output=True, text=True, timeout=30)
-                    before = snapshot()
+                    before = snapshot_tree(project)
                     missing = invoke('--check')
                     self.assertNotEqual(0, missing.returncode)
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(project))
                     built = invoke()
                     self.assertEqual(0, built.returncode, built.stdout + built.stderr)
-                    before = snapshot()
+                    before = snapshot_tree(project)
                     checked = invoke('--check')
                     self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(project))
                     document = json.loads(output.read_bytes())
                     self.assertEqual({'schemaVersion', 'icons'}, set(document))
                     self.assertEqual(['pret:ITEM_' + name for name in module.ICONS[region]],
                                      [icon['item']['value'] for icon in document['icons']])
                     document['icons'][0]['item']['value'] = 'pret:ITEM_TM00'
                     output.write_text(json.dumps(document))
-                    before = snapshot()
+                    before = snapshot_tree(project)
                     rejected = invoke('--check')
                     self.assertNotEqual(0, rejected.returncode)
-                    self.assertEqual(before, snapshot())
+                    self.assertEqual(before, snapshot_tree(project))
             # No recipe, canonical catalog or generated source dependency exists
             # in this raw-only tree, and a real icon binding mutation must fail.
             binding = raw / 'src/data/item_icon_table.h'

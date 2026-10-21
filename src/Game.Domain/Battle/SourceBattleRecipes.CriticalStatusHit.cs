@@ -3,18 +3,16 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasCriticalStatusHitRecipe(string effect) => effect is
         "EFFECT_BLAZE_KICK" or "EFFECT_POISON_TAIL" or "EFFECT_POISON_FANG";
 
     // All three source scripts set their status effect byte then enter EffectHit.
-    // The shared hit commands retain each storage owner's scalar command hooks.
     internal void ExecuteCriticalStatusHit(PokemonCatalog catalog, BattlerSlot actor,
         BattlerSlot target, int slot, PokemonMoveDefinition move, string purpose) =>
         ExecuteStatusHit(catalog, actor, target, slot, move, purpose);
 
-    internal abstract void MarkSecondaryNoEffect();
 
     internal void ApplyToxicSecondary(PokemonCatalog catalog, BattlerSlot target, bool certain = false)
     {

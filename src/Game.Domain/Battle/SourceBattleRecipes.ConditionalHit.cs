@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasConditionalHitRecipe(string effect) => effect is
         "EFFECT_FACADE" or "EFFECT_SMELLINGSALT" or "EFFECT_REVENGE" or "EFFECT_BRICK_BREAK";
@@ -71,7 +71,7 @@ internal abstract partial class SourceRecipeContext
         ForestOutcome(true);
     }
 
-    internal virtual void ConditionalHitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void ConditionalHitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
 
     private void ConditionalBreakScreens(BattlerSlot actor, BattlerSlot target)

@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Content;
 using Game.Domain.Ids;
 using Game.Domain.Events;
@@ -19,20 +20,20 @@ public sealed class AbilityPreventionPresentationTests
     [DataRow("ABILITY_CLEAR_BODY","sText_PkmnPreventsStatLossWith")]
     public void SinglesUsesSharedSourceAbilityMessageAndAffectedParticipant(string ability,string symbol)
     {
-        foreach(var target in new[]{WildBattleSide.Player,WildBattleSide.Opponent})
+        foreach(var target in new[]{new BattlerSlot(0),new BattlerSlot(1)})
         {
-            var actor=target==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player;
-            WildBattleEvent[] events=[new WildBattleAbilityPreventedEvent(1,1,actor,target,new MoveId("pret:MOVE_SWAGGER"),ability)];
-            var display=SourceTrainerPresentationModel.Describe(events,0,s=>s.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName,
+            var actor=target==new BattlerSlot(0)?new BattlerSlot(1):new BattlerSlot(0);
+            SourceBattleEvent[] events=[new SourceAbilityPreventedEvent(1,1,actor,target,new MoveId("pret:MOVE_SWAGGER"),ability)];
+            var display=SourceTrainerPresentationModel.Describe(events,0,s=>s.Side.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName,
                 battleText:BattleText);
             Assert.IsNotNull(display);Assert.IsFalse(display.Unsupported);Assert.IsFalse(display.Silent);
             var text=display.Texts.Single();Assert.AreEqual(symbol,text.Symbol);
             Assert.AreEqual(symbol,SourceTrainerPresentationModel.AbilityPreventionSymbol(ability));
             var fields=text.Values.ToDictionary(x=>x.Key,x=>x.Value);
-            Assert.AreEqual(target.ToString(),fields["B_DEF_NAME_WITH_PREFIX"]);
-            Assert.AreEqual(target.ToString(),fields["B_SCR_ACTIVE_NAME_WITH_PREFIX"]);
+            Assert.AreEqual(target.Side.ToString(),fields["B_DEF_NAME_WITH_PREFIX"]);
+            Assert.AreEqual(target.Side.ToString(),fields["B_SCR_ACTIVE_NAME_WITH_PREFIX"]);
             Assert.AreEqual(Names.AbilityName(ability),fields["B_SCR_ACTIVE_ABILITY"]);
-            Assert.AreEqual(actor.ToString(),fields["B_ATK_NAME_WITH_PREFIX"]);
+            Assert.AreEqual(actor.Side.ToString(),fields["B_ATK_NAME_WITH_PREFIX"]);
             Assert.AreEqual(ability=="ABILITY_HYPER_CUTTER"?"ATTACK":ability=="ABILITY_KEEN_EYE"?"accuracy":"",fields["B_BUFF1"]);
         }
     }
@@ -40,10 +41,10 @@ public sealed class AbilityPreventionPresentationTests
     public void AbsorbPreventionRemainsSilentUntilItsMatchingRecovery(string ability)
     {
         var move=new MoveId("pret:MOVE_THUNDERBOLT");
-        WildBattleEvent[] events=[new WildBattleAbilityPreventedEvent(1,1,WildBattleSide.Player,WildBattleSide.Opponent,move,ability),new WildBattleRecoveredEvent(2,1,WildBattleSide.Opponent,move,5,10,5)];
-        var before=SourceTrainerPresentationModel.Describe(events,0,s=>s.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName);
+        SourceBattleEvent[] events=[new SourceAbilityPreventedEvent(1,1,new BattlerSlot(0),new BattlerSlot(1),move,ability),new SourceRecoveredEvent(2,1,new BattlerSlot(1),move,5,10,5)];
+        var before=SourceTrainerPresentationModel.Describe(events,0,s=>s.Side.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName);
         Assert.IsTrue(before!.Silent);
-        var recovered=SourceTrainerPresentationModel.Describe(events,1,s=>s.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName)!.Texts.Single();
+        var recovered=SourceTrainerPresentationModel.Describe(events,1,s=>s.Side.ToString(),m=>m.Value,(_,_)=>"party", abilityName:Names.AbilityName, typeName:Names.TypeName)!.Texts.Single();
         Assert.AreEqual("sText_PkmnRestoredHPUsing",recovered.Symbol);
         Assert.AreEqual(Names.AbilityName(ability),recovered.Values.Single(x=>x.Key=="B_DEF_ABILITY").Value);
     }
@@ -55,9 +56,9 @@ public sealed class AbilityPreventionPresentationTests
     [DataRow("TYPE_MYSTERY", "???")]
     public void ChangedTypeMessagesUseImportedDisplayName(string type, string expected)
     {
-        WildBattleEvent[] events = [new WildBattleCalledOverlayChangedEvent(1, 1, WildBattleSide.Player,
+        SourceBattleEvent[] events = [new SourceCalledOverlayChangedEvent(1, 1, new BattlerSlot(0),
             new("pret:MOVE_CONVERSION"), null, new() { Type1 = type, Type2 = type })];
-        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.Side.ToString(), m => m.Value,
             (_, _) => "party", abilityName: Names.AbilityName, typeName: Names.TypeName)!;
         Assert.AreEqual("sText_PkmnChangedType", display.Texts.Single().Symbol);
         Assert.AreEqual(expected, display.Texts.Single().Values.Single(v => v.Key == "B_BUFF1").Value);
@@ -69,9 +70,9 @@ public sealed class AbilityPreventionPresentationTests
     [DataRow("ABILITY_LIGHTNING_ROD", "LIGHTNINGROD")]
     public void CopiedAbilityMessagesUseImportedDisplayName(string ability, string expected)
     {
-        WildBattleEvent[] events = [new WildBattleCalledOverlayChangedEvent(1, 1, WildBattleSide.Player,
+        SourceBattleEvent[] events = [new SourceCalledOverlayChangedEvent(1, 1, new BattlerSlot(0),
             new("pret:MOVE_ROLE_PLAY"), null, new() { Ability = ability })];
-        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.Side.ToString(), m => m.Value,
             (_, _) => "party", abilityName: Names.AbilityName, typeName: Names.TypeName)!;
         Assert.AreEqual(expected, display.Texts.Single().Values.Single(v => v.Key == "B_DEF_ABILITY").Value);
     }
@@ -79,19 +80,19 @@ public sealed class AbilityPreventionPresentationTests
     [TestMethod]
     public void InjectedNamesAreLiteralAndDoNotChangeEventIdentities()
     {
-        WildBattleEvent[] events = [new WildBattleAbilityActivatedEvent(1, 1, WildBattleSide.Player, "ABILITY_COLOR_CHANGE"),
-            new WildBattleCalledOverlayChangedEvent(2, 1, WildBattleSide.Player, new("pret:MOVE_TACKLE"), null,
+        SourceBattleEvent[] events = [new SourceAbilityActivatedEvent(1, 1, new BattlerSlot(0), "ABILITY_COLOR_CHANGE"),
+            new SourceCalledOverlayChangedEvent(2, 1, new BattlerSlot(0), new("pret:MOVE_TACKLE"), null,
                 new() { Type1 = "TYPE_FIRE", Type2 = "TYPE_FIRE" })];
         var before = System.Text.Json.JsonSerializer.Serialize(events);
         string Ability(string id) { Assert.AreEqual("ABILITY_COLOR_CHANGE", id); return "ability {literal}"; }
         string Type(string id) { Assert.AreEqual("TYPE_FIRE", id); return "type {literal}"; }
-        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+        var display = SourceTrainerPresentationModel.Describe(events, 0, s => s.Side.ToString(), m => m.Value,
             (_, _) => "party", abilityName: Ability, typeName: Type)!;
         var values = display.Texts.Single().Values.ToDictionary(v => v.Key, v => v.Value);
         Assert.AreEqual("ability {literal}", values["B_DEF_ABILITY"]);
         Assert.AreEqual("type {literal}", values["B_BUFF1"]);
         Assert.AreEqual(before, System.Text.Json.JsonSerializer.Serialize(events));
-        Assert.IsTrue(SourceTrainerPresentationModel.Describe(events, 1, s => s.ToString(), m => m.Value,
+        Assert.IsTrue(SourceTrainerPresentationModel.Describe(events, 1, s => s.Side.ToString(), m => m.Value,
             (_, _) => "party", abilityName: Ability, typeName: Type)!.Silent);
     }
 
@@ -136,11 +137,11 @@ public sealed class AbilityPreventionPresentationTests
     [DataRow("ABILITY_KEEN_EYE", "sText_Accuracy")]
     public void AbilityPreventionConsumesTheSameStatLookup(string ability, string symbol)
     {
-        WildBattleEvent[] events = [new WildBattleAbilityPreventedEvent(1, 1, WildBattleSide.Player,
-            WildBattleSide.Opponent, new("pret:MOVE_SWAGGER"), ability)];
+        SourceBattleEvent[] events = [new SourceAbilityPreventedEvent(1, 1, new BattlerSlot(0),
+            new BattlerSlot(1), new("pret:MOVE_SWAGGER"), ability)];
         var source = BattleText.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         source[symbol] = "CHANGED";
-        var text = SourceTrainerPresentationModel.Describe(events, 0, s => s.ToString(), m => m.Value,
+        var text = SourceTrainerPresentationModel.Describe(events, 0, s => s.Side.ToString(), m => m.Value,
             (_, _) => "party", abilityName: Names.AbilityName, typeName: Names.TypeName,
             battleText: source)!.Texts.Single();
         Assert.AreEqual("CHANGED", text.Values.Single(value => value.Key == "B_BUFF1").Value);

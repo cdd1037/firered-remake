@@ -113,7 +113,8 @@ public sealed class SubstituteSwapAnimationTests
         foreach(bool mon in new[]{false,true})
         {
             string label=Label(mon);var resolved=resources.ResolveGeneral(label);
-            Assert.AreSame(resolved,resources.ResolveGeneral(label));Assert.AreEqual(0,resolved.Script.MoveId);
+            var again=resources.ResolveGeneral(label);Assert.AreNotSame(resolved,again);
+            Assert.AreSame(resolved.Assets,again.Assets);Assert.AreSame(resolved.Script.Commands,again.Script.Commands);Assert.AreEqual(0,resolved.Script.MoveId);
             Assert.AreEqual(label,resolved.Script.Label);Assert.AreEqual(2,resolved.Script.Commands.Length);
             CollectionAssert.AreEqual(new[]{Callback,"2",mon?"TRUE":"FALSE"},resolved.Script.Commands[0].Args);
             Assert.AreEqual("end",resolved.Script.Commands[1].Op);

@@ -35,7 +35,7 @@ public sealed class PretRocketHideoutRegion
 
     private PretRocketHideoutRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
         ImmutableDictionary<string, int> constants,
-        JsonElement contract, JsonElement city)
+        JsonElement contract, JsonElement city, Func<string, MapId> resolveMap)
     {
         GeneratedDirectory = directory; NewMaps = maps;
         Constants = constants; ExternalCeladonEvents = city;
@@ -57,7 +57,7 @@ public sealed class PretRocketHideoutRegion
         }).ToImmutableArray();
         ElevatorFloors = contract.GetProperty("elevator").GetProperty("menu").EnumerateArray().Select(f =>
         {
-            var id = MapIdFromSourceSymbol(f.GetProperty("map").GetString()!); var x = f.GetProperty("x").GetInt32(); var y = f.GetProperty("y").GetInt32();
+            var id = resolveMap(f.GetProperty("map").GetString()!); var x = f.GetProperty("x").GetInt32(); var y = f.GetProperty("y").GetInt32();
             return new PretRocketElevatorFloor(f.GetProperty("index").GetInt32(), f.GetProperty("label").GetString()!,
                 f.GetProperty("value").GetInt32(), id, x, y, maps[id].GetSourceCell(x, y)!.Elevation, CoordinateWarpId);
         }).ToImmutableArray();
@@ -75,14 +75,6 @@ public sealed class PretRocketHideoutRegion
         Patch("RocketHideout_B1F_EventScript_" + (b1GuardDefeated ? "RemoveBarrier" : "SetBarrier")),
         Patch("RocketHideout_B4F_EventScript_" + (bothB4GuardsDefeated ? "RemoveBarrier" : "SetBarrier"))
     ];
-
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_ROCKET_HIDEOUT_B1F" => new("map.rocket-hideout-b1f"), "MAP_ROCKET_HIDEOUT_B2F" => new("map.rocket-hideout-b2f"),
-        "MAP_ROCKET_HIDEOUT_B3F" => new("map.rocket-hideout-b3f"), "MAP_ROCKET_HIDEOUT_B4F" => new("map.rocket-hideout-b4f"),
-        "MAP_ROCKET_HIDEOUT_ELEVATOR" => ElevatorMapId, "MAP_DYNAMIC" => DynamicMapId,
-        _ => PretCeladonGymRegion.MapIdFromSourceSymbol(symbol)
-    };
 
     internal static int ParseWarpId(string sourceMap, JsonElement warp)
     {
@@ -115,7 +107,7 @@ public sealed class PretRocketHideoutRegion
         var constants=PretSharedConstants.ForPackage(directory);
         var contract=Document("rocket-hideout.json");
         using var city=JsonDocument.Parse(world.ReadEvents("data/maps/CeladonCity/map.json"));
-        return new(directory,maps,constants,contract,city.RootElement.Clone());
+        return new(directory,maps,constants,contract,city.RootElement.Clone(),world.Resolve);
     }
 
     private static byte[] ReadPinned(string root, string path)

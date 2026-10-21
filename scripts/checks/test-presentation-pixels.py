@@ -224,6 +224,22 @@ class SharedPresentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Inherited trainer source pixels'):
             selected_trainer_art(source, module.TRAINERS, module.INHERITED, asset, [])
 
+    def test_inherited_portrait_texture_does_not_force_legacy_identifier(self):
+        source = Source(PROJECT_ROOT)
+        inherited = {'SWIMMER_F': 'content/generated/ui/first-sevii-presentation/first-sevii-swimmer-f-front.png'}
+        selection = ['SWIMMER_FEMALE_ABIGAIL']
+        for use_inherited, expected in ((True, 'first-sevii-swimmer-f-front'), (False, 'swimmer-f-front')):
+            with self.subTest(inherited_ids=use_inherited):
+                assets = []
+                trainers, portraits = selected_trainer_art(source, selection, inherited, asset, assets,
+                                                          inherited_ids=use_inherited)
+                self.assertEqual(trainers[0]['portrait'], expected)
+                self.assertEqual(portraits[0]['id'], expected)
+                self.assertEqual(assets[0]['id'], expected)
+                self.assertEqual(portraits[0]['texturePath'], inherited['SWIMMER_F'])
+                self.assertTrue(portraits[0]['inherited'])
+                self.assertEqual((portraits[0]['width'], portraits[0]['height']), (64, 64))
+
     def test_shared_item_binding_has_one_source_of_truth(self):
         source = Source(PROJECT_ROOT)
         items = ItemSource(source.read)

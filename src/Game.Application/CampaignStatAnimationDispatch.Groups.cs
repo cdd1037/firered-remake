@@ -46,23 +46,16 @@ public static partial class CampaignStatAnimationPresentation
     {
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length)return null;
         int invocation=battle.EventIndex;
-        while(invocation>=0&&battle.Events[invocation] is not (WildBattleMoveUsedEvent or WildBattleAttackStringEvent))invocation--;
-        if(invocation<0||battle.Events[invocation] is not WildBattleMoveUsedEvent used||
+        while(invocation>=0&&battle.Events[invocation] is not (SourceMoveUsedEvent or SourceAttackStringEvent))invocation--;
+        if(invocation<0||battle.Events[invocation] is not SourceMoveUsedEvent used||
             CampaignMoveAnimationPresentation.Definition(used.Move,moves) is not {} definition||!HasGroupedDefinition(definition))return null;
         var itemReceipts=ItemReceiptSequences(battle.Events);
-        return ReadGroup(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,itemReceipts,definition.Effect,moves);
+        return ReadGroup(battle.Id,battle.Events.ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,itemReceipts,definition.Effect,moves);
     }
     internal static HashSet<long> ItemReceiptSequences(IReadOnlyList<SourceBattleEvent> events)
     {
         var result=new HashSet<long>();
         for(int end=0;end<events.Count;end++)if(events[end] is SourceHeldItemConsumedEvent)
-        {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(events,end);if(start>=0)for(int i=start;i<=end;i++)result.Add(events[i].Sequence);}
-        return result;
-    }
-    private static HashSet<long> ItemReceiptSequences(IReadOnlyList<WildBattleEvent> events)
-    {
-        var result=new HashSet<long>();
-        for(int end=0;end<events.Count;end++)if(events[end] is WildBattleHeldItemConsumedEvent)
         {int start=CampaignHeldItemAnimationPresentation.ConsumedGroupStart(events,end);if(start>=0)for(int i=start;i<=end;i++)result.Add(events[i].Sequence);}
         return result;
     }
@@ -157,31 +150,6 @@ public static partial class CampaignStatAnimationPresentation
         SourceFocusEnergyEvent=>new(e.Sequence,e.Turn,"focus"),
         SourceInfatuationChangedEvent=>new(e.Sequence,e.Turn,"infatuation"),
         SourceOrderEvent or SourceTurnReadyEvent or SourceStartedEvent or SourceActionBlockedEvent or SourceCalledPartySwitchedEvent or SourcePlayerSwitchedEvent or SourcePlayerReplacedEvent=>new(e.Sequence,e.Turn,"boundary"),
-        _=>new(e.Sequence,e.Turn,"other")
-    };
-    private static GroupRow GroupRead(WildBattleEvent e)=>e switch
-    {
-        WildBattleAttackStringEvent x=>new(x.Sequence,x.Turn,"attack",(int)x.Actor,Move:x.CurrentMove.Value,Chosen:x.ChosenMove.Value),
-        WildBattleMoveUsedEvent x=>new(x.Sequence,x.Turn,"used",(int)x.Actor,(int)x.Target,x.Move.Value,Slot:x.Slot,Before:x.PpBefore,After:x.PpAfter),
-        WildBattlePpCommandEvent x=>new(x.Sequence,x.Turn,"pp",(int)x.Actor,(int)x.Target,x.CurrentMove.Value,x.ChosenMove.Value,(int)x.PpOwner,x.PpSlot,x.Before,x.After,x.CommandCost),
-        WildBattleHpChangedEvent x=>new(x.Sequence,x.Turn,"hp",(int)x.Actor,(int)x.Target,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage,Critical:x.Critical,Percent:x.RandomPercent),
-        WildBattleSubstituteDamagedEvent x=>new(x.Sequence,x.Turn,"substitute",(int)x.Actor,(int)x.Target,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage,Critical:x.Critical,Percent:x.RandomPercent),
-        WildBattleCriticalHitEvent x=>new(x.Sequence,x.Turn,"critical",(int)x.Actor,(int)x.Target),
-        WildBattleEffectivenessEvent x=>new(x.Sequence,x.Turn,"effectiveness",(int)x.Actor,(int)x.Target,x.Move.Value,Detail:x.Effectiveness.ToString()),
-        WildBattleDamageAdjustedEvent x=>new(x.Sequence,x.Turn,"adjustment",Target:(int)x.Target,Move:x.Move.Value,Before:x.DamageBefore,After:x.DamageAfter,Detail:x.Item,Endured:x.Endured,HungOn:x.HungOn),
-        WildBattleHeldItemSurvivalEvent x=>new(x.Sequence,x.Turn,"survival",Target:(int)x.Target,Move:x.Move.Value,Detail:x.Item),
-        WildBattleMtMoonVolatileEvent {Volatile:"endure",Before:1,After:1,Reason:"endured"} x=>new(x.Sequence,x.Turn,"endured",Target:(int)x.Side),
-        WildBattleStatChangedEvent x=>new(x.Sequence,x.Turn,"stat",(int)x.Actor,(int)x.Target,Before:x.Before,After:x.After,Stat:x.Stat),
-        WildBattleStatAtMinimumEvent x=>new(x.Sequence,x.Turn,"minimum",(int)x.Actor,(int)x.Target,Stat:x.Stat),
-        WildBattleStatAtMaximumEvent x=>new(x.Sequence,x.Turn,"maximum",(int)x.Actor,(int)x.Target,Stat:x.Stat),
-        WildBattleAbilityPreventedEvent x=>new(x.Sequence,x.Turn,"ability",(int)x.Actor,(int)x.Target,x.Move.Value,Detail:x.Ability),
-        WildBattleMoveFailedEvent x=>new(x.Sequence,x.Turn,"failed",(int)x.Actor,(int)x.Target,x.Move.Value,Detail:x.Reason),
-        WildBattleMoveMissedEvent x=>new(x.Sequence,x.Turn,"missed",(int)x.Actor,(int)x.Target,x.Move.Value),
-        WildBattleConfusionChangedEvent x=>new(x.Sequence,x.Turn,"confusion",Target:(int)x.Side,Before:x.Before,After:x.After,Detail:x.Reason),
-        WildBattleStatusChangedEvent=>new(e.Sequence,e.Turn,"status"),
-        WildBattleFocusEnergyEvent=>new(e.Sequence,e.Turn,"focus"),
-        WildBattleInfatuationChangedEvent=>new(e.Sequence,e.Turn,"infatuation"),
-        WildBattleOrderEvent or WildBattleTurnReadyEvent or WildBattleStartedEvent or WildBattleActionBlockedEvent or WildBattleCalledPartySwitchedEvent or WildBattlePlayerSwitchedEvent or WildBattlePlayerReplacedEvent=>new(e.Sequence,e.Turn,"boundary"),
         _=>new(e.Sequence,e.Turn,"other")
     };
 }

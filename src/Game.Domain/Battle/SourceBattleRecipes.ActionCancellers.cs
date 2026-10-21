@@ -4,30 +4,21 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    // AtkCanceller_UnableToUseMove: one ordered recipe used by both storage contexts.
-    // Historical profiles retain their original enablement; unported locks remain compatibility hooks.
-    internal virtual bool CancellerSleepEnabled => true;
-    internal virtual bool CancellerFreezeEnabled => true;
-    internal virtual bool CancellerEarlyPartyEnabled => true;
-    internal virtual bool CancellerEarlyBirdEnabled => true;
-    internal virtual bool CancellerSleepingMovesEnabled => true;
-    internal virtual bool CancellerTruantEnabled => true;
-    internal virtual bool CancellerInfatuationEnabled => true;
-    internal virtual bool ConfusionTowerRules => true;
-    internal virtual bool ConfusionExpandedRules(PokemonCatalog catalog) => true;
-    internal virtual bool ConfusionCanonicalRules(PokemonCatalog catalog) => true;
-    internal virtual void CancellerUproarWake(BattlerSlot slot) { }
-    internal virtual void CancellerCancelMultiTurn(BattlerSlot slot, string reason) { }
-    internal virtual void CancellerParalysisBlocked(BattlerSlot slot) { }
-    internal virtual bool CancellerCompatibilityLocks(PokemonCatalog catalog, BattlerSlot slot, MoveId move) => false;
-    internal abstract bool CancellerHasRecharge(BattlerSlot slot);
-    internal abstract void CancellerClearRecharge(BattlerSlot slot);
-    internal virtual BattlerSlot CancellerFailureTarget(BattlerSlot slot) => Invocation!.Target;
+    // AtkCanceller_UnableToUseMove: one ordered recipe for the canonical frame.
+    internal bool CancellerSleepEnabled => true;
+    internal bool CancellerFreezeEnabled => true;
+    internal bool CancellerEarlyPartyEnabled => true;
+    internal bool CancellerEarlyBirdEnabled => true;
+    internal bool CancellerSleepingMovesEnabled => true;
+    internal bool CancellerTruantEnabled => true;
+    internal bool ConfusionTowerRules => true;
+    internal bool ConfusionExpandedRules(PokemonCatalog catalog) => true;
+    internal bool ConfusionCanonicalRules(PokemonCatalog catalog) => true;
+    internal BattlerSlot CancellerFailureTarget(BattlerSlot slot) => Invocation!.Target;
 
-    internal virtual bool CancellerMoveThawEnabled => true;
-    internal virtual bool CancellerLateMoveThawEnabled => true;
+    internal bool CancellerMoveThawEnabled => true;
     internal bool ActionPreventsMove(PokemonCatalog catalog, BattlerSlot actor, MoveId move, string purpose)
     {
         bool blocked = CancellerSleepEnabled && SleepPreventsMove(actor, move) ||

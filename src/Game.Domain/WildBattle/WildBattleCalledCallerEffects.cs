@@ -1,10 +1,4 @@
-using System.Collections.Immutable;
 using System.Text.Json.Serialization;
-using Game.Domain.Ids;
-using Game.Domain.Battle;
-using Game.Domain.Pokemon;
-using Game.Domain.Randomness;
-using Game.Domain.Rules;
 
 namespace Game.Domain.WildBattle;
 
@@ -18,6 +12,3 @@ public sealed record WildBattleCalledDamageState
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialDamage { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? SpecialSource { get; init; }
 }
-
-public sealed record WildBattleCallerSelectionEvent(long Sequence, int Turn, WildBattleSide Actor,
-    MoveId Caller, MoveId? Result, ImmutableArray<int> CandidateSourceMoveIds, ulong RngCursor) : WildBattleEvent(Sequence, Turn);

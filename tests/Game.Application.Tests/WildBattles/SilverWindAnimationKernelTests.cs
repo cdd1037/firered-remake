@@ -37,7 +37,7 @@ public sealed class SilverWindAnimationKernelTests
     private static bool QualifyingRoll(SourceFourActionResult result) => result.Trace.Any(t =>
         t.Purpose.EndsWith(".secondary-effect", StringComparison.Ordinal) && t.Raw % 100 <= 10);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        Envelope.Single(events, index) with { SourceEvents = [] };
+        Envelope.Single(events, index);
     private static CampaignMoveAnimationDecision Text(ImmutableArray<SourceBattleEvent> events, int index, bool single,
         SourceBattleScene scene = SourceBattleScene.On) => single
         ? AnimationDispatchFixture.AtAttackText(Single(events, index), true, scene)
@@ -328,15 +328,15 @@ public sealed class SilverWindAnimationKernelTests
             CheckHit(result, single, Envelope.Hits(events).Single()); CheckWave(events, single, 55);
             if (!single) continue;
             var battle = Envelope.Single(events, usedAt); var pp = events.OfType<SourcePpCommandEvent>().Single(); int ppAt = events.IndexOf(pp);
-            var exportedPp = (WildBattlePpCommandEvent)battle.Events[ppAt];
-            Assert.AreEqual((WildBattleSide)pp.PpOwner.Value, exportedPp.PpOwner);
-            var badPp = battle with { Events = battle.Events.SetItem(ppAt, exportedPp with { PpOwner = WildBattleSide.Opponent }) };
+            var exportedPp = (SourcePpCommandEvent)battle.Events[ppAt];
+            Assert.AreEqual(new BattlerSlot(pp.PpOwner.Value), exportedPp.PpOwner);
+            var badPp = battle with { Events = battle.Events.SetItem(ppAt, exportedPp with { PpOwner = new BattlerSlot(1) }) };
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(badPp, true, SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(badPp with { EventIndex = statAt }, true));
-            var exportedStat = (WildBattleStatChangedEvent)battle.Events[statAt];
+            var exportedStat = (SourceStatChangedEvent)battle.Events[statAt];
             Assert.AreEqual(first.Stat, exportedStat.Stat); Assert.AreEqual(first.Before, exportedStat.Before); Assert.AreEqual(first.After, exportedStat.After);
-            var badStat = battle with { EventIndex = statAt, Events = battle.Events.SetItem(statAt, exportedStat with { Target = WildBattleSide.Opponent }) };
-            Assert.IsNull(AnimationDispatchFixture.StatAtResult(badStat, true), "Valid retained SourceEvents cannot repair a malformed exported stat result.");
+            var badStat = battle with { EventIndex = statAt, Events = battle.Events.SetItem(statAt, exportedStat with { Target = new BattlerSlot(1) }) };
+            Assert.IsNull(AnimationDispatchFixture.StatAtResult(badStat, true), "Malformed canonical stat results must fail closed in the single envelope.");
         }
     }
 

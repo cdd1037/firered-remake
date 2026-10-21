@@ -35,14 +35,15 @@ public static partial class CampaignMoveAnimationPresentation
         if(!sourceRules)return new(null,"historical-rules");
         if(scene!=SourceBattleScene.On)return new(null,"animations-disabled");
         if(battle.Phase!=CampaignBattlePhase.Events)return new(null,"not-hit-result");
-        if(BeatUpResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports) is {} member)return member;
-        if(ChargeSetup(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports) is {} charge)return charge;
-        if(BideRelease(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports) is {} bide)return bide;
-        if(battle.EventIndex>=0&&battle.EventIndex<battle.Events.Length&&battle.Events[battle.EventIndex] is WildBattleRecoveredEvent)
-            return RecoveryResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
-        if(battle.EventIndex>=0&&battle.EventIndex<battle.Events.Length&&battle.Events[battle.EventIndex] is WildBattleConfusionChangedEvent)
-            return StatusResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
-        return MultiHitResult(battle.Id,battle.Events.Select(AnimationReceipt).ToArray(),battle.EventIndex,2,moves,supports);
+        var rows=battle.Events.ToArray();
+        if(BeatUpResult(battle.Id,rows,battle.EventIndex,2,moves,supports) is {} member)return member;
+        if(ChargeSetup(battle.Id,rows,battle.EventIndex,2,moves,supports) is {} charge)return charge;
+        if(BideRelease(battle.Id,rows,battle.EventIndex,2,moves,supports) is {} bide)return bide;
+        if(battle.EventIndex>=0&&battle.EventIndex<rows.Length&&rows[battle.EventIndex] is SourceRecoveredEvent)
+            return RecoveryResult(battle.Id,rows,battle.EventIndex,2,moves,supports);
+        if(battle.EventIndex>=0&&battle.EventIndex<rows.Length&&rows[battle.EventIndex] is SourceConfusionChangedEvent)
+            return StatusResult(battle.Id,rows,battle.EventIndex,2,moves,supports);
+        return MultiHitResult(battle.Id,rows,battle.EventIndex,2,moves,supports);
     }
     private static CampaignMoveAnimationDecision RecoveryResult(string id,SourceBattleEvent[] rows,int index,int slots,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,Func<int,string,bool> supports)
@@ -120,21 +121,6 @@ public static partial class CampaignMoveAnimationPresentation
         SourceAbilityPreventedEvent x=>new(x.Sequence,x.Turn,"blocked",x.Actor.Value,x.Target.Value,x.Move.Value),
         SourceEffectivenessEvent {Effectiveness:WildBattleEffectiveness.NoEffect} x=>new(x.Sequence,x.Turn,"blocked",x.Actor.Value,x.Target.Value,x.Move.Value),
         SourceOrderEvent or SourceTurnReadyEvent or SourceStartedEvent or SourceCalledPartySwitchedEvent or SourcePlayerSwitchedEvent or SourcePlayerReplacedEvent=>new(e.Sequence,e.Turn,"boundary"),
-        _=>new(e.Sequence,e.Turn,"other")
-    };
-    private static MultiHitRow MultiHitRead(WildBattleEvent e)=>e switch
-    {
-        WildBattleAttackStringEvent x=>new(x.Sequence,x.Turn,"attack",(int)x.Actor,Move:x.CurrentMove.Value,ChosenMove:x.ChosenMove.Value),
-        WildBattleMoveUsedEvent x=>new(x.Sequence,x.Turn,"used",(int)x.Actor,(int)x.Target,x.Move.Value,Slot:x.Slot,Before:x.PpBefore,After:x.PpAfter),
-        WildBattlePpCommandEvent x=>new(x.Sequence,x.Turn,"pp",(int)x.Actor,(int)x.Target,x.CurrentMove.Value,x.ChosenMove.Value,x.PpSlot,x.Before,x.After,x.CommandCost,(int)x.PpOwner),
-        WildBattleHpChangedEvent x=>new(x.Sequence,x.Turn,"hp",(int)x.Actor,(int)x.Target,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage),
-        WildBattleSubstituteDamagedEvent x=>new(x.Sequence,x.Turn,"substitute",(int)x.Actor,(int)x.Target,x.Move.Value,Before:x.HpBefore,After:x.HpAfter,Damage:x.Damage),
-        WildBattleMultiHitEvent x=>new(x.Sequence,x.Turn,"summary",(int)x.Actor,(int)x.Target,x.Move.Value,Planned:x.PlannedHits,Actual:x.ActualHits),
-        WildBattleMoveFailedEvent x=>new(x.Sequence,x.Turn,"blocked",(int)x.Actor,(int)x.Target,x.Move.Value),
-        WildBattleMoveMissedEvent x=>new(x.Sequence,x.Turn,"blocked",(int)x.Actor,(int)x.Target,x.Move.Value),
-        WildBattleAbilityPreventedEvent x=>new(x.Sequence,x.Turn,"blocked",(int)x.Actor,(int)x.Target,x.Move.Value),
-        WildBattleEffectivenessEvent {Effectiveness:WildBattleEffectiveness.NoEffect} x=>new(x.Sequence,x.Turn,"blocked",(int)x.Actor,(int)x.Target,x.Move.Value),
-        WildBattleOrderEvent or WildBattleTurnReadyEvent or WildBattleStartedEvent or WildBattleCalledPartySwitchedEvent or WildBattlePlayerSwitchedEvent or WildBattlePlayerReplacedEvent=>new(e.Sequence,e.Turn,"boundary"),
         _=>new(e.Sequence,e.Turn,"other")
     };
 }

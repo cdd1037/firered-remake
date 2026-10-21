@@ -4,16 +4,13 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal virtual void PartyHealingSynchronize() { }
-    internal abstract ImmutableArray<WildBattleCalledPartyMember> HealingParty(BattleSide side);
-    internal abstract BattlerSlot? HealingActiveSlot(BattlerSlot actor, int partyIndex);
-    internal abstract void WriteHealingPartyMember(BattleSide side, int partyIndex, WildBattleCalledPartyMember member);
+    internal void PartyHealingSynchronize() { }
 
     // Cmd_healpartystatus uses live abilities only for the actor and source-present partner.
     // Every other real party member uses its permanent ability, including fainted reserves.
-    // Keep the existing party-change/status event order at the singles compatibility boundary.
+    // Keep the source party-change/status event order.
     internal void ExecutePartyHealing(BattlerSlot actor, int slot, PokemonMoveDefinition move)
     {
         if (move.Effect != "EFFECT_HEAL_BELL" || !SourceMoveDefinitionRules.IsValid(move))

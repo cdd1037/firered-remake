@@ -56,7 +56,7 @@ public sealed partial class CampaignSession
         var b=state.WildBattle!;
         if(b.Origin is null||state.Exploration!.Captured is null||CaptureCapacityError(state) is not null||b.Capture is not null)throw new InvalidDataException("capture_delivery_context_invalid");
         var captured=SourceWildBattlePolicy.CapturedMember(b.Frame??throw new InvalidDataException("canonical_wild_frame_required"));var capturedPokemon=captured.Pokemon;bool first=!state.CaughtSpecies.Contains(capturedPokemon.SourceSpeciesId);
-        var ball=b.Events.OfType<WildBattleCaptureResultEvent>().Single(e=>e.Outcome==CaptureOutcome.Caught).Ball;
+        var ball=b.Events.OfType<SourceCaptureResultEvent>().Single(e=>e.Outcome==CaptureOutcome.Caught).Ball;
         if(ball!=CaptureBall.Poke&&!AdditionalCaptureBallSupported(CaptureBallReceipt(ball)))throw new InvalidDataException("capture_ball_unsupported");
         var pending=new CampaignPendingCapture(capturedPokemon,WildBattleSourcePartyEffects.PersistentHeldItem(captured),captured.Status,b.Origin,first,first?CampaignCaptureStage.DexNotice:CampaignCaptureStage.NicknameChoice){Ball=CaptureBallReceipt(ball)};
         return state with{UnownPokedexPersonality=first&&capturedPokemon.SourceSpeciesId==201?capturedPokemon.Personality:state.UnownPokedexPersonality,CaughtSpecies=state.CaughtSpecies.Add(capturedPokemon.SourceSpeciesId),WildBattle=b with{Capture=pending,Phase=CampaignBattlePhase.Results,Pages=[],PageIndex=0}};

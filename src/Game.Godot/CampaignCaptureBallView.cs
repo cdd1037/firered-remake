@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Capture;
@@ -28,7 +29,7 @@ public partial class CampaignView
     }
     private CaptureBallPresentation? WildCaptureBallPlayback(CampaignWildBattle battle)
     {
-        if(battle.Phase!=CampaignBattlePhase.Events||WildCurrentEvent(battle) is not WildBattleCaptureResultEvent result)return null;
+        if(battle.Phase!=CampaignBattlePhase.Events||WildCurrentEvent(battle) is not SourceCaptureResultEvent result)return null;
         string key=battle.Id+":"+result.Sequence;
         if(_captureBallPlaybackKey!=key)
         {

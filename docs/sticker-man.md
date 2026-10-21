@@ -16,21 +16,38 @@ Pinned `src/field_control_avatar.c` increments the stat when `ShouldEggHatch()` 
 
 New games initialize `GAME_STAT_HATCHED_EGGS` at zero. The shared gift/day-care hatch transaction increments once, independently of later receipt pruning, animation, nickname choice and save/Continue. Retained hatch receipts are only a validation lower bound, never a reconstruction of lifetime totals: release and NPC trades can prune old breeding receipts.
 
-A save missing this counter is rejected with `save_hatched_egg_count_missing_migration_required`. The original generation-57604 representative checkpoint has no trustworthy lifetime total and remains unchanged; it is no longer claimed to be a current valid Continue baseline. No counter was inferred from its party, boxes or surviving receipts.
+A save missing this counter is rejected with `save_hatched_egg_count_missing`
+and an `InvalidData` load result. No lifetime total is inferred from party, boxes
+or surviving receipts, and missing data is never silently set to zero. Offline
+hatch-count correction and old-checkpoint conversion have been removed. The
+original generation-57604 historical sample remains unchanged and is not a valid
+current Continue baseline.
 
-Application regressions now strictly load a separately prepared schema-2 controlled fixture with an explicit synthetic test-only total of 1000. Ordinary tests do not add the counter or convert old saves. This fixture is not evidence of a player’s historical total. The command below operates only on an otherwise supported current-schema save with an independently known lifetime count; it cannot upgrade schema-1 nickname representation:
-
-```sh
-dotnet run --project src/Game.Tooling -- set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT
-```
-
-The count must be an explicit integer 0..16777215. The converter refuses overwriting a destination or replacing an already-present counter, validates the complete resulting save, and preserves original bytes, generation and RNG. Its operator-provided total is asserted input, not independently proven history; no automatic estimate is offered.
+Controlled test totals are synthetic inputs, not evidence of a player's historical
+count. Current new games initialize the statistic and normal Save/Continue
+preserves it under the existing checksum and safe-file transaction contract.
 
 ## Verification scope
 
-Boundary and repeat tests use isolated controlled counter transitions rather than fabricated league/hatching histories. Physical door, interaction, storage and Continue tests use the clearly marked controlled new-schema test fixture. Shared hatch tests exercise the walking/script hatch transaction for gift and bred eggs, animation, nickname choice and serialization. Real speaker audio and Trainer Card back visuals are outside this slice.
+Boundary and repeat tests use isolated controlled counter transitions rather than
+fabricated league/hatching histories. Shared hatch tests exercise walking/script
+transactions for gift and bred eggs, animation, nickname choice and serialization.
+Missing-stat load tests must reject the save and preserve its original bytes.
+Presentation tests verify ordinary invalid-data feedback without offering a removed
+conversion command. Conversion-only tests and the offline conversion check script
+were retired with that feature, not counted as retained coverage.
 
-## Checked 2026-10-16
+Default launch does not select a checkpoint; one is passed only when explicitly
+supplied. Explicit startup checkpoints remain guarded by the startup error handler.
+Process hash tests use their own EngineeringState and do not depend on the old
+player checkpoint. Real speaker audio and native-window visual acceptance remain
+separate gates; no new visual or audio acceptance is implied by this cleanup.
+
+## Historical checks on 2026-10-16
+
+The results below describe the implementation at that date. Its conversion tools,
+conversion-only tests and MigrationRequired feedback have since been retired;
+these results are not current feature availability or retained-test totals.
 
 Toolchain: .NET SDK 10.0.401, Microsoft.NETCore.App 10.0.12. All builds used the repository's serial command:
 

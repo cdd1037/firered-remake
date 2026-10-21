@@ -64,6 +64,18 @@ public sealed class GhostSongAnimationKernelTests
         Assert.AreEqual(Move(id),used.Move);Assert.AreEqual(used.Move,attack.CurrentMove);Assert.AreEqual(used.Move,attack.ChosenMove);
         Assert.AreEqual(attack.Sequence+1,used.Sequence);Assert.AreEqual(used.Sequence+1,pp.Sequence);
         Assert.AreEqual(used.Actor,pp.PpOwner);Assert.AreEqual(used.PpBefore,pp.Before);Assert.AreEqual(used.PpAfter,pp.After);
+        if(rows.OfType<SourceFaintedEvent>().SingleOrDefault(e=>e.Side==used.Actor) is {} faint)
+        {
+            if(used.Actor.Side==BattleSide.Player)
+            {
+                var applied=faint.Friendship;Assert.IsNotNull(applied);
+                var sync=rows.OfType<SourceCalledPartyChangedEvent>().Single(e=>e.SourceSlot==used.Actor);
+                Assert.AreEqual(new PartyMemberKey(sync.Side,sync.PartyIndex),applied.Member);
+                Assert.AreEqual(sync.Before.Pokemon.Friendship,applied.Before);Assert.AreEqual(sync.After.Pokemon.Friendship,applied.After);
+                Assert.AreEqual(used.Turn,faint.Turn);Assert.AreEqual(faint.Turn,sync.Turn);Assert.IsTrue(owner.Sequence<faint.Sequence&&faint.Sequence<sync.Sequence);
+            }
+            else Assert.IsNull(faint.Friendship);
+        }
         string before=JsonSerializer.Serialize(result);int count=0;CampaignMoveAnimationDispatch? found=null;
         for(int i=0;i<rows.Length;i++)foreach(bool atResult in new[]{false,true})
         {
@@ -310,6 +322,30 @@ public sealed class GhostSongAnimationKernelTests
     }
 
     [TestMethod]
+    public void TransformedGhostCostFaintAuthenticatesOriginalPartyFriendshipAndCopiedPp()
+    {
+        foreach(bool single in new[]{false,true})
+        {
+            var original=Kernel.Mon("DITTO","TRANSFORM",100);
+            original=original with{SpeedStage=12,Pokemon=original.Pokemon with{Friendship=200}};
+            var frame=Charge.Body(Initial(174,single,1),0,_=>original);
+            frame=Charge.Body(frame,1,b=>b with{SpeedStage=0});
+            var transformed=Charge.Ordered(frame,0,1);Assert.IsTrue(transformed.Events.OfType<SourceTransformedEvent>().Any());
+            frame=Charge.Body(Charge.CompleteTurn(transformed),0,b=>b with{SpeedStage=12,Pokemon=b.Pokemon with{CurrentHp=1}});
+            var result=Charge.Ordered(frame,0,1);Check(result,174,single,0);
+            var faint=result.Events.OfType<SourceFaintedEvent>().Single();var applied=faint.Friendship;Assert.IsNotNull(applied);
+            Assert.AreEqual(200,applied.Before);Assert.AreEqual(199,applied.After);
+            var sync=result.Events.OfType<SourceCalledPartyChangedEvent>().Single(e=>e.SourceSlot==new BattlerSlot(0));
+            Assert.AreEqual(original.Pokemon.Species,sync.After.Pokemon.Species);
+            Assert.AreEqual(Kernel.Id("TRANSFORM"),sync.After.Pokemon.Moves[0].Move);
+            Assert.IsTrue(sync.Before.Pokemon.Moves.SequenceEqual(sync.After.Pokemon.Moves));
+            Assert.AreEqual(199,result.State.Party(BattleSide.Player).Members[0].Pokemon.Friendship);
+            Deny(result.Events.SetItem(result.Events.IndexOf(faint),faint with{Friendship=null}),single,174);
+            Deny(result.Events.SetItem(result.Events.IndexOf(faint),faint with{Friendship=applied with{After=200}}),single,174);
+        }
+    }
+
+    [TestMethod]
     public void RealMetronomeTransformPreservesAnOriginalCurseSlotWithoutInferringFromEqualPp()
     {
         foreach(bool single in new[]{false,true})
@@ -472,9 +508,9 @@ public sealed class GhostSongAnimationKernelTests
             Assert.IsInstanceOfType<SourceCalledPartyChangedEvent>(restored);
             Assert.AreEqual(sync.SourceSlot,((SourceCalledPartyChangedEvent)restored).SourceSlot);
             Assert.AreEqual(sync.TransientMoveSlots,((SourceCalledPartyChangedEvent)restored).TransientMoveSlots);
-            var legacy=SourceBattleEventAdapter.Export(sync);Assert.IsInstanceOfType<WildBattleCalledPartyChangedEvent>(legacy);
-            Assert.AreEqual(WildBattleSide.Player,((WildBattleCalledPartyChangedEvent)legacy).SourceSlot);
-            Assert.AreEqual(sync.TransientMoveSlots,((WildBattleCalledPartyChangedEvent)legacy).TransientMoveSlots);
+            var legacy=OverlayHitAnimationKernelFixture.Single([sync], 0).Events[0];Assert.IsInstanceOfType<SourceCalledPartyChangedEvent>(legacy);
+            Assert.AreEqual(new BattlerSlot(0),((SourceCalledPartyChangedEvent)legacy).SourceSlot);
+            Assert.AreEqual(sync.TransientMoveSlots,((SourceCalledPartyChangedEvent)legacy).TransientMoveSlots);
             Assert.AreEqual("source_event_active_sync_persistence",SourceBattleEventHooks.ValidateRouting(result.State,sync with{TransientMoveSlots=15}));
             Assert.AreEqual("source_event_active_sync_persistence",SourceBattleEventHooks.ValidateRouting(result.State,sync with{TransientMoveSlots=16}));
             Assert.AreEqual("source_event_active_sync_persistence",SourceBattleEventHooks.ValidateRouting(result.State,sync with{TransientMoveSlots=null}));

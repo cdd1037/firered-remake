@@ -4,7 +4,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasSelectedVolatileRecipe(string effect) => effect is
         "EFFECT_ATTRACT" or "EFFECT_TAUNT" or "EFFECT_TORMENT" or "EFFECT_SPITE";
@@ -70,7 +70,7 @@ internal abstract partial class SourceRecipeContext
     }
 }
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
     internal void TauntResidual(BattlerSlot slot)
     {

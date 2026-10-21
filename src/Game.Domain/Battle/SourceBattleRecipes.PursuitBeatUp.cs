@@ -13,17 +13,14 @@ internal static class SourcePursuitRules
         !actor.TruantLoafing && outgoing.Pokemon.CurrentHp > 0;
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasPursuitBeatUpRecipe(string effect) => effect is "EFFECT_PURSUIT" or "EFFECT_BEAT_UP";
-    internal virtual void PartyHitCriticalMessage(BattlerSlot actor, BattlerSlot target, bool critical, int damage) { }
-    internal virtual void BeatUpSynchronize() { }
-    internal abstract ImmutableArray<WildBattleCalledPartyMember> BeatUpParty(BattleSide side);
-    internal virtual void BeatUpBeginHit(BattlerSlot target) { }
-    internal virtual int BeatUpAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
+    internal void BeatUpSynchronize() { }
+    internal int BeatUpAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
         AdjustHeldDamage(target, move.Id, damage, purpose);
-    internal virtual void BeatUpResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => SourceDamageResultMessage(actor, target, move);
-    internal virtual void BeatUpMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void BeatUpResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => SourceDamageResultMessage(actor, target, move);
+    internal void BeatUpMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceMultiHitMoveEnd(catalog, actor, target, move);
 
     internal void ExecutePursuitBeatUp(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
@@ -63,18 +60,15 @@ internal abstract partial class SourceRecipeContext
         ForestOutcome(true);
     }
 
-    internal virtual bool PursuitCritical(WildBattleCombatant actor, WildBattleCombatant target, PokemonMoveDefinition move, string purpose) =>
+    internal bool PursuitCritical(WildBattleCombatant actor, WildBattleCombatant target, PokemonMoveDefinition move, string purpose) =>
         SourceGenericCritical(actor, target, move, purpose);
-    internal virtual int PursuitDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
+    internal int PursuitDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition move, bool critical, int percent) =>
         SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent, pursuitSwitch: true);
-    internal virtual int PursuitAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
+    internal int PursuitAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
         AdjustHeldDamage(target, move.Id, damage, purpose);
-    internal virtual void PursuitRecordDamage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int lost) { }
-    internal virtual void PursuitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void PursuitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
-    internal abstract void PursuitMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
-        PokemonMoveDefinition move, string purpose, int damage, WildBattleCombatant previousActor);
 
     // Switch interception deliberately omits attackcanceler, accuracycheck and secondary RNG.
     // Only moveend states 3..6 run; normal history, berries and hit items are not reached.

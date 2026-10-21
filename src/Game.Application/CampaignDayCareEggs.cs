@@ -154,7 +154,7 @@ public sealed partial class CampaignSession
         var shards = SourceEggRules.CreateNormalHatchShards(hatched.Rng);
         var stats = state.GameStats;
         if (stats?.TryGetValue(HatchedEggsStat, out int hatchCount) != true)
-            throw new InvalidDataException("hatch_stat_missing_migration_required");
+            throw new InvalidDataException("hatch_stat_missing");
         next = WriteEggHatchReceipt(state, egg.InstanceId, new(location, state.World.Rng, hatched.Rng)) with {
             GameStats = stats.SetItem(HatchedEggsStat, Math.Min(0xffffff, hatchCount + 1)),
             Party = state.Party.SetItem(index, hatched.Pokemon), World = state.World with { Rng = hatched.Rng },

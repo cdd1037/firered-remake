@@ -5,7 +5,7 @@
 以下保留原验收与参考向量的历史说明；旧 shell、console DLL、锁定还原命令和计数不再是当前测试入口，历史套件名称也不表示当前仍有对应项目。
 
 This focused executable creates trainer encounters only through authenticated
-`SourceTrainerEncounterEntry.Prepare` → `FuchsiaGymTrainerPartyFactory.Create` →
+`SourceTrainerEncounterEntry.Prepare` → `TrainerPartyFactory.Create` →
 `SourceTrainerEncounterEntry.Begin`. It needs authenticated content from the main
 checkout, and does not call the retired trainer executor, import an old battle
 state, or use a retired controller as its oracle.

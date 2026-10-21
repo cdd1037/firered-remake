@@ -46,7 +46,7 @@ public sealed partial class CampaignSession
             var draw = Gen3Rng.Next(rng, "safari.entry.ai-setup.slot-" + slot, 16);
             rng = draw.State; trace.Add(draw.Trace);
         }
-        var held = EarlyLandWildPokemonFactory.AssignHeldItem(generated.Pokemon.Species, rng, EarlyLandEncounterRules.SafariRulesVersion);
+        var held = SafariWildHeldItemRules.Assign(generated.Pokemon.Species, rng);
         trace.AddRange(held.RandomTrace);
         return BeginSafariBattle(state, generated.Pokemon, held.GlobalRng, trace.ToImmutable(), held.HeldItem);
     }

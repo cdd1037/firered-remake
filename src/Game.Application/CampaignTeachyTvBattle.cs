@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
             _content.TeachyTv!.Lessons[battle.Lesson].Battle!, battle, command.Kind, command.Text);
         if (!result.Accepted) return new(CommandStatus.Rejected, state, result.Error);
         string music = command.Kind == "teachy_tv_battle_confirm" && battle.Voiceover.Pending?.StringId == "STRINGID_PKMNGAINEDEXP"
-            ? "MUS_VICTORY_WILD" : result.State.CurrentStep?.Event is SourcePokedudeCaughtEvent ? "MUS_CAUGHT" : state.Music;
+            ? "MUS_VICTORY_WILD" : result.State.CurrentEvent is SourcePokedudeCaughtEvent ? "MUS_CAUGHT" : state.Music;
         var next = state with { TeachyTv = tv with { Battle = result.State }, World = state.World with { Rng = result.State.Frame.Rng }, Music = music };
         return result.State.Stage == CampaignTeachyTvBattleStage.Finished ? CompleteTeachyTvBattle(next) : new(CommandStatus.Accepted, next);
     }
@@ -68,20 +68,19 @@ public sealed partial class CampaignSession
         int active = b.Frame.Get(new(0)).Member!.Value.Index;
         var body = b.Frame.Party(BattleSide.Player).Members[active];
         var owned = TeachyTvTemporaryMember(state, body.Pokemon, body.Status, active);
-        bool Exportable(CampaignTeachyTvBattleStep step) => step.Reward is null && step.Event is not SourcePokedudeCaughtEvent;
-        var events = b.Steps.Where(Exportable).Select(s => SourceBattleEventAdapter.Export(s.Event)).ToImmutableArray();
-        int index = b.Steps.Take(b.StepIndex).Count(Exportable);
+        bool Visible(CampaignTeachyTvBattleStep step) => step.Reward is null && b.Events[step.EventIndex] is not SourcePokedudeCaughtEvent;
+        int index = b.CurrentStep?.EventIndex ?? b.Events.Length;
         var pages = b.CurrentStep is { Reward: {} reward, Recipient: {} recipient }
             ? ImmutableArray.Create(new CampaignWildPage("source-reward", reward, recipient)) : [];
-        var phase = !pages.IsEmpty ? CampaignBattlePhase.Results : b.CurrentStep is {} step && Exportable(step)
+        var phase = !pages.IsEmpty ? CampaignBattlePhase.Results : b.CurrentStep is {} step && Visible(step)
             ? CampaignBattlePhase.Events : b.Stage is CampaignTeachyTvBattleStage.ChooseAction or CampaignTeachyTvBattleStage.ChooseMove
                 ? CampaignBattlePhase.ChooseMove : CampaignBattlePhase.Results;
-        var displayPlayer = b.CurrentStep?.Event is SourcePlayerSwitchedEvent switched ? switched.Replacement.Body.Pokemon : b.DisplayPlayer;
-        var projection = new CampaignWildBattle(b.Ticket, owned, b.Frame, events, index, displayPlayer, b.DisplayOpponent,
+        var displayPlayer = b.CurrentEvent is SourcePlayerSwitchedEvent switched ? switched.Replacement.Body.Pokemon : b.DisplayPlayer;
+        var projection = new CampaignWildBattle(b.Ticket, owned, b.Frame, b.Events, index, displayPlayer, b.DisplayOpponent,
             phase, pages, 0, b.RandomTrace) { ActivePartyIndex = active,
-            SourceEvents = b.Steps.Select(s => s.Event).DistinctBy(e => e.Sequence).ToImmutableArray() };
-        if (b.CurrentStep?.Event is SourcePlayerSwitchedEvent change)
-            projection = projection with { LastSwitch = new(TeachyTvTemporaryMember(state, change.Previous.Body.Pokemon,
+            DisplayBatch = b.DisplayBatch };
+        if (b.CurrentEvent is SourcePlayerSwitchedEvent change)
+            projection = projection with { SwitchDisplay = new(change.Previous.Body, change.Replacement.Body, WildBattleCalledSwitchKind.Voluntary), LastSwitch = new(TeachyTvTemporaryMember(state, change.Previous.Body.Pokemon,
                 change.Previous.Body.Status, 0), "sText_PkmnThatsEnough", "sText_GoPkmn2") };
         return projection;
     }

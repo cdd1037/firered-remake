@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using System.Collections.Immutable;
 using Game.Application;
 using Game.Content;
@@ -18,7 +19,7 @@ public partial class CampaignView
     }
     private bool ForestTrainerCombatVisible => _session.State.ForestTrainerBattle is { Stage: not CampaignForestTrainerStage.Intro };
     private readonly Dictionary<string, ImageTexture> _forestTrainerPortraits = new(StringComparer.Ordinal);
-    private WildBattleEvent? WildCurrentEvent(CampaignWildBattle battle) =>
+    private SourceBattleEvent? WildCurrentEvent(CampaignWildBattle battle) =>
         _session.State.ForestTrainerBattle?.CurrentTrainerEvent is not null || battle.EventIndex >= battle.Events.Length
             ? null : battle.Events[battle.EventIndex];
     private void LoadForestTrainerPresentation()
@@ -70,8 +71,8 @@ public partial class CampaignView
         if (item is not ForestTrainerOpponentReplacedEvent replacement)
             throw new InvalidDataException("Unsupported visible trainer event: " + item.GetType().Name);
         var name=PresentedBattleSpeciesName(replacement.Replacement.Pokemon.SourceSpeciesId);
-        bool forced=_session.State.ForestTrainerBattle.Presentation.Events.OfType<WildBattleForcedOutEvent>()
-            .Any(e=>e.TrainerBattle&&e.Target==WildBattleSide.Opponent&&e.Sequence<replacement.Sequence);
+        bool forced=_session.State.ForestTrainerBattle.Presentation.Events.OfType<SourceForcedOutEvent>()
+            .Any(e=>e.TrainerBattle&&e.Target.Value==1&&e.Sequence<replacement.Sequence);
         if(forced)source("sText_PkmnWasDraggedOut",[("B_DEF_NAME_WITH_PREFIX","Foe "+name)]);
         else
         {
@@ -169,7 +170,7 @@ public partial class CampaignView
         return true;
     }
     private bool ForestTrainerOpening(CampaignWildBattle battle) => _session.State.ForestTrainerBattle is not null &&
-        battle.Phase == CampaignBattlePhase.Events && WildCurrentEvent(battle) is WildBattleStartedEvent;
+        battle.Phase == CampaignBattlePhase.Events && WildCurrentEvent(battle) is SourceStartedEvent;
     private bool DrawForestTrainerPortrait(CampaignWildBattle battle)
     {
         if (!ForestTrainerOpening(battle) || _wildPage != 0) return false;
@@ -190,5 +191,5 @@ public partial class CampaignView
     private bool Route22RivalVisible => _session.State.ForestTrainerBattle is {} trainer && _catalog.Route22Trainers?.Trainers.ContainsKey(trainer.Trainer)==true;
     private int Route22RivalVictoryPageCount => Route22RivalVisible ? _catalog.TextPages(_catalog.Route22Trainers!.Battles[_session.State.ForestTrainerBattle!.Trainer].VictoryText).Length : 0;
     private string VisibleTrainerPortraitId => TrainerTowerTrainerText("portrait") ?? VisibleSeafoamTrainerPortraitId ?? VisibleRegisteredTrainer?.Portrait ?? VisibleVictoryRoadTrainer()?.Portrait ?? VisibleViridianGymTrainer()?.Portrait ?? VisibleFirstSeviiTrainerPortrait() ?? VisibleCinnabarTrainerPortrait() ?? VisibleSaffronGymTrainerPortrait() ?? VisibleSilphTrainerPortrait() ?? VisibleFuchsiaGymTrainer()?.Portrait ?? (VisibleOrdinaryTrainer().TrainerClass switch
-    {"TRAINER_CLASS_JUGGLER"=>"juggler-front","TRAINER_CLASS_TAMER"=>"tamer-front","TRAINER_CLASS_CHANNELER"=>"channeler-front","TRAINER_CLASS_BOSS"=>"giovanni-front","TRAINER_CLASS_BEAUTY"=>"beauty-front","TRAINER_CLASS_COOLTRAINER"=>"cooltrainer-f-front","TRAINER_CLASS_BIKER"=>"biker-front","TRAINER_CLASS_POKEMANIAC"=>"pokemaniac-front","TRAINER_CLASS_GAMER"=>"gamer-front","TRAINER_CLASS_ENGINEER"=>"engineer-front","TRAINER_CLASS_SAILOR"=>"sailor-front","TRAINER_CLASS_FISHERMAN"=>"fisherman-front","TRAINER_CLASS_GENTLEMAN"=>"gentleman-front","TRAINER_CLASS_RIVAL_LATE"=>"rival-late-front","TRAINER_CLASS_RIVAL_EARLY"=>"rival-early-front","TRAINER_CLASS_PICNICKER"=>"picnicker-front","TRAINER_CLASS_SWIMMER_M"=>"swimmer-m-front","TRAINER_CLASS_LEADER"=>VisibleOrdinaryTrainer().Id==FuchsiaGymTrainerPartyFactory.Koga?"koga-front":VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_ERIKA"?"erika-front":VisibleOrdinaryTrainer().Id==VermilionGymTrainerPartyFactory.LtSurge?"lt-surge-front":VisibleOrdinaryTrainer().Id==CeruleanTrainerPartyFactory.Misty?"misty-front":"brock-front","TRAINER_CLASS_YOUNGSTER"=>"youngster-front","TRAINER_CLASS_LASS"=>"lass-front","TRAINER_CLASS_CAMPER"=>"camper-front","TRAINER_CLASS_SUPER_NERD"=>"super-nerd-front","TRAINER_CLASS_HIKER"=>"hiker-front","TRAINER_CLASS_TEAM_ROCKET"=>_catalog.PokemonTowerTrainers?.Trainers.ContainsKey(VisibleOrdinaryTrainer().Id)==true||_catalog.RocketHideoutTrainers?.Trainers.ContainsKey(VisibleOrdinaryTrainer().Id)==true?"rocket-grunt-m-front":"rocket-m-front",_=>"bug-catcher-front"});
+    {"TRAINER_CLASS_JUGGLER"=>"juggler-front","TRAINER_CLASS_TAMER"=>"tamer-front","TRAINER_CLASS_CHANNELER"=>"channeler-front","TRAINER_CLASS_BOSS"=>"giovanni-front","TRAINER_CLASS_BEAUTY"=>"beauty-front","TRAINER_CLASS_COOLTRAINER"=>"cooltrainer-f-front","TRAINER_CLASS_BIKER"=>"biker-front","TRAINER_CLASS_POKEMANIAC"=>"pokemaniac-front","TRAINER_CLASS_GAMER"=>"gamer-front","TRAINER_CLASS_ENGINEER"=>"engineer-front","TRAINER_CLASS_SAILOR"=>"sailor-front","TRAINER_CLASS_FISHERMAN"=>"fisherman-front","TRAINER_CLASS_GENTLEMAN"=>"gentleman-front","TRAINER_CLASS_RIVAL_LATE"=>"rival-late-front","TRAINER_CLASS_RIVAL_EARLY"=>"rival-early-front","TRAINER_CLASS_PICNICKER"=>"picnicker-front","TRAINER_CLASS_SWIMMER_M"=>"swimmer-m-front","TRAINER_CLASS_LEADER"=>VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_KOGA"?"koga-front":VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_ERIKA"?"erika-front":VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_LT_SURGE"?"lt-surge-front":VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_MISTY"?"misty-front":"brock-front","TRAINER_CLASS_YOUNGSTER"=>"youngster-front","TRAINER_CLASS_LASS"=>"lass-front","TRAINER_CLASS_CAMPER"=>"camper-front","TRAINER_CLASS_SUPER_NERD"=>"super-nerd-front","TRAINER_CLASS_HIKER"=>"hiker-front","TRAINER_CLASS_TEAM_ROCKET"=>_catalog.PokemonTowerTrainers?.Trainers.ContainsKey(VisibleOrdinaryTrainer().Id)==true||_catalog.RocketHideoutTrainers?.Trainers.ContainsKey(VisibleOrdinaryTrainer().Id)==true?"rocket-grunt-m-front":"rocket-m-front",_=>"bug-catcher-front"});
 }

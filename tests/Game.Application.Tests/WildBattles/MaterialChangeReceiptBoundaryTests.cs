@@ -43,7 +43,7 @@ public sealed class MaterialChangeReceiptBoundaryTests
             Assert.AreEqual(json,JsonSerializer.Serialize(result));
             if(single)
             {
-                var exported=SourceBattleEventAdapter.Export(change) as WildBattleTransformedEvent;Assert.IsNotNull(exported);
+                var exported=OverlayHitAnimationKernelFixture.Single([change], 0).Events[0] as SourceTransformedEvent;Assert.IsNotNull(exported);
                 Assert.AreEqual(change.AppearancePersonality,exported.AppearancePersonality);Assert.AreEqual(change.AppearanceOriginalTrainerId,exported.AppearanceOriginalTrainerId);
             }
         }

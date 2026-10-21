@@ -11,20 +11,15 @@ public static class PretRoute3Trainers
 {
     public const string RelativePath = "content/generated/data/trainer-battles/route3.json";
 
-    public static Route3TrainerCatalog Load(string root)
+    public static OrdinaryTrainerCatalog Load(string root)
     {
         var document = ContentJson.ParseStrict<Route3TrainerDocument>(
             File.ReadAllText(Path.Combine(root, RelativePath)), SharedTrainerCatalog.Options(root));
         if (document.SchemaVersion != 1) throw new InvalidDataException("Unsupported Route3 trainer document schema.");
-        var catalog = new Route3TrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.Trainer));
-        Route3TrainerPartyFactory.ValidateCatalog(catalog);
-        return catalog;
+        var battles = document.Battles.Select(b => new CeruleanTrainerBattleDefinition(
+            b.Trainer, b.Mode, 0, b.BattleTypeFlags, b.ScriptEntry, b.IntroText, b.DefeatText, "",
+            b.PostBattleText, b.EntryScript, b.Callback, b.Source)).ToImmutableArray();
+        return new(document.Trainers.ToImmutableDictionary(t => t.Id), battles, "route3-trainer");
     }
 
-    public static Route3TrainerCatalog Load(PretRoute3Region region, PokemonPresentationPackage pokemon)
-    {
-        ArgumentNullException.ThrowIfNull(region);
-        ArgumentNullException.ThrowIfNull(pokemon);
-        return Load(PretRuntimeMapValidation.ProjectRoot(region.GeneratedDirectory));
-    }
 }

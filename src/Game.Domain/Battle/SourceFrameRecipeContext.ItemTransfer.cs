@@ -27,16 +27,16 @@ internal static class SourceItemTransferRules
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override bool IsTrainerTower => Frame.TrainerTowerEncounter?.Roster is not null;
+    internal bool IsTrainerTower => Frame.TrainerTowerEncounter?.Roster is not null;
     private readonly Dictionary<BattlerSlot, string> changedItems = [];
-    internal override string? UsedHeldItem(BattlerSlot slot) => Frame.Get(slot).Position.UsedHeldItem;
-    internal override void SetUsedHeldItem(BattlerSlot slot, string? item)
+    internal string? UsedHeldItem(BattlerSlot slot) => Frame.Get(slot).Position.UsedHeldItem;
+    internal void SetUsedHeldItem(BattlerSlot slot, string? item)
     {
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Position = cell.Position with { UsedHeldItem = item } }) };
     }
-    internal override void QueueChangedItem(BattlerSlot slot, string item) => changedItems[slot] = item;
-    internal override void WritePartyItem(BattlerSlot slot, string item, string reason)
+    internal void QueueChangedItem(BattlerSlot slot, string item) => changedItems[slot] = item;
+    internal void WritePartyItem(BattlerSlot slot, string item, string reason)
     {
         var key = Frame.Get(slot).Member!.Value; var party = Frame.Party(key.Side); var before = party.Members[key.Index];
         var after = WildBattleSourcePartyEffects.WithPersistentHeldItem(before, item);
@@ -45,11 +45,11 @@ internal sealed partial class FrameRecipeContext
             Add(n => new SourceCalledPartyChangedEvent(n, Turn, slot.Side, key.Index, reason, before, after) {
                 SourceSlot = reason is "trick-party-write" or "recycle-party-write" or "changed-item-applied" ? slot : null });
     }
-    internal override void SetKnockedOffItem(BattlerSlot slot, string item)
+    internal void SetKnockedOffItem(BattlerSlot slot, string item)
     {
         var key = Frame.Get(slot).Member!.Value;
         string persistent = WildBattleSourcePartyEffects.PersistentHeldItem(Frame.Party(key.Side).Members[key.Index]);
-        base.SetKnockedOffItem(slot, item);
+        SetKnockedOffItemCore(slot, item);
         WritePartyItem(slot, persistent, "knock-off-battle-only");
     }
     private void FinishChangedItems()

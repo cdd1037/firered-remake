@@ -198,7 +198,7 @@ public sealed class WildBattleFlowTests : WildBattleFixture
         var rejected = session.Execute("wrong-learning", session.Revision, new("wild_learn", MoveSlot: 4));
         Assert.IsTrue(rejected.Status == CommandStatus.Rejected && ReferenceEquals(session.State.WildBattle!.Frame, rewardFrame), "bad learning choice leaves canonical state identical");
         Send(session, new("wild_learn", MoveSlot: 0));
-        Assert.IsTrue(session.State.WildBattle!.SourceEvents.OfType<SourceRewardLearningEvent>().Any(e =>
+        Assert.IsTrue(session.State.WildBattle!.Events.OfType<SourceRewardLearningEvent>().Any(e =>
             e.Outcome == SourceRewardLearningOutcome.Replaced && e.Candidate.Move == target.Move), "Actual replacement receipt");
         GrowthResultTextFixture.AssertPages(content, session.State.WildBattle!.Pages.Select(page => page.Text),
             "sText_PkmnLearnedMove", ("B_BUFF1", content.PokemonDisplayName(session.State.Party[0])),

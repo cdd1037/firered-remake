@@ -1,9 +1,7 @@
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
-    internal abstract int SureHitTurnsRemaining(BattlerSlot slot);
-    internal abstract void SetSureHitTurnsRemaining(BattlerSlot slot, int remaining);
     internal void LockOnResidual(BattlerSlot slot)
     {
         int before = SureHitTurnsRemaining(slot);

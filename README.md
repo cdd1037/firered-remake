@@ -48,7 +48,7 @@ python dev run /path/to/current-checkpoint.json
 dotnet test tests/Game.Audio.Tests/Game.Audio.Tests.csproj
 ```
 
-也可在 Godot 打开并运行工程；正常入口不强制要求 FIRERED 环境变量，默认启用玩家入口和合成音频。参数、正常用户存档目录、诊断入口及显式转换见[当前组合](docs/current-game-composition.md)。
+也可在 Godot 打开并运行工程；正常入口不强制要求 FIRERED 环境变量，默认启用玩家入口和合成音频。参数、正常用户存档目录、诊断入口及严格存档边界见[当前组合](docs/current-game-composition.md)。
 
 默认 `dotnet test` 执行领域、真实内容战斗、应用、内容、表现、资源导入和跨进程七个 MSTest 项目。定向筛选须先指定项目；空套件、空筛选、发现警告与缺失输入均报错。测试项目职责、参考向量和报告命令只维护在[测试说明](tests/README.md)。离线音频测试不证明真实声卡输出。
 
@@ -67,7 +67,7 @@ dotnet test tests/Game.Audio.Tests/Game.Audio.Tests.csproj
 ## 当前验收与交付限制
 
 - P0 的真实音频输出尚未验收。Dummy/headless、离线 PCM 或测试通过不能关闭此缺口。
-- Linux 正常启动与独立包的有限 Save/Continue 流程有既有证据；Windows 尚未实测。已有导出证据不覆盖随后源码变更，本轮不导出新包，Drive 完整工程包也继续暂停。将来导出需匹配的官方模板，详见[Linux 导出验收](docs/linux-export-acceptance.md)。
+- Linux 正常启动与独立包的有限 Save/Continue 流程有既有证据；Windows 尚未实测。已有导出证据不覆盖随后源码变更，本轮不导出游戏包，GitHub 操作继续暂停；每个完成验证的大批次提供仅含源码的 Drive 归档，不包含素材、存档或生成资源。将来导出需匹配的官方模板，详见[Linux 导出验收](docs/linux-export-acceptance.md)。
 - 原生窗口仅验证了所记录的代表场景，不代表完整自然通关、所有 UI 状态、逐帧一致或实际帧率。当前回归与原生覆盖统一见[验证与限制](docs/validation.md)。
 - 存档保持可读 schema 3 JSON，支持 Unicode 身份与昵称；正常 Continue 拒绝 schema 1/2 和不匹配版本，不自动迁移、不猜测缺失的终身孵蛋数，也不覆盖旧档。generation-57604 历史样本不是当前 Continue 或自然后期验收基线。格式与备份契约见[存档说明](docs/save-storage.md)。
 

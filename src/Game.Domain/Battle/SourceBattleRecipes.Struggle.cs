@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     // BattleScript_EffectRecoil -> EffectHit. Forced selection owns NO_PPDEDUCT;
     // the recipe retains the real Struggle ID (physical damage, no STAB/typecalc).
@@ -40,9 +40,8 @@ internal abstract partial class SourceRecipeContext
         ForestOutcome(true);
     }
 
-    internal virtual int StruggleAdjustedDamage(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
+    internal int StruggleAdjustedDamage(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
         AdjustHeldDamage(target, move.Id, damage, purpose);
-    internal virtual bool StruggleSandstorm => SandstormTurnsRemaining > 0;
 
     private bool StruggleAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
     {

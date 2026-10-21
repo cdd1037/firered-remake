@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -16,31 +17,13 @@ namespace FireRed.Tests.Application.WildBattles;
 [TestClass, TestCategory("Game")]
 public sealed class DoubleKickMoveAnimationDispatchTests
 {
+    private static readonly DirectHitAnimationContract Contract = new("double-kick", 24, Id("DOUBLE_KICK"), 30, DirectHitOwnership.EachHit, 2, 2);
     private static readonly MoveId Kick = Id("DOUBLE_KICK");
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static SourceMechanicsCatalog Mechanics =>
-        TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("double-kick", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
-            events, index, [], [], 0, 0, [], [], [], [], 0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("double-kick", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
-    private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
-        events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) => Contract.Double(events, index);
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) => Contract.Single(events, index);
+
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
         events.Select((e, index) => e with { Sequence = index + 1 }).ToImmutableArray();
-
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name);
-        var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
 
     private static WildBattleCombatant[] Bodies(int actor = 0)
     {
@@ -129,54 +112,12 @@ public sealed class DoubleKickMoveAnimationDispatchTests
         Assert.AreEqual(Kick, summary.Move); Assert.AreEqual(2, summary.PlannedHits); Assert.AreEqual(expectedHits, summary.ActualHits);
         Assert.IsTrue(attack.Sequence < used.Sequence && used.Sequence < pp.Sequence && pp.Sequence < hits[0].Sequence);
         Assert.IsTrue(hits[^1].Sequence < summary.Sequence);
-        string before = JsonSerializer.Serialize(events); int dispatchCount = 0;
-        for (int index = 0; index < events.Length; index++)
-        {
-            var battle = Double(events, index);
-            var text = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
-            var hit = AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On);
-            Assert.IsNull(text.Dispatch, "Attack text must not schedule an extra Double Kick root.");
-            int ordinal = Array.FindIndex(hits, h => h.Sequence == events[index].Sequence);
-            if (ordinal >= 0)
-            {
-                var dispatch = hit.Dispatch; Assert.IsNotNull(dispatch, hit.Reason); dispatchCount++;
-                Assert.AreEqual(24, dispatch.SourceMoveId); Assert.AreEqual("double-kick", dispatch.BattleId);
-                Assert.AreEqual(actor, dispatch.Actor.Value); Assert.AreEqual(target, dispatch.Target.Value);
-                Assert.AreEqual(hits[ordinal].Sequence, dispatch.Sequence); Assert.AreEqual(hits[ordinal].Sequence, dispatch.ResultSequence);
-                Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
-                Assert.AreEqual((byte)ordinal, dispatch.MoveTurn);
-                Assert.AreEqual(hits[ordinal] is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-                Assert.IsFalse(dispatch.AcknowledgesCurrentReceipt, "Per-hit playback resumes the same receipt without an extra ACK.");
-            }
-            else Assert.IsNull(hit.Dispatch, "Used, PP, contact, summary, faint and other receipts cannot own another kick.");
-            Assert.AreEqual(hit, AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On));
-            Assert.AreEqual(index, battle.EventIndex, "Projection cannot consume the receipt cursor.");
-            if (actor < 2 && target < 2)
-            {
-                var single = Single(events, index);
-                Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(index, single.EventIndex);
-            }
-        }
-        Assert.AreEqual(expectedHits, dispatchCount, "Exactly one invocation per committed hit, never per planned kick or sprite.");
-        Assert.AreEqual(before, JsonSerializer.Serialize(events));
+        Contract.AssertDispatches(events, actor, target);
     }
 
-    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string branch)
-    {
-        string before = JsonSerializer.Serialize(events);
-        bool singles = events.OfType<SourceMoveUsedEvent>().All(e => e.Actor.Value < 2 && e.Target.Value < 2);
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch, branch);
-            if (!singles) continue;
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-        }
-        Assert.AreEqual(before, JsonSerializer.Serialize(events));
-    }
+    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string branch) =>
+        Contract.AssertDenied(events, branch,
+            !events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value > 1 || e.Target.Value > 1));
 
     [TestMethod]
     public void NaturalLearnerUsesSourceFixedTwoMetadataAndActualSinglesBothDirections()

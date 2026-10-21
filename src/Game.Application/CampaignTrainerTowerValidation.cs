@@ -59,33 +59,6 @@ public sealed partial class CampaignSession
         return null;
     }
 
-    /// <summary>Explicit offline v3 validation only. Checks every old receipt before the full stable-save boundary.</summary>
-    public string? ValidateLegacyTrainerTowerCheckpoint(CampaignState state)
-    {
-        if (state is null) return "save_structure_invalid";
-        if (state.TrainerTowerHistory is {} history)
-        {
-            if (history.IsDefault) return "save_trainer_tower_history";
-            for (int i = 0; i < history.Length; i++)
-            {
-                if (ValidateTrainerTowerReceipt(history[i]) is {} error) return error;
-                if (history[i].Id != TrainerTowerBattleId((long)i + 1)) return "save_trainer_tower_history";
-            }
-        }
-        return ValidatePlayerSave(RetainLastTrainerTowerReceipt(state));
-    }
-
-    /// <summary>Explicit offline conversion only. Continue never trims or repairs a legacy save.</summary>
-    public CampaignState ConvertLegacyTrainerTowerCheckpoint(CampaignState state)
-    {
-        if (ValidateLegacyTrainerTowerCheckpoint(state) is {} error)
-            throw new InvalidDataException("checkpoint_conversion_invalid: " + error);
-        return RetainLastTrainerTowerReceipt(state);
-    }
-
-    private static CampaignState RetainLastTrainerTowerReceipt(CampaignState state) =>
-        state.TrainerTowerHistory is { Length: > 1 } history ? state with { TrainerTowerHistory = [history[^1]] } : state;
-
     private CampaignTrainerTowerHistory ActiveTrainerTowerReceipt(CampaignState state, SourceBattleFrame frame,
         string id, bool finished)
     {

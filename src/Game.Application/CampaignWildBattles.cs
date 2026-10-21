@@ -16,7 +16,7 @@ namespace Game.Application;
 public sealed record CampaignWildAppearance(SpeciesId Species,uint Personality,uint OriginalTrainerId);
 public sealed record CampaignWildPage(string Text,WildRewardEvent? Reward=null,int? PartyIndex=null);
 public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,SourceBattleFrame Frame,
-    ImmutableArray<WildBattleEvent> Events,int EventIndex,PokemonInstance DisplayPlayer,PokemonInstance DisplayOpponent,
+    ImmutableArray<SourceBattleEvent> Events,int EventIndex,PokemonInstance DisplayPlayer,PokemonInstance DisplayOpponent,
     CampaignBattlePhase Phase,ImmutableArray<CampaignWildPage> Pages,int PageIndex,
     ImmutableArray<RandomTrace> RandomTrace)
 {
@@ -26,12 +26,12 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,Sourc
         get=>_frame;
         init=>_frame=value??throw new InvalidDataException("canonical_battle_frame_required");
     }
+    [JsonIgnore] public CampaignBattleSwitchDisplay? SwitchDisplay { get; init; }
     [JsonIgnore] public CampaignBattleDisplayBatch? DisplayBatch { get; init; }
     [JsonIgnore] public WildBattleState State=>CampaignWildReadProjection.From(Frame);
     [JsonIgnore] public ImmutableArray<WildPendingMove> PendingMoves=>Frame.Rewards?.Pending?.Moves??[];
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<int> EntryLevels{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ExperienceGained{get;init;}
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<SourceBattleEvent> SourceEvents{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignWildAppearance? DisplayPlayerAppearance{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignWildAppearance? DisplayOpponentAppearance{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ActivePartyIndex{get;init;}
@@ -118,8 +118,8 @@ public sealed partial class CampaignSession
         if(!started.Succeeded)throw new InvalidDataException(started.Fault);
         var frame=PrepareCanonicalWildFrame(state,started.State!);
         var battle=CampaignWildReadProjection.From(frame);
-        var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,frame,ProjectCanonicalWildEvents(started.Events),0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,[],0,[..generated.RandomTrace,..started.Trace])
-        {RockSmashReceipt=rockSmashReceipt,SourceTableReceipt=sourceTableReceipt,SeafoamReceipt=seafoamReceipt,PowerPlantReceipt=powerPlantReceipt,EventIslandReceipt=eventIslandReceipt,SevenIslandReceipt=sevenIslandOrigin is null?null:new(sevenIslandGenerationRng??state.World.Rng,generated.GlobalRng,generated.Pokemon),MewtwoReceipt=mewtwoReceipt,DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
+        var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,frame,started.Events,0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,[],0,[..generated.RandomTrace,..started.Trace])
+        {RockSmashReceipt=rockSmashReceipt,SourceTableReceipt=sourceTableReceipt,SeafoamReceipt=seafoamReceipt,PowerPlantReceipt=powerPlantReceipt,EventIslandReceipt=eventIslandReceipt,SevenIslandReceipt=sevenIslandOrigin is null?null:new(sevenIslandGenerationRng??state.World.Rng,generated.GlobalRng,generated.Pokemon),MewtwoReceipt=mewtwoReceipt,DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
         if(fishingPokemon is null&&surfPokemon is null&&scriptedPokemon is null)exploration=exploration with{EarlyEncounter=CompleteCurrentLandCandidate(exploration.EarlyEncounter!,state.World.Player.MapId)};
         return PrepareWildPresentation(state with{WildBattle=b,Exploration=exploration with{NextWildBattleId=checked(exploration.NextWildBattleId+1)},World=state.World with{Rng=battle.Rng},UnownPokedexPersonality=generated.Pokemon.SourceSpeciesId==201&&!state.SeenSpecies.Contains(201)?generated.Pokemon.Personality:state.UnownPokedexPersonality,SeenSpecies=towerBattle&&!PokemonTowerBattleContract.Policy(kind).RegisterSeen?state.SeenSpecies:state.SeenSpecies.Add(battle.Opponent.Pokemon.SourceSpeciesId),Motions=[],PresentationTicks=0});
     }
@@ -136,7 +136,7 @@ public sealed partial class CampaignSession
             {
                 if(b.PageIndex+1<b.Pages.Length)
                 {
-                    int index=b.PageIndex+1;var display=b.Pages[index].Reward is WildRewardLevelEvent&&b.RewardPartyIndex==b.ActivePartyIndex?state.Party[b.ActivePartyIndex].Pokemon:b.DisplayPlayer;
+                    int index=b.PageIndex+1;var display=DisplayRewardPage(b,index);
                     return new(CommandStatus.Accepted,state with{WildBattle=b with{PageIndex=index,DisplayPlayer=display}});
                 }
                 if(!b.PendingMoves.IsEmpty)return new(CommandStatus.Rejected,state,"wild_move_learning_required");
@@ -218,36 +218,8 @@ public sealed partial class CampaignSession
             var e=b.Events[b.EventIndex];
             b=AdvanceDisplayThrough(b,e.Sequence);
             if(HiddenEarlyPartyEvent(e)){b=b with{EventIndex=b.EventIndex+1};continue;}
-            if(e is WildBattleStatusChangedEvent {Reason:"sleep-countdown"} or WildBattleLeechSeedChangedEvent {Reason:not "move"}){b=b with{EventIndex=b.EventIndex+1};continue;}
-            if(e is WildBattleOrderEvent or WildBattleTurnReadyEvent or WildBattleEndedEvent {MoveEscape:null} or WildBattleDefenseCurledEvent || e is WildBattleBindingChangedEvent binding && binding.Reason is not("bind" or "wrap" or "expired")){b=b with{EventIndex=b.EventIndex+1};continue;}
-            void Update(WildBattleSide side,Func<PokemonInstance,PokemonInstance> update){b=side==WildBattleSide.Player?b with{DisplayPlayer=update(b.DisplayPlayer)}:b with{DisplayOpponent=update(b.DisplayOpponent)};}
-            switch(e)
-            {
-                case WildBattlePpCommandEvent pp when pp.PpSlot>=0:Update(pp.PpOwner,p=>p with{Moves=p.Moves.SetItem(pp.PpSlot,p.Moves[pp.PpSlot] with{CurrentPp=pp.After})});break;
-                case WildBattleSnatchPressurePpEvent pp:Update(pp.Snatcher,p=>p with{Moves=p.Moves.SetItem(pp.Slot,p.Moves[pp.Slot] with{CurrentPp=pp.After})});break;
-                case WildBattleGrudgePpEvent grudge:Update(grudge.Attacker,p=>p with{Moves=p.Moves.SetItem(grudge.ChosenSlot,p.Moves[grudge.ChosenSlot] with{CurrentPp=0})});break;
-                case WildBattleWeatherDamageEvent weather:Update(weather.Side,p=>p with{CurrentHp=weather.HpAfter});break;
-                case WildBattleDrainEvent drain:Update(drain.Actor,p=>p with{CurrentHp=drain.HpAfter});break;
-                case WildBattleMoveCopiedEvent copied:Update(copied.Actor,p=>p with{Moves=p.Moves.SetItem(copied.MoveSlot,copied.Replacement)});break;
-                case WildBattleTransformedEvent transformed:b=ApplyTransformDisplay(b,transformed);break;
-                case WildBattlePlayerReplacedEvent replaced:b=b with{DisplayPlayer=BattleDisplayPokemon(replaced.Replacement),DisplayPlayerAppearance=null};break;
-                case WildBattlePlayerSwitchedEvent changed:b=b with{DisplayPlayer=BattleDisplayPokemon(changed.Replacement),DisplayPlayerAppearance=null};break;
-                case WildBattleMoveUsedEvent used when used.Slot>=0:Update(used.Actor,p=>p with{Moves=p.Moves.SetItem(used.Slot,p.Moves[used.Slot] with{CurrentPp=used.PpAfter})});break;
-                case WildBattleTowerHpEvent towerHp:Update(towerHp.Side,p=>p with{CurrentHp=towerHp.HpAfter});break;
-                case WildBattleSpiteEvent spite:Update(spite.Target,p=>p with{Moves=p.Moves.SetItem(spite.Slot,p.Moves[spite.Slot] with{CurrentPp=spite.PpAfter})});break;
-                case WildBattleHpChangedEvent hp:Update(hp.Target,p=>p with{CurrentHp=hp.HpAfter});break;
-                case WildBattleHeldItemConsumedEvent item:Update(item.Side,p=>p with{CurrentHp=item.HpAfter});break;
-                case WildBattleIngrainHealEvent roots:Update(roots.Side,p=>p with{CurrentHp=roots.HpAfter});break;
-                case WildBattleRecoveredEvent recovered:Update(recovered.Side,p=>p with{CurrentHp=recovered.HpAfter});break;
-                case WildBattlePotionRecoveredEvent potion:Update(potion.Side,p=>p with{CurrentHp=potion.HpAfter});break;
-                case WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine:Update(WildBattleSide.Player,p=>p with{CurrentHp=medicine.HpAfter});break;
-                case WildBattleRecoilEvent recoil:Update(recoil.Actor,p=>p with{CurrentHp=recoil.HpAfter});break;
-                case WildBattleAbilityDamageEvent ability:Update(ability.Target,p=>p with{CurrentHp=ability.HpAfter});break;
-                case WildBattleConfusionSelfHitEvent self:Update(self.Side,p=>p with{CurrentHp=self.HpAfter});break;
-                case WildBattleLeechSeedDrainEvent seed:Update(seed.DrainedSide,p=>p with{CurrentHp=seed.HpAfter});Update(seed.ReceivingSide,p=>p with{CurrentHp=seed.ReceiverHpAfter});break;
-                case WildBattleBindingDamageEvent bind:Update(bind.Side,p=>p with{CurrentHp=bind.HpAfter});break;
-                case WildBattleStatusDamageEvent status:Update(status.Side,p=>p with{CurrentHp=status.HpAfter});break;
-            }
+            if(e is SourceStatusChangedEvent {Reason:"sleep-countdown"} or SourceLeechSeedChangedEvent {Reason:not "move"}){b=b with{EventIndex=b.EventIndex+1};continue;}
+            if(e is SourceOrderEvent or SourceTurnReadyEvent or SourceEndedEvent {MoveEscape:null} or SourceDefenseCurledEvent || e is SourceBindingChangedEvent binding && binding.Reason is not("bind" or "wrap" or "expired")){b=b with{EventIndex=b.EventIndex+1};continue;}
             return state with{WildBattle=b};
         }
         return ContinueCanonicalWild(state with{WildBattle=AdvanceDisplayThrough(b,long.MaxValue)});

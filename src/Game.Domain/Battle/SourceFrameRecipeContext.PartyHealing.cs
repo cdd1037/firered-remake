@@ -5,15 +5,15 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override ImmutableArray<WildBattleCalledPartyMember> HealingParty(BattleSide side) => Frame.Party(side).Members;
-    internal override BattlerSlot? HealingActiveSlot(BattlerSlot actor, int partyIndex)
+    internal ImmutableArray<WildBattleCalledPartyMember> HealingParty(BattleSide side) => Frame.Party(side).Members;
+    internal BattlerSlot? HealingActiveSlot(BattlerSlot actor, int partyIndex)
     {
         if (Frame.Get(actor).Member?.Index == partyIndex) return actor;
         if (SourceDoubleBattle && !Frame.IsSourceAbsent(actor.Partner) &&
             Frame.Get(actor.Partner).Member?.Index == partyIndex) return actor.Partner;
         return null;
     }
-    internal override void WriteHealingPartyMember(BattleSide side, int partyIndex, WildBattleCalledPartyMember member)
+    internal void WriteHealingPartyMember(BattleSide side, int partyIndex, WildBattleCalledPartyMember member)
     {
         var party = Frame.Party(side);
         Frame = Frame with { Parties = Frame.Parties.SetItem((int)side, party with { Members = party.Members.SetItem(partyIndex, member) }) };

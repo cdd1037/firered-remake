@@ -22,19 +22,6 @@ public sealed partial class PretPokemonLeagueRegion
 
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_INDIGO_PLATEAU_POKEMON_CENTER_1F" => new("map.indigo-plateau-pokemon-center-1f"),
-        "MAP_INDIGO_PLATEAU_POKEMON_CENTER_2F" => new("map.indigo-plateau-pokemon-center-2f"),
-        "MAP_POKEMON_LEAGUE_LORELEIS_ROOM" => new("map.pokemon-league-loreleis-room"),
-        "MAP_POKEMON_LEAGUE_BRUNOS_ROOM" => new("map.pokemon-league-brunos-room"),
-        "MAP_POKEMON_LEAGUE_AGATHAS_ROOM" => new("map.pokemon-league-agathas-room"),
-        "MAP_POKEMON_LEAGUE_LANCES_ROOM" => new("map.pokemon-league-lances-room"),
-        "MAP_POKEMON_LEAGUE_CHAMPIONS_ROOM" => new("map.pokemon-league-champions-room"),
-        "MAP_POKEMON_LEAGUE_HALL_OF_FAME" => new("map.pokemon-league-hall-of-fame"),
-        _ => PretVictoryRoadRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     private static SilphSourcePackage PokemonLeagueSource(string root) => new(root,"maps/regions/pokemon-league");
     public static PretPokemonLeagueRegion Load(PretCurrentWorld world)
     {

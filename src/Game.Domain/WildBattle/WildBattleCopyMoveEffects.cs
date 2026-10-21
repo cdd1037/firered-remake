@@ -9,8 +9,6 @@ namespace Game.Domain.WildBattle;
 public sealed record WildBattleMimickedSlot(int Slot, PokemonMoveSlot PersistentSlot);
 public sealed record WildBattleCopiedMoves(ImmutableArray<WildBattleMimickedSlot> Slots,
     string RulesVersion = WildBattleRules.CalledMoveKernelRulesVersion);
-public sealed record WildBattleMoveCopiedEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target,
-    MoveId Move, MoveId CopiedMove, int MoveSlot, bool Permanent, PokemonMoveSlot Replacement) : WildBattleEvent(Sequence, Turn);
 
 /// <summary>Source party/live move separation. No new persistent owned-Pokémon schema is needed.</summary>
 public static class WildBattleCopyMoveRules

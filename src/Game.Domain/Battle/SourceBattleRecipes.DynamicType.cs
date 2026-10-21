@@ -23,12 +23,12 @@ internal static class SourceDynamicTypeRules
     internal static string Symbol(ElementType type) => "TYPE_" + type.ToString().ToUpperInvariant();
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasDynamicTypeRecipe(string effect) => effect is "EFFECT_HIDDEN_POWER" or "EFFECT_WEATHER_BALL";
     private string? dynamicHitType;
     private int dynamicTypeMultiplier = 1;
-    internal virtual void SetDynamicHitType(string? type) => dynamicHitType = type;
+    internal void SetDynamicHitType(string? type) => dynamicHitType = type;
     internal string DynamicHitType(PokemonMoveDefinition move) => dynamicHitType ?? move.Type;
 
     // Weather Ball executes setweatherballtype before attackcanceler; Hidden Power's
@@ -41,9 +41,9 @@ internal abstract partial class SourceRecipeContext
         SetDynamicHitType(SourceDynamicTypeRules.Symbol(value.Type));
         dynamicTypeMultiplier = value.Multiplier;
     }
-    internal virtual bool DynamicTypeAbsorb(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string type) =>
+    internal bool DynamicTypeAbsorb(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string type) =>
         Route11WaterAbsorb(actor, target, move with { Type = type });
-    internal virtual void DynamicTypeReport(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string type)
+    internal void DynamicTypeReport(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string type)
     {
         if (SourceTypeReport(catalog, actor, target, move, type)) return;
         SourceDamageResultMessage(actor, target, move);

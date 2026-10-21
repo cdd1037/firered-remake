@@ -27,8 +27,8 @@ public sealed class RockFragmentMoveAnimationDispatchTests
         new("rock-fragments", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("rock-fragments", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("rock-fragments", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
         events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
     private static SourceStatChangedEvent[] DefenseWaves(ImmutableArray<SourceBattleEvent> events, int actor, int target) =>

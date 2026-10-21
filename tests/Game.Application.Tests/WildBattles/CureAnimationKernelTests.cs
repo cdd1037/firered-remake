@@ -58,12 +58,12 @@ public sealed class CureAnimationKernelTests
                 var sync=result.Events.OfType<SourceCalledPartyChangedEvent>().Single(e=>e.Reason=="active-sync");
                 Assert.AreEqual(WildBattleSourceFieldEffects.ToxicPoison,sync.Before.Status,"Party storage keeps Toxic without its live battle counter.");
                 Assert.AreEqual(0u,sync.After.Status);Assert.AreEqual(status,cure.Before,"The status receipt keeps the actual live counter.");
-                // The canonical singles export preserves each side of this
+                // The canonical single envelope preserves each side of this
                 // battle-versus-persistent status distinction unchanged.
                 if(single)
                 {
-                    var exportedCure=(WildBattleStatusChangedEvent)SourceBattleEventAdapter.Export(cure);
-                    var exportedSync=(WildBattleCalledPartyChangedEvent)SourceBattleEventAdapter.Export(sync);
+                    var exportedCure=(SourceStatusChangedEvent)OverlayHitAnimationKernelFixture.Single([cure], 0).Events[0];
+                    var exportedSync=(SourceCalledPartyChangedEvent)OverlayHitAnimationKernelFixture.Single([sync], 0).Events[0];
                     Assert.AreEqual(cure.Before,exportedCure.Before);Assert.AreEqual(sync.Before.Status,exportedSync.Before.Status);
                 }
             }
@@ -71,8 +71,8 @@ public sealed class CureAnimationKernelTests
             if(single)
             {
                 int cursor=result.Events.IndexOf(result.Events.OfType<SourceMoveUsedEvent>().Single());
-                Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(Envelope.Single(result.Events,cursor) with{SourceEvents=[]},true,SourceBattleScene.On).Dispatch,
-                    "Singles must consume their exported receipt envelope rather than the source side channel.");
+                Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(Envelope.Single(result.Events,cursor),true,SourceBattleScene.On).Dispatch,
+                    "Singles must consume the same canonical receipt envelope as doubles.");
             }
         }
     }
@@ -111,7 +111,7 @@ public sealed class CureAnimationKernelTests
             if(single)
             {
                 int cursor=result.Events.IndexOf(result.Events.OfType<SourceMoveUsedEvent>().Single());
-                Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(Envelope.Single(result.Events,cursor) with{SourceEvents=[]},true,SourceBattleScene.On).Dispatch);
+                Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(Envelope.Single(result.Events,cursor),true,SourceBattleScene.On).Dispatch);
             }
         }
     }
@@ -147,9 +147,9 @@ public sealed class CureAnimationKernelTests
             Shared.Check(result,id,single,Owner(result,id));
             if(single)
             {
-                int cursor=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single());var envelope=Envelope.Single(events,cursor) with{SourceEvents=[]};
+                int cursor=events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single());var envelope=Envelope.Single(events,cursor);
                 Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(envelope,true,SourceBattleScene.On).Dispatch);
-                int changedAt=events.IndexOf(changes[0]);var changed=(WildBattleCalledPartyChangedEvent)envelope.Events[changedAt];
+                int changedAt=events.IndexOf(changes[0]);var changed=(SourceCalledPartyChangedEvent)envelope.Events[changedAt];
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(envelope with{Events=envelope.Events.SetItem(changedAt,changed with{Reason="move"})},true,SourceBattleScene.On).Dispatch,
                     "The singles adapter must preserve the party outcome used to validate the command.");
             }

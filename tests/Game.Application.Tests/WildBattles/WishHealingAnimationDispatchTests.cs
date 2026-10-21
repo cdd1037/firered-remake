@@ -19,8 +19,8 @@ public sealed class WishHealingAnimationDispatchTests
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
         new("wish-heal", new("test"), "test", new(), CampaignDoubleBattleStage.Combat, events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
-        new("wish-heal", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("wish-heal", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
     private static CampaignWishHealingAnimationDispatch? At(ImmutableArray<SourceBattleEvent> events, int index = 0,
         bool single = false, MoveId?[]? entry = null, SourceBattleScene scene = SourceBattleScene.On, bool substitute = false) => single
         ? CampaignWishHealingAnimationPresentation.AtResult(Single(events, index), true, scene, entry ?? new MoveId?[2], substitute)
@@ -52,9 +52,11 @@ public sealed class WishHealingAnimationDispatchTests
             Assert.AreEqual(dispatch, At(events, single: single)); Assert.IsNull(At(events, 1, single));
             if (single)
             {
-                var exported = events.Select(SourceBattleEventAdapter.Export).ToImmutableArray();
-                var projected = CampaignWishResolutionPresentation.At(exported, 0); Assert.IsNotNull(projected);
-                Assert.AreEqual(kind, projected);
+                var singleEnvelope = Single(events); var doubleEnvelope = Double(events);
+                Assert.AreSame(events[0], singleEnvelope.Events[0]);
+                Assert.AreSame(singleEnvelope.Events[0], doubleEnvelope.Events[0]);
+                Assert.AreEqual(At(events, single: false), dispatch,
+                    "Both layouts dispatch the same canonical Wish recovery at matching slots.");
             }
             Assert.AreEqual(before, JsonSerializer.Serialize(events));
         }

@@ -57,9 +57,9 @@ public sealed class FissureSeismicAnimationKernelTests
         Assert.AreEqual(source, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(source)));
         if (single)
         {
-            var battle = F.Single(events, events.IndexOf(used)); Assert.AreEqual(0, battle.SourceEvents.Length);
+            var battle = F.Single(events, events.IndexOf(used)); Assert.AreEqual(events, battle.Events);
             string legacy = JsonSerializer.Serialize(battle.Events);
-            Assert.AreEqual(legacy, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<WildBattleEvent>>(legacy)));
+            Assert.AreEqual(legacy, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(legacy)));
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, false, SourceBattleScene.On).Dispatch);
         }
     }

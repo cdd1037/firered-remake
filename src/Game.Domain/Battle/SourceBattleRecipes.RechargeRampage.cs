@@ -3,12 +3,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasRechargeRampageRecipe(string effect) => effect is "EFFECT_RECHARGE" or "EFFECT_RAMPAGE";
-    internal virtual bool RampageLocked(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock?.Kind == WildBattleCalledLockKind.Rampage;
-    internal virtual int RechargeDuration => 2;
-    internal abstract void StartRechargeRampageLock(BattlerSlot actor, PokemonMoveDefinition move, WildBattleCalledLockKind kind, int remaining);
+    internal int RechargeDuration => 2;
 
     // BattleScript_EffectRampage and EffectRecharge share HitFromCritCalc, but have
     // different PP and SetMoveEffect paths. A missed continuation still runs ppreduce.

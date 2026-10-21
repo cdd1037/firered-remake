@@ -35,23 +35,6 @@ public sealed class PretSafariRegion
         Contracts = contracts; EncounterInventory = encounters;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE" => new("map.fuchsia-city-safari-zone-entrance"),
-        "MAP_FUCHSIA_CITY_SAFARI_ZONE_OFFICE" => new("map.fuchsia-city-safari-zone-office"),
-        "MAP_SAFARI_ZONE_CENTER" => new("map.safari-zone-center"),
-        "MAP_SAFARI_ZONE_EAST" => new("map.safari-zone-east"),
-        "MAP_SAFARI_ZONE_NORTH" => new("map.safari-zone-north"),
-        "MAP_SAFARI_ZONE_WEST" => new("map.safari-zone-west"),
-        "MAP_SAFARI_ZONE_CENTER_REST_HOUSE" => new("map.safari-zone-center-rest-house"),
-        "MAP_SAFARI_ZONE_EAST_REST_HOUSE" => new("map.safari-zone-east-rest-house"),
-        "MAP_SAFARI_ZONE_NORTH_REST_HOUSE" => new("map.safari-zone-north-rest-house"),
-        "MAP_SAFARI_ZONE_WEST_REST_HOUSE" => new("map.safari-zone-west-rest-house"),
-        "MAP_SAFARI_ZONE_SECRET_HOUSE" => new("map.safari-zone-secret-house"),
-        "MAP_FUCHSIA_CITY_WARDENS_HOUSE" => new("map.fuchsia-city-wardens-house"),
-        _ => PretFuchsiaRouteRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     /// <summary>Keep source connections, including unavailable neighbors, so callers can reject before mutation.</summary>
 
 

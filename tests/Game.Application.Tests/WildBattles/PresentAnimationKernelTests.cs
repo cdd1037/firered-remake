@@ -144,7 +144,7 @@ public sealed class PresentAnimationKernelTests
             Deny(Shared.Number(events.Insert(events.IndexOf(recovery),new SourceHpChangedEvent(recovery.Sequence,recovery.Turn,used.Actor,used.Target,used.Move,100,90,10,false,100))),single);
             if(single)
             {
-                int index=events.IndexOf(used);var legacy=Envelope.Single(events,index) with{SourceEvents=[]};var cue=AnimationDispatchFixture.AtAttackText(legacy,true,SourceBattleScene.On).Dispatch;
+                int index=events.IndexOf(used);var legacy=Envelope.Single(events,index);var cue=AnimationDispatchFixture.AtAttackText(legacy,true,SourceBattleScene.On).Dispatch;
                 Assert.IsNotNull(cue);Assert.AreEqual(true,cue.IsHealingMove);
             }
         }

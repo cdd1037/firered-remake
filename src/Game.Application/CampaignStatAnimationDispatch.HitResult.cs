@@ -31,10 +31,6 @@ public static partial class CampaignStatAnimationPresentation
         SourceMoveUsedEvent used,long sequence,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)=>
         IsFailedToxicSecondary(action.Select(GroupRead).ToArray(),GroupRead(used),sequence,moves);
 
-    internal static bool IsFailedToxicSecondary(IReadOnlyList<WildBattleEvent> action,
-        WildBattleMoveUsedEvent used,long sequence,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)=>
-        IsFailedToxicSecondary(action.Select(GroupRead).ToArray(),GroupRead(used),sequence,moves);
-
     private static bool IsFailedToxicSecondary(GroupRow[] rows,GroupRow used,long sequence,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves)
     {

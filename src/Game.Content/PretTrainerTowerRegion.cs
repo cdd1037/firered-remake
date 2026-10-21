@@ -98,18 +98,6 @@ public sealed class PretTrainerTowerRegion
         var selected = GetMap(map, format);
         return _layoutIds[selected.MapPath];
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_TRAINER_TOWER_LOBBY" => new("map.trainer-tower-lobby"),
-        "MAP_TRAINER_TOWER_ROOF" => new("map.trainer-tower-roof"),
-        "MAP_TRAINER_TOWER_ELEVATOR" => new("map.trainer-tower-elevator"),
-        "MAP_SEVEN_ISLAND_TRAINER_TOWER" => new("map.seven-island-trainer-tower"),
-        "MAP_DYNAMIC" => PretRocketHideoutRegion.DynamicMapId,
-        _ when Regex.IsMatch(symbol, "^MAP_TRAINER_TOWER_[1-8]F$", RegexOptions.CultureInvariant) => new("map.trainer-tower-" + symbol[^2..].ToLowerInvariant()),
-        _ => throw new InvalidDataException("Unknown Trainer Tower map symbol: " + symbol)
-    };
-
-
     public static PretTrainerTowerRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

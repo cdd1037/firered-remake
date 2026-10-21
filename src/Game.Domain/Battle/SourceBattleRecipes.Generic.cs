@@ -5,7 +5,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasGenericRecipe(string effect) => effect is
         "EFFECT_HIT" or "EFFECT_QUICK_ATTACK" or "EFFECT_HIGH_CRITICAL" or "EFFECT_ALWAYS_HIT" or
@@ -84,7 +84,7 @@ internal abstract partial class SourceRecipeContext
             return EarlyPartyAccuracy(side, target, move, purpose, false);
         }
 
-        internal virtual void SourceGenericMiss(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move)
+        private void SourceGenericMissCore(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move)
         {
             if (SourceTypeResultsEnabled && WildBattleEffective.Ability(Get(target)) == "ABILITY_WONDER_GUARD" && !ChargeFirstTurn(move))
                 SourceTypeNoEffect(target, clearHitType: true); // JumpIfMoveFailed, even when the weakness would pass WG
@@ -124,8 +124,6 @@ internal abstract partial class SourceRecipeContext
         }
 
         // The canonical owner emits result text here, after actual HP/critical commands.
-        // Legacy singles retain their existing event timing through the empty default.
-        internal virtual void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) { }
 
         internal void SourceGenericEffectiveness(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move)

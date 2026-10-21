@@ -44,10 +44,10 @@ public sealed partial class CampaignSession
     private string? ValidateFuchsiaGymProgress(CampaignState state)
     {
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET");
-        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==FuchsiaGymTrainerPartyFactory.Koga.Value&&h.Outcome==WildBattleOutcome.Won);
+        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId=="pret:TRAINER_LEADER_KOGA"&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_KOGA")!=won)return "save_koga_badge_history_mismatch";
         if(won&&state.Script.Flags.GetValueOrDefault("FLAG_HIDE_FAME_CHECKER_KOGA_JOURNAL"))return "save_koga_journal_still_hidden";
-        if(won&&FuchsiaGymTrainerPartyFactory.SupportedTrainers.Any(id=>!state.BattledTrainers.Contains(id.Value)))return "save_koga_trainer_flags_missing";
+        if(won&&TrainersOnMap(new("map.fuchsia-city-gym")).Any(id=>!state.BattledTrainers.Contains(id.Value)))return "save_koga_trainer_flags_missing";
         bool got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM06_FROM_KOGA");
         int quantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],KogaMachine);
         if(got&&!won||!got&&quantity!=0||quantity>1)return "save_koga_tm_reward_mismatch";

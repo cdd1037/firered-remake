@@ -135,6 +135,21 @@ public sealed class SourceBattleFriendshipTests : FieldEffectFixture
         Assert.IsTrue(replay.Events.IsEmpty); Assert.IsTrue(replay.Trace.IsEmpty);
         return result;
     }
+    private static void AssertFaintReceipt(ImmutableArray<SourceBattleEvent> events, SourceBattleFrame frame,
+        int before, int after)
+    {
+        var faint = events.OfType<SourceFaintedEvent>().Single(e => e.Side.Value == 0);
+        var receipt = faint.Friendship; Assert.IsNotNull(receipt);
+        Assert.AreEqual(frame.Get(faint.Side).Member!.Value, receipt.Member);
+        Assert.AreEqual(before, receipt.Before); Assert.AreEqual(after, receipt.After);
+        var sync = events.OfType<SourceCalledPartyChangedEvent>().Single(e => e.Sequence > faint.Sequence &&
+            e.Side == receipt.Member.Side && e.PartyIndex == receipt.Member.Index);
+        Assert.AreEqual(faint.Turn, sync.Turn); Assert.IsTrue(faint.Sequence < sync.Sequence);
+        Assert.AreEqual(before, sync.Before.Pokemon.Friendship); Assert.AreEqual(after, sync.After.Pokemon.Friendship);
+        Assert.IsNull(SourceBattleEventHooks.ValidateRouting(frame, faint));
+        string serialized = JsonSerializer.Serialize<SourceBattleEvent>(faint);
+        Assert.AreEqual(faint, JsonSerializer.Deserialize<SourceBattleEvent>(serialized));
+    }
 
     [TestMethod]
     [DataRow(true, 49, 49, 1)] [DataRow(true, 50, 49, 5)]
@@ -154,6 +169,7 @@ public sealed class SourceBattleFriendshipTests : FieldEffectFixture
                 Assert.AreEqual(frame.Party(BattleSide.Opponent).Members[i].Pokemon.Friendship, result.State.Party(BattleSide.Opponent).Members[i].Pokemon.Friendship);
             var receipt = result.Events.OfType<SourceCalledPartyChangedEvent>().Single(e => e.Side == BattleSide.Player && e.PartyIndex == 0);
             Assert.AreEqual(expected, receipt.After.Pokemon.Friendship);
+            AssertFaintReceipt(result.Events, result.State, friendship, expected);
             Assert.AreEqual(before, JsonSerializer.Serialize(frame));
             var differentFriendship = KnockOut(FaintFrame(single, friendship == 0 ? 255 : 0, left, right));
             Assert.AreEqual(result.State.Rng, differentFriendship.State.Rng);
@@ -196,6 +212,7 @@ public sealed class SourceBattleFriendshipTests : FieldEffectFixture
         Assert.AreEqual(1, result.Events.OfType<SourceFaintedEvent>().Count(e => e.Side.Value == 0));
         Assert.AreEqual(190, result.State.Party(BattleSide.Player).Members[0].Pokemon.Friendship);
         Assert.AreEqual(WildBattleStatus.None, result.State.Party(BattleSide.Player).Members[0].Status);
+        AssertFaintReceipt(result.Events, result.State, 200, 190);
     }
 
     [TestMethod]
@@ -203,6 +220,7 @@ public sealed class SourceBattleFriendshipTests : FieldEffectFixture
     {
         var result = KnockOut(FaintFrame(false, 205));
         Assert.AreEqual(195, result.State.Party(BattleSide.Player).Members[0].Pokemon.Friendship);
+        AssertFaintReceipt(result.Events, result.State, 205, 195);
         for (int i = 0; result.State.FourTurn is not null && i < 8; i++) result = Next(result);
         Assert.IsNull(result.State.FourTurn); Assert.IsTrue(result.State.IsSourceAbsent(new(0)));
         var frame = result.State;
@@ -224,6 +242,7 @@ public sealed class SourceBattleFriendshipTests : FieldEffectFixture
         Assert.AreEqual(1, events.OfType<SourceFaintedEvent>().Count(e => e.Side.Value == 0));
         Assert.AreEqual(175, turn.State.Party(BattleSide.Player).Members[0].Pokemon.Friendship,
             "revived same party identity incurs a fresh large-faint -5 at its current friendship");
+        AssertFaintReceipt(events, turn.State, 180, 175);
     }
 
     [TestMethod]
@@ -252,6 +271,7 @@ public sealed class SourceBattleFriendshipTests : FieldEffectFixture
         Assert.AreEqual(donor, after.Transform.CopiedPokemon);
         Assert.AreEqual(frame.Party(BattleSide.Opponent).Members[0].Pokemon.Friendship,
             result.State.Party(BattleSide.Opponent).Members[0].Pokemon.Friendship);
+        AssertFaintReceipt(result.Events, result.State, 200, 190);
     }
 
     [TestMethod]

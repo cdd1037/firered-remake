@@ -25,14 +25,6 @@ public sealed class PretCeladonGymRegion
          ExternalCeladonEvents = externalCeladonEvents;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_CELADON_CITY_GYM" => new("map.celadon-city-gym"),
-        _ => PretCeladonApproachRegion.MapIdFromSourceSymbol(symbol)
-    };
-
-
-
     public static PretCeladonGymRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

@@ -13,8 +13,8 @@ public partial class CampaignView
 
     private WildBattleCombatant? SingleDisplayedBody(CampaignWildBattle battle,WildBattleSide side)
     {
-        if(side==WildBattleSide.Player&&WildWithdrawing(battle)&&WildCurrentEvent(battle) is WildBattlePlayerSwitchedEvent switched)
-            return switched.Previous;
+        if(battle.SwitchDisplay is {} switched&&switched.Slot.Value==(int)side)
+            return WildSwitchShowingOutgoing(battle,side)?switched.Previous:switched.Replacement;
         return battle.DisplayBatch?.Display.Bodies[(int)side];
     }
 

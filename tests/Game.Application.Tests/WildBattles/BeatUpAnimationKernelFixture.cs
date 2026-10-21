@@ -43,7 +43,7 @@ internal static class BeatUpAnimationKernelFixture
             frame.Parties[1] with{Members=[frame.Parties[1].Members[0]]})};
         return frame;
     }
-    internal static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events,int index)=>Envelope.Single(events,index) with{SourceEvents=[]};
+    internal static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events,int index)=>Envelope.Single(events,index);
     internal static CampaignMoveAnimationDecision Project(ImmutableArray<SourceBattleEvent> events,int index,bool single,bool result=true,SourceBattleScene scene=SourceBattleScene.On)=>single
         ?result?AnimationDispatchFixture.AtResult(Single(events,index),true,scene):AnimationDispatchFixture.AtAttackText(Single(events,index),true,scene)
         :result?AnimationDispatchFixture.AtResult(Envelope.Double(events,index),scene):AnimationDispatchFixture.AtAttackText(Envelope.Double(events,index),scene);

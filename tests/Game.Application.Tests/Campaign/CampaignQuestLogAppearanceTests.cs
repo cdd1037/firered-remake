@@ -10,6 +10,52 @@ public sealed class CampaignQuestLogAppearanceTests
 {
     private static CampaignQuestLogAction Arrival()=>new(-1,0,0,Direction.South,false,CampaignQuestLogEvent.Arrived,127){TextKey="ArrivedInLocation",Arguments=["PALLET TOWN"]};
     [TestMethod]
+    [DataRow(false,false,false)]
+    [DataRow(false,false,true)]
+    [DataRow(false,true,false)]
+    [DataRow(false,true,true)]
+    [DataRow(true,false,false)]
+    [DataRow(true,false,true)]
+    [DataRow(true,true,false)]
+    [DataRow(true,true,true)]
+    public void LabelsCannotAdmitUnmountedScenesOrTransitionProjections(bool transition,bool emptyTiles,bool zeroFlash)
+    {
+        var catalog=CurrentCampaignFixture.Catalog;var state=CampaignSession.CreateCurrent(catalog).State;
+        const string unmounted="map.label-only-test";
+        Assert.IsFalse(catalog.Maps.ContainsKey(new(unmounted)));
+        var source=catalog.QuestLogSource with{MapNames=catalog.QuestLogSource.MapNames.SetItem(unmounted,"LABEL ONLY")};
+        Assert.AreEqual("LABEL ONLY",source.MapName(unmounted));
+        var actor=new CampaignQuestLogActor(CampaignQuestLogRecorder.PlayerId,"OBJ_EVENT_GFX_RED_NORMAL",6,8,Direction.South,true);
+        var input=new CampaignQuestLogAction(-1,0,0,Direction.South,false,CampaignQuestLogEvent.Input,1);
+        ImmutableArray<FieldMetatileEdit> tiles=emptyTiles?[]:default;int? flash=zeroFlash?0:null;
+        var scene=new CampaignQuestLogScene(transition?state.World.Player.MapId.Value:unmounted,[actor],[input]){Tiles=tiles,FlashLevel=flash};
+        if(transition)scene=scene with{Actions=[input,new(-1,0,0,Direction.South,false,CampaignQuestLogEvent.None,1)
+            {StartFrame=1,Transition=new(unmounted,[actor],null,tiles){FlashLevel=flash}}]};
+        var log=new CampaignQuestLog([scene]);
+        // Without a catalog this API deliberately validates structure and labels only.
+        Assert.IsNull(CampaignQuestLogRecorder.Validate(log,source));
+        Assert.AreEqual("save_quest_log_map_invalid",CampaignQuestLogRecorder.Validate(log,source,catalog));
+        Assert.AreEqual("save_quest_log_map_invalid",CampaignQuestLogRecorder.Validate(log,null,catalog));
+        var valid=transition?scene with{Actions=scene.Actions.SetItem(1,scene.Actions[1] with
+            {Transition=scene.Actions[1].Transition! with{Map=state.World.Player.MapId.Value,Tiles=[]}})}:scene with{Map=state.World.Player.MapId.Value};
+        var roundtrip=JsonSerializer.Deserialize<CampaignQuestLog>(JsonSerializer.Serialize(new CampaignQuestLog([valid])))!;
+        Assert.IsNull(CampaignQuestLogRecorder.Validate(roundtrip,source,catalog));
+    }
+    [TestMethod]
+    public void CurrentSaveAndRestoreRejectLabeledUnmountedRecordingWithoutLoadingACheckpoint()
+    {
+        var catalog=CurrentCampaignFixture.Catalog;var session=CampaignSession.CreateCurrent(catalog);var state=session.State;
+        var unmounted=catalog.QuestLogSource.MapNames.Keys.First(id=>!catalog.Maps.ContainsKey(new(id))&&!catalog.QuestLogSource.DisabledMaps.Contains(id));
+        var scene=CampaignQuestLogRecorder.SavedScene(state,catalog.QuestLogSource) with{Map=unmounted,Layout=null,Tiles=[],FlashLevel=0};
+        var forged=state with{QuestLog=new([scene])};
+        Assert.IsNull(CampaignQuestLogRecorder.Validate(forged.QuestLog,catalog.QuestLogSource));
+        Assert.AreEqual("save_quest_log_map_invalid",session.ValidatePlayerSave(forged));
+        StringAssert.Contains(Assert.Throws<InvalidDataException>(()=>CampaignSession.RestoreCurrent(catalog,forged,0)).Message,"save_quest_log_map_invalid");
+        var valid=state with{QuestLog=new([scene with{Map=state.World.Player.MapId.Value}])};
+        Assert.IsNull(session.ValidatePlayerSave(valid));
+        Assert.IsNull(CampaignSession.RestoreCurrent(catalog,valid,0).ValidatePlayerSave(valid));
+    }
+    [TestMethod]
     public void RecordingFormatHasOneTimelineAndRejectsMissingVersionClearly()
     {
         var catalog=CurrentCampaignFixture.Catalog;var state=CampaignSession.CreateCurrent(catalog).State;

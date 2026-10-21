@@ -4,15 +4,10 @@ using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
 // Ordinary Gen III battles and the authenticated local Trainer Tower exception.
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal virtual bool IsTrainerTower => false;
     internal static bool HasItemTransferRecipe(string effect) => effect is "EFFECT_THIEF" or "EFFECT_TRICK" or "EFFECT_KNOCK_OFF" or "EFFECT_RECYCLE";
-    internal virtual string? UsedHeldItem(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_item_position_owner_required");
-    internal virtual void SetUsedHeldItem(BattlerSlot slot, string? item) => throw new SourceRecipeUnsupported("source_item_position_owner_required");
-    internal virtual void QueueChangedItem(BattlerSlot slot, string item) => throw new SourceRecipeUnsupported("source_item_move_end_owner_required");
-    internal virtual void WritePartyItem(BattlerSlot slot, string item, string reason) => throw new SourceRecipeUnsupported("source_item_party_owner_required");
-    internal virtual void SetKnockedOffItem(BattlerSlot slot, string item) =>
+    private void SetKnockedOffItemCore(BattlerSlot slot, string item) =>
         Set(slot, Get(slot) with { HeldItem = "ITEM_NONE", KnockedOffItem = item, SourceChoiceMove = null });
 
     internal void ExecuteItemTransfer(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
@@ -84,8 +79,7 @@ internal abstract partial class SourceRecipeContext
         SourceGenericContact(catalog, actor, target, move, purpose, adjusted);
         ForestOutcome(true);
     }
-    // Singles historically records Recycle through its active-party synchronization event.
-    internal virtual void WriteRecycledPartyItem(BattlerSlot actor, string item) => WritePartyItem(actor, item, "recycle-party-write");
+    internal void WriteRecycledPartyItem(BattlerSlot actor, string item) => WritePartyItem(actor, item, "recycle-party-write");
     private void ItemTransferFailure(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string reason) =>
         Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move.Id, reason));
     private static bool TransferForbiddenItem(string item) => item == "ITEM_ENIGMA_BERRY" || PokemonStorageRules.IsMailItem(item);

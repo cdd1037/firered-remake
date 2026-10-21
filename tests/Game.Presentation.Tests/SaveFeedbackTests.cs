@@ -7,12 +7,13 @@ public sealed class SaveFeedbackTests
 {
     private static readonly Game.Content.PresentationTextCatalog Text = Game.Content.PresentationTextCatalog.English("save");
     [TestMethod]
-    public void MissingHatchTotalRequestsExplicitConversionWithoutCallingSaveDamaged()
+    public void MissingHatchTotalUsesInvalidDataFeedbackWithoutOfferingConversion()
     {
-        var text = CampaignSaveFeedback.Message(Text, new(SaveOperation.Load, SaveOperationStatus.MigrationRequired));
-        StringAssert.Contains(text, "known hatch count");
-        StringAssert.Contains(text, "Convert explicitly");
-        Assert.IsFalse(text.Contains("damaged", StringComparison.Ordinal));
+        var text = CampaignSaveFeedback.Message(Text, SaveOperationResult.Failure(SaveOperation.Load,
+            new InvalidDataException("save_semantic_invalid: save_hatched_egg_count_missing")));
+        StringAssert.Contains(text, "damaged save data");
+        StringAssert.Contains(text, "Files kept");
+        Assert.IsFalse(text.Contains("Convert", StringComparison.Ordinal));
     }
 
     [TestMethod]

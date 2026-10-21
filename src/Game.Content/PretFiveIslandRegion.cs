@@ -26,21 +26,6 @@ public sealed partial class PretFiveIslandRegion
 
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_FIVE_ISLAND" => new("map.five-island"),
-        "MAP_FIVE_ISLAND_HARBOR" => new("map.five-island-harbor"),
-        "MAP_FIVE_ISLAND_HOUSE1" => new("map.five-island-house1"),
-        "MAP_FIVE_ISLAND_HOUSE2" => new("map.five-island-house2"),
-        "MAP_FIVE_ISLAND_MEADOW" => new("map.five-island-meadow"),
-        "MAP_FIVE_ISLAND_MEMORIAL_PILLAR" => new("map.five-island-memorial-pillar"),
-        "MAP_FIVE_ISLAND_POKEMON_CENTER_1F" => new("map.five-island-pokemon-center-1f"),
-        "MAP_FIVE_ISLAND_POKEMON_CENTER_2F" => new("map.five-island-pokemon-center-2f"),
-        "MAP_FIVE_ISLAND_ROCKET_WAREHOUSE" => new("map.five-island-rocket-warehouse"),
-        "MAP_FIVE_ISLAND_WATER_LABYRINTH" => new("map.five-island-water-labyrinth"),
-        _ => PretSixIslandRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     public static PretFiveIslandRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;

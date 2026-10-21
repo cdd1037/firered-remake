@@ -21,13 +21,15 @@ public sealed class SourceAnimationResourceTests
     {
         using var resources=new SourceAnimationResources(Folder);
         var move=resources.Resolve(160);int assets=resources.CachedAssetCount;
-        for(int i=0;i<20;i++)Assert.AreSame(move,resources.Resolve(160));
+        for(int i=0;i<20;i++)
+        {var again=resources.Resolve(160);Assert.AreNotSame(move,again);Assert.AreSame(move.Assets,again.Assets);Assert.AreSame(move.Script.Commands,again.Script.Commands);}
         Assert.AreEqual(assets,resources.CachedAssetCount);
         var general=resources.ResolveGeneral("General_WishHeal");
-        Assert.AreSame(general,resources.ResolveGeneral("General_WishHeal"));
+        var generalAgain=resources.ResolveGeneral("General_WishHeal");
+        Assert.AreNotSame(general,generalAgain);Assert.AreSame(general.Assets,generalAgain.Assets);Assert.AreSame(general.Script.Commands,generalAgain.Script.Commands);
         var custom=move.Script with{SpriteDependencies=["missing-dependency"]};
         Assert.ThrowsExactly<InvalidDataException>(()=>resources.Resolve(custom));
-        Assert.AreSame(move,resources.Resolve(160));
+        Assert.AreSame(move.Assets,resources.Resolve(160).Assets);
         var unbound=move.Script with{ProgramReferences=["missing-program"]};
         Assert.ThrowsExactly<InvalidDataException>(()=>resources.Resolve(unbound));
         resources.Dispose();

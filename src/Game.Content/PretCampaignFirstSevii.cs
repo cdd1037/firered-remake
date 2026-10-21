@@ -25,7 +25,7 @@ public sealed partial class PretCampaignCatalog
         items.Validate();EarlyShopInventoryRules.ValidateCatalog(shop);
         foreach(var pickup in items.Pickups)
         {
-            var map=region.NewMaps[PretFirstSeviiRegion.MapIdFromSourceSymbol(pickup.MapSymbol)];
+            var map=region.NewMaps[region.NewMaps.Values.First().ResolveMapSymbol(pickup.MapSymbol)];
             if(!scripts.TryConstant(pickup.Flag,out int flag)||flag!=pickup.SourceFlagId)
                 throw new InvalidDataException("first_sevii_pickup_flag");
             var item=shop.Items.SingleOrDefault(i=>i.Id==pickup.Item)

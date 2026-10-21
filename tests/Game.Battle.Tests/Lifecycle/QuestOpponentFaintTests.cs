@@ -36,7 +36,7 @@ public sealed class QuestOpponentFaintTests:FieldEffectFixture
         frame=Rebind(frame,1,foe with{Status=WildBattleStatus.Poison,Pokemon=foe.Pokemon with{CurrentHp=1}}) with{
             LastOpponentFaint=new(1,new(2))};
         var (type,context)=Residual(frame);
-        type.BaseType!.GetMethod("StatusDamage",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(context,[new BattlerSlot(1),WildBattleStatus.Poison]);
+        type.GetMethod("StatusDamage",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(context,[new BattlerSlot(1),WildBattleStatus.Poison]);
         var after=Result(type,context);
         Assert.AreEqual(foe.Pokemon.SourceSpeciesId,after.LastOpponentFaint!.Species);
         Assert.AreEqual(new BattlerSlot(1),after.LastOpponentFaint.ScriptAttacker);
@@ -53,7 +53,7 @@ public sealed class QuestOpponentFaintTests:FieldEffectFixture
         var slot=frame.Get(new(0));frame=frame with{
             Slots=frame.Slots.SetItem(0,slot with{Registers=slot.Registers with{LeechSeedSource=new(1)}})};
         var (type,context)=Residual(frame);
-        type.BaseType!.GetMethod("LeechSeedResidual",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(context,[new BattlerSlot(0)]);
+        type.GetMethod("LeechSeedResidual",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(context,[new BattlerSlot(0)]);
         var after=Result(type,context);
         Assert.AreEqual(receiver.Pokemon.SourceSpeciesId,after.LastOpponentFaint!.Species);
         Assert.AreEqual(new BattlerSlot(0),after.LastOpponentFaint.ScriptAttacker);

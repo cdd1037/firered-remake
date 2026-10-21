@@ -11,7 +11,9 @@ public sealed record BillTrainerDocument(int SchemaVersion, ImmutableArray<Train
 /// <summary>Loads trainer tables and their initial battle scripts.</summary>
 public static class PretBillTrainers
 {
-    public static BillTrainerCatalog Load(string root)
+    public static OrdinaryTrainerCatalog Load(string root) => Load(root, out _);
+
+    public static OrdinaryTrainerCatalog Load(string root, out ImmutableArray<CeruleanTrainerBattleDefinition> additionalOccurrences)
     {
         byte[] Read(string path)
         {
@@ -23,8 +25,14 @@ public static class PretBillTrainers
             throw new InvalidDataException("Bill trainer document identity differs.");
         var shared=SharedTrainerCatalog.LoadProject(root);
         foreach(var occurrence in doc.AdditionalOccurrences) _=shared.Definition(occurrence.Trainer);
-        var catalog=new BillTrainerCatalog(doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer))
-        { AdditionalOccurrences=doc.AdditionalOccurrences };
-        BillTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
+        additionalOccurrences = doc.AdditionalOccurrences;
+        foreach (var battle in doc.Battles.Where(b => b.Mode != 0))
+        {
+            string expected = battle.Trainer.Value == "pret:TRAINER_TEAM_ROCKET_GRUNT_6"
+                ? "Route24_Text_YoudBecomeTopRocketLeader" : "";
+            if (battle.IntroText != "" || battle.PostBattleText != expected)
+                throw new InvalidDataException("bill_special_dialogue_binding");
+        }
+        return new(doc.Trainers.ToImmutableDictionary(t => t.Id), doc.Battles, "bill-trainer");
     }
 }

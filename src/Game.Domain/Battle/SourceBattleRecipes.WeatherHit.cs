@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasWeatherHitRecipe(string effect) => effect is
         "EFFECT_GUST" or "EFFECT_TWISTER" or "EFFECT_THUNDER" or "EFFECT_SKY_UPPERCUT";

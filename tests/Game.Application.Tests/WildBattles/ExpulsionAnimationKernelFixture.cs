@@ -81,7 +81,7 @@ internal static class ExpulsionAnimationKernelFixture
     }
     internal static SourceKernelResult Direct(SourceBattleFrame frame, int actor = 0, int? target = null) =>
         Envelope.Resolve(frame, actor, target ?? (Kernel.Mechanics.Catalog.Moves[frame.Slots[actor].Body!.Pokemon.Moves[0].Move].Target == "MOVE_TARGET_USER" ? actor : actor ^ 1));
-    internal static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) => Envelope.Single(events, index) with { SourceEvents = [] };
+    internal static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) => Envelope.Single(events, index);
     internal static CampaignMoveAnimationDecision Project(ImmutableArray<SourceBattleEvent> events, int index, bool single, bool result = false,
         SourceBattleScene scene = SourceBattleScene.On) => single
         ? result ? AnimationDispatchFixture.AtResult(Single(events, index), true, scene) : AnimationDispatchFixture.AtAttackText(Single(events, index), true, scene)

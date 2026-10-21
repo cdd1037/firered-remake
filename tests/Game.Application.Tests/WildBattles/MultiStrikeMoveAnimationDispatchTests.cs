@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -15,23 +16,18 @@ namespace FireRed.Tests.Application.WildBattles;
 [TestClass, TestCategory("Game")]
 public sealed class MultiStrikeMoveAnimationDispatchTests
 {
+    private static readonly DirectHitAnimationContract SwipesContract = new("multi-strike", 154, Id("FURY_SWIPES"), 15, DirectHitOwnership.EachHit, 2, 5);
+    private static readonly DirectHitAnimationContract ThrustContract = new("multi-strike", 292, Id("ARM_THRUST"), 20, DirectHitOwnership.EachHit, 2, 5);
     private static MoveId Move(int id)=>Id(id==154?"FURY_SWIPES":"ARM_THRUST");
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static SourceMechanicsCatalog Mechanics =>
-        TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("multi-strike", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
-            events, index, [], [], 0, 0, [], [], [], [], 0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("multi-strike", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
-    private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
-        events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) => SwipesContract.Double(events, index);
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) => SwipesContract.Single(events, index);
 
     private static void AssertDispatches(ImmutableArray<SourceBattleEvent> events, int actor, int target)
     {
         var hits = Hits(events); Assert.IsTrue(hits.Length > 0);
-        var used = events.OfType<SourceMoveUsedEvent>().Single();var selected=used.Move;Assert.IsTrue(selected==Move(154)||selected==Move(292));
+        var used = events.OfType<SourceMoveUsedEvent>().Single();
+        var selected = used.Move; Assert.IsTrue(selected == Move(154) || selected == Move(292));
+        var contract = selected == Move(154) ? SwipesContract : ThrustContract;
         var attack = events.OfType<SourceAttackStringEvent>().Single();
         var pp = events.OfType<SourcePpCommandEvent>().Single();
         var summary = events.OfType<SourceMultiHitEvent>().Single();
@@ -39,56 +35,16 @@ public sealed class MultiStrikeMoveAnimationDispatchTests
         Assert.AreEqual(selected, attack.ChosenMove); Assert.AreEqual(selected, attack.CurrentMove);
         Assert.AreEqual(selected, pp.ChosenMove); Assert.AreEqual(selected, pp.CurrentMove);
         Assert.AreEqual(actor, pp.PpOwner.Value); Assert.AreEqual(actor, pp.Actor.Value); Assert.AreEqual(target, pp.Target.Value);
-        Assert.AreEqual(Mechanics.Catalog.Moves[selected].Pp, pp.Before); Assert.AreEqual(pp.Before-1, pp.After); Assert.AreEqual(1, pp.CommandCost);
+        Assert.AreEqual(contract.Pp, pp.Before); Assert.AreEqual(pp.Before-1, pp.After); Assert.AreEqual(1, pp.CommandCost);
         Assert.IsTrue(attack.Sequence < used.Sequence && used.Sequence < pp.Sequence && pp.Sequence < hits[0].Sequence);
         Assert.IsTrue(summary.PlannedHits is >= 2 and <= 5);
         Assert.IsTrue(summary.ActualHits >= 1 && summary.ActualHits <= summary.PlannedHits);
         Assert.AreEqual(hits.Length, summary.ActualHits); Assert.IsTrue(hits[^1].Sequence < summary.Sequence);
-        string before = JsonSerializer.Serialize(events); int dispatchCount = 0;
-        for (int index = 0; index < events.Length; index++)
-        {
-            var battle = Double(events, index);
-            var text = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
-            var hit = AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On);
-            Assert.IsNull(text.Dispatch, "Attack text must not schedule an extra multi-strike root.");
-            int ordinal = Array.FindIndex(hits, h => h.Sequence == events[index].Sequence);
-            if (ordinal >= 0)
-            {
-                var dispatch = hit.Dispatch; Assert.IsNotNull(dispatch, hit.Reason); dispatchCount++;
-                Assert.AreEqual(Mechanics.Catalog.Moves[selected].SourceMoveId, dispatch.SourceMoveId); Assert.AreEqual("multi-strike", dispatch.BattleId);
-                Assert.AreEqual(actor, dispatch.Actor.Value); Assert.AreEqual(target, dispatch.Target.Value);
-                Assert.AreEqual(hits[ordinal].Sequence, dispatch.Sequence);
-                Assert.AreEqual(hits[ordinal].Sequence, dispatch.ResultSequence);
-                Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
-                Assert.AreEqual((byte)ordinal, dispatch.MoveTurn);
-                Assert.AreEqual(hits[ordinal] is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-                Assert.IsFalse(dispatch.AcknowledgesCurrentReceipt, "Per-hit playback cannot submit an extra ACK.");
-            }
-            else Assert.IsNull(hit.Dispatch, "PP, used, summary, faint and result receipts cannot schedule another root.");
-            Assert.AreEqual(hit, AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On));
-            if (actor < 2 && target < 2)
-            {
-                var single = Single(events, index);
-                Assert.AreEqual(text.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.AreEqual(hit.Dispatch, AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
-            }
-        }
-        Assert.AreEqual(hits.Length, dispatchCount, "One invocation per committed hit, never per planned hit or visual sprite.");
-        Assert.AreEqual(before, JsonSerializer.Serialize(events), "Projection cannot mutate committed events.");
+        contract.AssertDispatches(events, actor, target);
     }
-    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string branch)
-    {
-        string before = JsonSerializer.Serialize(events);
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch, branch);
-            if (events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value > 1 || e.Target.Value > 1)) continue;
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, branch);
-        }
-        Assert.AreEqual(before, JsonSerializer.Serialize(events));
-    }
+    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string branch) =>
+        SwipesContract.AssertDenied(events, branch,
+            !events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value > 1 || e.Target.Value > 1));
     private static void AssertReadOnly(SourceBattleFrame state, ImmutableArray<RandomTrace> trace, Action projection)
     {
         var rng = state.Rng; long revision = state.Revision, sequence = state.EventSequence;
@@ -97,35 +53,14 @@ public sealed class MultiStrikeMoveAnimationDispatchTests
         Assert.AreEqual(rng, state.Rng); Assert.AreEqual(revision, state.Revision); Assert.AreEqual(sequence, state.EventSequence);
         Assert.AreEqual(frame, JsonSerializer.Serialize(state)); Assert.AreEqual(random, JsonSerializer.Serialize(trace));
     }
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name); var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
+
     private static WildBattleCombatant[] Bodies(int id,int actor = 0)
     {
         var bodies = Enumerable.Range(0, 4).Select(_ => NaturalMon("SNORLAX", 100, "DEFENSE_CURL") with { SpeedStage = 0 }).ToArray();
         bodies[actor] = (id==154?NaturalMon("MANKEY",16,"FURY_SWIPES"):NaturalMon("MAKUHITA",10,"ARM_THRUST")) with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
-    private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
-    {
-        static WildBattleCalledPartyMember Member(WildBattleCombatant body) =>
-            new(body.Pokemon, body.HeldItem, WildBattleTransformationRules.PersistentStatus(body));
-        var frame = new SourceBattleFrame {
-            Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, BattleKind = WildBattleCalledBattleKind.Trainer, Rng = new(31),
-            Parties = [new(BattleSide.Player, [Member(bodies[0]), Member(bodies[2])]), new(BattleSide.Opponent, [Member(bodies[1]), Member(bodies[3])])],
-            Slots = Enumerable.Range(0, 4).Select(i => new SourceBattleSlot(new(i), new((BattleSide)(i & 1), i / 2), 1, bodies[i])).ToImmutableArray()
-        };
-        var entry = SourceFourEntryAbilities.InitializeEntry(Mechanics.Catalog, frame, frame.Revision);
-        Assert.IsTrue(entry.Succeeded, entry.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(entry.State));
-        return entry.State with { Rng = new(seed) };
-    }
+
     private static SourceKernelResult Resolve(SourceBattleFrame frame, int actor, int target)
     {
         Assert.IsNull(SourceBattleIdentityRules.Validate(frame));

@@ -34,14 +34,6 @@ public sealed class PretVermilionGymRegion
         BeamStates = beamStates; BeamDefinitions = beamDefinitions;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_VERMILION_CITY_GYM" => new("map.vermilion-city-gym"),
-        _ => PretVermilionRegion.MapIdFromSourceSymbol(symbol)
-    };
-
-
-
     public static PretVermilionGymRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

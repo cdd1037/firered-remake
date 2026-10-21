@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
         if(mapSource&&!RocketMap(state.World.Player.MapId))throw new InvalidDataException("rocket_effect_map_context");
         if(mapSource&&effect.Opcode is "call_if_defeated" or "call_if_not_defeated")
         {
-            if(a.Length!=2||!_content.RocketHideoutTrainers!.Trainers.ContainsKey(new("pret:"+a[0]))||_content.FindProgram(a[1]) is null)throw new InvalidDataException("rocket_trainer_branch_context");
+            if(a.Length!=2||!TrainerRegisteredOnMap(new("pret:"+a[0]),state.World.Player.MapId.Value)||_content.FindProgram(a[1]) is null)throw new InvalidDataException("rocket_trainer_branch_context");
             bool won=state.BattledTrainers.Contains("pret:"+a[0]);
             if(won==(effect.Opcode=="call_if_defeated"))next=state with{Script=state.Script with{Stack=state.Script.Stack.Add(new(a[1],0))}};
             return true;

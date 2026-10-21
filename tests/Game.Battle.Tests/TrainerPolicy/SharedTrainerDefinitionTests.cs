@@ -22,6 +22,8 @@ public sealed class SharedTrainerDefinitionTests
     [DataRow("cinnabar")]
     [DataRow("first-sevii")]
     [DataRow("saffron")]
+    [DataRow("celadon")]
+    [DataRow("fuchsia")]
     [DataRow("silph")]
     [DataRow("victory-road")]
     [DataRow("viridian")]
@@ -66,11 +68,10 @@ public sealed class SharedTrainerDefinitionTests
         Assert.AreEqual(8 * changed.BaseMoney * 51, VictoryRoadTrainerPartyFactory.BasePrize(updated, changed.Id));
 
         var viridian = PretViridianGymRules.LoadTrainers(TestAssets.Root);
-        var leader = viridian.Trainers[ViridianGymTrainerPartyFactory.Giovanni];
+        var leader = viridian.Trainers[new("pret:TRAINER_LEADER_GIOVANNI")];
         changed = leader with { BaseMoney = leader.BaseMoney + 1,
             Party = leader.Party.SetItem(leader.Party.Length - 1, leader.Party[^1] with { Level = 51 }) };
-        Assert.AreEqual(4 * changed.BaseMoney * 51, ViridianGymTrainerPartyFactory.BasePrize(
-            viridian with { Trainers = viridian.Trainers.SetItem(changed.Id, changed) }, changed.Id));
+        Assert.AreEqual(4 * changed.BaseMoney * 51, TrainerPartyFactory.BasePrize(changed));
     }
 
     [TestMethod]
@@ -136,20 +137,25 @@ public sealed class SharedTrainerDefinitionTests
             case "first-sevii":
                 var first = PretFirstSeviiRules.LoadTrainers(TestAssets.Root);
                 return new(first.Trainers, trainer => FirstSeviiTrainerPartyFactory.Create(first with { Trainers = first.Trainers.SetItem(trainer.Id, trainer) }, Opponents, trainer.Id, new(42)));
+            case "celadon":
+                var celadon = PretCeladonGymTrainers.Load(Canonical, TestAssets.Root);
+                return new(celadon.Trainers, trainer => TrainerPartyFactory.Create(celadon.Trainers.SetItem(trainer.Id, trainer), Opponents, trainer.Id, new(42)));
+            case "fuchsia":
+                var fuchsia = PretFuchsiaGymTrainers.Load(Canonical, TestAssets.Root);
+                return new(fuchsia.Trainers, trainer => TrainerPartyFactory.Create(fuchsia.Trainers.SetItem(trainer.Id, trainer), Opponents, trainer.Id, new(42)));
             case "saffron":
                 var saffronContent = PretSaffronGymTrainers.Load(Canonical, TestAssets.Root);
-                var saffron = new SaffronGymTrainerCatalog(saffronContent.Trainers, saffronContent.Battles);
-                return new(saffron.Trainers, trainer => SaffronGymTrainerPartyFactory.Create(saffron with { Trainers = saffron.Trainers.SetItem(trainer.Id, trainer) }, Opponents, trainer.Id, new(42)));
+                var saffron = saffronContent;
+                return new(saffron.Trainers, trainer => TrainerPartyFactory.Create(saffron.Trainers.SetItem(trainer.Id, trainer), Opponents, trainer.Id, new(42)));
             case "silph":
-                var silphContent = PretSilphTrainers.Load(Canonical, TestAssets.Root);
-                var silph = new SilphTrainerCatalog(silphContent.Trainers, silphContent.Battles);
-                return new(silph.Trainers, trainer => SilphTrainerPartyFactory.Create(silph with { Trainers = silph.Trainers.SetItem(trainer.Id, trainer) }, Opponents, trainer.Id, new(42)));
+                var silph = PretSilphTrainers.Load(Canonical, TestAssets.Root);
+                return new(silph.Trainers, trainer => TrainerPartyFactory.Create(silph.Trainers.SetItem(trainer.Id, trainer), Opponents, trainer.Id, new(42)));
             case "victory-road":
                 var victory = PretVictoryRoadRules.LoadTrainers(TestAssets.Root);
                 return new(victory.Trainers, trainer => VictoryRoadTrainerPartyFactory.Create(victory with { Trainers = victory.Trainers.SetItem(trainer.Id, trainer) }, Opponents, trainer.Id, new(42)));
             case "viridian":
                 var viridian = PretViridianGymRules.LoadTrainers(TestAssets.Root);
-                return new(viridian.Trainers, trainer => ViridianGymTrainerPartyFactory.Create(viridian with { Trainers = viridian.Trainers.SetItem(trainer.Id, trainer) }, Opponents, trainer.Id, new(42)));
+                return new(viridian.Trainers, trainer => TrainerPartyFactory.Create(viridian.Trainers.SetItem(trainer.Id, trainer), Opponents, trainer.Id, new(42)));
             case "six-island":
                 var six = PretSixIslandRules.LoadTrainers(TestAssets.Root);
                 return new(six.Trainers, trainer => SixIslandTrainerPartyFactory.Create(six with { Trainers = six.Trainers.SetItem(trainer.Id, trainer) }, Opponents, trainer.Id, new(42)));

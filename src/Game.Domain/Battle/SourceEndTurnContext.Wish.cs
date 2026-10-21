@@ -3,11 +3,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
-    internal abstract WildBattleCalledWish? GetWish(BattlerSlot slot);
-    internal abstract void SetWish(BattlerSlot slot, WildBattleCalledWish? wish);
-    internal virtual void HealWish(BattlerSlot slot, PokemonMoveDefinition move, int amount)
+    internal void HealWish(BattlerSlot slot, PokemonMoveDefinition move, int amount)
     {
         var body = Get(slot); int before = body.Pokemon.CurrentHp, after = Math.Min(body.Pokemon.Stats.MaxHp, before + amount);
         if (before == after)
@@ -33,8 +31,8 @@ internal abstract partial class SourceEndTurnContext
 
 internal sealed partial class FrameEndTurnContext
 {
-    internal override WildBattleCalledWish? GetWish(BattlerSlot slot) => Frame.Get(slot).Position.Wish;
-    internal override void SetWish(BattlerSlot slot, WildBattleCalledWish? wish)
+    internal WildBattleCalledWish? GetWish(BattlerSlot slot) => Frame.Get(slot).Position.Wish;
+    internal void SetWish(BattlerSlot slot, WildBattleCalledWish? wish)
     {
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Position = cell.Position with { Wish = wish } }) };

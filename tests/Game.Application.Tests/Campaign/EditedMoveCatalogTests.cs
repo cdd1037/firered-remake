@@ -33,8 +33,34 @@ public sealed class EditedMoveCatalogTests
         }
         File.WriteAllText(path, json.ToJsonString());
 
+        // VOLT_TACKLE is unused by the campaign's move definitions, but its Easy
+        // Chat word is still a real reference. Reject that dangling reference
+        // before making this isolated fixture genuinely unreferenced.
+        var dangling = Assert.ThrowsExactly<InvalidDataException>(() => PretCampaignCatalog.LoadCurrent(output.Path));
+        Assert.AreEqual("easy_chat_move_name_missing: 10072", dangling.Message);
+        const int removedWord = 10072;
+        var composerPath = Path.Combine(target, "data/services/mail-composer/catalog.json");
+        var composer = JsonNode.Parse(File.ReadAllText(composerPath))!;
+        var words = composer["words"]!.AsArray();
+        var word = words.Single(row => row!["value"]!.GetValue<int>() == removedWord)!;
+        Assert.AreEqual("EC_MOVE2(VOLT_TACKLE)", word["symbol"]!.GetValue<string>());
+        Assert.IsTrue(words.Remove(word));
+        foreach (var group in composer["groups"]!.AsArray()) RemoveWord(group!["wordValues"]!.AsArray());
+        foreach (var bucket in composer["alphabetical"]!.AsArray())
+        {
+            var alternatives = bucket!["alternatives"]!.AsArray();
+            foreach (var alternative in alternatives.ToArray())
+            {
+                var values = alternative!.AsArray();
+                RemoveWord(values);
+                if (values.Count == 0) Assert.IsTrue(alternatives.Remove(alternative));
+            }
+        }
+        File.WriteAllText(composerPath, composer.ToJsonString());
+
         // This checks composition and persistence, not battle execution of edited content.
         var catalog = PretCampaignCatalog.LoadCurrent(output.Path);
+        Assert.IsFalse(catalog.MailComposer!.Words.ContainsKey(removedWord));
         Assert.IsFalse(catalog.PokemonContent!.Catalog.Moves.ContainsKey(new MoveId(removedId)));
         Assert.AreEqual(json["moves"]!.AsArray().Count, catalog.PokemonContent.Catalog.Moves.Count);
         var session = CampaignSession.CreateCurrent(catalog, new(0x11223344));
@@ -46,5 +72,11 @@ public sealed class EditedMoveCatalogTests
         Assert.AreEqual(CanonicalJson.Hash(session.State), CanonicalJson.Hash(continued.State));
         Assert.AreEqual(session.Revision, continued.Revision);
         Assert.IsNull(continued.ValidatePlayerSave(continued.State));
+
+        static void RemoveWord(JsonArray values)
+        {
+            for (int index = values.Count - 1; index >= 0; index--)
+                if (values[index]!.GetValue<int>() == removedWord) values.RemoveAt(index);
+        }
     }
 }

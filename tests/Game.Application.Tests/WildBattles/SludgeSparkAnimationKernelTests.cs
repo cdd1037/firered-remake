@@ -64,7 +64,7 @@ public sealed class SludgeSparkAnimationKernelTests
                 : AnimationDispatchFixture.StatAtResult(Envelope.Double(events, i)));
             if (single)
             {
-                var exported = Envelope.Single(events, i) with { SourceEvents = [] };
+                var exported = Envelope.Single(events, i);
                 Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(exported, true, SourceBattleScene.On));
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(exported, false, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.AtResult(exported, true, SourceBattleScene.On).Dispatch);

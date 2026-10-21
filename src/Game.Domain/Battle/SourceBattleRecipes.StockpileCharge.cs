@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasStockpileChargeRecipe(string effect) => effect is
         "EFFECT_STOCKPILE" or "EFFECT_SPIT_UP" or "EFFECT_SWALLOW" or "EFFECT_CHARGE";
@@ -15,7 +15,7 @@ internal abstract partial class SourceRecipeContext
         Set(actor, body with { CalledVolatile = next == new WildBattleCalledVolatileState() ? null : next });
         Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "stockpile", previous.StockpileCount, count, reason));
     }
-    internal virtual void StockpileProtectionMiss() { }
+    internal void StockpileProtectionMiss() { }
 
     internal void ExecuteStockpileCharge(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         int slot, PokemonMoveDefinition move, string purpose)

@@ -2,11 +2,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
-    internal virtual bool YawnEnabled => true;
-    internal abstract bool YawnUproarPreventsSleep(BattlerSlot slot);
-    internal abstract void YawnCancelMultiTurn(BattlerSlot slot);
+    internal bool YawnEnabled => true;
     internal void NightmareResidual(BattlerSlot slot)
     {
         var body = Get(slot);

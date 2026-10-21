@@ -17,7 +17,7 @@ public sealed class WeatherContinuationTests : FieldEffectFixture
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var context = Activator.CreateInstance(type, flags | BindingFlags.Public, null, [frame, catalog], null)!;
         var order = Enumerable.Range(0, frame.BattlerCount).Reverse().Select(i => new BattlerSlot(i)).ToImmutableArray();
-        type.BaseType!.GetMethod("FieldEffects", flags)!.Invoke(context, [catalog, order]);
+        type.GetMethod("FieldEffects", flags)!.Invoke(context, [catalog, order]);
         var state = (SourceBattleFrame)type.GetProperty("Frame", flags)!.GetValue(context)!;
         var events = ((ImmutableArray<SourceBattleEvent>.Builder)type.GetField("Events", flags)!.GetValue(context)!).ToImmutable();
         Assert.IsNull(SourceBattleIdentityRules.Validate(state));
@@ -165,12 +165,9 @@ public sealed class WeatherContinuationTests : FieldEffectFixture
             if (controller >= 2)
             {
                 Assert.AreEqual("source_event_slot_outside_layout", SourceBattleEventHooks.ValidateRouting(Frame() with { Layout = SourceBattleLayout.Singles }, source));
-                Assert.Throws<NotSupportedException>(() => SourceBattleEventAdapter.Export(source));
                 continue;
             }
-            WildBattleEvent exported = SourceBattleEventAdapter.Export(source);
-            Assert.AreEqual(new WildBattleWeatherContinuedEvent(12, 3, (WildBattleSide)controller, "hail"), exported);
-            Assert.AreEqual(exported, JsonSerializer.Deserialize<WildBattleEvent>(JsonSerializer.Serialize(exported)));
+            Assert.IsNull(SourceBattleEventHooks.ValidateRouting(Frame() with { Layout = SourceBattleLayout.Singles }, source));
         }
         Assert.AreEqual("source_event_weather_kind", SourceBattleEventHooks.ValidateRouting(Frame(), new SourceWeatherContinuedEvent(1, 0, new(0), "unknown")));
     }

@@ -22,8 +22,8 @@ public sealed class WishMoveAnimationDispatchTests
         new("wish", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("wish", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("wish", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant NaturalMon(string species, int level, params string[] names)
     {

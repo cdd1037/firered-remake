@@ -4,5 +4,5 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public MemorialPillarTrainerCatalog? MemorialPillarTrainers { get; private init; }
+    public OrdinaryTrainerCatalog? MemorialPillarTrainers { get; private init; }
 }

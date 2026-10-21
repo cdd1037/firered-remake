@@ -179,6 +179,6 @@ public sealed class RolloutAnimationKernelTests
         }
         var ordinary=Envelope.Resolve(Kernel.Frame(Bodies()));var curled=Envelope.Resolve(Kernel.Frame(Bodies(curled:true)));
         Assert.AreEqual(JsonSerializer.Serialize(ordinary.Trace),JsonSerializer.Serialize(curled.Trace));var first=ordinary.Events.OfType<SourceHpChangedEvent>().Single();var twice=curled.Events.OfType<SourceHpChangedEvent>().Single();Assert.AreEqual(30,first.PreparedBasePower);Assert.AreEqual(60,twice.PreparedBasePower);
-        var exported=(WildBattleHpChangedEvent)SourceBattleEventAdapter.Export(first);Assert.AreEqual(first.PreparedBasePower,exported.PreparedBasePower);
+        var exported=(SourceHpChangedEvent)OverlayHitAnimationKernelFixture.Single([first], 0).Events[0];Assert.AreEqual(first.PreparedBasePower,exported.PreparedBasePower);
     }
 }

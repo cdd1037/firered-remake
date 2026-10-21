@@ -3,9 +3,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal virtual bool CanonicalSecondarySemantics => true;
+    internal bool CanonicalSecondarySemantics => true;
 
     internal SourceSecondaryEffectSelection SecondaryEffect(BattlerSlot actor, PokemonMoveDefinition move,
         string purpose, bool noEffect, bool certain = false, bool hasEffect = true, bool strictTwineedle = false)

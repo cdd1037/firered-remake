@@ -17,7 +17,7 @@ public sealed class ConversionMoveAnimationDispatchTests
     private static SourceMechanicsCatalog Mechanics=>TestAssets.Cached(()=>SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
     private static MoveId Move(int id)=>new("pret:MOVE_"+(id==160?"CONVERSION":"CONVERSION_2"));
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> e,int i)=>new("conversion",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,e,i,[],[],0,0,[],[],[],[],0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> e,int i)=>new("conversion",null!,new(),e.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),i,null!,null!,CampaignBattlePhase.Events,[],0,[]){SourceEvents=e};
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> e,int i)=>new("conversion",null!,new(),e,i,null!,null!,CampaignBattlePhase.Events,[],0,[]);
     private static WildBattleCombatant Mon(string species,params string[] names)
     {
         var p=SourcePokemonFactory.Create(Mechanics,new(new("pret:SPECIES_"+species),50,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(0)),new(0)).Pokemon;

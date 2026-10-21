@@ -142,10 +142,10 @@ public sealed class TeeterDanceAnimationKernelTests
     public void SinglesStatusProjectionUsesExportedConfusionEnvelopeAndRejectsWrongReasonWithoutFinalState()
     {
         var result = Envelope.Resolve(Kernel.Frame(Bodies(298), true)); var first = Confusions(result.Events)[0]; int fi = result.Events.IndexOf(first);
-        var single = Envelope.Single(result.Events, fi) with { SourceEvents = [] };
+        var single = Envelope.Single(result.Events, fi);
         var projected = AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On);
         Assert.IsNotNull(projected.Dispatch); Assert.AreEqual(first.Sequence, projected.Dispatch.ResultSequence);
-        var exported = (WildBattleConfusionChangedEvent)single.Events[fi]; Assert.AreEqual("teeter-dance", exported.Reason);
+        var exported = (SourceConfusionChangedEvent)single.Events[fi]; Assert.AreEqual("teeter-dance", exported.Reason);
         foreach (string reason in new[] { "move", "countdown", "berry" })
             Assert.IsNull(AnimationDispatchFixture.AtResult(single with { Events = single.Events.SetItem(fi, exported with { Reason = reason }) }, true, SourceBattleScene.On).Dispatch);
     }

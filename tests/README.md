@@ -65,6 +65,13 @@ MSTest 负责发现和 TRX，不使用旧 shell／console 套件调度或手工�
 Linux／macOS `python3`，可用 `FIRERED_PYTHON` 覆盖。资源检查需要 Python 3.12
 及 `requirements-dev.txt`；普通 C# 测试不依赖 Python。
 
+## 显式 Godot 资源注册检查
+
+先构建当前 `Game.Godot`，再执行 `python scripts/checks/test-species-registration.py --headless`。
+此入口不在默认 MSTest 中；它只编译临时探针，引用已构建产品，在官方 Godot 中检查
+继承纹理身份、尺寸／位置、重复键、肖像晋升、几何与释放；缺失完成标记、原生错误或泄漏均失败。
+`--output` 可保留证据。headless 通过不证明窗口渲染、完整游戏流程或真实音频输出。
+
 ## 输入与存档
 
 - 内容测试使用本地 `content/generated`；依赖原作输入的导入／参考检查使用
@@ -83,7 +90,7 @@ Linux／macOS `python3`，可用 `FIRERED_PYTHON` 覆盖。资源检查需要 Py
   `GeneratedOnlyCampaignTests` 另验证隔离 generated 资源加载，不代表长路线。
 - 普通测试不转换 schema 1/2，不猜旧昵称或缺失终身孵蛋数。
   受控夹具的名字、计数、个体和进度只是显式测试输入，不是玩家历史。
-  旧档原件保留，不能冒充当前 Continue 或事件前检查点；离线转换边界见
+  旧档原件保留，不能冒充当前 Continue 或事件前检查点；严格存档准入边界见
   [当前组合](../docs/current-game-composition.md)。
 - 文件系统用例使用唯一 `.toolhome/mstest` 临时目录；TRX 使用标准结果目录或
   显式 `--results-directory`。失败日志与成功复测分开保留。

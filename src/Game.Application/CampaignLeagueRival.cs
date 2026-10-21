@@ -78,7 +78,7 @@ public sealed partial class CampaignSession
         foreach(var history in state.ForestTrainerHistory??[])
         {
             if(history is null||history.TrainerId is null)continue; // General history validator rejects malformed entries.
-            if(history.TrainerId==ViridianGymTrainerPartyFactory.Giovanni.Value&&history.Outcome==WildBattleOutcome.Won)giovanniWon=true;
+            if(history.TrainerId=="pret:TRAINER_LEADER_GIOVANNI"&&history.Outcome==WildBattleOutcome.Won)giovanniWon=true;
             if(!LeagueRivalTrainerPartyFactory.SupportedTrainers.Any(t=>t.Value==history.TrainerId))continue;
             int starter=state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON");
             if(!giovanniWon||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET")||lateWon||

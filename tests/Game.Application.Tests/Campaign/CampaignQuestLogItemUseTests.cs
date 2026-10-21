@@ -33,9 +33,9 @@ public sealed class CampaignQuestLogItemUseTests:WildBattleFixture
         Assert.AreEqual("UsedItemOnMonAtThisLocation",log.Scenes.Single().Actions.Single().TextKey);
         Assert.AreEqual(original,System.Text.Json.JsonSerializer.Serialize(recordAfter));
         Assert.IsNull(CampaignQuestLogItemUseCapture.Observe(session.State,session.State,content));
-        var enemyEvents=session.State.WildBattle!.SourceEvents.Select(e=>e is SourceMedicineAppliedEvent medicine?
+        var enemyEvents=session.State.WildBattle!.Events.Select(e=>e is SourceMedicineAppliedEvent medicine?
             medicine with{Actor=new BattlerSlot(1),TargetSide=BattleSide.Opponent}:e).ToImmutableArray();
-        var enemyUse=session.State with{WildBattle=session.State.WildBattle with{SourceEvents=enemyEvents}};
+        var enemyUse=session.State with{WildBattle=session.State.WildBattle with{Events=enemyEvents}};
         Assert.IsNull(CampaignQuestLogItemUseCapture.Observe(state,enemyUse,content));
         var accepted=session.State;Drain(session);
         Assert.IsNull(CampaignQuestLogItemUseCapture.Observe(accepted,session.State,content));
@@ -75,7 +75,7 @@ public sealed class CampaignQuestLogItemUseTests:WildBattleFixture
         typeof(CampaignSession).GetField("_commands",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(session,
             new CommandSession<CampaignState,CampaignCommand>(state,session.RulesVersion,content.ContentVersion,session.Revision));
         Send(session,new("battle_medicine",Text:item.Value,PartyIndex:0){TargetInstanceId=state.Party[0].InstanceId});
-        Assert.IsTrue(session.State.WildBattle!.SourceEvents.OfType<SourceMedicineAppliedEvent>().Any());
+        Assert.IsTrue(session.State.WildBattle!.Events.OfType<SourceMedicineAppliedEvent>().Any());
         Assert.IsNull(CampaignQuestLogItemUseCapture.Observe(state,session.State,content));
     }
     [TestMethod]

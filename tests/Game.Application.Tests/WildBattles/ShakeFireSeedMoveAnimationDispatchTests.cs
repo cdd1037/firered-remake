@@ -27,8 +27,8 @@ public sealed class ShakeFireSeedMoveAnimationDispatchTests
         new("shake-fire-seed", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("shake-fire-seed", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("shake-fire-seed", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant NaturalMon(string species, int level, string name, uint personality = 0)
     {

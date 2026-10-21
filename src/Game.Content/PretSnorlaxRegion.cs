@@ -27,21 +27,6 @@ public sealed class PretSnorlaxRegion
 
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_ROUTE12" => new("map.route-12"),
-        "MAP_ROUTE12_NORTH_ENTRANCE_1F" => new("map.route-12-north-entrance-1f"),
-        "MAP_ROUTE12_NORTH_ENTRANCE_2F" => new("map.route-12-north-entrance-2f"),
-        "MAP_ROUTE12_FISHING_HOUSE" => new("map.route-12-fishing-house"),
-        "MAP_ROUTE13" => new("map.route-13"),
-        "MAP_ROUTE16" => new("map.route-16"),
-        "MAP_ROUTE16_NORTH_ENTRANCE_1F" => new("map.route-16-north-entrance-1f"),
-        "MAP_ROUTE16_NORTH_ENTRANCE_2F" => new("map.route-16-north-entrance-2f"),
-        "MAP_ROUTE16_HOUSE" => new("map.route-16-house"),
-        "MAP_ROUTE17" => new("map.route-17"),
-        _ => PretCeladonApproachRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     /// <summary>Retains external source connections. Availability must be checked before committing a transition.</summary>
 
 

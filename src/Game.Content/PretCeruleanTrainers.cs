@@ -10,21 +10,22 @@ public sealed record CeruleanTrainerDocument(int SchemaVersion, ImmutableArray<T
 public static class PretCeruleanTrainers
 {
     public const string RelativePath = "content/generated/data/trainer-battles/cerulean/trainers.json";
-    public static CeruleanTrainerCatalog Load(string root)
+    public static OrdinaryTrainerCatalog Load(string root)
     {
         var document = ContentJson.ParseStrict<CeruleanTrainerDocument>(
             File.ReadAllText(Path.Combine(root, RelativePath)), SharedTrainerCatalog.Options(root));
         if (document.SchemaVersion != 1) throw new InvalidDataException("Unsupported Cerulean trainer document schema.");
-        var catalog = new CeruleanTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.Trainer));
-        CeruleanTrainerPartyFactory.ValidateCatalog(catalog);
+        var catalog = new OrdinaryTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles, "cerulean-trainer");
+        foreach (var battle in document.Battles.Where(b => b.Mode != 0))
+        {
+            bool misty = battle.Trainer.Value == "pret:TRAINER_LEADER_MISTY";
+            bool grunt = battle.Trainer.Value == "pret:TRAINER_TEAM_ROCKET_GRUNT_5";
+            string intro = misty ? "CeruleanCity_Gym_Text_MistyIntro" : grunt ? "CeruleanCity_Text_GruntIntro" : "CeruleanCity_Text_RivalIntro";
+            string post = misty ? "CeruleanCity_Gym_Text_ExplainCascadeBadge" : grunt ? "CeruleanCity_Text_RecoveredTM28FromGrunt" : "CeruleanCity_Text_RivalPostBattle";
+            if (battle.IntroText != intro || battle.PostBattleText != post)
+                throw new InvalidDataException("cerulean_special_dialogue_binding");
+        }
         return catalog;
-    }
-
-    public static CeruleanTrainerCatalog Load(PretCeruleanRegion region, PokemonPresentationPackage pokemon)
-    {
-        ArgumentNullException.ThrowIfNull(region);
-        ArgumentNullException.ThrowIfNull(pokemon);
-        return Load(PretRuntimeMapValidation.ProjectRoot(region.GeneratedDirectory));
     }
 
     internal static byte[] ReadPinned(string root, string path)

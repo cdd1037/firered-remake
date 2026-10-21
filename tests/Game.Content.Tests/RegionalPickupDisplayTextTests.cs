@@ -174,16 +174,16 @@ public sealed class RegionalPickupDisplayTextTests
         {
             case "cerulean-cave":
                 var cave = PretCeruleanCaveRegion.Load(world);
-                return Create(cave.NewMaps, cave.Items, cave.Contracts, PretCeruleanCaveRegion.MapIdFromSourceSymbol);
+                return Create(cave.NewMaps, cave.Items, cave.Contracts, world.Resolve);
             case "power-plant":
                 var power = PretPowerPlantRegion.Load(world);
-                return Create(power.NewMaps, power.Items, power.Contracts, PretPowerPlantRegion.MapIdFromSourceSymbol);
+                return Create(power.NewMaps, power.Items, power.Contracts, world.Resolve);
             case "seafoam":
                 var seafoam = PretSeafoamRegion.Load(world);
-                return Create(seafoam.NewMaps, seafoam.Items, seafoam.Contracts, PretSeafoamRegion.MapIdFromSourceSymbol);
+                return Create(seafoam.NewMaps, seafoam.Items, seafoam.Contracts, world.Resolve);
             case "lost-cave":
                 var lost = PretLostCaveRegion.Load(world);
-                return Create(lost.NewMaps, lost.Items, lost.Contracts, PretLostCaveRegion.MapIdFromSourceSymbol);
+                return Create(lost.NewMaps, lost.Items, lost.Contracts, world.Resolve);
             default: throw new ArgumentOutOfRangeException(nameof(region));
         }
     }

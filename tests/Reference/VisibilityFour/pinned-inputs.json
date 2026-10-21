@@ -1,7 +1,7 @@
 {
   "src/battle_main.c": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
   "src/battle_anim_effects_2.c": "50561e4882a0f8813f305af6f4147ed1c394657278e32aae6c733bef31994a04",
-  "src/battle_anim_dark.c": "2d4607e9b60aec356c3d75bdb12bba30fa8ee5c6d50741eff54ab7760df98bfb",
+  "src/battle_anim_dark.c": "2030a1999963c452238f51d6bb624bbd8f0214e3368ddbbfedf08ee7608c31f5",
   "src/battle_anim_normal.c": "73478ff40f601740b58408caa3259f5abc29f90010f77017aecc69d71803a6c3",
   "src/battle_anim_utility_funcs.c": "8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297",
   "src/battle_anim_effects_3.c": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f",

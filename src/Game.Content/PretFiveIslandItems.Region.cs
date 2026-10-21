@@ -23,7 +23,7 @@ public static partial class PretFiveIslandItems
             throw new InvalidDataException("five_island_pickup_contract_scope");
         foreach (var pickup in content.Pickups)
         {
-            var map = region.NewMaps[PretFiveIslandRegion.MapIdFromSourceSymbol(pickup.MapSymbol)];
+            var map = region.NewMaps[region.NewMaps.Values.First().ResolveMapSymbol(pickup.MapSymbol)];
             var row = region.Contracts.GetProperty(pickup.Hidden ? "hiddenItems" : "itemPickups").EnumerateArray().Single(r =>
                 r.GetProperty("map").GetString() == pickup.MapSymbol && r.GetProperty("event").GetProperty("flag").GetString() == pickup.Flag);
             var sourceEvent = row.GetProperty("event");

@@ -3,14 +3,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasRetaliationRecipe(string effect) => effect is
         "EFFECT_COUNTER" or "EFFECT_MIRROR_COAT" or "EFFECT_VITAL_THROW";
-    internal abstract SourceDamageRegisters? RetaliationReceipt(BattlerSlot actor);
-    internal abstract void RetaliationTarget(BattlerSlot target);
-    internal abstract void RetaliationSuppressPressure();
-    internal virtual BattlerSlot? RetaliationFollowMe(BattleSide side) => null;
 
     internal void ExecuteRetaliation(PokemonCatalog catalog, BattlerSlot actor, int slot,
         PokemonMoveDefinition move, string purpose, ref bool handled)

@@ -22,19 +22,6 @@ public sealed partial class PretVictoryRoadRegion
 
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_ROUTE23" => new("map.route-23"),
-        "MAP_ROUTE22" => new("map.route-22"),
-        "MAP_ROUTE22_NORTH_ENTRANCE" => new("map.route-22-north-entrance"),
-        "MAP_VICTORY_ROAD_1F" => new("map.victory-road-1f"),
-        "MAP_VICTORY_ROAD_2F" => new("map.victory-road-2f"),
-        "MAP_VICTORY_ROAD_3F" => new("map.victory-road-3f"),
-        "MAP_INDIGO_PLATEAU_EXTERIOR" => new("map.indigo-plateau-exterior"),
-        "MAP_INDIGO_PLATEAU_POKEMON_CENTER_1F" => new("map.indigo-plateau-pokemon-center-1f"),
-        _ => PretFirstSeviiRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     private static SilphSourcePackage VictoryRoadSource(string root) => new(root,"maps/regions/victory-road");
     public static PretVictoryRoadRegion Load(PretCurrentWorld world)
     {

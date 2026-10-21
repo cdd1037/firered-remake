@@ -22,13 +22,6 @@ public sealed partial class PretViridianGymRegion
 
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_VIRIDIAN_CITY_GYM" => new("map.viridian-city-gym"),
-        "MAP_VIRIDIAN_CITY" => new("map.viridian-city"),
-        _ => PretFirstSeviiRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     private static SilphSourcePackage ViridianGymSource(string root) => new(root,"maps/regions/viridian-gym");
     public static PretViridianGymRegion Load(PretCurrentWorld world)
     {

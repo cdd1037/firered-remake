@@ -14,8 +14,8 @@ internal static class SourceFrameSpecialStatuses
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override bool FocusBanded(BattlerSlot slot) => Frame.Get(slot).Position.FocusBanded;
-    internal override void SetFocusBanded(BattlerSlot slot)
+    internal bool FocusBanded(BattlerSlot slot) => Frame.Get(slot).Position.FocusBanded;
+    internal void SetFocusBanded(BattlerSlot slot)
     {
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value,

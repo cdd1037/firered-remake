@@ -7,7 +7,7 @@ using Legal = FireRed.Tests.Application.WildBattles.ConditionalRecoveryAnimation
 
 namespace FireRed.Tests.Application.WildBattles;
 
-// Producer/export regression only. No animation-resource availability or root admission
+// Producer/receipt-identity regression only. No animation-resource availability or root admission
 // is asserted for these existing dynamic effects, particularly Low Kick and Eruption.
 [TestClass, TestCategory("Game")]
 public sealed class PreparedPowerReceiptRegressionTests
@@ -31,13 +31,13 @@ public sealed class PreparedPowerReceiptRegressionTests
             Assert.AreEqual(expected, Power(hit)); Assert.AreEqual(substitute, hit is SourceSubstituteDamagedEvent);
             if (single)
             {
-                var exported = SourceBattleEventAdapter.Export(hit);
-                Assert.AreEqual(Power(hit), exported switch { WildBattleHpChangedEvent h => h.PreparedBasePower,
-                    WildBattleSubstituteDamagedEvent s => s.PreparedBasePower, _ => throw new InvalidOperationException() });
+                var exported = OverlayHitAnimationKernelFixture.Single([hit], 0).Events[0];
+                Assert.AreEqual(Power(hit), exported switch { SourceHpChangedEvent h => h.PreparedBasePower,
+                    SourceSubstituteDamagedEvent s => s.PreparedBasePower, _ => throw new InvalidOperationException() });
             }
         }
         // Pinned EffectHit order remains accuracy, critical, random damage, zero-chance
-        // secondary per successful pass. Preparing/exporting power adds no RNG draw.
+        // secondary per successful pass. Preparing/reading power adds no RNG draw.
         string[] suffixes = [".accuracy", ".critical", ".damage", ".secondary-effect"];
         int[] bounds = [100, 16, 16, 100]; Assert.AreEqual(passes * 4, result.Trace.Length);
         uint seed = frame.Rng.Seed; ulong cursor = frame.Rng.Cursor;

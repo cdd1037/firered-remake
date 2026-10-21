@@ -31,8 +31,8 @@ public sealed class SelfAttackMoveAnimationDispatchTests
         new("self-attack", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("self-attack", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),
-            index, null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("self-attack", null!, new(), events,
+            index, null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant NaturalMon(string species, int level, string name)
     {

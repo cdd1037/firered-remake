@@ -1,3 +1,4 @@
+using Game.Domain.Trainers;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Domain.Ids;
@@ -14,9 +15,7 @@ public sealed partial class PretCampaignCatalog
 
     public PretFuchsiaGymRegion FuchsiaGymRegion { get; }
     public FuchsiaGymTrainerDocument? FuchsiaGymTrainerDocument { get; }
-    public FuchsiaGymTrainerCatalogContent? FuchsiaGymTrainers { get; }
-    Game.Domain.Trainers.FuchsiaGymTrainerCatalog? Game.Domain.World.ICampaignCatalog.FuchsiaGymTrainerParties =>
-        FuchsiaGymTrainers is { } trainers ? new(trainers.Trainers,trainers.Battles) : null;
+    public OrdinaryTrainerCatalog? FuchsiaGymTrainers { get; }
     public PretFuchsiaGymItemsDocument? FuchsiaGymItems { get; }
     /// <summary>Explicit source successor opt-in; native acceptance remains a separate gate.</summary>
     public PokemonMoveDefinition? FuchsiaGymToxic => PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")];

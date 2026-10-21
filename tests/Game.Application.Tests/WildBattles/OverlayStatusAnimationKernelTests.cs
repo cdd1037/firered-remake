@@ -178,11 +178,11 @@ public sealed class OverlayStatusAnimationKernelTests
                 Deny(events.SetItem(first, invalid), single, "Invalid Haze reset");
             if (single)
             {
-                // Mutate the exported two-slot envelope: slot 2 is representable as a
+                // Mutate the canonical two-slot envelope: slot 2 is representable as a
                 // source BattlerSlot, but cannot belong to this singles invocation.
                 var battle = Single(events, events.IndexOf(events.OfType<SourceMoveUsedEvent>().Single()));
-                var row = (WildBattleStatChangedEvent)battle.Events[first];
-                battle = battle with { Events = battle.Events.SetItem(first, row with { Target = (WildBattleSide)2 }) };
+                var row = (SourceStatChangedEvent)battle.Events[first];
+                battle = battle with { Events = battle.Events.SetItem(first, row with { Target = new BattlerSlot(2) }) };
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch,
                     "A Haze reset outside the singles layout must not authorize its root.");
             }

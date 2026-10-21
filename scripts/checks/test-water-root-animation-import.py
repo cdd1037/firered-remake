@@ -44,6 +44,11 @@ class WaterRootImportTests(unittest.TestCase):
     data=original(ref,name);return data.replace(before,after) if name==path else data
    with patch.object(imp,'read',side_effect=changed):
     with self.assertRaises(ValueError):imp.build(REFERENCE)
- def test_no_new_generic_or_unrelated_roots_from_primitive_admission(self):
-  for move in [57,151,182,197,215,287,297,312,318,330,347,349]:self.assertNotIn(move,self.roots)
+ def test_unreviewed_command_cannot_enter_a_complete_root(self):
+  original=imp.read;source=original(REFERENCE,'data/battle_anim_scripts.s');marker=b'Move_HYDRO_CANNON:\n';self.assertEqual(1,source.count(marker))
+  # Mutate a command, not a historical move-support list. All other roots survive.
+  changed=source.replace(marker,marker+b'\tunreviewed_command 0\n')
+  with patch.object(imp,'read',side_effect=lambda ref,path:changed if path=='data/battle_anim_scripts.s' else original(ref,path)):
+   rows,_=imp.discover_scripts(REFERENCE)
+  self.assertEqual(set(self.roots)-{308},{r['moveId'] for r in rows})
 if __name__=='__main__':unittest.main()

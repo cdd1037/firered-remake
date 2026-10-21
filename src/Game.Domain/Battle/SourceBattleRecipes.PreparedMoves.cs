@@ -14,19 +14,11 @@ internal static class SourcePreparedMoveRules
     }
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasPreparedMoveRecipe(string effect) => effect is "EFFECT_FOCUS_PUNCH" or "EFFECT_SNATCH" or "EFFECT_MAGIC_COAT";
-    internal virtual int PreparedActionIndex => 0;
-    internal virtual int PreparedBattlerCount => 2;
-    internal virtual bool PreparedMagicPressure => true;
-    internal virtual BattlerSlot PreparedReflectTarget(BattlerSlot original, BattlerSlot reflector) => original;
-    internal virtual (int Physical, int Special) PreparedDamage(BattlerSlot actor) => (0, 0);
-    internal virtual void SetPreparedInvocation(SourceMoveInvocation value) => throw new SourceRecipeUnsupported("prepared_invocation_owner_required");
-    internal virtual void PreparedPp(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool attackString = true) => SpendEarlyPartyPp(actor, target, Invocation!.PpSlot, move);
-    internal virtual void PreparedNoEffect() { }
-    internal virtual bool PreparedProtectionBlocks(BattlerSlot actor, int slot, PokemonMoveDefinition move) => false;
-    internal virtual MoveId? PreparedPreviousMove(BattlerSlot owner) => null;
+    internal bool PreparedMagicPressure => true;
+    internal bool PreparedProtectionBlocks(BattlerSlot actor, int slot, PokemonMoveDefinition move) => false;
     private bool preparedRegistersSwapped;
     internal void ResetPreparedRegisters() => preparedRegistersSwapped = false;
     private void PreparedVolatile(BattlerSlot slot, WildBattleCalledVolatileState value) => Set(slot, Get(slot) with {

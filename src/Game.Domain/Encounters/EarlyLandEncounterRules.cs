@@ -8,35 +8,15 @@ using Game.Domain.Randomness;
 namespace Game.Domain.Encounters;
 
 /// <summary>
-/// FireRed land encounters with explicit map and walking-profile admission.
+/// FireRed land encounters with explicit map admission and the current walking process.
 /// Ordinary table values come from content; a candidate remains pending until generation and battle start commit.
 /// </summary>
 public static class EarlyLandEncounterRules
 {
     public const string SourceCommit = Route1EncounterRules.SourceCommit;
-    public const string RulesVersion = "firered-early-kanto-walking-candidates-v1";
-    public const string Route22RulesVersion = "firered-route22-walking-candidates-v1";
     public const string FiveIslandRulesVersion = "firered-five-island-walking-candidates-v1";
-    public const string SixIslandRulesVersion = "firered-six-island-walking-candidates-v1";
-    public const string FourIslandRulesVersion = "firered-four-island-walking-candidates-v1";
-    public const string SeviiRubyRulesVersion = "firered-sevii-ruby-walking-candidates-v1";
-    public const string VictoryRoadRulesVersion = "firered-victory-road-walking-candidates-v1";
-    public const string FirstSeviiRulesVersion = "firered-first-sevii-walking-candidates-v1";
-    public const string CinnabarRulesVersion = "firered-cinnabar-walking-candidates-v1";
+    // Movement adapter identity only; Safari encounters share the current walking process.
     public const string SafariRulesVersion = "firered-safari-walking-candidates-v1";
-    public const string FuchsiaRulesVersion = "firered-fuchsia-route-walking-candidates-v1";
-    public const string SnorlaxRulesVersion = "firered-snorlax-walking-candidates-v1";
-    public const string PokemonTowerRulesVersion = "firered-pokemon-tower-walking-candidates-v1";
-    public const string RocketHideoutRulesVersion = "firered-rocket-hideout-walking-candidates-v1";
-    public const string CeladonGymRulesVersion = "firered-celadon-gym-walking-candidates-v1";
-    public const string CeladonApproachRulesVersion = "firered-celadon-approach-walking-candidates-v1";
-    public const string RockTunnelRulesVersion = "firered-rocktunnel-walking-candidates-v1";
-    public const string Route11RulesVersion = "firered-route11-walking-candidates-v1";
-    public const string SsAnneRulesVersion = "firered-ssanne-walking-candidates-v1";
-    public const string VermilionRulesVersion = "firered-vermilion-walking-candidates-v1";
-    public const string BillRulesVersion = "firered-bill-walking-candidates-v1";
-    public const string MtMoonRulesVersion = "firered-mtmoon-walking-candidates-v1";
-    public const string Route3RulesVersion = "firered-route3-walking-candidates-v1";
     public const byte TallGrassBehavior = Route1EncounterRules.TallGrassBehavior;
     public static ImmutableArray<int> SlotWeights { get; } = [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1];
     public static ImmutableArray<SpeciesId> WildSpecies { get; } =
@@ -57,7 +37,7 @@ public static class EarlyLandEncounterRules
             .Select((s, i) => new EarlyLandEncounterSlot(i, new("pret:SPECIES_" + s.Item1),
                 (byte)s.Item2, (byte)s.Item2, SlotWeights[i])).ToImmutableArray());
 
-    // Route3 authenticates Ekans held metadata; its Route4 encounter table requires the later MtMoon profile.
+    // Source Route3 species and ordered encounter slots.
     public static ImmutableArray<SpeciesId> Route3WildSpecies { get; } =
         [new("pret:SPECIES_EKANS"), new("pret:SPECIES_NIDORAN_F"),
          new("pret:SPECIES_NIDORAN_M"), new("pret:SPECIES_JIGGLYPUFF")];
@@ -69,7 +49,7 @@ public static class EarlyLandEncounterRules
                 (byte)s.Item2, (byte)s.Item2, SlotWeights[i])).ToImmutableArray());
 
     public static EarlyLandEncounterInitialization SeedFromGlobal(RngState globalRng, ushort previousMetatileBehavior = 0,
-        string rulesVersion = RulesVersion)
+        string rulesVersion = FiveIslandRulesVersion)
     {
         ValidateRulesVersion(rulesVersion);
         if (previousMetatileBehavior > byte.MaxValue) throw new ArgumentOutOfRangeException(nameof(previousMetatileBehavior));
@@ -117,16 +97,6 @@ public static class EarlyLandEncounterRules
         return CheckValidated(state, table, check, profile, globalRng, gate, repelSteps, repelLevel, ordinary);
     }
 
-    /// <summary>Current party139 reuses the same source walking and roaming process.</summary>
-
-
-    /// <summary>Current party146 reuses the same source walking and roaming process.</summary>
-
-
-
-
-
-
     private static EarlyLandEncounterResult CheckValidated(EarlyLandEncounterState state,
         EarlyLandEncounterTable table, EarlyLandEncounterCheck check, EarlyLandEncounterProfile profile,
         RngState globalRng, CelioRoamerEncounterGate? roamerGate = null,
@@ -146,7 +116,7 @@ public static class EarlyLandEncounterRules
         if (ordinary is not null) ordinary.ValidateCheck(check);
         else
         {
-            bool caveAttributes = IsCaveMap(table.Map, state.RulesVersion);
+            bool caveAttributes = IsCaveMap(table.Map);
             if (check.EncounterType == EncounterTileType.Water ||
                 (!caveAttributes && check.EncounterType == EncounterTileType.Land && check.MetatileBehavior != TallGrassBehavior))
                 throw new NotSupportedException("Only admitted source cave land, tall-grass land and non-encounter tiles are supported.");
@@ -155,8 +125,8 @@ public static class EarlyLandEncounterRules
         }
 
         return CheckCore(state, table, check, profile.WildEncountersDisabled, globalRng,
-            stench: state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadAbility == "ABILITY_STENCH",
-            illuminate: state.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadAbility == "ABILITY_ILLUMINATE", cleanseTag: state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadHeldItem == "ITEM_CLEANSE_TAG",
+            stench: profile.LeadAbility == "ABILITY_STENCH",
+            illuminate: profile.LeadAbility == "ABILITY_ILLUMINATE", cleanseTag: profile.LeadHeldItem == "ITEM_CLEANSE_TAG",
             repelSteps: repelSteps, repelLevel: repelLevel, roamerGate: roamerGate,bicycle: profile.Movement==EncounterMovementMode.Bicycle);
     }
 
@@ -315,7 +285,7 @@ public static class EarlyLandEncounterRules
         if (state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId)
             throw new NotSupportedException("Unsupported early land process version or rate RNG.");
         // The counter can retain the preceding map's cooldown until the caller's map-load reset.
-        if (state.PreviousMetatileBehavior > byte.MaxValue || state.StepsSinceLastEncounter > (state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion ? 21 : state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion ? 16 : 8))
+        if (state.PreviousMetatileBehavior > byte.MaxValue || state.StepsSinceLastEncounter > 21)
             throw new ArgumentException("Encounter state is outside the bounded walking profile.");
         if (state.Pending is {} pending && (pending.Candidate is null ||
             string.IsNullOrWhiteSpace(pending.Candidate.Map.Value) || string.IsNullOrWhiteSpace(pending.Candidate.Species.Value) ||
@@ -327,41 +297,9 @@ public static class EarlyLandEncounterRules
     public static void ValidateState(EarlyLandEncounterState state, EarlyLandEncounterTable table)
     {
         ValidateTable(table); ValidateState(state);
-        if (SourceTableEncounterRegistry.Land.Any(t => t.Map == table.Map) && state.RulesVersion != FiveIslandRulesVersion)
-            throw new NotSupportedException("Registered source-table maps require the current walking process.");
-        if (SevenIslandEncounterTables.Land.Any(t => t.Map == table.Map) && state.RulesVersion != FiveIslandRulesVersion)
-            throw new NotSupportedException("Seven Island requires the current walking process.");
-        if (IsCurrentCaveMap(table.Map) && state.RulesVersion != FiveIslandRulesVersion)
-            throw new NotSupportedException("Indoor current-region tables require the current walking process.");
-        if (FiveIslandEncounterTables.Land.Any(t=>t.Map==table.Map) && state.RulesVersion != FiveIslandRulesVersion)
-            throw new NotSupportedException("Six Island tables require the exact walking profile.");
-        if (SixIslandEncounterTables.Land.Any(t=>t.Map==table.Map) && state.RulesVersion is not (SixIslandRulesVersion or FiveIslandRulesVersion))
-            throw new NotSupportedException("Six Island tables require the exact walking profile.");
-        if (FourIslandEncounterTables.Land.Any(t=>t.Map==table.Map) && state.RulesVersion is not (FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
-            throw new NotSupportedException("Four Island tables require their explicit walking profile.");
-        if (SeviiRubyEncounterTables.Land.Any(t=>t.Map==table.Map) && state.RulesVersion is not (SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
-            throw new NotSupportedException("Ruby land requires its explicit walking profile.");
-        if (VictoryRoadEncounterTables.Land.Any(t=>t.Map==table.Map) && state.RulesVersion is not (VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
-            throw new NotSupportedException("Victory Road land requires its explicit walking profile.");
-        if (FirstSeviiEncounterTables.Land.Any(t => t.Map == table.Map) && state.RulesVersion is not (FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
-            throw new NotSupportedException("First Sevii land requires its explicit walking profile.");
-        if (CinnabarLandEncounterTables.All.Any(t => t.Map == table.Map) && state.RulesVersion is not (CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
-            throw new NotSupportedException("Cinnabar land requires its explicit walking profile.");
-        if(SafariLandEncounterTables.All.Any(t=>t.Map==table.Map)&&state.RulesVersion is not (SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))throw new NotSupportedException("Safari ground tables require their explicit Safari walking profile.");
-        if(FuchsiaRouteLandEncounterTables.All.Any(t=>t.Map==table.Map)&&state.RulesVersion is not (FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))throw new NotSupportedException("Southern route tables require their explicit Fuchsia walking profile.");
-        if (PokemonTowerLandEncounterTables.IsCave(table.Map) && state.RulesVersion is not (PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) throw new NotSupportedException("Tower tables require their explicit walking profile.");
-        if (CeladonApproachLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) throw new NotSupportedException("Celadon approach tables require the explicit walking profile.");
-        if (RockTunnelLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) throw new NotSupportedException("Rock Tunnel tables require their explicit profile.");
-        if (Route11LandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) throw new NotSupportedException("Route11 tables require their explicit walking profile.");
-        if (VermilionLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) throw new NotSupportedException("Vermilion tables require the explicit Vermilion walking profile.");
-        if (BillLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) throw new NotSupportedException("Bill land table requires explicit Bill walking profile.");
-        if ((table.Map == Route22Table.Map && state.RulesVersion is not (Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) ||
-            (table.Map == Route3Table.Map && state.RulesVersion is not (Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)) ||
-            (MtMoonLandEncounterTables.All.Any(t => t.Map == table.Map) && state.RulesVersion is not (MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion)))
-            throw new NotSupportedException("Extended maps require explicit encounter-profile admission.");
         if (state.Pending is not {} pending) return;
         var candidate = pending.Candidate;
-        if (pending.MetatileBehavior != TallGrassBehavior && !IsCaveMap(table.Map, state.RulesVersion))
+        if (pending.MetatileBehavior != TallGrassBehavior && !IsCaveMap(table.Map))
             throw new ArgumentException("Pending candidate requires grass or an admitted cave map.");
         var slot = table.Slots[candidate.Slot];
         if (candidate.Map != table.Map || candidate.Species != slot.Species ||
@@ -378,7 +316,7 @@ public static class EarlyLandEncounterRules
         // every possible party ability/item. Catalog-bound callers authenticate full
         // identifiers before projecting the three effects that FireRed uses here.
         if (!(profile.Movement == EncounterMovementMode.Walking ||
-                profile.RulesVersion == FiveIslandRulesVersion && profile.Movement == EncounterMovementMode.Bicycle) ||
+                profile.Movement == EncounterMovementMode.Bicycle) ||
             profile.RepelSteps != 0 || profile.LeadAbility is not ("ABILITY_NONE" or "ABILITY_STENCH" or "ABILITY_ILLUMINATE") ||
             profile.LeadHeldItem is not ("ITEM_NONE" or "ITEM_CLEANSE_TAG") ||
             profile.WhiteFluteActive || profile.BlackFluteActive || profile.RoamerActive ||
@@ -388,7 +326,7 @@ public static class EarlyLandEncounterRules
 
     internal static void ValidateRulesVersion(string rulesVersion)
     {
-        if (rulesVersion is not (RulesVersion or Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
+        if (rulesVersion != FiveIslandRulesVersion)
             throw new NotSupportedException("Unsupported early land process version.");
     }
 
@@ -446,30 +384,9 @@ public static class EarlyLandEncounterRules
         SeafoamEncounterTables.Land.Any(t => t.Map == map) || CeruleanCaveEncounterTables.IsCave(map) ||
         SevenIslandEncounterTables.IsChamber(map) || map == PowerPlantEncounterTables.Map;
 
-    private static bool IsCaveMap(MapId map, string rulesVersion) =>
-        rulesVersion == FiveIslandRulesVersion && IsCurrentCaveMap(map) ||
-        rulesVersion is FourIslandRulesVersion or SixIslandRulesVersion
-            or FiveIslandRulesVersion && FourIslandEncounterTables.IsCave(map) ||
-        rulesVersion is SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion
-            or FiveIslandRulesVersion && SeviiRubyEncounterTables.IsCave(map) ||
-        rulesVersion is VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion
-            or FiveIslandRulesVersion && VictoryRoadEncounterTables.IsCave(map) ||
-        rulesVersion is CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion
-            or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && CinnabarLandEncounterTables.IsCave(map) ||
-        rulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion
-            or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion
-            or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion
-            or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion
-            or SixIslandRulesVersion or FiveIslandRulesVersion && (MtMoonLandEncounterTables.IsCave(map) ||
-        rulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion
-            or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion
-            or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion
-            or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && Route11LandEncounterTables.IsCave(map) ||
-        rulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion
-            or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion
-            or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion
-            or SixIslandRulesVersion or FiveIslandRulesVersion && RockTunnelLandEncounterTables.IsCave(map) ||
-        rulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion
-            or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion
-            or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && PokemonTowerLandEncounterTables.IsCave(map));
+    private static bool IsCaveMap(MapId map) =>
+        IsCurrentCaveMap(map) || FourIslandEncounterTables.IsCave(map) || SeviiRubyEncounterTables.IsCave(map) ||
+        VictoryRoadEncounterTables.IsCave(map) || CinnabarLandEncounterTables.IsCave(map) ||
+        MtMoonLandEncounterTables.IsCave(map) || Route11LandEncounterTables.IsCave(map) ||
+        RockTunnelLandEncounterTables.IsCave(map) || PokemonTowerLandEncounterTables.IsCave(map);
 }

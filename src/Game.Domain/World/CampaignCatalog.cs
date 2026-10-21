@@ -44,6 +44,7 @@ public sealed record CampaignDepartmentElevatorEntrance(MapId SourceMapId,int So
 public sealed record CampaignDepartmentDynamicExit(int WarpIndex,int X,int Y,int Elevation,int SourceWarpId);
 public interface ICampaignCatalog:IStoryCatalog
 {
+    ImmutableArray<OrdinaryTrainerCatalog> OrdinaryTrainerCatalogs { get; }
     InventoryCatalog Inventory { get; }
     GamePokemonCatalog GamePokemon { get; }
     GameOpponentPokemonCatalog OpponentPokemon { get; }
@@ -67,7 +68,6 @@ public interface ICampaignCatalog:IStoryCatalog
     QuestItemsCatalog? QuestItems=>null;
     FieldFlyCatalog? FieldFly=>null;
     FieldRockSmashCatalog? FieldRockSmash=>null;
-    CeladonGymTrainerCatalog? CeladonGymTrainers=>null;
     FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>null;
     PokemonCatalog? PresetDoublePokemon=>null;
     SourceMechanicsCatalog? PresetDoubleMechanics=>null;
@@ -75,11 +75,9 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     SafariFishingEncounterCatalog? SafariFishing => null;
     ImmutableHashSet<MapId> CyclingRoadSceneInteriors => ImmutableHashSet<MapId>.Empty;
-    CyclingRoadTrainerCatalog? CyclingRoadTrainers => null;
     NpcTradePokemonCatalog? NpcTrades=>null;
     SourceMailMessage? NpcTradeMailMessage=>null;
     MapId NpcTradeMap(int tradeId)=>NpcTrades!.Definitions[tradeId].Map;
-    FightingDojoTrainerCatalog? FightingDojoTrainers=>null;
     TrainerTowerCatalog? TrainerTowerCatalog=>null;
     GameOpponentPokemonCatalog? TrainerTowerOpponents=>null;
     IFieldMap? TrainerTowerMap(MapId map,TrainerTowerBattleFormat format)=>null;
@@ -90,10 +88,8 @@ public interface ICampaignCatalog:IStoryCatalog
     bool HasMapLayouts(MapId map)=>false;
     IFieldMap? MapLayout(MapId map,string layout)=>null;
     ConnectedFieldMap? ConnectedMapLayout(MapId map,string layout)=>null;
-    LostCaveTrainerCatalog? LostCaveTrainers=>null;
     SeafoamTrainerCatalog? SeafoamTrainers=>null;
     Route16FlyTrainerCatalog? Route16FlyTrainers=>null;
-    MemorialPillarTrainerCatalog? MemorialPillarTrainers=>null;
     IFieldMap? SeafoamMap(MapId map,bool stoppedCurrent)=>null;
     ConnectedFieldMap? SeafoamConnectedMap(MapId map,bool stoppedCurrent)=>null;
     EventIslandFieldData? EventIslandField=>null;
@@ -103,14 +99,10 @@ public interface ICampaignCatalog:IStoryCatalog
     WaterEncounterCatalog? SevenIslandWaterEncounters=>null;
     LeagueRematchTrainerCatalog? LeagueRematchTrainerParties=>null;
     IReadOnlyDictionary<MapId,Game.Domain.Roaming.RoamerMap>? CelioRoamerMaps=>null;
-    FiveIslandTrainerCatalog? FiveIslandTrainers=>null;
-    FiveIslandTrainerCatalog? FiveIslandTrainerParties=>FiveIslandTrainers;
     WaterEncounterCatalog? FiveIslandWaterEncounters=>null;
     SixIslandTrainerCatalog? SixIslandTrainers=>null;
     SixIslandTrainerCatalog? SixIslandTrainerParties=>SixIslandTrainers;
     WaterEncounterCatalog? SixIslandWaterEncounters=>null;
-    FourIslandTrainerCatalog? FourIslandTrainers=>null;
-    FourIslandTrainerCatalog? FourIslandTrainerParties=>FourIslandTrainers;
     WaterEncounterCatalog? FourIslandWaterEncounters=>null;
     SeviiRubyTrainerCatalog? SeviiRubyTrainers=>null;
     SeviiRubyTrainerCatalog? SeviiRubyTrainerParties=>SeviiRubyTrainers;
@@ -126,21 +118,17 @@ public interface ICampaignCatalog:IStoryCatalog
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     VictoryRoadTrainerCatalog? VictoryRoadTrainerParties=>null;
     LeagueRivalTrainerCatalog? LeagueRivalTrainerParties=>null;
-    ViridianGymTrainerCatalog? ViridianGymTrainerParties=>null;
     FirstSeviiTrainerCatalog? FirstSeviiTrainerParties=>null;
     WaterEncounterCatalog? FirstSeviiWaterEncounters=>null;
     FirstSeviiItemCatalog? FirstSeviiItems=>null;
     CinnabarTrainerCatalog? CinnabarTrainerParties=>null;
-    SaffronGymTrainerCatalog? SaffronGymTrainerParties=>null;
     bool SupportsTeleportPads(MapId map)=>SilphFieldRules.IsSilphMap(map) && SilphWarpPads.Any(p=>p.SourceMapId==map);
-    SilphTrainerCatalog? SilphTrainerParties=>null;
     ImmutableArray<SilphWarpPad> SilphWarpPads=>[];
     ImmutableArray<SilphDoorDefinition> SilphDoors=>[];
     ImmutableArray<CampaignSilphElevatorFloor> SilphElevatorFloors=>[];
     ImmutableArray<CampaignSilphElevatorEntrance> SilphElevatorEntrances=>[];
     ImmutableArray<CampaignSilphDynamicExit> SilphDynamicExits=>[];
     IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>null;
-    FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     Game.Domain.Slots.SlotMachineSessionContract? GameCornerSlots=>null;
     GameCornerPrizeCatalog? GameCornerPrizes=>null;
@@ -159,18 +147,13 @@ public interface ICampaignCatalog:IStoryCatalog
     bool IsSnorlaxStablePosition(MapId map,int x,int y)=>true;
     bool IsNpcTradeStablePosition(MapId map,int x,int y)=>true;
     bool IsSnorlaxWarpAllowed(MapId map,int sourceWarpId)=>true;
-    PokemonTowerTrainerCatalog? PokemonTowerTrainers=>null;
     ImmutableArray<int> PokemonTowerInitiallySetFlags=>[];
-    RocketHideoutTrainerCatalog? RocketHideoutTrainers=>null;
     ImmutableArray<int> RocketHideoutInitiallySetFlags=>[];
     ImmutableArray<CampaignMapMetatilePatch> RocketHideoutMetatilePatches=>[];
     ImmutableArray<CampaignRocketElevatorFloor> RocketHideoutElevatorFloors=>[];
     ImmutableArray<CampaignRocketElevatorEntrance> RocketHideoutElevatorEntrances=>[];
     ImmutableArray<CampaignRocketDynamicExit> RocketHideoutDynamicExits=>[];
     ImmutableArray<CampaignMapMetatilePatch> RocketHideoutInitialPatches(bool entranceOpened,bool b1GuardDefeated,bool bothB4GuardsDefeated)=>[];
-    CeladonApproachTrainerCatalog? CeladonApproachTrainers=>null;
-    Route11TrainerCatalog? Route11Trainers=>null;
-    RockTunnelTrainerCatalog? RockTunnelTrainers=>null;
     ImmutableArray<MachineItem> CityServiceItems=>[];
     IReadOnlyDictionary<MapId,OldRodEncounterTable>? OldRodEncounters=>null;
     ImmutableDictionary<MapId,OldRodEncounterTable> SuperRodEncounters=>ImmutableDictionary<MapId,OldRodEncounterTable>.Empty;
@@ -181,13 +164,6 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableDictionary<int,int> CutGrassMetatiles=>ImmutableDictionary<int,int>.Empty;
     bool AllowsCycling(MapId map)=>false;
     bool AllowsRunning(MapId map)=>false;
-    VermilionGymTrainerCatalog? VermilionGymTrainers=>null;
-    SsAnneTrainerCatalog? SsAnneTrainers=>null;
-    VermilionTrainerCatalog? VermilionTrainers=>null;
-    BillTrainerCatalog? BillTrainers=>null;
-    CeruleanTrainerCatalog? CeruleanTrainers=>null;
-    MtMoonTrainerCatalog? MtMoonTrainers=>null;
-    Route3TrainerCatalog? Route3Trainers=>null;
     bool IsRoute3StablePosition(MapId map,int x,int y)=>false;
     Route22TrainerCatalog? Route22Trainers=>null;
     bool IsRoute22StablePosition(MapId map,int x,int y)=>false;
@@ -196,8 +172,6 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableArray<FieldItemServiceDefinition> FieldItemServices=>[];
     EarlyShopCatalog? EarlyShop=>null;
     OrdinaryMartCatalog OrdinaryMarts => OrdinaryMartCatalog.Empty;
-    ForestTrainerCatalog? ForestTrainers=>null;
-    PewterTrainerCatalog? PewterTrainers=>null;
     IReadOnlyDictionary<MapId,EarlyLandEncounterTable>? LandEncounters=>null;
     IReadOnlyDictionary<int,FieldMetatileDefinition>? MetatileDefinitions=>null;
     FieldMetatileDefinition? MetatileDefinition(MapId map,int id)=>MetatileDefinitions?.GetValueOrDefault(id);

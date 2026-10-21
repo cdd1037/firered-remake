@@ -11,13 +11,27 @@ public partial class CampaignView
     private static bool SourceTrainerPresentationActive(CampaignWildBattle battle) => battle.Frame is not null;
 
     private bool SourceBatonSwitchBefore(CampaignWildBattle battle, WildBattleSide side, long sequence) =>
-        SourceTrainerPresentationActive(battle) && battle.Events.LastOrDefault(e => e.Sequence <= sequence && e is WildBattleCalledPartySwitchedEvent) is
-            WildBattleCalledPartySwitchedEvent { Kind: WildBattleCalledSwitchKind.BatonPass } switched &&
-        switched.Side == side && (switched.Sequence == sequence || switched.Sequence + 1 == sequence);
+        SourceTrainerPresentationActive(battle) && battle.Events.LastOrDefault(e => e.Sequence <= sequence && e is SourceCalledPartySwitchedEvent) is
+            SourceCalledPartySwitchedEvent { Kind: WildBattleCalledSwitchKind.BatonPass } switched &&
+        switched.Side.Value == (int)side && (switched.Sequence == sequence || switched.Sequence + 1 == sequence);
 
-    private bool SourcePlayerBatonSwitch(CampaignWildBattle battle) =>
-        WildCurrentEvent(battle) is WildBattlePlayerSwitchedEvent switched &&
-        SourceBatonSwitchBefore(battle, WildBattleSide.Player, switched.Sequence);
+    private bool SinglePlayerSwitchPages(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source,
+        ImmutableArray<string>.Builder pages)
+    {
+        if (battle.SwitchDisplay is not { Slot.Value: 0, Kind: not WildBattleCalledSwitchKind.Forced } switched) return false;
+        if (switched.Kind == WildBattleCalledSwitchKind.FaintedReplacement)
+            source("sText_GoPkmn", [("B_PLAYER_MON1_NAME", _catalog.PokemonDisplayName(battle.OwnedBefore))]);
+        else if (switched.Kind == WildBattleCalledSwitchKind.BatonPass)
+            source(SourceBatonSendOutText(battle), [("B_BUFF1", _catalog.PokemonDisplayName(battle.OwnedBefore))]);
+        else
+        {
+            var change = battle.LastSwitch ?? throw new InvalidDataException("Voluntary switch presentation is missing.");
+            source(change.WithdrawalTextSymbol, [("B_BUFF1", _catalog.PokemonDisplayName(change.Outgoing))]);
+            _wildSwitchSendPage = pages.Count;
+            source(change.SendOutTextSymbol, [("B_BUFF1", _catalog.PokemonDisplayName(battle.OwnedBefore))]);
+        }
+        return true;
+    }
 
     // Cmd_hpthresholds -> STRINGID_SWITCHINMON uses the opponent HP at this display boundary.
     private static string SourceBatonSendOutText(CampaignWildBattle battle)
@@ -74,9 +88,9 @@ public partial class CampaignView
     {
         if (!SourceTrainerPresentationActive(battle) || battle.Phase != CampaignBattlePhase.Events || WildCurrentEvent(battle) is null) return null;
         if(CampaignStatAnimationPresentation.IsSilentResultReceipt(battle,true,moves:_catalog.PokemonContent!.Catalog.Moves))return new([]);
-        string PartyName(WildBattleSide side, int index)
+        string PartyName(BattleSide side, int index)
         {
-            if (side == WildBattleSide.Player)
+            if (side == BattleSide.Player)
                 return index >= 0 && index < PresentedBattlePlayerParty.Length ? _catalog.PokemonDisplayName(PresentedBattlePlayerParty[index])
                     : throw new InvalidDataException("Source player party display index differs.");
             if (_session.State.ForestTrainerBattle is { } trainer)
@@ -89,8 +103,8 @@ public partial class CampaignView
             return index == 0 ? PresentedBattleSpeciesName(WildBattleTransformationRules.PersistentPokemon(battle.State.Opponent).SourceSpeciesId)
                 : throw new InvalidDataException("Source wild opponent party display index differs.");
         }
-        string? PrefixedPartyName(WildBattleSide side,int index)=>CampaignWishResolutionPresentation.CasterAvailable(battle.Frame,new((int)side),index)
-            ?(side==WildBattleSide.Opponent?battle.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?_battleSelectionText.FoePrefix:_battleSelectionText.WildPrefix:"")+PartyName(side,index):null;
+        string? PrefixedPartyName(BattlerSlot slot,int index)=>CampaignWishResolutionPresentation.CasterAvailable(battle.Frame,slot,index)
+            ?(slot.Side==BattleSide.Opponent?battle.Frame.BattleKind==WildBattleCalledBattleKind.Trainer?_battleSelectionText.FoePrefix:_battleSelectionText.WildPrefix:"")+PartyName(slot.Side,index):null;
         return SourceTrainerPresentationModel.Describe(battle.Events, battle.EventIndex, WildPrefixedName, MoveName, PartyName, _catalog.DisplayNames.ItemName, PrefixedPartyName,
             _catalog.DisplayNames.AbilityName, _catalog.DisplayNames.TypeName, _battleText);
     }

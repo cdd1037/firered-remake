@@ -57,7 +57,7 @@ public sealed class WaterSportAnimationKernelTests
                 if (single)
                 {
                     Assert.IsNull(AnimationDispatchFixture.AtAttackText(Kernel.Single(result.Events, i), false, SourceBattleScene.On).Dispatch);
-                    var exportedOnly = Kernel.Single(result.Events, i) with { SourceEvents = [] };
+                    var exportedOnly = Kernel.Single(result.Events, i);
                     Assert.AreEqual(cue, AnimationDispatchFixture.AtAttackText(exportedOnly, true, SourceBattleScene.On).Dispatch);
                 }
             }

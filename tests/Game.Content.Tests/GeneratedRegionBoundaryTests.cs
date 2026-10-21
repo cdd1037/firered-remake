@@ -38,15 +38,17 @@ public sealed class GeneratedRegionBoundaryTests
     [TestMethod]
     public void MtMoonLoadsBusinessDefinitionsWithoutDuplicateSharedCatalogs()
     {
-        var region = PretMtMoonRegion.Load(PretCurrentWorld.Load(TestAssets.Root));
-        Assert.AreEqual(3, region.NewMaps.Count);
+        var world = PretCurrentWorld.Load(TestAssets.Root);
+        var directory = Path.Combine(TestAssets.Root, "content/generated/maps/regions/mtmoon");
+        var maps = world.MapsInDirectory(directory);
+        Assert.AreEqual(3, maps.Count);
         Assert.AreEqual(12, PretMtMoonTrainers.Load(TestAssets.Root).Trainers.Count);
-        Assert.AreEqual(3, region.Encounters.GetArrayLength());
+        Assert.IsTrue(Game.Domain.Encounters.MtMoonLandEncounterTables.All.All(t => PretEarlyLandEncounters.Load(world).ContainsKey(t.Map)));
         var items = PretMtMoonItems.LoadProject(TestAssets.Root);
         Assert.AreEqual(18, items.Pickups.Count(p => p.Map != "Route4"));
         Assert.AreEqual(2, items.Fossils.Length);
         foreach (string obsolete in new[] { "dependencies.json", "npc-source.json", "mtmoon-catalog.json" })
-            Assert.IsFalse(File.Exists(Path.Combine(region.GeneratedDirectory, obsolete)));
+            Assert.IsFalse(File.Exists(Path.Combine(directory, obsolete)));
 
     }
 
@@ -71,35 +73,23 @@ public sealed class GeneratedRegionBoundaryTests
             Type[] loaders =
             [
             typeof(PretVermilionGymRegion),
-            typeof(PretSsAnneRegion),
             typeof(PretViridianRegion),
             typeof(PretTrainerTowerRegion),
             typeof(PretFuchsiaRouteRegion),
             typeof(PretCeruleanCaveRegion),
-            typeof(PretMtMoonRegion),
-            typeof(PretRoute3Region),
-            typeof(PretCeladonApproachRegion),
             typeof(PretRocketHideoutRegion),
-            typeof(PretBillRegion),
             typeof(PretMoveReminderHouse),
             typeof(PretFossilLabRegion),
             typeof(PretFuchsiaGymRegion),
             typeof(PretPokemonTowerRegion),
             typeof(PretRoute16FlyHouse),
-            typeof(PretRoute22Region),
             typeof(PretSaffronGymRegion),
             typeof(PretCopycatHouse),
             typeof(PretCeladonGymRegion),
             typeof(PretFightingDojoRegion),
-            typeof(PretForestRegion),
-            typeof(PretCeruleanRegion),
-            typeof(PretRockTunnelRegion),
             typeof(PretSafariRegion),
             typeof(PretPowerPlantRegion),
-            typeof(PretPewterRegion),
             typeof(PretSnorlaxRegion),
-            typeof(PretVermilionRegion),
-            typeof(PretRoute11Region),
             typeof(PretMoveDeleterHouse),
             typeof(PretSchoolHouseInteriors),
             typeof(PretCityServices),

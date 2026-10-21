@@ -25,26 +25,17 @@ GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游�
 - CampaignSession.RestoreCurrent恢复已验证状态，不借恢复再次执行地图剧情或消费RNG。
 - CampaignCatalogBinding在创建/恢复时绑定当前目录。
 - 组合只公开一份 GamePokemon、OpponentPokemon 和 Machines；TrainerTower 的特殊对手目录单独保留。地区资源在单一构造入口装载，不再通过历史 Enabled 开关或前驱版本组合。
+- 地图来源符号统一由当前 world registry 解析；可解析的身份不等于已选入可玩地图。普通地区不再以包装对象或前驱解析链传递地图；特殊机关、跨图端点与地方业务仍验证实际选中地图及演员。早期陆地表一次读取组合，保留原有数据校验与独立 Route4 区域检查。
+- 行走遇敌只保留当前进程身份，不再接受历史地区阶段作为进程配置；当前序列化 token 不变。Safari 移动适配身份与遇敌进程分开，真实 Repel 200／250 步契约仍保留。
 - 普通遇敌必须绑定真实表与候选；物种存在不等于允许任意战斗来源。玩家徽章、剧情和图鉴解锁仍按状态判断。
 - 普通单/双打走共享内核；教程/特殊模式边界见[架构](architecture.md)。
 
-## 存档与显式转换
+## 当前存档边界
 
-当前rules ID为firered-current-campaign-v4，content ID为firered-current-content-v4。正常Continue严格匹配版本，不自动猜测或升级旧结构。
+当前 schema 为 3，rules ID 为 firered-current-campaign-v4，content ID 为 firered-current-content-v4。Continue 严格匹配版本并验证完整状态，不支持旧存档兼容、转换或补写缺失统计。
 
-需要转换已明确支持的旧检查点时，在工程目录运行：
+旧检查点转换与手填孵蛋总数工具已移除。旧命令明确返回非零状态，不读取或改写来源、目标文件，也不建议使用已删除的转换命令。缺失终身孵蛋数仍拒绝，不从现存个体或回执推算，不默认为零。
 
-```sh
-dotnet run --project src/Game.Tooling -- convert-current-checkpoint SOURCE NEW_DESTINATION
-```
+现有 generation-57604 历史样本为 schema 1／campaign-v3，保持原文件不变，不能作为当前 Continue 基线。当前新游戏初始化真实统计，并继续使用正常 Save／Continue、checksum、primary／backup／staging 与候选文件指纹边界。移除转换功能不改变格式或版本号，也不压缩存档。
 
-工具拒绝覆盖已有目标，并保留原文件。仅支持 content-v4 的两条明确路径：
-
-- campaign-v3 → campaign-v4：逐条验证旧 Trainer Tower 回执的顺序 ID、目录描述、结局和出场对手，再只保留最后一条回执；下一场 ID 由这条规范 ID 递增。其他玩法字段不变。
-- campaign-v2 → campaign-v4：先显式删除已退休个体证明并收敛当前个体来源／野战记录，验证完整旧 Tower 历史，再执行上述 Tower 收敛。该中间步骤不是当前存档准入。
-
-两条路径都必须通过完整状态校验，保留当前个体、分配器、图鉴统计、特殊事件、名人堂快照、Tower 的四项挑战记录／奖品／计时、RNG 与 generation。v4 输入和未声明的旧版本明确拒绝；不把动态当前版本号冒充旧的 v2→v3 转换，也不自动推进游戏。
-
-终身孵蛋数缺失时，版本转换仍会拒绝，不从回执或存活个体推算。现有 generation-57604 的 v3 代表档缺少可信总数，原文件保持不变，仍不能作为当前 Continue 基线。只有操作者独立知道总数时，才可先使用 `set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT` 添加明确的总数；该操作明确支持 campaign-v2/v3/v4 各自原版本内的修正，保留来源 rules、完整 Tower 历史及 v2 退休字段，再按需另行转换版本。v2 修正仅在临时副本上执行既有退休来源校验，不发布其中的收敛结果。测试夹具的固定 1000 仅为受控测试输入，绝不是玩家历史修复。
-
-历史runtime/profile/升级路由已退休。不要依据旧报告重建这些系统；当前回归入口是[测试说明](../tests/README.md)。
+历史 runtime/profile/升级路由已退休。不要依据旧报告重建这些系统；当前回归入口是[测试说明](../tests/README.md)。

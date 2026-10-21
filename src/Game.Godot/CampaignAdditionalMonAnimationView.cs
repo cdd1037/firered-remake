@@ -9,7 +9,7 @@ public partial class CampaignView
         var wild=doubles?null:PresentedWildBattle;
         var displayed=battle is not null?new CampaignBattleDisplayBodies(battle.DisplayedSlots,battle.DisplayedMembers):wild?.DisplayBatch?.Display;
         if(displayed is null)return null;
-        var request=CampaignAdditionalMonPresentation.RolePlay(dispatch,displayed,battle?.Frame??wild!.Frame,battle?.Events??wild!.SourceEvents);
+        var request=CampaignAdditionalMonPresentation.RolePlay(dispatch,displayed,battle?.Frame??wild!.Frame,battle?.Events??wild!.Events);
         if(request is null)return null;
         string face=request.Back?"back":"front";
         if(!_sourceBattlerGeometry.TryGetValue((request.Species,face),out var geometry))return null;

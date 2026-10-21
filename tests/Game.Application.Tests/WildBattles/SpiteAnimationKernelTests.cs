@@ -62,11 +62,11 @@ public sealed class SpiteAnimationKernelTests
         Assert.AreEqual(before, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(before)));
         if (single)
         {
-            var exported = events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(); string json = JsonSerializer.Serialize(exported);
-            Assert.AreEqual(json, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<WildBattleEvent>>(json)));
-            Assert.AreEqual(0, F.Single(events, events.IndexOf(used)).SourceEvents.Length, "Exercise legacy normalization without canonical receipts.");
+            var exported = events; string json = JsonSerializer.Serialize(exported);
+            Assert.AreEqual(json, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(json)));
+            Assert.AreEqual(events, F.Single(events, events.IndexOf(used)).Events, "The single envelope retains the canonical batch unchanged.");
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(F.Single(events, events.IndexOf(used)), false, SourceBattleScene.On).Dispatch);
-            var legacy = exported.OfType<WildBattleSpiteEvent>().Single(); Assert.AreEqual(result.Move, legacy.Move); Assert.AreEqual(result.Slot, legacy.Slot);
+            var legacy = exported.OfType<SourceSpiteEvent>().Single(); Assert.AreEqual(result.Move, legacy.Move); Assert.AreEqual(result.Slot, legacy.Slot);
             Assert.AreEqual(result.RolledReduction, legacy.RolledReduction); Assert.AreEqual(result.PpAfter, legacy.PpAfter);
         }
     }

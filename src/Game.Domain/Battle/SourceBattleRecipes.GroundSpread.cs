@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasGroundSpreadRecipe(string effect) => effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE";
 
@@ -69,8 +69,7 @@ internal abstract partial class SourceRecipeContext
         ForestOutcome(true);
     }
 
-    internal virtual void GroundSpreadNoEffect() { }
-    internal virtual void GroundSpreadReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
+    internal void GroundSpreadReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition move, bool missed)
     {
         if (SourceTypeReport(catalog, actor, target, move)) return;

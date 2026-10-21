@@ -84,14 +84,14 @@ public static class SourceBattleKernel
             return "source_kernel_spikes_entry_owner_required";
         if (move.Effect == "EFFECT_SECRET_POWER" && frame.Field.Terrain is null) return "source_kernel_secret_power_terrain";
         if (move.Effect == "EFFECT_TEETER_DANCE" && frame.Slots.Take(frame.BattlerCount).Any(c => c.Body is null)) return "source_kernel_teeter_dance_body_required";
-        if ((SourceRecipeContext.HasProtectionRecipe(move.Effect) || move.Effect is "EFFECT_SNATCH" or "EFFECT_MAGIC_COAT") &&
+        if ((FrameRecipeContext.HasProtectionRecipe(move.Effect) || move.Effect is "EFFECT_SNATCH" or "EFFECT_MAGIC_COAT") &&
             (frame.SourceMechanicsRulesVersion != Version || frame.Queue.Length != frame.BattlerCount))
             return "source_kernel_protection_order_required";
         if (move.Effect == "EFFECT_HELPING_HAND" && frame.Layout == SourceBattleLayout.PresetDoubles &&
             frame.Get(action.Actor.Slot.Partner).Body is null) return "source_kernel_helping_hand_empty_partner_not_migrated";
         if (frame.Layout == SourceBattleLayout.Singles && frame.Slots.Any(c => c.Registers.HelpingHand))
             return "source_kernel_singles_helping_hand_register";
-        if (SourceRecipeContext.HasSwitchRecipe(move.Effect) && frame.Layout == SourceBattleLayout.PresetDoubles && frame.FourTurn is null && frame.Queue.IsEmpty)
+        if (FrameRecipeContext.HasSwitchRecipe(move.Effect) && frame.Layout == SourceBattleLayout.PresetDoubles && frame.FourTurn is null && frame.Queue.IsEmpty)
             return "source_kernel_switch_owner_required";
         if (move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" && action.Target != action.Actor.Slot ||
             move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot && !(move.Effect == "EFFECT_CURSE" && !WildBattleEffective.HasType(catalog, actor, "TYPE_GHOST")) ||
@@ -175,7 +175,7 @@ public static class SourceBattleKernel
         catalog.Moves.TryGetValue(locked.Move, out var rampageMove) && rampageMove.Effect == "EFFECT_RAMPAGE" && SourceMoveDefinitionRules.IsValid(rampageMove) ||
         locked.Kind == WildBattleCalledLockKind.Charge && locked.TurnsRemaining == 1 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null && !locked.UnableToUseMove &&
-        catalog.Moves.TryGetValue(locked.Move,out var chargeMove) && SourceRecipeContext.HasChargeRecipe(chargeMove.Effect) && SourceMoveDefinitionRules.IsValid(chargeMove) ||
+        catalog.Moves.TryGetValue(locked.Move,out var chargeMove) && FrameRecipeContext.HasChargeRecipe(chargeMove.Effect) && SourceMoveDefinitionRules.IsValid(chargeMove) ||
         locked.Kind == WildBattleCalledLockKind.Rollout && locked.TurnsRemaining is >= 1 and <= 4 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null && !locked.UnableToUseMove &&
         catalog.Moves.TryGetValue(locked.Move, out var move) && move.Effect == "EFFECT_ROLLOUT" && SourceMoveDefinitionRules.IsValid(move);
@@ -217,18 +217,18 @@ public static class SourceBattleKernel
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => SourceMoveDefinitionRules.IsValid(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_RANDOM" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" or "MOVE_TARGET_DEPENDS" &&
-        (SourceRecipeContext.HasFieldUtilityRecipe(move.Effect) || SourceRecipeContext.HasMiscTargetRecipe(move.Effect) || SourceRecipeContext.HasPursuitBeatUpRecipe(move.Effect) || SourceRecipeContext.HasStockpileChargeRecipe(move.Effect) || SourceRecipeContext.HasDelayedRecipe(move.Effect) || move.Effect == "EFFECT_HEAL_BELL" || SourceRecipeContext.HasPreparedMoveRecipe(move.Effect) || SourceRecipeContext.HasConditionalHitRecipe(move.Effect) || SourceRecipeContext.HasAbilityExchangeRecipe(move.Effect) || SourceRecipeContext.HasLateTurnRecipe(move.Effect) || SourceRecipeContext.HasCallerRecipe(move.Effect) || SourceRecipeContext.HasWeatherHitRecipe(move.Effect) || SourceRecipeContext.HasUtilityHpRecipe(move.Effect) || SourceRecipeContext.HasMoveRestrictionRecipe(move.Effect) || SourceRecipeContext.HasGroundSpreadRecipe(move.Effect) || SourceRecipeContext.HasSleepAttackRecipe(move.Effect) || SourceRecipeContext.HasCopyStateRecipe(move.Effect) || SourceRecipeContext.HasRechargeRampageRecipe(move.Effect) || SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
-         SourceRecipeContext.HasTypeChangeRecipe(move.Effect) || SourceRecipeContext.HasRetaliationRecipe(move.Effect) || SourceRecipeContext.HasFixedDamageRecipe(move.Effect) ||
-        SourceRecipeContext.HasHitSequenceRecipe(move.Effect) || SourceRecipeContext.HasItemTransferRecipe(move.Effect) || SourceRecipeContext.HasRecoilRecipe(move.Effect) || SourceRecipeContext.HasDynamicTypeRecipe(move.Effect) || SourceRecipeContext.HasDynamicPowerRecipe(move.Effect) ||
-         SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||
-         SourceRecipeContext.HasProtectionRecipe(move.Effect) || SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));
+        (FrameRecipeContext.HasFieldUtilityRecipe(move.Effect) || FrameRecipeContext.HasMiscTargetRecipe(move.Effect) || FrameRecipeContext.HasPursuitBeatUpRecipe(move.Effect) || FrameRecipeContext.HasStockpileChargeRecipe(move.Effect) || FrameRecipeContext.HasDelayedRecipe(move.Effect) || move.Effect == "EFFECT_HEAL_BELL" || FrameRecipeContext.HasPreparedMoveRecipe(move.Effect) || FrameRecipeContext.HasConditionalHitRecipe(move.Effect) || FrameRecipeContext.HasAbilityExchangeRecipe(move.Effect) || FrameRecipeContext.HasLateTurnRecipe(move.Effect) || FrameRecipeContext.HasCallerRecipe(move.Effect) || FrameRecipeContext.HasWeatherHitRecipe(move.Effect) || FrameRecipeContext.HasUtilityHpRecipe(move.Effect) || FrameRecipeContext.HasMoveRestrictionRecipe(move.Effect) || FrameRecipeContext.HasGroundSpreadRecipe(move.Effect) || FrameRecipeContext.HasSleepAttackRecipe(move.Effect) || FrameRecipeContext.HasCopyStateRecipe(move.Effect) || FrameRecipeContext.HasRechargeRampageRecipe(move.Effect) || FrameRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || FrameRecipeContext.HasSleepResidualRecipe(move.Effect) || FrameRecipeContext.HasChargeRecipe(move.Effect) || FrameRecipeContext.HasResidualStatusRecipe(move.Effect) || FrameRecipeContext.HasBasicStatRecipe(move.Effect) || FrameRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || FrameRecipeContext.HasGenericRecipe(move.Effect) ||
+         FrameRecipeContext.HasTypeChangeRecipe(move.Effect) || FrameRecipeContext.HasRetaliationRecipe(move.Effect) || FrameRecipeContext.HasFixedDamageRecipe(move.Effect) ||
+        FrameRecipeContext.HasHitSequenceRecipe(move.Effect) || FrameRecipeContext.HasItemTransferRecipe(move.Effect) || FrameRecipeContext.HasRecoilRecipe(move.Effect) || FrameRecipeContext.HasDynamicTypeRecipe(move.Effect) || FrameRecipeContext.HasDynamicPowerRecipe(move.Effect) ||
+         FrameRecipeContext.HasStatRecoveryRecipe(move.Effect) || FrameRecipeContext.HasFieldSettingRecipe(move.Effect) ||
+         FrameRecipeContext.HasProtectionRecipe(move.Effect) || FrameRecipeContext.HasAllySupportRecipe(move.Effect) || FrameRecipeContext.HasTurnMoveRecipe(move.Effect) || FrameRecipeContext.HasSwitchRecipe(move.Effect));
 
     public static SourceKernelResult ResolveAction(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)
     {
         if (ValidateAction(catalog, frame, action) is { } error) return new(frame, [], [], null, error);
         // Preflight validates unsorted selections; execution must use the real retained owner.
         // Otherwise a standalone caller could invent a favorable non-last action index.
-        if ((SourceRecipeContext.HasProtectionRecipe(ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot).Effect) ||
+        if ((FrameRecipeContext.HasProtectionRecipe(ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot).Effect) ||
              ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot).Effect is "EFFECT_SNATCH" or "EFFECT_MAGIC_COAT" ||
              frame.Get(action.Actor.Slot).Body!.HeldItem == "ITEM_KINGS_ROCK") &&
             (frame.FourTurn?.Phase != SourceFourActionPhase.Actions || frame.NextAction != action.ActionOrderIndex ||

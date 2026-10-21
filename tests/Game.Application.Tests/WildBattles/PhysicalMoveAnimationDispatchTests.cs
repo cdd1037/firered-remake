@@ -17,18 +17,18 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
     {
         var session=CampaignSession.RestoreCurrent(content,FieldFixture(),checkpoint.Generation);
         Send(session,new("turn",Direction:Direction.North));Drain(session);
-        var move=new MoveId("pret:MOVE_"+name);var actor=WildBattleSide.Player;var target=id is 54 or 105 or 235 or 116 or 150 or 203 or 300 or 303 or 339 or 111 or 112 or 113 or 115?actor:WildBattleSide.Opponent;
+        var move=new MoveId("pret:MOVE_"+name);var actor=new BattlerSlot(0);var target=id is 54 or 105 or 235 or 116 or 150 or 203 or 300 or 303 or 339 or 111 or 112 or 113 or 115?actor:new BattlerSlot(1);
         var battle=session.State.WildBattle! with
         {
             Phase=CampaignBattlePhase.Events,EventIndex=1,
-            Events=[new WildBattleAttackStringEvent(1,1,actor,move,move),
-                new WildBattleMoveUsedEvent(2,1,actor,target,0,move,10,9),
-                new WildBattlePpCommandEvent(3,1,actor,target,0,move,move,10,9,1,0),
-                id is 54 or 113 or 115?new WildBattleMtMoonVolatileEvent(4,1,actor,id==54?"mist":id==113?"light-screen":"reflect",0,5,"move"):id==112?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Defense,6,8):id==111?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Defense,6,7):id==339?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Attack,6,7):id==150?new WildBattleMoveFailedEvent(4,1,actor,actor,move,"nothing-happened"):id==300?new WildBattleMtMoonVolatileEvent(4,1,actor,"mud-sport",0,1,"move"):id==116?new WildBattleFocusEnergyEvent(4,1,actor):id==203?new WildBattleProtectAttemptEvent(4,1,actor,move,0,1,65535,0,true,true):id==48?new WildBattleConfusionChangedEvent(4,1,target,0,3,"move"):id is 105 or 235 or 303?new WildBattleRecoveredEvent(4,1,actor,move,5,10,5):id is 103 or 178 or 319 or 204?new WildBattleStatChangedEvent(4,1,actor,target,id==178?WildBattleStat.Speed:id==204?WildBattleStat.Attack:id==103?WildBattleStat.Defense:WildBattleStat.SpecialDefense,6,4):id is 77 or 78 or 79 or 86 or 92 or 95 or 147?new WildBattleStatusChangedEvent(4,1,target,0,id==92?WildBattleSourceFieldEffects.ToxicPoison:id==77?WildBattleStatus.Poison:id is 78 or 86?WildBattleStatus.Paralysis:3,"move"):id==289?new WildBattleSnatchReadyEvent(4,1,actor,0):new WildBattleHpChangedEvent(4,1,actor,target,move,10,5,5,false,100)]
+            Events=[new SourceAttackStringEvent(1,1,actor,move,move),
+                new SourceMoveUsedEvent(2,1,actor,target,0,move,10,9),
+                new SourcePpCommandEvent(3,1,actor,target,0,move,move,10,9,1,0),
+                id is 54 or 113 or 115?new SourceMtMoonVolatileEvent(4,1,actor,id==54?"mist":id==113?"light-screen":"reflect",0,5,"move"):id==112?new SourceStatChangedEvent(4,1,actor,actor,WildBattleStat.Defense,6,8):id==111?new SourceStatChangedEvent(4,1,actor,actor,WildBattleStat.Defense,6,7):id==339?new SourceStatChangedEvent(4,1,actor,actor,WildBattleStat.Attack,6,7):id==150?new SourceMoveFailedEvent(4,1,actor,actor,move,"nothing-happened"):id==300?new SourceMtMoonVolatileEvent(4,1,actor,"mud-sport",0,1,"move"):id==116?new SourceFocusEnergyEvent(4,1,actor):id==203?new SourceProtectAttemptEvent(4,1,actor,move,0,1,65535,0,true,true):id==48?new SourceConfusionChangedEvent(4,1,target,0,3,"move"):id is 105 or 235 or 303?new SourceRecoveredEvent(4,1,actor,move,5,10,5):id is 103 or 178 or 319 or 204?new SourceStatChangedEvent(4,1,actor,target,id==178?WildBattleStat.Speed:id==204?WildBattleStat.Attack:id==103?WildBattleStat.Defense:WildBattleStat.SpecialDefense,6,4):id is 77 or 78 or 79 or 86 or 92 or 95 or 147?new SourceStatusChangedEvent(4,1,target,0,id==92?WildBattleSourceFieldEffects.ToxicPoison:id==77?WildBattleStatus.Poison:id is 78 or 86?WildBattleStatus.Paralysis:3,"move"):id==289?new SourceSnatchReadyEvent(4,1,actor,0):new SourceHpChangedEvent(4,1,actor,target,move,10,5,5,false,100)]
         };
-        if(id==203)battle=battle with{Events=battle.Events.Add(new WildBattleMtMoonVolatileEvent(5,1,actor,"endure",0,1,"move"))};
-        if(id==111)battle=battle with{Events=battle.Events.SetItem(3,new WildBattleStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7)).Insert(3,new WildBattleDefenseCurledEvent(4,1,actor))};
-        if(id==339)battle=battle with{Events=battle.Events.Add(new WildBattleStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7))};
+        if(id==203)battle=battle with{Events=battle.Events.Add(new SourceMtMoonVolatileEvent(5,1,actor,"endure",0,1,"move"))};
+        if(id==111)battle=battle with{Events=battle.Events.SetItem(3,new SourceStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7)).Insert(3,new SourceDefenseCurledEvent(4,1,actor))};
+        if(id==339)battle=battle with{Events=battle.Events.Add(new SourceStatChangedEvent(5,1,actor,actor,WildBattleStat.Defense,6,7))};
         string hash=CanonicalJson.Hash(battle);
         var result=AnimationDispatchFixture.AtAttackText(battle,true,SourceBattleScene.On);
         Assert.IsNotNull(result.Dispatch,result.Reason);Assert.AreEqual(id,result.Dispatch.SourceMoveId);Assert.AreEqual(id==111?5L:4L,result.Dispatch.ResultSequence);
@@ -38,7 +38,7 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
             int argument=id switch{103=>47,178=>48,204=>46,_=>50};
             var statResult=AnimationDispatchFixture.StatAtResult(battle with{EventIndex=3},true);
             Assert.IsNotNull(statResult);Assert.AreEqual(argument,statResult.AnimationArgument);Assert.AreEqual(4L,statResult.Sequence);
-            var recorded=(WildBattleStatChangedEvent)battle.Events[3];
+            var recorded=(SourceStatChangedEvent)battle.Events[3];
             var clamped=battle with{EventIndex=3,Events=battle.Events.SetItem(3,recorded with{Before=1,After=0})};
             Assert.AreEqual(argument,AnimationDispatchFixture.StatAtResult(clamped,true)!.AnimationArgument);
             Assert.IsNull(AnimationDispatchFixture.StatAtResult(clamped with{Events=clamped.Events.SetItem(3,recorded with{Before=0,After=0})},true));
@@ -46,49 +46,49 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
         }
         if(id==235)
         {
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,new WildBattleRecoveredEvent(4,1,actor,move,10,10,0))},true,SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,new WildBattleRecoveredEvent(4,1,actor,move,5,10,4))},true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,new SourceRecoveredEvent(4,1,actor,move,10,10,0))},true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,new SourceRecoveredEvent(4,1,actor,move,5,10,4))},true,SourceBattleScene.On).Dispatch);
         }
         if(id==138)
         {
-            var drained=battle with{Events=battle.Events.Add(new WildBattleRecoveredEvent(5,1,actor,move,5,7,2))};
+            var drained=battle with{Events=battle.Events.Add(new SourceRecoveredEvent(5,1,actor,move,5,7,2))};
             Assert.AreEqual(4L,AnimationDispatchFixture.AtAttackText(drained,true,SourceBattleScene.On).Dispatch!.ResultSequence);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(drained with{Events=drained.Events.RemoveAt(3)},true,SourceBattleScene.On).Dispatch);
         }
         if(id==111)
         {
             Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.RemoveAt(3)},true,SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(4,new WildBattleStatAtMaximumEvent(5,1,actor,actor,WildBattleStat.Defense))},true,SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,new WildBattleDefenseCurledEvent(4,1,target==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player))},true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(4,new SourceStatAtMaximumEvent(5,1,actor,actor,WildBattleStat.Defense))},true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,new SourceDefenseCurledEvent(4,1,target==new BattlerSlot(0)?new BattlerSlot(1):new BattlerSlot(0)))},true,SourceBattleScene.On).Dispatch);
         }
         if(id==339)
         {
-            var capped=battle with{Events=battle.Events.SetItem(4,new WildBattleStatAtMaximumEvent(5,1,actor,actor,WildBattleStat.Defense))};
+            var capped=battle with{Events=battle.Events.SetItem(4,new SourceStatAtMaximumEvent(5,1,actor,actor,WildBattleStat.Defense))};
             Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(capped,true,SourceBattleScene.On).Dispatch);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.RemoveAt(4)},true,SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(4,new WildBattleStatChangedEvent(5,1,actor,actor,WildBattleStat.Attack,6,7))},true,SourceBattleScene.On).Dispatch);
+            Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(4,new SourceStatChangedEvent(5,1,actor,actor,WildBattleStat.Attack,6,7))},true,SourceBattleScene.On).Dispatch);
         }
         if(id==203)
-        {var failed=battle with{Events=battle.Events.SetItem(3,new WildBattleProtectAttemptEvent(4,1,actor,move,0,1,65535,0,true,false))};Assert.IsNull(AnimationDispatchFixture.AtAttackText(failed,true,SourceBattleScene.On).Dispatch);}
+        {var failed=battle with{Events=battle.Events.SetItem(3,new SourceProtectAttemptEvent(4,1,actor,move,0,1,65535,0,true,false))};Assert.IsNull(AnimationDispatchFixture.AtAttackText(failed,true,SourceBattleScene.On).Dispatch);}
 
         if(id is 150 or 300)
         {
-            WildBattleEvent invalid=id==339?new WildBattleStatChangedEvent(4,1,actor,actor,WildBattleStat.Attack,6,7):id==150?new WildBattleMoveFailedEvent(4,1,actor,actor,move,"protected"):new WildBattleMtMoonVolatileEvent(4,1,actor,"mud-sport",1,1,"move");
+            SourceBattleEvent invalid=id==339?new SourceStatChangedEvent(4,1,actor,actor,WildBattleStat.Attack,6,7):id==150?new SourceMoveFailedEvent(4,1,actor,actor,move,"protected"):new SourceMtMoonVolatileEvent(4,1,actor,"mud-sport",1,1,"move");
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,invalid)},true,SourceBattleScene.On).Dispatch);
         }
         if(id==54)
         {
-            var setting=(WildBattleMtMoonVolatileEvent)battle.Events[3];
-            foreach(var invalid in new[]{setting with{Before=5},setting with{After=4},setting with{Reason="item"},setting with{Side=target==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player}})
+            var setting=(SourceMtMoonVolatileEvent)battle.Events[3];
+            foreach(var invalid in new[]{setting with{Before=5},setting with{After=4},setting with{Reason="item"},setting with{Side=target==new BattlerSlot(0)?new BattlerSlot(1):new BattlerSlot(0)}})
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(3,invalid)},true,SourceBattleScene.On).Dispatch);
         }
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle,true,SourceBattleScene.Off).Dispatch);
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle,false,SourceBattleScene.On).Dispatch);
-        var missed=battle with{Events=battle.Events.SetItem(3,new WildBattleMoveMissedEvent(4,1,actor,target,move))};
+        var missed=battle with{Events=battle.Events.SetItem(3,new SourceMoveMissedEvent(4,1,actor,target,move))};
         Assert.AreEqual("source-no-animation-result",AnimationDispatchFixture.AtAttackText(missed,true,SourceBattleScene.On).Reason);
-        var directPp=(WildBattlePpCommandEvent)battle.Events[2];
-        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(2,directPp with{PpOwner=actor==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player})},true,SourceBattleScene.On).Dispatch);
-        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(0,((WildBattleAttackStringEvent)battle.Events[0]) with{ChosenMove=new("pret:MOVE_METRONOME")})},true,SourceBattleScene.On).Dispatch);
+        var directPp=(SourcePpCommandEvent)battle.Events[2];
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(2,directPp with{PpOwner=actor==new BattlerSlot(0)?new BattlerSlot(1):new BattlerSlot(0)})},true,SourceBattleScene.On).Dispatch);
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(0,((SourceAttackStringEvent)battle.Events[0]) with{ChosenMove=new("pret:MOVE_METRONOME")})},true,SourceBattleScene.On).Dispatch);
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.SetItem(2,directPp with{Sequence=2})},true,SourceBattleScene.On).Dispatch);
         var withoutPp=battle with{Events=battle.Events.RemoveAt(2)};
         Assert.AreEqual("unmatched-source-pp-command",AnimationDispatchFixture.AtAttackText(withoutPp,true,SourceBattleScene.On).Reason);
@@ -213,7 +213,7 @@ public sealed class PhysicalMoveAnimationDispatchTests:WildBattleFixture
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with{Events=battle.Events.Add(new SourceMoveFailedEvent(5,1,actor,actor,move,"magic-coat-last-action"))},SourceBattleScene.On).Dispatch);
         }
         var session=CampaignSession.RestoreCurrent(content,FieldFixture(),checkpoint.Generation);Send(session,new("turn",Direction:Direction.North));Drain(session);
-        var wild=session.State.WildBattle! with{Phase=CampaignBattlePhase.Events,EventIndex=2,Events=[new WildBattleMtMoonVolatileEvent(1,1,WildBattleSide.Player,"magic-coat",0,1,"move"),new WildBattleAttackStringEvent(2,1,WildBattleSide.Player,move,move),new WildBattleMoveUsedEvent(3,1,WildBattleSide.Player,WildBattleSide.Player,0,move,10,9),new WildBattlePpCommandEvent(4,1,WildBattleSide.Player,WildBattleSide.Player,0,move,move,10,9,1,0)]};
+        var wild=session.State.WildBattle! with{Phase=CampaignBattlePhase.Events,EventIndex=2,Events=[new SourceMtMoonVolatileEvent(1,1,new BattlerSlot(0),"magic-coat",0,1,"move"),new SourceAttackStringEvent(2,1,new BattlerSlot(0),move,move),new SourceMoveUsedEvent(3,1,new BattlerSlot(0),new BattlerSlot(0),0,move,10,9),new SourcePpCommandEvent(4,1,new BattlerSlot(0),new BattlerSlot(0),0,move,move,10,9,1,0)]};
         Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(wild,true,SourceBattleScene.On).Dispatch);
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(wild with{Events=wild.Events.RemoveAt(0),EventIndex=1},true,SourceBattleScene.On).Dispatch);
     }

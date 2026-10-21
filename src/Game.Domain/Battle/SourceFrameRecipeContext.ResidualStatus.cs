@@ -2,9 +2,9 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override bool LeechSeedSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
-    internal override BattlerSlot? LeechSeedSource(BattlerSlot target) => Frame.Get(target).Registers.LeechSeedSource;
-    internal override void SetLeechSeedSource(BattlerSlot target, BattlerSlot actor)
+    internal bool LeechSeedSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
+    internal BattlerSlot? LeechSeedSource(BattlerSlot target) => Frame.Get(target).Registers.LeechSeedSource;
+    internal void SetLeechSeedSource(BattlerSlot target, BattlerSlot actor)
     {
         var cell = Frame.Get(target);
         Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with {

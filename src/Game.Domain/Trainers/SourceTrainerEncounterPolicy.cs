@@ -124,7 +124,7 @@ public sealed record TrainerEncounterRoster(TrainerDefinition Trainer,
     ImmutableArray<TrainerPartyPokemon> Party, Game.Domain.Randomness.RngState Rng,
     ImmutableArray<Game.Domain.Randomness.RandomTrace> Trace, TrainerTowerEncounterRoster? Tower = null)
 {
-    internal static bool SameTrainer(TrainerDefinition? a, TrainerDefinition? b)
+    public static bool SameTrainer(TrainerDefinition? a, TrainerDefinition? b)
     {
         if (a is null || b is null || a.EncodedTrainerName.IsDefault || b.EncodedTrainerName.IsDefault ||
             a.Items.IsDefault || b.Items.IsDefault || a.AiFlagSymbols.IsDefault || b.AiFlagSymbols.IsDefault ||

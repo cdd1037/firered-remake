@@ -1,7 +1,7 @@
 {
   "src/sprite.c": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae",
   "include/sprite.h": "a77aa1c837dfb58cf60b3eac299c7cc29a23ce27735ba710b9e8eeed102bf773",
-  "src/battle_anim_psychic.c": "3db4956ce939f8e3cdbe205c376e6da61de837ec07ceb96c6c6c1ce44eb1d6f2",
+  "src/battle_anim_psychic.c": "49a9c2a00ecb6791329fe6bb4f4e2612d4ba8f31a83dbfe39d1cafc40047c49a",
   "src/battle_anim_effects_2.c": "50561e4882a0f8813f305af6f4147ed1c394657278e32aae6c733bef31994a04",
   "src/battle_anim_mons.c": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb",
   "src/battle_anim_normal.c": "73478ff40f601740b58408caa3259f5abc29f90010f77017aecc69d71803a6c3",

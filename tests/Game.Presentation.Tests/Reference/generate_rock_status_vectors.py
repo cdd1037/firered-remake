@@ -14,7 +14,7 @@ CONFIGS=[
  [[20,-20,0,0,0,0],[24,-16,0,0,0,0],[-10,12,0,0,0,1],[32767,-32768,0,0,0,0],[-32768,32767,0,0,0,1]],[[0,0,0,0,0,0]]]
 SPRITE_COLUMNS=['slot','x','y','x2','y2','invisible','tile','hflip','vflip','subpriority','a','b','c','d','affineMode','objMode','animNumber','frameIndex','frameDelay','frameEnded']+['data'+str(i) for i in range(8)]
 STATE_COLUMNS=['tick','visualCount','activeTask','liveSprites','taskTimer']
-EXTRA_HASH={'src/battle_anim_rock.c':'13d82c078ffcbe648c81f1fbeeead1a2e74be1d680d30dfdb8df992034f93021','src/battle_anim_psychic.c':'3db4956ce939f8e3cdbe205c376e6da61de837ec07ceb96c6c6c1ce44eb1d6f2','src/battle_anim_status_effects.c':'e574e88a1a235973010647d1ec11bead112b4be2d0044b45de8be2a80b6328b3'}
+EXTRA_HASH={'src/battle_anim_rock.c':'bdc03fca6247a71a2a8d1094378544bcb6f3459be892bb48e92780da54f71767','src/battle_anim_psychic.c':'49a9c2a00ecb6791329fe6bb4f4e2612d4ba8f31a83dbfe39d1cafc40047c49a','src/battle_anim_status_effects.c':'e574e88a1a235973010647d1ec11bead112b4be2d0044b45de8be2a80b6328b3'}
 def module(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 def build(root,reference):

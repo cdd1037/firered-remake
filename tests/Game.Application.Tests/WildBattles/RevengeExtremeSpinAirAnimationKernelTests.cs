@@ -89,7 +89,7 @@ public sealed class RevengeExtremeSpinAirAnimationKernelTests
         int count = 0;
         for (int i = 0; i < events.Length; i++) foreach (bool atResult in new[] { false, true })
         {
-            // Charge.Project deliberately exports singles without SourceEvents, exercising normalization.
+            // Charge.Project exercises the shared canonical dispatch through the single envelope.
             var decision = Charge.Project(events, i, single, atResult);
             Assert.AreEqual(decision, Charge.Project(events, i, single, atResult));
             Assert.IsNull(Charge.Project(events, i, single, atResult, SourceBattleScene.Off).Dispatch);

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text;
-using System.Text.Json;
 using Game.Domain.Trainers;
 using Game.Domain.Pokemon;
 using Game.Domain.Ids;
@@ -9,10 +8,10 @@ namespace Game.Content;
 public sealed record VermilionGymTrainerDocument(int SchemaVersion, ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
     ImmutableArray<PokemonMoveDefinition> Moves, ImmutableArray<PretRoute1MoveName> MoveNames);
 
-/// <summary>Hash-locked source tables and initial battle scripts, independent from all earlier catalogs.</summary>
+/// <summary>Loads compiled ordinary trainer parties and battle entries.</summary>
 public static class PretVermilionGymTrainers
 {
-    public static VermilionGymTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
+    public static OrdinaryTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
     {
         byte[] Read(string path)
         {
@@ -20,8 +19,9 @@ public static class PretVermilionGymTrainers
         }
         var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/vermilion-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
                 if(doc.SchemaVersion!=1) throw new InvalidDataException("VermilionGym trainer document identity differs.");
-        var catalog=new VermilionGymTrainerCatalog(doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
-        VermilionGymTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
+        var catalog = new OrdinaryTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id), doc.Battles, "vermilion-gym-trainer");
+        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
+        return catalog;
     }
     public static PokemonCatalog ExtendPokemon(PretCanonicalPokemonCatalog canonical, string root, PokemonCatalog previous, bool route11Rules=false, bool rockTunnelRules=false, bool celadonApproachRules=false)
     {

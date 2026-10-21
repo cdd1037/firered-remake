@@ -83,7 +83,7 @@ public sealed class ScriptedEncounterTests : WildBattleFixture
         var session = Scene("map.pokemon-tower-6f", "PokemonTower_6F_EventScript_MarowakGhost");
         Assert.IsTrue(session.State.WildBattle!.Frame!.WildEncounter!.TowerBattleKind == PokemonTowerBattleKind.RevealedMarowak, "revealed mother stays distinct");
         Send(session, new("battle_ball", Text: "pret:ITEM_MASTER_BALL"));
-        Assert.IsTrue(session.State.WildBattle!.Events.Any(e => e is WildBattleTowerBallDodgedEvent) && session.State.WildBattle.Capture is null, "source ghost ball dodge survives canonical event projection");
+        Assert.IsTrue(session.State.WildBattle!.Events.Any(e => e is SourceTowerBallDodgedEvent) && session.State.WildBattle.Capture is null, "source ghost ball dodge survives canonical event projection");
         Drain(session);
         for (int i = 0; i < 10 && session.State.WildBattle is not null; i++)
         {

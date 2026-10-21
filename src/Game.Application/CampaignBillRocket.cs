@@ -2,7 +2,6 @@ using System.Globalization;
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
 
 namespace Game.Application;
@@ -41,7 +40,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("bill_rocket_defeated_branch_source_context");
             // Like the original comparison-result register, this branch must not
             // overwrite VAR_RESULT, which belongs to the later capacity check.
-            if (state.BattledTrainers.Contains(CeruleanTrainerPartyFactory.Rocket.Value))
+            if (state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_5"))
                 next = state with { Script = state.Script with { Stack = state.Script.Stack.SetItem(
                     state.Script.Stack.Length - 1, new(BillRocketReward, 0)) } };
             return true;
@@ -70,8 +69,8 @@ public sealed partial class CampaignSession
             effect.Source.Path is not (BillRocketSource or "data/scripts/obtain_item.inc" or "data/event_scripts.s"))
             throw new InvalidDataException("bill_rocket_tm_source_context");
         if (!state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET") ||
-            !state.BattledTrainers.Contains(CeruleanTrainerPartyFactory.Rocket.Value) ||
-            !(state.ForestTrainerHistory ?? []).Any(h => h.TrainerId == CeruleanTrainerPartyFactory.Rocket.Value && h.Outcome == WildBattleOutcome.Won) ||
+            !state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_5") ||
+            !(state.ForestTrainerHistory ?? []).Any(h => h.TrainerId == "pret:TRAINER_TEAM_ROCKET_GRUNT_5" && h.Outcome == WildBattleOutcome.Won) ||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_ROCKET") != 1 ||
             state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM28_FROM_ROCKET") ||
             state.Script.Flags.GetValueOrDefault("FLAG_HIDE_CERULEAN_ROCKET"))
@@ -120,10 +119,10 @@ public sealed partial class CampaignSession
         bool hidden = state.Script.Flags.GetValueOrDefault("FLAG_HIDE_CERULEAN_ROCKET");
         int scene = state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_ROCKET");
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.Machines ?? [], BillRocketMachine);
-        var history = (state.ForestTrainerHistory ?? []).Where(h => h.TrainerId == CeruleanTrainerPartyFactory.Rocket.Value).ToArray();
+        var history = (state.ForestTrainerHistory ?? []).Where(h => h.TrainerId == "pret:TRAINER_TEAM_ROCKET_GRUNT_5").ToArray();
         bool won = history.Any(h => h.Outcome == WildBattleOutcome.Won);
         if (scene is < 0 or > 1 || won != (scene == 1) ||
-            state.BattledTrainers.Contains(CeruleanTrainerPartyFactory.Rocket.Value) != won ||
+            state.BattledTrainers.Contains("pret:TRAINER_TEAM_ROCKET_GRUNT_5") != won ||
             history.Length != 0 && !state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET"))
             return "save_bill_rocket_progress";
         // A successful battle with a full pocket leaves scene 1 and a visible

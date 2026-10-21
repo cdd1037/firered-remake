@@ -272,14 +272,14 @@ public sealed class StockpileAnimationKernelTests
                 : CampaignMoveAnimationPresentation.AtAttackText(Envelope.Double(events, ui), SourceBattleScene.On, definitions, (_, _) => false).Dispatch);
             if (!single) continue;
             var battle = Envelope.Single(events, ui);
-            var detached = AnimationDispatchFixture.AtAttackText(battle with { SourceEvents = [] }, true, SourceBattleScene.On).Dispatch;
-            Assert.IsNotNull(detached, "Singles must consume the exported receipts without the original SourceEvents array.");
+            var detached = AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch;
+            Assert.IsNotNull(detached, "Singles must consume the canonical receipts directly.");
             Assert.AreEqual(id == 256 ? (byte?)2 : null, detached.MoveTurn);
-            int mi = events.IndexOf(Marker(events)); var marker = (WildBattleMtMoonVolatileEvent)battle.Events[mi];
+            int mi = events.IndexOf(Marker(events)); var marker = (SourceMtMoonVolatileEvent)battle.Events[mi];
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(mi, marker with { After = marker.Before }) }, true, SourceBattleScene.On).Dispatch);
             if (id == 256)
             {
-                int hi = events.IndexOf(events.OfType<SourceRecoveredEvent>().Single()); var healed = (WildBattleRecoveredEvent)battle.Events[hi];
+                int hi = events.IndexOf(events.OfType<SourceRecoveredEvent>().Single()); var healed = (SourceRecoveredEvent)battle.Events[hi];
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(hi, healed with { Recovered = 0 }) }, true, SourceBattleScene.On).Dispatch);
             }
         }

@@ -15,8 +15,6 @@ public sealed record CeruleanTrainerBattleDefinition(TrainerId Trainer, int Mode
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? NotEnoughMonsText { get; init; }
 }
-public sealed record CeruleanTrainerCatalog(ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,
-    ImmutableDictionary<TrainerId, CeruleanTrainerBattleDefinition> Battles);
 public sealed record CeruleanTrainerAiInput(WildBattleCombatant User, WildBattleCombatant Target,
     string? KnownTargetAbility = null, uint AiFlags = 1)
 {

@@ -4,22 +4,16 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasLateTurnRecipe(string effect) => effect is "EFFECT_BIDE" or "EFFECT_PERISH_SONG" or "EFFECT_DESTINY_BOND" or "EFFECT_GRUDGE";
-    internal virtual bool BideInCanceller => true;
-    internal virtual SourceTurnLock? BideLock(BattlerSlot actor) => null;
-    internal virtual void ChangeBideLock(BattlerSlot actor, SourceTurnLock? value, string reason) => throw new SourceRecipeUnsupported("source_bide_storage");
-    internal virtual void StartBide(BattlerSlot actor, PokemonMoveDefinition move) => throw new SourceRecipeUnsupported("source_bide_storage");
-    internal virtual void BideConditionsPassed() { }
-    internal virtual BattlerSlot? BideReleaseTarget(BattlerSlot actor, BattlerSlot stored, PokemonMoveDefinition move) => stored;
-    internal virtual bool BideAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => FixedDamageAccuracy(actor, target, move, purpose);
-    internal virtual bool BideImmune(PokemonCatalog catalog, BattlerSlot target, PokemonMoveDefinition move) => FixedDamageType(catalog, target, move).Immune;
-    internal virtual void BideTypeResult(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool immune)
+    internal bool BideAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => FixedDamageAccuracy(actor, target, move, purpose);
+    internal bool BideImmune(PokemonCatalog catalog, BattlerSlot target, PokemonMoveDefinition move) => FixedDamageType(catalog, target, move).Immune;
+    internal void BideTypeResult(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool immune)
     { if (immune) Add(n => new SourceEffectivenessEvent(n, Turn, actor, target, move.Id, WildBattleEffectiveness.NoEffect)); }
-    internal virtual int BideDamage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose, bool immune) =>
+    internal int BideDamage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose, bool immune) =>
         FixedDamageApply(actor, target, move, FixedDamageAdjust(target, move, damage, purpose), false, 100, immune);
-    internal virtual void BideFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
+    internal void BideFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
     {
         SourceDamageResultMessage(actor, target, move);
         if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
@@ -59,8 +53,7 @@ internal abstract partial class SourceRecipeContext
         SetLateTurnVolatile(actor, value with { Grudge = true });
         Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "grudge", 0, 1, "move"));
     }
-    internal virtual bool PerishSongPressureEnabled => true;
-    internal virtual ulong LateTurnRngCursor => 0;
+    internal bool PerishSongPressureEnabled => true;
     internal void PerishSongPressure(BattlerSlot actor)
     {
         if (!PerishSongPressureEnabled) return;

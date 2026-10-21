@@ -4,8 +4,8 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override bool TargetMarkSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
-    internal override void SetSureHit(BattlerSlot target, BattlerSlot actor)
+    internal bool TargetMarkSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
+    internal void SetSureHit(BattlerSlot target, BattlerSlot actor)
     {
         var cell = Frame.Get(target);
         var turn = cell.Registers.Turn ?? new(WildBattleRules.CalledMoveKernelRulesVersion, null, 0, null);

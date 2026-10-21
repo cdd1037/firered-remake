@@ -2,31 +2,12 @@ using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
-using Game.Domain.WildBattle;
 
 namespace Game.Domain.Trainers;
 
 /// <summary>Exact initial Ruby-region teams; shared source creation retains held items and double PID.</summary>
 public static class SeviiRubyTrainerPartyFactory
 {
-    private static readonly ImmutableHashSet<TrainerId> TrainerIds = ImmutableHashSet.CreateRange<TrainerId>([
-        new("pret:TRAINER_BLACK_BELT_HUGH"),
-        new("pret:TRAINER_BLACK_BELT_SHEA"),
-        new("pret:TRAINER_CAMPER_BRYCE"),
-        new("pret:TRAINER_CRUSH_GIRL_JOCELYN"),
-        new("pret:TRAINER_CRUSH_GIRL_SHARON"),
-        new("pret:TRAINER_CRUSH_GIRL_TANYA"),
-        new("pret:TRAINER_CRUSH_KIN_MIK_KIA"),
-        new("pret:TRAINER_FISHERMAN_TOMMY"),
-        new("pret:TRAINER_PICNICKER_CLAIRE"),
-        new("pret:TRAINER_PKMN_RANGER_BETH"),
-        new("pret:TRAINER_PKMN_RANGER_LOGAN"),
-        new("pret:TRAINER_SWIMMER_FEMALE_ABIGAIL"),
-        new("pret:TRAINER_SWIMMER_FEMALE_MARIA"),
-        new("pret:TRAINER_SWIMMER_MALE_FINN"),
-        new("pret:TRAINER_SWIMMER_MALE_GARRETT"),
-        new("pret:TRAINER_TEAM_ROCKET_GRUNT_43"),
-        new("pret:TRAINER_TEAM_ROCKET_GRUNT_44")]);
     private static readonly ImmutableHashSet<string> BattleScripts = ImmutableHashSet.Create<string>(StringComparer.Ordinal,
         "MtEmber_Exterior_EventScript_BattleGrunt1",
         "MtEmber_Exterior_EventScript_BattleGrunt2",
@@ -46,7 +27,24 @@ public static class SeviiRubyTrainerPartyFactory
         "OneIsland_KindleRoad_EventScript_Shea",
         "OneIsland_KindleRoad_EventScript_Tanya",
         "OneIsland_KindleRoad_EventScript_Tommy");
-    public static ImmutableArray<TrainerId> AllTrainers { get; } = [new("pret:TRAINER_BLACK_BELT_HUGH"),new("pret:TRAINER_BLACK_BELT_SHEA"),new("pret:TRAINER_CAMPER_BRYCE"),new("pret:TRAINER_CRUSH_GIRL_JOCELYN"),new("pret:TRAINER_CRUSH_GIRL_SHARON"),new("pret:TRAINER_CRUSH_GIRL_TANYA"),new("pret:TRAINER_CRUSH_KIN_MIK_KIA"),new("pret:TRAINER_FISHERMAN_TOMMY"),new("pret:TRAINER_PICNICKER_CLAIRE"),new("pret:TRAINER_PKMN_RANGER_BETH"),new("pret:TRAINER_PKMN_RANGER_LOGAN"),new("pret:TRAINER_SWIMMER_FEMALE_ABIGAIL"),new("pret:TRAINER_SWIMMER_FEMALE_MARIA"),new("pret:TRAINER_SWIMMER_MALE_FINN"),new("pret:TRAINER_SWIMMER_MALE_GARRETT"),new("pret:TRAINER_TEAM_ROCKET_GRUNT_43"),new("pret:TRAINER_TEAM_ROCKET_GRUNT_44")];
+    public static ImmutableArray<TrainerId> AllTrainers { get; } = [
+        new("pret:TRAINER_BLACK_BELT_HUGH"),
+        new("pret:TRAINER_BLACK_BELT_SHEA"),
+        new("pret:TRAINER_CAMPER_BRYCE"),
+        new("pret:TRAINER_CRUSH_GIRL_JOCELYN"),
+        new("pret:TRAINER_CRUSH_GIRL_SHARON"),
+        new("pret:TRAINER_CRUSH_GIRL_TANYA"),
+        new("pret:TRAINER_CRUSH_KIN_MIK_KIA"),
+        new("pret:TRAINER_FISHERMAN_TOMMY"),
+        new("pret:TRAINER_PICNICKER_CLAIRE"),
+        new("pret:TRAINER_PKMN_RANGER_BETH"),
+        new("pret:TRAINER_PKMN_RANGER_LOGAN"),
+        new("pret:TRAINER_SWIMMER_FEMALE_ABIGAIL"),
+        new("pret:TRAINER_SWIMMER_FEMALE_MARIA"),
+        new("pret:TRAINER_SWIMMER_MALE_FINN"),
+        new("pret:TRAINER_SWIMMER_MALE_GARRETT"),
+        new("pret:TRAINER_TEAM_ROCKET_GRUNT_43"),
+        new("pret:TRAINER_TEAM_ROCKET_GRUNT_44")];
 
     public static TrainerId DoubleTrainer { get; } = new("pret:TRAINER_CRUSH_KIN_MIK_KIA");
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = AllTrainers.Where(id => id != DoubleTrainer).ToImmutableArray();

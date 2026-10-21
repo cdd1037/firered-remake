@@ -11,20 +11,17 @@ public static class PretMtMoonTrainers
 {
     public const string RelativePath = "content/generated/data/trainer-battles/mtmoon.json";
 
-    public static MtMoonTrainerCatalog Load(string root)
+    public static OrdinaryTrainerCatalog Load(string root)
     {
         var document = ContentJson.ParseStrict<MtMoonTrainerDocument>(
             File.ReadAllText(Path.Combine(root, RelativePath)), SharedTrainerCatalog.Options(root));
         if (document.SchemaVersion != 1) throw new InvalidDataException("Unsupported MtMoon trainer document schema.");
-        var catalog = new MtMoonTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.Trainer));
-        MtMoonTrainerPartyFactory.ValidateCatalog(catalog);
+        var battles = document.Battles.Select(b => new CeruleanTrainerBattleDefinition(
+            b.Trainer, b.Mode, 0, b.BattleTypeFlags, b.ScriptEntry, b.IntroText, b.DefeatText, "",
+            b.PostBattleText, b.EntryScript, b.Callback, b.Source)).ToImmutableArray();
+        var catalog = new OrdinaryTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), battles, "mtmoon-trainer");
+        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
 
-    public static MtMoonTrainerCatalog Load(PretMtMoonRegion region, PokemonPresentationPackage pokemon)
-    {
-        ArgumentNullException.ThrowIfNull(region);
-        ArgumentNullException.ThrowIfNull(pokemon);
-        return Load(PretRuntimeMapValidation.ProjectRoot(region.GeneratedDirectory));
-    }
 }

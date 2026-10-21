@@ -22,6 +22,11 @@ public sealed class SpritePaletteGroupTests
             var groups=resources.Resolve(47).Script.SpritePaletteGroups;Assert.AreEqual(1,groups.Count);Assert.AreEqual(3,groups[tag].Length);
             CollectionAssert.AreEqual(asset.Palette,groups[tag][0]);Assert.AreEqual((ushort)271,groups[tag][2][15]);
             groups[tag][1][0]=0;Assert.AreEqual((ushort)128,resources.Resolve(47).Script.SpritePaletteGroups[tag][1][0],"Resolved groups must detach mutable callback input.");
+            var custom=resources.Scripts[47];
+            var customGroups=resources.Resolve(custom).Script.SpritePaletteGroups;
+            customGroups[tag][1][0]=42;customGroups[tag][2]=new ushort[16];
+            for(int i=0;i<3;i++)foreach(var again in new[]{resources.Resolve(47),resources.Resolve(custom)})
+            {Assert.AreEqual((ushort)128,again.Script.SpritePaletteGroups[tag][1][0]);Assert.AreEqual((ushort)271,again.Script.SpritePaletteGroups[tag][2][15]);}
         }
         foreach(var malformed in new[]{bytes[..^1],new byte[96],bytes.Select((b,i)=>i==33?(byte)128:b).ToArray()})
         {
@@ -32,7 +37,62 @@ public sealed class SpritePaletteGroupTests
         foreach(string badPath in new[]{"../test-palettes.bin",""})
         {json["paletteGroups"]![0]!["path"]=badPath;File.WriteAllText(path,json.ToJsonString());Assert.Throws<InvalidDataException>(()=>new SourceAnimationResources(folder));}
     }
-    private sealed class Audio:ISourceAnimationAudio{public bool IsPlaying=>false;public void Play(SourceAnimationSound sound){}public void StopAnimationEffects(){}}
+    [TestMethod]
+    public void RepeatedMoveGeneralAndCustomResolutionsDetachEveryPaletteWithoutDecodingAssetsAgain()
+    {
+        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
+        // Sing supplies indexed sprite banks, Thief a move background, Surf an overlay.
+        foreach(int move in new[]{47,168,57})
+        {
+            Check(()=>resources.Resolve(move));
+            Check(()=>resources.Resolve(resources.Scripts[move]));
+        }
+        Check(()=>resources.ResolveGeneral("General_DoomDesireHit"));
+        void Check(Func<SourceResolvedAnimation> resolve)
+        {
+            var first=resolve();int count=resources.CachedAssetCount;
+            var expected=System.Text.Json.JsonSerializer.Serialize(new[]{first.Script.SpritePalettes.Values.ToArray(),first.Script.BackgroundPalettes.Values.ToArray(),first.Script.OverlayPalettes.Values.ToArray()});
+            Assert.IsTrue(first.Script.SpritePalettes.Count+first.Script.BackgroundPalettes.Count+first.Script.OverlayPalettes.Count>0);
+            for(int iteration=0;iteration<3;iteration++)
+            {
+                var next=resolve();
+                Assert.AreNotSame(first.Script,next.Script);Assert.AreSame(first.Script.Commands,next.Script.Commands);
+                foreach(var (id,asset) in first.Assets)Assert.AreSame(asset,next.Assets[id]);
+                foreach(var (id,asset) in first.Backgrounds)Assert.AreSame(asset,next.Backgrounds[id]);
+                foreach(var (id,asset) in first.Overlays)Assert.AreSame(asset,next.Overlays[id]);
+                Assert.AreEqual(expected,System.Text.Json.JsonSerializer.Serialize(new[]{next.Script.SpritePalettes.Values.ToArray(),next.Script.BackgroundPalettes.Values.ToArray(),next.Script.OverlayPalettes.Values.ToArray()}));
+                Mutate(first.Script.SpritePalettes,next.Script.SpritePalettes);
+                Mutate(first.Script.BackgroundPalettes,next.Script.BackgroundPalettes);
+                Mutate(first.Script.OverlayPalettes,next.Script.OverlayPalettes);
+                first=next;
+            }
+            Assert.AreEqual(count,resources.CachedAssetCount);
+        }
+        static void Mutate<TKey>(IReadOnlyDictionary<TKey,ushort[]> old,IReadOnlyDictionary<TKey,ushort[]> next) where TKey:notnull
+        {
+            foreach(var (key,bank) in old)
+            {Assert.AreNotSame(bank,next[key]);ushort value=next[key][0];bank[0]^=32767;Assert.AreEqual(value,next[key][0]);}
+        }
+    }
+    [TestMethod]
+    public void ReusedResourcesKeepEveryFrameAndCompletionTimeIndependentOfPriorPaletteMutation()
+    {
+        using var resources=new SourceAnimationResources(Path.Combine(TestAssets.Root,"content/generated/battle/animations"));
+        var first=resources.Resolve(47);var expected=Frames(first.Script);
+        foreach(var bank in first.Script.SpritePalettes.Values)Array.Clear(bank);
+        var again=resources.Resolve(47);CollectionAssert.AreEqual(expected,Frames(again.Script));
+        CollectionAssert.AreEqual(expected,Frames(again.Script)); // A new owner may reuse the same detached definition.
+        static string[] Frames(SourceAnimationScript script)
+        {
+            var bodies=new[]{new AnimationBattler(new(0),"a",0,0,64,64),new AnimationBattler(new(1),"b",0,0,64,64)};
+            var owner=new SourceBattleAnimation(script,new("sing",1,47,new(0),new(1)),bodies,false,new Audio());
+            var frames=new List<string>();
+            for(int tick=0;tick<1000&&owner.Active;tick++)frames.Add(System.Text.Json.JsonSerializer.Serialize(owner.Tick()));
+            Assert.IsFalse(owner.Active,"Sing must complete within the bounded source animation window.");Assert.IsTrue(frames.Count>1);
+            owner.Cancel();return frames.ToArray();
+        }
+    }
+    private sealed class Audio:ISourceAnimationAudio{public bool IsPlaying=>false;public void Play(SourceAnimationSound sound){}public void SetPan(int pan,int frame){}public void StopAnimationEffects(){}}
     [TestMethod]
     public void UnloadFreesTagWithoutASecondLoadWaitAndKeepsPreviousFrameDetached()
     {

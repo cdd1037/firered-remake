@@ -20,10 +20,6 @@ public sealed record WildBattleTransformation(PokemonInstance OriginalPokemon, P
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattleStats? LevelUpStats { get; init; }
 }
 
-public sealed record WildBattleTransformedEvent(long Sequence, int Turn, WildBattleSide Actor,
-    WildBattleSide Target, SpeciesId OriginalSpecies, SpeciesId AppearanceSpecies,
-    uint AppearancePersonality, uint AppearanceOriginalTrainerId, PokemonInstance BattleView) : WildBattleEvent(Sequence, Turn);
-
 /// <summary>Only Pokemon is the live battle view. Persistence, capture delivery and reward recipients use PersistentPokemon.</summary>
 public static class WildBattleTransformationRules
 {

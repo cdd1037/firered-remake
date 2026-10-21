@@ -40,24 +40,6 @@ public sealed partial class PretFourIslandRegion
         FieldMilestones = ImmutableDictionary<string, FieldMilestoneCollection>.Empty.Add(StickerMilestones.Special, StickerMilestones);
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_FOUR_ISLAND" => new("map.four-island"),
-        "MAP_FOUR_ISLAND_HARBOR" => new("map.four-island-harbor"),
-        "MAP_FOUR_ISLAND_HOUSE1" => new("map.four-island-house1"),
-        "MAP_FOUR_ISLAND_HOUSE2" => new("map.four-island-house2"),
-        "MAP_FOUR_ISLAND_ICEFALL_CAVE_1F" => new("map.four-island-icefall-cave-1f"),
-        "MAP_FOUR_ISLAND_ICEFALL_CAVE_B1F" => new("map.four-island-icefall-cave-b1f"),
-        "MAP_FOUR_ISLAND_ICEFALL_CAVE_BACK" => new("map.four-island-icefall-cave-back"),
-        "MAP_FOUR_ISLAND_ICEFALL_CAVE_ENTRANCE" => new("map.four-island-icefall-cave-entrance"),
-        "MAP_FOUR_ISLAND_LORELEIS_HOUSE" => new("map.four-island-loreleis-house"),
-        "MAP_FOUR_ISLAND_MART" => new("map.four-island-mart"),
-        "MAP_FOUR_ISLAND_POKEMON_CENTER_1F" => new("map.four-island-pokemon-center-1f"),
-        "MAP_FOUR_ISLAND_POKEMON_CENTER_2F" => new("map.four-island-pokemon-center-2f"),
-        "MAP_FOUR_ISLAND_POKEMON_DAY_CARE" => new("map.four-island-pokemon-day-care"),
-        _ => PretSeviiRubyRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     public static PretFourIslandRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;

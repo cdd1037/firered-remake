@@ -138,19 +138,32 @@ public sealed class SourceAnimationResources:IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed,this);
         if(!_resolvedGeneral.TryGetValue(label,out var resolved))_resolvedGeneral.Add(label,resolved=ResolveBound(_generalScripts[label]));
-        return resolved;
+        return DetachPalettes(resolved);
     }
     public SourceResolvedAnimation Resolve(int move)
     {
         ObjectDisposedException.ThrowIf(_disposed,this);
         if(!_resolvedMoves.TryGetValue(move,out var resolved))_resolvedMoves.Add(move,resolved=ResolveBound(_scripts[move]));
-        return resolved;
+        return DetachPalettes(resolved);
     }
     public SourceResolvedAnimation Resolve(SourceAnimationScript script)
     {
         ObjectDisposedException.ThrowIf(_disposed,this);
         // Custom programs still authenticate references and dependencies on every request.
-        return ResolveBound(SourceAnimationProgramDependencies.BindReferences(script,_programs));
+        return DetachPalettes(ResolveBound(SourceAnimationProgramDependencies.BindReferences(script,_programs)));
+    }
+    // Cache resource binding and decoded assets, never callback-facing mutable banks.
+    // Every resolution owns its palette arrays; commands and immutable materials stay shared.
+    private static SourceResolvedAnimation DetachPalettes(SourceResolvedAnimation resolved)
+    {
+        var script=resolved.Script;
+        return resolved with{Script=script with
+        {
+            SpritePalettes=script.SpritePalettes.ToDictionary(p=>p.Key,p=>(ushort[])p.Value.Clone()),
+            SpritePaletteGroups=script.SpritePaletteGroups.ToDictionary(p=>p.Key,p=>p.Value.Select(bank=>(ushort[])bank.Clone()).ToArray()),
+            BackgroundPalettes=script.BackgroundPalettes.ToDictionary(p=>p.Key,p=>(ushort[])p.Value.Clone()),
+            OverlayPalettes=script.OverlayPalettes.ToDictionary(p=>p.Key,p=>(ushort[])p.Value.Clone())
+        }};
     }
     private SourceResolvedAnimation ResolveBound(SourceAnimationScript script)
     {
@@ -203,7 +216,7 @@ public sealed class SourceAnimationResources:IDisposable
                 _paletteGroups.Add(tag,banks);
             }
             if(!banks[0].SequenceEqual(palette))throw new InvalidDataException("Source palette group first bank differs from its indexed material.");
-            paletteGroups.Add(tag,banks.Select(bank=>(ushort[])bank.Clone()).ToArray());
+            paletteGroups.Add(tag,banks);
         }
         return new(script with{OverlayPalettes=overlays.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray()),SpritePalettes=spritePalettes,SpritePaletteGroups=paletteGroups,BackgroundPalettes=backgrounds.ToDictionary(p=>p.Key,p=>p.Value.Palette.ToArray())},pixels,metallic?_metallic:null,stats?_statMask:null){Backgrounds=backgrounds,Overlays=overlays};
     }

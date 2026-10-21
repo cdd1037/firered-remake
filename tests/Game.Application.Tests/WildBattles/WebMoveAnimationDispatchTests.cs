@@ -21,7 +21,7 @@ public sealed class WebMoveAnimationDispatchTests
     private static bool Spread(int id)=>id is 43 or 81;
     private static WildBattleStat ReducedStat(int id)=>id switch {43=>WildBattleStat.Defense,313=>WildBattleStat.SpecialDefense,_=>WildBattleStat.Speed};
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> e,int i)=>new("web",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,e,i,[],[],0,0,[],[],[],[],0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> e,int i)=>new("web",null!,new(),e.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),i,null!,null!,CampaignBattlePhase.Events,[],0,[]){SourceEvents=e};
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> e,int i)=>new("web",null!,new(),e,i,null!,null!,CampaignBattlePhase.Events,[],0,[]);
     private static WildBattleCombatant Mon(string species,params string[] names)
     {
         var p=SourcePokemonFactory.Create(Mechanics,new(new("pret:SPECIES_"+species),50,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(0)),new(0)).Pokemon;

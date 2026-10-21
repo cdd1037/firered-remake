@@ -90,9 +90,8 @@ public sealed class CampaignCastformAnimationDispatchTests
     {
         // PrepareWildPresentation has already applied the current canonical event.
         var batch = new CampaignBattleDisplayBatch(seed).AdvanceThrough(events, events[index].Sequence);
-        return new("castform", null!, final ?? new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            batch.Display.Bodies[0].Pokemon, batch.Display.Bodies[1].Pokemon, CampaignBattlePhase.Events, [], 0, []) {
-            SourceEvents = events, DisplayBatch = batch
+        return new("castform", null!, final ?? new(), events, index,
+            batch.Display.Bodies[0].Pokemon, batch.Display.Bodies[1].Pokemon, CampaignBattlePhase.Events, [], 0, []) { DisplayBatch = batch
         };
     }
     private static CampaignCastformAnimationDispatch? At(CampaignDoubleBattle battle, MoveId?[]? entry = null,
@@ -573,11 +572,22 @@ public sealed class CampaignCastformAnimationDispatchTests
     public void SinglesCanonicalMirrorAndAppliedAfterMustAgreeExactly()
     {
         var events = Pair(); var seed = Seed(single: true); var battle = Single(events, 1, seed);
-        var receipt = (WildBattleCalledOverlayChangedEvent)battle.Events[1];
+        var receipt = (SourceCalledOverlayChangedEvent)battle.Events[1];
         Assert.IsNotNull(At(battle));
-        Assert.IsNull(At(battle with { SourceEvents = [] }));
+        // A canonical receipt stream remains mandatory; there is no separate legacy mirror.
+        Assert.IsNull(At(battle with { Events = [] }));
         Assert.IsNull(At(battle with { Events = battle.Events.SetItem(1, receipt with { After = Overlay(SourceCastformForm.Snowy) }) }));
-        Assert.IsNull(At(battle with { Events = battle.Events.SetItem(1, receipt with { Before = Overlay(SourceCastformForm.Sunny) }) }));
+        // A visual Sunny -> Rainy canonical receipt is valid. The retired duplicate-array
+        // disagreement is replaced by an actual retained-register inconsistency.
+        Assert.IsNull(At(battle with { Events = battle.Events.SetItem(1, receipt with {
+            Before = Overlay(SourceCastformForm.Sunny) with { Ability = "ABILITY_NONE" } }) }));
+        var sunny = Overlay(SourceCastformForm.Sunny); var canonical = Pair(before: sunny);
+        var actor = Mon() with { CalledOverlay = sunny };
+        var singleCue = At(Single(canonical, 1, Seed(single: true, actor: actor)));
+        var doubleCue = At(Double(canonical, 1, Seed(actor: actor)));
+        Assert.IsNotNull(singleCue); Assert.IsNotNull(doubleCue);
+        SameCue(doubleCue with { SpriteVisibility = doubleCue.SpriteVisibility.Take(2).ToImmutableArray() }, singleCue,
+            "Both layouts consume the same authoritative Forecast receipt without a duplicate stream.");
         var display = battle.DisplayBatch!.Display;
         Assert.IsNull(At(battle with { DisplayBatch = battle.DisplayBatch with {
             Display = display with { Bodies = display.Bodies.SetItem(0, display.Bodies[0] with { CalledOverlay = Overlay(SourceCastformForm.Snowy) }) }

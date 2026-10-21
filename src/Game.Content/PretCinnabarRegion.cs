@@ -23,24 +23,6 @@ public sealed partial class PretCinnabarRegion
 
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_ROUTE21_NORTH" => new("map.route-21-north"),
-        "MAP_ROUTE21_SOUTH" => new("map.route-21-south"),
-        "MAP_ROUTE20" => new("map.route-20"),
-        "MAP_CINNABAR_ISLAND" => new("map.cinnabar-island"),
-        "MAP_CINNABAR_ISLAND_GYM" => new("map.cinnabar-island-gym"),
-        "MAP_CINNABAR_ISLAND_MART" => new("map.cinnabar-island-mart"),
-        "MAP_CINNABAR_ISLAND_POKEMON_CENTER_1F" => new("map.cinnabar-island-pokemon-center-1f"),
-        "MAP_CINNABAR_ISLAND_POKEMON_CENTER_2F" => new("map.cinnabar-island-pokemon-center-2f"),
-        "MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE" => new("map.cinnabar-island-pokemon-lab-entrance"),
-        "MAP_POKEMON_MANSION_1F" => new("map.pokemon-mansion-1f"),
-        "MAP_POKEMON_MANSION_2F" => new("map.pokemon-mansion-2f"),
-        "MAP_POKEMON_MANSION_3F" => new("map.pokemon-mansion-3f"),
-        "MAP_POKEMON_MANSION_B1F" => new("map.pokemon-mansion-b1f"),
-        _ => PretRegionalServiceMaps.MapIdFromSourceSymbol(symbol)
-    };
-
     public static PretCinnabarRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;
@@ -65,7 +47,7 @@ public sealed partial class PretCinnabarRegion
             var map = maps[new(fall.GetProperty("map").GetString()!)]; var warp = map.FieldWarps[fall.GetProperty("sourceWarpIndex").GetInt32()];
             var endpoint = fall.GetProperty("source");
             Need(map.SourceBehaviorAt(warp.X, warp.Y) == 0x66 && warp.X == endpoint.GetProperty("x").GetInt32() && warp.Y == endpoint.GetProperty("y").GetInt32() &&
-                warp.DestinationMapId == MapIdFromSourceSymbol(endpoint.GetProperty("dest_map").GetString()!) &&
+                warp.DestinationMapId == world.Resolve(endpoint.GetProperty("dest_map").GetString()!) &&
                 warp.DestinationWarpId == int.Parse(endpoint.GetProperty("dest_warp_id").GetString()!, System.Globalization.CultureInfo.InvariantCulture), "Cinnabar fall warp endpoint differs.");
         }
         return new(source, maps.ToImmutable(), constants);

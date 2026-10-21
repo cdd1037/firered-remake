@@ -4,6 +4,7 @@ import argparse,io,json,re,struct,sys,types,unittest
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
+from indexed_material_expectations import assert_source_pixels
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);p.add_argument('--previous',type=Path);p.add_argument('--importer',type=Path)
 a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
@@ -35,8 +36,8 @@ class SquashWaterFireImportTests(unittest.TestCase):
    if blue:palette=[int(v) for line in imp.read(REF,'graphics/battle_anims/sprites/glowy_blue_orb.pal').decode().splitlines()[3:] for v in line.split()]
    colors=[sum((palette[i*3+c]//8)<<(c*5) for c in range(3)) for i in range(16)]
    self.assertEqual(struct.pack('<16H',*colors),self.pixels[name+'.pal16']);self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.pixels[name+'.4bpp'])
-   self.assertEqual(size,struct.unpack_from('<HH',self.pixels[name]));self.assertEqual([colors[v]|(32768 if v else 0) for v in raster],list(struct.unpack_from('<'+str(len(raster))+'H',self.pixels[name],4)))
-   for suffix in ('.rgb555','.4bpp','.pal16'):self.assertEqual(self.pixels[name if suffix=='.rgb555' else name+suffix],(OUT/('elemental-'+name+suffix)).read_bytes())
+   assert_source_pixels(self,self.pack,self.pixels,name,size,raster,colors,'ANIM_TAG_'+name.upper().replace('-','_'))
+   for suffix in ('.4bpp','.pal16'):self.assertEqual(self.pixels[name+suffix],(OUT/('elemental-'+name+suffix)).read_bytes())
  def test_unreviewed_raw_children_and_affine_handoff_fail_closed(self):
   mutations=[('src/battle_anim_fire.c','CreateSprite(&gEruptionLaunchRockSpriteTemplate,','CreateSprite(&gEruptionFallingRockSpriteTemplate,'),('src/battle_anim_water.c','CreateSprite(&gSmallWaterOrbSpriteTemplate,','CreateSprite(&gUnknownOrbSpriteTemplate,'),('src/battle_anim_water.c','StartSpriteAffineAnim(&gSprites[sprite->data[1]], 3);','StartSpriteAffineAnim(&gSprites[sprite->data[1]], 2);')]
   read=imp.read

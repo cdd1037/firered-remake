@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Content;
 using Game.Domain.Capture;
 using Game.Domain.Items;
@@ -27,13 +28,13 @@ public partial class CampaignView
         }
     }
 
-    private ForestMessage? CeladonGymWildMessage(WildBattleEvent current)=>current switch
+    private ForestMessage? CeladonGymWildMessage(SourceBattleEvent current)=>current switch
     {
-        WildBattleRootsChangedEvent {Rooted:true} roots=>new("sText_PkmnPlantedRoots",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(roots.Side))),
-        WildBattleRootsChangedEvent=>new(""),
-        WildBattleIngrainHealEvent heal=>new("sText_PkmnAbsorbedNutrients",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(heal.Side))),
-        WildBattleMoveFailedEvent {Reason:"already-rooted"}=>new("sText_ButItFailed"),
-        WildBattleMoveFailedEvent {Reason:"rooted"} failed=>new("sText_PkmnAnchoredItself",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(failed.Target))),
+        SourceRootsChangedEvent {Rooted:true} roots=>new("sText_PkmnPlantedRoots",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(roots.Side))),
+        SourceRootsChangedEvent=>new(""),
+        SourceIngrainHealEvent heal=>new("sText_PkmnAbsorbedNutrients",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(heal.Side))),
+        SourceMoveFailedEvent {Reason:"already-rooted"}=>new("sText_ButItFailed"),
+        SourceMoveFailedEvent {Reason:"rooted"} failed=>new("sText_PkmnAnchoredItself",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(failed.Target))),
         _=>null
     };
     private bool CeladonGymSilentEvent(CampaignWildBattle battle)=>WildCurrentEvent(battle) is {} e&&CeladonGymWildMessage(e) is {Symbol.Length:0};

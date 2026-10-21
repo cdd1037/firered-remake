@@ -27,14 +27,6 @@ public sealed partial class PretPokemonTowerRegion
     public JsonElement Mechanics => ReadDocument("mechanics.json");
 
 
-    public static MapId MapIdFromSourceSymbol(string symbol)
-    {
-        var m = Regex.Match(symbol, @"^MAP_POKEMON_TOWER_([1-7])F$", RegexOptions.CultureInvariant);
-        return m.Success ? FloorMapId(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)) : PretRocketHideoutRegion.MapIdFromSourceSymbol(symbol);
-    }
-
-
-
     public static PretPokemonTowerRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;
@@ -47,7 +39,7 @@ public sealed partial class PretPokemonTowerRegion
         var constants = PretSharedConstants.ForPackage(directory);
         var contract = Document("pokemon-tower.json");
         using var city = JsonDocument.Parse(world.ReadEvents("data/maps/LavenderTown/map.json"));
-        return new(directory, maps, runtime.Maps[HouseMapId], constants, contract, city.RootElement.Clone());
+        return new(directory, maps, runtime.Maps[HouseMapId], constants, contract, city.RootElement.Clone(), world);
     }
     private JsonElement ReadDocument(string path)
     {

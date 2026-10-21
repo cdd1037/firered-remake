@@ -4,7 +4,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool IsThawHitMove(MoveId move) => move.Value is "pret:MOVE_FLAME_WHEEL" or "pret:MOVE_SACRED_FIRE";
     internal void ThawByMove(BattlerSlot actor, MoveId move)
@@ -20,8 +20,7 @@ internal abstract partial class SourceRecipeContext
     internal static bool FireHitFailureSetsNoEffect(string reason) => reason is
         "existing-status" or "fire-type-immunity" or "accuracy" or "substitute" or "protected" or "no-pp";
 
-    internal virtual bool FireHitThawEnabled => true;
-    internal virtual bool FireHitThawNoEffect => ContactCommandNoEffect;
+    internal bool FireHitThawEnabled => true;
 
     // Cmd_moveend MOVEEND_DEFROST consumes the retained specialDmg register.
     // There is intentionally no power, opponent-side, Substitute or fresh-hit gate.

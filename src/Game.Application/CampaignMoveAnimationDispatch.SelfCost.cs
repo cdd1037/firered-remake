@@ -9,11 +9,14 @@ public static partial class CampaignMoveAnimationPresentation
         SourcePpCommandEvent[] commands,CommittedSelfCost cost,Func<int,bool> validateCost,CampaignAnimationInvocation? invocation)
     {
         if(cost.Actor!=used.Actor||cost.Before<1||cost.Damage<1||cost.After!=Math.Max(0,cost.Before-cost.Damage))return false;
+        SourceFaintedEvent? faintReceipt=null;
         if(cost.After==0)
         {
             if(tail<action.Length&&action[tail] is SourceStatusChangedEvent {Reason:"faint",After:0} clear)
             {if(clear.Side!=used.Actor||!CureStatus(clear.Before))return false;tail++;}
-            if(tail>=action.Length||action[tail] is not SourceFaintedEvent faint||faint.Side!=used.Actor)return false;
+            if(tail>=action.Length||action[tail] is not SourceFaintedEvent faint||faint.Side!=used.Actor||faint.Turn!=used.Turn||
+                faint.Sequence<=used.Sequence||used.Actor.Side!=BattleSide.Player&&faint.Friendship is not null)return false;
+            faintReceipt=faint;
             tail++;
         }
         int end=action.Length;
@@ -30,20 +33,34 @@ public static partial class CampaignMoveAnimationPresentation
         int costSyncs=0;
         bool Sync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,SourceMoveUsedEvent owner)
         {
-            if(!CommittedCostPartySync(rows,index,sync,owner,commands,cost,validateCost,invocation))return false;
+            if(!CommittedCostPartySync(rows,index,sync,owner,commands,cost,validateCost,invocation,faintReceipt))return false;
             if(sync.Before.Pokemon.CurrentHp!=sync.After.Pokemon.CurrentHp)costSyncs++;
             return true;
         }
         return CureMoveEndTail(action[..end],tail,used,slots,Sync)&&costSyncs==1;
     }
     private static bool CommittedCostPartySync(SourceBattleEvent[] rows,int index,SourceCalledPartyChangedEvent sync,
-        SourceMoveUsedEvent used,SourcePpCommandEvent[] commands,CommittedSelfCost? cost,Func<int,bool>? validateCost,CampaignAnimationInvocation? invocation)
+        SourceMoveUsedEvent used,SourcePpCommandEvent[] commands,CommittedSelfCost? cost,Func<int,bool>? validateCost,CampaignAnimationInvocation? invocation,
+        SourceFaintedEvent? faint=null)
     {
         var before=sync.Before;var after=sync.After;
         if(sync.SourceSlot is not {} source||source.Value is <0 or >3||source.Side!=sync.Side||
             sync.TransientMoveSlots is not {} transient||transient>15)return false;
         if(before?.Pokemon is null||after?.Pokemon is null||before.Pokemon.Moves.IsDefault||after.Pokemon.Moves.IsDefault||
             before.Pokemon.Moves.Length!=after.Pokemon.Moves.Length||before.Pokemon.Moves.Any(m=>m is null)||after.Pokemon.Moves.Any(m=>m is null))return false;
+        int friendship=before.Pokemon.Friendship;
+        if(source==used.Actor&&cost?.After==0&&source.Side==BattleSide.Player&&
+            (friendship!=after.Pokemon.Friendship||faint?.Friendship is not null))
+        {
+            // The faint command owns this permanent delta. Match its captured
+            // member and values; presentation never reruns friendship rules.
+            if(faint?.Friendship is not {} applied||faint.Side!=source||faint.Turn!=used.Turn||sync.Turn!=faint.Turn||
+                faint.Sequence>=sync.Sequence||applied.Member!=new PartyMemberKey(sync.Side,sync.PartyIndex)||
+                applied.Before is <0 or >255||applied.After<0||applied.After>applied.Before||
+                applied.Before!=friendship||applied.After!=after.Pokemon.Friendship)return false;
+            friendship=applied.After;
+        }
+        else if(friendship!=after.Pokemon.Friendship)return false;
         bool explained=false;
         if(before.Pokemon.CurrentHp!=after.Pokemon.CurrentHp)
         {
@@ -68,7 +85,7 @@ public static partial class CampaignMoveAnimationPresentation
                 !InvocationPpDelta(rows,used,invocation,slot,a.Move,a.CurrentPp,b.CurrentPp,allowUnchanged:true))return false;
             explained|=a!=b;
         }
-        var normalized=sync with{Before=before with{Pokemon=before.Pokemon with{CurrentHp=after.Pokemon.CurrentHp,Moves=after.Pokemon.Moves}}};
+        var normalized=sync with{Before=before with{Pokemon=before.Pokemon with{CurrentHp=after.Pokemon.CurrentHp,Moves=after.Pokemon.Moves,Friendship=friendship}}};
         if(CureActiveSync(rows,index,normalized,used,invocation))return true;
         // Transform may preserve party move slots unchanged. A pure committed
         // HP cost is still a real synchronization, not an invented PP change.

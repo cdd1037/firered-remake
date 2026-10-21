@@ -25,15 +25,6 @@ public sealed class PretFightingDojoRegion
 
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_SAFFRON_CITY_DOJO" => new("map.saffron-city-dojo"),
-        "MAP_SAFFRON_CITY" => new("map.saffron-city"),
-        _ => throw new InvalidDataException("Unknown Saffron Fighting Dojo map symbol: " + symbol)
-    };
-
-
-
     public static PretFightingDojoRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

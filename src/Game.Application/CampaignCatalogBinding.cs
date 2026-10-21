@@ -31,18 +31,14 @@ public sealed partial class CampaignSession
     {
         ArgumentNullException.ThrowIfNull(content);
         ValidateCampaignCatalog(content);
+        if (content.OrdinaryTrainerCatalogs.IsDefaultOrEmpty || content.OrdinaryTrainerCatalogs.Any(catalog => catalog is null))
+            throw new InvalidDataException("current_ordinary_trainer_catalogs_missing");
         var battle = content.GamePokemon;
         if (content.LandEncounters is null || content.LandEncounters.Count == 0)
             throw new InvalidDataException("current_land_encounters_missing");
         OrdinaryLandEncounterCatalog ordinaryLand;
         try { ordinaryLand = new(content.LandEncounters, content.Maps, battle.Catalog); }
         catch (ArgumentException error) { throw new InvalidDataException("current_land_encounter_reference", error); }
-        if (content.CyclingRoadTrainers is { } cyclingRoadTrainers)
-            CyclingRoadTrainerPartyFactory.ValidateCatalog(cyclingRoadTrainers);
-        if (content.MemorialPillarTrainers is { } memorialTrainers)
-            MemorialPillarTrainerPartyFactory.ValidateCatalog(memorialTrainers);
-        if (content.LostCaveTrainers is { } lostCaveTrainers)
-            LostCaveTrainerPartyFactory.ValidateCatalog(lostCaveTrainers);
         var water = content.WaterEncounters ?? throw new InvalidDataException("current_water_encounters_missing");
         var fishing = content.FishingTables ?? throw new InvalidDataException("current_fishing_encounters_missing");
         // Acquirable held items must participate in the same inventory/transfer rules as bag items.
@@ -85,18 +81,11 @@ public sealed partial class CampaignSession
             !ReferenceEquals(content.GamePokemon,content.OpponentPokemon.Owned))
             throw new InvalidDataException("cinnabar_source_profile_missing");
         CinnabarTrainerPartyFactory.ValidateCatalog(content.CinnabarTrainerParties);
-        if(content.OpponentPokemon is null||content.SaffronGymTrainerParties is null||
-            !ReferenceEquals(content.GamePokemon,content.OpponentPokemon.Owned))
-            throw new InvalidDataException("saffron_gym_source_profile_missing");
-        SaffronGymTrainerPartyFactory.ValidateCatalog(content.SaffronGymTrainerParties);
-        if(content.GamePokemon is null||content.OpponentPokemon is null||content.SilphTrainerParties is null)
+        if(content.GamePokemon is null||content.OpponentPokemon is null)
             throw new InvalidDataException("silph_requires_authenticated_successor");
         if(content.PresetDoublePokemon is null||content.PresetDoubleItems is null||content.PresetDoubleMechanics is null||
             SourceTwinsTrainerEncounter.ValidateDefinition(content.Route8Twins) is not null)
             throw new InvalidDataException("preset_double_requires_authenticated_successor");
-        if(content.FuchsiaGymTrainerParties is null)
-            throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
-        FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
         if (content.GameCornerPrizes is not {} prizes || !ReferenceEquals(prizes.Pokemon, content.PokemonContent?.Catalog) ||
             !prizes.Items.Items.SequenceEqual(content.EarlyShop!.Items) || !ReferenceEquals(prizes.Machines, content.Machines))
             throw new InvalidDataException("current_prize_catalog_identity");

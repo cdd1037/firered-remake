@@ -606,7 +606,6 @@ public sealed class EndTurnResidualTests
     {
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
         var type = typeof(SourceFourActionTurns).Assembly.GetType("Game.Domain.Battle.FrameEndTurnContext")!;
-        var baseType = type.BaseType!;
         var initial = EndBoundary(Frame()).State;
         using var doc = JsonDocument.Parse(File.ReadAllBytes(TestAssets.GeneratedFile("tests/Game.Battle.Tests/Residuals/Fixtures/source-residual-vectors.json", "python tests/Game.Battle.Tests/Residuals/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Residuals/Fixtures --fixtures-only")));
         foreach (var row in doc.RootElement.GetProperty("vectors").EnumerateArray())
@@ -674,11 +673,11 @@ public sealed class EndTurnResidualTests
 
             var context = Activator.CreateInstance(type, flags | System.Reflection.BindingFlags.Public, null, [f, catalog], null)!;
             if (mode == 0)
-                baseType.GetMethod("WeatherDamage", flags)!.Invoke(context, [catalog, new BattlerSlot(2), x[1] == 24 ? "sandstorm" : "hail"]);
+                type.GetMethod("WeatherDamage", flags)!.Invoke(context, [catalog, new BattlerSlot(2), x[1] == 24 ? "sandstorm" : "hail"]);
             else if (x[1] == 5)
-                baseType.GetMethod("ToxicDamage", flags)!.Invoke(context, [new BattlerSlot(2)]);
+                type.GetMethod("ToxicDamage", flags)!.Invoke(context, [new BattlerSlot(2)]);
             else
-                baseType.GetMethod("StatusDamage", flags)!.Invoke(context, [new BattlerSlot(2), (uint)x[4]]);
+                type.GetMethod("StatusDamage", flags)!.Invoke(context, [new BattlerSlot(2), (uint)x[4]]);
             var result = (SourceBattleFrame)type.GetProperty("Frame", flags)!.GetValue(context)!;
             var actualEvents = (ImmutableArray<SourceBattleEvent>.Builder)type.GetField("Events", flags)!.GetValue(context)!;
             if (mode == 0)

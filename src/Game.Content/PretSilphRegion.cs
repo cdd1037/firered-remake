@@ -24,12 +24,8 @@ public sealed partial class PretSilphRegion
         using var saffron = JsonDocument.Parse(world.ReadEvents("data/maps/SaffronCity/map.json"));
         ExternalSaffronEvents = saffron.RootElement.Clone(); NewMaps = maps; Constants = constants;
         Contracts = source.Document("contracts.json");
-        InitializeField(source);
+        InitializeField(source, world.Resolve);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol.StartsWith("MAP_SILPH_CO_", StringComparison.Ordinal) || symbol.StartsWith("MAP_SAFFRON_CITY", StringComparison.Ordinal)
-        ? new("map." + symbol[4..].ToLowerInvariant().Replace('_', '-'))
-        : symbol == "MAP_DYNAMIC" ? PretRocketHideoutRegion.DynamicMapId : PretRegionalServiceMaps.MapIdFromSourceSymbol(symbol);
-
     public static PretSilphRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;
@@ -54,7 +50,7 @@ public sealed partial class PretSilphRegion
         {
             var map = maps[new(pad.GetProperty("map").GetString()!)]; var warp = map.FieldWarps[pad.GetProperty("warpIndex").GetInt32()];
             Need(map.SourceBehaviorAt(warp.X, warp.Y) == 103 && warp.X == pad.GetProperty("x").GetInt32() && warp.Y == pad.GetProperty("y").GetInt32() &&
-                warp.DestinationMapId == MapIdFromSourceSymbol(pad.GetProperty("destinationMap").GetString()!) && warp.DestinationWarpId == pad.GetProperty("destinationWarp").GetInt32(), "Silph pad source endpoint differs.");
+                warp.DestinationMapId == world.Resolve(pad.GetProperty("destinationMap").GetString()!) && warp.DestinationWarpId == pad.GetProperty("destinationWarp").GetInt32(), "Silph pad source endpoint differs.");
         }
         return new(world, source, maps.ToImmutable(), constants);
     }

@@ -108,13 +108,13 @@ public sealed class FieldRootAnimationKernelTests
                 Deny(Number(events.Insert(at + 1, roots with { Rooted = false })), single);
                 if (single)
                 {
-                    var battle = Previous.Single(events, usedAt); var exported = (WildBattleRootsChangedEvent)battle.Events[at];
+                    var battle = Previous.Single(events, usedAt); var exported = (SourceRootsChangedEvent)battle.Events[at];
                     battle = battle with { Events = battle.Events.SetItem(at, exported with { Rooted = false }) };
                     Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch,
-                        "The exported singles receipt is authoritative even if SourceEvents still carries the original root.");
-                    battle = Previous.Single(events, usedAt) with { SourceEvents = [] };
+                        "The canonical receipt is authoritative for the single envelope.");
+                    battle = Previous.Single(events, usedAt);
                     Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch,
-                        "Singles normalization must consume WildBattleRootsChangedEvent itself.");
+                        "Singles dispatch must consume SourceRootsChangedEvent itself.");
                 }
             }
             var definitions = Mechanics.Catalog.Moves; var definition = definitions[Move(id)];

@@ -25,14 +25,6 @@ public sealed class PretFuchsiaGymRegion
          ExternalFuchsiaEvents = externalFuchsiaEvents;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_FUCHSIA_CITY_GYM" => new("map.fuchsia-city-gym"),
-        _ => PretFuchsiaRouteRegion.MapIdFromSourceSymbol(symbol)
-    };
-
-
-
     public static PretFuchsiaGymRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

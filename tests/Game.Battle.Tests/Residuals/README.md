@@ -7,7 +7,7 @@
 Run `bash tests/Game.Battle.Tests/Residuals/run.sh AUTHENTICATED_CONTENT_ROOT PINNED_SOURCE_ROOT NEW_EVIDENCE_DIRECTORY`.
 The runner requires the official .NET 10 toolchain selected by `scripts/env.sh`, uses an empty local NuGet source and locked restore, and serializes short builds with `/tmp/firered-remake-build.lock`.
 
-This is the first residual subset for the bounded four-action owner. The exact same `SourceEndTurnContext` performs field ordering, battler ordering, weather/status damage and end-turn abilities for canonical four slots and the established singles bridge. Existing singly represented commands remain delegates in that bridge. There is no paired-singles projection or second poison/weather implementation.
+The canonical `FrameEndTurnContext` performs field ordering, battler ordering, weather/status damage and end-turn abilities for both single and double battles. Its scheduler and storage now form one concrete partial implementation; there is no historical singles bridge, paired-singles projection or second poison/weather implementation.
 
 Admitted ordinary state is temporary rain/sandstorm/sun/hail, poison/burn/Toxic and Shed Skin/Rain Dish/Speed Boost. Actual selected poison/burn effects can now continue through this owner. Truant's recipe is shared, but four-action admission remains blocked until its action canceller is migrated. Items, links, locks, screens, Wish/Future/Perish, permanent weather, Forecast/Trace and other unported phases still reject explicitly. No reward is invented: an opponent residual KO yields `RewardsPending`; real reserves yield `ReplacementsPending`. Damage registers remain alive until the actual delayed cleanup boundary.
 

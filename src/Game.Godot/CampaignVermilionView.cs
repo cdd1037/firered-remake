@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Application;
 using Game.Domain.WildBattle;
 using Godot;
@@ -17,15 +18,15 @@ public partial class CampaignView
 
     // Source battle_scripts_1.s:3883 and 4212–4281 select these battle_message.c strings.
     // Status/confusion changes precede their single held-item message in the event stream.
-    private ForestMessage? VermilionWildMessage(WildBattleEvent current) => current switch
+    private ForestMessage? VermilionWildMessage(SourceBattleEvent current) => current switch
     {
-        WildBattlePayDayEvent => new("sText_CoinsScattered"),
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_LIMBER" } ability => new("sText_PkmnPreventsParalysisWith",
+        SourcePayDayEvent => new("sText_CoinsScattered"),
+        SourceAbilityPreventedEvent { Ability: "ABILITY_LIMBER" } ability => new("sText_PkmnPreventsParalysisWith",
             ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
-        WildBattleStatusChangedEvent { Reason: "limber", After: 0 } change => new("sText_PkmnsXCuredItsYProblem",
+        SourceStatusChangedEvent { Reason: "limber", After: 0 } change => new("sText_PkmnsXCuredItsYProblem",
             ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(change.Side)), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName("ABILITY_LIMBER")), ("B_BUFF1", ForestStatusName(change.Before))),
-        WildBattleStatusChangedEvent { Reason: "held-berry" } or WildBattleConfusionChangedEvent { Reason: "persim-berry" } => new(""),
-        WildBattleHeldItemConsumedEvent { Item: "ITEM_CHERI_BERRY" or "ITEM_CHESTO_BERRY" or "ITEM_PECHA_BERRY" or "ITEM_RAWST_BERRY" or "ITEM_PERSIM_BERRY" } item =>
+        SourceStatusChangedEvent { Reason: "held-berry" } or SourceConfusionChangedEvent { Reason: "persim-berry" } => new(""),
+        SourceHeldItemConsumedEvent { Item: "ITEM_CHERI_BERRY" or "ITEM_CHESTO_BERRY" or "ITEM_PECHA_BERRY" or "ITEM_RAWST_BERRY" or "ITEM_PERSIM_BERRY" } item =>
             new(item.Item switch
             {
                 "ITEM_CHERI_BERRY" => "sText_PkmnsItemCuredParalysis",
@@ -34,7 +35,7 @@ public partial class CampaignView
                 "ITEM_RAWST_BERRY" => "sText_PkmnsItemHealedBurn",
                 _ => "sText_PkmnsItemSnappedOut"
             }, ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(item.Side)), ("B_LAST_ITEM", _catalog.DisplayNames.ItemName(item.Item))),
-        WildBattleHeldItemStolenEvent stolen => new("sText_PkmnStoleItem",
+        SourceHeldItemStolenEvent stolen => new("sText_PkmnStoleItem",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(stolen.Actor)), ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stolen.Target)), ("B_LAST_ITEM", _catalog.DisplayNames.ItemName(stolen.Item))),
         _ => null
     };

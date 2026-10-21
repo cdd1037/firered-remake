@@ -4,8 +4,8 @@ using Game.Domain.Rules;
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
-// Shared source commands; the older historical profiles retain their compatibility helpers.
-internal abstract partial class SourceRecipeContext
+// Source commands shared by the canonical frame recipes.
+internal sealed partial class FrameRecipeContext
 {
     internal bool EarlyPartyAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool reportMiss, bool? sandstorm = null)
     {

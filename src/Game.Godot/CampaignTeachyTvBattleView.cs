@@ -33,7 +33,7 @@ public partial class CampaignView
         }
         _held = null; if (b.SoundSequence != _teachyBattleSoundSequence)
         { _teachyBattleSoundSequence = b.SoundSequence; if (b.Sound is {} sound) SourceSound(sound); }
-        string key = $"{b.Ticket}:{b.Stage}:{b.StepIndex}:{b.CurrentStep?.Event.Sequence}:{b.Voiceover.Next}:{b.Voiceover.Pending?.TextSymbol}:{b.SelectingSide}";
+        string key = $"{b.Ticket}:{b.Stage}:{b.StepIndex}:{b.CurrentEvent?.Sequence}:{b.Voiceover.Next}:{b.Voiceover.Pending?.TextSymbol}:{b.SelectingSide}";
         if (_teachyBattleVisualKey != key)
         {
             _teachyBattleVisualKey = key; _wildElapsed = 0; _teachyBattleEventVisualElapsed = 0;
@@ -48,7 +48,7 @@ public partial class CampaignView
             }
             else if (b.Voiceover.Pending is null)
             { _teachyBattleVoiceSymbol = null; _teachyBattlePalette = null; _teachyBattleVoiceText.Clear(); }
-            if (b.CurrentStep?.Event is SourcePokedudeCaughtEvent)
+            if (b.CurrentEvent is SourcePokedudeCaughtEvent)
             {
                 var raw = _catalog.OldManTutorial!.Texts["sText_GotchaPkmnCaught2"].Text;
                 var parsed = ParseOldManText(raw, PresentedBattleSpeciesName(b.DisplayOpponent.SourceSpeciesId), _catalog.DisplayNames.ItemName("ITEM_POKE_BALL"));
@@ -97,7 +97,7 @@ public partial class CampaignView
             }
             if (b.Stage == CampaignTeachyTvBattleStage.Events)
             {
-                double pause = b.CurrentStep?.Event is SourcePokedudeCaughtEvent ? 127d / 60 : _wildPages.IsEmpty ? .45 : 64d / 60;
+                double pause = b.CurrentEvent is SourcePokedudeCaughtEvent ? 127d / 60 : _wildPages.IsEmpty ? .45 : 64d / 60;
                 if (_teachyBattleEventVisualElapsed < pause) break;
                 if (TryAdvanceWildVisualMessage()) { _teachyBattleEventVisualElapsed = 0; break; }
                 if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; _teachyBattleEventVisualElapsed = 0; }
@@ -156,7 +156,7 @@ public partial class CampaignView
     }
 
     private bool TeachyTvHidesCaughtOpponent => TeachyBattle is {} b &&
-        (b.CurrentStep?.Event is SourcePokedudeCaughtEvent || b.Stage == CampaignTeachyTvBattleStage.Ending && b.Frame.Outcome == WildBattleOutcome.Caught);
+        (b.CurrentEvent is SourcePokedudeCaughtEvent || b.Stage == CampaignTeachyTvBattleStage.Ending && b.Frame.Outcome == WildBattleOutcome.Caught);
 
     private bool DrawTeachyTvBattle()
     {

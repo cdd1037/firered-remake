@@ -4,15 +4,12 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal abstract BattlerSlot? MeanLookSource(BattlerSlot target);
-    internal abstract void SetMeanLookSource(BattlerSlot target, BattlerSlot actor);
-    internal virtual void SetBindingSource(BattlerSlot target, BattlerSlot actor) { }
-    internal virtual bool VolatileOwnTempoEnabled => true;
-    internal virtual bool BindingStoresMove => true;
-    internal virtual bool BindingSandTombName => true;
-    internal virtual bool VolatileTargetAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
+    internal bool VolatileOwnTempoEnabled => true;
+    internal bool BindingStoresMove => true;
+    internal bool BindingSandTombName => true;
+    internal bool VolatileTargetAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
     {
         if (SourceGenericAccuracy(actor, target, move, purpose)) return true;
         SourceGenericMiss(actor, target, move); return false;

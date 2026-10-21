@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_tree
 from unittest.mock import patch
 
 ROOT = _PROJECT_ROOT
@@ -108,12 +109,10 @@ class LateMachineImporterTests(unittest.TestCase):
                 self.assertEqual(0, generated.returncode, generated.stdout + generated.stderr)
                 target = project / 'content/generated' / item_path
                 self.assertTrue(target.is_file())
-                before = {str(path.relative_to(project)): (path.read_bytes(), path.stat().st_mtime_ns)
-                          for path in project.rglob('*') if path.is_file()}
+                before = snapshot_tree(project)
                 checked = invoke('--check')
                 self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
-                after = {str(path.relative_to(project)): (path.read_bytes(), path.stat().st_mtime_ns)
-                         for path in project.rglob('*') if path.is_file()}
+                after = snapshot_tree(project)
                 self.assertEqual(before, after)
                 altered = json.loads(target.read_bytes())
                 altered['schemaVersion'] = -1

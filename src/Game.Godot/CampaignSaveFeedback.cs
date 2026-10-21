@@ -17,7 +17,6 @@ internal static class CampaignSaveFeedback
         {
             SaveOperationStatus.AccessDenied => text.Get("error.access", ("Action", action)),
             SaveOperationStatus.StorageFailure => text.Get("error.storage", ("Action", action)),
-            SaveOperationStatus.MigrationRequired => text.Get("error.migration"),
             SaveOperationStatus.IncompatibleVersion => text.Get("error.version", ("Action", action)),
             SaveOperationStatus.TooLarge => text.Get("error.size", ("Action", action)),
             SaveOperationStatus.FilesChanged => text.Get("error.changed"),
@@ -26,7 +25,6 @@ internal static class CampaignSaveFeedback
         string recovery = result.Files == SaveFileOutcome.Unconfirmed ? "recovery.unconfirmed"
             : result.Status == SaveOperationStatus.StorageFailure ? "recovery.storage"
             : result.Status == SaveOperationStatus.AccessDenied ? "recovery.access"
-            : result.Status == SaveOperationStatus.MigrationRequired ? "recovery.migration"
             : result.Status == SaveOperationStatus.IncompatibleVersion ? "recovery.version"
             : result.Status == SaveOperationStatus.FilesChanged ? "recovery.changed" : "recovery.backup";
         return reason + "\n" + text.Get(recovery);

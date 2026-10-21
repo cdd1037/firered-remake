@@ -23,7 +23,7 @@ public sealed class ShadowCopyAnimationKernelTests
     {
         if(single)
         {
-            var b=Envelope.Single(events,index) with{SourceEvents=[]};
+            var b=Envelope.Single(events,index);
             return result?AnimationDispatchFixture.AtResult(b,true,scene):AnimationDispatchFixture.AtAttackText(b,true,scene);
         }
         return result?AnimationDispatchFixture.AtResult(Envelope.Double(events,index),scene):AnimationDispatchFixture.AtAttackText(Envelope.Double(events,index),scene);

@@ -1,6 +1,4 @@
 using Game.Domain.Ids;
-using Game.Domain.Pokemon;
-using Game.Domain.Randomness;
 namespace Game.Domain.Encounters;
 
 /// <summary>New CeladonApproach land candidates share the original nature/PID rejection and two-IV-draw generator.</summary>
@@ -14,11 +12,4 @@ public static class CeladonApproachWildPokemonFactory
         "pret:SPECIES_MEOWTH" when roll >= 95 => "ITEM_NUGGET",
         _ => "ITEM_NONE"
     };
-    public static EarlyLandWildHeldItemResult AssignHeldItem(SpeciesId species, RngState globalRng)
-    {
-        if (!CeladonApproachLandEncounterTables.WildSpecies.Contains(species))
-            throw new NotSupportedException("Only the five authenticated CeladonApproach land species are admitted.");
-        var draw = Gen3Rng.Next(globalRng, "wild-battle.held-item", 100);
-        return new(HeldItem(species, draw.Trace.Result), draw.State, [draw.Trace]);
-    }
 }

@@ -31,16 +31,15 @@ internal static class SourceSubstituteRules
     }
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     private readonly SourceSubstituteLifecycle localSubstituteLifecycle = new();
-    internal virtual SourceSubstituteLifecycle SubstituteLifecycle => localSubstituteLifecycle;
+    internal SourceSubstituteLifecycle SubstituteLifecycle => localSubstituteLifecycle;
     internal bool SubstitutePresent(BattlerSlot target) => Get(target).CalledVolatile?.SubstituteHp > 0 || SubstituteLifecycle.Faded.Contains(target);
     internal bool SubstituteHitReachedPokemon(BattlerSlot target) => !SubstituteLifecycle.Hit.Contains(target);
     internal void BeginSubstituteAction() => SubstituteLifecycle.BeginAction();
     internal void EndSubstitutePass() => SubstituteLifecycle.Faded.Clear();
-    internal virtual void SubstituteClearsBinding(BattlerSlot actor) { }
-    internal virtual void SubstituteCostReceipt(BattlerSlot actor, PokemonMoveDefinition move, int cost)
+    internal void SubstituteCostReceipt(BattlerSlot actor, PokemonMoveDefinition move, int cost)
     {
         HitItemsCommandDamage(cost);
         RecordHitItemDamage(actor, cost, substitute: false, noEffect: false, physical: true);

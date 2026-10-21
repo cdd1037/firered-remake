@@ -41,12 +41,12 @@ public sealed class ItemTransferReceiptPresentationTests
         Assert.AreEqual(actorItem, WildBattleSourcePartyEffects.PersistentHeldItem(result.State.Parties[1].Members[0]));
         Assert.IsTrue(result.Events.OfType<SourcePpCommandEvent>().Single(p => p.CurrentMove == receipt.Move).Sequence < receipt.Sequence);
 
-        var exported = result.Events.Select(SourceBattleEventAdapter.Export).ToImmutableArray();
-        var single = exported.OfType<WildBattleHeldItemsSwappedEvent>().Single();
+        var exported = result.Events;
+        var single = exported.OfType<SourceHeldItemsSwappedEvent>().Single();
         Assert.AreEqual(receipt.Sequence, single.Sequence);
         Assert.AreEqual(receipt.Turn, single.Turn);
-        Assert.AreEqual(WildBattleSide.Player, single.Actor);
-        Assert.AreEqual(WildBattleSide.Opponent, single.Target);
+        Assert.AreEqual(new BattlerSlot(0), single.Actor);
+        Assert.AreEqual(new BattlerSlot(1), single.Target);
         Assert.AreEqual(receipt.Move, single.Move);
         Assert.AreEqual(actorItem, single.ActorItemBefore);
         Assert.AreEqual(targetItem, single.TargetItemBefore);
@@ -81,7 +81,7 @@ public sealed class ItemTransferReceiptPresentationTests
         Assert.AreEqual("ITEM_ORAN_BERRY", firstConsumption.Item);
         Assert.AreEqual("ITEM_NONE", consumed.State.Slots[0].Body!.HeldItem);
         Assert.AreEqual("ITEM_ORAN_BERRY", consumed.State.Slots[0].Position.UsedHeldItem);
-        DrainSharedMessages(consumed.Events.Select(SourceBattleEventAdapter.Export).ToImmutableArray());
+        DrainSharedMessages(consumed.Events);
 
         var recycled = CompleteTurn(consumed.State, 0);
         var receipt = recycled.Events.OfType<SourceHeldItemRecycledEvent>().Single();
@@ -105,11 +105,11 @@ public sealed class ItemTransferReceiptPresentationTests
             Assert.AreEqual(receipt.Item, recycled.State.Slots[0].Body!.HeldItem);
             Assert.IsNull(recycled.State.Slots[0].Position.UsedHeldItem);
         }
-        var exported = recycled.Events.Select(SourceBattleEventAdapter.Export).ToImmutableArray();
-        var single = exported.OfType<WildBattleHeldItemRecycledEvent>().Single();
+        var exported = recycled.Events;
+        var single = exported.OfType<SourceHeldItemRecycledEvent>().Single();
         Assert.AreEqual(receipt.Sequence, single.Sequence);
         Assert.AreEqual(receipt.Turn, single.Turn);
-        Assert.AreEqual(WildBattleSide.Player, single.Actor);
+        Assert.AreEqual(new BattlerSlot(0), single.Actor);
         Assert.AreEqual(receipt.Move, single.Move);
         Assert.AreEqual(receipt.Item, single.Item);
         SourceTrainerText[] expected = [new("sText_XFoundOneY", ("B_ATK_NAME_WITH_PREFIX", "Player"), ("B_LAST_ITEM", receipt.Item))];
@@ -121,7 +121,7 @@ public sealed class ItemTransferReceiptPresentationTests
         if (reconsume)
         {
             int markerIndex = exported.IndexOf(single);
-            int consumedIndex = Enumerable.Range(0, exported.Length).Single(i => exported[i] is WildBattleHeldItemConsumedEvent);
+            int consumedIndex = Enumerable.Range(0, exported.Length).Single(i => exported[i] is SourceHeldItemConsumedEvent);
             Assert.IsTrue(markerIndex < consumedIndex, "Found-one narration belongs before later consumption.");
         }
     }
@@ -131,12 +131,12 @@ public sealed class ItemTransferReceiptPresentationTests
     [DataRow(WildBattleSide.Opponent)]
     public void TypedItemTransferReceiptsOwnSuccessForEitherExportedActor(WildBattleSide actor)
     {
-        var target = actor == WildBattleSide.Player ? WildBattleSide.Opponent : WildBattleSide.Player;
-        WildBattleEvent[] events = [
-            new WildBattleHeldItemsSwappedEvent(1, 1, actor, target, Move("TRICK"), "ITEM_FOCUS_BAND", "ITEM_NONE"),
-            new WildBattleHeldItemRecycledEvent(2, 1, actor, Move("RECYCLE"), "ITEM_ORAN_BERRY")
+        var slot = new BattlerSlot((int)actor); var target = slot.Opposite;
+        SourceBattleEvent[] events = [
+            new SourceHeldItemsSwappedEvent(1, 1, slot, target, Move("TRICK"), "ITEM_FOCUS_BAND", "ITEM_NONE"),
+            new SourceHeldItemRecycledEvent(2, 1, slot, Move("RECYCLE"), "ITEM_ORAN_BERRY")
         ];
-        AssertNarrationAt(events, events[0], ExpectedSwap(actor.ToString(), target.ToString(), "ITEM_FOCUS_BAND", "ITEM_NONE"));
+        AssertNarrationAt(events, events[0], ExpectedSwap(actor.ToString(), target.Side.ToString(), "ITEM_FOCUS_BAND", "ITEM_NONE"));
         AssertNarrationAt(events, events[1], [new("sText_XFoundOneY",
             ("B_ATK_NAME_WITH_PREFIX", actor.ToString()), ("B_LAST_ITEM", "ITEM_ORAN_BERRY"))]);
         Assert.AreEqual(3, DrainSharedMessages(events).Length);
@@ -199,11 +199,11 @@ public sealed class ItemTransferReceiptPresentationTests
         return [new("sText_PkmnSwitchedItems", ("B_ATK_NAME_WITH_PREFIX", actor)), obtained];
     }
 
-    private static SourceTrainerEventDisplay? Describe(IReadOnlyList<WildBattleEvent> events, int index) =>
-        SourceTrainerPresentationModel.Describe(events, index, side => side.ToString(), move => move.Value,
+    private static SourceTrainerEventDisplay? Describe(IReadOnlyList<SourceBattleEvent> events, int index) =>
+        SourceTrainerPresentationModel.Describe(events, index, side => side.Side.ToString(), move => move.Value,
             (side, member) => $"{side}:{member}", item => item);
 
-    private static void AssertNarrationAt(IReadOnlyList<WildBattleEvent> events, WildBattleEvent marker,
+    private static void AssertNarrationAt(IReadOnlyList<SourceBattleEvent> events, SourceBattleEvent marker,
         SourceTrainerText[] expected)
     {
         int index = Enumerable.Range(0, events.Count).Single(i => events[i] == marker);
@@ -218,19 +218,19 @@ public sealed class ItemTransferReceiptPresentationTests
         "sText_XFoundOneY" or "sText_PkmnSwitchedItems" or "sText_PkmnObtainedX" or
         "sText_PkmnObtainedX2" or "sText_PkmnObtainedXYObtainedZ";
 
-    private static void AssertSuccessNarrationExactlyOnce(ImmutableArray<WildBattleEvent> events,
+    private static void AssertSuccessNarrationExactlyOnce(ImmutableArray<SourceBattleEvent> events,
         SourceTrainerText[] expected)
     {
         var pages = DrainSharedMessages(events).Where(IsSuccessText);
         Assert.AreEqual(PageSnapshot(expected), PageSnapshot(pages),
             "A committed success must retain all source text exactly once, including equal items and no-write branches.");
-        var withoutMarkers = events.Where(e => e is not (WildBattleHeldItemsSwappedEvent or WildBattleHeldItemRecycledEvent)).ToImmutableArray();
+        var withoutMarkers = events.Where(e => e is not (SourceHeldItemsSwappedEvent or SourceHeldItemRecycledEvent)).ToImmutableArray();
         Assert.IsTrue(withoutMarkers.Length < events.Length);
         Assert.IsFalse(DrainSharedMessages(withoutMarkers).Any(IsSuccessText),
             "Optional party bookkeeping must never fabricate or repeat success narration.");
     }
 
-    private static ImmutableArray<SourceTrainerText> DrainSharedMessages(IReadOnlyList<WildBattleEvent> events)
+    private static ImmutableArray<SourceTrainerText> DrainSharedMessages(IReadOnlyList<SourceBattleEvent> events)
     {
         Assert.IsTrue(events.Count > 0, "Never pass a message-drain test with an empty event batch.");
         string before = JsonSerializer.Serialize(events);
@@ -248,9 +248,9 @@ public sealed class ItemTransferReceiptPresentationTests
         return pages.ToImmutable();
     }
 
-    private static void AssertBookkeepingIsSilent(ImmutableArray<WildBattleEvent> events)
+    private static void AssertBookkeepingIsSilent(ImmutableArray<SourceBattleEvent> events)
     {
-        var partyWrites = events.OfType<WildBattleCalledPartyChangedEvent>().ToArray();
+        var partyWrites = events.OfType<SourceCalledPartyChangedEvent>().ToArray();
         Assert.IsTrue(partyWrites.Length > 0, "The full public turn must include its real party synchronization receipts.");
         foreach (var write in partyWrites)
         {
@@ -258,7 +258,7 @@ public sealed class ItemTransferReceiptPresentationTests
             Assert.IsNotNull(display);
             Assert.IsTrue(display.Silent, $"{write.Reason} must not print a duplicate success page.");
         }
-        var withoutWrites = events.Where(e => e is not WildBattleCalledPartyChangedEvent).ToImmutableArray();
+        var withoutWrites = events.Where(e => e is not SourceCalledPartyChangedEvent).ToImmutableArray();
         Assert.AreEqual(PageSnapshot(DrainSharedMessages(events)), PageSnapshot(DrainSharedMessages(withoutWrites)));
     }
 

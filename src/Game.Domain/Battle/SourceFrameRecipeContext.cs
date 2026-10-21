@@ -7,12 +7,12 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal sealed partial class FrameRecipeContext : SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal override bool PokedudeBattle => Frame.Pokedude is not null;
-    internal override bool CancellerInfatuationEnabled => !SourceWildBattlePolicy.Disguised(Frame);
-    internal override bool BideInCanceller => !SourceWildBattlePolicy.Disguised(Frame);
-    internal override bool CancellerLateMoveThawEnabled => !SourceWildBattlePolicy.Disguised(Frame);
+    internal bool PokedudeBattle => Frame.Pokedude is not null;
+    internal bool CancellerInfatuationEnabled => !SourceWildBattlePolicy.Disguised(Frame);
+    internal bool BideInCanceller => !SourceWildBattlePolicy.Disguised(Frame);
+    internal bool CancellerLateMoveThawEnabled => !SourceWildBattlePolicy.Disguised(Frame);
     private readonly PokemonCatalog catalog;
     private readonly SourceResolvedMoveAction action;
     private readonly SourceBattleFrame initial;
@@ -256,36 +256,36 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             }
         Frame = Frame with { Revision = checked(Frame.Revision + 1) };
     }
-    internal override bool CancellerHasRecharge(BattlerSlot slot) => Frame.Get(slot).Registers.Turn?.Lock?.Kind == WildBattleCalledLockKind.Recharge;
-    internal override void CancellerClearRecharge(BattlerSlot slot)
+    internal bool CancellerHasRecharge(BattlerSlot slot) => Frame.Get(slot).Registers.Turn?.Lock?.Kind == WildBattleCalledLockKind.Recharge;
+    internal void CancellerClearRecharge(BattlerSlot slot)
     {
         var cell = Frame.Get(slot); var turn = cell.Registers.Turn!; var locked = turn.Lock!;
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with {
             Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
         Add(n => new SourceMtMoonVolatileEvent(n, Turn, slot, "called-recharge", locked.TurnsRemaining, 0, "recharged"));
     }
-    internal override bool HelpingHand(BattlerSlot slot) => Frame.Get(slot).Registers.HelpingHand;
-    internal override bool AllySupportAbsent(BattlerSlot slot) => Frame.IsSourceAbsent(slot);
-    internal override void SetHelpingHand(BattlerSlot slot)
+    internal bool HelpingHand(BattlerSlot slot) => Frame.Get(slot).Registers.HelpingHand;
+    internal bool AllySupportAbsent(BattlerSlot slot) => Frame.IsSourceAbsent(slot);
+    internal void SetHelpingHand(BattlerSlot slot)
     {
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with { HelpingHand = true } }) };
     }
-    internal override int FollowMeTimer(BattleSide side) => Frame.Sides[(int)side].FollowMeTimer;
-    internal override void SetFollowMe(BattlerSlot slot) => Frame = Frame with {
+    internal int FollowMeTimer(BattleSide side) => Frame.Sides[(int)side].FollowMeTimer;
+    internal void SetFollowMe(BattlerSlot slot) => Frame = Frame with {
         Sides = Frame.Sides.SetItem((int)slot.Side, Frame.Sides[(int)slot.Side] with { FollowMeTimer = 1, FollowMeTarget = slot }) };
-    internal override void SetAllySupportTarget(BattlerSlot slot) => invocation = invocation with { Target = slot };
-    internal override bool SourceDoubleBattle => Frame.Layout == SourceBattleLayout.PresetDoubles;
-    internal override int SourceDefenderCount(BattlerSlot target) => SourceMoveTargeting.CountSourcePresentDefenders(Frame, target);
-    internal override IEnumerable<BattlerSlot> SourceNumericTargets(BattlerSlot actor, BattlerSlot initialTarget) =>
+    internal void SetAllySupportTarget(BattlerSlot slot) => invocation = invocation with { Target = slot };
+    internal bool SourceDoubleBattle => Frame.Layout == SourceBattleLayout.PresetDoubles;
+    internal int SourceDefenderCount(BattlerSlot target) => SourceMoveTargeting.CountSourcePresentDefenders(Frame, target);
+    internal IEnumerable<BattlerSlot> SourceNumericTargets(BattlerSlot actor, BattlerSlot initialTarget) =>
         SourceDoubleBattle ? SourceMoveTargeting.NumericScriptTargetsAfterDeferredKo(Frame, actor) : [initialTarget];
-    internal override void BeginScriptTarget(BattlerSlot target)
+    internal void BeginScriptTarget(BattlerSlot target)
     {
         invocation = invocation with { Target = target };
         commandNoEffect = false; hitItemsNoEffect = false; skipsMoveEnd = false;
         targetEventStart = Events.Count;
     }
-    internal override void CompleteScriptTarget() => CompleteScriptTarget(historyOnly: false);
+    internal void CompleteScriptTarget() => CompleteScriptTarget(historyOnly: false);
     private void CompleteScriptTarget(bool historyOnly)
     {
         if (Frame.PendingSwitches.Any(p => p.Kind == WildBattleCalledSwitchKind.BatonPass && p.Slot == action.Actor.Slot))
@@ -314,8 +314,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         }
         completedTargetPasses++;
     }
-    internal override bool UproarPreventsSleep(BattlerSlot slot) => SharedUproarPreventsSleep(slot);
-    internal override void SynchronizeStatus(PokemonCatalog catalog, BattlerSlot target, uint status)
+    internal bool UproarPreventsSleep(BattlerSlot slot) => SharedUproarPreventsSleep(slot);
+    internal void SynchronizeStatus(PokemonCatalog catalog, BattlerSlot target, uint status)
     {
         if (WildBattleEffective.Ability(Get(target)) != "ABILITY_SYNCHRONIZE") return;
         Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_SYNCHRONIZE"));
@@ -323,8 +323,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         InflictStatus(catalog, source, status, true, "synchronize");
     }
     internal override int Turn => Frame.Turn;
-    internal override SourceMoveInvocation? Invocation => invocation;
-    internal override IEnumerable<BattlerSlot> ActiveSlots => Enumerable.Range(0, Frame.BattlerCount).Select(i => new BattlerSlot(i)).Where(s => Frame.Get(s).Body is not null);
+    internal SourceMoveInvocation? Invocation => invocation;
+    internal IEnumerable<BattlerSlot> ActiveSlots => Enumerable.Range(0, Frame.BattlerCount).Select(i => new BattlerSlot(i)).Where(s => Frame.Get(s).Body is not null);
     internal override WildBattleCombatant Get(BattlerSlot slot) => Frame.Get(slot).Body ?? throw new SourceRecipeUnsupported("source_kernel_absent_body");
     internal override void Set(BattlerSlot slot, WildBattleCombatant body)
     {
@@ -334,7 +334,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Body = body }),
             Parties = Frame.Parties.SetItem((int)key.Side, party with { Members = party.Members.SetItem(key.Index, member) }) };
     }
-    internal override ushort Draw(string purpose, int bound = 65536)
+    internal ushort Draw(string purpose, int bound = 65536)
     {
         var next = Gen3Rng.Next(Frame.Rng, purpose, bound); Frame = Frame with { Rng = next.State }; Trace.Add(next.Trace); return next.Value;
     }
@@ -353,40 +353,40 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (slot.Side == BattleSide.Player && Frame.TrainerEncounter is { } trainer)
             Frame = Frame with { TrainerEncounter = trainer with { KnownPlayerAbility = ability } };
     }
-    internal override void SpikesResultMessage(BattlerSlot actor) =>
+    internal void SpikesResultMessage(BattlerSlot actor) =>
         Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "spikes", 0, 1, "move"));
-    internal override int SpikesLayers(BattleSide side) => Frame.Sides[(int)side].Spikes;
-    internal override void SetSpikesLayers(BattleSide side, int layers) => Frame = Frame with {
+    internal int SpikesLayers(BattleSide side) => Frame.Sides[(int)side].Spikes;
+    internal void SetSpikesLayers(BattleSide side, int layers) => Frame = Frame with {
         Sides = Frame.Sides.SetItem((int)side, Frame.Sides[(int)side] with { Spikes = layers }) };
-    internal override void SpikesSuppressPressure() => invocation = invocation with {
+    internal void SpikesSuppressPressure() => invocation = invocation with {
         Flags = invocation.Flags | WildBattleInvocationFlags.PpNotAffectedByPressure };
-    internal override int FieldSettingTimer(BattleSide side, string effect) => new FrameEndTurnContext(Frame).GetTimer(side, effect);
-    internal override void SetFieldSettingTimer(BattleSide side, string effect, int value)
+    internal int FieldSettingTimer(BattleSide side, string effect) => new FrameEndTurnContext(Frame).GetTimer(side, effect);
+    internal void SetFieldSettingTimer(BattleSide side, string effect, int value)
     {
         var storage = new FrameEndTurnContext(Frame); storage.SetTimer(side, effect, value); Frame = storage.Frame;
     }
-    internal override SourceFieldRegisters SettingWeather => Frame.Field;
-    internal override void ReplaceSettingWeather(SourceFieldRegisters weather) => Frame = Frame with { Field = weather };
-    internal override void SettingWeatherChanged()
+    internal SourceFieldRegisters SettingWeather => Frame.Field;
+    internal void ReplaceSettingWeather(SourceFieldRegisters weather) => Frame = Frame with { Field = weather };
+    internal void SettingWeatherChanged()
     {
         var entry = new FrameEntryContext(Frame); entry.ForecastAll();
         Frame = entry.Frame; Events.AddRange(entry.Events); Trace.AddRange(entry.Trace);
     }
-    internal override int SandstormTurnsRemaining => Frame.Field.SandstormTurnsRemaining;
-    internal override bool StruggleSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
-    internal override bool Safeguard(BattlerSlot slot) => Frame.Sides[(int)slot.Side].SafeguardTurnsRemaining > 0;
-    internal override int RainTurnsRemaining => Frame.Field.RainTurnsRemaining;
-    internal override bool SourceCalledRain => SourceWeatherRules.HasRain(Frame.Field);
-    internal override bool SourceCalledSun => SourceWeatherRules.HasSun(Frame.Field);
-    internal override bool SourceCalledWeatherPresent => SourceCalledSun || SourceCalledRain || Frame.Field.HailTurnsRemaining > 0 || SourceWeatherRules.HasSandstorm(Frame.Field);
-    internal override bool SourceCalledWeatherSuppressed => SourceWeatherRules.IsSuppressed(Frame);
-    internal override bool SourceDamageWeatherSuppressed => SourceWeatherRules.IsSuppressed(Frame, includeFainted: true);
-    internal override bool RockTunnelReflects(BattlerSlot slot) => Frame.Sides[(int)slot.Side].ReflectTurnsRemaining > 0;
-    internal override bool SourceCalledLightScreen(BattlerSlot slot) => Frame.Sides[(int)slot.Side].LightScreenTurnsRemaining > 0;
+    internal int SandstormTurnsRemaining => Frame.Field.SandstormTurnsRemaining;
+    internal bool StruggleSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
+    internal bool Safeguard(BattlerSlot slot) => Frame.Sides[(int)slot.Side].SafeguardTurnsRemaining > 0;
+    internal int RainTurnsRemaining => Frame.Field.RainTurnsRemaining;
+    internal bool SourceCalledRain => SourceWeatherRules.HasRain(Frame.Field);
+    internal bool SourceCalledSun => SourceWeatherRules.HasSun(Frame.Field);
+    internal bool SourceCalledWeatherPresent => SourceCalledSun || SourceCalledRain || Frame.Field.HailTurnsRemaining > 0 || SourceWeatherRules.HasSandstorm(Frame.Field);
+    internal bool SourceCalledWeatherSuppressed => SourceWeatherRules.IsSuppressed(Frame);
+    internal bool SourceDamageWeatherSuppressed => SourceWeatherRules.IsSuppressed(Frame, includeFainted: true);
+    internal bool RockTunnelReflects(BattlerSlot slot) => Frame.Sides[(int)slot.Side].ReflectTurnsRemaining > 0;
+    internal bool SourceCalledLightScreen(BattlerSlot slot) => Frame.Sides[(int)slot.Side].LightScreenTurnsRemaining > 0;
     internal override bool SourceCalledMist(BattlerSlot slot) => Frame.Sides[(int)slot.Side].MistTurnsRemaining > 0;
     internal override bool SourceCalledSecondaryBlocked(BattlerSlot slot) => SubstitutePresent(slot);
-    internal override bool SourceCalledHitReachedPokemon(BattlerSlot slot) => SubstituteHitReachedPokemon(slot);
-    internal override bool SourceCalledSafeguardBlocks(BattlerSlot actor, BattlerSlot target, MoveId move)
+    internal bool SourceCalledHitReachedPokemon(BattlerSlot slot) => SubstituteHitReachedPokemon(slot);
+    internal bool SourceCalledSafeguardBlocks(BattlerSlot actor, BattlerSlot target, MoveId move)
     {
         if (Frame.Sides[(int)target.Side].SafeguardTurnsRemaining == 0) return false;
         skipsMoveEnd = true;
@@ -394,12 +394,12 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     internal override void SourceCalledProtectionFailure(BattlerSlot actor, BattlerSlot target, MoveId move, string reason) =>
         Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move, reason));
-    internal override bool CalledSureHit(BattlerSlot actor, BattlerSlot target) => Frame.Get(target).Registers.Turn is { SureHitTurnsRemaining: > 0 } t && t.SureHitSource == actor;
-    internal override bool BillUnderground(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal bool CalledSureHit(BattlerSlot actor, BattlerSlot target) => Frame.Get(target).Registers.Turn is { SureHitTurnsRemaining: > 0 } t && t.SureHitSource == actor;
+    internal bool BillUnderground(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         actor != target && !CalledSureHit(actor,target) && SourceChargeRules.Misses(SemiInvulnerable(target),move);
 
 
-    internal override void SpendEarlyPartyPp(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move) => SpendFramePp(actor,target,move,true);
+    internal void SpendEarlyPartyPp(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move) => SpendFramePp(actor,target,move,true);
     private void SpendFramePp(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool attackString)
     {
         invocation = invocation with { Target = target };
@@ -421,7 +421,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Add(n => new SourcePpCommandEvent(n, Turn, actor, target, invocation.PpSlot, invocation.ChosenMove, move.Id, before, reduced.After, reduced.CommandCost, Frame.Rng.Cursor) { PpOwner = invocation.PpOwner });
     }
 
-    internal override int SourceGenericApplyDamage(BattlerSlot actor, BattlerSlot target, MoveId move, int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null, int? preparedAnimationPower = null)
+    internal int SourceGenericApplyDamage(BattlerSlot actor, BattlerSlot target, MoveId move, int damage, bool critical, int percent, int? preparedBasePower = null, int? preparedFuryCutterCounter = null, int? preparedAnimationPower = null)
     {
         ushort? preparedAnimationWeather=catalog.Moves.TryGetValue(move,out var animationMove)&&animationMove.Effect=="EFFECT_WEATHER_BALL"?SourceWeatherRules.AnimationFlags(Frame):null;
         if (ConsumeSubstituteDamage(actor, target, move, damage, critical, percent, out int substituteLost,
@@ -434,7 +434,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (critical && damage > 0) Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         return before - after;
     }
-    internal override bool Route11WaterAbsorb(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    internal bool Route11WaterAbsorb(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
         string ability = WildBattleEffective.Ability(Get(target));
         if (move.Power == 0 || !(ability == "ABILITY_WATER_ABSORB" && move.Type == "TYPE_WATER" || ability == "ABILITY_VOLT_ABSORB" && move.Type == "TYPE_ELECTRIC")) return false;
@@ -445,14 +445,14 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (after != before) { Set(target, body with { Pokemon = body.Pokemon with { CurrentHp = after } }); Add(n => new SourceRecoveredEvent(n, Turn, target, move.Id, before, after, after - before)); }
         return true;
     }
-    internal override bool SsAnneFlashFire(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    internal bool SsAnneFlashFire(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
         if (move.Type != "TYPE_FIRE" || WildBattleEffective.Ability(Get(target)) != "ABILITY_FLASH_FIRE" || Get(target).Status == WildBattleStatus.Freeze) return false;
         Set(target, Get(target) with { FlashFireBoost = true });
         Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_FLASH_FIRE"));
         Add(n => new SourceAbilityPreventedEvent(n, Turn, actor, target, move.Id, "ABILITY_FLASH_FIRE")); return true;
     }
-    internal override void ChangeStatus(BattlerSlot target, uint status, string reason)
+    internal void ChangeStatus(BattlerSlot target, uint status, string reason)
     {
         var body = Get(target); if (body.Status == status) return;
         if (body.Status == 0 && (WildBattleStatus.IsSleeping(status) || status == WildBattleStatus.Freeze))
@@ -465,9 +465,9 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Set(target, Get(target) with { Status = status, SourcePartyStatusOverride = null });
         Add(n => new SourceStatusChangedEvent(n, Turn, target, body.Status, status, reason));
     }
-    internal override void ChangeStage(BattlerSlot actor, BattlerSlot target, WildBattleStat stat, int amount, MoveId move, bool secondary = false) =>
+    internal void ChangeStage(BattlerSlot actor, BattlerSlot target, WildBattleStat stat, int amount, MoveId move, bool secondary = false) =>
         SourceChangeStat(actor, target, stat, amount, move, secondary);
-    internal override void ApplyConfusion(BattlerSlot target, string purpose, bool secondary)
+    internal void ApplyConfusion(BattlerSlot target, string purpose, bool secondary)
     {
         var body = Get(target);
         if (body.Pokemon.CurrentHp == 0 || body.ConfusionTurnsRemaining > 0 || WildBattleEffective.Ability(body) == "ABILITY_OWN_TEMPO" ||
@@ -475,32 +475,36 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         int turns = 2 + (Draw($"{purpose}.confusion-duration", 4) & 3); Set(target, body with { ConfusionTurnsRemaining = turns });
         Add(n => new SourceConfusionChangedEvent(n, Turn, target, 0, turns, "move"));
     }
-    internal override bool CeruleanScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move)
+    internal bool CeruleanScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move)
     {
         if (move.Effect != "EFFECT_RESTORE_HP") throw new SourceRecipeUnsupported("source_kernel_script_not_migrated");
         SpendEarlyPartyPp(actor, actor, slot, move); SourceStatRecoveryHeal(actor, move, Math.Max(1, Get(actor).Pokemon.Stats.MaxHp / 2)); return true;
     }
-    internal override void ForestFaint(BattlerSlot slot)
+    internal void ForestFaint(BattlerSlot slot)
     {
         // Both layouts use source FaintClearSetData; the lifecycle owns replacement timing.
         if (Frame.Layout == SourceBattleLayout.Singles && Frame.FourTurn is null)
             throw new SourceRecipeUnsupported("source_kernel_faint_owner_required");
         if (Get(slot).Pokemon.CurrentHp != 0) throw new SourceRecipeUnsupported("source_kernel_faint_requires_zero_hp");
         if (Frame.IsSourceAbsent(slot)) return; // Cmd_tryfaintmon tests absence, independently of HP.
+        var member = Frame.Get(slot).Member!.Value;
+        int friendshipBefore = Frame.Party(member.Side).Members[member.Index].Pokemon.Friendship;
         Set(slot, SourceBattleFriendshipRules.Faint(Frame, slot));
+        SourceFaintFriendshipReceipt? friendship = slot.Side == BattleSide.Player
+            ? new(member, friendshipBefore, Frame.Party(member.Side).Members[member.Index].Pokemon.Friendship) : null;
         Frame = SourceOpponentFaintResults.Record(Frame, slot, invocation.Actor);
         ResolveLateTurnFaint(slot);
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
         Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         ChangeStatus(slot, WildBattleStatus.None, "faint");
-        Add(n => new SourceFaintedEvent(n, Turn, slot));
+        Add(n => new SourceFaintedEvent(n, Turn, slot) { Friendship = friendship });
     }
-    internal override void ForestOutcome(bool allowReplacement) { }
-    internal override void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) => BuildRage(actor, target, move);
-    internal override void SourceCalledMoveEndSubstitute() => EndSubstitutePass();
-    internal override bool SourceHeldDamageEnabled => Frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version;
-    internal override bool Endured(BattlerSlot slot) => HeldDamageEndured(slot);
-    internal override void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    internal void ForestOutcome(bool allowReplacement) { }
+    internal void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) => BuildRage(actor, target, move);
+    internal void SourceCalledMoveEndSubstitute() => EndSubstitutePass();
+    internal bool SourceHeldDamageEnabled => Frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version;
+    internal bool Endured(BattlerSlot slot) => HeldDamageEndured(slot);
+    internal void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
         if (commandNoEffect) return;
         // Cmd_resultmessage follows HP update, never the earlier adjustment command.
@@ -511,7 +515,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         else if (HeldDamageHungOn(target))
             Add(n => new SourceHeldItemSurvivalEvent(n, Turn, target, move.Id, Get(target).HeldItem));
     }
-    internal override void SourceGenericMiss(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    internal void SourceGenericMiss(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
         commandNoEffect = true;
         if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !ChargeFirstTurn(move))
@@ -519,7 +523,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             MarkProtectionMiss(target);
             Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move.Id, "protected"));
         }
-        else base.SourceGenericMiss(actor, target, move);
+        else SourceGenericMissCore(actor, target, move);
     }
     private void MarkProtectionMiss(BattlerSlot target)
     {
@@ -530,7 +534,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with { Registers = cell.Registers with {
             History = (cell.Registers.History ?? new()) with { LastHitByType = "TYPE_NORMAL" } } }) };
     }
-    internal override bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move)
+    internal bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move)
     {
         // Cmd_tryexplosion scans stored abilities before selecting the numeric first target.
         var damp = ActiveSlots.Where(s => WildBattleEffective.Ability(Get(s)) == "ABILITY_DAMP").Cast<BattlerSlot?>().FirstOrDefault();
@@ -538,7 +542,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Add(n => new SourceAbilityPreventedEvent(n, Turn, actor, holder, move.Id, "ABILITY_DAMP"));
         return true;
     }
-    internal override void ApplyFlinch(BattlerSlot target)
+    internal void ApplyFlinch(BattlerSlot target)
     {
         if (Frame.FourTurn?.Phase != SourceFourActionPhase.Actions || action.ActionOrderIndex != Frame.NextAction ||
             Frame.Queue[Frame.NextAction].Token?.Owner != action.Actor)
@@ -549,7 +553,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Set(target, body with { Flinched = true });
         Add(n => new SourceFlinchEvent(n, Turn, target, true));
     }
-    internal override bool EarlyStarterPrimaryMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_primary_status_not_migrated");
-    internal override bool EarlyPartyScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");
-    internal override bool TowerScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");
+    internal bool EarlyStarterPrimaryMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_primary_status_not_migrated");
+    internal bool EarlyPartyScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");
+    internal bool TowerScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");
 }

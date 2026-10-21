@@ -7,32 +7,11 @@ using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Rules;
 using Game.Domain.World;
-using Game.Tooling;
 
-if (args.Length > 0 && args[0] is "set-known-hatch-count" or "convert-current-checkpoint")
+if (args.Length > 0 && (args[0] is "set-known-hatch-count" or "convert-current-checkpoint" ||
+    args.Length >= 2 && args[0] == "save" && args[1].StartsWith("upgrade-", StringComparison.Ordinal)))
 {
-    try
-    {
-        if (args[0] == "set-known-hatch-count")
-        {
-            if (args.Length != 4 || !int.TryParse(args[3], System.Globalization.NumberStyles.None,
-                System.Globalization.CultureInfo.InvariantCulture, out int count) || count is < 0 or > 0xffffff)
-                throw new ArgumentException("Usage: set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT (0..16777215). Accepts campaign-v2, campaign-v3 or campaign-v4 and preserves its rules. No automatic estimate is available.");
-            return KnownHatchCountConversion.Run(Directory.GetCurrentDirectory(), args[1], args[2], count);
-        }
-        if (args.Length != 3) throw new ArgumentException("Usage: convert-current-checkpoint SOURCE NEW_DESTINATION (campaign-v2 or campaign-v3 to campaign-v4; content-v4 only)");
-        return CurrentCheckpointConversion.Run(Directory.GetCurrentDirectory(), args[1], args[2]);
-    }
-    catch (Exception error) when (error is ArgumentException or IOException or InvalidDataException or UnauthorizedAccessException)
-    {
-        Console.Error.WriteLine(error.Message);
-        return 2;
-    }
-}
-
-if (args.Length >= 2 && args[0] == "save" && args[1].StartsWith("upgrade-", StringComparison.Ordinal))
-{
-    Console.Error.WriteLine("save_upgrade_retired: only explicit convert-current-checkpoint SOURCE NEW_DESTINATION is supported.");
+    Console.Error.WriteLine("save_conversion_unsupported: old-save conversion and hatch-count correction are not supported; files were not changed.");
     return 2;
 }
 
@@ -85,5 +64,5 @@ if (args.Length == 2 && args[0] == "scenario" && args[1] == "smoke")
     if(repeat.State.Money!=100)throw new InvalidOperationException("reward_duplicated_after_load");
     Console.WriteLine(JsonSerializer.Serialize(new{scenario="smoke",passed=true,fixture="original engineering fixture, not FireRed content",commands,hashes,finalHash=CanonicalJson.Hash(session.State),money=session.State.Money,battleResult=session.State.Message,saveBytes=bytes.Length,rewardIdempotentAfterLoad=true},new JsonSerializerOptions{WriteIndented=true}));return 0;
 }
-Console.Error.WriteLine("Usage: Game.Tooling set-known-hatch-count SOURCE NEW_DESTINATION KNOWN_LIFETIME_COUNT; convert-current-checkpoint SOURCE NEW_DESTINATION; scenario smoke; content validate FILE.");return 2;
+Console.Error.WriteLine("Usage: Game.Tooling scenario smoke; content validate FILE.");return 2;
 sealed class TestBattleContent : IBattleContent {public MoveDefinition? FindMove(MoveId id)=>id.Value=="fixture:strike"?new(id,ElementType.Normal,40,100,35):null;}

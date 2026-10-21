@@ -11,11 +11,14 @@ using Game.Domain.WildBattle;
 namespace Game.Application;
 
 public enum CampaignTeachyTvBattleStage { Events, ChooseAction, ChooseMove, Bag, Party, MedicineTarget, Ending, Boundary, Finished }
-public sealed record CampaignTeachyTvBattleStep(SourceBattleEvent Event, WildRewardEvent? Reward = null, int? Recipient = null);
+public sealed record CampaignTeachyTvBattleStep(int EventIndex, WildRewardEvent? Reward = null, int? Recipient = null);
 public sealed record CampaignTeachyTvBattle(string Ticket, int Lesson, SourceBattleFrame Frame,
     ImmutableArray<CampaignTeachyTvBattleStep> Steps, int StepIndex, CampaignTeachyTvBattleStage Stage,
     PokemonInstance DisplayPlayer, PokemonInstance DisplayOpponent)
 {
+    public ImmutableArray<SourceBattleEvent> Events { get; init; } = [];
+    public CampaignBattleDisplayBatch? DisplayBatch { get; init; }
+    public SourceBattleEvent? CurrentEvent => CurrentStep is {} step ? Events[step.EventIndex] : null;
     public long Revision { get; init; }
     public string WaitId => Ticket + ":battle:" + Revision.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public ImmutableArray<SourcePokedudeInputCursor> ActionCursors { get; init; } = [new(), new()];
@@ -63,7 +66,8 @@ public static class CampaignTeachyTvBattleRules
         if (!started.Succeeded) throw new InvalidDataException(started.Fault);
         var frame = started.State!;
         var battle = new CampaignTeachyTvBattle(request.Ticket, request.Lesson.SourceIndex, frame, Steps(started.Events), 0,
-            CampaignTeachyTvBattleStage.Events, frame.Get(new(0)).Body!.Pokemon, frame.Get(new(1)).Body!.Pokemon) { RandomTrace = started.Trace };
+            CampaignTeachyTvBattleStage.Events, frame.Get(new(0)).Body!.Pokemon, frame.Get(new(1)).Body!.Pokemon) { RandomTrace = started.Trace, Events = started.Events,
+            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)) };
         return new(true, Prepare(mechanics.Catalog, definition, battle));
     }
 
@@ -184,7 +188,7 @@ public static class CampaignTeachyTvBattleRules
             if (b.Voiceover.Pending is not null || b.Stage is CampaignTeachyTvBattleStage.Boundary or CampaignTeachyTvBattleStage.Finished) return b;
             if (b.Stage == CampaignTeachyTvBattleStage.Events && b.StepIndex >= b.Steps.Length)
             {
-                b = b with { Steps = [], StepIndex = 0, Intercepted = false };
+                b = AdvanceDisplay(b, long.MaxValue) with { Steps = [], StepIndex = 0, Intercepted = false };
                 if (b.Frame.Rewards?.Pending is not null) return b with { Stage = CampaignTeachyTvBattleStage.Boundary, Boundary = "teachy_tv_battle_learning_not_scripted" };
                 if (b.Frame.Outcome != WildBattleOutcome.Ongoing && b.Frame.FourTurn?.Phase is null or SourceFourActionPhase.BattleEnded)
                     b = b with { Stage = CampaignTeachyTvBattleStage.Ending };
@@ -221,29 +225,49 @@ public static class CampaignTeachyTvBattleRules
         CampaignTeachyTvBattleStage.Party => ("CONTROLLER_CHOOSEPOKEMON", BattleSide.Player, "0"),
         CampaignTeachyTvBattleStage.Ending => ("CONTROLLER_ENDLINKBATTLE", BattleSide.Player, "0"),
         CampaignTeachyTvBattleStage.Events when b.CurrentStep is { Reward: WildRewardExperienceEvent } => ("CONTROLLER_PRINTSTRING", BattleSide.Player, "STRINGID_PKMNGAINEDEXP"),
-        CampaignTeachyTvBattleStage.Events when b.CurrentStep?.Event is SourceAttackStringEvent used => ("CONTROLLER_PRINTSTRING", (BattleSide)used.Actor.Value, "STRINGID_USEDMOVE"),
-        CampaignTeachyTvBattleStage.Events when b.CurrentStep?.Event is SourceActionBlockedEvent blocked && WildBattleStatus.IsSleeping(blocked.Status) => ("CONTROLLER_PRINTSTRING", (BattleSide)blocked.Side.Value, "STRINGID_PKMNFASTASLEEP"),
+        CampaignTeachyTvBattleStage.Events when b.CurrentEvent is SourceAttackStringEvent used => ("CONTROLLER_PRINTSTRING", (BattleSide)used.Actor.Value, "STRINGID_USEDMOVE"),
+        CampaignTeachyTvBattleStage.Events when b.CurrentEvent is SourceActionBlockedEvent blocked && WildBattleStatus.IsSleeping(blocked.Status) => ("CONTROLLER_PRINTSTRING", (BattleSide)blocked.Side.Value, "STRINGID_PKMNFASTASLEEP"),
         _ => null };
 
     private static ImmutableArray<CampaignTeachyTvBattleStep> Steps(ImmutableArray<SourceBattleEvent> events)
     {
         var result = ImmutableArray.CreateBuilder<CampaignTeachyTvBattleStep>();
-        foreach (var e in events)
+        for (int index = 0; index < events.Length; index++)
         {
+            var e = events[index];
             if (e is SourceRewardAppliedEvent reward)
-                foreach (var r in reward.Reward.Events) result.Add(new(e, r, reward.Recipient.Index));
+                foreach (var r in reward.Reward.Events) result.Add(new(index, r, reward.Recipient.Index));
             else if (e is not (SourceRewardLearningEvent or SourceOpponentRewardCompletedEvent or SourceEndedEvent or SourceOrderEvent or SourceTurnReadyEvent or SourcePpCommandEvent or SourceCalledPartySwitchedEvent) &&
-                e is not SourceStatusChangedEvent { Reason: "sleep-countdown" or "faint" }) result.Add(new(e));
+                e is not SourceStatusChangedEvent { Reason: "sleep-countdown" or "faint" }) result.Add(new(index));
         }
         return result.ToImmutable();
     }
     private static CampaignTeachyTvBattle Apply(CampaignTeachyTvBattle b, SourceFourActionResult result) =>
-        b with { Frame = result.State, Steps = Steps(result.Events), StepIndex = 0, Stage = CampaignTeachyTvBattleStage.Events,
+        b with { DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(b.Frame.Slots)), Events = result.Events,
+            Frame = result.State, Steps = Steps(result.Events), StepIndex = 0, Stage = CampaignTeachyTvBattleStage.Events,
             Intercepted = false, RandomTrace = b.RandomTrace.AddRange(result.Trace) };
+    private static CampaignTeachyTvBattle AdvanceDisplay(CampaignTeachyTvBattle b, long sequence)
+    {
+        var before = b.DisplayBatch!;
+        var after = before.AdvanceThrough(b.Events, sequence);
+        for (int i = before.NextEventIndex; i < after.NextEventIndex; i++)
+            if (b.Events[i] is SourceCalledPartySwitchedEvent switched)
+            {
+                // The hidden switch command replaces the complete active HUD identity,
+                // including max HP, before any subsequent HP receipt. Use its snapshot,
+                // not the final frame or a later reward already reduced in this batch.
+                var pokemon = switched.Replacement!.Body.Pokemon;
+                b = switched.Side.Value == 0 ? b with { DisplayPlayer = pokemon } : b with { DisplayOpponent = pokemon };
+            }
+        return b with { DisplayBatch = after };
+    }
     private static CampaignTeachyTvBattle ApplyDisplay(CampaignTeachyTvBattle b)
     {
+        // Repeated reward steps share one receipt; AdvanceThrough applies it once while
+        // the visible reward level below changes only at its authored step.
+        b = AdvanceDisplay(b, b.CurrentEvent!.Sequence);
         void Hp(int side, int hp) { b = side == 0 ? b with { DisplayPlayer = b.DisplayPlayer with { CurrentHp = hp } } : b with { DisplayOpponent = b.DisplayOpponent with { CurrentHp = hp } }; }
-        switch (b.CurrentStep?.Event)
+        switch (b.CurrentEvent)
         {
             case SourceHpChangedEvent e: Hp(e.Target.Value, e.HpAfter); break;
             case SourceStatusDamageEvent e: Hp(e.Side.Value, e.HpAfter); break;

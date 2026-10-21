@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using System.Text.Json;
 using Game.Application;
 using Game.Content;
@@ -105,15 +106,15 @@ public partial class CampaignView
         }
     }
     private bool TowerRevealing(CampaignWildBattle b)=>b.State.TowerBattleKind==PokemonTowerBattleKind.RevealedMarowak&&
-        b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is WildBattleStartedEvent&&_wildPage==1;
-    private bool PokemonTowerRevealInputLocked(CampaignWildBattle b)=>TowerRevealing(b)&&_towerRevealTicks<94||WildCurrentEvent(b) is WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Played or PokeFluteBattlePhase.Fanfare};
+        b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is SourceStartedEvent&&_wildPage==1;
+    private bool PokemonTowerRevealInputLocked(CampaignWildBattle b)=>TowerRevealing(b)&&_towerRevealTicks<94||WildCurrentEvent(b) is SourcePokeFluteEvent {Phase:PokeFluteBattlePhase.Played or PokeFluteBattlePhase.Fanfare};
     private PokemonTowerPresentationModel.OpponentAppearance? TowerOpponentAppearance()
     {
         if(PresentedWildBattle is not {} b||b.State.TowerBattleKind is not {} kind)return null;
         var phase=PokemonTowerPresentationModel.RevealPhase.NotApplicable;
         if(kind==PokemonTowerBattleKind.RevealedMarowak)
         {
-            bool intro=b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is WildBattleStartedEvent;
+            bool intro=b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is SourceStartedEvent;
             phase=intro&&(_wildPage==0||_wildPage==1&&_towerRevealTicks<47)?PokemonTowerPresentationModel.RevealPhase.BeforeReveal:PokemonTowerPresentationModel.RevealPhase.AfterReveal;
         }
         return PokemonTowerPresentationModel.Opponent(kind,phase,b.DisplayOpponent.SourceSpeciesId,(_catalog.SourceSpeciesName(b.DisplayOpponent.SourceSpeciesId) ?? throw new InvalidDataException("Pokemon species display name missing.")), _battleText["gText_Ghost"]);
@@ -132,7 +133,7 @@ public partial class CampaignView
         return true;
     }
     private bool PokemonTowerHidePlayer(CampaignWildBattle b,WildBattleSide side)=>side==WildBattleSide.Player&&b.State.TowerBattleKind is {} kind&&
-        b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is WildBattleStartedEvent&&_wildPage<(kind==PokemonTowerBattleKind.RevealedMarowak?3:2);
+        b.Phase==CampaignBattlePhase.Events&&WildCurrentEvent(b) is SourceStartedEvent&&_wildPage<(kind==PokemonTowerBattleKind.RevealedMarowak?3:2);
     private bool DrawPokemonTowerOpponent(CampaignWildBattle b)
     {
         var appearance=TowerOpponentAppearance();if(appearance is null)return false;
@@ -180,7 +181,7 @@ public partial class CampaignView
     private bool TowerFluteAudioFinished=>_sourceAudio is null||_audioFaulted||_sourceAudio.Snapshot().FanfareToken is null;
     private bool ProcessPokemonTowerFluteBattle(CampaignWildBattle b)
     {
-        if(WildCurrentEvent(b) is not WildBattlePokeFluteEvent e)return false;
+        if(WildCurrentEvent(b) is not SourcePokeFluteEvent e)return false;
         if(e.Phase==PokeFluteBattlePhase.Played)
         {
             if(!_busy&&_towerFluteBattleDrawnSequence==e.Sequence&&Engine.GetProcessFrames()>_towerFluteBattleDrawnFrame)Apply(new("ack"));
@@ -192,30 +193,30 @@ public partial class CampaignView
     }
     private void NotePokemonTowerFluteBattle(CampaignWildBattle b)
     {
-        if(WildCurrentEvent(b) is WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Played} e)
+        if(WildCurrentEvent(b) is SourcePokeFluteEvent {Phase:PokeFluteBattlePhase.Played} e)
         { _towerFluteBattleDrawnSequence=e.Sequence;_towerFluteBattleDrawnFrame=Engine.GetProcessFrames(); }
     }
-    private bool PokemonTowerSilentEvent(CampaignWildBattle b)=>WildCurrentEvent(b) is {} e&&e is not WildBattlePokeFluteEvent&&PokemonTowerWildMessage(e) is {Symbol.Length:0};
-    private ForestMessage? PokemonTowerWildMessage(WildBattleEvent current)=>current switch
+    private bool PokemonTowerSilentEvent(CampaignWildBattle b)=>WildCurrentEvent(b) is {} e&&e is not SourcePokeFluteEvent&&PokemonTowerWildMessage(e) is {Symbol.Length:0};
+    private ForestMessage? PokemonTowerWildMessage(SourceBattleEvent current)=>current switch
     {
-        WildBattleTowerGhostActionEvent {StringId:"STRINGID_MONTOOSCAREDTOMOVE"} e=>new("sText_TooScaredToMove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleTowerGhostActionEvent {StringId:"STRINGID_GHOSTGETOUTGETOUT"}=>new("sText_GetOutGetOut"),
-        WildBattleTowerBallDodgedEvent=>new("sText_ItDodgedBall"),
-        WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.NoEffect}=>new("sText_PlayedFluteCatchyTune",("B_LAST_ITEM","POKé FLUTE")),
-        WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Played}=>new("sText_PlayedThe",("B_LAST_ITEM","POKé FLUTE")),
-        WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Fanfare}=>new("sText_PlayedThe",("B_LAST_ITEM","POKé FLUTE")),
-        WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Awakened}=>new("sText_PkmnHearingFluteAwoke"),
-        WildBattleSpiteEvent e=>new("sText_PkmnReducedPP",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Target)),("B_BUFF1",MoveName(e.Move)),("B_BUFF2",(e.PpBefore-e.PpAfter).ToString())),
-        WildBattleTowerVolatileEvent {Applied:false}=>new(""),
-        WildBattleTowerVolatileEvent {Effect:"curse"}=>new(""),
-        WildBattleTowerVolatileEvent {Effect:"mean-look"} e=>new("sText_TargetCantEscapeNow",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleTowerVolatileEvent {Effect:"nightmare"} e=>new("sText_PkmnFellIntoNightmare",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleTowerVolatileEvent {Effect:"destiny-bond"} e=>new("sText_PkmnTryingToTakeFoe",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleTowerHpEvent {Effect:"curse-cost"} e=>new("sText_PkmnLaidCurse",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(Opposite(e.Side)))),
-        WildBattleTowerHpEvent {Effect:"curse"} e=>new("sText_PkmnAfflictedByCurse",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleTowerHpEvent {Effect:"nightmare"} e=>new("sText_PkmnLockedInNightmare",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
-        WildBattleTowerHpEvent {Effect:"destiny-bond"} e=>new("sText_PkmnTookFoe",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(Opposite(e.Side)))),
-        WildBattleMoveFailedEvent {Reason:"target-awake" or "no-reducible-last-move" or "stat-limits" or "semi-invulnerable" or "already-cursed" or "already-trapped" or "already-nightmare"}=>new("sText_ButItFailed"),
+        SourceTowerGhostActionEvent {StringId:"STRINGID_MONTOOSCAREDTOMOVE"} e=>new("sText_TooScaredToMove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceTowerGhostActionEvent {StringId:"STRINGID_GHOSTGETOUTGETOUT"}=>new("sText_GetOutGetOut"),
+        SourceTowerBallDodgedEvent=>new("sText_ItDodgedBall"),
+        SourcePokeFluteEvent {Phase:PokeFluteBattlePhase.NoEffect}=>new("sText_PlayedFluteCatchyTune",("B_LAST_ITEM","POKé FLUTE")),
+        SourcePokeFluteEvent {Phase:PokeFluteBattlePhase.Played}=>new("sText_PlayedThe",("B_LAST_ITEM","POKé FLUTE")),
+        SourcePokeFluteEvent {Phase:PokeFluteBattlePhase.Fanfare}=>new("sText_PlayedThe",("B_LAST_ITEM","POKé FLUTE")),
+        SourcePokeFluteEvent {Phase:PokeFluteBattlePhase.Awakened}=>new("sText_PkmnHearingFluteAwoke"),
+        SourceSpiteEvent e=>new("sText_PkmnReducedPP",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Target)),("B_BUFF1",MoveName(e.Move)),("B_BUFF2",(e.PpBefore-e.PpAfter).ToString())),
+        SourceTowerVolatileEvent {Applied:false}=>new(""),
+        SourceTowerVolatileEvent {Effect:"curse"}=>new(""),
+        SourceTowerVolatileEvent {Effect:"mean-look"} e=>new("sText_TargetCantEscapeNow",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceTowerVolatileEvent {Effect:"nightmare"} e=>new("sText_PkmnFellIntoNightmare",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceTowerVolatileEvent {Effect:"destiny-bond"} e=>new("sText_PkmnTryingToTakeFoe",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceTowerHpEvent {Effect:"curse-cost"} e=>new("sText_PkmnLaidCurse",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(Opposite(e.Side)))),
+        SourceTowerHpEvent {Effect:"curse"} e=>new("sText_PkmnAfflictedByCurse",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceTowerHpEvent {Effect:"nightmare"} e=>new("sText_PkmnLockedInNightmare",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side))),
+        SourceTowerHpEvent {Effect:"destiny-bond"} e=>new("sText_PkmnTookFoe",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(e.Side)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(Opposite(e.Side)))),
+        SourceMoveFailedEvent {Reason:"target-awake" or "no-reducible-last-move" or "stat-limits" or "semi-invulnerable" or "already-cursed" or "already-trapped" or "already-nightmare"}=>new("sText_ButItFailed"),
         _=>null
     };
 }

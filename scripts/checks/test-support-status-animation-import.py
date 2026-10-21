@@ -5,6 +5,7 @@ sys.dont_write_bytecode=True
 import argparse,importlib.util,io,json,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
+from indexed_material_expectations import assert_preserved_materials, assert_source_pixels
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--reference',type=Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--generated',type=Path,default=ROOT/'content/generated/battle/animations');p.add_argument('--previous',type=Path);a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
@@ -47,7 +48,7 @@ class SupportStatusImportTests(unittest.TestCase):
    with Image.open(io.BytesIO(imp.read(a.reference,'graphics/battle_anims/sprites/'+pal+'.png'))) as im:palette=im.getpalette()[:48]
    colors=[sum((palette[3*i+c]//8)<<(5*c) for c in range(3)) for i in range(16)]
    with Image.open(io.BytesIO(imp.read(a.reference,'graphics/battle_anims/sprites/'+asset+'.png'))) as im:
-    self.assertEqual(shape,im.size);self.assertEqual([colors[i]|(32768 if i else 0) for i in im.tobytes()],list(struct.unpack_from('<'+'H'*(shape[0]*shape[1]),self.pixels[asset.replace('_','-')],4)));indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
+    self.assertEqual(shape,im.size);assert_source_pixels(self,self.pack,self.pixels,asset.replace('_','-'),shape,im.tobytes(),colors,'ANIM_TAG_'+asset.upper());indices=[v for y in range(0,im.height,8) for x in range(0,im.width,8) for v in im.crop((x,y,x+8,y+8)).tobytes()]
    stem=asset.replace('_','-');self.assertEqual(struct.pack('<16H',*colors),self.pixels[stem+'.pal16']);self.assertEqual(bytes(indices[i]|indices[i+1]<<4 for i in range(0,len(indices),2)),self.pixels[stem+'.4bpp'])
  def test_bad_material_registration_or_callback_fails_closed(self):
   for path,old,new in [('src/data/battle_anim.h',b'{gBattleAnimSpritePal_Finger, ANIM_TAG_TAG_HAND}',b'{gBattleAnimSpritePal_HollowOrb, ANIM_TAG_TAG_HAND}'),('src/data/battle_anim.h',b'{gBattleAnimSpritePal_HollowOrb, ANIM_TAG_HOLLOW_ORB}',b'{gBattleAnimSpritePal_Finger, ANIM_TAG_HOLLOW_ORB}'),('src/battle_anim_effects_3.c',b'.callback = AnimHelpingHandClap,',b'.callback = SpriteCallbackDummy,'),('src/battle_anim_effects_1.c',b'.callback = AnimFlyingMusicNotes,',b'.callback = AnimSlowFlyingMusicNotes,')]:
@@ -64,9 +65,5 @@ class SupportStatusImportTests(unittest.TestCase):
    for row in old['scripts']:self.assertEqual(row,rows[row['moveId']])
    if file=='elemental.json':
     for row in old['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
-    for group in ['assets','indexedAssets']:
-     for row in old[group]:
-      self.assertIn(row,self.pack[group])
-      for field in ['path','indicesPath','palettePath']:
-       if field in row:self.assertEqual((baseline/row[field]).read_bytes(),self.pixels[row[field].removeprefix('elemental-').removesuffix('.rgb555')])
+    assert_preserved_materials(self,old,self.pack,baseline,self.pixels,'elemental-')
 if __name__=='__main__':unittest.main()

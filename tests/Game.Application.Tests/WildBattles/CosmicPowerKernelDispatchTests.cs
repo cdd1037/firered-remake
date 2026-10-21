@@ -18,8 +18,8 @@ public sealed class CosmicPowerKernelDispatchTests
         new("cosmic-power", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("cosmic-power", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),
-            index, null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("cosmic-power", null!, new(), events,
+            index, null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant NaturalMon(string species, int level, string move)
     {

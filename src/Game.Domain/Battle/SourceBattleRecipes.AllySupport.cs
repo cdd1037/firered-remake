@@ -2,15 +2,9 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasAllySupportRecipe(string effect) => effect is "EFFECT_FOLLOW_ME" or "EFFECT_HELPING_HAND";
-    internal virtual bool HelpingHand(BattlerSlot slot) => false;
-    internal virtual bool AllySupportAbsent(BattlerSlot slot) => true;
-    internal virtual void SetHelpingHand(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_ally_support_storage");
-    internal virtual int FollowMeTimer(BattleSide side) => 0;
-    internal virtual void SetFollowMe(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_ally_support_storage");
-    internal virtual void SetAllySupportTarget(BattlerSlot slot) { }
 
     internal void ExecuteAllySupport(BattlerSlot actor, int slot, PokemonMoveDefinition move, ref bool handled)
     {

@@ -9,46 +9,10 @@ namespace Game.Domain.Battle;
 internal enum SourceBattlerEndTurnStep { Ingrain, Abilities, Items1, LeechSeed, Poison, Toxic, Burn, Nightmare,
     Curse, Wrap, Uproar, Thrash, Disable, Encore, LockOn, Charge, Taunt, Yawn, Items2 }
 
-/// <summary>The one source residual scheduler and migrated recipes. Contexts supply storage,
-/// phase-only compatibility commands and boundaries; they never supply another weather/status loop.</summary>
-internal abstract partial class SourceEndTurnContext
+/// <summary>The canonical frame owns the source residual scheduler, storage and phase boundaries.</summary>
+internal sealed partial class FrameEndTurnContext
 {
-    internal abstract int Turn { get; }
-    internal abstract long Revision { get; }
-    internal abstract long EventSequence { get; }
-    internal abstract int BattlerCount { get; }
-    internal abstract bool Ongoing { get; }
-    internal abstract bool AdvancedAbilitiesEnabled { get; }
-    internal abstract bool ToxicEnabled { get; }
-    internal abstract bool RainTimerEnabled { get; }
-    internal abstract WildBattleCombatant Get(BattlerSlot slot);
-    internal abstract void Set(BattlerSlot slot, WildBattleCombatant body);
-    internal abstract bool IsAbsent(BattlerSlot slot);
-    internal abstract bool WeatherSuppressed { get; }
-    internal abstract bool HasWeather(string weather);
-    internal abstract bool WeatherDamageEnabled(BattlerSlot slot, string weather);
-    internal abstract bool UnderGroundOrWater(BattlerSlot slot);
-    internal abstract int GetTimer(BattleSide side, string effect);
-    internal abstract void SetTimer(BattleSide side, string effect, int value);
-    internal abstract void Add(Func<long, SourceBattleEvent> create);
-    internal abstract ushort Draw(string purpose, int bound);
-    internal abstract string Purpose(BattlerSlot slot, string effect);
-    internal abstract void RecordAbility(BattlerSlot slot, string ability);
-    internal abstract void ChangeStatus(BattlerSlot slot, uint status, string reason);
-    internal abstract void Faint(BattlerSlot slot);
-    internal virtual void FaintAs(BattlerSlot slot, BattlerSlot? scriptAttacker) => Faint(slot);
-    internal abstract void DamageOutcome();
-    internal abstract void CheckTeamsLost();
-    internal abstract void Prepare();
-    internal abstract void ExposeFaintedActions();
-    internal abstract void FaintedActionItems();
-    internal abstract void Wish(PokemonCatalog catalog, BattlerSlot slot);
-    internal abstract void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot);
-    internal abstract bool Future(PokemonCatalog catalog, BattlerSlot slot);
-    internal abstract bool Perish(BattlerSlot slot);
-    internal abstract void Cleanup();
-    internal virtual bool BindingStoresMove => true;
-    internal virtual void ClearBindingSource(BattlerSlot slot) { }
+    internal bool BindingStoresMove => true;
 
     internal void BindingResidual(BattlerSlot slot)
     {

@@ -175,11 +175,11 @@ public sealed class ExpulsionAnimationKernelTests
             Assert.AreEqual(WildBattleOutcome.Escaped, result.State.Outcome); Assert.IsFalse(result.Events.OfType<SourceForcedOutEvent>().Any());
             var ended = result.Events.OfType<SourceEndedEvent>().Single();
             Assert.AreEqual(new SourceMoveEscapeReceipt(new(actor), definition.Id), ended.MoveEscape);
-            var exported = (WildBattleEndedEvent)SourceBattleEventAdapter.Export(ended);
-            Assert.AreEqual(new WildBattleMoveEscapeReceipt((WildBattleSide)actor, definition.Id), exported.MoveEscape);
+            var exported = (SourceEndedEvent)OverlayHitAnimationKernelFixture.Single([ended], 0).Events[0];
+            Assert.AreEqual(new SourceMoveEscapeReceipt(new BattlerSlot(actor), definition.Id), exported.MoveEscape);
             Assert.AreEqual(ended.Sequence, exported.Sequence); Assert.AreEqual(ended.Turn, exported.Turn);
             Assert.AreEqual(ended, JsonSerializer.Deserialize<SourceBattleEvent>(JsonSerializer.Serialize<SourceBattleEvent>(ended)));
-            Assert.AreEqual(exported, JsonSerializer.Deserialize<WildBattleEvent>(JsonSerializer.Serialize<WildBattleEvent>(exported)));
+            Assert.AreEqual(exported, JsonSerializer.Deserialize<SourceBattleEvent>(JsonSerializer.Serialize<SourceBattleEvent>(exported)));
             Assert.IsFalse(result.Events.OfType<SourceCalledPartySwitchedEvent>().Any()); Shared.Check(result.Events, 100, true);
         }
         foreach (bool single in new[] { false, true })

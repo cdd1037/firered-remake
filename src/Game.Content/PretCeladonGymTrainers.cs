@@ -14,12 +14,11 @@ public static class PretCeladonGymTrainers
     {
         var d=ContentJson.ParseStrict<CeladonGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/data/trainer-battles/celadon-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
         if (d.SchemaVersion != 1) throw new InvalidDataException("Unsupported CeladonGym trainer document schema.");
-        CeladonGymTrainerPartyFactory.ValidateCatalog(new(d.Trainers.ToImmutableDictionary(t => t.Id),
-            d.Battles.ToImmutableDictionary(b => b.Trainer)));
+        TrainerCatalogValidation.Validate(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, GymTrainerSourceValidation.ValidateCeladonGym);
         return d;
     }
-    public static CeladonGymTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
-    {var d=LoadDocument(canonical, root);return new(d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
+    public static OrdinaryTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
+    {var d=LoadDocument(canonical, root);return new(d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles, "celadon-gym-trainer");}
     private static void Require(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
     private static byte[] Read(string root,string relative)
     {

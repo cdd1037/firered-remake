@@ -168,22 +168,22 @@ public sealed partial class CampaignSession
                 return "save_forest_trainer_reward_invalid";
             if (h.Outcome == WildBattleOutcome.Won) winners.Add(h.TrainerId);
         }
-        if(winners.Contains(PewterTrainerPartyFactory.Brock.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))
-            winners.Add(PewterTrainerPartyFactory.Liam.Value);
-        if(winners.Contains(CeruleanTrainerPartyFactory.Misty.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
-        {winners.Add(CeruleanTrainerPartyFactory.Diana.Value);winners.Add(CeruleanTrainerPartyFactory.Luis.Value);}
-        if(winners.Contains(VermilionGymTrainerPartyFactory.LtSurge.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))
-            foreach(var id in VermilionGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(winners.Contains(CeladonGymTrainerPartyFactory.Erika.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET"))
-            foreach(var id in CeladonGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(winners.Contains(FuchsiaGymTrainerPartyFactory.Koga.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"))
-            foreach(var id in FuchsiaGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
-        if(winners.Contains(SaffronGymTrainerPartyFactory.Sabrina.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET"))
-            foreach(var id in SaffronGymTrainerPartyFactory.SupportedTrainers)winners.Add(id.Value);
+        if(winners.Contains("pret:TRAINER_LEADER_BROCK")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))
+            winners.Add("pret:TRAINER_CAMPER_LIAM");
+        if(winners.Contains("pret:TRAINER_LEADER_MISTY")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
+        {winners.Add("pret:TRAINER_PICNICKER_DIANA");winners.Add("pret:TRAINER_SWIMMER_MALE_LUIS");}
+        if(winners.Contains("pret:TRAINER_LEADER_LT_SURGE")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))
+            foreach(var id in TrainersOnMap(new(VermilionGymMap)))winners.Add(id.Value);
+        if(winners.Contains("pret:TRAINER_LEADER_ERIKA")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET"))
+            foreach(var id in TrainersOnMap(new("map.celadon-city-gym")))winners.Add(id.Value);
+        if(winners.Contains("pret:TRAINER_LEADER_KOGA")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"))
+            foreach(var id in TrainersOnMap(new("map.fuchsia-city-gym")))winners.Add(id.Value);
+        if(winners.Contains("pret:TRAINER_LEADER_SABRINA")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE06_GET"))
+            foreach(var id in TrainersOnMap(new("map.saffron-city-gym")))winners.Add(id.Value);
         if(winners.Contains(CinnabarTrainerPartyFactory.Blaine.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"))
             foreach(var symbol in CinnabarGymTrainerSymbols)winners.Add("pret:"+symbol);
-        if(winners.Contains(ViridianGymTrainerPartyFactory.Giovanni.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET"))
-            foreach(var id in ViridianGymTrainerPartyFactory.GymTrainers)winners.Add(id.Value);
+        if(winners.Contains("pret:TRAINER_LEADER_GIOVANNI")&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET"))
+            foreach(var id in TrainersOnMap(new(ViridianGymMap)).Where(id => id.Value != "pret:TRAINER_LEADER_GIOVANNI"))winners.Add(id.Value);
         winners.RemoveWhere(id=>IsPokemonLeagueChampion(new(id))&&!state.BattledTrainers.Contains(id));
         var recorded = state.BattledTrainers.Where(id => OrdinaryTrainerIds.Contains(new TrainerId(id)));
         return winners.SetEquals(recorded) ? null : "save_forest_trainer_flag_mismatch";

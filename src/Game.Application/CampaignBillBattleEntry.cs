@@ -6,11 +6,27 @@ public sealed partial class CampaignSession
 {
     private MapId OrdinaryTrainerMap(TrainerId trainer) => ResolveTrainerOccurrence(trainer).Map;
 
-    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsLostCaveTrainer(trainer)?"0x0":IsFourIslandTrainer(trainer)?"0x0":IsSeviiRubyTrainer(trainer)?SeviiRubyNoIntroActorScript(trainer):IsPokemonLeagueTrainer(trainer)?PokemonLeagueTrainerActorScript(trainer):IsLeagueRivalTrainer(trainer)?"0x0":IsFirstSeviiTrainer(trainer)?"ThreeIsland_EventScript_Biker":IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
-        IsPokemonTowerRival(trainer)||IsCeruleanRival(trainer)||IsSsAnneRival(trainer)?"0x0":
-        IsCeruleanTrainer(trainer)?"CeruleanCity_EventScript_Grunt":
-        trainer==Game.Domain.Trainers.BillTrainerPartyFactory.Rocket?"Route24_EventScript_Rocket":
-        throw new InvalidDataException("ordinary_no_intro_actor");
+    private string OrdinaryNoIntroActorScript(TrainerId trainer)
+    {
+        if (IsLostCaveSelphy(trainer) || IsFourIslandGrunt(trainer) || IsLeagueRivalTrainer(trainer) ||
+            IsSilphRival(trainer) || IsPokemonTowerRival(trainer) || IsCeruleanRival(trainer) || IsSsAnneRival(trainer))
+            return "0x0";
+        if (IsSeviiRubyTrainer(trainer)) return SeviiRubyNoIntroActorScript(trainer);
+        if (IsPokemonLeagueTrainer(trainer)) return PokemonLeagueTrainerActorScript(trainer);
+        if (IsFirstSeviiTrainer(trainer)) return "ThreeIsland_EventScript_Biker";
+        if (IsCinnabarTrainer(trainer)) return OrdinaryTrainerScript(trainer).ScriptEntry;
+        // These source scenes battle through a script other than their actor's
+        // ordinary interaction program. Admission still requires the exact call.
+        return trainer.Value switch
+        {
+            "pret:TRAINER_BOSS_GIOVANNI_2" => "0x0",
+            "pret:TRAINER_BOSS_GIOVANNI" => "RocketHideout_B4F_EventScript_Giovanni",
+            "pret:TRAINER_SUPER_NERD_MIGUEL" => "MtMoon_B2F_EventScript_Miguel",
+            "pret:TRAINER_TEAM_ROCKET_GRUNT_5" => "CeruleanCity_EventScript_Grunt",
+            "pret:TRAINER_TEAM_ROCKET_GRUNT_6" => "Route24_EventScript_Rocket",
+            _ => throw new InvalidDataException("ordinary_no_intro_actor")
+        };
+    }
 
     // BattleSetup_GetTerrainId (battle_setup.c:466), metatile_behavior.c and fixed
     // map headers. This rule terrain is independent from presentation background overrides.

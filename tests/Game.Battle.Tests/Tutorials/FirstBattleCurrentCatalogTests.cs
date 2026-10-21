@@ -18,12 +18,14 @@ public sealed class FirstBattleCurrentCatalogTests
     private static PretCampaignCatalog Content => TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
     private static PokemonCatalog Catalog => Content.PokemonContent!.Catalog;
 
-    // These snapshots freeze bd6a6f5 before the profile refactor. They are regression evidence,
-    // not an independent source oracle. Normal tests never generate or rewrite expected values.
+    // These regression snapshots originate at bd6a6f5; they are not an independent source oracle.
+    // Updated only for the documented Nickname -> CustomNickname serialization rename: changing
+    // that property name back in preserved pre-refactor output exactly reconstructs all three old
+    // hashes, with every value and array order unchanged. Normal tests never rewrite expectations.
     [TestMethod]
-    [DataRow("BULBASAUR", "82C29367B74BBA3E32A588F35269951C7E2344BBBF3AAC75075163E8A58481E0")]
-    [DataRow("CHARMANDER", "DB6DFB5D2F8C51CA04F482AF6028ADB2D493B74F175D16EEC955A1C803F01692")]
-    [DataRow("SQUIRTLE", "C6ED19E6718103E1B9C5BB4A25E8282EB5FF2B52F3CAD0673B4BAD01B98DEA7F")]
+    [DataRow("BULBASAUR", "780442D291FC988CBAEA82D46CB30A0370F4C0F9E9F384540D8E8A8FC4319A54")]
+    [DataRow("CHARMANDER", "6138AEB78012577A8163DD822B3959506583F4ED8D8CC62B1C9713C6AAA020D6")]
+    [DataRow("SQUIRTLE", "B404A3F319C78BAE45C88316B5DE75CB644DA838B9CA12D79DCC44BD0A8E7EB1")]
     public void OriginalCatalogPreservesEventsRewardsAndEveryRandomDraw(string species, string expected)
     {
         var snapshots = new List<object>();

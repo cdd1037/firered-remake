@@ -2,20 +2,15 @@ using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasChargeRecipe(string effect) => effect is "EFFECT_RAZOR_WIND" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_SOLAR_BEAM" or "EFFECT_SKULL_BASH" or "EFFECT_SKY_ATTACK";
-    internal virtual bool ChargeLocked(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock?.Kind == WildBattleCalledLockKind.Charge;
-    internal virtual WildBattleSemiInvulnerable SemiInvulnerable(BattlerSlot target) => WildBattleRules.CalledSemiInvulnerable(Get(target));
-    internal abstract void ChangeCharge(BattlerSlot actor, PokemonMoveDefinition move, bool locked, string reason);
-    internal abstract void ChargePp(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool attackString);
-    internal abstract void ChargeNoPpDeduct();
-    internal virtual bool ChargeAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => SourceGenericAccuracy(actor,target,move,purpose);
-    internal virtual int ChargeDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent, string purpose) =>
+    internal bool ChargeAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => SourceGenericAccuracy(actor,target,move,purpose);
+    internal int ChargeDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent, string purpose) =>
         AdjustHeldDamage(target,move.Id,SourceGenericDamage(catalog,Get(actor),Get(target),target,move,critical,percent),purpose);
-    internal virtual bool ChargeImmune(PokemonCatalog catalog, BattlerSlot target, PokemonMoveDefinition move) => FixedDamageType(catalog,target,move).Immune;
-    internal virtual void ChargeReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => SourceGenericEffectiveness(catalog,actor,target,move);
-    internal virtual void ChargeFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move,string purpose,int lost) => RolloutFinish(catalog,actor,target,move,purpose,lost);
+    internal bool ChargeImmune(PokemonCatalog catalog, BattlerSlot target, PokemonMoveDefinition move) => FixedDamageType(catalog,target,move).Immune;
+    internal void ChargeReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => SourceGenericEffectiveness(catalog,actor,target,move);
+    internal void ChargeFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move,string purpose,int lost) => RolloutFinish(catalog,actor,target,move,purpose,lost);
     private bool chargeRelease;
     private bool sunnyChargePrepared;
     // SolarBeam's sun branch is before attackcanceler, including on an existing charge.

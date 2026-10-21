@@ -4,7 +4,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasHitSequenceRecipe(string effect) => effect is
         "EFFECT_RAGE" or "EFFECT_FURY_CUTTER" or "EFFECT_TRIPLE_KICK" or "EFFECT_FAKE_OUT";
@@ -36,7 +36,7 @@ internal abstract partial class SourceRecipeContext
             ChangeStage(target, target, WildBattleStat.Attack, 1, move);
     }
 
-    internal virtual void HitSequenceReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void HitSequenceReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
 
     internal void ExecuteHitSequence(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,

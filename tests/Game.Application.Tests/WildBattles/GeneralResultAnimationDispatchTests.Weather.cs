@@ -41,8 +41,14 @@ public sealed partial class GeneralResultAnimationDispatchTests
                 CampaignGeneralAnimationBoundary.AfterText, entry, substitutes);
             Assert.AreEqual(weather switch { "rain" => "sText_RainContinues", "sandstorm" => "sText_SandstormRages",
                 "sun" => "sText_SunlightStrong", _ => "sText_HailContinues" }, CampaignWeatherContinuationPresentation.ContinuationSymbol(weather));
-            if (single) Assert.AreEqual(paired, CampaignWeatherContinuationPresentation.At(
-                new SourceBattleEvent[] { timer, continued }.Select(SourceBattleEventAdapter.Export).ToArray(), 0));
+            if (single)
+            {
+                MoveId?[] doubleEntry = new MoveId?[4]; doubleEntry[controller] = Id("DIG");
+                var shared = At([timer, continued], 0, false, doubleEntry, [true, true, true, true]);
+                Assert.IsNotNull(shared);
+                Assert.AreEqual(cue, shared with { SpriteVisibility = cue.SpriteVisibility });
+                CollectionAssert.AreEqual(cue.SpriteVisibility.ToArray(), shared.SpriteVisibility.Take(2).ToArray());
+            }
         }
         Assert.Throws<ArgumentOutOfRangeException>(() => CampaignWeatherContinuationPresentation.ContinuationSymbol("snow"));
     }

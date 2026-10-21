@@ -126,7 +126,7 @@ internal static class ChargeCopyAnimationKernelFixture
         throw new InvalidOperationException($"No actual {branch} in 1024 public-turn-start seeds.");
     }
     internal static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        Envelope.Single(events, index) with { SourceEvents = [] };
+        Envelope.Single(events, index);
     internal static CampaignMoveAnimationDecision Project(ImmutableArray<SourceBattleEvent> events, int index,
         bool single, bool result, SourceBattleScene scene = SourceBattleScene.On) => single
         ? result ? AnimationDispatchFixture.AtResult(Single(events, index), true, scene) : AnimationDispatchFixture.AtAttackText(Single(events, index), true, scene)

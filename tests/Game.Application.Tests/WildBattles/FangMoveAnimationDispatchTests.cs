@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -15,25 +16,14 @@ public sealed class FangMoveAnimationDispatchTests
 {
     private static readonly (string Name, int Id, string Species, int Level)[] Moves =
         [("HYPER_FANG",158,"RATTATA",13),("SUPER_FANG",162,"RATTATA",34),("POISON_FANG",305,"ZUBAT",41)];
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static SourceMechanicsCatalog Mechanics =>
-        TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
+
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
         new("fang-moves", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("fang-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("fang-moves", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name); var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
     private static WildBattleCombatant[] Bodies(int id, int actor = 0)
     {
         var move = Moves.Single(m => m.Id == id);
@@ -41,20 +31,7 @@ public sealed class FangMoveAnimationDispatchTests
         bodies[actor] = NaturalMon(move.Species, move.Level, move.Name) with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
-    private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
-    {
-        static WildBattleCalledPartyMember Member(WildBattleCombatant body) =>
-            new(body.Pokemon, body.HeldItem, WildBattleTransformationRules.PersistentStatus(body));
-        var frame = new SourceBattleFrame {
-            Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, BattleKind = WildBattleCalledBattleKind.Trainer, Rng = new(31),
-            Parties = [new(BattleSide.Player, [Member(bodies[0]), Member(bodies[2])]), new(BattleSide.Opponent, [Member(bodies[1]), Member(bodies[3])])],
-            Slots = Enumerable.Range(0, 4).Select(i => new SourceBattleSlot(new(i), new((BattleSide)(i & 1), i / 2), 1, bodies[i])).ToImmutableArray()
-        };
-        var entry = SourceFourEntryAbilities.InitializeEntry(Mechanics.Catalog, frame, frame.Revision);
-        Assert.IsTrue(entry.Succeeded, entry.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(entry.State));
-        return entry.State with { Rng = new(seed) };
-    }
+
     private static SourceKernelResult Resolve(SourceBattleFrame frame, int actor = 0, int target = 1)
     {
         var result = SourceBattleKernel.ResolveAction(Mechanics.Catalog, frame,
@@ -62,24 +39,7 @@ public sealed class FangMoveAnimationDispatchTests
         Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
         return result;
     }
-    private static SourceFourActionResult Ordered(SourceBattleFrame frame, int actor, int target)
-    {
-        var selected = frame.Slots[actor].Body!.Pokemon.Moves[0].Move;
-        var choices = frame.Slots.Select(c => {
-            var move = Mechanics.Catalog.Moves[c.Body!.Pokemon.Moves[0].Move];
-            int recipient = c.Slot.Value == actor ? target : move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? c.Slot.Value : c.Slot.Value ^ 1;
-            return new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
-        }).ToImmutableArray();
-        var result = SourceFourActionTurns.BeginActions(Mechanics.Catalog, frame, frame.Revision, choices);
-        for (int step = 0; step < 12; step++)
-        {
-            Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
-            if (result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value == actor && e.Move == selected)) return result;
-            Assert.IsNotNull(result.Continuation, "The selected natural fang move must execute.");
-            result = SourceFourActionTurns.Advance(Mechanics.Catalog, result.State, result.Continuation.Value);
-        }
-        throw new InvalidOperationException("The fang move did not execute within one public turn.");
-    }
+
     private static SourceFourActionResult Run(SourceBattleFrame frame,int actor=0,int target=1)
     {
         if(frame.Slots[actor].Body!.Pokemon.Moves[0].Move==Id("HYPER_FANG"))return Ordered(frame,actor,target);

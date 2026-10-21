@@ -12,6 +12,6 @@ public sealed partial class PretCampaignCatalog
     public PretCeladonGymRegion CeladonGymRegion { get; }
     public PokemonPresentationPackage? CeladonGymPokemon { get; }
     public PretCeladonGymItemsDocument? CeladonGymItems { get; }
-    public CeladonGymTrainerCatalog? CeladonGymTrainers { get; }
+    public OrdinaryTrainerCatalog? CeladonGymTrainers { get; }
 
 }

@@ -4,8 +4,8 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override PokemonCatalog TypeResultCatalog => catalog;
-    internal override void SourceTypeNoEffect(BattlerSlot target, bool clearHitType)
+    internal PokemonCatalog TypeResultCatalog => catalog;
+    internal void SourceTypeNoEffect(BattlerSlot target, bool clearHitType)
     {
         commandNoEffect = true;
         var cell = Frame.Get(target);

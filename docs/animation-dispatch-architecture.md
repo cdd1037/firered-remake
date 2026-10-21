@@ -6,13 +6,15 @@ The post-content audit identified two parallel authorities: a move-symbol/number
 
 `CampaignMoveAnimationPresentation` receives the actual `PokemonMoveDefinition` catalog and a predicate backed by the scene's resolved scripts. A definition supplies `SourceMoveId`; the resolved script must have both that ID and the corresponding source `Move_*` label. Missing definitions, invalid metadata, missing scripts, or a mismatched label fail closed. There is no copied list of admitted move IDs in Application.
 
-Singles retain their existing exported event envelope. A small explicit adapter converts the receipt kinds consumed by invocation matching into canonical source receipts, including PP-owner identity. Unconsumed receipts retain sequence and turn. Both modes then use one invocation validator. Grouped/stat result callbacks continue to use their existing authoritative result validators and event-time projection; no fake double-battle frame or final-state reconstruction is created.
+Singles, doubles and Teachy TV consume canonical SourceBattleEvent receipts directly, including PP-owner identity; the legacy envelope and reverse adapter are removed. A canonical receipt is acknowledged once, while switch text subpages and tutorial steps retain their own presentation timing. Both battle modes use one invocation validator. Grouped/stat callbacks retain authoritative result validators and event-time projection from immutable entry bodies, not a fake double-battle frame or final-state reconstruction.
 
 Real source distinctions remain explicit: doubles target revisits, setup-only Wish/Future Sight, self-destruction, primary status/recovery, and grouped stat timing. Per-hit scheduling and planned-hit bounds come from the source move effect (`MULTI_HIT`, `DOUBLE_HIT`, `TWINEEDLE`, `TRIPLE_KICK`) and still require an available matching script. Primary and grouped stat outputs also obtain numeric source identity from the supplied catalog.
 
 ## Resource boundary
 
 Import tooling exposes elemental script discovery separately from pixel generation. The background producer defers to those complete discovered programs, so sharing a callback cannot publish a second root without its owning task/material metadata. This is source discovery, not another move-ID exclusion list.
+
+Cached resolved bindings retain shared immutable materials and commands. Public move/general/custom resolution detaches its four callback-facing palette collections; callers cannot corrupt a later resolution through a mutable bank. This deliberately does not promise resolved-wrapper reference identity or zero allocations. Canonical indexed materials have one descriptor owner, not duplicate RGB shadow declarations; independent source indices, palettes and visible pixels remain checked.
 
 `SourceAnimationResources` remains the product pack/dependency resolver. The removed Physical/Elemental catalog classes no longer supply parallel parsers, numeric `Supports` lists, or incomplete helper closures. Family callback partials remain source implementations, not separate pack readers. Positive rendering tests use the resolver-backed composition fixture; intentionally incomplete primitive tests remain explicit.
 

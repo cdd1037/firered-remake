@@ -21,6 +21,9 @@ public sealed partial class CampaignSession
         ImmutableHashSet<TrainerId> HistoryIdentities,
         ImmutableHashSet<MapId> ActorMaps);
 
+    private IEnumerable<TrainerId> TrainersOnMap(MapId map) => TrainerOccurrences.ByTrainer
+        .Where(entry => entry.Value.Any(occurrence => occurrence.Map == map)).Select(entry => entry.Key);
+
     private TrainerOccurrenceCatalog? _trainerOccurrences;
     private TrainerOccurrenceCatalog TrainerOccurrences => _trainerOccurrences ??= BindTrainerOccurrences();
 
@@ -62,6 +65,7 @@ public sealed partial class CampaignSession
                     throw new InvalidDataException("trainer_occurrence_not_unique:" + trainer.Value + ":" + definition.ScriptEntry);
                 var instruction = matches[0];
                 ValidateTrainerOccurrenceSemantics(definition, instruction);
+                ValidateTrainerPostDialogue(definition, program, instruction);
                 var links = actorLinks.GetValueOrDefault(definition.ScriptEntry, []);
                 var linkedMaps = links.Select(link => link.Map).Distinct().ToArray();
                 string sourceMap = definition.Source.Path.StartsWith("data/maps/", StringComparison.Ordinal)
@@ -104,6 +108,18 @@ public sealed partial class CampaignSession
 
     // event.inc selects the battle mode from the macro arguments. StartTrainerBattle
     // supplies TRAINER and adds FIRST_BATTLE only for the early-rival tutorial flags.
+    private void ValidateTrainerPostDialogue(ForestTrainerBattleDefinition definition,
+        StoryProgram program, StoryInstruction battle)
+    {
+        if (definition.Mode != 0) return;
+        var dialogs = program.Instructions.Where(instruction => instruction.Opcode == "msgbox").ToArray();
+        if (dialogs.Length != 1 || dialogs[0].Op != StoryOp.Dialog ||
+            !dialogs[0].Args.SequenceEqual([definition.PostBattleText, "MSGBOX_AUTOCLOSE"]) ||
+            program.Instructions.IndexOf(dialogs[0]) <= program.Instructions.IndexOf(battle) ||
+            string.IsNullOrWhiteSpace(definition.PostBattleText) || _content.TextPages(definition.PostBattleText).IsDefaultOrEmpty)
+            throw new InvalidDataException("trainer_post_dialogue_binding:" + definition.Trainer.Value);
+    }
+
     private static void ValidateTrainerOccurrenceSemantics(ForestTrainerBattleDefinition definition,
         StoryInstruction instruction)
     {

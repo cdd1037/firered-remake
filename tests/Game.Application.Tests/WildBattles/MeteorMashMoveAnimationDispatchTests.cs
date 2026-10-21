@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -14,26 +15,12 @@ namespace FireRed.Tests.Application.WildBattles;
 public sealed class MeteorMashMoveAnimationDispatchTests
 {
     private static readonly MoveId Mash = Id("METEOR_MASH");
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static SourceMechanicsCatalog Mechanics =>
-        TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
         new("meteor-mash", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("meteor-mash", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
-
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name);
-        var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
+        new("meteor-mash", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static WildBattleCombatant[] Bodies(int actor = 0)
     {

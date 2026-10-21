@@ -15,8 +15,6 @@ public sealed record CelioRoamerBattleOrigin(RoamerIndividual Individual, uint O
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public RoamerBattleOutcome? SourceOutcome { get; init; }
 }
 
-public sealed record WildBattleRoamerRunEvent(long Sequence, int Turn, bool Escaped) : WildBattleEvent(Sequence, Turn);
-
 public static class CelioRoamerBattleContract
 {
     public const string Version = "firered-celio-roamer-battle-v1";

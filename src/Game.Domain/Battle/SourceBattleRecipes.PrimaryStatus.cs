@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     // Lifted from EarlyStarterPrimaryMove's source-invocation branches; the resolved
     // target remains a position, including a selected ally, throughout every command.
@@ -31,6 +31,4 @@ internal abstract partial class SourceRecipeContext
         if (move.Effect == "EFFECT_POISON") { ChangeStatus(targetSlot, WildBattleStatus.Poison, "move"); SynchronizeStatus(catalog, targetSlot, WildBattleStatus.Poison); }
         else ChangeStatus(targetSlot, (uint)((Draw($"{purpose}.sleep-duration", 4) & 3) + 2), "move");
     }
-    internal abstract bool UproarPreventsSleep(BattlerSlot slot);
-    internal abstract void SynchronizeStatus(PokemonCatalog catalog, BattlerSlot target, uint status);
 }

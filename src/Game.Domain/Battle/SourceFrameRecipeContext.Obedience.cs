@@ -4,9 +4,9 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override SourceObedienceContext? ObedienceContext => Frame.Obedience;
-    internal override PartyMemberKey ObedienceMember(BattlerSlot slot) => Frame.Get(slot).Member!.Value;
-    internal override bool ObedienceMultiTurn(BattlerSlot slot) => Frame.Get(slot).Registers.Turn?.Lock is { Kind: not WildBattleCalledLockKind.Recharge };
+    internal SourceObedienceContext? ObedienceContext => Frame.Obedience;
+    internal PartyMemberKey ObedienceMember(BattlerSlot slot) => Frame.Get(slot).Member!.Value;
+    internal bool ObedienceMultiTurn(BattlerSlot slot) => Frame.Get(slot).Registers.Turn?.Lock is { Kind: not WildBattleCalledLockKind.Recharge };
 
     private bool ObedienceRedirectsAction(string purpose)
     {

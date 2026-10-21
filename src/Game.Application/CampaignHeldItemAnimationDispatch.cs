@@ -45,13 +45,9 @@ public static class CampaignHeldItemAnimationPresentation
     // and animation admission remain owned by AtResult below.
     internal static int ConsumedGroupStart(IReadOnlyList<SourceBattleEvent> events,int end)=>
         end>=0&&end<events.Count?GroupStart(events.Select(Read).ToArray(),end):-1;
-    internal static int ConsumedGroupStart(IReadOnlyList<WildBattleEvent> events,int end)=>
-        end>=0&&end<events.Count?GroupStart(events.Select(Read).ToArray(),end):-1;
     // An invalid same-owner consumption span cannot authenticate its stat
     // prelude as a move result. A foreign recipient's later item is independent.
     internal static bool HasMalformedConsumedPrelude(IReadOnlyList<SourceBattleEvent> events,int index)=>
-        HasMalformedConsumedPrelude(events.Select(Read).ToArray(),index);
-    internal static bool HasMalformedConsumedPrelude(IReadOnlyList<WildBattleEvent> events,int index)=>
         HasMalformedConsumedPrelude(events.Select(Read).ToArray(),index);
     private static bool HasMalformedConsumedPrelude(Row[] rows,int index)
     {
@@ -65,11 +61,7 @@ public static class CampaignHeldItemAnimationPresentation
     // Callers validate the entry snapshot's battle-layout width.
     internal static bool VisibleAtResult(IReadOnlyList<SourceBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
         index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
-    internal static bool VisibleAtResult(IReadOnlyList<WildBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
-        index>=0&&index<events.Count&&slot.Value<entry.Count&&VisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry);
     internal static bool? SpriteVisibleAtResult(IReadOnlyList<SourceBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
-        index>=0&&index<events.Count&&slot.Value<entry.Count?SpriteVisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry):null;
-    internal static bool? SpriteVisibleAtResult(IReadOnlyList<WildBattleEvent> events,int index,BattlerSlot slot,IReadOnlyList<MoveId?> entry)=>
         index>=0&&index<events.Count&&slot.Value<entry.Count?SpriteVisibleAt(events.Select(Read).ToArray(),index,slot.Value,entry):null;
     private static bool VisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)=>SpriteVisibleAt(rows,index,slot,entry)==true;
     private static bool? SpriteVisibleAt(Row[] rows,int index,int slot,IReadOnlyList<MoveId?> entry)
@@ -135,22 +127,6 @@ public static class CampaignHeldItemAnimationPresentation
         SourcePlayerSwitchedEvent x=>new(x.Sequence,x.Turn,"switch",x.Slot.Value),
         SourcePlayerReplacedEvent x=>new(x.Sequence,x.Turn,"switch",x.Slot.Value),
         SourceStartedEvent=>new(e.Sequence,e.Turn,"start"),
-        _=>new(e.Sequence,e.Turn,"boundary")
-    };
-    private static Row Read(WildBattleEvent e)=>e switch
-    {
-        WildBattleHeldItemConsumedEvent x=>new(x.Sequence,x.Turn,"consumed",(int)x.Side,Before:x.HpBefore,After:x.HpAfter,Item:x.Item,Restored:x.HpRestored,Stats:x.StatChanges,Focus:x.FocusEnergyRaised==true,Flavor:x.Flavor,Pp:x.PpRecovery),
-        WildBattleHeldItemHealEvent x=>new(x.Sequence,x.Turn,"heal",(int)x.Actor,Before:x.HpBefore,After:x.HpAfter,Item:x.Item,Restored:x.HpRestored),
-        WildBattleStatChangedEvent x=>new(x.Sequence,x.Turn,"stat",(int)x.Target,(int)x.Actor,x.Before,x.After,Stat:x.Stat),
-        WildBattleFocusEnergyEvent x=>new(x.Sequence,x.Turn,"focus",(int)x.Side),
-        WildBattleStatusChangedEvent x=>new(x.Sequence,x.Turn,"status",(int)x.Side,Before:(int)x.Before,After:(int)x.After,Reason:x.Reason),
-        WildBattleConfusionChangedEvent x=>new(x.Sequence,x.Turn,"confusion",(int)x.Side,Before:x.Before,After:x.After,Reason:x.Reason),
-        WildBattleInfatuationChangedEvent x=>new(x.Sequence,x.Turn,"infatuation",(int)x.Side,Before:x.Before is {} before?(int)before:-1,After:x.After is {} after?(int)after:-1,Reason:x.Reason),
-        WildBattlePpCommandEvent x=>new(x.Sequence,x.Turn,"pp",(int)x.Actor,Move:x.CurrentMove),
-        WildBattleMtMoonVolatileEvent {Volatile:"called-charge"} x=>new(x.Sequence,x.Turn,"charge",(int)x.Side,Before:x.Before,After:x.After,Reason:x.Reason),
-        WildBattleCalledPartySwitchedEvent x=>new(x.Sequence,x.Turn,"switch",(int)x.Side),
-        WildBattlePlayerSwitchedEvent or WildBattlePlayerReplacedEvent=>new(e.Sequence,e.Turn,"switch",0),
-        WildBattleStartedEvent=>new(e.Sequence,e.Turn,"start"),
         _=>new(e.Sequence,e.Turn,"boundary")
     };
 }

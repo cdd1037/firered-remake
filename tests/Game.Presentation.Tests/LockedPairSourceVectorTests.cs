@@ -34,8 +34,21 @@ public sealed class LockedPairSourceVectorTests
             var script=AnimationCompositionFixture.Script(37) with{Commands=[new("end",[],1)],Labels=new Dictionary<string,int>(),Subroutines=new Dictionary<string,SourceAnimationCommand[]>(),SubroutineLabels=new Dictionary<string,IReadOnlyDictionary<string,int>>()};
             var owner=new SourceBattleAnimation(script,new("locked-source",1,37,new(actor),new(actor^1)),battlers,doubles,new Audio());Field<PixelPoint[]>(owner,"_offsets")[actor]=new(c[2],c[3]);
             object? horizontal=null,vertical=null;var tasks=Field<IList>(owner,"_tasks");
-            if(kind!=1){Assert.AreEqual(true,Invoke(owner,"TryCreateLockedPairTask",new SourceAnimationCommand("createvisualtask",["AnimTask_ThrashMoveMonHorizontal","2"],1)));horizontal=tasks[tasks.Count-1];}
-            if(kind!=0){Assert.AreEqual(true,Invoke(owner,"TryCreateLockedPairTask",new SourceAnimationCommand("createvisualtask",["AnimTask_ThrashMoveMonVertical","2"],1)));vertical=tasks[tasks.Count-1];}
+            object CreateTask(string name)
+            {
+                var command=new SourceAnimationCommand("createvisualtask",[name,"2"],1);
+                int visualStart=tasks.Count,soundStart=Field<IList>(owner,"_soundTasks").Count;
+                long order=Field<long>(owner,"_nextTaskOrder");
+                Assert.AreEqual(true,Invoke(owner,"TryCreateLockedPairTask",command));
+                // Direct initializer probes must perform the registration normally done by RunScript.
+                Invoke(owner,"AssignTaskOrder",visualStart,soundStart,command);
+                var task=tasks[tasks.Count-1]!;
+                Assert.AreEqual(2,(int)task.GetType().GetProperty("Priority",Instance)!.GetValue(task)!);
+                Assert.AreEqual(order,(long)task.GetType().GetProperty("Order",Instance)!.GetValue(task)!);
+                return task;
+            }
+            if(kind!=1)horizontal=CreateTask("AnimTask_ThrashMoveMonHorizontal");
+            if(kind!=0)vertical=CreateTask("AnimTask_ThrashMoveMonVertical");
             int tick=-2;
             foreach(var row in entry.Value.EnumerateArray())
             {

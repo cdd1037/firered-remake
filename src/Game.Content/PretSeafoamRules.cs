@@ -1,41 +1,19 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Game.Domain.Ids;
-using Game.Domain.Items;
-using Game.Domain.Pokemon;
 using Game.Domain.Trainers;
-using Game.Domain.Encounters;
 
 namespace Game.Content;
 
-public sealed record SeafoamTrainerDocument(ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles);
+public sealed record SeafoamTrainerDocument(ImmutableArray<TrainerDefinition> Trainers,
+    ImmutableArray<CeruleanTrainerBattleDefinition> Battles) : RegionalTrainerDocument(Trainers, Battles);
 
-/// <summary>Thin source-authenticated Articuno ownership, machines and original Route19/20 trainer teams.</summary>
+/// <summary>Initial regional trainer definitions and battle occurrences.</summary>
 public static class PretSeafoamRules
 {
-    private static T Read<T>(string root,string file)
-    {
-        var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/data/regions/seafoam", file));
-        return JsonSerializer.Deserialize<T>(bytes, SharedTrainerCatalog.Options(root, new JsonSerializerOptions {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-        })) ?? throw new InvalidDataException("seafoam_source_missing");
-    }
+    private static readonly RegionalTrainerLoader<SeafoamTrainerDocument, SeafoamTrainerCatalog> Loader = new(
+        "content/generated/data/regions/seafoam/trainers.json", "seafoam_source_missing",
+        document => document.ByScript((trainers, battles) => new SeafoamTrainerCatalog(trainers, battles),
+            "seafoam_trainers_missing"), SeafoamTrainerPartyFactory.ValidateCatalog);
 
-    public static SeafoamTrainerDocument LoadDocument(string root)
-    {
-        var document = Read<SeafoamTrainerDocument>(root,"trainers.json");
-        _ = LoadTrainers(document); return document;
-    }
-    public static SeafoamTrainerCatalog LoadTrainers(string root) => LoadTrainers(LoadDocument(root));
-    private static SeafoamTrainerCatalog LoadTrainers(SeafoamTrainerDocument document)
-    {
-        if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty)
-            throw new InvalidDataException("seafoam_trainers_missing");
-        var result = new SeafoamTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
-        SeafoamTrainerPartyFactory.ValidateCatalog(result); return result;
-    }
-
+    public static SeafoamTrainerDocument LoadDocument(string root) => Loader.LoadDocument(root);
+    public static SeafoamTrainerCatalog LoadTrainers(string root) => Loader.LoadCatalog(root);
 }

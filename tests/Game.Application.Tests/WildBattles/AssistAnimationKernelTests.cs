@@ -171,12 +171,12 @@ public sealed class AssistAnimationKernelTests
             {
                 if (single)
                 {
-                    // Source export rejects four-position rows; mutate the legacy
-                    // envelope to exercise its own two-position layout guard.
+                    // A canonical slot can exist outside a singles layout; the shared
+                    // dispatch must still enforce this envelope's two-position guard.
                     int cursor = events.IndexOf(events.OfType<SourceAttackStringEvent>().First());
                     var exported = F.Single(events, cursor);
-                    var legacy = (WildBattleCalledMoveTransitionEvent)exported.Events[t];
-                    var invalid = legacy with { Invocation = legacy.Invocation with { Target = (WildBattleSide)2 } };
+                    var legacy = (SourceCalledMoveTransitionEvent)exported.Events[t];
+                    var invalid = legacy with { Invocation = legacy.Invocation with { Target = new BattlerSlot(2) } };
                     Assert.IsNull(AnimationDispatchFixture.AtAttackText(exported with { Events = exported.Events.SetItem(t, invalid) }, true, SourceBattleScene.On).Dispatch);
                 }
                 else Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BattlerSlot(4));

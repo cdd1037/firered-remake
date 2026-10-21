@@ -11,19 +11,15 @@ public static class PretForestTrainers
 {
     public const string RelativePath = "content/generated/data/trainer-battles/forest.json";
 
-    public static ForestTrainerCatalog Load(string root)
+    public static OrdinaryTrainerCatalog Load(string root)
     {
         var document = ContentJson.ParseStrict<ForestTrainerDocument>(
             File.ReadAllText(Path.Combine(root, RelativePath)), SharedTrainerCatalog.Options(root));
         if (document.SchemaVersion != 1) throw new InvalidDataException("Unsupported Forest trainer document schema.");
-        var catalog = new ForestTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.Trainer));
-        ForestTrainerPartyFactory.ValidateCatalog(catalog);
-        return catalog;
+        var battles = document.Battles.Select(b => new CeruleanTrainerBattleDefinition(
+            b.Trainer, b.Mode, 0, b.BattleTypeFlags, b.ScriptEntry, b.IntroText, b.DefeatText, "",
+            b.PostBattleText, b.EntryScript, b.Callback, b.Source)).ToImmutableArray();
+        return new(document.Trainers.ToImmutableDictionary(t => t.Id), battles, "forest-trainer");
     }
 
-    public static ForestTrainerCatalog Load(PretForestRegion region)
-    {
-        ArgumentNullException.ThrowIfNull(region);
-        return Load(PretRuntimeMapValidation.ProjectRoot(region.GeneratedDirectory));
-    }
 }

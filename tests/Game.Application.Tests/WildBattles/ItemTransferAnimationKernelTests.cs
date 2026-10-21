@@ -64,8 +64,8 @@ public sealed class ItemTransferAnimationKernelTests
         Assert.AreEqual(source, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(source)));
         if (single)
         {
-            var exported = events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(); string legacy = JsonSerializer.Serialize(exported);
-            Assert.AreEqual(legacy, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<WildBattleEvent>>(legacy)));
+            var exported = events; string legacy = JsonSerializer.Serialize(exported);
+            Assert.AreEqual(legacy, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(legacy)));
         }
     }
 
@@ -369,11 +369,11 @@ public sealed class ItemTransferAnimationKernelTests
             Assert.IsNull(single ? CampaignMoveAnimationPresentation.AtAttackText(Envelope.Single(events, ui), true, SourceBattleScene.On, definitions, (_, _) => false).Dispatch
                 : CampaignMoveAnimationPresentation.AtAttackText(Envelope.Double(events, ui), SourceBattleScene.On, definitions, (_, _) => false).Dispatch);
             if (!single) continue;
-            var battle = Envelope.Single(events, ui) with { SourceEvents = [] };
+            var battle = Envelope.Single(events, ui);
             Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch);
-            int at = events.IndexOf(Owner(events, id)); WildBattleEvent corrupted = battle.Events[at] switch {
-                WildBattleHeldItemRecycledEvent x => x with { Item = "ITEM_NONE" },
-                WildBattleHeldItemsSwappedEvent x => x with { Actor = WildBattleSide.Opponent }, _ => throw new InvalidOperationException() };
+            int at = events.IndexOf(Owner(events, id)); SourceBattleEvent corrupted = battle.Events[at] switch {
+                SourceHeldItemRecycledEvent x => x with { Item = "ITEM_NONE" },
+                SourceHeldItemsSwappedEvent x => x with { Actor = new BattlerSlot(1) }, _ => throw new InvalidOperationException() };
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(at, corrupted) }, true, SourceBattleScene.On).Dispatch);
         }
     }

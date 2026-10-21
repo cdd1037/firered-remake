@@ -226,8 +226,8 @@ public sealed partial class CampaignSession
                 entry.EntrySlots.Select(c=>c.Body!).ToImmutableArray(), entry.EntrySlots.Select(c=>c.Member!.Value).ToImmutableArray(),entry.Trace,[],0),
                 SeenSpecies=state.SeenSpecies.Union(frame.Party(BattleSide.Opponent).Members.Select(m=>m.Pokemon.SourceSpeciesId))};
         int active=frame.Get(new(0)).Member!.Value.Index;
-        var view=new CampaignWildBattle(id,state.Party[active],frame,ProjectTrainerWildEvents(entry.Events),0,frame.Get(new(0)).Body!.Pokemon,frame.Get(new(1)).Body!.Pokemon,
-            CampaignBattlePhase.Events,[],0,entry.Trace){DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(entry.EntrySlots)), SourceEvents=entry.Events,ActivePartyIndex=active,OpponentHpAtLastSwitch=frame.Get(new(1)).Body!.Pokemon.CurrentHp};
+        var view=new CampaignWildBattle(id,state.Party[active],frame,entry.Events,0,frame.Get(new(0)).Body!.Pokemon,frame.Get(new(1)).Body!.Pokemon,
+            CampaignBattlePhase.Events,[],0,entry.Trace){DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(entry.EntrySlots)), ActivePartyIndex=active,OpponentHpAtLastSwitch=frame.Get(new(1)).Body!.Pokemon.CurrentHp};
         return PrepareForestTrainerPresentation(ProjectSourceTrainerOwnedParty(next with{ForestTrainerBattle=new(id,made.Trainer.Id,actor,view,CampaignForestTrainerStage.Combat,state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
             ProjectTrainerEvents(frame,entry.Events),0,0,[0]),SeenSpecies=state.SeenSpecies.Add(frame.Get(new(1)).Body!.Pokemon.SourceSpeciesId)}));
     }

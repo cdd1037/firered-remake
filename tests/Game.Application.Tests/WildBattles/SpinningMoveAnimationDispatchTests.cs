@@ -20,17 +20,20 @@ public sealed class SpinningMoveAnimationDispatchTests
         [("MEGA_PUNCH", 5, "HITMONCHAN", 38, 20),
          ("MEGA_KICK", 25, "HITMONLEE", 46, 5),
          ("BLAZE_KICK", 299, "BLAZIKEN", 36, 10)];
+    private static DirectHitAnimationContract Contract(int id) => id switch
+    {
+        5 => new("spinning-moves", 5, Id("MEGA_PUNCH"), 20, DirectHitOwnership.AttackText),
+        25 => new("spinning-moves", 25, Id("MEGA_KICK"), 5, DirectHitOwnership.AttackText),
+        299 => new("spinning-moves", 299, Id("BLAZE_KICK"), 10, DirectHitOwnership.AttackText),
+        _ => throw new ArgumentOutOfRangeException(nameof(id))
+    };
     private static MoveId Id(string name) => new("pret:MOVE_" + name);
     private static SourceMechanicsCatalog Mechanics =>
         TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
         events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("spinning-moves", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
-            events, index, [], [], 0, 0, [], [], [], [], 0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("spinning-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) => Contract(5).Double(events, index);
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) => Contract(5).Single(events, index);
 
     private static WildBattleCombatant NaturalMon(string species, int level, string name)
     {
@@ -138,38 +141,18 @@ public sealed class SpinningMoveAnimationDispatchTests
         Assert.AreEqual(move.Pp, pp.Before); Assert.AreEqual(move.Pp - 1, pp.After); Assert.AreEqual(1, pp.CommandCost);
         Assert.AreEqual(pp.After, state.Slots[actor].Body!.Pokemon.Moves[0].CurrentPp);
         Assert.AreEqual(0, events.OfType<SourceMultiHitEvent>().Count());
-        int roots = 0;
+        if (expected) Contract(id).AssertDispatches(events, actor, target);
+        else Contract(id).AssertDenied(events, "blocked spinning invocation", singles: actor < 2 && target < 2);
         for (int index = 0; index < events.Length; index++)
         {
             var battle = Double(events, index);
-            var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
-            Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
-            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch,
-                "A single-hit spinning root cannot be replayed by a result page.");
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.Off).Dispatch);
             if (expected && events[index] == used)
-            {
-                var cue = decision.Dispatch; Assert.IsNotNull(cue, decision.Reason); roots++;
-                var hit = Hits(events).Single();
-                Assert.AreEqual(id, cue.SourceMoveId); Assert.AreEqual("spinning-moves", cue.BattleId);
-                Assert.AreEqual(actor, cue.Actor.Value); Assert.AreEqual(target, cue.Target.Value);
-                Assert.AreEqual(used.Sequence, cue.Sequence); Assert.AreEqual(hit.Sequence, cue.ResultSequence);
-                Assert.AreEqual(attack.Sequence, cue.AttackSequence); Assert.AreEqual(pp.Sequence, cue.PpSequence);
-                Assert.IsTrue(cue.AcknowledgesCurrentReceipt); Assert.IsNull(cue.MoveTurn);
-                Assert.AreEqual(hit is SourceSubstituteDamagedEvent, cue.HitsSubstitute);
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(
                     battle with { Stage = CampaignDoubleBattleStage.Finished }, SourceBattleScene.On).Dispatch);
-            }
-            else Assert.IsNull(decision.Dispatch, "Secondary, contact, faint and failure pages must not admit another root.");
             if (actor < 2 && target < 2)
-            {
-                var single = Single(events, index);
-                Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtAttackText(single, false, SourceBattleScene.On).Dispatch);
-            }
+                Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), false, SourceBattleScene.On).Dispatch);
         }
-        Assert.AreEqual(expected ? 1 : 0, roots);
         Assert.AreEqual(receipts, JsonSerializer.Serialize(events), "Matching must not mutate committed receipts.");
         Assert.AreEqual(committed, JsonSerializer.Serialize(state), "Matching must not mutate authoritative state or RNG.");
         Assert.AreEqual(random, JsonSerializer.Serialize(trace), "Matching must not consume or rewrite random draws.");

@@ -27,15 +27,6 @@ public sealed class PretCeruleanCaveRegion
 
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_CERULEAN_CAVE_1F" => new("map.cerulean-cave-1f"),
-        "MAP_CERULEAN_CAVE_2F" => new("map.cerulean-cave-2f"),
-        "MAP_CERULEAN_CAVE_B1F" => new("map.cerulean-cave-b1f"),
-        "MAP_CERULEAN_CITY" => new("map.cerulean-city"),
-        _ => throw new InvalidDataException("Unknown Cerulean Cave map symbol: " + symbol)
-    };
-
     public static PretCeruleanCaveRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

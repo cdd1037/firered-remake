@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_files, write_files
 
 from PIL import Image
 
@@ -64,17 +65,14 @@ class MuseumPictureImportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='firered-museum-import-') as temporary:
             base = Path(temporary)
             raw, output = base / 'raw', base / 'generated'
-            for name, data in self.source.items():
-                path = raw / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(data)
+            write_files(raw, self.source)
             command = [sys.executable, str(SCRIPT), '--raw', str(raw), '--out', str(output)]
             result = subprocess.run(command, cwd=base, capture_output=True, text=True, timeout=30)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()}
+            before = snapshot_files(output.iterdir())
             result = subprocess.run([*command, '--check'], cwd=base, capture_output=True, text=True, timeout=30)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            self.assertEqual(before, {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()})
+            self.assertEqual(before, snapshot_files(output.iterdir()))
             (output / 'pictures.json').write_text('{}')
             result = subprocess.run([*command, '--check'], cwd=base, capture_output=True, text=True, timeout=30)
             self.assertNotEqual(0, result.returncode)
@@ -84,12 +82,8 @@ class MuseumPictureImportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='firered-museum-missing-') as temporary:
             base = Path(temporary)
             raw, output = base / 'raw', base / 'generated'
-            for name, data in self.source.items():
-                if name.endswith('kabutops_fossil.png'):
-                    continue
-                path = raw / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(data)
+            write_files(raw, {name: data for name, data in self.source.items()
+                              if not name.endswith('kabutops_fossil.png')})
             result = subprocess.run([sys.executable, str(SCRIPT), '--raw', str(raw), '--out', str(output)],
                                     cwd=base, capture_output=True, text=True, timeout=30)
             self.assertNotEqual(0, result.returncode)

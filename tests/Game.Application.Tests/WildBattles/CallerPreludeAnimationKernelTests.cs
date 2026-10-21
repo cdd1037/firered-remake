@@ -215,9 +215,9 @@ public sealed class CallerPreludeAnimationKernelTests
                 int cursor = Array.FindIndex(events.ToArray(), e => id == 118
                     ? e is SourceAttackStringEvent a && a.CurrentMove == Shared.Move(id)
                     : e is SourceMoveUsedEvent u && u.Move == Shared.Move(id));
-                var exported = Envelope.Single(events, cursor) with { SourceEvents = [] };
-                var exportedTransition = (WildBattleCalledMoveTransitionEvent)exported.Events[at];
-                var wrongTarget = exportedTransition with { Invocation = exportedTransition.Invocation with { Target = (WildBattleSide)2 } };
+                var exported = Envelope.Single(events, cursor);
+                var exportedTransition = (SourceCalledMoveTransitionEvent)exported.Events[at];
+                var wrongTarget = exportedTransition with { Invocation = exportedTransition.Invocation with { Target = new BattlerSlot(2) } };
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(exported with { Events = exported.Events.SetItem(at, wrongTarget) }, true, SourceBattleScene.On).Dispatch);
             }
             else Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new BattlerSlot(4));
@@ -253,19 +253,19 @@ public sealed class CallerPreludeAnimationKernelTests
     {
         var result = Envelope.Resolve(Shared.Frame(id, true)); var cue = Shared.Check(result, id, true);
         int at = Array.FindIndex(result.Events.ToArray(), e => e.Sequence == cue.Sequence);
-        var single = Envelope.Single(result.Events, at) with { SourceEvents = [] };
+        var single = Envelope.Single(result.Events, at);
         Assert.AreEqual(cue, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-        int selectionIndex = Array.FindIndex(single.Events.ToArray(), e => e is WildBattleCallerSelectionEvent);
-        var selected = (WildBattleCallerSelectionEvent)single.Events[selectionIndex];
+        int selectionIndex = Array.FindIndex(single.Events.ToArray(), e => e is SourceCallerSelectionEvent);
+        var selected = (SourceCallerSelectionEvent)single.Events[selectionIndex];
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { Events = single.Events.SetItem(selectionIndex, selected with { Result = null }) }, true, SourceBattleScene.On).Dispatch);
-        int transitionIndex = Array.FindIndex(single.Events.ToArray(), e => e is WildBattleCalledMoveTransitionEvent);
-        var transition = (WildBattleCalledMoveTransitionEvent)single.Events[transitionIndex];
+        int transitionIndex = Array.FindIndex(single.Events.ToArray(), e => e is SourceCalledMoveTransitionEvent);
+        var transition = (SourceCalledMoveTransitionEvent)single.Events[transitionIndex];
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { Events = single.Events.SetItem(transitionIndex, transition with {
-            Invocation = transition.Invocation with { PpOwner = WildBattleSide.Opponent } }) }, true, SourceBattleScene.On).Dispatch);
+            Invocation = transition.Invocation with { PpOwner = new BattlerSlot(1) } }) }, true, SourceBattleScene.On).Dispatch);
         if (id == 214)
         {
-            int talkIndex = Array.FindIndex(single.Events.ToArray(), e => e is WildBattleSleepTalkEvent);
-            var talk = (WildBattleSleepTalkEvent)single.Events[talkIndex];
+            int talkIndex = Array.FindIndex(single.Events.ToArray(), e => e is SourceSleepTalkEvent);
+            var talk = (SourceSleepTalkEvent)single.Events[talkIndex];
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(single with { Events = single.Events.SetItem(talkIndex, talk with { CalledSlot = 0 }) }, true, SourceBattleScene.On).Dispatch);
         }
     }

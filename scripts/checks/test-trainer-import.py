@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_tree
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,6 +44,36 @@ class TrainerImportTests(unittest.TestCase):
                 actual = trainer_json(ROOT / 'content/generated', document, check=True)
                 self.assertEqual((ROOT / f'content/generated/data/trainer-battles/{name}.json').read_bytes(), actual)
 
+    def test_route4_admission_preserves_actual_call_and_shared_party(self):
+        early = load('imports/trainers/import-early-trainer-catalogs.py')
+        document = early.compile_catalog(ROOT, 'route3')
+        battle = next(row for row in document['battles'] if row['trainer']['value'] == 'pret:TRAINER_LASS_CRISSY')
+        self.assertEqual(battle['scriptEntry'], 'Route4_EventScript_Crissy')
+        self.assertEqual(battle['postBattleText'], 'Route4_Text_CrissyPostBattle')
+        self.assertEqual(battle['mode'], 0)
+        actor = next(row for row in json.loads((RAW / 'data/maps/Route4/map.json').read_text())['object_events']
+                     if row['script'] == battle['scriptEntry'])
+        self.assertEqual((actor['x'], actor['y'], actor['trainer_type']), (75, 3, 'TRAINER_TYPE_NORMAL'))
+        trainer = next(row for row in document['trainers'] if row['id'] == battle['trainer'])
+        self.assertEqual(trainer, read_trainers(ROOT / 'content/generated')[trainer['id']['value']])
+        original = Path.read_text
+        for replacement in ('trainerbattle_rematch', 'trainerbattle_double'):
+            with self.subTest(replacement=replacement):
+                def mutate(path, *args, **kwargs):
+                    text = original(path, *args, **kwargs)
+                    if path == RAW / 'data/scripts/trainers.inc':
+                        text = text.replace('trainerbattle_single TRAINER_LASS_CRISSY,', replacement + ' TRAINER_LASS_CRISSY,')
+                    return text
+                with patch.object(Path, 'read_text', mutate), self.assertRaises(ValueError):
+                    early.compile_catalog(ROOT, 'route3')
+        # A changed original operand must be reflected, not concealed by a handwritten binding.
+        def mutate_post(path, *args, **kwargs):
+            text = original(path, *args, **kwargs)
+            return text.replace('Route4_Text_CrissyPostBattle', 'Route4_Text_Changed') if path == RAW / 'data/scripts/trainers.inc' else text
+        with patch.object(Path, 'read_text', mutate_post):
+            changed = early.compile_catalog(ROOT, 'route3')
+        self.assertEqual(next(row for row in changed['battles'] if row['trainer'] == battle['trainer'])['postBattleText'], 'Route4_Text_Changed')
+
     def test_all_regional_cli_outputs_and_shared_contributions(self):
         with tempfile.TemporaryDirectory() as temporary:
             generated = Path(temporary) / 'generated'
@@ -57,11 +88,9 @@ class TrainerImportTests(unittest.TestCase):
                     self.assertTrue(target.is_file(), target)
                     self.assertEqual((ROOT / 'content/generated' / relative).read_bytes(),
                                      (generated / relative).read_bytes())
-                    before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
-                              for path in generated.rglob('*') if path.is_file()}
+                    before = snapshot_tree(generated)
                     subprocess.run([*command, '--check'], cwd=temporary, check=True, capture_output=True)
-                    self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns)
-                                              for path in generated.rglob('*') if path.is_file()})
+                    self.assertEqual(before, snapshot_tree(generated))
             self.assertFalse(any(path.is_dir() and path.suffix in ('.json', '.png')
                                  for path in generated.rglob('*')))
             shared = read_trainers(generated)
@@ -93,11 +122,9 @@ class TrainerImportTests(unittest.TestCase):
             current, rebuilt = read_trainers(ROOT / 'content/generated'), read_trainers(generated)
             self.assertTrue(rebuilt)
             self.assertEqual(rebuilt, {identity: current[identity] for identity in rebuilt})
-            before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
-                      for path in generated.rglob('*') if path.is_file()}
+            before = snapshot_tree(generated)
             subprocess.run([*command, '--check'], check=True, capture_output=True)
-            self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns)
-                                     for path in generated.rglob('*') if path.is_file()})
+            self.assertEqual(before, snapshot_tree(generated))
 
     def test_vs_seeker_raw_cli_preserves_all_parties_and_occurrences(self):
         subprocess.run([sys.executable, str(ROOT / 'scripts/imports/trainers/import-vs-seeker-parties.py'),

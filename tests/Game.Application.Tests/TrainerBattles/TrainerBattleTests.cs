@@ -125,7 +125,7 @@ public sealed class TrainerBattleTests
                         int slot = Enumerable.Range(0, state.Party[recipient].Pokemon.Moves.Length)
                             .First(i => !PokemonMoveRules.IsHiddenMachineMove(state.Party[recipient].Pokemon.Moves[i].Move));
                         Send(session, new("wild_learn", MoveSlot: slot));
-                        Assert.IsTrue(session.State.ForestTrainerBattle!.Presentation.SourceEvents.OfType<SourceRewardLearningEvent>().Any(e =>
+                        Assert.IsTrue(session.State.ForestTrainerBattle!.Presentation.Events.OfType<SourceRewardLearningEvent>().Any(e =>
                             e.Outcome == SourceRewardLearningOutcome.Replaced && e.Candidate.Move == pending.Move), "Actual trainer replacement receipt");
                         var pages = session.State.ForestTrainerBattle!.Presentation.Pages
                             .Where(page => page.Reward is null && page.PartyIndex == recipient);
@@ -206,6 +206,40 @@ public sealed class TrainerBattleTests
         var continued = CampaignSession.RestoreCurrent(content, decoded.State, decoded.Generation);
         Assert.IsTrue(CanonicalJson.Hash(continued.State) == CanonicalJson.Hash(session.State), key + " exact current Continue");
         Console.WriteLine("Completed " + key);
+    }
+
+    [TestMethod]
+    public void OneCanonicalSwitchRetainsOutgoingIdentityAndIsAppliedOnlyOnce()
+    {
+        var session = CampaignSession.RestoreCurrent(current, roseState, checkpoint.Generation);
+        Send(session, new("interact"));
+        while (session.State.ForestTrainerBattle!.Presentation.Phase != CampaignBattlePhase.ChooseMove)
+            Send(session, new("ack"));
+        var before = session.State.ForestTrainerBattle!.Presentation; var outgoing = before.DisplayBatch!.Display.Bodies[0];
+        Send(session, new("battle_switch", PartyIndex: 1));
+        var switched = session.State.ForestTrainerBattle!.Presentation;
+        for (int n = 0; n < 32 && switched.Events[switched.EventIndex] is not SourceCalledPartySwitchedEvent; n++)
+        {
+            Send(session, new("ack")); switched = session.State.ForestTrainerBattle!.Presentation;
+        }
+        var receipt = switched.Events[switched.EventIndex] as SourceCalledPartySwitchedEvent;
+        Assert.IsNotNull(receipt); Assert.IsNotNull(switched.SwitchDisplay); Assert.IsNotNull(receipt.Replacement);
+        Assert.AreEqual(outgoing, switched.SwitchDisplay.Previous);
+        Assert.AreEqual(receipt.Replacement.Body, switched.SwitchDisplay.Replacement);
+        Assert.AreEqual(new PartyMemberKey(BattleSide.Player, 1), switched.DisplayBatch!.Display.Members[0]);
+        Assert.AreEqual(switched.EventIndex + 1, switched.DisplayBatch.NextEventIndex);
+        Assert.AreEqual(1, switched.Events.OfType<SourceCalledPartySwitchedEvent>().Count());
+        var advance = typeof(CampaignSession).GetMethod("AdvanceDisplayThrough", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var repeated = (CampaignWildBattle)advance.Invoke(null, [switched, receipt.Sequence])!;
+        Assert.AreSame(switched.SwitchDisplay, repeated.SwitchDisplay);
+        Assert.AreEqual(switched.EventIndex, repeated.EventIndex);
+        Assert.AreEqual(switched.DisplayBatch, repeated.DisplayBatch);
+        Assert.AreEqual(switched.Frame, repeated.Frame); Assert.AreEqual(switched.RandomTrace, repeated.RandomTrace);
+        long sequence = receipt.Sequence;
+        Send(session, new("ack"));
+        var next = session.State.ForestTrainerBattle!.Presentation;
+        Assert.IsFalse(next.Events.ElementAtOrDefault(next.EventIndex)?.Sequence == sequence,
+            "One acknowledgement advances the canonical receipt, not a synthetic second switch event.");
     }
 
     [TestMethod]

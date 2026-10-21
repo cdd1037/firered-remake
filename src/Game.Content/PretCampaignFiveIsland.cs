@@ -15,8 +15,7 @@ public sealed partial class PretCampaignCatalog
 {
     public const string FiveIslandContentProfile = "firered-five-island-campaign-v1";
     public PretFiveIslandRegion FiveIslandRegion { get; }
-    public FiveIslandTrainerCatalog? FiveIslandTrainers { get; }
-    public FiveIslandTrainerCatalog? FiveIslandTrainerParties => FiveIslandTrainers;
+    public OrdinaryTrainerCatalog? FiveIslandTrainers { get; }
     public FiveIslandItemContent? FiveIslandItems { get; }
     public WaterEncounterCatalog? FiveIslandWaterEncounters { get; }
 
@@ -27,12 +26,11 @@ public sealed partial class PretCampaignCatalog
 
 
 
-    private static void ValidateFiveIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FiveIslandTrainerCatalog trainers, PretStoryCompilation scripts, FiveIslandItemContent items, bool includeCelio = false)
+    private static void ValidateFiveIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, OrdinaryTrainerCatalog trainers, PretStoryCompilation scripts, FiveIslandItemContent items, bool includeCelio = false)
     {
         if (items.Pickups.Any(p => p.ItemSymbol == "ITEM_SAPPHIRE"))
             throw new InvalidDataException("five_island_sapphire_must_be_story_reward");
-        FiveIslandTrainerPartyFactory.ValidateCatalog(trainers);
-        foreach (var battle in trainers.BattlesByScript.Values)
+        foreach (var battle in trainers.Battles)
         {
             var program = scripts.FindProgram(battle.ScriptEntry) ?? throw new InvalidDataException("five_island_battle_missing");
             if (!program.Instructions.Any(i => i.Op == StoryOp.TrainerBattle && i.Source.Path == battle.Source.Path &&

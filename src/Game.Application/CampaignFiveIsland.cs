@@ -3,7 +3,6 @@ using System.Text.Json;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.World;
 
 namespace Game.Application;
@@ -16,9 +15,8 @@ public sealed partial class CampaignSession
 
     private static void ValidateFiveIslandCatalog(ICampaignCatalog content)
     {
-        if (content.FiveIslandTrainers is not {} trainers || !content.Inventory.Items.ContainsKey(ItemIds.UpGradeId))
+        if (!content.Inventory.Items.ContainsKey(ItemIds.UpGradeId))
             throw new InvalidDataException("five_island_source_profile_missing");
-        FiveIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }
 
     private string? ValidateFiveIslandProgress(CampaignState state)

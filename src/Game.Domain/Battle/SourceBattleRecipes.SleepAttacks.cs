@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasSleepAttackRecipe(string effect) => effect is "EFFECT_REST" or "EFFECT_SNORE" or "EFFECT_DREAM_EATER";
 
@@ -101,18 +101,18 @@ internal abstract partial class SourceRecipeContext
         Add(n => new SourceRecoveredEvent(n, Turn, actor, move.Id, before, after, after - before));
     }
 
-    internal virtual bool SleepAttackAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
+    internal bool SleepAttackAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
         SourceGenericAccuracy(actor, target, move, purpose);
-    internal virtual int SleepAttackDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent) =>
+    internal int SleepAttackDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent) =>
         SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent);
-    internal virtual int SleepAttackAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
+    internal int SleepAttackAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
         AdjustHeldDamage(target, move.Id, damage, purpose);
-    internal virtual int SleepAttackApplyDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int damage, bool critical, int percent)
+    internal int SleepAttackApplyDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int damage, bool critical, int percent)
     {
         int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
         if (critical && damage == 0 && HeldDamageEffectiveZero(target)) Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         return lost;
     }
-    internal virtual void SleepAttackReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void SleepAttackReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
 }

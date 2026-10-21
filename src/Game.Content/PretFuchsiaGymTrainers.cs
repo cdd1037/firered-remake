@@ -8,19 +8,17 @@ namespace Game.Content;
 public sealed record FuchsiaGymTrainerDocument(int SchemaVersion,ImmutableArray<TrainerDefinition> Trainers,ImmutableArray<CeruleanTrainerBattleDefinition> Battles,
     ImmutableArray<PokemonMoveDefinition> Moves,ImmutableArray<PretRoute1MoveName> MoveNames);
 /// <summary>Source-only loader. No catalog promotion, battle factory or campaign registration is implied.</summary>
-public sealed record FuchsiaGymTrainerCatalogContent(ImmutableDictionary<TrainerId,TrainerDefinition> Trainers,ImmutableDictionary<TrainerId,CeruleanTrainerBattleDefinition> Battles);
 public static class PretFuchsiaGymTrainers
 {
     public static FuchsiaGymTrainerDocument LoadDocument(PretCanonicalPokemonCatalog canonical, string root)
     {
         var d=ContentJson.ParseStrict<FuchsiaGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/data/trainer-battles/fuchsia-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
         if (d.SchemaVersion != 1) throw new InvalidDataException("Unsupported FuchsiaGym trainer document schema.");
-        FuchsiaGymTrainerPartyFactory.ValidateCatalog(new(d.Trainers.ToImmutableDictionary(t => t.Id),
-            d.Battles.ToImmutableDictionary(b => b.Trainer)));
+        TrainerCatalogValidation.Validate(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, GymTrainerSourceValidation.ValidateFuchsiaGym);
         return d;
     }
-    public static FuchsiaGymTrainerCatalogContent Load(PretCanonicalPokemonCatalog canonical, string root)
-    {var d=LoadDocument(canonical, root);return new(d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(b=>b.Trainer));}
+    public static OrdinaryTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)
+    {var d=LoadDocument(canonical, root);return new(d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles, "fuchsia-gym-trainer");}
     private static void Require(bool condition,string message){if(!condition)throw new InvalidDataException(message);}
     private static byte[] Read(string root,string relative)
     {

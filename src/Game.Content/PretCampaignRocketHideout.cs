@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
     public PokemonPresentationPackage? RocketHideoutPokemon { get; }
     public PretRocketHideoutItemsDocument? RocketHideoutItems { get; }
     public PretRocketHideoutPickupsDocument? RocketHideoutPickups { get; }
-    public RocketHideoutTrainerCatalog? RocketHideoutTrainers { get; }
+    public OrdinaryTrainerCatalog? RocketHideoutTrainers { get; }
     public ImmutableArray<int> RocketHideoutInitiallySetFlags => RocketHideoutRegion?.InitiallySetFlags ?? [];
     public ImmutableArray<CampaignMapMetatilePatch> RocketHideoutMetatilePatches =>
         RocketHideoutRegion?.MetatilePatches.Select(CampaignRocketPatch).ToImmutableArray() ?? [];
@@ -60,7 +60,7 @@ public sealed partial class PretCampaignCatalog
             string pocket = item?.Pocket ?? machine!.Pocket;
             if (!scripts.TryConstant(pickup.Flag, out int flag) || flag != pickup.SourceFlagId)
                 throw new InvalidDataException("rocket-hideout_pickup_flag_differs: " + pickup.Flag);
-            if (!region.NewMaps.ContainsKey(PretRocketHideoutRegion.MapIdFromSourceSymbol(pickup.Map)))
+            if (!region.NewMaps.ContainsKey(region.NewMaps.Values.First().ResolveMapSymbol(pickup.Map)))
                 throw new InvalidDataException("rocket-hideout_pickup_map_missing: " + pickup.Map);
 
             yield return new("rocket-hideout:" + pickup.Flag, pickup.Map, false, pickup.LocalId,

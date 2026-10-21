@@ -21,5 +21,5 @@
   "include/constants/battle.h": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
   "include/constants/pokemon.h": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
   "data/battle_anim_scripts.s": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
-  "src/battle_anim_psychic.c": "3db4956ce939f8e3cdbe205c376e6da61de837ec07ceb96c6c6c1ce44eb1d6f2"
+  "src/battle_anim_psychic.c": "49a9c2a00ecb6791329fe6bb4f4e2612d4ba8f31a83dbfe39d1cafc40047c49a"
 }

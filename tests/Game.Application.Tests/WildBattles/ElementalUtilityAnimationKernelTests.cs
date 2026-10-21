@@ -355,12 +355,12 @@ public sealed class ElementalUtilityAnimationKernelTests
             Assert.IsNull(single ? CampaignMoveAnimationPresentation.AtAttackText(Envelope.Single(events, ui), true, SourceBattleScene.On, definitions, (_, _) => false).Dispatch
                 : CampaignMoveAnimationPresentation.AtAttackText(Envelope.Double(events, ui), SourceBattleScene.On, definitions, (_, _) => false).Dispatch);
             if (!single) continue;
-            var battle = Envelope.Single(events, ui) with { SourceEvents = [] };
+            var battle = Envelope.Single(events, ui);
             Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch);
-            int oi = events.IndexOf(Owner(events, id)); WildBattleEvent corrupted = battle.Events[oi] switch {
-                WildBattleMtMoonVolatileEvent marker => marker with { Before = 3 },
-                WildBattleStatusChangedEvent burn => burn with { After = WildBattleStatus.Poison },
-                WildBattleHpChangedEvent hit => hit with { Target = WildBattleSide.Player },
+            int oi = events.IndexOf(Owner(events, id)); SourceBattleEvent corrupted = battle.Events[oi] switch {
+                SourceMtMoonVolatileEvent marker => marker with { Before = 3 },
+                SourceStatusChangedEvent burn => burn with { After = WildBattleStatus.Poison },
+                SourceHpChangedEvent hit => hit with { Target = new BattlerSlot(0) },
                 _ => throw new InvalidOperationException("Expected the actual exported owner.") };
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(oi, corrupted) }, true, SourceBattleScene.On).Dispatch);
         }

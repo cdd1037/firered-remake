@@ -18,9 +18,10 @@ public sealed class TrainerPolicyTests
     private global::Game.Domain.Pokemon.SourceMechanicsCatalog proof = default !;
     private global::Game.Domain.Pokemon.PokemonCatalog catalog = default !;
     private global::Game.Domain.Items.SourceBattleItemCatalog items = default !;
+    private GameOpponentPokemonCatalog opponents = default!;
     private global::Game.Domain.Pokemon.PokemonCatalog trainerCatalog = default !;
-    private global::Game.Content.FuchsiaGymTrainerCatalogContent loaded = default !;
-    private global::Game.Domain.Trainers.FuchsiaGymTrainerCatalog gym = default !;
+    private OrdinaryTrainerCatalog loaded = default !;
+    private OrdinaryTrainerCatalog gym = default !;
     [TestInitialize]
     public void SetUp()
     {
@@ -30,8 +31,9 @@ public sealed class TrainerPolicyTests
         items = SourceBattleItemCatalogLoader.LoadAuthenticated(root);
         var canonical = PretCanonicalPokemonCatalog.Load(root, root);
         trainerCatalog = catalog;
+        opponents = PretGamePokemonCatalog.LoadContent(File.ReadAllText(Path.Combine(root, PretGamePokemonCatalog.RelativePath)), canonical, proof).Opponents;
         loaded = PretFuchsiaGymTrainers.Load(canonical, root);
-        gym = new FuchsiaGymTrainerCatalog(loaded.Trainers, loaded.Battles);
+        gym = loaded;
     }
 
     private string Json<T>(T value) => JsonSerializer.Serialize(value);
@@ -40,7 +42,7 @@ public sealed class TrainerPolicyTests
     {
         var setup = SourceTrainerEncounterEntry.Prepare(new(seed), "fuchsia-gym-trainer");
         Assert.IsTrue(setup.Succeeded && setup.Trace.Length == 4 && setup.Trace.All(t => t.Bound == 16), "four source entry AI setup draws");
-        var made = FuchsiaGymTrainerPartyFactory.Create(gym, trainerCatalog, new("pret:TRAINER_" + name), setup.Rng);
+        var made = TrainerPartyFactory.Create(gym.Trainers, opponents, new("pret:TRAINER_" + name), setup.Rng);
         var rewards = new SourceFourRewardState {
             Context = new(SourceRewardBattleKind.OrdinaryTrainer, 42, "RED", "MAPSEC_FUCHSIA_CITY"),
             Metadata = Enumerable.Range(0, 2).Select(i => new SourceRewardMetadata(new(BattleSide.Player, i),
@@ -107,7 +109,7 @@ public sealed class TrainerPolicyTests
             Metadata = players.Select((_, i) => new SourceRewardMetadata(new(BattleSide.Player, i), "RED", "MAPSEC_PALLET_TOWN", "ITEM_POKE_BALL", SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray()
         };
         var setup = SourceTrainerEncounterEntry.Prepare(new(17), "fuchsia-gym-trainer");
-        var made = FuchsiaGymTrainerPartyFactory.Create(gym, trainerCatalog, new("pret:TRAINER_" + trainer), setup.Rng);
+        var made = TrainerPartyFactory.Create(gym.Trainers, opponents, new("pret:TRAINER_" + trainer), setup.Rng);
         var entered = SourceTrainerEncounterEntry.Begin(catalog, setup, made, players, 0, rewards: rewards);
         Assert.IsTrue(entered.Succeeded, "authentic lifecycle entry " + entered.Fault);
         return entered.State!;

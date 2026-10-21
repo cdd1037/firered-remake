@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -21,7 +22,7 @@ public sealed class IceMoveAnimationDispatchTests
 {
     private static readonly (string Name, int Id, string Species, int Level, int Pp)[] Moves =
         [("BLIZZARD", 59, "JYNX", 67, 5), ("ICY_WIND", 196, "SEEL", 100, 15)];
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
+
     private static SourceMechanicsCatalog Mechanics => TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
     private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
         events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).Where(hit => {
@@ -94,15 +95,7 @@ public sealed class IceMoveAnimationDispatchTests
         Assert.AreEqual(before, JsonSerializer.Serialize(events)); Assert.AreEqual(frame, JsonSerializer.Serialize(state));
         Assert.AreEqual(random, JsonSerializer.Serialize(trace));
     }
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name); var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
+
     private static WildBattleCombatant[] Bodies(int id, int actor)
     {
         var move = Moves.Single(m => m.Id == id);
@@ -113,20 +106,7 @@ public sealed class IceMoveAnimationDispatchTests
         bodies[actor] = NaturalMon(move.Species, move.Level, move.Name) with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
-    private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
-    {
-        static WildBattleCalledPartyMember Member(WildBattleCombatant body) =>
-            new(body.Pokemon, body.HeldItem, WildBattleTransformationRules.PersistentStatus(body));
-        var frame = new SourceBattleFrame {
-            Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, BattleKind = WildBattleCalledBattleKind.Trainer, Rng = new(31),
-            Parties = [new(BattleSide.Player, [Member(bodies[0]), Member(bodies[2])]), new(BattleSide.Opponent, [Member(bodies[1]), Member(bodies[3])])],
-            Slots = Enumerable.Range(0, 4).Select(i => new SourceBattleSlot(new(i), new((BattleSide)(i & 1), i / 2), 1, bodies[i])).ToImmutableArray()
-        };
-        var entry = SourceFourEntryAbilities.InitializeEntry(Mechanics.Catalog, frame, frame.Revision);
-        Assert.IsTrue(entry.Succeeded, entry.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(entry.State));
-        return entry.State with { Rng = new(seed) };
-    }
+
     private static SourceKernelResult Resolve(SourceBattleFrame frame, int actor = 0, int target = 1)
     {
         Assert.IsNull(SourceBattleIdentityRules.Validate(frame));
@@ -135,24 +115,7 @@ public sealed class IceMoveAnimationDispatchTests
         Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
         Assert.IsFalse(result.Events.IsEmpty); return result;
     }
-    private static SourceFourActionResult Ordered(SourceBattleFrame frame, int actor, int target)
-    {
-        var selected = frame.Slots[actor].Body!.Pokemon.Moves[0].Move;
-        var choices = frame.Slots.Select(c => {
-            var move = Mechanics.Catalog.Moves[c.Body!.Pokemon.Moves[0].Move];
-            int recipient = c.Slot.Value == actor ? target : move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? c.Slot.Value : c.Slot.Value ^ 1;
-            return new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
-        }).ToImmutableArray();
-        var result = SourceFourActionTurns.BeginActions(Mechanics.Catalog, frame, frame.Revision, choices);
-        for (int step = 0; step < 12; step++)
-        {
-            Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
-            if (result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value == actor && e.Move == selected)) return result;
-            Assert.IsNotNull(result.Continuation, "The natural Ice move must execute within this public turn.");
-            result = SourceFourActionTurns.Advance(Mechanics.Catalog, result.State, result.Continuation.Value);
-        }
-        throw new InvalidOperationException("The selected Ice move did not execute in one bounded public turn.");
-    }
+
     private static (uint Seed, SourceKernelResult Result) Find(WildBattleCombatant[] bodies,
         int actor, int target, Func<SourceKernelResult, bool> predicate, string branch)
     {

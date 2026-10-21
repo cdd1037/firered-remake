@@ -1,7 +1,7 @@
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
     internal void ElectricChargeResidual(BattlerSlot slot)
     {

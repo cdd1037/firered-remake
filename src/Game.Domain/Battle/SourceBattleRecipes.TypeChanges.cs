@@ -3,15 +3,11 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasTypeChangeRecipe(string effect) => effect is "EFFECT_CONVERSION" or "EFFECT_CONVERSION_2" or "EFFECT_CAMOUFLAGE";
-    internal virtual bool TypeChangeEnabled(PokemonCatalog catalog) => true;
-    internal virtual bool TypeChangeNoEffect(PokemonMoveDefinition move) => ContactCommandNoEffect;
-    internal abstract string TypeChangeHitType(PokemonMoveDefinition move);
-    internal abstract string? TypeChangeLastHitType(BattlerSlot actor);
-    internal abstract BattlerSlot? TypeChangeLastHitBy(BattlerSlot actor);
-    internal abstract bool TypeChangeMultipleTurns(BattlerSlot source);
+    internal bool TypeChangeEnabled(PokemonCatalog catalog) => true;
+    internal bool TypeChangeNoEffect(PokemonMoveDefinition move) => ContactCommandNoEffect;
 
     internal void SetBattleType(BattlerSlot slot, PokemonMoveDefinition move, string type)
     {

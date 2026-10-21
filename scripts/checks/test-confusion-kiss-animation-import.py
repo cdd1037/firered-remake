@@ -5,6 +5,7 @@ sys.dont_write_bytecode=True
 import argparse,importlib.util,io,json,re,struct,unittest
 from pathlib import Path
 from unittest.mock import patch
+from indexed_material_expectations import assert_preserved_materials, assert_source_pixels, dependent_roots
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--reference',type=Path,default=ROOT/'content/raw/pokefirered/037335f4');p.add_argument('--generated',type=Path,default=ROOT/'content/generated/battle/animations');opts,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
@@ -37,8 +38,8 @@ class ConfusionKissImportTests(unittest.TestCase):
   def changed(ref,name):
    data=original(ref,name);return data.replace(before,after) if name==path else data
   with patch.object(importer,'read',side_effect=changed):return importer.build(REFERENCE)
- def test_exact_four_root_dependency_closure_preserves_all_other_scripts_and_recipes(self):
-  old={r['moveId']:r for r in self.previous['scripts']};self.assertEqual(NEW_ROOTS,set(self.roots)-set(old));self.assertEqual(set(old),set(self.roots)-NEW_ROOTS)
+ def test_dependency_closure_preserves_all_unaffected_scripts_and_recipes(self):
+  old={r['moveId']:r for r in self.previous['scripts']};affected=dependent_roots(self.pack,templates=NAMES);self.assertTrue(NEW_ROOTS<=affected);self.assertEqual(affected,set(self.roots)-set(old));self.assertEqual(set(old),set(self.roots)-affected)
   for move,row in old.items():self.assertEqual(row,self.roots[move])
   for row in self.previous['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
   self.assertEqual(NAMES,set(self.recipes)-{r['template'] for r in self.previous['spriteRecipes']})
@@ -46,12 +47,7 @@ class ConfusionKissImportTests(unittest.TestCase):
   prior=json.loads((opts.generated/'elemental.json').read_bytes())
   for row in prior['scripts']:self.assertEqual(row,self.roots[row['moveId']])
   for row in prior['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
-  for group in ['assets','indexedAssets']:
-   for row in prior[group]:
-    self.assertIn(row,self.pack[group])
-    for field in ['path','indicesPath','palettePath']:
-     if field in row:
-      filename=row[field];key=filename.removeprefix('elemental-').removesuffix('.rgb555');self.assertEqual((opts.generated/filename).read_bytes(),self.pixels[key])
+  assert_preserved_materials(self,prior,self.pack,opts.generated,self.pixels,'elemental-')
   self.assert_background_preserved({'manifest.json':(opts.generated/'backgrounds/manifest.json').read_bytes(),'atlas.bin':(opts.generated/'backgrounds/atlas.bin').read_bytes()})
  def test_four_roots_keep_complete_source_timing_tasks_and_sounds(self):
   expected={109:('CONFUSE_RAY',2,{'SE_M_STRING_SHOT2':123,'SE_M_CONFUSE_RAY':189}),142:('LOVELY_KISS',5,{'SE_M_ATTRACT':219,'SE_M_PSYBEAM2':193}),186:('SWEET_KISS',7,{'SE_M_ATTRACT':219,'SE_M_HEAL_BELL':188}),193:('FORESIGHT',1,{'SE_M_DETECT':202,'SE_M_SKETCH':198})}
@@ -67,13 +63,13 @@ class ConfusionKissImportTests(unittest.TestCase):
  def test_every_missing_callback_or_task_adapter_closes_only_dependent_roots(self):
   for name,root in [('gConfuseRayBallBounceSpriteTemplate',109),('gConfuseRayBallSpiralSpriteTemplate',109),('gDevilSpriteTemplate',142),('gPinkHeartSpriteTemplate',142),('gAngelSpriteTemplate',186),('gRedHeartBurstSpriteTemplate',186),('gForesightMagnifyingGlassSpriteTemplate',193)]:
    with self.subTest(name=name),patch.object(imp,'TEMPLATES',{k:v for k,v in imp.TEMPLATES.items() if k!=name}):data,_=imp.build(REFERENCE)
-   self.assertEqual(set(self.roots)-{root},{r['moveId'] for r in json.loads(data)['scripts']})
+   affected=dependent_roots(self.pack,templates={name});self.assertIn(root,affected);self.assertEqual(set(self.roots)-affected,{r['moveId'] for r in json.loads(data)['scripts']})
   for name in ['SoundTask_AdjustPanningVar','AnimTask_BlendColorCycleByTag']:
    with self.subTest(name=name),patch.object(imp,'TASKS',imp.TASKS-{name}):data,_=imp.build(REFERENCE)
-   self.assertEqual(set(self.roots)-{109},{r['moveId'] for r in json.loads(data)['scripts']})
+   affected=dependent_roots(self.pack,tasks={name});self.assertIn(109,affected);self.assertEqual(set(self.roots)-affected,{r['moveId'] for r in json.loads(data)['scripts']})
  def test_six_materials_match_source_indices_rgb555_and_distinct_heart_palettes(self):
   for asset,stem,size,palette in [('yellow-ball','yellow_ball',(16,16),None),('devil','devil',(32,64),None),('angel','angel',(32,32),None),('magnifying-glass','magnifying_glass',(32,32),None),('pink-heart','magenta_heart',(16,16),'pink_heart'),('red-heart','magenta_heart',(16,16),'red_heart')]:
-   shape,linear,rgb,tiles=png(stem);self.assertEqual(size,shape);cs=colors(pal(palette) if palette else rgb);blob=self.pixels[asset];self.assertEqual(size,struct.unpack_from('<HH',blob));self.assertEqual([cs[i]|(32768 if i else 0) for i in linear],list(struct.unpack_from('<'+'H'*len(linear),blob,4)))
+   shape,linear,rgb,tiles=png(stem);self.assertEqual(size,shape);cs=colors(pal(palette) if palette else rgb);assert_source_pixels(self,self.pack,self.pixels,asset,size,linear,cs,'ANIM_TAG_'+asset.upper().replace('-','_'))
   self.assertNotEqual(self.pixels['pink-heart'],self.pixels['red-heart'])
   shape,linear,rgb,tiles=png('yellow_ball');self.assertEqual(bytes(tiles[i]|tiles[i+1]<<4 for i in range(0,len(tiles),2)),self.pixels['yellow-ball.4bpp']);self.assertEqual(struct.pack('<16H',*colors(rgb)),self.pixels['yellow-ball.pal16']);self.assertEqual({'id':'yellow-ball','width':16,'height':16,'indicesPath':'elemental-yellow-ball.4bpp','palettePath':'elemental-yellow-ball.pal16','paletteTag':'ANIM_TAG_YELLOW_BALL'},next(r for r in self.pack['indexedAssets'] if r['id']=='yellow-ball'))
  def test_exact_seven_recipe_frame_affine_programs(self):

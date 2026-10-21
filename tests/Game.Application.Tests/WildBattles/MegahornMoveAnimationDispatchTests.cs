@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -15,39 +16,23 @@ namespace FireRed.Tests.Application.WildBattles;
 public sealed class MegahornMoveAnimationDispatchTests
 {
     private static readonly (string Name,int Id,int Level,int Pp)[] Moves=[("MEGAHORN",224,53,10)];
-    private static MoveId Id(string name)=>new("pret:MOVE_"+name);
+
     private static SourceMechanicsCatalog Mechanics=>TestAssets.Cached(()=>SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
-    private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events)=>events.Where(e=>e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events,int index)=>new("megahorn",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,events,index,[],[],0,0,[],[],[],[],0);
+
+    private static readonly DirectHitAnimationContract Contract = new("megahorn", 224, Id("MEGAHORN"), 10, DirectHitOwnership.AttackText);
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) => Contract.Double(events, index);
     private static void AssertProjection(SourceKernelResult result,bool expected,int actor,int target)
     {AssertProjection(result.Events,result.State,result.Trace,expected,actor,target);}
     private static void AssertProjection(ImmutableArray<SourceBattleEvent> events,SourceBattleFrame state,ImmutableArray<RandomTrace> trace,bool expected,int actor,int target)
     {
-        string before=JsonSerializer.Serialize(events),frame=JsonSerializer.Serialize(state),random=JsonSerializer.Serialize(trace);int dispatched=0;
+        string before=JsonSerializer.Serialize(events),frame=JsonSerializer.Serialize(state),random=JsonSerializer.Serialize(trace);
         var used=events.OfType<SourceMoveUsedEvent>().Single();var attack=events.OfType<SourceAttackStringEvent>().Single();var pp=events.OfType<SourcePpCommandEvent>().Single();
         Assert.AreEqual(Id("MEGAHORN"),used.Move);Assert.AreEqual(used.Move,pp.CurrentMove);Assert.AreEqual(actor,pp.Actor.Value);Assert.AreEqual(target,pp.Target.Value);
-        for(int i=0;i<events.Length;i++)
-        {
-            var battle=Double(events,i);var decision=AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On);
-            Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(battle,SourceBattleScene.On));Assert.IsNull(AnimationDispatchFixture.AtResult(battle,SourceBattleScene.On).Dispatch);
-            if(expected&&events[i]==used)
-            {
-                var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);dispatched++;var hit=Hits(events).Single();
-                Assert.AreEqual(224,cue.SourceMoveId);Assert.AreEqual(actor,cue.Actor.Value);Assert.AreEqual(target,cue.Target.Value);Assert.AreEqual(used.Sequence,cue.Sequence);Assert.AreEqual(hit.Sequence,cue.ResultSequence);Assert.AreEqual(attack.Sequence,cue.AttackSequence);Assert.AreEqual(pp.Sequence,cue.PpSequence);Assert.IsTrue(cue.AcknowledgesCurrentReceipt);Assert.IsNull(cue.MoveTurn);Assert.AreEqual(hit is SourceSubstituteDamagedEvent,cue.HitsSubstitute);
-            }
-            else Assert.IsNull(decision.Dispatch);
-        }
-        Assert.AreEqual(expected?1:0,dispatched);Assert.AreEqual(before,JsonSerializer.Serialize(events));Assert.AreEqual(frame,JsonSerializer.Serialize(state));Assert.AreEqual(random,JsonSerializer.Serialize(trace));
+        if (expected) Contract.AssertDispatches(events, actor, target);
+        else Contract.AssertDenied(events, "blocked source invocation", singles: false);
+        Assert.AreEqual(before,JsonSerializer.Serialize(events));Assert.AreEqual(frame,JsonSerializer.Serialize(state));Assert.AreEqual(random,JsonSerializer.Serialize(trace));
     }
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name); var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
+
     private static WildBattleCombatant[] Bodies(int id, int actor = 0)
     {
         var move = Moves.Single(m => m.Id == id);
@@ -55,20 +40,7 @@ public sealed class MegahornMoveAnimationDispatchTests
         bodies[actor] = NaturalMon("HERACROSS", move.Level, move.Name) with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
-    private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
-    {
-        static WildBattleCalledPartyMember Member(WildBattleCombatant body) =>
-            new(body.Pokemon, body.HeldItem, WildBattleTransformationRules.PersistentStatus(body));
-        var frame = new SourceBattleFrame {
-            Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, BattleKind = WildBattleCalledBattleKind.Trainer, Rng = new(31),
-            Parties = [new(BattleSide.Player, [Member(bodies[0]), Member(bodies[2])]), new(BattleSide.Opponent, [Member(bodies[1]), Member(bodies[3])])],
-            Slots = Enumerable.Range(0, 4).Select(i => new SourceBattleSlot(new(i), new((BattleSide)(i & 1), i / 2), 1, bodies[i])).ToImmutableArray()
-        };
-        var entry = SourceFourEntryAbilities.InitializeEntry(Mechanics.Catalog, frame, frame.Revision);
-        Assert.IsTrue(entry.Succeeded, entry.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(entry.State));
-        return entry.State with { Rng = new(seed) };
-    }
+
     private static SourceKernelResult Resolve(SourceBattleFrame frame, int actor = 0, int target = 1)
     {
         Assert.IsNull(SourceBattleIdentityRules.Validate(frame));
@@ -77,24 +49,7 @@ public sealed class MegahornMoveAnimationDispatchTests
         Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
         Assert.IsFalse(result.Events.IsEmpty); return result;
     }
-    private static SourceFourActionResult Ordered(SourceBattleFrame frame, int actor, int target)
-    {
-        var selected = frame.Slots[actor].Body!.Pokemon.Moves[0].Move;
-        var choices = frame.Slots.Select(c => {
-            var move = Mechanics.Catalog.Moves[c.Body!.Pokemon.Moves[0].Move];
-            int recipient = c.Slot.Value == actor ? target : move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? c.Slot.Value : c.Slot.Value ^ 1;
-            return new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
-        }).ToImmutableArray();
-        var result = SourceFourActionTurns.BeginActions(Mechanics.Catalog, frame, frame.Revision, choices);
-        for (int step = 0; step < 12; step++)
-        {
-            Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
-            if (result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value == actor && e.Move == selected)) return result;
-            Assert.IsNotNull(result.Continuation, "The natural Megahorn move must execute within this public turn.");
-            result = SourceFourActionTurns.Advance(Mechanics.Catalog, result.State, result.Continuation.Value);
-        }
-        throw new InvalidOperationException("The selected Megahorn move did not execute in one bounded public turn.");
-    }
+
     private static (uint Seed, SourceKernelResult Result) Find(WildBattleCombatant[] bodies,
         int actor, int target, Func<SourceKernelResult, bool> predicate, string branch)
     {
@@ -107,7 +62,6 @@ public sealed class MegahornMoveAnimationDispatchTests
         }
         throw new InvalidOperationException($"No observed {branch} in 1024 action-start seeds.");
     }
-
 
     [TestMethod]
     public void NaturalMegahornUsesOrderedTurnsAtAllFourPositionsAndSelectedAllies()

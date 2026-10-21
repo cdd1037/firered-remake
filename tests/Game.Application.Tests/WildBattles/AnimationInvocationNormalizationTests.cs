@@ -18,14 +18,17 @@ public sealed class AnimationInvocationNormalizationTests
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events)=>
         new("normalized",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,events,1,[],[],0,0,[],[],[],[],0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events)=>
-        new("normalized",null!,new(),events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),1,null!,null!,CampaignBattlePhase.Events,[],0,[]);
+        new("normalized",null!,new(),events,1,null!,null!,CampaignBattlePhase.Events,[],0,[]);
 
     [TestMethod]
     public void BothEnvelopesUseTheSameInvocationAndPreserveForeignPpOwner()
     {
-        Assert.AreEqual(AnimationDispatchFixture.AtAttackText(Double(Events),SourceBattleScene.On),
-            AnimationDispatchFixture.AtAttackText(Single(Events),true,SourceBattleScene.On));
-        var foreign=Events.SetItem(2,((SourcePpCommandEvent)Events[2]) with{PpOwner=new(1)});
+        var events = Events; var single = Single(events); var doubles = Double(events);
+        Assert.AreEqual(events, single.Events); Assert.AreEqual(events, doubles.Events);
+        for (int i = 0; i < events.Length; i++) Assert.AreSame(single.Events[i], doubles.Events[i]);
+        Assert.AreEqual(AnimationDispatchFixture.AtAttackText(doubles,SourceBattleScene.On),
+            AnimationDispatchFixture.AtAttackText(single,true,SourceBattleScene.On));
+        var foreign=events.SetItem(2,((SourcePpCommandEvent)events[2]) with{PpOwner=new(1)});
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(foreign),SourceBattleScene.On).Dispatch);
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(foreign),true,SourceBattleScene.On).Dispatch);
     }

@@ -216,9 +216,9 @@ public sealed class TwisterBrickFuryAnimationKernelTests
             Assert.AreEqual(before == 5 ? 0 : 1, marks.Length);
             if (marks.Length != 0) { Assert.AreEqual(before, marks[0].Before); Assert.AreEqual(expected, marks[0].After); Assert.AreEqual("hit", marks[0].Reason); Assert.IsTrue(marks[0].Sequence < hit.Sequence); }
             Check(result, 210, single, hit); Assert.AreEqual(expected, (int?)Cue(result.Events, single)!.FuryCutterCounter);
-            var export = SourceBattleEventAdapter.Export(hit);
-            Assert.AreEqual(Counter(hit), export switch { WildBattleHpChangedEvent h => h.PreparedFuryCutterCounter,
-                WildBattleSubstituteDamagedEvent s => s.PreparedFuryCutterCounter, _ => throw new InvalidOperationException() });
+            var export = OverlayHitAnimationKernelFixture.Single([hit], 0).Events[0];
+            Assert.AreEqual(Counter(hit), export switch { SourceHpChangedEvent h => h.PreparedFuryCutterCounter,
+                SourceSubstituteDamagedEvent s => s.PreparedFuryCutterCounter, _ => throw new InvalidOperationException() });
         }
     }
 
@@ -250,9 +250,9 @@ public sealed class TwisterBrickFuryAnimationKernelTests
             foreach (int? invalid in new int?[] { null, -1, 0, 6, 255 }) Shared.Deny(events.SetItem(at, WithCounter(hit, invalid)), single);
             if (!single) continue;
             int ui = Array.FindIndex(events.ToArray(), e => e is SourceMoveUsedEvent); var battle = Envelope.Single(events, ui);
-            Assert.AreEqual(5, (int?)AnimationDispatchFixture.AtAttackText(battle with { SourceEvents = [] }, true, SourceBattleScene.On).Dispatch!.FuryCutterCounter);
-            WildBattleEvent wrong = battle.Events[at] switch { WildBattleHpChangedEvent h => h with { PreparedFuryCutterCounter = null },
-                WildBattleSubstituteDamagedEvent s => s with { PreparedFuryCutterCounter = null }, _ => throw new InvalidOperationException() };
+            Assert.AreEqual(5, (int?)AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch!.FuryCutterCounter);
+            SourceBattleEvent wrong = battle.Events[at] switch { SourceHpChangedEvent h => h with { PreparedFuryCutterCounter = null },
+                SourceSubstituteDamagedEvent s => s with { PreparedFuryCutterCounter = null }, _ => throw new InvalidOperationException() };
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(at, wrong) }, true, SourceBattleScene.On).Dispatch);
         }
     }

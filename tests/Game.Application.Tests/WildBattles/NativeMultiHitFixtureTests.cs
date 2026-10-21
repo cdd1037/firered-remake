@@ -48,21 +48,21 @@ public sealed class NativeMultiHitFixtureTests
                 validate: owner.ValidatePlayerSave);
             Assert.AreEqual(CanonicalJson.Hash(initial), CanonicalJson.Hash(loaded.State));
             var route = RunPublicRoute(content, loaded.State, loaded.Generation);
-            var summary = route.Battle.SourceEvents.OfType<SourceMultiHitEvent>()
+            var summary = route.Battle.Events.OfType<SourceMultiHitEvent>()
                 .SingleOrDefault(e => e.Actor.Value == 0 && e.Move == Slap);
             if (summary is not { ActualHits: >= 2 }) continue;
-            var hits = route.Battle.SourceEvents.OfType<SourceHpChangedEvent>()
+            var hits = route.Battle.Events.OfType<SourceHpChangedEvent>()
                 .Where(e => e.Actor.Value == 0 && e.Target.Value == 1 && e.Move == Slap).ToImmutableArray();
             int expectedReceiptCount = summary.ActualHits;
             Assert.AreEqual(expectedReceiptCount, hits.Length);
             Assert.IsTrue(hits.All(e => e.HpBefore > e.HpAfter));
-            var pp = route.Battle.SourceEvents.OfType<SourcePpCommandEvent>()
+            var pp = route.Battle.Events.OfType<SourcePpCommandEvent>()
                 .Single(e => e.Actor.Value == 0 && e.CurrentMove == Slap);
             Assert.AreEqual(10, pp.Before);
             Assert.AreEqual(9, pp.After);
             for (int ordinal = 0; ordinal < hits.Length; ordinal++)
             {
-                int index = route.Battle.SourceEvents.IndexOf(hits[ordinal]);
+                int index = route.Battle.Events.IndexOf(hits[ordinal]);
                 var decision = AnimationDispatchFixture.AtResult(
                     route.Battle with { EventIndex = index }, true, SourceBattleScene.On);
                 Assert.IsNotNull(decision.Dispatch, decision.Reason);
@@ -74,7 +74,7 @@ public sealed class NativeMultiHitFixtureTests
             // A second normal RestoreCurrent/public route proves the bytes being
             // exported select the same encounter and committed event sequence.
             var replay = RunPublicRoute(content, loaded.State, loaded.Generation);
-            Assert.AreEqual(CanonicalJson.Hash(route.Battle.SourceEvents), CanonicalJson.Hash(replay.Battle.SourceEvents));
+            Assert.AreEqual(CanonicalJson.Hash(route.Battle.Events), CanonicalJson.Hash(replay.Battle.Events));
             Assert.AreEqual(route.Acknowledgements, replay.Acknowledgements);
             verified = new(initial, bytes, seed, route.Acknowledgements, route.Battle, summary, hits);
         }

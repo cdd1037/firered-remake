@@ -41,7 +41,7 @@ public sealed class BatonPassAnimationKernelTests
         // a wild opponent is never given a fabricated multi-member party.
         var campaign=(ICampaignCatalog)CurrentCampaignFixture.Catalog;
         var setup=SourceTrainerEncounterEntry.Prepare(new(42),"baton-pass-animation");
-        var made=SaffronGymTrainerPartyFactory.Create(campaign.SaffronGymTrainerParties!,campaign.OpponentPokemon!,SaffronGymTrainerPartyFactory.Sabrina,setup.Rng);
+        var made=TrainerPartyFactory.Create(campaign.OrdinaryTrainerCatalogs.Single(c => c.Trainers.ContainsKey(new("pret:TRAINER_LEADER_SABRINA"))).Trainers,campaign.OpponentPokemon!,new("pret:TRAINER_LEADER_SABRINA"),setup.Rng);
         var rewards=new SourceFourRewardState{Context=new(SourceRewardBattleKind.OrdinaryTrainer,42,"RED","MAPSEC_SAFFRON_CITY"),
             Metadata=[new(new(BattleSide.Player,0),"RED","MAPSEC_PALLET_TOWN","ITEM_POKE_BALL",SourceRewardPokerusHistory.NeverInfected)]};
         var entry=SourceTrainerEncounterEntry.Begin(Kernel.Mechanics.Catalog,setup,made,[Kernel.Mon("WAILORD","SPLASH",100)],0,rewards:rewards);

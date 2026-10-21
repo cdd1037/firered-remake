@@ -48,9 +48,9 @@ public sealed class SketchAnimationKernelTests
         Assert.AreEqual(before, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(before)));
         if (single)
         {
-            var exported = events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(); string json = JsonSerializer.Serialize(exported);
-            Assert.AreEqual(json, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<WildBattleEvent>>(json)));
-            Assert.AreEqual(0, F.Single(events, events.IndexOf(used)).SourceEvents.Length);
+            var exported = events; string json = JsonSerializer.Serialize(exported);
+            Assert.AreEqual(json, JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(json)));
+            Assert.AreEqual(events, F.Single(events, events.IndexOf(used)).Events);
             Assert.IsNull(AnimationDispatchFixture.AtAttackText(F.Single(events, events.IndexOf(used)), false, SourceBattleScene.On).Dispatch);
         }
     }

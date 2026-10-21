@@ -13,13 +13,12 @@ public sealed partial class PretCampaignCatalog
 {
     public const string ViridianGymContentProfile="firered-viridian-gym-campaign-v1";
     public PretViridianGymRegion ViridianGymRegion { get; }
-    public ViridianGymTrainerCatalog? ViridianGymTrainerParties { get; }
+    public OrdinaryTrainerCatalog? ViridianGymTrainerParties { get; }
 
 
-    private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,MachineCatalog machines,GamePokemonCatalog owned)
+    private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,OrdinaryTrainerCatalog trainers,PretStoryCompilation scripts,MachineCatalog machines,GamePokemonCatalog owned)
     {
         var gym=new MapId("map.viridian-city-gym");
-        ViridianGymTrainerPartyFactory.ValidateCatalog(trainers);
         var cityDoor = maps[new MapId("map.viridian-city")].FieldWarps.Single(w => w.Index == 2);
         if (cityDoor.X != 36 || cityDoor.Y != 10 || cityDoor.Elevation != 0 ||
             cityDoor.DestinationWarpId != 1 || cityDoor.DestinationMapId != gym)
@@ -28,7 +27,7 @@ public sealed partial class PretCampaignCatalog
         if(sourceWarps.Length!=3||sourceWarps.Any(w=>w.DestinationMapId.Value!="map.viridian-city"||w.DestinationWarpId!=2)||
             sourceWarps[1].X!=17||sourceWarps[1].Y!=22||maps[gym].SourceBehaviorAt(17,22)!=0x65)
             throw new InvalidDataException("viridian_gym_warp_source");
-        foreach(var battle in trainers.BattlesByScript.Values)
+        foreach(var battle in trainers.Battles)
         {
             var program=scripts.FindProgram(battle.ScriptEntry)??throw new InvalidDataException("viridian_gym_trainer_script_missing");
             if(!program.Instructions.Any(i=>i.Op==StoryOp.TrainerBattle&&i.Source.Path==battle.Source.Path&&

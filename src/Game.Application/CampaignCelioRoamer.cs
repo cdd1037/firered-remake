@@ -51,10 +51,10 @@ public sealed partial class CampaignSession
         var battle = CampaignWildReadProjection.From(frame);
         var origin = new CampaignCelioRoamerEncounter(state.World.Player.MapId, method, candidate.Individual, state.TrainerId);
         var presentation = new CampaignWildBattle("wild-battle:" + exploration.NextWildBattleId, owned,
-            frame, ProjectCanonicalWildEvents(started.Events), 0, battle.Player.Pokemon, battle.Opponent.Pokemon,
+            frame, started.Events, 0, battle.Player.Pokemon, battle.Opponent.Pokemon,
             CampaignBattlePhase.Events, [], 0, started.Trace)
         {
-            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
+            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(started.EntrySlots)), EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
             CelioRoamer = origin, CelioRoamerEncounterTrace = gateTrace, ActivePartyIndex = active,
             Origin = new(_content.MapDefinition(origin.Map).RegionMapSection, SourceRoamerRules.Level),
             OpponentHpAtLastSwitch = battle.Opponent.Pokemon.CurrentHp

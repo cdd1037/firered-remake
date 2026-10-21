@@ -40,24 +40,16 @@ explicit residual layout debt, not required historical compatibility layers.
 ## Checkpoints and verification limits
 
 The current content version is `firered-current-content-v4`; campaign rules are
-`firered-current-campaign-v4`. The explicit offline
-`convert-current-checkpoint SOURCE NEW_DESTINATION` command accepts exactly
-campaign-v3/content-v4 (validated Tower-history compaction) or campaign-v2/content-v4
-(retired-Pokemon compaction followed by validated Tower-history compaction).
-Already-v4 inputs and other version routes are refused. Every discarded Tower
-receipt is validated, source bytes are preserved, and generation, RNG and unrelated
-player state remain unchanged. Normal Continue does not migrate old rules.
+`firered-current-campaign-v4`, with schema 3 readable JSON saves. Continue strictly
+validates these versions and current state. Offline old-save conversion and
+operator-supplied hatch-count correction are no longer supported. Missing lifetime
+hatch totals are rejected, never inferred or defaulted to zero.
 
-The generation-57604 v3 representative checkpoint still lacks an independently
-known lifetime hatch count. Version conversion does not infer or supply it. An
-operator with a known total must use the separate explicit `set-known-hatch-count`
-command first. It explicitly supports same-version v2, v3 and v4 corrections,
-preserving the source rules, full Tower history and v2 retired fields; v2 is checked
-using a throwaway copy through the retired-source validation before publication.
-The controlled fixture's synthetic test-only total is not a repaired player save.
-See [current game composition](current-game-composition.md) for the exact routes.
-Historical measurements below remain evidence of their original cleanup slice,
-not a claim that the unchanged old checkpoint is a current Continue baseline.
+The unchanged generation-57604 historical sample is schema 1/campaign-v3 and is
+not a current Continue baseline. Current new-game Save/Continue remains supported;
+checksums and safe primary/backup/staging behavior are unchanged. See
+[current game composition](current-game-composition.md). Historical measurements
+below describe their original cleanup slice, not compatibility guarantees.
 
 Game completeness is separate from this cleanup; see [scope audit](full-scope-audit.md).
 Not all optional content or dedicated move animations are implemented. Native
@@ -116,8 +108,7 @@ Acquisition/evolution sources are retained for current ownership and active work
 finite gift/trade completion, independent Hall of Fame snapshots, Pokedex facts
 and cumulative statistics survive an entity leaving. IDs remain monotonic.
 
-The explicit prior-rules checkpoint conversion preserves RNG, generation and the
-original input file. The current representative checkpoint is 196,808 bytes,
+The historical representative checkpoint measured 196,808 bytes,
 compared with 205,104 bytes after the preceding battle-history reduction. This
 8,296-byte difference is the ownership cleanup's incremental change, not the
 entire reduction from the older 315,347-byte file.

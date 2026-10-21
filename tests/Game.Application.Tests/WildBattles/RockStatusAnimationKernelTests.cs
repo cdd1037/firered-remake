@@ -116,9 +116,9 @@ public sealed class RockStatusAnimationKernelTests
             Deny(events.SetItem(events.IndexOf(attack), attack with { ChosenMove = Kernel.Id("METRONOME") }), single);
             if (single)
             {
-                var battle = Envelope.Single(events, usedAt); var exported = (WildBattleDisableChangedEvent)battle.Events[at];
+                var battle = Envelope.Single(events, usedAt); var exported = (SourceDisableChangedEvent)battle.Events[at];
                 Assert.AreEqual(disabled.Move, exported.Move);
-                Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle with { SourceEvents = [] }, true, SourceBattleScene.On).Dispatch);
+                Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(at, exported with { Move = null }) }, true, SourceBattleScene.On).Dispatch);
             }
         }

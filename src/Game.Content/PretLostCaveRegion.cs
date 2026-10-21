@@ -34,26 +34,6 @@ public sealed class PretLostCaveRegion
 
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol)
-    {
-        if (symbol.StartsWith("MAP_FIVE_ISLAND_LOST_CAVE_ROOM", StringComparison.Ordinal) &&
-            int.TryParse(symbol.AsSpan("MAP_FIVE_ISLAND_LOST_CAVE_ROOM".Length), NumberStyles.None,
-                CultureInfo.InvariantCulture, out int room) && room is >= 1 and <= 14 &&
-            symbol == "MAP_FIVE_ISLAND_LOST_CAVE_ROOM" + room.ToString(CultureInfo.InvariantCulture))
-            return new("map.five-island-lost-cave-room" + room.ToString(CultureInfo.InvariantCulture));
-        return symbol switch
-        {
-            "MAP_FIVE_ISLAND_WATER_LABYRINTH" => WaterLabyrinthMapId,
-            "MAP_FIVE_ISLAND_RESORT_GORGEOUS" => ResortGorgeousMapId,
-            "MAP_FIVE_ISLAND_RESORT_GORGEOUS_HOUSE" => HouseMapId,
-            "MAP_FIVE_ISLAND_LOST_CAVE_ENTRANCE" => EntranceMapId,
-            "MAP_FIVE_ISLAND" => new("map.five-island"),
-            _ => throw new InvalidDataException("Unknown Lost Cave map symbol: " + symbol)
-        };
-    }
-
-
-
     public static PretLostCaveRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

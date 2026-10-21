@@ -28,15 +28,6 @@ public sealed class PretPowerPlantRegion
 
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_POWER_PLANT" => new("map.power-plant"),
-        "MAP_ROUTE10" => new("map.route-10"),
-        _ => throw new InvalidDataException("Unknown Power Plant map symbol: " + symbol)
-    };
-
-
-
     public static PretPowerPlantRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

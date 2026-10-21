@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Content;
 using Game.Application;
 using Game.Domain.WildBattle;
@@ -170,29 +171,29 @@ public partial class CampaignView
     }
     private bool MtMoonSilentEvent(CampaignWildBattle battle) => WildCurrentEvent(battle) is { } current && RockTunnelWildMessage(current) is null && MtMoonWildMessage(battle, current) is { Symbol.Length: 0 };
 
-    private ForestMessage? MtMoonWildMessage(CampaignWildBattle battle, WildBattleEvent current) => current switch
+    private ForestMessage? MtMoonWildMessage(CampaignWildBattle battle, SourceBattleEvent current) => current switch
     {
-        WildBattleMtMoonVolatileEvent { Volatile: "charge", Reason: "move" } charge => new("sText_PkmnChargingPower", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(charge.Side))),
-        WildBattleMtMoonVolatileEvent { Volatile: "water-sport", Reason: "move" } => new("sText_FireWeakened"),
-        WildBattleMtMoonVolatileEvent { Volatile: "mud-sport", Reason: "move" } => new("sText_ElectricityWeakened"),
-        WildBattleMtMoonVolatileEvent { Volatile: "follow-me" } follow => new("sText_PkmnCenterAttention", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(follow.Side))),
-        WildBattleMtMoonVolatileEvent or WildBattleSelfDestructEvent => new(""),
-        WildBattleEncoreChangedEvent { Reason: "move" } encore => new("sText_PkmnGotEncore", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(encore.Side))),
-        WildBattleEncoreChangedEvent { Reason: "expired" } encore => new("sText_PkmnEncoreEnded", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(encore.Side))),
-        WildBattleEncoreChangedEvent => new(""),
-        WildBattleDrainEvent drain => new("sText_PkmnEnergyDrained", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(drain.Target))),
-        WildBattleMagnitudeEvent magnitude => new("sText_MagnitudeStrength", ("B_BUFF1", magnitude.Magnitude.ToString())),
-        WildBattleHeldItemStolenEvent stolen => new("sText_PkmnStoleItem", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(stolen.Actor)),
+        SourceMtMoonVolatileEvent { Volatile: "charge", Reason: "move" } charge => new("sText_PkmnChargingPower", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(charge.Side))),
+        SourceMtMoonVolatileEvent { Volatile: "water-sport", Reason: "move" } => new("sText_FireWeakened"),
+        SourceMtMoonVolatileEvent { Volatile: "mud-sport", Reason: "move" } => new("sText_ElectricityWeakened"),
+        SourceMtMoonVolatileEvent { Volatile: "follow-me" } follow => new("sText_PkmnCenterAttention", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(follow.Side))),
+        SourceMtMoonVolatileEvent or SourceSelfDestructEvent => new(""),
+        SourceEncoreChangedEvent { Reason: "move" } encore => new("sText_PkmnGotEncore", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(encore.Side))),
+        SourceEncoreChangedEvent { Reason: "expired" } encore => new("sText_PkmnEncoreEnded", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(encore.Side))),
+        SourceEncoreChangedEvent => new(""),
+        SourceDrainEvent drain => new("sText_PkmnEnergyDrained", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(drain.Target))),
+        SourceMagnitudeEvent magnitude => new("sText_MagnitudeStrength", ("B_BUFF1", magnitude.Magnitude.ToString())),
+        SourceHeldItemStolenEvent stolen => new("sText_PkmnStoleItem", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(stolen.Actor)),
             ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(stolen.Target)), ("B_LAST_ITEM", _catalog.DisplayNames.ItemName(stolen.Item))),
-        WildBattleMoveFailedEvent { Reason: "no-encore-target" or "no-ally-in-single-battle" or "already-mud-sport" } => new("sText_ButItFailed"),
-        WildBattleConfusionChangedEvent { Reason: "rampage-ended" } confusion => new("sText_PkmnWasConfused", ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(confusion.Side))),
-        WildBattleLeechSeedChangedEvent { Reason: "rapid-spin" } seed => new("sText_PkmnShedLeechSeed", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(seed.Side))),
-        WildBattleBindingChangedEvent { Reason: "rapid-spin" } bind => new("sText_PkmnFreedFrom", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(bind.Side)), ("B_BUFF1", MoveName(bind.Move ?? new("pret:MOVE_BIND")))),
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" } ability => new("sText_PkmnMakesGroundMiss", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
-        WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } effect when battle.Events.Any(e => e.Sequence == effect.Sequence - 1 && e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" }) => new(""),
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_STICKY_HOLD" } ability => new("sText_PkmnsXBlocksY", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)),
+        SourceMoveFailedEvent { Reason: "no-encore-target" or "no-ally-in-single-battle" or "already-mud-sport" } => new("sText_ButItFailed"),
+        SourceConfusionChangedEvent { Reason: "rampage-ended" } confusion => new("sText_PkmnWasConfused", ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(confusion.Side))),
+        SourceLeechSeedChangedEvent { Reason: "rapid-spin" } seed => new("sText_PkmnShedLeechSeed", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(seed.Side))),
+        SourceBindingChangedEvent { Reason: "rapid-spin" } bind => new("sText_PkmnFreedFrom", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(bind.Side)), ("B_BUFF1", MoveName(bind.Move ?? new("pret:MOVE_BIND")))),
+        SourceAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" } ability => new("sText_PkmnMakesGroundMiss", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
+        SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } effect when battle.Events.Any(e => e.Sequence == effect.Sequence - 1 && e is SourceAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" }) => new(""),
+        SourceAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_STICKY_HOLD" } ability => new("sText_PkmnsXBlocksY", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)),
             ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability)), ("B_CURRENT_MOVE", MoveName(ability.Move))),
-        WildBattleStatusChangedEvent { Reason: "effect-spore", Before: 0 } change => new(change.After switch
+        SourceStatusChangedEvent { Reason: "effect-spore", Before: 0 } change => new(change.After switch
             { >= 1 and <= 5 => "sText_PkmnMadeSleep", WildBattleStatus.Poison => "sText_PkmnPoisonedBy", WildBattleStatus.Paralysis => "sText_PkmnWasParalyzedBy", _ => throw new InvalidDataException("Unsupported Effect Spore status.") },
             ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(Opposite(change.Side))), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName("ABILITY_EFFECT_SPORE")), ("B_EFF_NAME_WITH_PREFIX", WildPrefixedName(change.Side))),
         _ => null

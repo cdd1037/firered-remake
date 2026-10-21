@@ -131,9 +131,9 @@ public sealed partial class CampaignSession
         if (!prepared.Succeeded) throw new InvalidDataException(prepared.Fault);
         var frame = prepared.State! with { Obedience = CampaignObedienceContext(state) };
         string id = "forest-trainer-battle:" + ((state.ForestTrainerHistory?.Length ?? 0) + 1);
-        var presentation = new CampaignWildBattle(id, state.Party[active], frame, ProjectTrainerWildEvents(prepared.Events), 0,
+        var presentation = new CampaignWildBattle(id, state.Party[active], frame, prepared.Events, 0,
             frame.Get(new(0)).Body!.Pokemon, frame.Get(new(1)).Body!.Pokemon, CampaignBattlePhase.Events, [], 0, prepared.Trace) {
-            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), SourceEvents = prepared.Events, ActivePartyIndex = active,
+            DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(prepared.EntrySlots)), ActivePartyIndex = active,
             OpponentHpAtLastSwitch = frame.Get(new(1)).Body!.Pokemon.CurrentHp };
         var battle = new CampaignForestTrainerBattle(id, trainer, actor.LocalId, presentation, CampaignForestTrainerStage.Intro,
             state.Party.Select(p => p.Pokemon.Level).ToImmutableArray(), ProjectTrainerEvents(frame, prepared.Events), 0, 0, [0]) {

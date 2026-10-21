@@ -240,7 +240,7 @@ public sealed class VisibilityFourAnimationKernelTests
             }
             if (single)
             {
-                var exported = Envelope.Single(events, events.IndexOf(used)) with { SourceEvents = [] };
+                var exported = Envelope.Single(events, events.IndexOf(used));
                 Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(exported, true, SourceBattleScene.On).Dispatch);
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(exported with { Events = exported.Events.RemoveAt(mi) }, true, SourceBattleScene.On).Dispatch);
             }

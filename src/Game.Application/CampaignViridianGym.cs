@@ -1,7 +1,6 @@
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
 using Game.Domain.World;
 
@@ -19,22 +18,20 @@ public sealed partial class CampaignSession
     {
         ValidateVictoryRoadCatalog(content);
         ValidateLeagueRivalCatalog(content);
-        if(content.ViridianGymTrainerParties is null||
-            content.GamePokemon is null||content.OpponentPokemon is null||
+        if(content.GamePokemon is null||content.OpponentPokemon is null||
             !ReferenceEquals(content.OpponentPokemon.Owned,content.GamePokemon)||
             content.Machines is not {} proof||
             !content.Maps.ContainsKey(new(ViridianGymMap))||content.Maps.ContainsKey(new("map.viridian-gym"))||
             content.MapFromSourceSymbol("MAP_VIRIDIAN_CITY_GYM").Value!=ViridianGymMap||
             content.MapDefinition(new(ViridianGymMap)).Actors.Length!=10||!content.SupportsRegionalFlavor(new(ViridianGymMap)))
             throw new InvalidDataException("viridian_gym_source_profile_missing");
-        ViridianGymTrainerPartyFactory.ValidateCatalog(content.ViridianGymTrainerParties);
         var warp=content.Maps[new("map.viridian-city")].FieldWarps.Single(w=>w.Index==2);
         if(warp.DestinationMapId.Value!=ViridianGymMap||warp.DestinationWarpId!=1)
             throw new InvalidDataException("viridian_gym_runtime_warp_missing");
     }
 
     private static bool ViridianGymVictory(CampaignState state)=>(state.ForestTrainerHistory??[])
-        .Any(h=>h is not null&&h.TrainerId==ViridianGymTrainerPartyFactory.Giovanni.Value&&h.Outcome==WildBattleOutcome.Won);
+        .Any(h=>h is not null&&h.TrainerId=="pret:TRAINER_LEADER_GIOVANNI"&&h.Outcome==WildBattleOutcome.Won);
     private static bool ViridianGymDoorBadges(CampaignState state)=>Enumerable.Range(2,6)
         .All(i=>state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET"));
 
@@ -42,7 +39,7 @@ public sealed partial class CampaignSession
     {
         next=state;        if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetViridianGymTrainers")
         {
-            if(effect.Args.Length!=1||!ViridianGymTrainerPartyFactory.GymTrainers.Any(t=>t.Value=="pret:"+effect.Args[0])||
+            if(effect.Args.Length!=1||!TrainersOnMap(new(ViridianGymMap)).Where(id => id.Value != "pret:TRAINER_LEADER_GIOVANNI").Any(t=>t.Value=="pret:"+effect.Args[0])||
                 state.World.Player.MapId.Value!=ViridianGymMap||!ViridianGymVictory(state)||
                 !state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET")||!state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_LEADER_GIOVANNI"))
                 throw new InvalidDataException("viridian_gym_trainer_flag_context");
@@ -88,7 +85,7 @@ public sealed partial class CampaignSession
         if(Flag("FLAG_HIDDEN_ITEM_VIRIDIAN_CITY_GYM_MACHO_BRACE")&&!ItemfinderEnabled)return "save_viridian_gym_itemfinder_profile_missing";
         bool won=ViridianGymVictory(state);
         if(badge!=won||defeated!=won||rockets!=won)return "save_giovanni_badge_history_mismatch";
-        if(won&&ViridianGymTrainerPartyFactory.SupportedTrainers.Any(t=>!state.BattledTrainers.Contains(t.Value)))
+        if(won&&TrainersOnMap(new(ViridianGymMap)).Any(t=>!state.BattledTrainers.Contains(t.Value)))
             return "save_giovanni_trainer_flags_missing";
         if(got&&!won||!got&&quantity!=0||quantity>1||hidden&&(!got||!won))return "save_giovanni_tm_reward_mismatch";
         int door=state.Script.Variables.GetValueOrDefault(ViridianGymDoor);

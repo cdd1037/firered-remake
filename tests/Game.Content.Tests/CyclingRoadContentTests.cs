@@ -38,8 +38,8 @@ public sealed class CyclingRoadContentTests
             "Route17_EventScript_Nikolas", "Route17_EventScript_Billy", "Route17_EventScript_Jamal",
             "Route17_EventScript_Zeek", "Route17_EventScript_Corey", "Route17_EventScript_William", "Route17_EventScript_Jaxon",
             "Route18_EventScript_Jacob", "Route18_EventScript_Ramiro", "Route18_EventScript_Wilton"];
-        CollectionAssert.AreEquivalent(expected, catalog.CyclingRoadTrainers.BattlesByScript.Keys.ToArray());
-        foreach (var battle in catalog.CyclingRoadTrainers.BattlesByScript.Values)
+        CollectionAssert.AreEquivalent(expected, catalog.CyclingRoadTrainers.Battles.Select(b => b.ScriptEntry).ToArray());
+        foreach (var battle in catalog.CyclingRoadTrainers.Battles)
         {
             Assert.AreEqual(0, battle.Mode);
             Assert.AreEqual(8u, battle.BattleTypeFlags);

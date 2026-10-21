@@ -4,12 +4,8 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal abstract int SpikesLayers(BattleSide side);
-    internal abstract void SetSpikesLayers(BattleSide side, int layers);
-    internal abstract void SpikesSuppressPressure();
-    internal virtual void SpikesResultMessage(BattlerSlot actor) { }
 
     // BattleScript_EffectSpikes mutates the opposing side before attackstring/ppreduce.
     // Failure at three layers still spends base PP, suppressing every Pressure holder.

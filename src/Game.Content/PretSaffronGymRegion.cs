@@ -26,10 +26,6 @@ public sealed partial class PretSaffronGymRegion
         ExternalSaffronEvents = saffron.RootElement.Clone(); NewMaps = maps; Constants = constants;
         Contracts = source.Document("contracts.json");
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol.StartsWith("MAP_SAFFRON_CITY", StringComparison.Ordinal)
-        ? new("map." + symbol[4..].ToLowerInvariant().Replace('_', '-'))
-        : PretRegionalServiceMaps.MapIdFromSourceSymbol(symbol);
-
     public static PretSaffronGymRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;

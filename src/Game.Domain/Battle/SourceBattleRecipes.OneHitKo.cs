@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal void ExecuteOneHitKo(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
@@ -41,12 +41,12 @@ internal abstract partial class SourceRecipeContext
         SourceGenericSecondary(catalog, actor, target, move, purpose, damage);
         OneHitFinish(catalog, actor, target, move, purpose, lost);
     }
-    internal virtual bool OneHitNoAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal bool OneHitNoAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         CalledSureHit(actor, target) || SemiInvulnerable(target) == WildBattleSemiInvulnerable.None &&
         !(Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"));
-    internal virtual void OneHitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void OneHitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
-    internal virtual void OneHitFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
+    internal void OneHitFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
     {
         if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
         if (lost > 0) MtMoonRageOnDamage(actor, target, move.Id);

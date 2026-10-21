@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -15,25 +16,19 @@ public sealed class ClawMoveAnimationDispatchTests
 {
     private static readonly (string Name, int Id, string Species, int Level)[] Moves =
         [("METAL_CLAW", 232, "CHARMANDER", 13), ("CRUSH_CLAW", 306, "ZANGOOSE", 31), ("DRAGON_CLAW", 337, "BAGON", 49)];
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static SourceMechanicsCatalog Mechanics =>
-        TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("claw-moves", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
-            events, index, [], [], 0, 0, [], [], [], [], 0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("claw-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
 
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
+    // Independent source identities and receipt ownership, not production metadata.
+    private static DirectHitAnimationContract Contract(int id) => id switch
     {
-        var move = Id(name); var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
+        232 => new("claw-moves", 232, Id("METAL_CLAW"), 35, DirectHitOwnership.AttackText),
+        306 => new("claw-moves", 306, Id("CRUSH_CLAW"), 10, DirectHitOwnership.AttackText),
+        337 => new("claw-moves", 337, Id("DRAGON_CLAW"), 15, DirectHitOwnership.AttackText),
+        _ => throw new ArgumentOutOfRangeException(nameof(id))
+    };
+
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) => Contract(232).Double(events, index);
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) => Contract(232).Single(events, index);
+
     private static WildBattleCombatant[] Bodies(int id, int actor = 0)
     {
         var move = Moves.Single(m => m.Id == id);
@@ -41,20 +36,7 @@ public sealed class ClawMoveAnimationDispatchTests
         bodies[actor] = NaturalMon(move.Species, move.Level, move.Name) with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
-    private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
-    {
-        static WildBattleCalledPartyMember Member(WildBattleCombatant body) =>
-            new(body.Pokemon, body.HeldItem, WildBattleTransformationRules.PersistentStatus(body));
-        var frame = new SourceBattleFrame {
-            Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, BattleKind = WildBattleCalledBattleKind.Trainer, Rng = new(31),
-            Parties = [new(BattleSide.Player, [Member(bodies[0]), Member(bodies[2])]), new(BattleSide.Opponent, [Member(bodies[1]), Member(bodies[3])])],
-            Slots = Enumerable.Range(0, 4).Select(i => new SourceBattleSlot(new(i), new((BattleSide)(i & 1), i / 2), 1, bodies[i])).ToImmutableArray()
-        };
-        var entry = SourceFourEntryAbilities.InitializeEntry(Mechanics.Catalog, frame, frame.Revision);
-        Assert.IsTrue(entry.Succeeded, entry.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(entry.State));
-        return entry.State with { Rng = new(seed) };
-    }
+
     private static SourceKernelResult Resolve(SourceBattleFrame frame, int actor = 0, int target = 1)
     {
         var result = SourceBattleKernel.ResolveAction(Mechanics.Catalog, frame,
@@ -62,24 +44,7 @@ public sealed class ClawMoveAnimationDispatchTests
         Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
         return result;
     }
-    private static SourceFourActionResult Ordered(SourceBattleFrame frame, int actor, int target)
-    {
-        var selected = frame.Slots[actor].Body!.Pokemon.Moves[0].Move;
-        var choices = frame.Slots.Select(c => {
-            var move = Mechanics.Catalog.Moves[c.Body!.Pokemon.Moves[0].Move];
-            int recipient = c.Slot.Value == actor ? target : move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? c.Slot.Value : c.Slot.Value ^ 1;
-            return new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
-        }).ToImmutableArray();
-        var result = SourceFourActionTurns.BeginActions(Mechanics.Catalog, frame, frame.Revision, choices);
-        for (int step = 0; step < 12; step++)
-        {
-            Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
-            if (result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value == actor && e.Move == selected)) return result;
-            Assert.IsNotNull(result.Continuation, "The selected natural claw move must execute.");
-            result = SourceFourActionTurns.Advance(Mechanics.Catalog, result.State, result.Continuation.Value);
-        }
-        throw new InvalidOperationException("The claw move did not execute within one public turn.");
-    }
+
     private static SourceKernelResult Find(WildBattleCombatant[] bodies, Func<SourceKernelResult, bool> predicate, string branch)
     {
         var entered = Frame(bodies, 0);
@@ -91,45 +56,10 @@ public sealed class ClawMoveAnimationDispatchTests
         }
         throw new InvalidOperationException($"No observed {branch} in 1024 action-start seeds.");
     }
-    private static void AssertOne(ImmutableArray<SourceBattleEvent> events, int id, int actor = 0, int target = 1)
-    {
-        var hit = events.Single(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent);
-        var used = events.OfType<SourceMoveUsedEvent>().Single(); var attack = events.OfType<SourceAttackStringEvent>().Single();
-        var pp = events.OfType<SourcePpCommandEvent>().Single(); string before = JsonSerializer.Serialize(events); int count = 0;
-        Assert.AreEqual(0, events.OfType<SourceMultiHitEvent>().Count());
-        for (int index = 0; index < events.Length; index++)
-        {
-            var battle = Double(events, index); var decision = AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(battle, SourceBattleScene.On).Dispatch);
-            if (events[index] == used)
-            {
-                var dispatch = decision.Dispatch; Assert.IsNotNull(dispatch, decision.Reason); count++;
-                Assert.AreEqual(id, dispatch.SourceMoveId); Assert.AreEqual(actor, dispatch.Actor.Value); Assert.AreEqual(target, dispatch.Target.Value);
-                Assert.AreEqual(used.Sequence, dispatch.Sequence); Assert.AreEqual(hit.Sequence, dispatch.ResultSequence);
-                Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
-                Assert.IsNull(dispatch.MoveTurn); Assert.IsTrue(dispatch.AcknowledgesCurrentReceipt);
-                Assert.AreEqual(hit is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-                Assert.AreEqual(decision, AnimationDispatchFixture.AtAttackText(battle, SourceBattleScene.On));
-            }
-            else Assert.IsNull(decision.Dispatch, "A secondary stat/status/faint page cannot replay the claw root.");
-            if (actor < 2 && target < 2)
-            {
-                var single = Single(events, index);
-                Assert.AreEqual(decision.Dispatch, AnimationDispatchFixture.AtAttackText(single, true, SourceBattleScene.On).Dispatch);
-                Assert.IsNull(AnimationDispatchFixture.AtResult(single, true, SourceBattleScene.On).Dispatch);
-            }
-        }
-        Assert.AreEqual(1, count); Assert.AreEqual(before, JsonSerializer.Serialize(events));
-    }
-    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events)
-    {
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On).Dispatch);
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch);
-        }
-    }
+    private static void AssertOne(ImmutableArray<SourceBattleEvent> events, int id, int actor = 0, int target = 1) =>
+        Contract(id).AssertDispatches(events, actor, target);
+    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events) =>
+        Contract(232).AssertDenied(events, "claw denial", singles: true);
 
     [TestMethod]
     public void NaturalClawsUseOneOrderedRootAtAllFourPositionsAndSelectedAllies()

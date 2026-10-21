@@ -247,9 +247,8 @@ public abstract class WildBattleFixture
         var prepare = typeof(CampaignSession).GetMethod("PrepareCanonicalWildFrame", BindingFlags.Instance | BindingFlags.NonPublic)!;
         var frame = (SourceBattleFrame)prepare.Invoke(session, [basis, entered])!;
         var view = CampaignWildReadProjection.From(frame);
-        var battle = new CampaignWildBattle("wild-battle:" + basis.Exploration!.NextWildBattleId, party[0], frame, entry.Events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), 0, view.Player.Pokemon, view.Opponent.Pokemon, CampaignBattlePhase.Events, [], 0, entry.Trace)
+        var battle = new CampaignWildBattle("wild-battle:" + basis.Exploration!.NextWildBattleId, party[0], frame, entry.Events, 0, view.Player.Pokemon, view.Opponent.Pokemon, CampaignBattlePhase.Events, [], 0, entry.Trace)
         {
-            SourceEvents = entry.Events,
             DisplayBatch = new(CampaignBattleDisplayBodies.FromSlots(entry.EntrySlots.SetItem(1,
                 entry.EntrySlots[1] with { Body = entry.EntrySlots[1].Body! with {
                     Pokemon = enemy.Pokemon, HeldItem = enemy.HeldItem, Status = enemy.Status } }))),

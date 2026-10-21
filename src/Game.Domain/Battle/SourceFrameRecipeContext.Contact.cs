@@ -7,16 +7,16 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext
 {
-    internal override BattlerSlot? InfatuationSource(BattlerSlot slot) => Frame.Get(slot).Registers.InfatuationSource;
-    internal override void SetInfatuationSource(BattlerSlot slot, BattlerSlot? source)
+    internal BattlerSlot? InfatuationSource(BattlerSlot slot) => Frame.Get(slot).Registers.InfatuationSource;
+    internal void SetInfatuationSource(BattlerSlot slot, BattlerSlot? source)
     {
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with {
             Registers = cell.Registers with { InfatuationSource = source } }) };
     }
-    internal override bool ContactCommandNoEffect => commandNoEffect;
-    internal override SourceHitDamageReceipt HitItemReceipt(BattlerSlot slot) => Frame.Get(slot).Position.HitItemReceipt ?? new();
-    internal override void SetHitItemReceipt(BattlerSlot slot, SourceHitDamageReceipt receipt)
+    internal bool ContactCommandNoEffect => commandNoEffect;
+    internal SourceHitDamageReceipt HitItemReceipt(BattlerSlot slot) => Frame.Get(slot).Position.HitItemReceipt ?? new();
+    internal void SetHitItemReceipt(BattlerSlot slot, SourceHitDamageReceipt receipt)
     {
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Position = cell.Position with {
@@ -39,15 +39,15 @@ internal sealed partial class FrameRecipeContext
     {
         Frame = SourceFrameSpecialStatuses.Clear(Frame);
     }
-    internal override void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
+    internal void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition move, string purpose, int damage)
     {
         SourceColorChange(catalog, actor, target, move);
         ContactAbility(catalog, actor, target, move, purpose, damage);
     }
-    internal override string TypeChangeHitType(PokemonMoveDefinition move) => DynamicHitType(move);
-    internal override string? TypeChangeLastHitType(BattlerSlot actor) => Frame.Get(actor).Registers.History?.LastHitByType;
-    internal override BattlerSlot? TypeChangeLastHitBy(BattlerSlot actor) => Frame.Get(actor).Registers.LastHitBy;
-    internal override bool TypeChangeMultipleTurns(BattlerSlot source) =>
+    internal string TypeChangeHitType(PokemonMoveDefinition move) => DynamicHitType(move);
+    internal string? TypeChangeLastHitType(BattlerSlot actor) => Frame.Get(actor).Registers.History?.LastHitByType;
+    internal BattlerSlot? TypeChangeLastHitBy(BattlerSlot actor) => Frame.Get(actor).Registers.LastHitBy;
+    internal bool TypeChangeMultipleTurns(BattlerSlot source) =>
         Frame.Get(source).Registers.Turn?.Lock is { Kind: not WildBattleCalledLockKind.Recharge };
 }

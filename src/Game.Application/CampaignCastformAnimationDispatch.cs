@@ -45,12 +45,8 @@ public static class CampaignCastformAnimationPresentation
     {
         ValidateEntry(entryChargeMoves,2);
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||battle.DisplayBatch is not {} batch)return null;
-        if(battle.Events[battle.EventIndex] is not WildBattleCalledOverlayChangedEvent legacy)return null;
-        long sequence=legacy.Sequence;int index=-1;
-        for(int i=0;i<battle.SourceEvents.Length;i++)if(battle.SourceEvents[i].Sequence==sequence){index=i;break;}
-        if(index<0||batch.NextEventIndex!=index+1||battle.SourceEvents[index] is not SourceCalledOverlayChangedEvent receipt||receipt.Side.Value>=batch.Display.Bodies.Length)return null;
-        if(legacy.Turn!=receipt.Turn||(int)legacy.Side!=receipt.Side.Value||legacy.Move!=receipt.Move||legacy.Before!=receipt.Before||legacy.After!=receipt.After)return null;
-        return Match(battle.Id,battle.SourceEvents,index,batch.Display.Bodies[receipt.Side.Value],true,entryChargeMoves);
+        if(batch.NextEventIndex!=battle.EventIndex+1||battle.Events[battle.EventIndex] is not SourceCalledOverlayChangedEvent receipt||receipt.Side.Value>=batch.Display.Bodies.Length)return null;
+        return Match(battle.Id,battle.Events,battle.EventIndex,batch.Display.Bodies[receipt.Side.Value],true,entryChargeMoves);
     }
     public static CampaignCastformAnimationDispatch? AtResult(CampaignDoubleBattle battle,SourceBattleScene scene,IReadOnlyList<MoveId?> entryChargeMoves)
     {

@@ -12,10 +12,11 @@ public static class PretCeladonApproachTrainers
         var bytes=PretCeladonApproachSource.Read(root,"content/generated/data/trainer-battles/celadon-approach.json");
         var d=ContentJson.ParseStrict<CeladonApproachTrainerDocument>(Encoding.UTF8.GetString(bytes),SharedTrainerCatalog.Options(root));
         if (d.SchemaVersion != 1) throw new InvalidDataException("Unsupported CeladonApproach trainer document schema.");
-        CeladonApproachTrainerPartyFactory.ValidateCatalog(new(d.Trainers.ToImmutableDictionary(t => t.Id),
-            d.Battles.ToImmutableDictionary(b => b.Trainer)));
         return d;
     }
-    public static CeladonApproachTrainerCatalog Load(string root)
-    {var d=LoadDocument(root);return new(d.Trainers.ToImmutableDictionary(t=>t.Id),d.Battles.ToImmutableDictionary(t=>t.Trainer));}
+    public static OrdinaryTrainerCatalog Load(string root)
+    {
+        var d = LoadDocument(root);
+        return new(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, "celadon-approach-trainer");
+    }
 }

@@ -115,7 +115,7 @@ public sealed class VoltTackleAnimationKernelTests
                     Assert.AreEqual(hit.Sequence,cue.ResultSequence);Assert.AreEqual(pp.Sequence,cue.SnapshotSequence);
                     Assert.AreEqual(CampaignMoveAnimationBoundary.AfterAttackText,cue.Boundary);Assert.IsTrue(cue.AcknowledgesCurrentReceipt);
                     Assert.IsFalse(cue.HitsSubstitute);Assert.IsNull(cue.MoveTurn);Assert.IsNull(cue.MovePower);Assert.IsNull(cue.MoveDamage);
-                    if(single)Assert.AreEqual(cue,AnimationDispatchFixture.AtAttackText(Envelope.Single(events,i) with{SourceEvents=[]},true,SourceBattleScene.On).Dispatch);
+                    if(single)Assert.AreEqual(cue,AnimationDispatchFixture.AtAttackText(Envelope.Single(events,i),true,SourceBattleScene.On).Dispatch);
                 }
                 else Assert.IsNull(decision.Dispatch);
             }

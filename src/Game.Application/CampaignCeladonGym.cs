@@ -44,9 +44,9 @@ public sealed partial class CampaignSession
     private string? ValidateCeladonGymProgress(CampaignState state)
     {
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE04_GET");
-        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==CeladonGymTrainerPartyFactory.Erika.Value&&h.Outcome==WildBattleOutcome.Won);
+        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId=="pret:TRAINER_LEADER_ERIKA"&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_ERIKA")!=won)return "save_erika_badge_history_mismatch";
-        if(won&&CeladonGymTrainerPartyFactory.SupportedTrainers.Any(id=>!state.BattledTrainers.Contains(id.Value)))return "save_erika_trainer_flags_missing";
+        if(won&&TrainersOnMap(new("map.celadon-city-gym")).Any(id=>!state.BattledTrainers.Contains(id.Value)))return "save_erika_trainer_flags_missing";
         bool got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM19_FROM_ERIKA");
         int quantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],ErikaMachine);
         if(got&&!won||!got&&quantity!=0||quantity>1)return "save_erika_tm_reward_mismatch";

@@ -27,13 +27,13 @@ public sealed class SaveRecoveryTests : ProtocolFixture
     [TestMethod]
     public void save_canonical_polymorphic_metadata_order()
     {
-        Game.Domain.WildBattle.WildBattleEvent[] events = [new Game.Domain.WildBattle.WildBattleMedicineAppliedEvent(4, 2, new("pret:ITEM_ANTIDOTE"), 7, 1, false, 16, 16, 8, 0)];
+        Game.Domain.Battle.SourceBattleEvent[] events = [new Game.Domain.Battle.SourceMedicineAppliedEvent(4, 2, new("pret:ITEM_ANTIDOTE"), 7, 1, false, 16, 16, 8, 0)];
         var bytes = SaveCodec.Encode(events, 5, "diagnostic", "content");
         var text = Encoding.UTF8.GetString(bytes);
         Assert.IsTrue(text.IndexOf("\"ActiveTarget\"", StringComparison.Ordinal) < text.IndexOf("\"kind\"", StringComparison.Ordinal), "fixture must exercise canonical metadata ordering");
-        var restored = SaveCodec.Decode<Game.Domain.WildBattle.WildBattleEvent[]>(bytes, "diagnostic", "content");
-        Assert.IsTrue(CanonicalJson.Hash(restored.State) == CanonicalJson.Hash(events) && restored.State[0] is Game.Domain.WildBattle.WildBattleMedicineAppliedEvent, "typed canonical payload did not roundtrip");
-        Throws(() => SaveCodec.Decode<Game.Domain.WildBattle.WildBattleEvent[]>(bytes, "diagnostic", "content", validate: _ => "save_battle_active"));
+        var restored = SaveCodec.Decode<Game.Domain.Battle.SourceBattleEvent[]>(bytes, "diagnostic", "content");
+        Assert.IsTrue(CanonicalJson.Hash(restored.State) == CanonicalJson.Hash(events) && restored.State[0] is Game.Domain.Battle.SourceMedicineAppliedEvent, "typed canonical payload did not roundtrip");
+        Throws(() => SaveCodec.Decode<Game.Domain.Battle.SourceBattleEvent[]>(bytes, "diagnostic", "content", validate: _ => "save_battle_active"));
         var fs = new MemoryStorage();
         Throws(() => new SaveService(fs).Save("slot", events, 5, "diagnostic", "content", _ => "save_battle_active"));
         Assert.IsTrue(fs.Files.Count == 0, "codec support must not bypass player save policy");

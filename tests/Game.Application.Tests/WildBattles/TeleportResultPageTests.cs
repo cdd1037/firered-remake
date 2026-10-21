@@ -24,26 +24,26 @@ public sealed class TeleportResultPageTests : WildBattleFixture
             Assert.IsNotNull(current, "The successful escape must not settle before its result text.");
             Assert.AreEqual(CampaignBattlePhase.Events, current.Phase);
             var receipt = current.Events[current.EventIndex];
-            if (receipt is WildBattleEndedEvent ended)
+            if (receipt is SourceEndedEvent ended)
             {
                 Assert.IsTrue(sawAttack, "The move announcement and dedicated animation boundary precede the fled page.");
                 Assert.AreEqual(WildBattleOutcome.Escaped, ended.Outcome);
                 Assert.IsNotNull(ended.MoveEscape);
-                Assert.AreEqual(opponent ? WildBattleSide.Opponent : WildBattleSide.Player, ended.MoveEscape.Actor);
+                Assert.AreEqual(opponent ? new BattlerSlot(1) : new BattlerSlot(0), ended.MoveEscape.Actor);
                 Assert.AreEqual("pret:MOVE_TELEPORT", ended.MoveEscape.Move.Value);
                 Assert.AreEqual(history, session.State.Exploration!.Battles.Length);
                 Assert.IsFalse(session.State.Exploration.Battles.Any(b => b.Id == battleId));
                 Assert.AreEqual("save_event_active", session.ValidatePlayerSave(session.State));
-                Assert.AreEqual(1, current.Events.OfType<WildBattleEndedEvent>().Count(e => e.MoveEscape is not null));
-                var source = current.SourceEvents.OfType<SourceEndedEvent>().Single();
+                Assert.AreEqual(1, current.Events.OfType<SourceEndedEvent>().Count(e => e.MoveEscape is not null));
+                var source = current.Events.OfType<SourceEndedEvent>().Single();
                 Assert.AreEqual(ended.Sequence, source.Sequence);
-                Assert.AreEqual((int)ended.MoveEscape.Actor, source.MoveEscape!.Actor.Value);
+                Assert.AreEqual(ended.MoveEscape.Actor.Value, source.MoveEscape!.Actor.Value);
                 var rng = session.State.World.Rng;
                 string party = JsonSerializer.Serialize(session.State.Party);
                 var trailing = current.Events.Skip(current.EventIndex + 1).ToArray();
                 Assert.AreEqual(1, trailing.Length, "This escape's only trailing receipt is its PP party synchronization.");
-                Assert.IsTrue(trailing[0] is WildBattleCalledPartyChangedEvent { Reason: "active-sync" } sync &&
-                    sync.SourceSlot == ended.MoveEscape.Actor && sync.Side == ended.MoveEscape.Actor,
+                Assert.IsTrue(trailing[0] is SourceCalledPartyChangedEvent { Reason: "active-sync" } sync &&
+                    sync.SourceSlot == ended.MoveEscape.Actor && sync.Side == ended.MoveEscape.Actor.Side,
                     "No user-visible result may be silently dismissed after the fled page.");
                 Send(session, new("ack"));
                 // The real view auto-ACKs this existing silent bookkeeping receipt.
@@ -63,7 +63,7 @@ public sealed class TeleportResultPageTests : WildBattleFixture
                 Assert.AreEqual(WildBattleOutcome.Escaped, session.State.Exploration.Battles[^1].Outcome);
                 return;
             }
-            if (receipt is WildBattleMoveUsedEvent { Move.Value: "pret:MOVE_TELEPORT" }) sawAttack = true;
+            if (receipt is SourceMoveUsedEvent { Move.Value: "pret:MOVE_TELEPORT" }) sawAttack = true;
             Send(session, new("ack"));
         }
         Assert.Fail("The real escape result was not reached within its bounded presentation batch.");
@@ -76,11 +76,11 @@ public sealed class TeleportResultPageTests : WildBattleFixture
         Send(session, new("battle_menu", Text: "run"));
         var battle = session.State.WildBattle;
         Assert.IsNotNull(battle);
-        Assert.IsTrue(battle.Events.OfType<WildBattleRunAttemptEvent>().Single().Escaped);
-        Assert.IsTrue(battle.Events.OfType<WildBattleEndedEvent>().All(e => e.MoveEscape is null));
+        Assert.IsTrue(battle.Events.OfType<SourceRunAttemptEvent>().Single().Escaped);
+        Assert.IsTrue(battle.Events.OfType<SourceEndedEvent>().All(e => e.MoveEscape is null));
         for (int i = 0; i < 32 && session.State.WildBattle is { } pending; i++)
         {
-            Assert.IsFalse(pending.Events[pending.EventIndex] is WildBattleEndedEvent,
+            Assert.IsFalse(pending.Events[pending.EventIndex] is SourceEndedEvent,
                 "The ordinary Run result remains its original page, with no extra terminal confirmation.");
             Send(session, new("ack"));
         }

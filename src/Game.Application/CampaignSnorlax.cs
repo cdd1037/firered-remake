@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using System.Collections.Immutable;
 using Game.Domain;
 using Game.Domain.Encounters;
@@ -66,7 +67,7 @@ public sealed partial class CampaignSession
     private static int SnorlaxSourceOutcome(CampaignWildBattle battle)=>battle.Frame!.WildEncounter?.SourceOutcome is {} sourceOutcome ? (int)sourceOutcome : battle.Frame.Outcome switch
     {
         WildBattleOutcome.Won=>1,WildBattleOutcome.Lost=>2,WildBattleOutcome.Draw=>3,
-        WildBattleOutcome.Escaped=>battle.Events.Any(e=>e is WildBattleForcedOutEvent {TrainerBattle:false})?5:4,
+        WildBattleOutcome.Escaped=>battle.Events.Any(e=>e is SourceForcedOutEvent {TrainerBattle:false})?5:4,
         WildBattleOutcome.Caught=>7,_=>throw new InvalidDataException("snorlax_battle_not_ended")
     };
     private CampaignState ReturnFromSnorlaxBattle(CampaignState s,CampaignWildBattle battle)

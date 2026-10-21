@@ -30,7 +30,17 @@ public sealed class MementoAnimationKernelTests
     {
         string before=JsonSerializer.Serialize(rows);var used=rows.OfType<SourceMoveUsedEvent>().Single();var attack=rows.OfType<SourceAttackStringEvent>().Single();var pp=rows.OfType<SourcePpCommandEvent>().Single();var hp=rows.OfType<SourceHpChangedEvent>().Single();
         Assert.IsTrue(AnimationDispatchFixture.Supports(262,Move.Value));Assert.AreEqual(used.Actor,hp.Actor);Assert.AreEqual(used.Actor,hp.Target);Assert.AreEqual(0,hp.HpAfter);Assert.AreEqual(hp.HpBefore,hp.Damage);Assert.AreEqual(pp.Sequence+1,hp.Sequence);
-        Assert.AreEqual(used.Actor,rows.OfType<SourceFaintedEvent>().Single().Side);int roots=0,waves=0;
+        var faint=rows.OfType<SourceFaintedEvent>().Single();Assert.AreEqual(used.Actor,faint.Side);
+        var sync=rows.OfType<SourceCalledPartyChangedEvent>().Single(s=>s.SourceSlot==used.Actor);
+        if(used.Actor.Side==BattleSide.Player)
+        {
+            var friendship=faint.Friendship;Assert.IsNotNull(friendship);
+            Assert.AreEqual(new PartyMemberKey(sync.Side,sync.PartyIndex),friendship.Member);
+            Assert.AreEqual(sync.Before.Pokemon.Friendship,friendship.Before);Assert.AreEqual(sync.After.Pokemon.Friendship,friendship.After);
+            Assert.AreEqual(used.Turn,faint.Turn);Assert.AreEqual(faint.Turn,sync.Turn);Assert.IsTrue(hp.Sequence<faint.Sequence&&faint.Sequence<sync.Sequence);
+        }
+        else Assert.IsNull(faint.Friendship);
+        int roots=0,waves=0;
         for(int i=0;i<rows.Length;i++)
         {
             var decision=Kernel.Project(rows,i,single);if(rows[i]==used){var cue=decision.Dispatch;Assert.IsNotNull(cue,decision.Reason);roots++;Assert.AreEqual(262,cue.SourceMoveId);Assert.AreEqual(used.Actor,cue.Actor);Assert.AreEqual(used.Target,cue.Target);Assert.AreEqual(hp.Sequence,cue.ResultSequence);Assert.AreEqual(pp.Sequence,cue.SnapshotSequence);Assert.AreEqual(attack.Sequence,cue.AttackSequence);Assert.IsFalse(cue.HitsSubstitute);Assert.AreEqual(CampaignMoveAnimationBoundary.AfterAttackText,cue.Boundary);}else Assert.IsNull(decision.Dispatch);
@@ -38,7 +48,7 @@ public sealed class MementoAnimationKernelTests
             if(Wave(rows,i,single) is {} wave){waves++;Assert.AreEqual(expectedWave,wave.AnimationArgument);Assert.AreEqual(used.Target,wave.Affected);Assert.AreEqual(262,wave.SourceMoveId);Assert.IsInstanceOfType<SourceStatChangedEvent>(rows[i]);}
         }
         Assert.AreEqual(1,roots);Assert.AreEqual(expectedWave is null?0:1,waves);Assert.AreEqual(before,JsonSerializer.Serialize(rows));Assert.AreEqual(before,JsonSerializer.Serialize(JsonSerializer.Deserialize<ImmutableArray<SourceBattleEvent>>(before)));
-        if(single){var legacy=Envelope.Single(rows,rows.IndexOf(used)) with{SourceEvents=[]};Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(legacy,true,SourceBattleScene.On).Dispatch);}
+        if(single){var legacy=Envelope.Single(rows,rows.IndexOf(used));Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(legacy,true,SourceBattleScene.On).Dispatch);}
     }
     [TestMethod]
     public void RealSelfCostAndPairedReductionOwnOneRootAndOneWaveForEveryPositionAndSelectedAlly()
@@ -114,6 +124,63 @@ public sealed class MementoAnimationKernelTests
             Deny(Numbering.Number(rows.SetItem(rows.IndexOf(stats[0]),stats[1]).SetItem(rows.IndexOf(stats[1]),stats[0])),single);
         }
     }
+    [TestMethod]
+    public void FaintFriendshipMetadataCannotBorrowAnotherMemberTurnOrValue()
+    {
+        foreach(bool single in new[]{false,true})
+        {
+            var result=F.Ordered(Initial(single),0,1);var rows=result.Events;Check(rows,single,58);
+            var faint=rows.OfType<SourceFaintedEvent>().Single();var applied=faint.Friendship;Assert.IsNotNull(applied);
+            int at=rows.IndexOf(faint);
+            foreach(var invalid in new[]{
+                faint with{Friendship=null},faint with{Turn=faint.Turn+1},faint with{Side=new(1)},
+                faint with{Friendship=applied with{Member=new(BattleSide.Player,1)}},
+                faint with{Friendship=applied with{Member=new(BattleSide.Opponent,0)}},
+                faint with{Friendship=applied with{Before=applied.Before+1}},
+                faint with{Friendship=applied with{After=applied.After+1}},
+                faint with{Friendship=applied with{Before=-1}},faint with{Friendship=applied with{Before=256}},
+                faint with{Friendship=applied with{After=-1}},faint with{Friendship=applied with{After=applied.Before+1}}})
+                Deny(rows.SetItem(at,invalid),single);
+            var sync=rows.OfType<SourceCalledPartyChangedEvent>().Single(s=>s.SourceSlot==faint.Side);
+            Deny(rows.SetItem(rows.IndexOf(sync),sync with{PartyIndex=1}),single);
+            Assert.IsNull(SourceBattleEventHooks.ValidateRouting(result.State,faint));
+            // Missing metadata remains valid for ordinary manually authored receipts.
+            Assert.IsNull(SourceBattleEventHooks.ValidateRouting(result.State,faint with{Friendship=null}));
+            foreach(var invalid in new[]{
+                faint with{Side=new(1)},faint with{Friendship=applied with{Member=new(BattleSide.Player,1)}},
+                faint with{Friendship=applied with{Member=new(BattleSide.Opponent,0)}},
+                faint with{Friendship=applied with{After=applied.After+1}},
+                faint with{Friendship=applied with{Before=-1}},faint with{Friendship=applied with{Before=256}},
+                faint with{Friendship=applied with{After=-1}},faint with{Friendship=applied with{After=applied.Before+1}}})
+                Assert.AreEqual("source_event_faint_friendship",SourceBattleEventHooks.ValidateRouting(result.State,invalid));
+            var opponent=F.Ordered(Initial(single,1),1,0);var opponentFaint=opponent.Events.OfType<SourceFaintedEvent>().Single();
+            Assert.IsNull(opponentFaint.Friendship);
+            var borrowed=opponentFaint with{Friendship=applied};
+            Deny(opponent.Events.SetItem(opponent.Events.IndexOf(opponentFaint),borrowed),single);
+            Assert.AreEqual("source_event_faint_friendship",SourceBattleEventHooks.ValidateRouting(opponent.State,borrowed));
+        }
+    }
+    [TestMethod,DataRow(0,0),DataRow(1,0),DataRow(199,194),DataRow(200,190),DataRow(255,245)]
+    public void SourceFaintFriendshipBandsAndZeroClampKeepRootWithoutRngChanges(int before,int after)
+    {
+        foreach(bool single in new[]{false,true})
+        {
+            var frame=F.Body(Initial(single),0,b=>b with{Pokemon=b.Pokemon with{Friendship=before}});
+            frame=F.Body(frame,1,_=>Kernel.Mon("WAILORD","SPLASH",100) with{SpeedStage=0});
+            var result=F.Ordered(frame,0,1);Check(result.Events,single,58);
+            var faint=result.Events.OfType<SourceFaintedEvent>().Single();Assert.IsNotNull(faint.Friendship);
+            Assert.AreEqual(before,faint.Friendship.Before);Assert.AreEqual(after,faint.Friendship.After);
+            Assert.AreEqual(after,result.State.Party(BattleSide.Player).Members[0].Pokemon.Friendship);
+            var control=F.Ordered(F.Body(frame,0,b=>b with{Pokemon=b.Pokemon with{Friendship=0}}),0,1);
+            Assert.AreEqual(control.State.Rng,result.State.Rng);CollectionAssert.AreEqual(control.Trace.ToArray(),result.Trace.ToArray());
+            if(before==0)
+            {
+                var optional=result.Events.SetItem(result.Events.IndexOf(faint),faint with{Friendship=null});
+                var used=optional.OfType<SourceMoveUsedEvent>().Single();
+                Assert.IsNotNull(Kernel.Project(optional,optional.IndexOf(used),single).Dispatch);
+            }
+        }
+    }
     private static SourceFourActionResult Begin(SourceBattleFrame frame)
     {
         var choices=frame.Slots.Take(frame.BattlerCount).Select(c=>new SourceActionSelection(c.Occupant!.Value,SourceActionKind.Move,0,c.Slot.Value==0?new BattlerSlot(1):c.Slot)).ToImmutableArray();var s=SourceFourActionTurns.BeginActions(Kernel.Mechanics.Catalog,frame,frame.Revision,choices);Assert.IsTrue(s.Succeeded,s.Fault);Assert.IsNotNull(s.Continuation);return s;
@@ -129,6 +196,9 @@ public sealed class MementoAnimationKernelTests
             for(uint seed=0;seed<65536;seed++)
             {var start=Begin(frame with{Rng=new(seed)});var target=SourceMoveTargeting.ResolveLearned(start.State,new(0),new(1),Kernel.Mechanics.Catalog.Moves[Kernel.Id("METRONOME")]);Assert.IsTrue(target.Succeeded,target.Fault);if(WildBattleSourceCallers.Metronome(target.Rng).SourceMoveId!=262)continue;found=Advance(start);break;}
             Assert.IsNotNull(found);var hp=found.Events.OfType<SourceHpChangedEvent>().Single(e=>e.Move==Move);var cue=CalledLeafAnimationKernelFixture.Check(found.Events,found,single,Kernel.Id("METRONOME"),262,hp);Assert.AreEqual(new BattlerSlot(0),cue.Actor);Assert.AreEqual(found.Events.OfType<SourceCalledMoveTransitionEvent>().Single().Invocation.Target,cue.Target);Assert.AreEqual(1,found.Events.Select((_,i)=>Wave(found.Events,i,single)).Count(w=>w is not null));
+            var faint=found.Events.OfType<SourceFaintedEvent>().Single();var sync=found.Events.OfType<SourceCalledPartyChangedEvent>().Single(e=>e.SourceSlot==cue.Actor);
+            Assert.IsNotNull(faint.Friendship);Assert.AreEqual(sync.Before.Pokemon.Friendship,faint.Friendship.Before);Assert.AreEqual(sync.After.Pokemon.Friendship,faint.Friendship.After);
+            Assert.AreEqual(new PartyMemberKey(sync.Side,sync.PartyIndex),faint.Friendship.Member);
         }
     }
 }

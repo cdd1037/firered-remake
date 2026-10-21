@@ -5,7 +5,7 @@ Every chosen case retains every frame, including raw-child allocation failures.
 import argparse,hashlib,importlib.util,json,re,tempfile
 from pathlib import Path
 CONFIGS=[[[0],[1],[2]],[[20,0,0,24,30],[20,0,-24,24,30],[20,0,24,24,30],[-32768,32767,-32768,32767,1],[32767,-32768,32767,-32768,255]],[[0],[1],[2]],[[0]]]
-SOURCE_SHA256={'src/battle_anim_effects_3.c': 'bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f', 'src/battle_anim_psychic.c': '3db4956ce939f8e3cdbe205c376e6da61de837ec07ceb96c6c6c1ce44eb1d6f2', 'src/battle_anim_ghost.c': '622823b0ad91a22d98b29964caf03a35409d8f667379d45477ad7f660c31955e'}
+SOURCE_SHA256={'src/battle_anim_effects_3.c': 'bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f', 'src/battle_anim_psychic.c': '49a9c2a00ecb6791329fe6bb4f4e2612d4ba8f31a83dbfe39d1cafc40047c49a', 'src/battle_anim_ghost.c': '622823b0ad91a22d98b29964caf03a35409d8f667379d45477ad7f660c31955e'}
 TEMPLATES=['gYawnCloudSpriteTemplate','gSpikesSpriteTemplate','sSkillSwapOrbSpriteTemplate','gGrudgeFlameSpriteTemplate']
 COLUMNS=['slot','x','y','x2','y2','visible','tile','priority','subpriority','a','b','c','d','affine']
 def module(n,p):

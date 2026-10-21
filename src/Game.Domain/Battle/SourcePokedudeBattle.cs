@@ -81,7 +81,7 @@ public static class SourcePokedudeBattle
                 Metadata = players.Select((_, i) => new SourceRewardMetadata(new(BattleSide.Player, i),
                     playerName, currentRegion, "ITEM_POKE_BALL", SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray() } };
             if (SourceFourActionTurns.ValidateCapability(mechanics.Catalog, frame) is { } invalid) return Fail(invalid);
-            return new(frame, entry.Events, trace.ToImmutable().AddRange(entry.Trace), null);
+            return new(frame, entry.Events, trace.ToImmutable().AddRange(entry.Trace), null) { EntrySlots = entry.EntrySlots };
         }
         catch (Exception ex) when (ex is ArgumentException or OverflowException or NotSupportedException)
         { return Fail(ex.Message); }
@@ -93,7 +93,11 @@ public static class SourcePokedudeBattle
         return context.RulesVersion != SourcePokedudeContext.Version || context.LessonId is < 0 or > 3 ||
             frame.Layout != SourceBattleLayout.Singles || frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version ||
             frame.SourceCampaignRulesVersion is not null || frame.TrainerEncounter is not null || frame.TrainerTowerEncounter is not null ||
-            frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.WildEncounter != new SourceWildEncounterContext() ||
+            frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.WildEncounter is not { } encounter ||
+            // Temporary battles have no encounter provenance, but retain the shared
+            // terminal outcome. SourceWildBattlePolicy validates its value below.
+            (encounter with { SourceOutcome = null }) != new SourceWildEncounterContext() ||
+            frame.Outcome != WildBattleOutcome.Ongoing && encounter.SourceOutcome is null ||
             frame.Obedience is not null || frame.Parties.Any(p => p.Members.Any(m => m.IsEgg || m.HeldItem != "ITEM_NONE"))
             ? "pokedude_frame_context" : null;
     }
@@ -130,8 +134,8 @@ public static class SourcePokedudeBattle
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } invalid) return new(frame, [], [], invalid);
         if (frame.Pokedude is null || frame.Revision != expectedRevision || frame.Outcome != WildBattleOutcome.Ongoing)
             return new(frame, [], [], "pokedude_abort_phase");
-        var next = frame with { Outcome = WildBattleOutcome.Draw, Revision = checked(frame.Revision + 1),
-            Queue = [], NextAction = 0, FourTurn = null, PendingSwitches = [], Reservations = [], PreparedMedicines = null };
+        var next = SourceBattleOutcomeRules.SetOutcome(frame with { Revision = checked(frame.Revision + 1),
+            Queue = [], NextAction = 0, FourTurn = null, PendingSwitches = [], Reservations = [], PreparedMedicines = null }, WildBattleOutcome.Draw);
         var ended = SourceBattleEventHooks.Publish(next, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Draw));
         return new(ended.State, [ended.Event], [], null);
     }

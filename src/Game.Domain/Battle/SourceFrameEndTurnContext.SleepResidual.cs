@@ -4,9 +4,9 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameEndTurnContext
 {
-    internal override bool YawnUproarPreventsSleep(BattlerSlot slot) => WildBattleEffective.Ability(Get(slot)) != "ABILITY_SOUNDPROOF" &&
+    internal bool YawnUproarPreventsSleep(BattlerSlot slot) => WildBattleEffective.Ability(Get(slot)) != "ABILITY_SOUNDPROOF" &&
         Frame.Slots.Any(c => c.Registers.Turn?.Lock?.Kind == WildBattleCalledLockKind.Uproar);
-    internal override void YawnCancelMultiTurn(BattlerSlot slot)
+    internal void YawnCancelMultiTurn(BattlerSlot slot)
     {
         var cell = Frame.Get(slot);
         if (cell.Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Rampage or WildBattleCalledLockKind.Uproar } locked) return;

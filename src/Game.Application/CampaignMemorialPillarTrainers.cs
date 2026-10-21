@@ -7,9 +7,9 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private bool IsMemorialPillarTrainer(TrainerId trainer) =>
-        _content.MemorialPillarTrainers?.Trainers.ContainsKey(trainer) == true;
+        TrainerRegisteredOnMap(trainer, "map.five-island-memorial-pillar");
     private bool IsMemorialPillarTrainerMap(MapId map) =>
-        _content.MemorialPillarTrainers is not null && map.Value == MemorialPillarTrainerPartyFactory.Map;
+        map.Value == "map.five-island-memorial-pillar" && TrainerOccurrences.ActorMaps.Contains(map);
 
     private void RequireMemorialPillarTrainerOccurrence(CampaignState state, TrainerId trainer,
         ForestTrainerBattleDefinition source, bool noIntro) =>
@@ -22,9 +22,10 @@ public sealed partial class CampaignSession
         if (!IsMemorialPillarTrainerMap(state.World.Player.MapId) || state.LastTalked is not { } id ||
             !state.Actors.TryGetValue(id, out var actor) || !actor.Active ||
             state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") != actor.SourceLocalId ||
-            !_content.MemorialPillarTrainers!.BattlesByScript.TryGetValue(actor.ScriptId, out var source))
+            !TrainerOccurrences.ByActor.TryGetValue((state.World.Player.MapId, id), out var occurrence) ||
+            occurrence.Source.Definition.ScriptEntry != actor.ScriptId)
             throw new InvalidDataException("memorial_pillar_rematch_query_context");
-        MemorialPillarTrainerPartyFactory.ValidateBattle(source);
+        var source = occurrence.Source.Definition;
         if (effect.Source.Path != source.Source.Path || effect.Source.Symbol != source.ScriptEntry ||
             effect.Source.Line != source.Source.StartLine + 2 || effect.Opcode != "specialvar" ||
             !effect.Args.SequenceEqual(new[] { "VAR_RESULT", "ShouldTryRematchBattle" }))

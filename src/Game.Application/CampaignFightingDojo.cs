@@ -1,6 +1,5 @@
 using Game.Domain.Events;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.World;
 using Game.Domain.Pokemon;
 
@@ -34,14 +33,12 @@ public sealed partial class CampaignSession
     {
         if (content.GamePokemon is not { } owned ||
             content.OpponentPokemon is not { } opponents || content.Machines is not { } machines ||
-            content.FightingDojoTrainers is not { } trainers ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(owned, content.PokemonContent?.Pokemon) ||
             !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents) ||
             !ReferenceEquals(opponents, content.PokemonContent?.Pokemon.Opponents))
             throw new InvalidDataException("fighting_dojo_current_binding");
-        FightingDojoTrainerPartyFactory.ValidateCatalog(trainers);
     }
 
     private string? ValidateFightingDojoGift(CampaignState state)

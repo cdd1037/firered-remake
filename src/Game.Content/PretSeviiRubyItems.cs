@@ -62,7 +62,7 @@ public static class PretSeviiRubyItems
 
         void Add(string symbol, JsonElement sourceEvent, bool hidden, int? localId, string itemSymbol, int quantity)
         {
-            var map = region.NewMaps[PretSeviiRubyRegion.MapIdFromSourceSymbol(symbol)];
+            var map = region.NewMaps[region.NewMaps.Values.First().ResolveMapSymbol(symbol)];
             var item = shop.Items.SingleOrDefault(i => i.SourceItemSymbol == itemSymbol)
                 ?? throw new InvalidDataException("sevii_ruby_pickup_item_missing: " + itemSymbol);
             string flag = sourceEvent.GetProperty("flag").GetString()!, script = hidden ? "EventScript_HiddenItemScript" : sourceEvent.GetProperty("script").GetString()!;

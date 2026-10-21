@@ -5,7 +5,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasCallerRecipe(string effect) => effect is "EFFECT_METRONOME" or
         "EFFECT_SLEEP_TALK" or "EFFECT_MIRROR_MOVE" or "EFFECT_ASSIST" or "EFFECT_NATURE_POWER";

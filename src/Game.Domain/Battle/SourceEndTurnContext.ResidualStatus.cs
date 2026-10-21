@@ -2,11 +2,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
-    internal abstract BattlerSlot? LeechSeedSource(BattlerSlot target);
-    internal virtual bool IngrainEnabled => true;
-    internal virtual bool LiquidOozeEnabled => true;
+    internal bool IngrainEnabled => true;
+    internal bool LiquidOozeEnabled => true;
 
     internal void IngrainResidual(BattlerSlot slot)
     {

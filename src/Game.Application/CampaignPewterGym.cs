@@ -2,7 +2,6 @@ using Game.Domain.Events;
 using Game.Domain.Items;
 using Game.Domain.Ids;
 using System.Collections.Immutable;
-using Game.Domain.Trainers;
 using Game.Domain.World;
 namespace Game.Application;
 
@@ -15,7 +14,7 @@ public sealed partial class CampaignSession
             if(effect.Source.Path!="data/scripts/set_gym_trainers.inc"||effect.Source.Symbol!="EventScript_SetPewterGymTrainers"||
                 effect.Args.Length!=1||effect.Args[0]!="TRAINER_CAMPER_LIAM"||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))
                 throw new InvalidDataException("gym_trainer_flag_context_unsupported");
-            next=state with{BattledTrainers=state.BattledTrainers.Add(PewterTrainerPartyFactory.Liam.Value)};return true;
+            next=state with{BattledTrainers=state.BattledTrainers.Add("pret:TRAINER_CAMPER_LIAM")};return true;
         }
         if(_content.Machines is not {} machines)return false;
         int Value(string token)=>token.StartsWith("VAR_",StringComparison.Ordinal)?state.Script.Variables.GetValueOrDefault(token):int.TryParse(token,out int n)?n:_content.TryConstant(token,out n)?n:throw new InvalidDataException("gym_item_value_missing: "+token);
@@ -40,9 +39,9 @@ public sealed partial class CampaignSession
     private string? ValidatePewterProgress(CampaignState state)
     {
         bool badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET");
-        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==PewterTrainerPartyFactory.Brock.Value&&h.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Won);
+        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId=="pret:TRAINER_LEADER_BROCK"&&h.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_BROCK")!=won)return "save_brock_badge_history_mismatch";
-        if(won&&(!state.BattledTrainers.Contains(PewterTrainerPartyFactory.Liam.Value)||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_PEWTER_CITY_GYM_GUIDE")||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PEWTER_CITY") is not (1 or 2)))return "save_brock_reward_flags_mismatch";
+        if(won&&(!state.BattledTrainers.Contains("pret:TRAINER_CAMPER_LIAM")||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_PEWTER_CITY_GYM_GUIDE")||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PEWTER_CITY") is not (1 or 2)))return "save_brock_reward_flags_mismatch";
         // Brock reveals the aide in scene1. The original running-shoes script then
         // removes him, grants B_DASH and advances to scene2 as one stable outcome.
         // Requiring a visible aide forever rejects a normally earned post-gift save.

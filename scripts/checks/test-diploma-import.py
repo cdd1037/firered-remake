@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_files, write_files
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,17 +84,15 @@ class DiplomaImportTests(unittest.TestCase):
     def test_isolated_cold_import_and_read_only_check(self):
         with tempfile.TemporaryDirectory(prefix='firered-diploma-import-') as temporary:
             root = Path(temporary)
-            for name, value in self.source.raw.items():
-                path = root / self.source.raw_prefix / name
-                path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(value)
+            write_files(root / self.source.raw_prefix, self.source.raw)
             command = [sys.executable, str(SCRIPT), '--project-root', str(root)]
             result = subprocess.run(command, capture_output=True, text=True, timeout=30)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             output = root / module.BASE
-            before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()}
+            before = snapshot_files(output.iterdir())
             result = subprocess.run([*command, '--check'], capture_output=True, text=True, timeout=30)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            self.assertEqual(before, {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()})
+            self.assertEqual(before, snapshot_files(output.iterdir()))
             (output / 'diploma.json').write_text('{}')
             result = subprocess.run([*command, '--check'], capture_output=True, text=True, timeout=30)
             self.assertNotEqual(0, result.returncode)

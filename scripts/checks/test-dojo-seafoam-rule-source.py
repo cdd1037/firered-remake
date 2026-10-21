@@ -43,7 +43,7 @@ class DojoSeafoamRuleSourceTests(unittest.TestCase):
                 actual = json.loads(trainer_json(ROOT / 'content/generated', docs['trainers.json'], check=True))
                 expected = json.loads((ROOT / f'content/generated/data/regions/{family}/trainers.json').read_text())
                 self.assertEqual(expected, actual)
-                self.assertEqual(1 if family == 'fighting-dojo' else 2, len(files))
+                self.assertEqual(0 if family == 'fighting-dojo' else 2, len(files))
                 for path, contents in files.items():
                     self.assertEqual((ROOT / path).read_bytes(), contents, path)
 
@@ -56,6 +56,7 @@ class DojoSeafoamRuleSourceTests(unittest.TestCase):
                 subprocess.run(command, check=True, capture_output=True, text=True)
                 subprocess.run([*command, '--check'], check=True, capture_output=True, text=True)
                 self.assertFalse((output / 'content/raw').exists())
+                self.assertFalse((output / 'src/Game.Domain/Trainers/FightingDojoTrainerSource.cs').exists())
                 self.assertEqual({'trainers.json'}, {path.name for path in
                     (output / f'content/generated/data/regions/{family}').iterdir()})
 

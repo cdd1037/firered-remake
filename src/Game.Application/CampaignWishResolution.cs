@@ -1,6 +1,5 @@
 using Game.Domain.Battle;
 using Game.Domain.Ids;
-using Game.Domain.WildBattle;
 
 namespace Game.Application;
 
@@ -23,8 +22,6 @@ public static class CampaignWishResolutionPresentation
 
     public static CampaignWishResolution? At(IReadOnlyList<SourceBattleEvent> events, int index) =>
         Match(events.Select(Read).ToArray(), index, 4);
-    public static CampaignWishResolution? At(IReadOnlyList<WildBattleEvent> events, int index) =>
-        Match(events.Select(Read).ToArray(), index, 2);
 
     private static CampaignWishResolution? Match(Row[] rows, int index, int count)
     {
@@ -63,12 +60,6 @@ public static class CampaignWishResolutionPresentation
         SourceCalledDelayedEvent x => new(x.Sequence, x.Turn, "delayed", x.Target.Value, x.Move, x.Before, x.After, x.Reason, x.SourcePartyIndex),
         SourceRecoveredEvent x => new(x.Sequence, x.Turn, "recovery", x.Side.Value, x.Move, x.HpBefore, x.HpAfter, Amount: x.Recovered),
         SourceMoveFailedEvent x => new(x.Sequence, x.Turn, "failed", x.Target.Value, x.Move, Reason: x.Reason, Actor: x.Actor.Value),
-        _ => new(e.Sequence, e.Turn, "boundary")
-    };
-    private static Row Read(WildBattleEvent e) => e switch {
-        WildBattleCalledDelayedEvent x => new(x.Sequence, x.Turn, "delayed", (int)x.Target, x.Move, x.Before, x.After, x.Reason, x.SourcePartyIndex),
-        WildBattleRecoveredEvent x => new(x.Sequence, x.Turn, "recovery", (int)x.Side, x.Move, x.HpBefore, x.HpAfter, Amount: x.Recovered),
-        WildBattleMoveFailedEvent x => new(x.Sequence, x.Turn, "failed", (int)x.Target, x.Move, Reason: x.Reason, Actor: (int)x.Actor),
         _ => new(e.Sequence, e.Turn, "boundary")
     };
 }

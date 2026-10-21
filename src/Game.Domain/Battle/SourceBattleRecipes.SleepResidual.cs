@@ -3,16 +3,16 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasSleepResidualRecipe(string effect) => effect is "EFFECT_NIGHTMARE" or "EFFECT_CURSE" or "EFFECT_YAWN";
-    internal virtual bool SleepResidualNoAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal bool SleepResidualNoAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         CalledSureHit(actor, target) || SemiInvulnerable(target) == WildBattleSemiInvulnerable.None &&
             !(Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"));
-    internal virtual void SleepResidualPrepare(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) { }
-    internal virtual void CurseStat(BattlerSlot actor, WildBattleStat stat, int amount, PokemonMoveDefinition move) =>
+    internal void SleepResidualPrepare(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) { }
+    internal void CurseStat(BattlerSlot actor, WildBattleStat stat, int amount, PokemonMoveDefinition move) =>
         SourceChangeStat(actor, actor, stat, amount, move.Id, certain: true);
-    internal virtual void CurseCostReceipt(BattlerSlot actor, PokemonMoveDefinition move, int damage, int lost)
+    internal void CurseCostReceipt(BattlerSlot actor, PokemonMoveDefinition move, int damage, int lost)
     {
         HitItemsCommandDamage(damage);
         RecordHitItemDamage(actor, lost, false, false, physical: false); // TYPE_MYSTERY is special in Gen III.

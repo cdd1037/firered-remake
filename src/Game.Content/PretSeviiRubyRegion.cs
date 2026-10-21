@@ -26,27 +26,6 @@ public sealed partial class PretSeviiRubyRegion
 
         InitializeField(source);
     }
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_MT_EMBER_EXTERIOR" => new("map.mt-ember-exterior"),
-        "MAP_MT_EMBER_RUBY_PATH_1F" => new("map.mt-ember-ruby-path-1f"),
-        "MAP_MT_EMBER_RUBY_PATH_B1F" => new("map.mt-ember-ruby-path-b1f"),
-        "MAP_MT_EMBER_RUBY_PATH_B1F_STAIRS" => new("map.mt-ember-ruby-path-b1f-stairs"),
-        "MAP_MT_EMBER_RUBY_PATH_B2F" => new("map.mt-ember-ruby-path-b2f"),
-        "MAP_MT_EMBER_RUBY_PATH_B2F_STAIRS" => new("map.mt-ember-ruby-path-b2f-stairs"),
-        "MAP_MT_EMBER_RUBY_PATH_B3F" => new("map.mt-ember-ruby-path-b3f"),
-        "MAP_MT_EMBER_RUBY_PATH_B4F" => new("map.mt-ember-ruby-path-b4f"),
-        "MAP_MT_EMBER_RUBY_PATH_B5F" => new("map.mt-ember-ruby-path-b5f"),
-        "MAP_MT_EMBER_SUMMIT" => new("map.mt-ember-summit"),
-        "MAP_MT_EMBER_SUMMIT_PATH_1F" => new("map.mt-ember-summit-path-1f"),
-        "MAP_MT_EMBER_SUMMIT_PATH_2F" => new("map.mt-ember-summit-path-2f"),
-        "MAP_MT_EMBER_SUMMIT_PATH_3F" => new("map.mt-ember-summit-path-3f"),
-        "MAP_ONE_ISLAND" => new("map.one-island"),
-        "MAP_ONE_ISLAND_KINDLE_ROAD" => new("map.one-island-kindle-road"),
-        "MAP_ONE_ISLAND_KINDLE_ROAD_EMBER_SPA" => new("map.one-island-kindle-road-ember-spa"),
-        _ => PretFirstSeviiRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     public static PretSeviiRubyRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;

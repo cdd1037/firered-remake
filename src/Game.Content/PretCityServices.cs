@@ -30,15 +30,6 @@ public sealed class PretCityServices
          Items = items.Items; Icons = items.Icons;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_VERMILION_CITY_POKEMON_FAN_CLUB" => new("map.vermilion-city-pokemon-fan-club"),
-        "MAP_VERMILION_CITY_HOUSE1" => new("map.vermilion-city-house-1"),
-        _ => PretVermilionRegion.MapIdFromSourceSymbol(symbol)
-    };
-
-
-
     public static PretCityServices Load(PretCurrentWorld world, SharedMachineCatalog? shared = null)
     {
         var projectRoot = world.ProjectRoot;

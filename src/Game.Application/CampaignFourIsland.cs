@@ -4,7 +4,6 @@ using Game.Domain.Encounters;
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.World;
 
 namespace Game.Application;
@@ -23,9 +22,8 @@ public sealed partial class CampaignSession
         _content.FindProgram(f.ProgramId)?.Instructions.Any(i => FourIslandSource(i.Source.Path)) == true);
     private static void ValidateFourIslandCatalog(ICampaignCatalog content)
     {
-        if (content.FourIslandTrainers is not {} trainers || !content.Inventory.Items.ContainsKey(ItemIds.NeverMeltIceId))
+        if (!content.Inventory.Items.ContainsKey(ItemIds.NeverMeltIceId))
             throw new InvalidDataException("four_island_source_profile_missing");
-        FourIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }
 
     private string? ValidateFourIslandProgress(CampaignState state)

@@ -9,11 +9,10 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public PretCeladonApproachRegion CeladonApproachRegion { get; }
     public PokemonPresentationPackage? CeladonApproachPokemon { get; }
     public PretCeladonApproachItemsDocument? CeladonApproachItems { get; }
     public PretCeladonApproachEncounters? CeladonApproachEncounters { get; }
-    public CeladonApproachTrainerCatalog? CeladonApproachTrainers { get; }
+    public OrdinaryTrainerCatalog? CeladonApproachTrainers { get; }
 
     private static IEnumerable<FieldPickupDefinition> CeladonApproachPickupDefinitions(
         PretCeladonApproachItemsDocument items,EarlyShopCatalog shop,MachineCatalog machines,PretStoryCompilation scripts)

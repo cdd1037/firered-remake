@@ -24,20 +24,6 @@ public sealed class PretFossilLabRegion
 
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_CINNABAR_ISLAND_POKEMON_LAB_ENTRANCE" => new("map.cinnabar-island-pokemon-lab-entrance"),
-        "MAP_CINNABAR_ISLAND_POKEMON_LAB_EXPERIMENT_ROOM" => new("map.cinnabar-island-pokemon-lab-experiment-room"),
-        "MAP_CINNABAR_ISLAND" => new("map.cinnabar-island"),
-        // These are original, preserved warp destinations. Resolving their IDs
-        // does not add them to NewMaps or admit traversal into missing rooms.
-        "MAP_CINNABAR_ISLAND_POKEMON_LAB_LOUNGE" => new("map.cinnabar-island-pokemon-lab-lounge"),
-        "MAP_CINNABAR_ISLAND_POKEMON_LAB_RESEARCH_ROOM" => new("map.cinnabar-island-pokemon-lab-research-room"),
-        _ => throw new InvalidDataException("Unknown Cinnabar fossil lab map symbol: " + symbol)
-    };
-
-
-
     public static PretFossilLabRegion Load(PretCurrentWorld world)
     {
         var projectRoot = world.ProjectRoot;

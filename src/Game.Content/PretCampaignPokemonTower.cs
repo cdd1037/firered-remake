@@ -11,19 +11,19 @@ public sealed partial class PretCampaignCatalog
     public PretPokemonTowerRegion PokemonTowerRegion { get; }
     public PretPokemonTowerItemsDocument? PokemonTowerItems { get; }
     public PretPokemonTowerPickupsDocument? PokemonTowerPickups { get; }
-    public PokemonTowerTrainerCatalog? PokemonTowerTrainers { get; }
+    public OrdinaryTrainerCatalog? PokemonTowerTrainers { get; }
     public ImmutableArray<int> PokemonTowerInitiallySetFlags => PokemonTowerRegion?.InitiallySetFlags ?? [];
-    private static ImmutableDictionary<MapId,EarlyLandEncounterTable> PokemonTowerEncounterTables(PretPokemonTowerRegion region)
+    private static ImmutableDictionary<MapId,EarlyLandEncounterTable> PokemonTowerEncounterTables(PretPokemonTowerRegion region, Func<string, MapId> resolveMap)
     {
         var result=ImmutableDictionary.CreateBuilder<MapId,EarlyLandEncounterTable>();
         foreach(var entry in region.Dependencies.GetProperty("wildEncounters").EnumerateArray())
         {
             var land=entry.GetProperty("land_mons");
-            var table=new EarlyLandEncounterTable(PretPokemonTowerRegion.MapIdFromSourceSymbol(entry.GetProperty("map").GetString()!),                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,
+            var table=new EarlyLandEncounterTable(resolveMap(entry.GetProperty("map").GetString()!),                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,
                 new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
             EarlyLandEncounterRules.ValidateTable(table);result.Add(table.Map,table);
         }
-        if(result.Count!=5)throw new InvalidDataException("pokemon_tower_encounter_table_count");
+        if(!result.Keys.ToHashSet().SetEquals(PokemonTowerLandEncounterTables.All.Select(t => t.Map)))throw new InvalidDataException("pokemon_tower_encounter_table_count");
         return result.ToImmutable();
     }
     private static IEnumerable<FieldPickupDefinition> PokemonTowerPickupDefinitions(PretPokemonTowerPickupsDocument pickups,EarlyShopCatalog shop,PretStoryCompilation scripts)

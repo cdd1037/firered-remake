@@ -31,7 +31,7 @@ public sealed partial class CampaignSession
     private string? ValidateHatchedEggCount(CampaignState state)
     {
         if (state.GameStats?.TryGetValue(HatchedEggsStat, out int count) != true)
-            return "save_hatched_egg_count_missing_migration_required";
+            return "save_hatched_egg_count_missing";
         int retained = Math.Min(0xffffff, (state.DayCareEggs ?? []).Count(e => e.Hatch is not null) +
             (state.GiftEggs ?? []).Count(e => e.Hatch is not null));
         return count < retained ? "save_hatched_egg_count" : null;

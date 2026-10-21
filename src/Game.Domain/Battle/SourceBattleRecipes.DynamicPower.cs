@@ -17,7 +17,7 @@ internal static class SourceDynamicPowerRules
     internal static int Weight(int hectograms) => hectograms < 100 ? 20 : hectograms < 250 ? 40 : hectograms < 500 ? 60 : hectograms < 1000 ? 80 : hectograms < 2000 ? 100 : 120;
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasDynamicPowerRecipe(string effect) => effect is
         "EFFECT_RETURN" or "EFFECT_FRUSTRATION" or "EFFECT_FLAIL" or "EFFECT_ERUPTION" or "EFFECT_LOW_KICK";
@@ -69,9 +69,9 @@ internal abstract partial class SourceRecipeContext
         DynamicPowerFinish(catalog, actor, target, move, purpose, lost);
     }
 
-    internal virtual void DynamicPowerReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void DynamicPowerReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
-    internal virtual void DynamicPowerFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
+    internal void DynamicPowerFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
     {
         if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
         if (lost > 0) MtMoonRageOnDamage(actor, target, move.Id);

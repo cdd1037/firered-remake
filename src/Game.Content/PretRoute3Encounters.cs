@@ -1,27 +1,21 @@
-using System.Collections.Immutable;
+using System.Text.Json;
 using Game.Domain.Encounters;
 
 namespace Game.Content;
 
-/// <summary>Admits only Route3 grass from the authenticated region. Route4 remains outside the approach scope.</summary>
+/// <summary>Admits only Route3 grass. Route4 belongs to the full current composition.</summary>
 public static class PretRoute3Encounters
 {
-    public static EarlyLandEncounterTable LoadProject(string projectRoot) => Load(PretRoute3Region.Load(PretCurrentWorld.Load(projectRoot)));
+    public static EarlyLandEncounterTable LoadProject(string projectRoot) => Load(PretCurrentWorld.Load(projectRoot));
 
-    public static EarlyLandEncounterTable Load(PretRoute3Region region)
+    public static EarlyLandEncounterTable Load(PretCurrentWorld world)
     {
-        ArgumentNullException.ThrowIfNull(region);
-        var entries = region.Encounters.EnumerateArray().Where(e =>
-            PretRoute3Region.MapIdFromSourceSymbol(e.GetProperty("map").GetString()!) == EarlyLandEncounterRules.Route3Table.Map).ToArray();
-        if (entries.Length != 1) throw new InvalidDataException("The single authenticated Route3 FireRed encounter table is required.");
-        var entry = entries[0];
-        var table = entry;
-        var land = table.GetProperty("land_mons");
-        var weights = EarlyLandEncounterRules.SlotWeights;
-        if (weights.Length != 12) throw new InvalidDataException("Route3 requires twelve source encounter weights.");
-        var result = new EarlyLandEncounterTable(PretRoute3Region.MapIdFromSourceSymbol(table.GetProperty("map").GetString()!),            land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((mon, i) =>
-                new EarlyLandEncounterSlot(i, new("pret:" + mon.GetProperty("species").GetString()),
-                    mon.GetProperty("min_level").GetByte(), mon.GetProperty("max_level").GetByte(), weights[i])).ToImmutableArray());
+        ArgumentNullException.ThrowIfNull(world);
+        var entries = PretEarlyFieldData.Read(world.ProjectRoot, "data/encounters/early-land.json").EnumerateArray()
+            .Where(e => e.GetProperty("map").GetString() == "MAP_ROUTE3").ToArray();
+        if (entries.Length != 1 || !world.Maps.ContainsKey(EarlyLandEncounterRules.Route3Table.Map))
+            throw new InvalidDataException("The single mounted Route3 encounter table is required.");
+        var result = PretWildEncounterTables.Land(JsonSerializer.SerializeToElement(entries), world.Resolve).Single();
         EarlyLandEncounterRules.ValidateTable(result);
         return result;
     }

@@ -44,7 +44,7 @@ public sealed class UtilityAnimationKernelTests
         string snapshot=JsonSerializer.Serialize(result);Shared.Check(result,id,single,Owner(result.Events,id));
         var used=result.Events.OfType<SourceMoveUsedEvent>().Single();int ui=result.Events.IndexOf(used);
         Assert.IsNotNull(Charge.Project(result.Events,ui,single,false).Dispatch,
-            "Singles must authenticate the exported envelope with SourceEvents explicitly empty.");
+            "Singles must authenticate the canonical receipt stream directly.");
         if(single)Assert.IsNull(AnimationDispatchFixture.AtAttackText(Charge.Single(result.Events,ui),false,SourceBattleScene.On).Dispatch);
         Assert.AreEqual(snapshot,JsonSerializer.Serialize(result));
     }

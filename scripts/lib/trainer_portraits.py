@@ -215,11 +215,12 @@ def publish(outputs, output, *, check=False):
             path.write_bytes(data)
 
 
-def selected_trainer_art(source, selection, inherited, emit, assets):
+def selected_trainer_art(source, selection, inherited, emit, assets, *, inherited_ids=True):
     """Resolve selected trainer names/portraits while preserving inherited pixels.
 
     This reads presentation fields only; trainer_import owns complete battle
     parties. The selected source records determine IDs, music and battle mode.
+    Older manifests use canonical portrait IDs even for inherited texture paths.
     """
     indexed = PixelReader(source).indexed
     trainers, portraits = [], []
@@ -245,7 +246,7 @@ def selected_trainer_art(source, selection, inherited, emit, assets):
             part = part.strip()
             music_value |= 128 if part == 'F_TRAINER_FEMALE' else int(re.search(r'^#define ' + part + r'\s+(\d+)', trainer_constants, re.M)[1])
         key = pic.removeprefix('TRAINER_PIC_')
-        portrait_id = PurePosixPath(inherited[key]).stem if key in inherited else key.lower().replace('_', '-') + '-front'
+        portrait_id = PurePosixPath(inherited[key]).stem if inherited_ids and key in inherited else key.lower().replace('_', '-') + '-front'
         trainers.append(dict(trainer='pret:' + symbol, sourceTrainerId=source_id, name=display_name,
             trainerClass=cls, className=cls_name, trainerPic=pic, portrait=portrait_id,
             encounterMusicGender=music_value, doubleBattle='.doubleBattle = TRUE,' in body))
@@ -260,7 +261,7 @@ def selected_trainer_art(source, selection, inherited, emit, assets):
             need(match, 'Trainer graphic path missing')
             paths.append(match[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
         _, rgba = indexed(*paths, (64, 64))
-        identity = PurePosixPath(inherited[key]).stem if key in inherited else key.lower().replace('_', '-') + '-front'
+        identity = PurePosixPath(inherited[key]).stem if inherited_ids and key in inherited else key.lower().replace('_', '-') + '-front'
         if key in inherited:
             path = inherited[key]
             need(Image.open(io.BytesIO(source.reuse(path))).convert('RGBA').tobytes() == rgba, 'Inherited trainer source pixels differ: ' + key)

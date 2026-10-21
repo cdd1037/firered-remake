@@ -4,7 +4,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasTurnMoveRecipe(string effect) => effect is "EFFECT_DISABLE" or "EFFECT_ROLLOUT";
     internal void ExecuteTurnMove(PokemonCatalog catalog, BattlerSlot actor, int slot,
@@ -55,21 +55,18 @@ internal abstract partial class SourceRecipeContext
         return true;
     }
 
-    // Only storage/legacy scalar adapters vary. Cmd_rolloutdamagecalculation is shared.
-    internal virtual int RolloutRemaining(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_rollout_storage");
-    internal virtual void ChangeRollout(BattlerSlot slot, PokemonMoveDefinition move, int remaining, string reason) => throw new SourceRecipeUnsupported("source_rollout_storage");
-    internal virtual void RolloutAttackString(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_rollout_storage");
-    internal virtual bool RolloutAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => SourceGenericAccuracy(actor, target, move, purpose);
-    internal virtual bool RolloutImmune(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    // Cmd_rolloutdamagecalculation uses the canonical frame registers.
+    internal bool RolloutAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => SourceGenericAccuracy(actor, target, move, purpose);
+    internal bool RolloutImmune(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceTypeResult(catalog, target, move, command: SourceTypeCommand.TypeCalc2, apply: true).Immune;
-    internal virtual void RolloutReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    internal void RolloutReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
         if (!SourceTypeReport(catalog, actor, target, move, command: SourceTypeCommand.TypeCalc2))
             SourceGenericEffectiveness(catalog, actor, target, move);
     }
-    internal virtual int RolloutDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent, int power, string purpose) =>
+    internal int RolloutDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent, int power, string purpose) =>
         AdjustHeldDamage(target, move.Id, SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent, power), purpose);
-    internal virtual void RolloutFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
+    internal void RolloutFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
     {
         if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
         if (lost > 0) MtMoonRageOnDamage(actor, target, move.Id);

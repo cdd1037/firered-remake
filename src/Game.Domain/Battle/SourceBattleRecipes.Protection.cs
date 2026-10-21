@@ -12,7 +12,7 @@ internal static class SourceProtectionRules
             ? "source_kernel_protection_state" : null;
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasProtectionRecipe(string effect) => effect is "EFFECT_PROTECT" or "EFFECT_ENDURE";
 

@@ -10,6 +10,8 @@ public sealed class UtilityFamilyAnimationTests
     private const BindingFlags Hidden=BindingFlags.NonPublic|BindingFlags.Instance;
     private sealed class Audio:ISourceAnimationAudio
     {public readonly List<SourceAnimationSound> Cues=[];public bool IsPlaying=>false;public void Play(SourceAnimationSound c)=>Cues.Add(c);public void StopAnimationEffects(){}}
+    private sealed class Occupied(int slot):SourceBattleAnimation.VisualSprite(slot,100)
+    {public override bool Counted=>false;public override SourceVisualSpriteFrame Frame=>new(Slot,"external",default,default,0,false,false,false,256,null,100);public override void Step(SourceBattleAnimation owner){}}
     private static string Folder=>Path.Combine(TestAssets.Root,"content/generated/battle/animations");
     private static ushort[] TerrainPalette(SourceAnimationResources resources){var surface=resources.CreateBackgroundSurface(0);return Enumerable.Range(0,16).Select(i=>surface.PaletteColor(2,i)).ToArray();}
     private static AnimationBattler[] Bodies(bool doubles)=>Enumerable.Range(0,doubles?4:2).Select(i=>new AnimationBattler(new(i),"body-"+i,new[]{5,11,7,13}[i],new[]{2,3,4,5}[i],new[]{56,40,32,64}[i],new[]{64,48,32,56}[i])).ToArray();
@@ -37,8 +39,12 @@ public sealed class UtilityFamilyAnimationTests
             string tag="ANIM_TAG_"+resolved.Script.SpriteRecipes[template].Asset.ToUpperInvariant().Replace('-','_');Call(r,"LoadSpriteGraphics",tag);
             if(capacity>=0)
             {
-                var type=typeof(SourceBattleAnimation).GetNestedType("CureWindowCopy",BindingFlags.NonPublic)!;var owned=Field(r,"_sprites");
-                for(int slot=slots;slot<64-capacity;slot++){var copy=Activator.CreateInstance(type,Hidden|BindingFlags.Public,null,[slot,r,0],null)!;owned.GetType().GetMethod("Add")!.Invoke(owned,[copy]);}
+                var owned=Field(r,"_sprites");
+                for(int slot=slots;slot<64-capacity;slot++)owned.GetType().GetMethod("Add")!.Invoke(owned,[new Occupied(slot)]);
+                var occupied=((IEnumerable)owned).Cast<SourceBattleAnimation.VisualSprite>().OfType<Occupied>().ToArray();
+                Assert.AreEqual(64-capacity-slots,occupied.Length);
+                CollectionAssert.AreEqual(Enumerable.Range(slots,64-capacity-slots).ToArray(),occupied.Select(s=>s.Slot).ToArray());
+                Assert.IsTrue(occupied.All(s=>!s.Counted));
             }
             short[] registers=(short[])Field(r,"_animationArgs");for(int i=0;i<args.Length;i++)registers[i]=unchecked((short)args[i]);
             if(kind<2)Assert.AreEqual(true,Call(r,"TryCreateUtilitySprite",C("createsprite",[template,"ANIM_TARGET","2",..args.Select(x=>x.ToString())]),slots,28));

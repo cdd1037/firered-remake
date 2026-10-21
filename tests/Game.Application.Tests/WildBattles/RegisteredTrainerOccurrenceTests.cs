@@ -1,7 +1,9 @@
 using System.Collections;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Game.Application;
+using Game.Content;
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Trainers;
@@ -131,6 +133,48 @@ public sealed class RegisteredTrainerOccurrenceTests
     }
 
     [TestMethod]
+    [DataRow("TRAINER_LEADER_ERIKA")]
+    [DataRow("TRAINER_LEADER_KOGA")]
+    [DataRow("TRAINER_LEADER_SABRINA")]
+    public void MigratedGymOccurrenceRetainsActorMapCallbackAndMusic(string symbol)
+    {
+        var session = CampaignSession.CreateCurrent(CurrentCampaignFixture.Catalog);
+        var primary = TrainerEntries(Property<object>(Property<object>(session, "TrainerOccurrences"), "Primary"));
+        var occurrence = primary[new("pret:" + symbol)];
+        var link = Rows(Property<object>(occurrence, "Actors")).Single();
+        var map = Property<MapId>(link, "Map");
+        var localId = Property<string>(link, "LocalId");
+        var sourceId = Property<int>(link, "SourceLocalId");
+        var script = Property<string>(link, "Script");
+        var actor = new CampaignActor(localId, sourceId, "unused", 0, 0, 0, Direction.South,
+            "unused", script, "", true, false, 0, 0);
+        var state = session.State with {
+            World = session.State.World with { Player = session.State.World.Player with { MapId = map } },
+            LastTalked = localId, Actors = session.State.Actors.SetItem(localId, actor),
+            Script = session.State.Script with { Wait = new(StoryWaitKind.Battle, "gym-guard-test"),
+                Variables = session.State.Script.Variables.SetItem("VAR_LAST_TALKED", sourceId) }
+        };
+        Invoke(session, "RequireTrainerActorOccurrence", state, occurrence);
+        CampaignState[] forged = [
+            state with { World = state.World with { Player = state.World.Player with { MapId = new("map.pallet-town") } } },
+            state with { LastTalked = "unregistered-actor" },
+            state with { Actors = state.Actors.SetItem(localId, actor with { Active = false }) },
+            state with { Actors = state.Actors.SetItem(localId, actor with { SourceLocalId = sourceId + 1 }) },
+            state with { Actors = state.Actors.SetItem(localId, actor with { ScriptId = script + "_Other" }) },
+            state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_LAST_TALKED", sourceId + 1) } }
+        ];
+        foreach (var candidate in forged)
+            Assert.ThrowsExactly<InvalidDataException>(() => Invoke(session, "RequireTrainerActorOccurrence", candidate, occurrence));
+        var instruction = Instruction(occurrence);
+        Assert.AreEqual(1, Definition(occurrence).Mode);
+        Assert.AreEqual("NO_MUSIC", instruction.Args[4]);
+        var original = new StoryEffect(1, instruction.Opcode, instruction.Args, instruction.Source);
+        foreach (int index in new[] { 1, 2, 3, 4 })
+            Assert.ThrowsExactly<InvalidDataException>(() => Invoke(session, "RequireTrainerOccurrence", Definition(occurrence).Trainer,
+                original with { Args = original.Args.SetItem(index, "NotTheDeclaredArgument") }));
+    }
+
+    [TestMethod]
     public void SettledHistoryUsesTrainerBusinessIdentityAcrossEquivalentCallSites()
     {
         var session = CampaignSession.CreateCurrent(CurrentCampaignFixture.Catalog);
@@ -171,6 +215,9 @@ public sealed class RegisteredTrainerOccurrenceTests
     }
 
     [TestMethod]
+    [DataRow("CeladonCity_Gym_")]
+    [DataRow("FuchsiaCity_Gym_")]
+    [DataRow("SaffronCity_Gym_")]
     [DataRow("Route19_")]
     [DataRow("SaffronCity_Dojo_")]
     public void CompositionRejectsMutatedModeAndBattleFlags(string scriptPrefix)
@@ -196,6 +243,84 @@ public sealed class RegisteredTrainerOccurrenceTests
             var error = Assert.ThrowsExactly<InvalidDataException>(() => Invoke(session, "BindTrainerOccurrences"));
             StringAssert.StartsWith(error.Message, "trainer_occurrence_semantics_mismatch:");
         }
+    }
+
+    [TestMethod]
+    public void CompositionRejectsMissingProgramsInsteadOfRegionalScriptAllowlists()
+    {
+        var session = CampaignSession.CreateCurrent(CurrentCampaignFixture.Catalog);
+        var bindings = TrainerEntries(Property<object>(session, "OrdinaryTrainerBindings"));
+        var source = bindings.Values.SelectMany(Sources).First(candidate =>
+            Property<ForestTrainerBattleDefinition>(candidate, "Definition").Mode == 0);
+        var original = Property<ForestTrainerBattleDefinition>(source, "Definition");
+        source.GetType().GetProperty("Definition", InstanceMembers)!.SetValue(source,
+            original with { ScriptEntry = "MissingMap_EventScript_MissingTrainer" });
+        var error = Assert.ThrowsExactly<InvalidDataException>(() => Invoke(session, "BindTrainerOccurrences"));
+        StringAssert.StartsWith(error.Message, "trainer_occurrence_program_missing:");
+    }
+
+    [TestMethod]
+    [DataRow("ViridianForest_EventScript_Rick")]
+    [DataRow("Route3_EventScript_Ben")]
+    [DataRow("CeladonCity_Gym_EventScript_Tamia")]
+    public void CompositionAuthenticatesDeclaredPostTextAgainstActualProgram(string script)
+    {
+        foreach (var replacement in new[] { "", " ", "Text_NotDeclaredByTheProgram" })
+        {
+            var session = CampaignSession.CreateCurrent(CurrentCampaignFixture.Catalog);
+            var bindings = TrainerEntries(Property<object>(session, "OrdinaryTrainerBindings"));
+            var source = bindings.Values.SelectMany(Sources).First(candidate =>
+                Property<ForestTrainerBattleDefinition>(candidate, "Definition").ScriptEntry == script);
+            var original = Property<ForestTrainerBattleDefinition>(source, "Definition");
+            source.GetType().GetProperty("Definition", InstanceMembers)!.SetValue(source,
+                original with { PostBattleText = replacement });
+            var error = Assert.ThrowsExactly<InvalidDataException>(() => Invoke(session, "BindTrainerOccurrences"));
+            StringAssert.StartsWith(error.Message, "trainer_post_dialogue_binding:");
+        }
+    }
+
+    [TestMethod]
+    [DataRow("missing")]
+    [DataRow("duplicate")]
+    [DataRow("substituted-text")]
+    [DataRow("wrong-autoclose-mode")]
+    [DataRow("wrong-op")]
+    [DataRow("wrong-opcode")]
+    [DataRow("extra-argument")]
+    [DataRow("before-battle")]
+    public void CompositionRejectsMalformedActualPostDialogue(string mutation)
+    {
+        const string script = "ViridianForest_EventScript_Rick";
+        var original = CurrentCampaignFixture.Catalog;
+        var program = original.FindProgram(script)!;
+        var index = Enumerable.Range(0, program.Instructions.Length)
+            .Single(i => program.Instructions[i].Opcode == "msgbox");
+        var dialogue = program.Instructions[index];
+        var instructions = mutation switch
+        {
+            "missing" => program.Instructions.RemoveAt(index),
+            "duplicate" => program.Instructions.Insert(index + 1, dialogue),
+            "substituted-text" => program.Instructions.SetItem(index,
+                dialogue with { Args = dialogue.Args.SetItem(0, "ViridianForest_Text_RickIntro") }),
+            "wrong-autoclose-mode" => program.Instructions.SetItem(index,
+                dialogue with { Args = dialogue.Args.SetItem(1, "MSGBOX_NPC") }),
+            "wrong-op" => program.Instructions.SetItem(index, dialogue with { Op = StoryOp.Message }),
+            "wrong-opcode" => program.Instructions.SetItem(index, dialogue with { Opcode = "message" }),
+            "extra-argument" => program.Instructions.SetItem(index,
+                dialogue with { Args = dialogue.Args.Add("UNDECLARED_ARGUMENT") }),
+            "before-battle" => program.Instructions.RemoveAt(index).Insert(0, dialogue),
+            _ => throw new ArgumentOutOfRangeException(nameof(mutation))
+        };
+        // The immutable script override is private to this composition. Other tests retain
+        // the original generated programs, definitions and source assets.
+        var copy = (PretCampaignCatalog)typeof(object).GetMethod("MemberwiseClone", InstanceMembers)!.Invoke(original, null)!;
+        var field = typeof(PretCampaignCatalog).GetField("_scripts", InstanceMembers)!;
+        var compilation = (PretStoryCompilation)field.GetValue(original)!;
+        field.SetValue(copy, compilation with {
+            Programs = compilation.Programs.SetItem(script, program with { Instructions = instructions })
+        });
+        var error = Assert.ThrowsExactly<InvalidDataException>(() => CampaignSession.CreateCurrent(copy));
+        StringAssert.StartsWith(error.Message, "trainer_post_dialogue_binding:");
     }
 
     [TestMethod]

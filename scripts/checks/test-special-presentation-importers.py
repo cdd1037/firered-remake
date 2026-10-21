@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from import_check_fixtures import snapshot_files, snapshot_tree, write_files
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts/lib'))
@@ -64,14 +65,6 @@ def build(name, module):
     else:
         outputs = module.build(lock, sources)
     return sources, outputs
-
-
-def snapshot(paths):
-    return {str(path): (path.read_bytes(), path.stat().st_mtime_ns) for path in paths}
-
-
-def tree_snapshot(root):
-    return snapshot(sorted(path for path in root.rglob('*') if path.is_file()))
 
 
 def command(name, out, raw=RAW, dependency=ROOT):
@@ -165,7 +158,7 @@ class SpecialPresentationImporterTests(unittest.TestCase):
                 temporary = Path(temporary)
                 out = temporary / 'output'
                 arguments = command(name, out)
-                before = snapshot(RAW / relative for relative in sources)
+                before = snapshot_files(RAW / relative for relative in sources)
                 if name in ('slot', 'gym', 'field'):
                     missing = invoke([*arguments, '--check'], temporary)
                     self.assertNotEqual(0, missing.returncode)
@@ -175,22 +168,22 @@ class SpecialPresentationImporterTests(unittest.TestCase):
                 self.assertEqual(set(outputs), {path.relative_to(out).as_posix() for path in out.rglob('*') if path.is_file()})
                 for relative, data in outputs.items():
                     self.assertEqual(data, (out / relative).read_bytes(), relative)
-                written = tree_snapshot(out)
+                written = snapshot_tree(out)
                 checked = invoke([*arguments, '--check'] if name in ('slot', 'gym', 'field') else arguments, temporary)
                 self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
                 for relative, data in outputs.items():
                     self.assertEqual(data, (out / relative).read_bytes(), relative)
                 if name in ('slot', 'gym', 'field'):
-                    self.assertEqual(written, tree_snapshot(out), '--check rewrote generated files')
+                    self.assertEqual(written, snapshot_tree(out), '--check rewrote generated files')
                     target = next(path for path in out.rglob('*.json') if 'content/raw' not in path.as_posix())
                     value = json.loads(target.read_bytes())
                     value['schemaVersion'] = -1
                     target.write_text(json.dumps(value))
-                    altered = tree_snapshot(out)
+                    altered = snapshot_tree(out)
                     rejected = invoke([*arguments, '--check'], temporary)
                     self.assertNotEqual(0, rejected.returncode, 'Corrupt JSON passed --check')
-                    self.assertEqual(altered, tree_snapshot(out))
-                self.assertEqual(before, snapshot(RAW / relative for relative in sources), 'CLI changed input sources')
+                    self.assertEqual(altered, snapshot_tree(out))
+                self.assertEqual(before, snapshot_files(RAW / relative for relative in sources), 'CLI changed input sources')
 
     def test_source_mutations_fail_before_writing_outputs(self):
         mutations = {
@@ -212,10 +205,7 @@ class SpecialPresentationImporterTests(unittest.TestCase):
                 temporary = Path(temporary)
                 dependency = temporary / 'dependency'
                 raw = dependency / 'content/raw/pokefirered/037335f4'
-                for source_path, data in self.fixtures[name][0].items():
-                    target = raw / source_path
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(data)
+                write_files(raw, self.fixtures[name][0])
                 if name == 'slot':
                     # Font code stays untouched; this fixture only supplies the existing CLI dependency.
                     relative_font = 'scripts/imports/presentation/import-source-font.py'
@@ -229,21 +219,21 @@ class SpecialPresentationImporterTests(unittest.TestCase):
                 out = temporary / 'output'
                 out.mkdir()
                 (out / 'sentinel').write_bytes(b'keep existing output')
-                before = tree_snapshot(out)
-                source_before = tree_snapshot(raw)
+                before = snapshot_tree(out)
+                source_before = snapshot_tree(raw)
                 rejected = invoke(command(name, out, raw, dependency), temporary)
                 self.assertNotEqual(0, rejected.returncode, 'Changed source semantics passed')
                 self.assertIn(errors[name], rejected.stderr)
-                self.assertEqual(before, tree_snapshot(out), 'Invalid source changed output')
-                self.assertEqual(source_before, tree_snapshot(raw), 'Invalid source was rewritten')
+                self.assertEqual(before, snapshot_tree(out), 'Invalid source changed output')
+                self.assertEqual(source_before, snapshot_tree(raw), 'Invalid source was rewritten')
 
     def test_field_check_preserves_retained_encoding_and_rejects_pixel_change(self):
         sources, outputs = self.fixtures['field']
-        before = snapshot([*(RAW / relative for relative in sources),
+        before = snapshot_files([*(RAW / relative for relative in sources),
                            *(RETAINED['field'] / relative for relative in outputs)])
         result = invoke([sys.executable, str(ROOT / 'scripts/imports' / SCRIPTS['field']), '--check'], ROOT)
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertEqual(before, snapshot(Path(path) for path in before))
+        self.assertEqual(before, snapshot_files(Path(path) for path in before))
         with tempfile.TemporaryDirectory() as temporary:
             out = Path(temporary) / 'output'
             self.assertEqual(0, invoke(command('field', out), temporary).returncode)
@@ -253,10 +243,10 @@ class SpecialPresentationImporterTests(unittest.TestCase):
             pixel = image.getpixel((0, 0))
             image.putpixel((0, 0), ((pixel[0] + 1) % 256, *pixel[1:]))
             image.save(target)
-            altered = tree_snapshot(out)
+            altered = snapshot_tree(out)
             result = invoke([*command('field', out), '--check'], temporary)
             self.assertNotEqual(0, result.returncode, 'Changed RGBA passed --check')
-            self.assertEqual(altered, tree_snapshot(out))
+            self.assertEqual(altered, snapshot_tree(out))
 
     def test_gym_and_field_refuse_output_over_source(self):
         for name in ('gym', 'field'):

@@ -14,6 +14,7 @@ using Game.Domain.Slots;
 namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
+    public ImmutableArray<OrdinaryTrainerCatalog> OrdinaryTrainerCatalogs { get; }
     /// <summary>Builds the current game from generated gameplay resources and compiled story IR.</summary>
     public static PretCampaignCatalog LoadCurrent(string projectRoot) => new(projectRoot);
 
@@ -79,14 +80,12 @@ public sealed partial class PretCampaignCatalog
         var schoolHouseInteriors = PretSchoolHouseInteriors.Load(world);
         var lostCave = PretLostCaveRegion.Load(world);
         var trainerFanClub = PretTrainerFanClub.Load(world);
-        var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers, SharedTrainerCatalog.LoadProject(projectRoot).Select(LostCaveTrainerPartyFactory.AllTrainers));
+        var lostCaveTrainers = PretLostCaveTrainers.Load(projectRoot, vsSeekerTrainers);
         var fieldFly = PretFieldFly.Load(projectRoot, shared: sharedMachines);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
         var doubleItems = doubleMechanics.Catalog.BattleItems ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
-        var route22 = PretRoute22Region.Load(world);
-        var route3 = PretRoute3Region.Load(world);
         var oakPokedex = PretPokedexMenu.Load(projectRoot);
         var route22Pokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "route22", pokedexMenu: oakPokedex);
         var route3Pokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "route3", pokedexMenu: oakPokedex);
@@ -153,17 +152,14 @@ public sealed partial class PretCampaignCatalog
         var celadonGymPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "celadon-gym", pokedexMenu: oakPokedex);
         var celadonGymItems = PretCeladonGymItems.LoadProject(projectRoot, shared: sharedMachines);
         var celadonGymTrainers = PretCeladonGymTrainers.Load(canonicalPokemon, projectRoot);
-        var celadonApproach = PretCeladonApproachRegion.Load(world);
         var celadonApproachPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "celadon-approach", pokedexMenu: oakPokedex);
         var celadonApproachItems = PretCeladonApproachItems.LoadProject(projectRoot, shared: sharedMachines);
         var celadonApproachEncounters = PretCeladonApproachEncounters.Load(projectRoot);
         var celadonApproachTrainers = PretCeladonApproachTrainers.Load(projectRoot);
-        var rockTunnel = PretRockTunnelRegion.Load(world);
         var rockTunnelPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "rocktunnel", pokedexMenu: oakPokedex);
         var rockTunnelItems = PretRockTunnelItems.LoadProject(projectRoot, shared: sharedMachines);
         var rockTunnelEncounters = PretRockTunnelEncounters.Load(projectRoot);
         var rockTunnelTrainers = PretRockTunnelTrainers.Load(projectRoot);
-        var route11 = PretRoute11Region.Load(world);
         var route11Pokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "route11", pokedexMenu: oakPokedex);
         var route11Items = PretRoute11Items.LoadProject(projectRoot, shared: sharedMachines);
         var route11Encounters = PretRoute11Encounters.Load(projectRoot);
@@ -173,19 +169,14 @@ public sealed partial class PretCampaignCatalog
         var oldRod = PretOldRod.Load(projectRoot);
         var vermilionGym = PretVermilionGymRegion.Load(world);
         var vermilionGymTrainers = PretVermilionGymTrainers.Load(canonicalPokemon, projectRoot);
-        var ssAnne = PretSsAnneRegion.Load(world);
         var ssAnnePokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "ssanne", pokedexMenu: oakPokedex);
         var ssAnneTrainers = PretSsAnneTrainers.Load(projectRoot);
         var ssAnneItems = PretSsAnneItems.LoadProject(projectRoot, shared: sharedMachines);
         var vermilionPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "vermilion", pokedexMenu: oakPokedex);
-        var vermilion = PretVermilionRegion.Load(world);
         var vermilionTrainers = PretVermilionTrainers.Load(projectRoot);
         var billPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "bill", pokedexMenu: oakPokedex);
-        var bill = PretBillRegion.Load(world);
         var billItems = PretBillItems.LoadProject(projectRoot, shared: sharedMachines);
-        var billTrainers = PretBillTrainers.Load(projectRoot);
-        var cerulean = PretCeruleanRegion.Load(world);
-        var mtMoon = PretMtMoonRegion.Load(world);
+        var billTrainers = PretBillTrainers.Load(projectRoot, out var billAdditionalOccurrences);
         var mtMoonPokemon = PokemonPresentationPackage.Load(canonicalPokemon, projectRoot, "mtmoon", pokedexMenu: oakPokedex);
         var oakRating = PretOakRating.Load(projectRoot);
         var townMap = PretTownMap.Load(projectRoot, sharedItems, flyMapPresentation.MapNames);
@@ -194,10 +185,6 @@ public sealed partial class PretCampaignCatalog
         var region = PretViridianRegion.Load(world);
 
         var center = PretViridianCenter.Load(world);
-
-        var forest = PretForestRegion.Load(world);
-
-        var pewter = PretPewterRegion.Load(world);
 
         regionalServices.ValidateReusedMaps(maps);
 
@@ -547,7 +534,7 @@ public sealed partial class PretCampaignCatalog
         FuchsiaGymRegion = fuchsiaGym;
         FuchsiaGymTrainerDocument = fuchsiaGymTrainers;
         FuchsiaGymItems = fuchsiaGymItems;
-        FuchsiaGymTrainers = new(fuchsiaGymTrainers.Trainers.ToImmutableDictionary(t => t.Id), fuchsiaGymTrainers.Battles.ToImmutableDictionary(b => b.Trainer));
+        FuchsiaGymTrainers = new(fuchsiaGymTrainers.Trainers.ToImmutableDictionary(t => t.Id), fuchsiaGymTrainers.Battles, "fuchsia-gym-trainer");
         FuchsiaRouteRegion = fuchsiaRoute;
         FuchsiaRouteTrainers = fuchsiaTrainers;
         FuchsiaRouteArt = fuchsiaArt;
@@ -571,17 +558,14 @@ public sealed partial class PretCampaignCatalog
         CeladonGymPokemon = celadonGymPokemon;
         CeladonGymItems = celadonGymItems;
         CeladonGymTrainers = celadonGymTrainers;
-        CeladonApproachRegion = celadonApproach;
         CeladonApproachPokemon = celadonApproachPokemon;
         CeladonApproachItems = celadonApproachItems;
         CeladonApproachEncounters = celadonApproachEncounters;
         CeladonApproachTrainers = celadonApproachTrainers;
-        RockTunnelRegion = rockTunnel;
         RockTunnelPokemon = rockTunnelPokemon;
         RockTunnelItems = rockTunnelItems;
         RockTunnelEncounters = rockTunnelEncounters;
         RockTunnelTrainers = rockTunnelTrainers;
-        Route11Region = route11;
         Route11Pokemon = route11Pokemon;
         Route11Items = route11Items;
         Route11Encounters = route11Encounters;
@@ -618,31 +602,24 @@ public sealed partial class PretCampaignCatalog
         CityServiceItems = cityServices.Items.AddRange(goodRodService.Items).AddRange(superRodService.Items).AddRange(gameCornerCoins.Items);
         VermilionGymRegion = vermilionGym;
         VermilionGymTrainers = vermilionGymTrainers;
-        SsAnneRegion = ssAnne;
         SsAnnePokemon = ssAnnePokemon;
         SsAnneTrainers = ssAnneTrainers;
-        VermilionRegion = vermilion;
         VermilionPokemon = vermilionPokemon;
         VermilionTrainers = vermilionTrainers;
-        BillRegion = bill;
         BillPokemon = billPokemon;
         BillItems = billItems;
         BillTrainers = billTrainers;
         CeruleanPokemon = ceruleanPokemon;
-        CeruleanTrainers = PretCeruleanTrainers.Load(cerulean, ceruleanPokemon);
-        CeruleanRegion = cerulean;
+        CeruleanTrainers = PretCeruleanTrainers.Load(projectRoot);
         MtMoonItems = mtMoonItems;
-        MtMoonRegion = mtMoon;
         MtMoonPokemon = mtMoonPokemon;
-        MtMoonTrainers = PretMtMoonTrainers.Load(mtMoon, mtMoonPokemon);
+        MtMoonTrainers = PretMtMoonTrainers.Load(projectRoot);
         MagikarpContract = magikarp;
-        Route3Region = route3;
         Route3Pokemon = route3Pokemon;
-        Route3Trainers = PretRoute3Trainers.Load(route3, route3Pokemon);
-        _route4WesternPositions = Route4WesternPositions(route3);
-        Route22Region = route22;
+        Route3Trainers = PretRoute3Trainers.Load(projectRoot);
+        _route4WesternPositions = Route4WesternPositions(world.Maps[new("map.route-4")]);
         Route22Pokemon = route22Pokemon;
-        Route22Trainers = PretRoute22Trainers.Load(route22, route22Pokemon);
+        Route22Trainers = PretRoute22Trainers.Load(projectRoot);
         EarlyRepel = repel;
         TownMap = townMap;
         OakRating = oakRating;
@@ -680,14 +657,12 @@ public sealed partial class PretCampaignCatalog
                 .Append(ItemIds.VsSeekerId));
         EarlyShopDocument = earlyShop with { Catalog = earlyShop.Catalog with { Inventory = Inventory } };
         EarlyShopInventoryRules.ValidateCatalog(EarlyShopDocument.Catalog);
-        PewterRegion = pewter;
         PewterPokemon = pewterPokemon;
 
-        PewterTrainers = PretPewterTrainers.Load(pewter);
-        ForestRegion = forest;
+        PewterTrainers = PretPewterTrainers.Load(projectRoot);
         ForestPokemon = forestPokemon;
-        ForestTrainers = PretForestTrainers.Load(forest);
-        LandEncounters = VermilionEncounterTables(forest, route22, route3, mtMoon, bill, vermilion);
+        ForestTrainers = PretForestTrainers.Load(projectRoot);
+        LandEncounters = PretEarlyLandEncounters.Load(world).Add(EarlyLandEncounterRules.Route1Table.Map, EarlyLandEncounterRules.Route1Table);
         FieldPickups = FieldPickups.AddRange(MtMoonPickupDefinitions(mtMoonItems, earlyShop.Catalog, machines, compiled));
         FieldPickups = FieldPickups.AddRange(BillPickupDefinitions(billItems, machines, compiled));
         FieldPickups = FieldPickups.AddRange(SsAnnePickupDefinitions(ssAnneItems, machines, earlyShop.Catalog, compiled));
@@ -699,7 +674,7 @@ public sealed partial class PretCampaignCatalog
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(celadonApproachEncounters.Tables);
         FieldPickups = FieldPickups.AddRange(RocketHideoutPickupDefinitions(rocketHideoutPickups, earlyShop.Catalog, machines, rocketHideout, compiled));
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(FuchsiaRouteLandEncounterTables.All.Select(t => KeyValuePair.Create(t.Map, t)));
-        LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(PokemonTowerEncounterTables(pokemonTower));
+        LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(PokemonTowerEncounterTables(pokemonTower, world.Resolve));
         FieldPickups = FieldPickups.AddRange(PokemonTowerPickupDefinitions(pokemonTowerPickups, earlyShop.Catalog, compiled));
         FieldPickups = FieldPickups.AddRange(SafariPickupDefinitions(safari, earlyShop.Catalog, machines, safariItems, compiled));
         FieldPickups = FieldPickups.AddRange(SilphPickupDefinitions(silph, earlyShop.Catalog, machines, silphItems, compiled));
@@ -746,7 +721,7 @@ public sealed partial class PretCampaignCatalog
             FiveIslandWaterEncounters = SixIslandWaterEncounters!.Add(FiveIslandEncounterTables.Water);
         }
 
-        FieldPickups = FieldPickups.AddRange(SourceRegionPickupDefinitions(ceruleanCave.NewMaps, ceruleanCave.Items, ceruleanCave.Contracts, PretCeruleanCaveRegion.MapIdFromSourceSymbol, "maps/regions/cerulean-cave", earlyShop.Catalog, compiled));
+        FieldPickups = FieldPickups.AddRange(SourceRegionPickupDefinitions(ceruleanCave.NewMaps, ceruleanCave.Items, ceruleanCave.Contracts, world.Resolve, "maps/regions/cerulean-cave", earlyShop.Catalog, compiled));
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(CeruleanCaveEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
         CeruleanCaveWaterEncounters = FiveIslandWaterEncounters!.Add(CeruleanCaveEncounterTables.Water);
         if (FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != FieldPickups.Length)
@@ -764,15 +739,15 @@ public sealed partial class PretCampaignCatalog
             throw new InvalidDataException("seven_island_pickup_composition");
 
         var powerPickups=SourceRegionPickupDefinitions(powerPlant.NewMaps,powerPlant.Items,powerPlant.Contracts,
-            PretPowerPlantRegion.MapIdFromSourceSymbol,"power-plant",earlyShop.Catalog,compiled);
+            world.Resolve,"power-plant",earlyShop.Catalog,compiled);
         if(FieldPickups.Select(p=>p.Id).Intersect(powerPickups.Select(p=>p.Id),StringComparer.Ordinal).Any())
             throw new InvalidDataException("power_plant_duplicate_pickup");
         FieldPickups=FieldPickups.AddRange(powerPickups);
         FieldPickups=FieldPickups.AddRange(SourceRegionPickupDefinitions(seafoam.NewMaps,seafoam.Items,seafoam.Contracts,
-            PretSeafoamRegion.MapIdFromSourceSymbol,"seafoam",earlyShop.Catalog,compiled));
+            world.Resolve,"seafoam",earlyShop.Catalog,compiled));
         FieldPickups = FieldPickups.AddRange(originalTmAcquisition.MachineBallPickups(machines));
         FieldPickups = FieldPickups.AddRange(originalTmAcquisition.MemorialPickups(earlyShop.Catalog));
-        FieldPickups = FieldPickups.AddRange(LostCavePickupDefinitions(lostCave, earlyShop.Catalog, compiled));
+        FieldPickups = FieldPickups.AddRange(LostCavePickupDefinitions(lostCave, world.Resolve, earlyShop.Catalog, compiled));
         if (FieldPickups.Any(p => p.Hidden))
             throw new InvalidDataException("hidden_pickups_require_world_binding");
         FieldPickups = FieldPickups.AddRange(PretWorldHiddenPickups.Load(world, sharedItems));
@@ -822,6 +797,27 @@ public sealed partial class PretCampaignCatalog
         ItemfinderDocument = itemfinder;
         FieldRockSmash = fieldRockSmash;
         MemorialPillarTrainers = memorialTrainers;
+        // Bill reuses three Cerulean party definitions and owns their same source calls.
+        // Keep one registration per trainer, authenticate overlap instead of overwriting.
+        var overlap = CeruleanTrainers!.Trainers.Keys.Intersect(BillTrainers!.Trainers.Keys).ToImmutableHashSet();
+        if (overlap.Count != 3 || overlap.Any(id => !TrainerEncounterRoster.SameTrainer(CeruleanTrainers.Trainers[id], BillTrainers.Trainers[id])))
+            throw new InvalidDataException("bill_cerulean_definition_overlap");
+        foreach (var id in overlap)
+        {
+            var earlier = CeruleanTrainers.Battles.Single(b => b.Trainer == id);
+            var retained = BillTrainers.Battles.Single(b => b.Trainer == id);
+            // Different source blocks include different continuation metadata; the call itself must be identical.
+            if (earlier with { IntroText = retained.IntroText, PostBattleText = retained.PostBattleText,
+                    Source = earlier.Source with { EndLine = retained.Source.EndLine } } != retained)
+                throw new InvalidDataException("bill_cerulean_call_overlap");
+        }
+        var ceruleanRegistration = new OrdinaryTrainerCatalog(CeruleanTrainers.Trainers.RemoveRange(overlap),
+            [.. CeruleanTrainers.Battles.Where(b => !overlap.Contains(b.Trainer)), .. billAdditionalOccurrences], "cerulean-trainer");
+        OrdinaryTrainerCatalogs = [ForestTrainers, PewterTrainers!, Route3Trainers!, MtMoonTrainers!, ceruleanRegistration,
+            BillTrainers, VermilionTrainers!, SsAnneTrainers!, VermilionGymTrainers!, Route11Trainers!, RockTunnelTrainers!,
+            CeladonApproachTrainers!, RocketHideoutTrainers!, PokemonTowerTrainers!, SilphTrainers!, ViridianGymTrainerParties!,
+            FourIslandTrainers!, FiveIslandTrainers!, FightingDojoTrainers, MemorialPillarTrainers!, LostCaveTrainers, CyclingRoadTrainers,
+            CeladonGymTrainers, FuchsiaGymTrainers, SaffronGymTrainers];
 
         BindPokedexAides();
         BindCyclingRoadSceneInteriors();

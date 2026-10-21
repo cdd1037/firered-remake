@@ -65,9 +65,9 @@ public static class CampaignQuestLogItemUseCapture
                     stack.Quantity-current.BagItems.Where(s=>s.Item==stack.Item).Sum(s=>s.Quantity)==1)
                     return new(stack.Item);
         if(before.WildBattle?.Frame is {} wildBefore&&after.WildBattle?.Frame is {} wildAfter)
-            return Battle(before,wildBefore,after.WildBattle.SourceEvents,catalog);
+            return Battle(before,wildBefore,after.WildBattle.Events,catalog);
         if(before.ForestTrainerBattle is {} trainerBefore&&after.ForestTrainerBattle is {} trainerAfter)
-            return Battle(before,trainerBefore.Frame,trainerAfter.Presentation.SourceEvents,catalog);
+            return Battle(before,trainerBefore.Frame,trainerAfter.Presentation.Events,catalog);
         if(before.DoubleBattle is {} doubleBefore&&after.DoubleBattle is {} doubleAfter)
             return Battle(before,doubleBefore.Frame,doubleAfter.Events,catalog);
         return null;

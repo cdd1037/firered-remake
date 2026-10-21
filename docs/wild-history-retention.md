@@ -44,24 +44,16 @@ parent input snapshots do not require those parents to remain owned forever.
 ## Persistence boundary
 
 The current campaign rules version is `firered-current-campaign-v4`; content remains
-`firered-current-content-v4`. Normal Continue does not migrate an old rules version.
-The explicit `convert-current-checkpoint SOURCE NEW_DESTINATION` command accepts
-exactly v2-to-v4 or v3-to-v4 with content-v4. The v2 route first removes retired
-Pokemon proofs and compacts current-source/wild settlements, then validates and
-compacts legacy Tower history. The v3 route only performs the Tower step; it does
-not silently prune unrelated wild history or optional payload fields. Every old
-Tower receipt must pass validation before any are discarded; only its final receipt
-is retained for callback identity and the next battle ID. The four authoritative
-Tower challenge records, prizes and timer remain unchanged.
+`firered-current-content-v4`, using schema 3 readable JSON. Old-save conversion and
+hatch-count correction tools are removed. Continue rejects old versions, unbounded
+Tower history and missing lifetime hatch counts without repairing the input or
+inventing statistics. Current Tower state retains one validated settlement receipt
+for callback identity and the next battle ID; its four authoritative challenge
+records, prizes and timer remain independent.
 
-Both routes preserve the source file, NextPokemonId, RNG, generation, current
-entities, game facts and snapshots, and validate the complete current output.
-Already-current and undeclared input versions are rejected. Missing lifetime hatch
-counts are never inferred: a known count requires the separate explicit operator
-correction, supporting exactly same-version v2, v3 or v4 while preserving the
-original rules/history and v2 retired payload fields, before version conversion.
-The unchanged v3 representative checkpoint's unknown total remains a blocker;
-controlled tests use a clearly synthetic in-memory total only.
+Current-source compaction still runs after ordinary release/NPC trade; removing
+an offline compatibility wrapper does not remove that gameplay behavior. Historical
+player files remain untouched and are not current Continue fixtures.
 
 SaveCodec checksums, staged-write byte comparison, valid-primary backup handling
 and current transaction checks remain. The roamer's local state comparison uses
@@ -71,7 +63,8 @@ its typed scalar fields and ordered player-history values, not JSON hashing.
 
 Tests cover public capture/evolution/release and NPC trade flows, monotonic IDs,
 current source retention, gift/hatching completion, independent Hall of Fame
-snapshots and explicit checkpoint conversion. Controlled large-history fixtures
+snapshots and strict current-save admission. Conversion-only tests were retired
+with the removed feature; they are not counted as retained coverage. Controlled large-history fixtures
 exercise repeated ordinary and special attempts plus deterministic roamer rules.
 These fixtures are not thousands of full public-command battle playthroughs.
 

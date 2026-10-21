@@ -4,17 +4,6 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.WildBattle;
 
-public sealed record WildBattleFocusPunchPreparedEvent(long Sequence, int Turn, WildBattleSide Actor,
-    int ChosenSlot, int PartyIndex) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleFocusPunchLostEvent(long Sequence, int Turn, WildBattleSide Actor,
-    int PhysicalDamage, int SpecialDamage) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleSnatchReadyEvent(long Sequence, int Turn, WildBattleSide Actor,
-    int ActionOrderIndex) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleMoveSnatchedEvent(long Sequence, int Turn, WildBattleSide OriginalActor,
-    WildBattleSide Snatcher, MoveId Move, WildBattleSide EffectTarget) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleSnatchPressurePpEvent(long Sequence, int Turn, WildBattleSide PressuringActor,
-    WildBattleSide Snatcher, int Slot, int Before, int After) : WildBattleEvent(Sequence, Turn);
-
 /// <summary>Source command predicates independent of the singles owner. Battler count is the retained
 /// source queue size, including canceled/absent actions, never the number of living combatants.</summary>
 public static class WildBattleSourcePreparedMoves

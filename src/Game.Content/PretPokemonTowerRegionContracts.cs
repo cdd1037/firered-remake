@@ -21,7 +21,7 @@ public sealed partial class PretPokemonTowerRegion
 
     private PretPokemonTowerRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
         PretRuntimeMapData house, ImmutableDictionary<string, int> constants,
-        JsonElement contract, JsonElement city)
+        JsonElement contract, JsonElement city, PretCurrentWorld world)
     {
         GeneratedDirectory = directory; NewMaps = maps; ExistingHouse = house; Constants = constants; SourceContract = contract; ExternalLavenderEvents = city;
         InitiallySetFlags = [constants["FLAG_HIDE_POKEHOUSE_FUJI"]];
@@ -77,10 +77,17 @@ public sealed partial class PretPokemonTowerRegion
         var rescueSource = Source("data/maps/PokemonTower_7F/scripts.inc", "PokemonTower_7F_EventScript_MrFuji");
         FujiRescue = new(rescue.GetProperty("setFlags").EnumerateArray().Select(x => constants[x.GetString()!]).ToImmutableArray(),
             rescue.GetProperty("clearFlags").EnumerateArray().Select(x => constants[x.GetString()!]).ToImmutableArray(), constants[rescue.GetProperty("initialHidden").GetString()!],
-            new(MapIdFromSourceSymbol(warp.GetProperty("map").GetString()!), warp.GetProperty("warpId").GetInt32(), warp.GetProperty("x").GetInt32(), warp.GetProperty("y").GetInt32(),
+            new(world.Resolve(warp.GetProperty("map").GetString()!), warp.GetProperty("warpId").GetInt32(), warp.GetProperty("x").GetInt32(), warp.GetProperty("y").GetInt32(),
                 !mechanics.GetProperty("escape").GetProperty("fujiCoordinateWarpMustNotReplaceEscapeAnchor").GetBoolean(), rescueSource),
-            MapIdFromSourceSymbol(exits.GetProperty("houseExteriorReturn").GetProperty("map").GetString()!), exits.GetProperty("houseExteriorReturn").GetProperty("warpId").GetInt32(), false,
+            world.Resolve(exits.GetProperty("houseExteriorReturn").GetProperty("map").GetString()!), exits.GetProperty("houseExteriorReturn").GetProperty("warpId").GetInt32(), false,
             rescueSource.Symbol, rescueSource);
+        Need(FujiRescue.Warp.DestinationMapId == HouseMapId && FujiRescue.Warp.WarpId == PretRocketHideoutRegion.CoordinateWarpId &&
+            world.Maps.TryGetValue(FujiRescue.Warp.DestinationMapId, out var rescueMap) &&
+            rescueMap.GetTile(FujiRescue.Warp.X, FujiRescue.Warp.Y) is not null &&
+            world.Maps.TryGetValue(FujiRescue.ExteriorMapId, out var exterior) && FujiRescue.ExteriorWarpId >= 0 &&
+            FujiRescue.ExteriorWarpId < exterior.FieldWarps.Length &&
+            exterior.FieldWarps[FujiRescue.ExteriorWarpId].DestinationMapId == HouseMapId,
+            "Tower rescue/return destination is not a mounted house endpoint.");
         var reward = deps.GetProperty("reward"); var rewardSource = Source("data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc", "LavenderTown_VolunteerPokemonHouse_EventScript_MrFuji");
         FluteReward = new(HouseMapId, rewardSource.Symbol, reward.GetProperty("item").GetString()!, constants[reward.GetProperty("item").GetString()!],
             reward.GetProperty("quantity").GetInt32(), constants[reward.GetProperty("flag").GetString()!], reward.GetProperty("checkCapacityBeforeFlag").GetBoolean(),
@@ -92,7 +99,13 @@ public sealed partial class PretPokemonTowerRegion
         {
             var hidden = p.GetProperty("kind").GetString() == "hidden"; var e = p.GetProperty(hidden ? "event" : "actor");
             var underfoot = hidden && e.GetProperty("underfoot").GetBoolean();
-            return new PretTowerPickup(MapIdFromSourceSymbol(p.GetProperty("map").GetString()!), hidden ? null : p.GetProperty("localId").GetInt32(),
+            var id = world.Resolve(p.GetProperty("map").GetString()!);
+            Need(maps.TryGetValue(id, out var map), "Tower pickup map is not mounted.");
+            var events = map!.Events.GetProperty(hidden ? "bg_events" : "object_events");
+            int index = hidden ? p.GetProperty("eventIndex").GetInt32() : p.GetProperty("localId").GetInt32() - 1;
+            Need(index >= 0 && index < events.GetArrayLength() && JsonElement.DeepEquals(e, events[index]),
+                "Tower pickup endpoint differs from the mounted event.");
+            return new PretTowerPickup(id, hidden ? null : p.GetProperty("localId").GetInt32(),
                 hidden ? p.GetProperty("eventIndex").GetInt32() : null, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
                 p.GetProperty("item").GetString()!, p.GetProperty("quantity").GetInt32(), e.GetProperty("flag").GetString()!, constants[e.GetProperty("flag").GetString()!],
                 hidden, underfoot, underfoot, hidden ? null : e.GetProperty("script").GetString()!, Ref(p.GetProperty(hidden ? "sourceRef" : "scriptSource")));

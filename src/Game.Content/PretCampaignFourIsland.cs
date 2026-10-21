@@ -15,8 +15,7 @@ public sealed partial class PretCampaignCatalog
 {
     public const string FourIslandContentProfile = "firered-four-island-campaign-v1";
     public PretFourIslandRegion FourIslandRegion { get; }
-    public FourIslandTrainerCatalog? FourIslandTrainers { get; }
-    public FourIslandTrainerCatalog? FourIslandTrainerParties => FourIslandTrainers;
+    public OrdinaryTrainerCatalog? FourIslandTrainers { get; }
     public FourIslandItemContent? FourIslandItems { get; }
     public WaterEncounterCatalog? FourIslandWaterEncounters { get; }
     public ImmutableDictionary<string, FieldStatFlagUnlocks> StatFlagUnlocks { get; }
@@ -24,10 +23,9 @@ public sealed partial class PretCampaignCatalog
 
 
 
-    private static void ValidateFourIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, FourIslandTrainerCatalog trainers, PretStoryCompilation scripts)
+    private static void ValidateFourIslandComposition(ImmutableDictionary<MapId, PretWorldMap> maps, OrdinaryTrainerCatalog trainers, PretStoryCompilation scripts)
     {
-        FourIslandTrainerPartyFactory.ValidateCatalog(trainers);
-        var battle = trainers.BattlesByScript[FourIslandTrainerPartyFactory.BattleScript];
+        var battle = trainers.Battles.Single(b => b.Trainer.Value == "pret:TRAINER_TEAM_ROCKET_GRUNT_45");
         var scene = scripts.FindProgram(battle.ScriptEntry) ?? throw new InvalidDataException("four_island_scene_missing");
         var instructions = scene.Instructions.ToArray();
         int fight = Array.FindIndex(instructions, i => i.Op == StoryOp.TrainerBattle && i.Opcode == "trainerbattle_no_intro" &&
@@ -37,7 +35,7 @@ public sealed partial class PretCampaignCatalog
         int home = Array.FindIndex(instructions, i => i.Opcode == "clearflag" && i.Args.SequenceEqual(new[] { "FLAG_HIDE_LORELEI_IN_HER_HOUSE" }));
         int completed = Array.FindIndex(instructions, i => i.Opcode == "setvar" && i.Args.SequenceEqual(new[] { "VAR_MAP_SCENE_ICEFALL_CAVE_BACK","1" }));
         if (fight < 0 || scientist <= fight || home <= scientist || completed <= home ||
-            instructions.Any(i => i.Op == StoryOp.Unsupported) || FourIslandTrainerPartyFactory.BasePrize(trainers, FourIslandTrainerPartyFactory.Grunt45) != 1216)
+            instructions.Any(i => i.Op == StoryOp.Unsupported) || TrainerPartyFactory.BasePrize(trainers.Trainers[new("pret:TRAINER_TEAM_ROCKET_GRUNT_45")]) != 1216)
             throw new InvalidDataException("four_island_battle_reward_order");
         var house = maps[new("map.four-island-loreleis-house")];
         foreach (var actor in house.Events.GetProperty("object_events").EnumerateArray())

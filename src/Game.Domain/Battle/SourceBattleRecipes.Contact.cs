@@ -4,16 +4,12 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     // TARGET_TURN_DAMAGED is retained SpecialStatus physical/special damage, not the
     // current damage command or merely a fresh positive hit. Future attacks can carry it.
-    internal virtual bool CanonicalContactReceipts => true;
-    internal virtual bool ContactCommandNoEffect => false;
-    internal virtual bool ContactConfusionSelfDamage => false;
-    internal virtual bool ContactObliviousGuard => true;
-    internal abstract BattlerSlot? InfatuationSource(BattlerSlot slot);
-    internal abstract void SetInfatuationSource(BattlerSlot slot, BattlerSlot? source);
+    internal bool CanonicalContactReceipts => true;
+    internal bool ContactObliviousGuard => true;
 
     internal void ChangeInfatuation(BattlerSlot slot, BattlerSlot? source, string reason)
     {
@@ -29,15 +25,14 @@ internal abstract partial class SourceRecipeContext
         Add(n => new SourceInfatuationBlockedEvent(n, Turn, slot, source, move));
         return true;
     }
-    // Four-position execution follows TARGET_TURN_DAMAGED. The singles bridge explicitly
-    // retains earlier command-damage gates where no naturally reached divergence is proven.
-    internal virtual bool ContactUsesRetainedDamage(string ability) => CanonicalContactReceipts;
-    internal virtual bool ContactEffectSporeEnabled => true;
-    internal virtual bool ContactAbilityBlocked(BattlerSlot actor, BattlerSlot target,
+    // Canonical execution follows TARGET_TURN_DAMAGED for contact eligibility.
+    internal bool ContactUsesRetainedDamage(string ability) => CanonicalContactReceipts;
+    internal bool ContactEffectSporeEnabled => true;
+    internal bool ContactAbilityBlocked(BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition? move, string ability) => ContactConfusionSelfDamage;
-    internal virtual bool ContactSporeSleepBlocked(BattlerSlot actor) =>
+    internal bool ContactSporeSleepBlocked(BattlerSlot actor) =>
         WildBattleEffective.Ability(Get(actor)) is "ABILITY_VITAL_SPIRIT" or "ABILITY_INSOMNIA" || UproarPreventsSleep(actor);
-    internal virtual void ContactInflictStatus(PokemonCatalog catalog, BattlerSlot actor, uint status, string reason) =>
+    internal void ContactInflictStatus(PokemonCatalog catalog, BattlerSlot actor, uint status, string reason) =>
         InflictStatus(catalog, actor, status, true, reason);
 
     internal void ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,

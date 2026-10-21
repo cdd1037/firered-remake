@@ -5,18 +5,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasSwitchRecipe(string effect) => effect is "EFFECT_ROAR" or "EFFECT_BATON_PASS";
-    internal abstract bool ForceSwitchTrainer { get; }
-    internal abstract bool ForceSwitchRootedCheck { get; }
-    internal abstract bool ForceSwitchHasReserve(BattlerSlot target);
-    internal abstract bool ForceSwitchAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose);
-    internal abstract void ForceSwitch(PokemonCatalog catalog, BattlerSlot target, MoveId move);
-    internal abstract void ForceSwitchEscape();
-    internal abstract ImmutableArray<int> BatonPassReserves(BattlerSlot actor);
-    internal abstract void PauseBatonPass(BattlerSlot actor, ImmutableArray<int> legal);
-    internal virtual void BatonPassFailed() { }
+    internal void BatonPassFailed() { }
 
     internal void ExecuteSwitch(PokemonCatalog catalog, BattlerSlot actor, int slot,
         PokemonMoveDefinition move, string purpose)

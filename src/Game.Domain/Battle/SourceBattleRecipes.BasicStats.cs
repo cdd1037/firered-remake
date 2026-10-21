@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasBasicStatRecipe(string effect) => effect is
         "EFFECT_ATTACK_DOWN" or "EFFECT_DEFENSE_DOWN" or "EFFECT_SPEED_DOWN" or "EFFECT_ACCURACY_DOWN" or
@@ -66,6 +66,6 @@ internal abstract partial class SourceRecipeContext
         };
         BasicStatChange(actor, amount > 0 ? actor : target, stat, amount, move);
     }
-    internal virtual void BasicStatChange(BattlerSlot actor, BattlerSlot target, WildBattleStat stat, int amount, PokemonMoveDefinition move) =>
+    internal void BasicStatChange(BattlerSlot actor, BattlerSlot target, WildBattleStat stat, int amount, PokemonMoveDefinition move) =>
         SourceChangeStat(actor, target, stat, amount, move.Id);
 }

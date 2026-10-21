@@ -40,7 +40,7 @@ public sealed partial class PretCampaignCatalog
             for (int i = 0; i < sourceWarps.Length; i++)
             {
                 var source = sourceWarps[i]; var warp = map.FieldWarps[i];
-                if (warp.DestinationMapId != PretRegionalServiceMaps.MapIdFromSourceSymbol(source.GetProperty("dest_map").GetString()!) ||
+                if (warp.DestinationMapId != map.ResolveMapSymbol(source.GetProperty("dest_map").GetString()!) ||
                     warp.DestinationWarpId != int.Parse(source.GetProperty("dest_warp_id").GetString()!, CultureInfo.InvariantCulture) ||
                     !maps.TryGetValue(warp.DestinationMapId, out var target) || warp.DestinationWarpId < 0 ||
                     warp.DestinationWarpId >= target.Events.GetProperty("warp_events").GetArrayLength())

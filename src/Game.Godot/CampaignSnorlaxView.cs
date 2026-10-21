@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Events;
@@ -31,15 +32,15 @@ public partial class CampaignView
     }
 
     private bool SnorlaxSilentEvent(CampaignWildBattle battle)=>WildCurrentEvent(battle) is {} current&&SnorlaxWildMessage(current) is {Symbol.Length:0};
-    private ForestMessage? SnorlaxWildMessage(WildBattleEvent current)=>current switch
+    private ForestMessage? SnorlaxWildMessage(SourceBattleEvent current)=>current switch
     {
-        WildBattleYawnEvent {Reason:"move",Before:0,After:2} yawn=>new("sText_PkmnWasMadeDrowsy",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(Opposite(yawn.Side))),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(yawn.Side))),
-        WildBattleYawnEvent or WildBattleSleepTalkEvent=>new(""),
-        WildBattleStatusChangedEvent {Reason:"yawn",Before:0} sleep=>new("sText_PkmnFellAsleep",("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(sleep.Side))),
-        WildBattleAbilityPreventedEvent {Ability:"ABILITY_IMMUNITY"} ability=>new("sText_PkmnPreventsPoisoningWith",("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(ability.Target)),("B_DEF_ABILITY",_catalog.DisplayNames.AbilityName(ability.Ability))),
-        WildBattleStatusChangedEvent {Reason:"immunity",After:0} cure=>new("sText_PkmnsXCuredItsYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(cure.Side)),("B_SCR_ACTIVE_ABILITY",_catalog.DisplayNames.AbilityName("ABILITY_IMMUNITY")),("B_BUFF1",_battleText["gText_Poison"])),
-        WildBattleMoveFailedEvent {Reason:"no-pp"}=>new("sText_ButNoPPLeft"),
-        WildBattleMoveFailedEvent {Reason:"user-awake" or "already-drowsy" or "no-callable-move"}=>new("sText_ButItFailed"),
+        SourceYawnEvent {Reason:"move",Before:0,After:2} yawn=>new("sText_PkmnWasMadeDrowsy",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(Opposite(yawn.Side))),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(yawn.Side))),
+        SourceYawnEvent or SourceSleepTalkEvent=>new(""),
+        SourceStatusChangedEvent {Reason:"yawn",Before:0} sleep=>new("sText_PkmnFellAsleep",("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(sleep.Side))),
+        SourceAbilityPreventedEvent {Ability:"ABILITY_IMMUNITY"} ability=>new("sText_PkmnPreventsPoisoningWith",("B_EFF_NAME_WITH_PREFIX",WildPrefixedName(ability.Target)),("B_DEF_ABILITY",_catalog.DisplayNames.AbilityName(ability.Ability))),
+        SourceStatusChangedEvent {Reason:"immunity",After:0} cure=>new("sText_PkmnsXCuredItsYProblem",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(cure.Side)),("B_SCR_ACTIVE_ABILITY",_catalog.DisplayNames.AbilityName("ABILITY_IMMUNITY")),("B_BUFF1",_battleText["gText_Poison"])),
+        SourceMoveFailedEvent {Reason:"no-pp"}=>new("sText_ButNoPPLeft"),
+        SourceMoveFailedEvent {Reason:"user-awake" or "already-drowsy" or "no-callable-move"}=>new("sText_ButItFailed"),
         _=>null
     };
 }

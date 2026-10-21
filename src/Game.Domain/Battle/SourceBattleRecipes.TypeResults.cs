@@ -4,11 +4,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal virtual bool SourceTypeResultsEnabled => true;
-    internal abstract PokemonCatalog TypeResultCatalog { get; }
-    internal virtual void SourceTypeNoEffect(BattlerSlot target, bool clearHitType) { }
+    internal bool SourceTypeResultsEnabled => true;
 
     internal SourceTypeResult SourceTypeResult(PokemonCatalog catalog, BattlerSlot target, PokemonMoveDefinition move,
         string? type = null, SourceTypeCommand command = SourceTypeCommand.TypeCalc, bool apply = false)

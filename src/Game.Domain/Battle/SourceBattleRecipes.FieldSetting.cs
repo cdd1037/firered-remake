@@ -2,7 +2,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasFieldSettingRecipe(string effect) => effect is
         "EFFECT_REFLECT" or "EFFECT_LIGHT_SCREEN" or "EFFECT_MIST" or "EFFECT_SAFEGUARD" or
@@ -14,11 +14,6 @@ internal abstract partial class SourceRecipeContext
     internal bool FieldMudSport => ActiveSlots.Any(slot => Get(slot).MudSport);
     internal bool FieldWaterSport => ActiveSlots.Any(slot => Get(slot).WaterSport);
 
-    internal abstract int FieldSettingTimer(BattleSide side, string effect);
-    internal abstract void SetFieldSettingTimer(BattleSide side, string effect, int value);
-    internal abstract SourceFieldRegisters SettingWeather { get; }
-    internal abstract void ReplaceSettingWeather(SourceFieldRegisters weather);
-    internal virtual void SettingWeatherChanged() { }
 
     internal void ExecuteFieldSetting(BattlerSlot actor, int slot, PokemonMoveDefinition move, ref bool handled)
     {

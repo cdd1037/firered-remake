@@ -27,7 +27,7 @@ public static class CampaignGeneralAnimationPresentation
         ValidateInputs(entryChargeMoves, behindSubstitutes, 2);
         if (!sourceRules || battle.Phase != CampaignBattlePhase.Events ||
             !CampaignResultAnimationPolicy.Allows(CampaignResultAnimationKind.General, scene)) return null;
-        return Match(battle.Id, battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),
+        return Match(battle.Id, battle.Events,
             battle.EventIndex, behindSubstitutes, slot => CampaignHeldItemAnimationPresentation.SpriteVisibleAtResult(
                 battle.Events, battle.EventIndex, slot, entryChargeMoves));
     }

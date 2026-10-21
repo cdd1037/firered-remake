@@ -43,7 +43,13 @@ public sealed class CompiledEarlyTrainerCatalogTests
             var document = JsonNode.Parse(File.ReadAllText(path))!;
             document["battles"]![0]!["callback"] = "InvalidCallback";
             File.WriteAllText(path, document.ToJsonString());
-            Assert.ThrowsExactly<NotSupportedException>(() => LoadTrainers(root, region));
+            if (region == "route22")
+                Assert.ThrowsExactly<NotSupportedException>(() => LoadTrainers(root, region));
+            else
+            {
+                var error = Assert.ThrowsExactly<ArgumentException>(() => LoadTrainers(root, region));
+                Assert.AreEqual("ordinary_trainer_battle_semantics", error.Message);
+            }
         });
     }
 

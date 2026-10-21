@@ -14,7 +14,7 @@ public sealed partial class GeneralResultAnimationDispatchTests
 {
     private static CampaignGeneralAnimationDispatch? At(ImmutableArray<SourceBattleEvent> events, int index, bool single,
         MoveId?[]? entry = null, bool[]? substitutes = null, SourceBattleScene scene = SourceBattleScene.On) => single
-        ? CampaignGeneralAnimationPresentation.AtResult(Single(events, index) with { SourceEvents = [] }, true, scene,
+        ? CampaignGeneralAnimationPresentation.AtResult(Single(events, index), true, scene,
             entry ?? new MoveId?[2], substitutes ?? new bool[2])
         : CampaignGeneralAnimationPresentation.AtResult(Double(events, index), scene,
             entry ?? new MoveId?[4], substitutes ?? new bool[4]);

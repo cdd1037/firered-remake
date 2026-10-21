@@ -12,7 +12,7 @@ public partial class CampaignView
         var display=battle is not null?new CampaignBattleDisplayBodies(battle.DisplayedSlots,battle.DisplayedMembers):wild?.DisplayBatch?.Display;
         if(display is null)return false;
         var request=CampaignMoveAnimationPresentation.MaterialChangeAtInvocation(dispatch,display,
-            battle?.Events??wild!.SourceEvents,battle?.EventIndex??wild!.DisplayBatch!.NextEventIndex,
+            battle?.Events??wild!.Events,battle?.EventIndex??wild!.DisplayBatch!.NextEventIndex,
             _catalog.PokemonContent!.Catalog.Moves);
         if(request is null)return false;
         int slot=request.Affected.Value,index=battlers.FindIndex(b=>b.Slot.Value==slot);

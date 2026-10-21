@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasMiscTargetRecipe(string effect) => effect is "EFFECT_PRESENT" or "EFFECT_SECRET_POWER" or "EFFECT_TEETER_DANCE";
 
@@ -62,7 +62,7 @@ internal abstract partial class SourceRecipeContext
         ForestOutcome(true);
     }
 
-    internal virtual int PresentApplyDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
+    internal int PresentApplyDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition move, int damage, bool critical, int percent)
     {
         int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
@@ -70,7 +70,7 @@ internal abstract partial class SourceRecipeContext
             Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
         return lost;
     }
-    internal virtual void PresentReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void PresentReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
 
     internal void ApplySecretPowerSecondary(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
@@ -98,9 +98,8 @@ internal abstract partial class SourceRecipeContext
         }
     }
 
-    internal virtual void BeginTeeterDanceTarget(BattlerSlot target) => BeginScriptTarget(target);
-    internal virtual IEnumerable<BattlerSlot> TeeterDanceSlots(BattlerSlot initialTarget) => ActiveSlots.OrderBy(s => s.Value);
-    internal virtual void CompleteTeeterDanceTarget(PokemonCatalog catalog) => CompleteScriptTarget();
+    internal void BeginTeeterDanceTarget(BattlerSlot target) => BeginScriptTarget(target);
+    internal void CompleteTeeterDanceTarget(PokemonCatalog catalog) => CompleteScriptTarget();
     private void ExecuteTeeterDance(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot initialTarget, int slot, PokemonMoveDefinition move, string purpose)
     {
         SpendEarlyPartyPp(actor, initialTarget, slot, move);

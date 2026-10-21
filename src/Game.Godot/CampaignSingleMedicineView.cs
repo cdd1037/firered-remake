@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using System.Collections.Immutable;
 using Game.Application;
 using Game.Domain.Ids;
@@ -97,10 +98,10 @@ public partial class CampaignView
         {DrawInventoryIcon(stacks[selected].Item);ItemLines(_sourceWhite,OpeningItemUiSkin.DescriptionText,EarlyItem(stacks[selected].Item) is not null?InventoryDescription(stacks[selected].Item):SingleBattleItemName(stacks[selected].Item));}
         else ItemLines(_sourceWhite,OpeningItemUiSkin.DescriptionText,_itemSkin.Text("gText_CloseBag"));
     }
-    private bool SingleMedicinePages(WildBattleMedicineAppliedEvent item,Action<string,(string Key,string Value)[]> source)
+    private bool SingleMedicinePages(SourceMedicineAppliedEvent item,Action<string,(string Key,string Value)[]> source)
     {
         if(item.Actor is null)return false;
-        if (item.Actor == WildBattleSide.Opponent)
+        if (item.Actor is { Side: BattleSide.Opponent })
         {
             source("sText_Trainer1UsedItem", [("B_LAST_ITEM", SingleBattleItemName(item.Item))]);
             return true;
@@ -112,11 +113,11 @@ public partial class CampaignView
         if(item.PpRecovery is {IsEmpty:false})source("gText_PPWasRestored",[]);
         return true;
     }
-    private ForestMessage? SingleMedicineEffectMessage(WildBattleEvent value)=>value switch
+    private ForestMessage? SingleMedicineEffectMessage(SourceBattleEvent value)=>value switch
     {
-        WildBattleConfusionChangedEvent {Reason:"item",After:0} x=>new("gText_PkmnSnappedOutOfConfusion",("STR_VAR_1",WildName(x.Side))),
-        WildBattleInfatuationChangedEvent {Reason:"item",After:null} x=>new("gText_PkmnGotOverInfatuation",("STR_VAR_1",WildName(x.Side))),
-        WildBattleMtMoonVolatileEvent {Volatile:"mist",Reason:"item"} x=>new("gBattleText_MistShroud",("B_ATK_PREFIX2",SourceMenuLabelPresentation.Plain(_battleText, x.Side==WildBattleSide.Player?"sText_AllyPkmnPrefix2":"sText_FoePkmnPrefix3"))),
+        SourceConfusionChangedEvent {Reason:"item",After:0} x=>new("gText_PkmnSnappedOutOfConfusion",("STR_VAR_1",WildName(x.Side))),
+        SourceInfatuationChangedEvent {Reason:"item",After:null} x=>new("gText_PkmnGotOverInfatuation",("STR_VAR_1",WildName(x.Side))),
+        SourceMtMoonVolatileEvent {Volatile:"mist",Reason:"item"} x=>new("gBattleText_MistShroud",("B_ATK_PREFIX2",SourceMenuLabelPresentation.Plain(_battleText, x.Side.Side==BattleSide.Player?"sText_AllyPkmnPrefix2":"sText_FoePkmnPrefix3"))),
         _=>null
     };
 }

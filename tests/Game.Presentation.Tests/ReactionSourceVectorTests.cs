@@ -94,7 +94,20 @@ public sealed class ReactionSourceVectorTests
             if (kind == 3) callbacks[1] = NewNested("FacadeColorTask", selected, checked((short)config[2]));
             if (kind == 6 && config[0] != 0) callbacks[0] = NewNested("SmellingSquishTask", owner, selected, checked((short)config[1]));
             if (kind == 7) callbacks[0] = NewNested("LeafBladeTask", owner);
-            foreach (var callback in callbacks.OfType<object>()) Tasks(owner).Add(callback);
+            foreach (var callback in callbacks.OfType<object>())
+            {
+                // Match the source command priority and RunScript's registration, not default duplicate keys.
+                int priority = kind == 7 ? 5 : kind == 6 ? 3 : 2;
+                string name = callback == callbacks[1] || kind == 2 ? "AnimTask_FacadeColorBlend"
+                    : kind == 7 ? "AnimTask_LeafBlade" : kind == 6 ? "AnimTask_SmellingSaltsSquish" : "AnimTask_SquishAndSweatDroplets";
+                int visualStart = Tasks(owner).Count, soundStart = Field<IList>(owner, "_soundTasks").Count;
+                long order = Field<long>(owner, "_nextTaskOrder");
+                Tasks(owner).Add(callback);
+                Invoke(owner, "AssignTaskOrder", visualStart, soundStart,
+                    new SourceAnimationCommand("createvisualtask", [name, priority.ToString(CultureInfo.InvariantCulture)], 1));
+                Assert.AreEqual(priority, Property<int>(callback, "Priority"));
+                Assert.AreEqual(order, Property<long>(callback, "Order"));
+            }
             if (kind == 6 && config[0] == 0)
                 Assert.AreEqual(true, Invoke(owner, "TryCreateReactionTask", new SourceAnimationCommand("createvisualtask", ["AnimTask_SmellingSaltsSquish", "3", "0", config[1].ToString(CultureInfo.InvariantCulture)], 1)));
         }

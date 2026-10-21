@@ -33,8 +33,8 @@ internal static class OverlayHitAnimationKernelFixture
     internal static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index) =>
         new("overlay-hit", new("test"), "test", new(), CampaignDoubleBattleStage.Combat, events, index, [], [], 0, 0, [], [], [], [], 0);
     internal static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("overlay-hit", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("overlay-hit", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
     internal static WildBattleCombatant Mon(string species, string name, int level = 50)
     {
         var pokemon = SourcePokemonFactory.Create(Mechanics,

@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Pokemon;
@@ -15,22 +16,23 @@ public partial class CampaignView
 
     }
 
-    private ForestMessage? FuchsiaRouteWildMessage(WildBattleEvent current) => current switch
+    private ForestMessage? FuchsiaRouteWildMessage(SourceBattleEvent current) => current switch
     {
-        WildBattleTransformedEvent transformed => new("sText_PkmnTransformedInto",
+        SourceTransformedEvent transformed => new("sText_PkmnTransformedInto",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(transformed.Actor)),
             ("B_BUFF1", PresentedBattleSpeciesName(PresentedSpeciesId(transformed.AppearanceSpecies)))),
-        WildBattleMoveFailedEvent { Reason: "target-transformed" or "semi-invulnerable" } => new("sText_ButItFailed"),
+        SourceMoveFailedEvent { Reason: "target-transformed" or "semi-invulnerable" } => new("sText_ButItFailed"),
         _ => null
     };
 
     private (int Species, bool Shiny) FuchsiaBattleAppearance(CampaignWildBattle battle, WildBattleSide side, PokemonInstance identity)
     {
         // The display projection advances at event boundaries; the final turn state can be ahead of the screen.
-        // A withdrawing player still uses the previous combatant's source appearance.
-        if (side == WildBattleSide.Player && WildWithdrawing(battle) && WildCurrentEvent(battle) is WildBattlePlayerSwitchedEvent switched)
+        // The silent switch beat and player withdrawal retain the outgoing appearance.
+        if (WildSwitchShowingOutgoing(battle,side))
         {
-            var old = switched.Previous.Transform?.CopiedPokemon ?? switched.Previous.Pokemon;
+            var previous = battle.SwitchDisplay!.Previous;
+            var old = previous.Transform?.CopiedPokemon ?? previous.Pokemon;
             return PresentedAppearance(old);
         }
         var appearance = side == WildBattleSide.Player ? battle.DisplayPlayerAppearance : battle.DisplayOpponentAppearance;

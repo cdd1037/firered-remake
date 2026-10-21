@@ -5,6 +5,7 @@ sys.dont_write_bytecode=True
 import argparse,hashlib,io,json,struct,types,unittest
 from pathlib import Path
 from unittest.mock import patch
+from indexed_material_expectations import assert_preserved_materials, assert_source_pixels
 from PIL import Image
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);p.add_argument('--previous',type=Path);p.add_argument('--importer',type=Path);a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
 ROOT=a.root.resolve();a.reference=a.reference or ROOT/'content/raw/pokefirered/037335f4';a.generated=a.generated or ROOT/'content/generated/battle/animations';path=ROOT/'scripts/imports/battle/import-source-elemental-animations.py'
@@ -39,7 +40,7 @@ class PetalPawImportTests(unittest.TestCase):
  def test_material_pixels_indices_and_palettes_match_every_source_pixel(self):
   for asset,shape in [('paw-print',(32,32)),('pink-petal',(8,32))]:
    with Image.open(io.BytesIO(imp.read(a.reference,'graphics/battle_anims/sprites/'+asset.replace('-','_')+'.png'))) as source:
-    self.assertEqual(shape,source.size);palette=source.getpalette()[:48];colors=[sum((palette[3*i+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual(shape,struct.unpack_from('<HH',self.pixels[asset]));self.assertEqual([colors[i]|(32768 if i else 0) for i in source.tobytes()],list(struct.unpack_from('<'+'H'*(shape[0]*shape[1]),self.pixels[asset],4)))
+    self.assertEqual(shape,source.size);palette=source.getpalette()[:48];colors=[sum((palette[3*i+c]//8)<<(5*c) for c in range(3)) for i in range(16)];assert_source_pixels(self,self.pack,self.pixels,asset,shape,source.tobytes(),colors,'ANIM_TAG_'+asset.upper().replace('-','_'))
     tiled=[source.getpixel((tx+x,ty+y)) for ty in range(0,shape[1],8) for tx in range(0,shape[0],8) for y in range(8) for x in range(8)];self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),self.pixels[asset+'.4bpp']);self.assertEqual(struct.pack('<16H',*colors),self.pixels[asset+'.pal16'])
  def test_corrupt_callbacks_and_material_registration_fail(self):
   original=imp.read
@@ -52,12 +53,7 @@ class PetalPawImportTests(unittest.TestCase):
   for row in old['scripts']:self.assertEqual(row,self.roots[row['moveId']])
   for row in old['spriteRecipes']:self.assertEqual(row,self.recipes[row['template']])
   for key,value in old['subroutines'].items():self.assertEqual(value,self.pack['subroutines'][key])
-  for group in ['assets','indexedAssets']:
-   current={r['id']:r for r in self.pack[group]}
-   for row in old[group]:
-    self.assertEqual(row,current[row['id']])
-    for field in ['path','indicesPath','palettePath']:
-     if field in row:self.assertEqual(((a.previous or a.generated)/row[field]).read_bytes(),self.pixels[row[field].removeprefix('elemental-').removesuffix('.rgb555')])
+  assert_preserved_materials(self,old,self.pack,a.previous or a.generated,self.pixels,'elemental-')
   self.assertEqual(self.data,(a.generated/'elemental.json').read_bytes())
   for name,blob in self.pixels.items():self.assertEqual(blob,(a.generated/('elemental-'+name if name.endswith(('.4bpp','.pal16')) else 'elemental-'+name+'.rgb555')).read_bytes())
 if __name__=='__main__':unittest.main()

@@ -17,14 +17,11 @@ internal static class SourceHeldDamageRules
     }
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     // The slot kernel remains closed to held items until its owner admits this phase.
-    internal virtual bool SourceHeldDamageEnabled => false;
-    internal virtual bool FocusBanded(BattlerSlot slot) => false;
-    internal virtual void SetFocusBanded(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_kernel_held_damage_not_migrated");
-    internal virtual bool HasDamageSubstitute(BattlerSlot slot) => Get(slot).CalledVolatile?.SubstituteHp > 0;
-    internal virtual void RecordEndureAdjustment(BattlerSlot slot) { }
+    internal bool HasDamageSubstitute(BattlerSlot slot) => Get(slot).CalledVolatile?.SubstituteHp > 0;
+    internal void RecordEndureAdjustment(BattlerSlot slot) { }
     private readonly HashSet<BattlerSlot> heldDamageEndured = [];
     internal bool HeldDamageEndured(BattlerSlot slot) => heldDamageEndured.Contains(slot);
     private readonly HashSet<BattlerSlot> heldDamageHungOn = [];

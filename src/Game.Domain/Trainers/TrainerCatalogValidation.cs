@@ -21,7 +21,6 @@ public static class TrainerCatalogValidation
                 CeruleanTrainerBattleDefinition normal => normal.Trainer,
                 EarlyRivalBattleDefinition rival => rival.Trainer,
                 ForestTrainerBattleDefinition forest => forest.Trainer,
-                PewterTrainerBattleDefinition pewter => pewter.Trainer,
                 Route22TrainerBattleDefinition route22 => route22.Trainer,
                 _ => throw new ArgumentException("trainer_catalog_battle")
             };

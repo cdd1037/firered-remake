@@ -12,7 +12,7 @@ internal static class SourceRecoilRules
     internal static int Crash(int adjustedDamage, int targetMaxHp) => Math.Min(Math.Max(1, adjustedDamage / 2), targetMaxHp / 2);
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasRecoilRecipe(string effect) => effect is "EFFECT_RECOIL" or "EFFECT_DOUBLE_EDGE" or "EFFECT_RECOIL_IF_MISS";
 
@@ -81,7 +81,7 @@ internal abstract partial class SourceRecipeContext
         var result = SourceTypeResult(catalog, target, move);
         return (result.TypeImmune, result.Immune, result.Effectiveness);
     }
-    internal virtual void RecoilReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    internal void RecoilReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
         if (SourceTypeReport(catalog, actor, target, move)) return;
         SourceDamageResultMessage(actor, target, move);
@@ -99,7 +99,7 @@ internal abstract partial class SourceRecipeContext
         Add(n => new SourceRecoilEvent(n, Turn, actor, move.Id, before, after, damage));
         if (after == 0) ForestFaint(actor);
     }
-    internal virtual void RecordCrashDamage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int lost) =>
+    private void RecordCrashDamageCore(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int lost) =>
         RecordHitItemDamage(actor, lost, substitute: false, noEffect: false,
             physical: TypeRules.Category(FixedDamageElementType(move.Type)) == DamageCategory.Physical);
 }

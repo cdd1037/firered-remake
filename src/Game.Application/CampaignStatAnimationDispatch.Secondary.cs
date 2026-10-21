@@ -36,9 +36,9 @@ public static partial class CampaignStatAnimationPresentation
     private static CampaignStatAnimationDispatch? Secondary(CampaignWildBattle battle,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves,bool substitute)
     {
-        if(moves is null||substitute||battle.Phase!=CampaignBattlePhase.Events||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||battle.Events[battle.EventIndex] is not (WildBattleStatChangedEvent or WildBattleStatAtMaximumEvent))return null;
+        if(moves is null||substitute||battle.Phase!=CampaignBattlePhase.Events||battle.EventIndex<0||battle.EventIndex>=battle.Events.Length||battle.Events[battle.EventIndex] is not (SourceStatChangedEvent or SourceStatAtMaximumEvent))return null;
         if(CampaignHeldItemAnimationPresentation.HasMalformedConsumedPrelude(battle.Events,battle.EventIndex))return null;
-        return ReadSecondary(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,moves,ItemReceiptSequences(battle.Events));
+        return ReadSecondary(battle.Id,battle.Events.ToArray(),battle.Events.Select(GroupRead).ToArray(),battle.EventIndex,2,moves,ItemReceiptSequences(battle.Events));
     }
     private static CampaignStatAnimationDispatch? ReadSecondary(string battle,SourceBattleEvent[] events,GroupRow[] rows,int index,int slots,
         IReadOnlyDictionary<MoveId,PokemonMoveDefinition> moves,HashSet<long> items)

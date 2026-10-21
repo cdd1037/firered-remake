@@ -7,16 +7,15 @@ from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 from runtime_json import runtime_json_bytes
 from presentation_pixels import PixelReader
-from presentation_source import Source, safe, need
-from image_io import png
+from trainer_portraits import selected_trainer_art
+from presentation_source import Source, need
+from presentation_output import asset_emitter, publish
 import argparse
 import io
 import json
 import pathlib
 import re
-import runpy
 import struct
-import subprocess
 from PIL import Image
 
 ROOT = _PROJECT_ROOT
@@ -35,12 +34,7 @@ def build(root, reference, dependency):
     source = Source(root, reference, dependency)
     out, assets = {}, []
 
-    def emit(identity, width, height, rgba, inputs):
-        need(len(rgba) == width * height * 4, 'RGBA dimensions differ')
-        out[identity + '.png'] = png(width, height, rgba)
-        row = dict(id=identity, width=width, height=height, texturePath=BASE + identity + '.png')
-        assets.append(row)
-        return row
+    emit = asset_emitter(source, out, assets, BASE)
 
     pixels = PixelReader(source)
     palette, indexed = pixels.palette, pixels.indexed
@@ -107,56 +101,8 @@ def build(root, reference, dependency):
         indices=bytes(1 if v==0 else 0 for v in im.get_flattened_data());colors=palette(pal,True)
         rgba=bytes(v for i in indices for v in (*colors[i],255 if i else 0))
         footprints.append(dict(speciesId='pret:'+canonical,sourceSpeciesId=species,**emit(name.lower()+'-footprint',16,16,rgba,[image,pal])))
-    trainers, portraits = [], []
-    trainer_source, trainer_constants = source.text('src/data/trainers.h'), source.text('include/constants/trainers.h')
-    opponents, classes = source.text('include/constants/opponents.h'), source.text('src/data/text/trainer_class_names.h')
-    trainer_graphics = source.text('src/data/graphics/trainers.h')
-    picture_table = source.text('src/data/trainer_graphics/front_pic_tables.h')
-    coords = re.findall(r'\{\.size = (\d+), \.y_offset = (\d+)\}', picture_table.split('const struct CompressedSpriteSheet')[0])
-    trainer_pics = {}
-    for name in TRAINERS:
-        symbol = 'TRAINER_' + name
-        match = re.search(r'\[' + symbol + r'\]\s*=\s*\{(.*?)\n    \}', trainer_source, re.S)
-        need(match, 'Trainer source record missing: ' + symbol)
-        body = match[1]
-        cls, pic = re.search(r'\.trainerClass = (\w+)', body)[1], re.search(r'\.trainerPic = (\w+)', body)[1]
-        display_name = re.search(r'\.trainerName = _\("([^\"]+)"\)', body)[1]
-        cls_name = re.search(r'\[' + cls + r'\]\s*= _\("([^\"]+)"\)', classes)[1]
-        source_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)\s*$', opponents, re.M)[1])
-        pic_id = int(re.search(r'^#define ' + pic + r'\s+(\d+)\s*$', trainer_constants, re.M)[1])
-        music = re.search(r'\.encounterMusic_gender = ([^,]+),', body)[1]
-        music_value = 0
-        for part in music.split('|'):
-            part = part.strip()
-            music_value |= 128 if part == 'F_TRAINER_FEMALE' else int(re.search(r'^#define ' + part + r'\s+(\d+)', trainer_constants, re.M)[1])
-        key = pic.removeprefix('TRAINER_PIC_')
-        portrait_id = pathlib.PurePosixPath(INHERITED[key]).stem if key in INHERITED else key.lower().replace('_', '-') + '-front'
-        trainers.append(dict(trainer='pret:' + symbol, sourceTrainerId=source_id, name=display_name,
-            trainerClass=cls, className=cls_name, trainerPic=pic, portrait=portrait_id,
-            encounterMusicGender=music_value, doubleBattle='.doubleBattle = TRUE,' in body))
-        trainer_pics[pic] = pic_id
-    need(len(trainers)==18 and sum(t['doubleBattle'] for t in trainers)==2,'Trainer cohort differs')
-    for pic, number in sorted(trainer_pics.items()):
-        key = pic.removeprefix('TRAINER_PIC_')
-        pic_symbol = re.search(r'TRAINER_SPRITE\(' + key + r', (\w+), 0x800\)', picture_table)[1]
-        pal_symbol = re.search(r'TRAINER_PAL\(' + key + r', (\w+)\)', picture_table)[1]
-        paths = []
-        for symbol in (pic_symbol, pal_symbol):
-            match = re.search(r'const u32 ' + symbol + r'\[\]\s*= INCBIN_U32\("([^\"]+)"\)', trainer_graphics)
-            need(match, 'Trainer graphic path missing')
-            paths.append(match[1].replace('.4bpp.lz', '.png').replace('.gbapal.lz', '.pal'))
-        _, rgba = indexed(*paths, (64, 64))
-        identity = pathlib.PurePosixPath(INHERITED[key]).stem if key in INHERITED else key.lower().replace('_', '-') + '-front'
-        if key in INHERITED:
-            path = INHERITED[key]
-            need(Image.open(io.BytesIO(source.reuse(path))).convert('RGBA').tobytes() == rgba, 'Inherited trainer source pixels differ: ' + key)
-            asset = dict(id=identity, width=64, height=64, texturePath=path)
-            assets.append(asset)
-        else:
-            asset = emit(identity, 64, 64, rgba, paths)
-        need(coords[number][0] == '8', 'Trainer portrait source size differs')
-        portraits.append(dict(trainerPic=pic, sourceTrainerPicId=number, inherited=key in INHERITED,
-                              x=144, y=8, sourceYOffset=int(coords[number][1]), **asset))
+    trainers, portraits = selected_trainer_art(source, TRAINERS, INHERITED, emit, assets)
+    need(len(trainers) == 18 and sum(t['doubleBattle'] for t in trainers) == 2, 'Trainer cohort differs')
 
     map_music=[]
     for map_name in MAPS:
@@ -214,11 +160,5 @@ if __name__ == '__main__':
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     output, report = build(args.project_root, args.reference_root, args.dependency_root or args.project_root)
-    for relative, data in output.items():
-        target = safe(args.project_root, relative)
-        if args.check:
-            need(target.read_bytes() == data, 'Generated bytes differ: ' + relative)
-        else:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(data)
+    publish(args.project_root, output, check=args.check)
     print(json.dumps(report, sort_keys=True))

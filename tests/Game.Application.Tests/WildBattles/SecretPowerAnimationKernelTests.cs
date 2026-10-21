@@ -41,7 +41,7 @@ public sealed class SecretPowerAnimationKernelTests
             Assert.IsNull(Kernel.Project(events,i,single,SourceBattleScene.Off).Dispatch);Assert.IsNull(Called.Project(events,i,single,result:true).Dispatch);
             if(single)
             {
-                var legacy=Envelope.Single(events,i) with{SourceEvents=[]};Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(legacy,true,SourceBattleScene.On));
+                var legacy=Envelope.Single(events,i);Assert.AreEqual(decision,AnimationDispatchFixture.AtAttackText(legacy,true,SourceBattleScene.On));
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(legacy,false,SourceBattleScene.On).Dispatch);
             }
             if(owner is null||events[i]!=used){Assert.IsNull(decision.Dispatch);continue;}

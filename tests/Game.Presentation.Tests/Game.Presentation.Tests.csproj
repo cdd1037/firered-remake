@@ -16,6 +16,7 @@
     <Compile Include="../../src/Game.Godot/SourceMusicFade.cs" Link="SourceMusicFade.cs" />
     <Compile Include="../../src/Game.Godot/QuestLogPalettePresentation.cs" Link="QuestLogPalettePresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceTrainerPresentationModel.cs" Link="SourceTrainerPresentationModel.cs" />
+    <Compile Include="../../src/Game.Godot/SourceBattleHpPresentation.cs" Link="SourceBattleHpPresentation.cs" />
     <Compile Include="../../src/Game.Application/CampaignWishResolution.cs" Link="CampaignWishResolution.cs" />
     <Compile Include="../../src/Game.Application/CampaignWeatherContinuationPresentation.cs" Link="CampaignWeatherContinuationPresentation.cs" />
     <Compile Include="../../src/Game.Godot/SourceInventoryPresentation.cs" Link="SourceInventoryPresentation.cs" />

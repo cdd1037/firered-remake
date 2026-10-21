@@ -116,7 +116,7 @@ public sealed class TreasureBeachTests
         {
             using var document = JsonDocument.Parse(rows.ToJsonString());
             Assert.ThrowsExactly<ArgumentException>(() =>
-                PretWildEncounterTables.Water(document.RootElement, PretFirstSeviiRegion.MapIdFromSourceSymbol));
+                PretWildEncounterTables.Water(document.RootElement, Content.MapFromSourceSymbol));
         }
         Reject([]);
         Reject(new(beach.DeepClone(), beach.DeepClone()));

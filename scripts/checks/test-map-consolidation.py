@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
+from import_check_fixtures import snapshot_tree
 from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts/lib'))
 from project_paths import PROJECT_ROOT as ROOT
@@ -195,16 +196,13 @@ class MapConsolidationTests(unittest.TestCase):
                 target = out / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(b'existing complete world must remain unchanged')
-            def snapshot():
-                return {p.relative_to(out).as_posix(): (p.read_bytes(), p.stat().st_mtime_ns)
-                        for p in out.rglob('*') if p.is_file()}
-            before = snapshot()
+            before = snapshot_tree(out)
             result = subprocess.run([sys.executable, str(ROOT / 'scripts/imports/maps/import-world.py'),
                                      '--raw', str(RAW), '--out', str(out), '--map', 'PalletTown'],
                                     capture_output=True, text=True)
             self.assertEqual(2, result.returncode)
             self.assertIn('unrecognized arguments: --map PalletTown', result.stderr)
-            self.assertEqual(before, snapshot())
+            self.assertEqual(before, snapshot_tree(out))
 
     def test_world_check_is_read_only_and_rejects_final_data_drift(self):
         importer = module('scripts/imports/maps/import-world.py')
@@ -213,24 +211,21 @@ class MapConsolidationTests(unittest.TestCase):
             selection = root / 'world.json'
             selection.write_text(json.dumps({'groups': {'opening': ['PalletTown']}}))
             importer.compile_world(RAW, out, selection)
-            def snapshot():
-                return {p.relative_to(out).as_posix(): (p.read_bytes(), p.stat().st_mtime_ns)
-                        for p in out.rglob('*') if p.is_file()}
             command = [sys.executable, str(ROOT / 'scripts/imports/maps/import-world.py'),
                        '--raw', str(RAW), '--out', str(out), '--selection', str(selection), '--check']
-            before = snapshot()
+            before = snapshot_tree(out)
             result = subprocess.run(command, capture_output=True, text=True)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            self.assertEqual(before, snapshot())
+            self.assertEqual(before, snapshot_tree(out))
             target = out / 'maps/world.json'
             changed = json.loads(target.read_bytes())
             changed['maps'][0]['stableId'] = 'map.wrong'
             target.write_text(json.dumps(changed))
-            damaged = snapshot()
+            damaged = snapshot_tree(out)
             result = subprocess.run(command, capture_output=True, text=True)
             self.assertNotEqual(0, result.returncode)
             self.assertIn('Final world output differs', result.stderr)
-            self.assertEqual(damaged, snapshot())
+            self.assertEqual(damaged, snapshot_tree(out))
 
 
 if __name__ == '__main__':

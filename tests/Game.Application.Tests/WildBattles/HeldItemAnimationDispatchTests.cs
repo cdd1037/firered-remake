@@ -11,7 +11,7 @@ namespace FireRed.Tests.Application.WildBattles;
 public sealed class HeldItemAnimationDispatchTests
 {
     private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events,int index=0)=>new("held",new("test"),"test",new(),CampaignDoubleBattleStage.Combat,events,index,[],[],0,0,[],[],[],[],0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events,int index=0)=>new("held",null!,new(),events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),index,null!,null!,CampaignBattlePhase.Events,[],0,[]){SourceEvents=events};
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events,int index=0)=>new("held",null!,new(),events,index,null!,null!,CampaignBattlePhase.Events,[],0,[]);
     private static CampaignHeldItemAnimationDispatch? At(CampaignDoubleBattle battle,MoveId?[]? entry=null)=>CampaignHeldItemAnimationPresentation.AtResult(battle,SourceBattleScene.On,entry??new MoveId?[4]);
     private static SourceHeldItemConsumedEvent Consumed(int slot,int seq,string item,int before=10,int after=10)=>new(seq,1,new(slot),item,before,after,after-before);
     private static SourceHeldItemHealEvent Heal(int slot,int seq=3)=>new(seq,1,new(slot),new(slot^1),new("pret:MOVE_NONE"),"ITEM_LEFTOVERS",0,10,12,2);

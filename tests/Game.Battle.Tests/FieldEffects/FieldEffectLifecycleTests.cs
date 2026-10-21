@@ -269,7 +269,7 @@ public sealed class FieldEffectLifecycleTests : FieldEffectFixture
                     Sides = [Side(0, x[1]), Side(1, x[2])]
                 };
                 var context = Activator.CreateInstance(type, bindings | BindingFlags.Public, null, [f, catalog], null)!;
-                type.BaseType!.GetMethod("FieldEffects", bindings)!.Invoke(context, [catalog, ImmutableArray.Create(new BattlerSlot(0), new(1), new(2), new(3))]);
+                type.GetMethod("FieldEffects", bindings)!.Invoke(context, [catalog, ImmutableArray.Create(new BattlerSlot(0), new(1), new(2), new(3))]);
                 var after = (SourceBattleFrame)type.GetProperty("Frame", bindings)!.GetValue(context)!;
                 Assert.IsTrue(Bits(after.Field) == y[0], "full source field owner weather expiry");
                 Assert.IsTrue(after.Sides[0].ReflectTurnsRemaining == y[2] && after.Sides[1].ReflectTurnsRemaining == y[3] && after.Sides[0].MistTurnsRemaining == y[4] && after.Sides[1].SafeguardTurnsRemaining == y[5], "exact both-side timer decrement");

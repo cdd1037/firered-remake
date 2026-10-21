@@ -3,14 +3,9 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasDelayedRecipe(string effect) => effect is "EFFECT_WISH" or "EFFECT_FUTURE_SIGHT";
-    internal abstract WildBattleCalledWish? DelayedWish(BattlerSlot slot);
-    internal abstract void SetDelayedWish(BattlerSlot slot, WildBattleCalledWish? wish);
-    internal abstract SourceFutureAttack? DelayedFuture(BattlerSlot slot);
-    internal abstract void SetDelayedFuture(BattlerSlot slot, SourceFutureAttack? future);
-    internal abstract int DelayedPartyIndex(BattlerSlot slot);
 
     // Cmd_trywish / Cmd_trysetfutureattack run after ppreduce, without an accuracy,
     // Protect or Substitute command. Both timers belong to positions, not occupants.

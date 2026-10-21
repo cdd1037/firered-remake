@@ -33,21 +33,3 @@ public sealed record WildBattleCalledDelayedState
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledFutureAttack? PlayerFutureAttack { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledFutureAttack? OpponentFutureAttack { get; init; }
 }
-public sealed record WildBattleSubstituteDamagedEvent(long Sequence, int Turn, WildBattleSide Actor,
-    WildBattleSide Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent)
-    : WildBattleEvent(Sequence, Turn)
-{
-    /// <summary>Base power prepared by the executing dynamic-power command before damage calculation.</summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedBasePower { get; init; }
-    /// <summary>Source attack-animation power retained from CalculateBaseDamage after Sport and ability modifiers; zero is valid.</summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedAnimationPower { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ushort? PreparedAnimationWeather { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? PreparedFuryCutterCounter { get; init; }
-}
-public sealed record WildBattleCalledDelayedEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move,
-    int Before, int After, string Reason, int? SourcePartyIndex = null) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleMagicCoatPressurePpEvent(long Sequence, int Turn, WildBattleSide PressuringActor, WildBattleSide Reflector, int Slot, int Before, int After) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleMagicCoatEvent(long Sequence, int Turn, WildBattleSide OriginalActor,
-    WildBattleSide Reflector, MoveId Move) : WildBattleEvent(Sequence, Turn);
-public sealed record WildBattleGrudgePpEvent(long Sequence, int Turn, WildBattleSide Fainted,
-    WildBattleSide Attacker, MoveId Move, int ChosenSlot, int Before) : WildBattleEvent(Sequence, Turn);

@@ -110,13 +110,13 @@ public sealed class CopyPsychicAnimationKernelTests
     public void SinglesMimicAuthenticatesTheExportedCopyAndPpWithoutCanonicalBackchannel()
     {
         var result = F.Ordered(F.Initial(102, true), 0, 1); var used = result.Events.OfType<SourceMoveUsedEvent>().Single();
-        var battle = F.Single(result.Events, result.Events.IndexOf(used)); Assert.AreEqual(0, battle.SourceEvents.Length);
+        var battle = F.Single(result.Events, result.Events.IndexOf(used)); Assert.AreEqual(result.Events, battle.Events);
         Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch);
-        int copied = Array.FindIndex(battle.Events.ToArray(), e => e is WildBattleMoveCopiedEvent);
-        var copy = (WildBattleMoveCopiedEvent)battle.Events[copied];
+        int copied = Array.FindIndex(battle.Events.ToArray(), e => e is SourceMoveCopiedEvent);
+        var copy = (SourceMoveCopiedEvent)battle.Events[copied];
         Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(copied, copy with { Permanent = true }) }, true, SourceBattleScene.On).Dispatch);
-        int p = Array.FindIndex(battle.Events.ToArray(), e => e is WildBattlePpCommandEvent); var pp = (WildBattlePpCommandEvent)battle.Events[p];
-        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(p, pp with { PpOwner = WildBattleSide.Opponent }) }, true, SourceBattleScene.On).Dispatch);
+        int p = Array.FindIndex(battle.Events.ToArray(), e => e is SourcePpCommandEvent); var pp = (SourcePpCommandEvent)battle.Events[p];
+        Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(p, pp with { PpOwner = new BattlerSlot(1) }) }, true, SourceBattleScene.On).Dispatch);
     }
     [TestMethod, DataRow(101), DataRow(354)]
     public void OrdinaryPsychicRootsUseSubstituteHitsAndRejectMissProtectionAndImmunity(int id)

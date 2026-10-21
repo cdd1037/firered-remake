@@ -4,7 +4,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasFixedDamageRecipe(string effect) => effect is
         "EFFECT_FALSE_SWIPE" or "EFFECT_DRAGON_RAGE" or "EFFECT_SONICBOOM" or "EFFECT_LEVEL_DAMAGE" or
@@ -75,12 +75,9 @@ internal abstract partial class SourceRecipeContext
         ForestOutcome(true);
     }
 
-    internal virtual int FixedDamageAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
+    internal int FixedDamageAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
         AdjustHeldDamage(target, move.Id, damage, purpose, falseSwipe: move.Effect == "EFFECT_FALSE_SWIPE");
-    internal virtual int FixedDamageApply(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move,
-        int damage, bool critical, int percent, bool immune) =>
-        SourceGenericApplyDamage(actor, target, move, immune ? 0 : damage, critical, percent);
-    internal virtual bool FixedDamageZeroCriticalPrinted(BattlerSlot target) => false;
+    internal bool FixedDamageZeroCriticalPrinted(BattlerSlot target) => false;
 
     private bool FixedDamageAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool thunderWeather = false)
     {

@@ -4,13 +4,13 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasAdditionalPrimaryStatusRecipe(string effect) => effect is
         "EFFECT_PARALYZE" or "EFFECT_TOXIC" or "EFFECT_WILL_O_WISP";
-    internal virtual bool PrimaryParalysisChecksLimber => true;
-    internal virtual void PreparePrimaryToxicStorage() { }
-    internal virtual bool PrimaryStatusAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
+    internal bool PrimaryParalysisChecksLimber => true;
+    internal void PreparePrimaryToxicStorage() { }
+    internal bool PrimaryStatusAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
     {
         if (SourceGenericAccuracy(actor, target, move, purpose)) return true;
         SourceCalledProtectionFailure(actor, target, move.Id, "accuracy"); return false;

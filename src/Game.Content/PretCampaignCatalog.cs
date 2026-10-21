@@ -35,9 +35,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public EscapeRopePolicy EscapeRoutes { get; }
     public PretViridianCenter ViridianCenter { get; }
     public PretOldManTutorialContent OldManTutorial { get; }
-    public PretForestRegion ForestRegion { get; }
     public PretForestPokemon? ForestPokemon { get; }
-    public PretPewterRegion PewterRegion { get; }
     public PretPokemonStorageSource PokemonStorageSource { get; }
     public PretEarlyPickups? EarlyPickups { get; }
     public ImmutableArray<FieldPickupDefinition> FieldPickups { get; }
@@ -47,19 +45,15 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretOakRating OakRating { get; }
     /// <summary>Immutable metadata shared by Oak, Route22 and presentation in this composition.</summary>
     public PretPokedexMenu PokedexMenu { get; }
-    public PretRoute22Region Route22Region { get; }
     public PokemonPresentationPackage? Route22Pokemon { get; }
     public Route22TrainerCatalog? Route22Trainers { get; }
-    public PretRoute3Region Route3Region { get; }
     public PokemonPresentationPackage? Route3Pokemon { get; }
-    public Route3TrainerCatalog? Route3Trainers { get; }
+    public OrdinaryTrainerCatalog? Route3Trainers { get; }
     public PretMagikarpContract MagikarpContract { get; }
-    public PretMtMoonRegion MtMoonRegion { get; }
     public PokemonPresentationPackage? MtMoonPokemon { get; }
-    public MtMoonTrainerCatalog? MtMoonTrainers { get; }
-    public PretCeruleanRegion CeruleanRegion { get; }
+    public OrdinaryTrainerCatalog? MtMoonTrainers { get; }
     public PokemonPresentationPackage? CeruleanPokemon { get; }
-    public CeruleanTrainerCatalog? CeruleanTrainers { get; }
+    public OrdinaryTrainerCatalog? CeruleanTrainers { get; }
     public PretCeruleanCaveRegion CeruleanCaveRegion { get; }
     public WaterEncounterCatalog CeruleanCaveWaterEncounters { get; }
     public PretCityServices CityServices { get; }
@@ -73,23 +67,20 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretSchoolHouseInteriors SchoolHouseInteriors { get; }
     public PretTrainerFanClub TrainerFanClub { get; }
     public PretLostCaveRegion LostCaveRegion { get; }
-    public LostCaveTrainerCatalog LostCaveTrainers { get; }
+    public OrdinaryTrainerCatalog LostCaveTrainers { get; }
     public Route16FlyTrainerCatalog Route16FlyTrainers { get; }
     public PretOldRod? OldRod { get; }
     public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters { get; }
     public ImmutableArray<MachineItem> CityServiceItems { get; }
     public PretVermilionGymRegion VermilionGymRegion { get; }
-    public VermilionGymTrainerCatalog? VermilionGymTrainers { get; }
-    public PretSsAnneRegion SsAnneRegion { get; }
+    public OrdinaryTrainerCatalog? VermilionGymTrainers { get; }
     public PokemonPresentationPackage? SsAnnePokemon { get; }
-    public SsAnneTrainerCatalog? SsAnneTrainers { get; }
-    public PretVermilionRegion VermilionRegion { get; }
+    public OrdinaryTrainerCatalog? SsAnneTrainers { get; }
     public PokemonPresentationPackage? VermilionPokemon { get; }
-    public VermilionTrainerCatalog? VermilionTrainers { get; }
-    public PretBillRegion BillRegion { get; }
+    public OrdinaryTrainerCatalog? VermilionTrainers { get; }
     public PokemonPresentationPackage? BillPokemon { get; }
     public PretBillItemsDocument? BillItems { get; }
-    public BillTrainerCatalog? BillTrainers { get; }
+    public OrdinaryTrainerCatalog? BillTrainers { get; }
     public PretMtMoonItemsDocument? MtMoonItems { get; }
 
     public bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => PokedexMenu?.Entries.ContainsKey(sourceSpeciesId) == true;
@@ -106,8 +97,8 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretEarlyShopDocument EarlyShopDocument { get; }
     public EarlyShopCatalog? EarlyShop => EarlyShopDocument?.Catalog;
     public OrdinaryMartCatalog OrdinaryMarts { get; }
-    public ForestTrainerCatalog ForestTrainers { get; }
-    public PewterTrainerCatalog? PewterTrainers { get; }
+    public OrdinaryTrainerCatalog ForestTrainers { get; }
+    public OrdinaryTrainerCatalog? PewterTrainers { get; }
     public PretPewterPokemon? PewterPokemon { get; }
     public IReadOnlyDictionary<MapId, EarlyLandEncounterTable> LandEncounters { get; }
     public PretMartMetatiles? MartMetatiles { get; }

@@ -35,5 +35,5 @@ public sealed partial class PretCampaignCatalog
         CyclingRoadSceneInteriors = closure.ToImmutableHashSet();
     }
 
-    public CyclingRoadTrainerCatalog CyclingRoadTrainers => CyclingRoadRegion.Trainers;
+    public OrdinaryTrainerCatalog CyclingRoadTrainers => CyclingRoadRegion.Trainers;
 }

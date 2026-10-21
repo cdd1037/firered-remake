@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Text.Json;
+using Game.Content;
 using Game.Application;
 using Game.Domain.Events;
 using Godot;
@@ -97,15 +99,17 @@ public partial class CampaignView
 
     private void LoadBillPresentation()
     {
-        if (_catalog.BillRegion is not { } source) return;
+        var directory = System.IO.Path.Combine(_root, "content/generated/maps/regions/bill");
+        using var animations = JsonDocument.Parse(GeneratedResourceFile.Read(_root,
+            "content/generated/maps/regions/bill/animations.json"));
         BillPcRows = new[] { 133, 136, 135, 134 }.Select(id =>
             _catalog.SourceSpeciesName(id) ?? throw new InvalidDataException("Bill PC species display name missing."))
             .Append(SourceMenuLabelPresentation.Plain(_battleText, "gText_QuitLooking")).ToArray();
-        var metadata = source.Animations;
+        var metadata = animations.RootElement;
         Texture2D Asset(string path)
         {
             var artifact = metadata.GetProperty("artifacts").EnumerateArray().Single(a => a.GetProperty("path").GetString() == path);
-            var texture = SceneTextures.Texture(System.IO.Path.Combine(source.GeneratedDirectory, path));
+            var texture = SceneTextures.Texture(System.IO.Path.Combine(directory, path));
             if (texture.GetWidth() != artifact.GetProperty("width").GetInt32() || texture.GetHeight() != artifact.GetProperty("height").GetInt32()) throw new InvalidDataException("Bill atlas dimensions differ.");
             return texture;
         }

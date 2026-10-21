@@ -18,8 +18,8 @@ public sealed class MultiHitAnimationDispatchTests
         new("multi-hit", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
-        new("multi-hit", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("multi-hit", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
     private static CampaignMoveAnimationDecision At(ImmutableArray<SourceBattleEvent> events, int index) =>
         AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
     private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events, long first = 1) =>

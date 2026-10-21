@@ -211,11 +211,9 @@ public sealed class CalledRetaliationTargetResolutionTests
         Assert.AreEqual(JsonSerializer.Serialize(Numbering.Number(selected.Events)), JsonSerializer.Serialize(Numbering.Number(withoutProof)));
         SourceBattleEvent source = receipt;
         Assert.AreEqual(receipt, JsonSerializer.Deserialize<SourceBattleEvent>(JsonSerializer.Serialize(source)));
-        WildBattleEvent exported = SourceBattleEventAdapter.Export(receipt);
-        Assert.IsInstanceOfType<WildBattleMoveTargetResolvedEvent>(exported);
-        Assert.AreEqual(exported, JsonSerializer.Deserialize<WildBattleEvent>(JsonSerializer.Serialize(exported)));
-        var normalize = typeof(CampaignMoveAnimationPresentation).GetMethod("AnimationReceipt", BindingFlags.NonPublic | BindingFlags.Static)!;
-        Assert.AreEqual(receipt, normalize.Invoke(null, [exported]));
+        var envelope = Envelope.Single(retargeted.Events, retargeted.Events.IndexOf(receipt));
+        Assert.AreEqual(retargeted.Events, envelope.Events);
+        Assert.AreSame(receipt, envelope.Events[envelope.EventIndex], "The canonical retarget proof is not projected or reconstructed.");
         int index = retargeted.Events.IndexOf(retargeted.Events.OfType<SourceMoveUsedEvent>().Single());
         var cue = Kernel.Project(retargeted.Events, index, true).Dispatch; Assert.IsNotNull(cue);
         Assert.AreEqual(id, cue.SourceMoveId); Assert.AreEqual(receipt.Target, cue.Target);

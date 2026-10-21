@@ -19,8 +19,8 @@ public sealed class SpreadSecondaryPrefixTests
         new("spread-secondary", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("spread-secondary", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("spread-secondary", null!, new(), events, index,
+            null!, null!, CampaignBattlePhase.Events, [], 0, []);
     private static WildBattleStat Stat(PokemonMoveDefinition move) => move.Effect switch {
         "EFFECT_DEFENSE_DOWN_HIT" => WildBattleStat.Defense,
         "EFFECT_SPEED_DOWN_HIT" => WildBattleStat.Speed,

@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using Game.Domain.Events;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -134,27 +135,20 @@ public partial class CampaignView
         }
     }
 
-    private SsAnneTrainerPlayerForcedOutEvent? SsAnnePendingPlayerForceOut(CampaignWildBattle battle)
+    private ForestMessage? SsAnneWildMessage(SourceBattleEvent current) => current switch
     {
-        if (battle.Phase != CampaignBattlePhase.Events || _session.State.ForestTrainerBattle is not { } trainer) return null;
-        long sequence = trainer.CurrentTrainerEvent?.Sequence ?? WildCurrentEvent(battle)?.Sequence ?? long.MaxValue;
-        return trainer.TrainerEvents.OfType<SsAnneTrainerPlayerForcedOutEvent>().FirstOrDefault(e => e.Sequence > sequence);
-    }
-
-    private ForestMessage? SsAnneWildMessage(WildBattleEvent current) => current switch
-    {
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_FLASH_FIRE" } ability => new("sText_PkmnRaisedFirePowerWith",
+        SourceAbilityPreventedEvent { Ability: "ABILITY_FLASH_FIRE" } ability => new("sText_PkmnRaisedFirePowerWith",
             ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_CLEAR_BODY" } ability => new("sText_PkmnPreventsStatLossWith",
+        SourceAbilityPreventedEvent { Ability: "ABILITY_CLEAR_BODY" } ability => new("sText_PkmnPreventsStatLossWith",
             ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_SCR_ACTIVE_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
-        WildBattleAbilityPreventedEvent { Ability: "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" } ability => new("sText_PkmnStayedAwakeUsing",
+        SourceAbilityPreventedEvent { Ability: "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" } ability => new("sText_PkmnStayedAwakeUsing",
             ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_DEF_ABILITY", _catalog.DisplayNames.AbilityName(ability.Ability))),
-        WildBattleStatusChangedEvent { Reason: "rest" } rest => new(rest.Before == 0 ? "sText_PkmnWentToSleep" : "sText_PkmnSleptHealthy",
+        SourceStatusChangedEvent { Reason: "rest" } rest => new(rest.Before == 0 ? "sText_PkmnWentToSleep" : "sText_PkmnSleptHealthy",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(rest.Side))),
-        WildBattleMoveFailedEvent { Move.Value: "pret:MOVE_REST", Reason: "already-asleep" } failed => new("sText_PkmnAlreadyAsleep2",
+        SourceMoveFailedEvent { Move.Value: "pret:MOVE_REST", Reason: "already-asleep" } failed => new("sText_PkmnAlreadyAsleep2",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(failed.Actor))),
-        WildBattleMoveFailedEvent { Reason: "already-full-hp" } failed => new("sText_PkmnHPFull", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(failed.Target))),
-        WildBattleDrainEvent { Restored: < 0 } or WildBattleLeechSeedDrainEvent { Restored: < 0 } => new("sText_ItSuckedLiquidOoze"),
+        SourceMoveFailedEvent { Reason: "already-full-hp" } failed => new("sText_PkmnHPFull", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(failed.Target))),
+        SourceDrainEvent { Restored: < 0 } or SourceLeechSeedDrainEvent { Restored: < 0 } => new("sText_ItSuckedLiquidOoze"),
         _ => null
     };
 

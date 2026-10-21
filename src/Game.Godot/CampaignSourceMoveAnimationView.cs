@@ -54,16 +54,28 @@ public partial class CampaignView
         else{_sourceCompletedState.Clear();_sourceChargePoseLifetime.Clear();_sourceCompletedMembers.Clear();}
         _sourceMoveInitialFrame=null;_sourceMoveMaterials=null;_sourceCompletedMaterialSequence=null;
     }
-    private PartyMemberKey SourceDisplayedMember(bool doubles,int slot)=>doubles
-        ?_session.State.DoubleBattle!.DisplayedMembers[slot]
-        :PresentedWildBattle!.DisplayBatch!.Display.Members[slot];
+    private PartyMemberKey SourceDisplayedMember(bool doubles,int slot)
+    {
+        if(doubles)return _session.State.DoubleBattle!.DisplayedMembers[slot];
+        var battle=PresentedWildBattle!;
+        if(battle.SwitchDisplay is {} display&&display.Slot.Value==slot)
+        {
+            if(WildCurrentEvent(battle) is SourceCalledPartySwitchedEvent switched)
+                return new(switched.Side.Side,WildSwitchShowingOutgoing(battle,(WildBattleSide)slot)?switched.OutgoingIndex:switched.IncomingIndex);
+            if(!WildWithdrawing(battle))return battle.DisplayBatch!.Display.Members[slot];
+            var outgoing=battle.LastSwitch?.Outgoing??throw new InvalidDataException("Outgoing player identity is missing.");
+            int index=Enumerable.Range(0,PresentedBattlePlayerParty.Length).Single(i=>PresentedBattlePlayerParty[i].InstanceId==outgoing.InstanceId);
+            return new(BattleSide.Player,index);
+        }
+        return battle.DisplayBatch!.Display.Members[slot];
+    }
     private void RefreshCompletedSourceState(bool doubles)
     {
         RefreshSubstituteController(doubles);
         if(!_sourceCompletedState.HasState)return;
         if(!doubles&&PresentedWildBattle is null){ClearCompletedSourceState();return;}
         bool changed=false;
-        var chargeEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
+        var chargeEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.Events;
         long? currentChargeReceipt=doubles?_session.State.DoubleBattle!.CurrentEvent?.Sequence:WildCurrentEvent(PresentedWildBattle!)?.Sequence;
         // No source MOVEEND visibility receipt is exposed. The charge-owned hold
         // is released conservatively after the complete result batch is ACKed,
@@ -91,9 +103,9 @@ public partial class CampaignView
             };
             else replaced|=WildCurrentEvent(PresentedWildBattle!) switch
             {
-                WildBattleCalledPartySwitchedEvent x=> (int)x.Side==slot,
-                WildBattlePlayerReplacedEvent=>slot==0,
-                WildBattlePlayerSwitchedEvent=>slot==0&&!WildWithdrawing(PresentedWildBattle!),
+                SourceCalledPartySwitchedEvent x=>x.Side.Value==slot&&!WildSwitchShowingOutgoing(PresentedWildBattle!, (WildBattleSide)slot),
+                SourcePlayerReplacedEvent=>slot==0,
+                SourcePlayerSwitchedEvent=>slot==0&&!WildWithdrawing(PresentedWildBattle!),
                 _=>false
             };
             if(replaced){_sourceChargePoseLifetime.DropSlot(slot);_sourceCompletedState.DropSlot(slot);_sourceCompletedMembers.Remove(slot);changed=true;}
@@ -333,7 +345,7 @@ public partial class CampaignView
     private bool StartSourceMoveAnimation(CampaignMoveAnimationDispatch dispatch,Dictionary<string,SourcePixelAsset> assets,List<AnimationBattler> battlers,bool doubles)
     {
         if(_sourceResultEntryCharge is null)return false;
-        var sourceEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
+        var sourceEvents=doubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.Events;
         var visibility=CampaignMoveAnimationPresentation.SpriteVisibilityAtInvocation(sourceEvents,dispatch,_sourceResultEntryCharge);
         if(visibility is null||!ApplySourceAnimationVisibility(battlers,visibility))return false;
         var resolved=_sourceAnimationResources!.Resolve(dispatch.SourceMoveId);
@@ -453,7 +465,7 @@ public partial class CampaignView
             int finishedFrame=completed.Frame;
             if(_sourceMoveRestoresSubstitute)_sourceSubstituteLifetime.Restore(pending.Actor.Value);
             _sourceMoveRestoresSubstitute=false;
-            var completedEvents=_sourceMoveDoubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.SourceEvents;
+            var completedEvents=_sourceMoveDoubles?_session.State.DoubleBattle!.Events:PresentedWildBattle!.Events;
             if(completed.BattlerVisibility.Any(v=>v.Slot==pending.Actor.Value&&!v.SpriteInvisible)&&_sourceChargePoseLifetime.CompleteRelease(pending,completedEvents))_sourceCompletedState.DropVisibility(pending.Actor.Value);
             if(_sourceMoveInitialFrame is {} initial)_sourceCompletedState.Capture(initial,completed,_sourceMoveMaterials);
             if(_sourceChargePoseLifetime.Capture(pending,completedEvents)&&!_sourceCompletedState.RetainVisibility(completed,pending.Actor.Value))

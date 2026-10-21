@@ -21,17 +21,17 @@ internal sealed partial class FrameRecipeContext
         ApplyFrameHitItems(delayed: true);
         EndSubstitutePass();
     }
-    internal override void HitItemsCommandDamage(int damage, bool noEffect = false)
+    internal void HitItemsCommandDamage(int damage, bool noEffect = false)
     {
         hitItemsCommandDamage = damage;
         hitItemsNoEffect = noEffect;
     }
-    internal override void HitItemsConfusionDamage(BattlerSlot actor, int damage)
+    internal void HitItemsConfusionDamage(BattlerSlot actor, int damage)
     {
         hitItemsCommandDamage = damage;
         hitItemsSelfTarget = actor;
     }
-    internal override bool ContactConfusionSelfDamage => hitItemsSelfTarget is not null;
+    internal bool ContactConfusionSelfDamage => hitItemsSelfTarget is not null;
     private void ApplyFrameHitItems(bool delayed = false)
     {
         // Miss/absorption scripts may skip datahpupdate, retaining command damage

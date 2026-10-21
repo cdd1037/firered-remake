@@ -3,7 +3,10 @@ namespace FireRed.Tests.ResourceImport;
 [TestClass, TestCategory("ResourceImport")]
 public sealed class NativePresentationImportTests
 {
+    public TestContext TestContext { get; set; } = null!;
+
     [TestMethod]
+    [DataRow("test-indexed-material-animation-import.py")]
     [DataRow("test-beatup-animation-import.py")]
     [DataRow("test-battler-copy-animation-import.py")]
     [DataRow("test-psycho-boost-import.py")]
@@ -26,7 +29,6 @@ public sealed class NativePresentationImportTests
     [DataRow("test-impact-emission-animation-import.py")]
     [DataRow("test-orbital-particle-animation-import.py")]
     [DataRow("test-fire-seed-animation-import.py")]
-    [DataRow("test-physical-animation-import.py", 10)]
     [DataRow("test-elemental-animation-import.py")]
     [DataRow("test-source-animation-expectations.py")]
     [DataRow("test-impact-adapter-animation-import.py")]
@@ -37,6 +39,12 @@ public sealed class NativePresentationImportTests
     [DataRow("test-npc-trade-scene-import.py")]
     [DataRow("test-party-screen.py")]
     [DataRow("test-summary-screen.py")]
-    public Task GeneratedNativePresentationMatchesSource(string script, int timeoutMinutes = 3) =>
-        PythonResourceCheck.Run("scripts/checks/" + script, timeout: TimeSpan.FromMinutes(timeoutMinutes));
+    public Task GeneratedNativePresentationMatchesSource(string script) =>
+        PythonResourceCheck.Run("scripts/checks/" + script, timeout: TimeSpan.FromMinutes(3), context: TestContext);
+
+    [TestMethod]
+    [Timeout(660_000, CooperativeCancellation = true)]
+    public Task PhysicalAnimationsMatchSource() =>
+        PythonResourceCheck.Run("scripts/checks/test-physical-animation-import.py",
+            timeout: TimeSpan.FromMinutes(10), context: TestContext);
 }

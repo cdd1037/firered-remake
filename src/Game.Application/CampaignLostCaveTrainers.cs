@@ -10,7 +10,7 @@ public sealed partial class CampaignSession
     private const string LostCaveSelphyActor = "LOCALID_LOST_CAVE_SELPHY";
     private const string LostCaveSelphyScene = "FiveIsland_LostCave_Room10_EventScript_FindSelphyScene";
     private const string LostCaveSelphySceneVariable = "VAR_MAP_SCENE_FIVE_ISLAND_LOST_CAVE_ROOM10";
-    private bool IsLostCaveTrainer(TrainerId trainer) => _content.LostCaveTrainers?.Trainers.ContainsKey(trainer) == true;
+    private static bool IsLostCaveSelphy(TrainerId trainer) => trainer.Value == "pret:TRAINER_LADY_SELPHY";
 
     private void RequireLostCaveTrainerOccurrence(CampaignState state, TrainerId trainer,
         ForestTrainerBattleDefinition source, bool noIntro)
@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
         // map scene therefore preserves any stale VAR_LAST_TALKED; actor identity
         // comes from the authenticated local ID and completed source movements.
         var player = state.World.Player;
-        if (!IsLostCaveTrainer(trainer) || trainer.Value != "pret:TRAINER_LADY_SELPHY" || !noIntro ||
+        if (!IsLostCaveSelphy(trainer) || !noIntro ||
             source.Mode != 3 || source.BattleTypeFlags != 8 || source.ScriptEntry != LostCaveSelphyScene ||
             player.MapId.Value != "map.five-island-lost-cave-room10" || player.X != 5 || player.Y != 8 || player.Elevation != 3 ||
             !state.Script.Locked || state.Script.QuestLogState != 0 || state.Script.Wait?.Kind != StoryWaitKind.Battle ||

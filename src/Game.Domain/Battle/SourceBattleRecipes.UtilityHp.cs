@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasUtilityHpRecipe(string effect) => effect is
         "EFFECT_PAIN_SPLIT" or "EFFECT_MEMENTO" or "EFFECT_SPLASH";

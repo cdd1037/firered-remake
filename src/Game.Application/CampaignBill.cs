@@ -3,7 +3,6 @@ using System.Globalization;
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
-using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
 using Game.Domain.World;
 
@@ -311,10 +310,10 @@ public sealed partial class CampaignSession
         int rivalScene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_RIVAL");
         if(rivalScene is <0 or >1||rivalWon!=(rivalScene==1)||state.Script.Flags.GetValueOrDefault("FLAG_GOT_FAME_CHECKER")!=rivalWon)
             return "save_bill_rival_progress";
-        bool rocketWon=history.Any(h=>h.TrainerId==BillTrainerPartyFactory.Rocket.Value&&h.Outcome==WildBattleOutcome.Won);
+        bool rocketWon=history.Any(h=>h.TrainerId=="pret:TRAINER_TEAM_ROCKET_GRUNT_6"&&h.Outcome==WildBattleOutcome.Won);
         int bridgeScene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE24");
         if(bridgeScene is <0 or >1||rocketWon!=(bridgeScene==1)||rocketWon&&!received||
-            history.Any(h=>h.TrainerId==BillTrainerPartyFactory.Rocket.Value)&&!received)return "save_bill_bridge_progress";
+            history.Any(h=>h.TrainerId=="pret:TRAINER_TEAM_ROCKET_GRUNT_6")&&!received)return "save_bill_bridge_progress";
         var inventory=state.Inventory;
         // Nuggets are fungible, sellable rewards from multiple source events.
         // Bridge progress is validated by its receipt and battle flags above;

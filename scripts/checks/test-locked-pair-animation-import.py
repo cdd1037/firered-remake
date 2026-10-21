@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Original Bide branches and simultaneous Thrash task closure, without new art."""
-import importlib.util,json,re,unittest
+import argparse,importlib.util,json,re,sys,unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('locked_pair_physical',ROOT/'scripts/imports/battle/import-source-physical-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
 REFERENCE=ROOT/'content/raw/pokefirered/037335f4'
+p=argparse.ArgumentParser(add_help=False);p.add_argument('--generated',type=Path,default=ROOT/'content/generated/battle/animations');a,remaining=p.parse_known_args();sys.argv=[sys.argv[0],*remaining]
 class LockedPairAnimationImportTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
@@ -19,7 +20,12 @@ class LockedPairAnimationImportTests(unittest.TestCase):
     self.assertEqual((op,args),(c['op'],c['args']))
   bide=self.rows[117];self.assertEqual(['BideSetUp','BideUnleash'],bide['commands'][0]['args']);self.assertTrue(set(bide['commands'][0]['args'])<=bide['labels'].keys())
   self.assertEqual(['gBasicHitSplatSpriteTemplate'],self.rows[37]['spriteDependencies'])
-  self.assertNotIn(80,self.rows);self.assertNotIn(253,self.rows)
+  # Removing an actual unreviewed operation must close Thrash, irrespective of
+  # which other move roots now share its reviewed adapters.
+  changed=dict(self.raw);marker=b'Move_THRASH:\n';self.assertEqual(1,changed['data/battle_anim_scripts.s'].count(marker))
+  changed['data/battle_anim_scripts.s']=changed['data/battle_anim_scripts.s'].replace(marker,marker+b'\tunreviewed_command 0\n')
+  with patch.object(imp,'read_sources',return_value=changed):data,blocked=imp.build(REFERENCE)
+  self.assertEqual(set(self.rows)-{37},{row['moveId'] for row in json.loads(data)['scripts']});self.assertIn(37,{row['moveId'] for row in blocked})
  def test_thrashing_affine_loop_is_source_task_program_not_sprite_animation(self):
   self.assertEqual([('frame',-10,9,7,0),('frame',20,-20,7,0),('frame',-20,20,7,0),('frame',10,-9,7,0),('loop',0,0,0,2),('end',0,0,0,0)],[(c['op'],c['x'],c['y'],c['duration'],c['count']) for c in self.pack['taskAffinePrograms']['sThrashMoveMonAffineAnimCmds']])
   self.assertEqual({'ANIM_TAG_IMPACT','ANIM_TAG_HANDS_AND_FEET'},set(self.rows[37]['spriteTags']));self.assertEqual({'ANIM_TAG_IMPACT'},set(self.rows[117]['spriteTags']))
@@ -36,5 +42,5 @@ class LockedPairAnimationImportTests(unittest.TestCase):
   with patch.object(imp,'read_sources',return_value=raw):
    data,blocked=imp.build(REFERENCE);self.assertNotIn(117,[r['moveId'] for r in json.loads(data)['scripts']]);self.assertIn('invocation:move-turn',next(r['missing'] for r in blocked if r['moveId']==117))
  def test_targeted_regeneration_is_exact(self):
-  data,_=imp.build(REFERENCE);self.assertEqual(data,(ROOT/'content/generated/battle/animations/physical.json').read_bytes())
+  data,_=imp.build(REFERENCE);self.assertEqual(data,(a.generated/'physical.json').read_bytes())
 if __name__=='__main__':unittest.main()

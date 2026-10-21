@@ -32,18 +32,6 @@ public sealed class PretSeafoamRegion
         _fieldTilesets = GeneratedFieldTilesets.ForPackage(source.Directory);
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_SEAFOAM_ISLANDS_1F" => new("map.seafoam-islands-1f"),
-        "MAP_SEAFOAM_ISLANDS_B1F" => new("map.seafoam-islands-b1f"),
-        "MAP_SEAFOAM_ISLANDS_B2F" => new("map.seafoam-islands-b2f"),
-        "MAP_SEAFOAM_ISLANDS_B3F" => new("map.seafoam-islands-b3f"),
-        "MAP_SEAFOAM_ISLANDS_B4F" => new("map.seafoam-islands-b4f"),
-        "MAP_ROUTE19" => new("map.route-19"), "MAP_ROUTE20" => new("map.route-20"),
-        "MAP_FUCHSIA_CITY" => new("map.fuchsia-city"), "MAP_CINNABAR_ISLAND" => new("map.cinnabar-island"),
-        _ => throw new InvalidDataException("Unknown Seafoam map symbol: " + symbol)
-    };
-
     public PretWorldMap SeafoamMap(MapId map, bool currentStopped) => currentStopped && map.Value is "map.seafoam-islands-b3f" or "map.seafoam-islands-b4f"
         ? LayoutVariants[map.Value == "map.seafoam-islands-b3f" ? "LAYOUT_SEAFOAM_ISLANDS_B3F_CURRENT_STOPPED" : "LAYOUT_SEAFOAM_ISLANDS_B4F_CURRENT_STOPPED"]
         : NewMaps[map];

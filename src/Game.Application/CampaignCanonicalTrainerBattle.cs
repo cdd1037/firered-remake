@@ -24,27 +24,6 @@ public static class CampaignTrainerReadProjection
 
 public sealed partial class CampaignSession
 {
-    private static ImmutableArray<WildBattleEvent> ProjectTrainerWildEvents(ImmutableArray<SourceBattleEvent> events, SourceBattleFrame? previous = null)
-    {
-        var result = ImmutableArray.CreateBuilder<WildBattleEvent>();
-        foreach (var e in events)
-        {
-            if (e is SourceRewardAppliedEvent or SourceRewardLearningEvent or SourceOpponentRewardCompletedEvent or
-                SourceTrainerStartedEvent or SourceTrainerOpponentSelectedEvent or SourceTrainerShiftOfferedEvent or
-                SourceReplacementRequiredEvent { Slot.Value: 1 }) continue;
-            result.Add(SourceBattleEventAdapter.Export(e));
-            if (e is SourceCalledPartySwitchedEvent { Side.Value: 0, Replacement: { } replacement } switched &&
-                switched.Kind != WildBattleCalledSwitchKind.Forced)
-            {
-                var outgoing = previous is not null ? SourceBattleReadProjection.Combatant(previous, new(0)) : throw new InvalidDataException("trainer_switch_display_previous");
-                result.Add(switched.Kind == WildBattleCalledSwitchKind.FaintedReplacement
-                    ? new WildBattlePlayerReplacedEvent(e.Sequence, e.Turn, outgoing, replacement.Body)
-                    : new WildBattlePlayerSwitchedEvent(e.Sequence, e.Turn, outgoing, replacement.Body));
-            }
-        }
-        return result.ToImmutable();
-    }
-
     private static ImmutableArray<ForestTrainerCombatEvent> ProjectTrainerEvents(SourceBattleFrame frame, ImmutableArray<SourceBattleEvent> events, SourceBattleFrame? previous = null)
     {
         var result = ImmutableArray.CreateBuilder<ForestTrainerCombatEvent>();
@@ -115,7 +94,7 @@ public sealed partial class CampaignSession
             if (!sent.Contains(switched.IncomingIndex)) sent = sent.Add(switched.IncomingIndex);
             seen = seen.Add(result.State.Party(BattleSide.Opponent).Members[switched.IncomingIndex].Pokemon.SourceSpeciesId);
         }
-        b = b with { DisplayBatch = BeginDisplayBatch(b), Frame = result.State, SourceEvents = result.Events, Events = ProjectTrainerWildEvents(result.Events, trainer.Frame), EventIndex = 0,
+        b = b with { DisplayBatch = BeginDisplayBatch(b), Frame = result.State, Events = result.Events, EventIndex = 0, SwitchDisplay = null,
             Phase = CampaignBattlePhase.Events, Pages = pages.ToImmutable(), PageIndex = 0,
             Replacement = null, RandomTrace = b.RandomTrace.AddRange(result.Trace),
             LastSwitch = result.Events.OfType<SourceCalledPartySwitchedEvent>().Any(e => e.Side.Value == 0 && e.Kind != WildBattleCalledSwitchKind.Voluntary) ? null : b.LastSwitch };

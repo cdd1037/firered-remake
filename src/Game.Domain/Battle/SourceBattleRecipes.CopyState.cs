@@ -5,12 +5,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasCopyStateRecipe(string effect) => effect is "EFFECT_TRANSFORM" or "EFFECT_MIMIC" or "EFFECT_SKETCH";
-    internal abstract void CopyChosenUnavailable(bool transform);
-    internal abstract MoveId? CopyLastPrintedMove(BattlerSlot target);
-    internal virtual bool CopyNoAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal bool CopyNoAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         CalledSureHit(actor, target) || SemiInvulnerable(target) == WildBattleSemiInvulnerable.None &&
             !(Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"));
 

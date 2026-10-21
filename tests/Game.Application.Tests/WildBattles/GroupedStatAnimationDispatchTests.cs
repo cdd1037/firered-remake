@@ -18,8 +18,8 @@ public sealed class GroupedStatAnimationDispatchTests
             events, index, [], [], 0, 0, [], [], [], [], 0);
 
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 1) =>
-        new("grouped-stat", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),
-            index, null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("grouped-stat", null!, new(), events,
+            index, null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static MoveId Move(int id) => new(id switch
     {

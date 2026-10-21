@@ -3,6 +3,8 @@
 import argparse,importlib.util,json,re,struct,sys,unittest
 from pathlib import Path
 from PIL import Image
+from unittest.mock import patch
+from indexed_material_expectations import decode_indexed
 sys.dont_write_bytecode=True
 p=argparse.ArgumentParser(add_help=False);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2]);p.add_argument('--reference',type=Path);p.add_argument('--generated',type=Path);a,rest=p.parse_known_args();sys.argv=[sys.argv[0],*rest]
 ROOT=a.root;REFERENCE=a.reference or ROOT/'content/raw/pokefirered/037335f4';GENERATED=a.generated or ROOT/'content/generated/battle/animations'
@@ -13,8 +15,8 @@ class ElectricWispImportTests(unittest.TestCase):
  def setUpClass(cls):
   cls.pack=json.loads((GENERATED/'elemental.json').read_text());cls.roots={r['moveId']:r for r in cls.pack['scripts']};cls.recipes={r['template']:r for r in cls.pack['spriteRecipes']};cls.importer=module('electric_wisp_importer',ROOT/'scripts/imports/battle/import-source-elemental-animations.py');cls.source=(REFERENCE/'data/battle_anim_scripts.s').read_text()
  def test_exact_source_roots_commands_and_callback_sounds(self):
-  self.assertEqual({261,268,351},set(self.roots)&{209,261,268,344,351});lines=self.source.splitlines()
-  for move in [261,268,351]:
+  self.assertTrue({261,268,351}<=set(self.roots));lines=self.source.splitlines()
+  for move in [209,261,268,344,351]:
    root=self.roots[move];commands=root['commands']+[c for label in {r['args'][0] for r in root['commands'] if r['op']=='call'} for c in self.pack['subroutines'][label]]
    for c in commands:
     op,*tail=lines[c['line']-1].split('@',1)[0].strip().split(None,1);args=[v.strip() for v in re.split(r',\s*(?![^()]*\))',tail[0])] if tail else [];self.assertEqual((op,args),(c['op'],c['args']))
@@ -36,7 +38,7 @@ class ElectricWispImportTests(unittest.TestCase):
    with Image.open(REFERENCE/'graphics/battle_anims/sprites'/f'{stem}.png') as im:
     self.assertEqual(('P',size),(im.mode,im.size));indices=list(im.tobytes());tiled=[im.getpixel((x+dx,y+dy)) for y in range(0,size[1],8) for x in range(0,size[0],8) for dy in range(8) for dx in range(8)]
    with Image.open(REFERENCE/'graphics/battle_anims/sprites'/f'{pal}.png') as im:palette=im.getpalette()[:48]
-   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual(size,(row['width'],row['height']));self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertEqual(struct.pack('<HH',*size)+struct.pack('<'+str(len(indices))+'H',*[colors[i]|(0x8000 if i else 0) for i in indices]),(GENERATED/('elemental-'+stem.replace('_','-')+'.rgb555')).read_bytes())
+   colors=[sum((palette[i*3+c]//8)<<(5*c) for c in range(3)) for i in range(16)];self.assertEqual('ANIM_TAG_'+stem.upper(),row['paletteTag']);self.assertEqual(size,(row['width'],row['height']));self.assertEqual(bytes(tiled[i]|tiled[i+1]<<4 for i in range(0,len(tiled),2)),(GENERATED/row['indicesPath']).read_bytes());self.assertEqual(struct.pack('<16H',*colors),(GENERATED/row['palettePath']).read_bytes());self.assertFalse(any(r['id']==stem.replace('_','-') for r in self.pack['assets']));self.assertEqual(tuple(colors[i]|32768 if i else 0 for i in indices),decode_indexed(*size,(GENERATED/row['indicesPath']).read_bytes(),(GENERATED/row['palettePath']).read_bytes()))
  def test_source_sprite_registration_and_palette_aliases_are_exact(self):
   registration=(REFERENCE/'src/data/battle_anim.h').read_text();graphics=(REFERENCE/'src/graphics.c').read_text()
   for stem,symbol,size,palette in [('electric_orbs','ElectricOrbs','0080','ElectricOrbs'),('electricity','Electricity','0800','ElectricOrbs'),('wisp_orb','WispOrb','0380','WispOrb'),('wisp_fire','WispFire','0800','WispOrb')]:
@@ -44,5 +46,11 @@ class ElectricWispImportTests(unittest.TestCase):
  def test_discovery_never_requires_or_rewrites_generated_materials(self):
   rows,subs=self.importer.discover_scripts(REFERENCE);actual={r['moveId']:r for r in rows}
   for move in [261,268,351]:self.assertEqual(self.roots[move],actual[move])
-  self.assertNotIn(209,actual);self.assertNotIn(344,actual)
+  self.assertEqual(set(self.roots),set(actual))
+  # Discovery is source-only and rejects an unsupported command in a supported root.
+  original=self.importer.read;source=original(REFERENCE,'data/battle_anim_scripts.s');marker=b'Move_WILL_O_WISP:\n';self.assertEqual(1,source.count(marker))
+  changed=source.replace(marker,marker+b'\tunreviewed_command 0\n')
+  with patch.object(self.importer,'read',side_effect=lambda ref,path:changed if path=='data/battle_anim_scripts.s' else original(ref,path)):
+   rejected,_=self.importer.discover_scripts(REFERENCE)
+  self.assertEqual(set(actual)-{261},{r['moveId'] for r in rejected})
 if __name__=='__main__':unittest.main()

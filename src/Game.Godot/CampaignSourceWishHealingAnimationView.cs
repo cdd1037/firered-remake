@@ -16,7 +16,7 @@ public partial class CampaignView
         else if(PresentedWildBattle is {} b)
         {
             dispatch=CampaignWishHealingAnimationPresentation.AtResult(b,SourceTrainerPresentationActive(b),_session.EffectiveOptions.BattleScene,_sourceResultEntryCharge);
-            if(dispatch is not null&&(WildCurrentEvent(b) is not WildBattleCalledDelayedEvent delayed||!CampaignWishResolutionPresentation.CasterAvailable(b.Frame,dispatch.Affected,delayed.SourcePartyIndex)))return null;
+            if(dispatch is not null&&(WildCurrentEvent(b) is not SourceCalledDelayedEvent delayed||!CampaignWishResolutionPresentation.CasterAvailable(b.Frame,dispatch.Affected,delayed.SourcePartyIndex)))return null;
         }
         else return null;
         if(dispatch is null)return null;

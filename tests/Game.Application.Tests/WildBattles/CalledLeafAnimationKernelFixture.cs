@@ -128,7 +128,7 @@ internal static class CalledLeafAnimationKernelFixture
             Assert.IsNull(Project(events, i, single, atResult, SourceBattleScene.Off).Dispatch);
             if (single)
             {
-                var legacy = Envelope.Single(events, i) with { SourceEvents = [] };
+                var legacy = Envelope.Single(events, i);
                 Assert.AreEqual(decision, atResult ? AnimationDispatchFixture.AtResult(legacy, true, SourceBattleScene.On)
                     : AnimationDispatchFixture.AtAttackText(legacy, true, SourceBattleScene.On));
                 Assert.IsNull(atResult ? AnimationDispatchFixture.AtResult(legacy, false, SourceBattleScene.On).Dispatch

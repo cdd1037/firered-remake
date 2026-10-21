@@ -14,7 +14,7 @@ public sealed record PendingEarlyLandEncounter(EarlyLandEncounterCandidate Candi
 /// <summary>Field-effect input. Unbound checks accept only Stench/Illuminate/Cleanse Tag
 /// and NONE; catalog-bound checks also authenticate and normalize full lead identifiers.</summary>
 public sealed record EarlyLandEncounterProfile(
-    string RulesVersion = EarlyLandEncounterRules.RulesVersion,
+    string RulesVersion = EarlyLandEncounterRules.FiveIslandRulesVersion,
     EncounterMovementMode Movement = EncounterMovementMode.Walking,
     ushort RepelSteps = 0,
     string LeadAbility = "ABILITY_NONE",
@@ -27,22 +27,20 @@ public sealed record EarlyLandEncounterProfile(
     string Weather = "WEATHER_NONE")
 {
     public static EarlyLandEncounterProfile OrdinaryWalking { get; } = new();
-    public static EarlyLandEncounterProfile MtMoonWalking { get; } = new(RulesVersion: EarlyLandEncounterRules.MtMoonRulesVersion);
-    public static EarlyLandEncounterProfile Route22Walking { get; } = new(RulesVersion: EarlyLandEncounterRules.Route22RulesVersion);
 }
 
 /// <summary>Resolve field scripts, trainer sight and warps before emitting a completed field check.</summary>
 public sealed record EarlyLandEncounterCheck(MapId Map, EncounterCheckTrigger Trigger,
     byte MetatileBehavior, EncounterTileType EncounterType);
 
-/// <summary>A separately versioned process; old Route 1 saves are not reinterpreted as this state.</summary>
+/// <summary>Current walking process state, including pending candidate and source cooldown cache.</summary>
 public sealed record EarlyLandEncounterState(
     EncounterRateRngState RateRng,
     ushort PreviousMetatileBehavior = 0,
     ushort EncounterRateBuff = 0,
     byte StepsSinceLastEncounter = 0,
     PendingEarlyLandEncounter? Pending = null,
-    string RulesVersion = EarlyLandEncounterRules.RulesVersion)
+    string RulesVersion = EarlyLandEncounterRules.FiveIslandRulesVersion)
 {
     // Source HandleWildEncounterCooldown caches the lead held item before its cooldown roll.
     // RockSmashWildEncounter reads that cache without resampling the party.

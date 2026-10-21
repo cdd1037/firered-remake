@@ -13,10 +13,10 @@ public sealed class PretCyclingRoadRegion
 {
     public static MapId Route17MapId { get; } = new("map.route-17");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public CyclingRoadTrainerCatalog Trainers { get; }
+    public OrdinaryTrainerCatalog Trainers { get; }
     public ImmutableArray<EarlyLandEncounterTable> LandEncounters { get; }
 
-    private PretCyclingRoadRegion(ImmutableDictionary<MapId, PretWorldMap> maps, CyclingRoadTrainerCatalog trainers, string directory,
+    private PretCyclingRoadRegion(ImmutableDictionary<MapId, PretWorldMap> maps, OrdinaryTrainerCatalog trainers, string directory,
         ImmutableArray<EarlyLandEncounterTable> landEncounters)
     {
         NewMaps = maps;
@@ -28,16 +28,6 @@ public sealed class PretCyclingRoadRegion
         map.Value is "map.route-16" or "map.route-17" or "map.route-18" or
             "map.route-16-north-entrance-1f" or "map.route-18-east-entrance-1f";
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_ROUTE16" => new("map.route-16"),
-        "MAP_ROUTE17" => Route17MapId,
-        "MAP_ROUTE18" => new("map.route-18"),
-        _ => throw new InvalidDataException("cycling_road_map_symbol:" + symbol)
-    };
-
-
-
     public static PretCyclingRoadRegion Load(PretCurrentWorld world)
     {
         var root = world.ProjectRoot;
@@ -45,9 +35,8 @@ public sealed class PretCyclingRoadRegion
         var maps = world.MapsInDirectory(source.Directory);
         var doc = JsonSerializer.Deserialize<FiveIslandTrainerDocument>(source.Read("trainers.json"),
             SharedTrainerCatalog.Options(root)) ?? throw new InvalidDataException("cycling_road_trainers_missing");
-        var trainers = new CyclingRoadTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id),
-            doc.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
-        CyclingRoadTrainerPartyFactory.ValidateCatalog(trainers);
+        var trainers = new OrdinaryTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id),
+            doc.Battles, "cycling-road-trainer");
         var land = ContentJson.ParseStrict<ImmutableArray<EarlyLandEncounterTable>>(
             System.Text.Encoding.UTF8.GetString(source.Read("land-encounters.json")), ContentJson.CreateOptions());
         if (land.IsDefaultOrEmpty ||

@@ -3,7 +3,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasAbilityExchangeRecipe(string effect) => effect is "EFFECT_ROLE_PLAY" or "EFFECT_SKILL_SWAP";
 

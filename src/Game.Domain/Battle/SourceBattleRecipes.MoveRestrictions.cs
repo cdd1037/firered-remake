@@ -4,11 +4,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasMoveRestrictionRecipe(string effect) => effect is "EFFECT_ENCORE" or "EFFECT_IMPRISON" || HasSelectedVolatileRecipe(effect);
-    internal abstract ulong MoveRestrictionRngCursor { get; }
-    internal virtual bool EncoreAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
+    internal bool EncoreAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
         SourceGenericAccuracy(actor, target, move, purpose);
 
     internal void ExecuteMoveRestriction(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move, string purpose)
@@ -61,7 +60,7 @@ internal abstract partial class SourceRecipeContext
     }
 }
 
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
     internal void EncoreResidual(BattlerSlot slot)
     {

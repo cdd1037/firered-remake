@@ -36,7 +36,7 @@ public sealed class BattleMoveOrderApplicationTests : WildBattleFixture
         var stale = session.Execute("replayed-selection", session.Revision, command);
         Assert.AreEqual(CommandStatus.Rejected, stale.Status); Assert.AreSame(after, session.State);
         Send(session, new("battle_move", MoveSlot: 0));
-        Assert.IsTrue(session.State.WildBattle!.Events.OfType<WildBattleMoveUsedEvent>().Any(e => e.Move.Value == "pret:MOVE_TACKLE"));
+        Assert.IsTrue(session.State.WildBattle!.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Move.Value == "pret:MOVE_TACKLE"));
     }
 
     [TestMethod]

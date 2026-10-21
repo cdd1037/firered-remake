@@ -30,14 +30,9 @@ internal static class SourceHitItemRules
         receipt.Damage is >= 0 and <= 65535 && receipt.Physical is >= 0 and <= 65535 && receipt.Special is >= 0 and <= 65535 && receipt != new SourceHitDamageReceipt();
 }
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
-    internal virtual SourceHitDamageReceipt HitItemReceipt(BattlerSlot slot) => new();
-    internal virtual void SetHitItemReceipt(BattlerSlot slot, SourceHitDamageReceipt receipt) =>
-        throw new SourceRecipeUnsupported("source_kernel_hit_items_not_migrated");
-    internal virtual void HitItemsCommandDamage(int damage, bool noEffect = false) { }
-    internal virtual void HitItemsConfusionDamage(BattlerSlot actor, int damage) { }
-    internal virtual void HitItemsPerHitMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) { }
+    internal void HitItemsPerHitMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) { }
     internal void RecordHitItemDamage(BattlerSlot target, int lost, bool substitute, bool noEffect, bool physical)
     {
         if (SourceHeldDamageEnabled) SetHitItemReceipt(target, SourceHitItemRules.Record(HitItemReceipt(target), lost, substitute, noEffect, physical));

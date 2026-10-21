@@ -19,9 +19,9 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static ImmutableArray<FieldPickupDefinition> LostCavePickupDefinitions(PretLostCaveRegion region,EarlyShopCatalog shop,PretStoryCompilation scripts)
+    private static ImmutableArray<FieldPickupDefinition> LostCavePickupDefinitions(PretLostCaveRegion region,Func<string, MapId> resolveMap,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
-        return SourceRegionPickupDefinitions(region.NewMaps, region.Items, region.Contracts, PretLostCaveRegion.MapIdFromSourceSymbol,
+        return SourceRegionPickupDefinitions(region.NewMaps, region.Items, region.Contracts, resolveMap,
             "lost-cave", shop, scripts);
     }
 }

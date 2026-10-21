@@ -4,7 +4,6 @@ using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 using Game.Domain.Randomness;
-using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
 using Game.Domain.World;
 
@@ -70,7 +69,7 @@ public sealed partial class CampaignSession
         }
         if(effect.Opcode=="settrainerflag"&&effect.Source.Path=="data/scripts/set_gym_trainers.inc"&&effect.Source.Symbol=="EventScript_SetVermilionGymTrainers")
         {
-            if(a.Length!=1||!VermilionGymTrainerPartyFactory.SupportedTrainers.Any(id=>id.Value=="pret:"+a[0])||a[0]=="TRAINER_LEADER_LT_SURGE"||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))
+            if(a.Length!=1||!TrainersOnMap(new(VermilionGymMap)).Any(id=>id.Value=="pret:"+a[0])||a[0]=="TRAINER_LEADER_LT_SURGE"||!state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"))
                 throw new InvalidDataException("vermilion_gym_trainer_flag_context");
             next=state with{BattledTrainers=state.BattledTrainers.Add("pret:"+a[0])};return true;
         }
@@ -97,9 +96,9 @@ public sealed partial class CampaignSession
     private string? ValidateVermilionGymProgress(CampaignState state)
     {
         bool both=state.Script.Flags.GetValueOrDefault(GymBothSwitches),badge=state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET");
-        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId==VermilionGymTrainerPartyFactory.LtSurge.Value&&h.Outcome==WildBattleOutcome.Won);
+        bool won=(state.ForestTrainerHistory??[]).Any(h=>h.TrainerId=="pret:TRAINER_LEADER_LT_SURGE"&&h.Outcome==WildBattleOutcome.Won);
         if(badge!=won||state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_LT_SURGE")!=won||won&&!both)return "save_surge_badge_history_mismatch";
-        if(won&&VermilionGymTrainerPartyFactory.SupportedTrainers.Any(id=>!state.BattledTrainers.Contains(id.Value)))return "save_surge_trainer_flags_missing";
+        if(won&&TrainersOnMap(new(VermilionGymMap)).Any(id=>!state.BattledTrainers.Contains(id.Value)))return "save_surge_trainer_flags_missing";
         bool got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_TM34_FROM_SURGE");int count=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],SurgeMachine);
         if(got&&!won||!got&&count!=0||count>1)return "save_surge_tm_reward_mismatch";
         if(state.World.Player.MapId.Value!=VermilionGymMap)return null;

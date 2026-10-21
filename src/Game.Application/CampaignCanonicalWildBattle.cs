@@ -55,10 +55,6 @@ public sealed partial class CampaignSession
             _content.MapDefinition(state.World.Player.MapId).RegionMapSection),Metadata=state.Party.Select((p,i)=>new SourceRewardMetadata(
                 new(BattleSide.Player,i),p.OriginalTrainerName,p.MetLocation,p.Ball,SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray()}
     };
-    private static ImmutableArray<WildBattleEvent> ProjectCanonicalWildEvents(ImmutableArray<SourceBattleEvent> events)=>
-        events.Where(e=>e is not (SourceRewardAppliedEvent or SourceRewardLearningEvent or SourceOpponentRewardCompletedEvent))
-            .Select(SourceBattleEventAdapter.Export).ToImmutableArray();
-
     private Decision<CampaignState> CommitCanonicalWildResult(CampaignState state,SourceFourActionResult result,bool resetTrace=false)
     {
         if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
@@ -86,7 +82,7 @@ public sealed partial class CampaignSession
                     ("B_BUFF1", PokemonName(state.Party[learned.Recipient.Index])), ("B_BUFF2", BattleContent.MoveNames[learned.Candidate.Move.Value])))
                     pages.Add(new(text,null,learned.Recipient.Index));
         }
-        var next=b with{DisplayBatch=BeginDisplayBatch(b),Frame=result.State,SourceEvents=result.Events,Events=ProjectCanonicalWildEvents(result.Events),EventIndex=0,
+        var next=b with{DisplayBatch=BeginDisplayBatch(b),Frame=result.State,Events=result.Events,EventIndex=0,SwitchDisplay=null,
             Phase=CampaignBattlePhase.Events,Pages=pages.ToImmutable(),PageIndex=0,
             LastSwitch=result.Events.OfType<SourceCalledPartySwitchedEvent>().Any(e=>e.Side.Value==0&&e.Kind!=WildBattleCalledSwitchKind.Voluntary)?null:b.LastSwitch,
             ExperienceGained=checked(b.ExperienceGained+result.Events.OfType<SourceRewardAppliedEvent>().Sum(e=>e.Reward.ExperienceCredited)),

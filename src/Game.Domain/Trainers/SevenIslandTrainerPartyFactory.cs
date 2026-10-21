@@ -2,31 +2,11 @@ using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
-using Game.Domain.WildBattle;
 namespace Game.Domain.Trainers;
 
 /// <summary>Exact original singles and preset doubles through the existing trainer construction kernel.</summary>
 public static class SevenIslandTrainerPartyFactory
 {
-    public static readonly ImmutableHashSet<TrainerId> TrainerIds = ImmutableHashSet.CreateRange<TrainerId>([
-        new("pret:TRAINER_CRUSH_GIRL_CYNDY"),
-        new("pret:TRAINER_TAMER_EVAN"),
-        new("pret:TRAINER_PKMN_RANGER_JACKSON"),
-        new("pret:TRAINER_PKMN_RANGER_KATELYN"),
-        new("pret:TRAINER_COOLTRAINER_LEROY"),
-        new("pret:TRAINER_COOLTRAINER_MICHELLE"),
-        new("pret:TRAINER_COOL_COUPLE_LEX_NYA"),
-        new("pret:TRAINER_AROMA_LADY_MIAH"),
-        new("pret:TRAINER_YOUNG_COUPLE_EVE_JON"),
-        new("pret:TRAINER_PKMN_RANGER_NICOLAS"),
-        new("pret:TRAINER_PKMN_RANGER_MADELINE"),
-        new("pret:TRAINER_JUGGLER_MASON"),
-        new("pret:TRAINER_RUIN_MANIAC_BRANDON"),
-        new("pret:TRAINER_RUIN_MANIAC_BENJAMIN"),
-        new("pret:TRAINER_PAINTER_EDNA"),
-        new("pret:TRAINER_GENTLEMAN_CLIFFORD"),
-        new("pret:TRAINER_PSYCHIC_DARIO"),
-        new("pret:TRAINER_PSYCHIC_RODETTE")]);
     public static readonly ImmutableHashSet<string> BattleScripts = ImmutableHashSet.Create<string>(StringComparer.Ordinal,
         "SevenIsland_SevaultCanyon_EventScript_Cyndy",
         "SevenIsland_SevaultCanyon_EventScript_Evan",
@@ -48,7 +28,26 @@ public static class SevenIslandTrainerPartyFactory
         "SevenIsland_TanobyRuins_EventScript_Clifford",
         "SevenIsland_TrainerTower_EventScript_Dario",
         "SevenIsland_TrainerTower_EventScript_Rodette");
-    public static ImmutableArray<TrainerId> AllTrainers { get; } = [new("pret:TRAINER_CRUSH_GIRL_CYNDY"), new("pret:TRAINER_TAMER_EVAN"), new("pret:TRAINER_PKMN_RANGER_JACKSON"), new("pret:TRAINER_PKMN_RANGER_KATELYN"), new("pret:TRAINER_COOLTRAINER_LEROY"), new("pret:TRAINER_COOLTRAINER_MICHELLE"), new("pret:TRAINER_COOL_COUPLE_LEX_NYA"), new("pret:TRAINER_AROMA_LADY_MIAH"), new("pret:TRAINER_YOUNG_COUPLE_EVE_JON"), new("pret:TRAINER_PKMN_RANGER_NICOLAS"), new("pret:TRAINER_PKMN_RANGER_MADELINE"), new("pret:TRAINER_JUGGLER_MASON"), new("pret:TRAINER_RUIN_MANIAC_BRANDON"), new("pret:TRAINER_RUIN_MANIAC_BENJAMIN"), new("pret:TRAINER_PAINTER_EDNA"), new("pret:TRAINER_GENTLEMAN_CLIFFORD"), new("pret:TRAINER_PSYCHIC_DARIO"), new("pret:TRAINER_PSYCHIC_RODETTE")];
+    public static ImmutableArray<TrainerId> AllTrainers { get; } = [
+        new("pret:TRAINER_CRUSH_GIRL_CYNDY"),
+        new("pret:TRAINER_TAMER_EVAN"),
+        new("pret:TRAINER_PKMN_RANGER_JACKSON"),
+        new("pret:TRAINER_PKMN_RANGER_KATELYN"),
+        new("pret:TRAINER_COOLTRAINER_LEROY"),
+        new("pret:TRAINER_COOLTRAINER_MICHELLE"),
+        new("pret:TRAINER_COOL_COUPLE_LEX_NYA"),
+        new("pret:TRAINER_AROMA_LADY_MIAH"),
+        new("pret:TRAINER_YOUNG_COUPLE_EVE_JON"),
+        new("pret:TRAINER_PKMN_RANGER_NICOLAS"),
+        new("pret:TRAINER_PKMN_RANGER_MADELINE"),
+        new("pret:TRAINER_JUGGLER_MASON"),
+        new("pret:TRAINER_RUIN_MANIAC_BRANDON"),
+        new("pret:TRAINER_RUIN_MANIAC_BENJAMIN"),
+        new("pret:TRAINER_PAINTER_EDNA"),
+        new("pret:TRAINER_GENTLEMAN_CLIFFORD"),
+        new("pret:TRAINER_PSYCHIC_DARIO"),
+        new("pret:TRAINER_PSYCHIC_RODETTE")];
+    public static readonly ImmutableHashSet<TrainerId> TrainerIds = AllTrainers.ToImmutableHashSet();
     public static ImmutableArray<TrainerId> SupportedTrainers => AllTrainers;
     public static int BasePrize(SevenIslandTrainerCatalog trainers, TrainerId id)
     {

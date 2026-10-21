@@ -46,14 +46,7 @@ public partial class CampaignView
     private void VerifySeafoamMoveGeometry()
     {
         if (_seafoamArt is not { } art) return;
-        foreach (var row in art.Manifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray())
-        {
-            var key = (row.GetProperty("species").GetInt32(), row.GetProperty("side").GetString()!);
-            if (!_sourceBattlerGeometry.TryGetValue(key, out var actual) || actual.YOffset != row.GetProperty("yOffset").GetInt32() ||
-                actual.Elevation != row.GetProperty("elevation").GetInt32() || actual.SourceWidth != row.GetProperty("sourceWidth").GetInt32() ||
-                actual.SourceHeight != row.GetProperty("sourceHeight").GetInt32())
-                throw new InvalidDataException("Seafoam inherited move geometry differs.");
-        }
+        VerifyInheritedMoveGeometry(art.Manifest, "Seafoam");
     }
     private void DisposeSeafoamPresentation()
     {

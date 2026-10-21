@@ -1,3 +1,4 @@
+using static FireRed.Tests.Application.WildBattles.DirectHitAnimationFixture;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Game.Application;
@@ -15,105 +16,25 @@ public sealed class BoneMoveAnimationDispatchTests
 {
     private static readonly MoveId Club = Id("BONE_CLUB");
     private static readonly MoveId Rush = Id("BONE_RUSH");
-    private static MoveId Id(string name) => new("pret:MOVE_" + name);
-    private static SourceMechanicsCatalog Mechanics =>
-        TestAssets.Cached(() => SourceMechanicsCatalogLoader.LoadAuthenticated(TestAssets.Root));
-    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
-        new("bone-moves", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
-            events, index, [], [], 0, 0, [], [], [], [], 0);
-    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 0) =>
-        new("bone-moves", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(), index,
-            null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
-    private static CampaignMoveAnimationDecision AtHit(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtResult(Double(events, index), SourceBattleScene.On);
-    private static CampaignMoveAnimationDecision AtText(ImmutableArray<SourceBattleEvent> events, int index) =>
-        AnimationDispatchFixture.AtAttackText(Double(events, index), SourceBattleScene.On);
-    private static ImmutableArray<SourceBattleEvent> Number(IEnumerable<SourceBattleEvent> events) =>
-        events.Select((e, i) => e with { Sequence = i + 1 }).ToImmutableArray();
-    private static SourceBattleEvent[] Hits(ImmutableArray<SourceBattleEvent> events) =>
-        events.Where(e => e is SourceHpChangedEvent or SourceSubstituteDamagedEvent).ToArray();
+    private static readonly DirectHitAnimationContract ClubContract = new("bone-moves", 125, Id("BONE_CLUB"), 20, DirectHitOwnership.AttackText);
+    private static readonly DirectHitAnimationContract RushContract = new("bone-moves", 198, Id("BONE_RUSH"), 10, DirectHitOwnership.EachHit, 2, 5);
 
-    private static ImmutableArray<SourceBattleEvent> Group(bool rush, int actor = 0, int? target = null,
-        int planned = 3, int? actual = null)
-    {
-        var move = rush ? Rush : Club; var a = new BattlerSlot(actor); var t = new BattlerSlot(target ?? (actor ^ 1));
-        int count = rush ? actual ?? planned : 1; int pp = rush ? 10 : 20;
-        List<SourceBattleEvent> events = [
-            new SourceAttackStringEvent(0, 7, a, move, move),
-            new SourceMoveUsedEvent(0, 7, a, t, 0, move, pp, pp - 1),
-            new SourcePpCommandEvent(0, 7, a, t, 0, move, move, pp, pp - 1, 1, 0) { PpOwner = a }];
-        for (int ordinal = 0; ordinal < count; ordinal++)
-            events.Add(new SourceHpChangedEvent(0, 7, a, t, move, 100 - 5 * ordinal, 95 - 5 * ordinal, 5, false, 100));
-        if (rush) events.Add(new SourceMultiHitEvent(0, 7, a, t, move, planned, count));
-        return Number(events);
-    }
+    private static CampaignDoubleBattle Double(ImmutableArray<SourceBattleEvent> events, int index = 0) => ClubContract.Double(events, index);
+    private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index = 0) => ClubContract.Single(events, index);
+    private static CampaignMoveAnimationDecision AtHit(ImmutableArray<SourceBattleEvent> events, int index = 0) => ClubContract.AtHit(events, index);
+    private static CampaignMoveAnimationDecision AtText(ImmutableArray<SourceBattleEvent> events, int index = 0) => ClubContract.AtText(events, index);
 
-    private static void AssertRush(ImmutableArray<SourceBattleEvent> events, int actor, int target)
-    {
-        var summary = events.OfType<SourceMultiHitEvent>().Single();
-        Assert.AreEqual(Rush, summary.Move);
-        Assert.IsTrue(summary.PlannedHits is >= 2 and <= 5);
-        Assert.IsTrue(summary.ActualHits >= 1 && summary.ActualHits <= summary.PlannedHits);
-        Assert.AreEqual(summary.ActualHits, Hits(events).Length);
-        var attack = events.OfType<SourceAttackStringEvent>().Single();
-        var pp = events.OfType<SourcePpCommandEvent>().Single();
-        string before = JsonSerializer.Serialize(events); int ordinal = 0;
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(AtText(events, index).Dispatch, "Rush must never acquire an extra attack-text playback.");
-            var decision = AtHit(events, index);
-            if (events[index] is not (SourceHpChangedEvent or SourceSubstituteDamagedEvent))
-            {
-                Assert.IsNull(decision.Dispatch, events[index].GetType().Name); continue;
-            }
-            var dispatch = decision.Dispatch; Assert.IsNotNull(dispatch, decision.Reason);
-            Assert.AreEqual(198, dispatch.SourceMoveId); Assert.AreEqual("bone-moves", dispatch.BattleId);
-            Assert.AreEqual(actor, dispatch.Actor.Value); Assert.AreEqual(target, dispatch.Target.Value);
-            Assert.AreEqual(events[index].Sequence, dispatch.Sequence);
-            Assert.AreEqual(events[index].Sequence, dispatch.ResultSequence);
-            Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
-            Assert.AreEqual((byte)ordinal++, dispatch.MoveTurn);
-            Assert.AreEqual(events[index] is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-            Assert.IsFalse(dispatch.AcknowledgesCurrentReceipt);
-            Assert.AreEqual(decision, AtHit(events, index));
-        }
-        Assert.AreEqual(summary.ActualHits, ordinal);
-        Assert.AreEqual(before, JsonSerializer.Serialize(events), "Presentation cannot mutate committed receipts.");
-    }
+    private static ImmutableArray<SourceBattleEvent> Group(bool rush, int actor = 0, int? target = null, int planned = 3, int? actual = null) =>
+        (rush ? RushContract : ClubContract).Group(actor, target, planned, actual);
 
-    private static void AssertClub(ImmutableArray<SourceBattleEvent> events, int actor, int target)
-    {
-        var hit = Hits(events).Single(); var used = events.OfType<SourceMoveUsedEvent>().Single();
-        var attack = events.OfType<SourceAttackStringEvent>().Single(); var pp = events.OfType<SourcePpCommandEvent>().Single();
-        string before = JsonSerializer.Serialize(events);
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(AtHit(events, index).Dispatch, "Club is single-hit and is owned by the attack-text page.");
-            var decision = AtText(events, index);
-            if (events[index] != used) { Assert.IsNull(decision.Dispatch); continue; }
-            var dispatch = decision.Dispatch; Assert.IsNotNull(dispatch, decision.Reason);
-            Assert.AreEqual(125, dispatch.SourceMoveId); Assert.AreEqual("bone-moves", dispatch.BattleId);
-            Assert.AreEqual(actor, dispatch.Actor.Value); Assert.AreEqual(target, dispatch.Target.Value);
-            Assert.AreEqual(used.Sequence, dispatch.Sequence); Assert.AreEqual(hit.Sequence, dispatch.ResultSequence);
-            Assert.AreEqual(attack.Sequence, dispatch.AttackSequence); Assert.AreEqual(pp.Sequence, dispatch.PpSequence);
-            Assert.IsNull(dispatch.MoveTurn); Assert.IsTrue(dispatch.AcknowledgesCurrentReceipt);
-            Assert.AreEqual(hit is SourceSubstituteDamagedEvent, dispatch.HitsSubstitute);
-            Assert.AreEqual(decision, AtText(events, index));
-        }
-        Assert.AreEqual(before, JsonSerializer.Serialize(events));
-    }
+    private static void AssertRush(ImmutableArray<SourceBattleEvent> events, int actor, int target) =>
+        RushContract.AssertDispatches(events, actor, target);
 
-    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string label, bool singles = false)
-    {
-        for (int index = 0; index < events.Length; index++)
-        {
-            Assert.IsNull(AtText(events, index).Dispatch, label + " attack-text " + index);
-            Assert.IsNull(AtHit(events, index).Dispatch, label + " hit-result " + index);
-            if (!singles) continue;
-            Assert.IsNull(AnimationDispatchFixture.AtAttackText(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
-            Assert.IsNull(AnimationDispatchFixture.AtResult(Single(events, index), true, SourceBattleScene.On).Dispatch, label);
-        }
-    }
+    private static void AssertClub(ImmutableArray<SourceBattleEvent> events, int actor, int target) =>
+        ClubContract.AssertDispatches(events, actor, target);
+
+    private static void AssertDenied(ImmutableArray<SourceBattleEvent> events, string label, bool singles = false) =>
+        ClubContract.AssertDenied(events, label, singles);
 
     [TestMethod]
     public void RushTwoThroughFivePlansUseOnlyActualReceiptOrdinalsForAllPositionsAndSelectedAllies()
@@ -283,34 +204,13 @@ public sealed class BoneMoveAnimationDispatchTests
         AssertClub(club.SetItem(3, new SourceSubstituteDamagedEvent(4, 7, a, t, Club, 1, 0, 10, false, 100)), 0, 1);
     }
 
-    private static WildBattleCombatant NaturalMon(string species, int level, string name)
-    {
-        var move = Id(name); var pokemon = SourcePokemonFactory.Create(Mechanics,
-            new(new("pret:SPECIES_" + species), level, 42, IvPolicy.Fixed(31), PersonalityPolicy.Fixed(0)), new(0)).Pokemon;
-        Assert.IsTrue(Mechanics.Catalog.Species[pokemon.Species].LevelUpMoves.Any(m => m.Move == move && m.Level <= level),
-            $"Natural source learnset required: {species}/{level}/{name}.");
-        int pp = Mechanics.Catalog.Moves[move].Pp;
-        return new(pokemon with { Moves = [new(move, pp, pp)] });
-    }
     private static WildBattleCombatant[] Bodies(bool rush, int actor)
     {
         var bodies = Enumerable.Range(0, 4).Select(_ => NaturalMon("SNORLAX", 100, "DEFENSE_CURL") with { SpeedStage = 0 }).ToArray();
         bodies[actor] = NaturalMon("CUBONE", rush ? 41 : 9, rush ? "BONE_RUSH" : "BONE_CLUB") with { AccuracyStage = 12, SpeedStage = 12 };
         return bodies;
     }
-    private static SourceBattleFrame Frame(WildBattleCombatant[] bodies, uint seed)
-    {
-        static WildBattleCalledPartyMember Member(WildBattleCombatant b) => new(b.Pokemon, b.HeldItem, WildBattleTransformationRules.PersistentStatus(b));
-        var frame = new SourceBattleFrame {
-            Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-            SourceMechanicsRulesVersion = SourceBattleKernel.Version, BattleKind = WildBattleCalledBattleKind.Trainer, Rng = new(31),
-            Parties = [new(BattleSide.Player, [Member(bodies[0]), Member(bodies[2])]), new(BattleSide.Opponent, [Member(bodies[1]), Member(bodies[3])])],
-            Slots = Enumerable.Range(0, 4).Select(i => new SourceBattleSlot(new(i), new((BattleSide)(i & 1), i / 2), 1, bodies[i])).ToImmutableArray()
-        };
-        var entry = SourceFourEntryAbilities.InitializeEntry(Mechanics.Catalog, frame, frame.Revision);
-        Assert.IsTrue(entry.Succeeded, entry.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(entry.State));
-        return entry.State with { Rng = new(seed) };
-    }
+
     private static SourceKernelResult DirectRush(SourceBattleFrame frame, int actor, int target)
     {
         Assert.AreEqual(Rush, frame.Slots[actor].Body!.Pokemon.Moves[0].Move);
@@ -318,24 +218,6 @@ public sealed class BoneMoveAnimationDispatchTests
             new(frame.Slots[actor].Occupant!.Value, frame.Revision, 0, new(target)));
         Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
         return result;
-    }
-    private static SourceFourActionResult OrderedAction(SourceBattleFrame frame, int actor, int target)
-    {
-        var selected = frame.Slots[actor].Body!.Pokemon.Moves[0].Move;
-        var choices = frame.Slots.Select(c => {
-            var move = Mechanics.Catalog.Moves[c.Body!.Pokemon.Moves[0].Move];
-            int recipient = c.Slot.Value == actor ? target : move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? c.Slot.Value : c.Slot.Value ^ 1;
-            return new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Move, 0, new(recipient));
-        }).ToImmutableArray();
-        var result = SourceFourActionTurns.BeginActions(Mechanics.Catalog, frame, frame.Revision, choices);
-        for (int step = 0; step < 12; step++)
-        {
-            Assert.IsTrue(result.Succeeded, result.Fault); Assert.IsNull(SourceBattleIdentityRules.Validate(result.State));
-            if (result.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Actor.Value == actor && e.Move == selected)) return result;
-            Assert.IsNotNull(result.Continuation, "The selected natural bone move must actually execute.");
-            result = SourceFourActionTurns.Advance(Mechanics.Catalog, result.State, result.Continuation.Value);
-        }
-        throw new InvalidOperationException("The selected bone move did not execute within one bounded public turn.");
     }
 
     [TestMethod]
@@ -345,7 +227,7 @@ public sealed class BoneMoveAnimationDispatchTests
         for (int actor = 0; actor < 4; actor++)
         foreach (int target in new[] { actor ^ 1, actor ^ 2 })
         {
-            var result = OrderedAction(Frame(Bodies(rush, actor), 31), actor, target);
+            var result = Ordered(Frame(Bodies(rush, actor), 31), actor, target);
             Assert.AreEqual(rush ? 1 : 0, result.Events.OfType<SourceMultiHitEvent>().Count());
             var pp = result.Events.OfType<SourcePpCommandEvent>().Single();
             Assert.AreEqual(rush ? 10 : 20, pp.Before); Assert.AreEqual(rush ? 9 : 19, pp.After); Assert.AreEqual(1, pp.CommandCost);
@@ -415,7 +297,7 @@ public sealed class BoneMoveAnimationDispatchTests
             bodies[target] = NaturalMon(species, 100, move) with { SpeedStage = 0 };
             if (branch == "levitate") Assert.AreEqual("ABILITY_LEVITATE", bodies[target].Pokemon.AbilityId);
             if (branch == "wonder-guard") Assert.AreEqual("ABILITY_WONDER_GUARD", bodies[target].Pokemon.AbilityId);
-            var result = OrderedAction(Frame(bodies, 31), actor, target);
+            var result = Ordered(Frame(bodies, 31), actor, target);
             if (rush)
             {
                 var summary = result.Events.OfType<SourceMultiHitEvent>().Single();
@@ -448,7 +330,7 @@ public sealed class BoneMoveAnimationDispatchTests
             bodies[actor] = bodies[actor] with { Pokemon = bodies[actor].Pokemon with { CurrentHp = 1 } };
             bodies[target] = NaturalMon(species, 100, move) with { SpeedStage = 0 };
             Assert.AreEqual(ability, bodies[target].Pokemon.AbilityId);
-            var result = OrderedAction(Frame(bodies, 31), actor, target);
+            var result = Ordered(Frame(bodies, 31), actor, target);
             Assert.AreEqual(1, result.State.Slots[actor].Body!.Pokemon.CurrentHp);
             Assert.AreEqual(WildBattleStatus.None, result.State.Slots[actor].Body!.Status);
             Assert.AreEqual(0, result.Events.OfType<SourceAbilityDamageEvent>().Count());
@@ -471,7 +353,7 @@ public sealed class BoneMoveAnimationDispatchTests
         // Bounded branch discovery is an integration fixture, not a source golden.
         for (uint seed = 0; seed < 128 && found is null; seed++)
         {
-            var result = OrderedAction(entered with { Rng = new(seed) }, 0, 1);
+            var result = Ordered(entered with { Rng = new(seed) }, 0, 1);
             var summary = result.Events.OfType<SourceMultiHitEvent>().Single();
             if (summary.ActualHits == summary.PlannedHits && result.Events.OfType<SourceHpChangedEvent>().All(h => h.HpAfter == 1)) found = result;
         }
@@ -492,7 +374,7 @@ public sealed class BoneMoveAnimationDispatchTests
         {
             int target = actor ^ 1; var bodies = Bodies(true, actor);
             bodies[actor] = bodies[actor] with { HeldItem = "ITEM_KINGS_ROCK" };
-            var result = OrderedAction(Frame(bodies, 31), actor, target);
+            var result = Ordered(Frame(bodies, 31), actor, target);
             var summary = result.Events.OfType<SourceMultiHitEvent>().Single();
             Assert.AreEqual(summary.PlannedHits, summary.ActualHits);
             Assert.AreEqual(summary.ActualHits + 1, result.Trace.Count(t => t.Purpose.EndsWith(".kings-rock", StringComparison.Ordinal)),
@@ -503,7 +385,7 @@ public sealed class BoneMoveAnimationDispatchTests
         var clubFrame = Frame(clubBodies, 0); SourceFourActionResult? clubBranch = null;
         for (uint seed = 0; seed < 128 && clubBranch is null; seed++)
         {
-            var result = OrderedAction(clubFrame with { Rng = new(seed) }, 0, 1);
+            var result = Ordered(clubFrame with { Rng = new(seed) }, 0, 1);
             var rock = result.Trace.Single(t => t.Purpose.EndsWith(".kings-rock", StringComparison.Ordinal));
             var secondary = result.Trace.Single(t => t.Purpose.EndsWith(".secondary-effect", StringComparison.Ordinal));
             if (rock.Raw % 100 < 10 && secondary.Raw % 100 > 10) clubBranch = result;

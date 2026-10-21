@@ -81,11 +81,11 @@ public sealed class ElementalStatusAnimationKernelTests
                     identified with { After = 0 }, identified with { Volatile = "sure-hit" }, identified with { Reason = "countdown" } }) Shared.Deny(events.SetItem(at, wrong), single);
             if (single)
             {
-                var battle = Envelope.Single(events, usedAt); Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle with { SourceEvents = [] }, true, SourceBattleScene.On).Dispatch);
+                var battle = Envelope.Single(events, usedAt); Assert.IsNotNull(AnimationDispatchFixture.AtAttackText(battle, true, SourceBattleScene.On).Dispatch);
                 var exported = battle.Events[at];
-                WildBattleEvent changed = exported switch {
-                    WildBattleConfusionChangedEvent e => e with { Before = 1 }, WildBattleStatusChangedEvent e => e with { Before = WildBattleStatus.Burn },
-                    WildBattleMtMoonVolatileEvent e => e with { After = 0 }, _ => throw new InvalidOperationException() };
+                SourceBattleEvent changed = exported switch {
+                    SourceConfusionChangedEvent e => e with { Before = 1 }, SourceStatusChangedEvent e => e with { Before = WildBattleStatus.Burn },
+                    SourceMtMoonVolatileEvent e => e with { After = 0 }, _ => throw new InvalidOperationException() };
                 Assert.IsNull(AnimationDispatchFixture.AtAttackText(battle with { Events = battle.Events.SetItem(at, changed) }, true, SourceBattleScene.On).Dispatch);
             }
             var definitions = Kernel.Mechanics.Catalog.Moves; var definition = definitions[Move(id)];

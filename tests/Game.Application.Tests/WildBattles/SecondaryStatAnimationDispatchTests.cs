@@ -21,8 +21,8 @@ public sealed class SecondaryStatAnimationDispatchTests
         new("secondary-stat", new("test"), "test", new(), CampaignDoubleBattleStage.Combat,
             events, index, [], [], 0, 0, [], [], [], [], 0);
     private static CampaignWildBattle Single(ImmutableArray<SourceBattleEvent> events, int index) =>
-        new("secondary-stat", null!, new(), events.Select(SourceBattleEventAdapter.Export).ToImmutableArray(),
-            index, null!, null!, CampaignBattlePhase.Events, [], 0, []) { SourceEvents = events };
+        new("secondary-stat", null!, new(), events,
+            index, null!, null!, CampaignBattlePhase.Events, [], 0, []);
 
     private static ImmutableArray<SourceBattleEvent> Invocation(PokemonMoveDefinition move, int actor, int target,
         params SourceBattleEvent[] results)

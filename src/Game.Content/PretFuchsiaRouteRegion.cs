@@ -28,29 +28,6 @@ public sealed class PretFuchsiaRouteRegion
         ReusedEvents = reused;
     }
 
-    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
-    {
-        "MAP_ROUTE13" => new("map.route-13"),
-        "MAP_ROUTE14" => new("map.route-14"),
-        "MAP_ROUTE15" => new("map.route-15"),
-        "MAP_ROUTE15_WEST_ENTRANCE_1F" => new("map.route-15-west-entrance-1f"),
-        "MAP_ROUTE15_WEST_ENTRANCE_2F" => new("map.route-15-west-entrance-2f"),
-        "MAP_FUCHSIA_CITY" => new("map.fuchsia-city"),
-        "MAP_FUCHSIA_CITY_POKEMON_CENTER_1F" => new("map.fuchsia-city-pokemon-center-1f"),
-        "MAP_FUCHSIA_CITY_POKEMON_CENTER_2F" => new("map.fuchsia-city-pokemon-center-2f"),
-        "MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE" => new("map.fuchsia-city-safari-zone-entrance"),
-        "MAP_FUCHSIA_CITY_WARDENS_HOUSE" => new("map.fuchsia-city-wardens-house"),
-        "MAP_FUCHSIA_CITY_MART" => new("map.fuchsia-city-mart"),
-        "MAP_FUCHSIA_CITY_SAFARI_ZONE_OFFICE" => new("map.fuchsia-city-safari-zone-office"),
-        "MAP_FUCHSIA_CITY_GYM" => new("map.fuchsia-city-gym"),
-        "MAP_FUCHSIA_CITY_HOUSE1" => new("map.fuchsia-city-house-1"),
-        "MAP_FUCHSIA_CITY_HOUSE2" => new("map.fuchsia-city-house-2"),
-        "MAP_FUCHSIA_CITY_HOUSE3" => new("map.fuchsia-city-house-3"),
-        "MAP_ROUTE18" => new("map.route-18"),
-        "MAP_ROUTE19" => new("map.route-19"),
-        _ => PretSnorlaxRegion.MapIdFromSourceSymbol(symbol)
-    };
-
     /// <summary>Keep source connections, including unavailable neighbors, so callers can reject before mutation.</summary>
 
 

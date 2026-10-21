@@ -70,8 +70,8 @@ public sealed class CalledStatAnimationKernelTests
             Assert.AreEqual(owner.Argument, wave.AnimationArgument);
             if (single)
             {
-                var exported = Envelope.Single(result.Events, i) with { SourceEvents = [] };
-                Assert.AreEqual(wave, AnimationDispatchFixture.StatAtResult(exported, true), "Exported receipts carry the caller proof without a canonical side channel.");
+                var exported = Envelope.Single(result.Events, i);
+                Assert.AreEqual(wave, AnimationDispatchFixture.StatAtResult(exported, true), "Canonical receipts carry the caller proof unchanged through the single envelope.");
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(exported, false));
                 Assert.IsNull(AnimationDispatchFixture.StatAtResult(exported, true, true));
             }

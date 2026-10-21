@@ -53,7 +53,7 @@ public sealed class MixedEffectAnimationDispatchTests:WildBattleFixture
             Assert.AreEqual(expected,decision.Dispatch is not null,scenario+":"+decision.Reason);
             if(slot<2)
             {
-                var single=AnimationDispatchFixture.AtAttackText(wild with{Phase=CampaignBattlePhase.Events,EventIndex=1,Events=events.Select(SourceBattleEventAdapter.Export).ToImmutableArray()},true,SourceBattleScene.On);
+                var single=AnimationDispatchFixture.AtAttackText(wild with{Phase=CampaignBattlePhase.Events,EventIndex=1,Events=events},true,SourceBattleScene.On);
                 Assert.AreEqual(expected,single.Dispatch is not null,"single:"+scenario+":"+single.Reason);
             }
             if(expected)

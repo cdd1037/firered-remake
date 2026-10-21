@@ -3,12 +3,12 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal abstract partial class SourceRecipeContext
+internal sealed partial class FrameRecipeContext
 {
     internal static bool HasFreezeHitRecipe(string effect) => effect == "EFFECT_FREEZE_HIT";
 
     // BattleScript_EffectFreezeHit sets MOVE_EFFECT_FREEZE then enters the ordinary
-    // hit script. The singles storage bridge retains its scalar command hooks.
+    // hit script with canonical frame storage.
     internal void ExecuteFreezeHit(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         int slot, PokemonMoveDefinition move, string purpose)
         => ExecuteStatusHit(catalog, actor, target, slot, move, purpose);
@@ -61,19 +61,19 @@ internal abstract partial class SourceRecipeContext
         ChangeStatus(target, WildBattleStatus.Freeze, "move");
     }
 
-    internal virtual int FreezeHitSecondaryDamage(int effectiveDamage, int adjustedDamage) => effectiveDamage;
-    internal virtual bool FreezeHitAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
+    internal int FreezeHitSecondaryDamage(int effectiveDamage, int adjustedDamage) => effectiveDamage;
+    internal bool FreezeHitAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
         SourceGenericAccuracy(actor, target, move, purpose);
-    internal virtual int FreezeHitDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent) =>
+    internal int FreezeHitDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent) =>
         SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent);
-    internal virtual int FreezeHitAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
+    internal int FreezeHitAdjust(BattlerSlot target, PokemonMoveDefinition move, int damage, string purpose) =>
         AdjustHeldDamage(target, move.Id, damage, purpose);
-    internal virtual void FreezeHitApplyDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int damage, bool critical, int percent)
+    internal void FreezeHitApplyDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int damage, bool critical, int percent)
     {
         SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
         if (critical && damage == 0 && HeldDamageEffectiveZero(target))
             Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
     }
-    internal virtual void FreezeHitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+    internal void FreezeHitReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
         SourceGenericEffectiveness(catalog, actor, target, move);
 }

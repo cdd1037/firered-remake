@@ -16,11 +16,11 @@ public sealed partial class PretSilphRegion
     public ImmutableArray<CampaignSilphElevatorEntrance> Entrances => ElevatorEntrances;
     public ImmutableArray<CampaignSilphDynamicExit> DynamicExits { get; private set; }
     private GeneratedFieldTilesets _fieldTilesets = null!;
-    private void InitializeField(SilphSourcePackage source)
+    private void InitializeField(SilphSourcePackage source, Func<string, MapId> resolveMap)
     {
         WarpPads = Contracts.GetProperty("pads").EnumerateArray().Select(p => new SilphWarpPad(new(p.GetProperty("map").GetString()!),
             p.GetProperty("warpIndex").GetInt32(), p.GetProperty("x").GetInt32(), p.GetProperty("y").GetInt32(), p.GetProperty("elevation").GetInt32(),
-            MapIdFromSourceSymbol(p.GetProperty("destinationMap").GetString()!), p.GetProperty("destinationWarp").GetInt32())).ToImmutableArray();
+            resolveMap(p.GetProperty("destinationMap").GetString()!), p.GetProperty("destinationWarp").GetInt32())).ToImmutableArray();
         Doors = Contracts.GetProperty("doors").EnumerateArray().Select(d =>
         {
             ImmutableArray<SilphDoorCell> Cells(string property) => d.GetProperty(property).EnumerateArray().Select(c =>
@@ -30,7 +30,7 @@ public sealed partial class PretSilphRegion
         }).ToImmutableArray();
         ElevatorFloors = Contracts.GetProperty("elevatorFloors").EnumerateArray().Select(f =>
         {
-            var map = MapIdFromSourceSymbol(f.GetProperty("destinationMap").GetString()!); int x = f.GetProperty("x").GetInt32(), y = f.GetProperty("y").GetInt32();
+            var map = resolveMap(f.GetProperty("destinationMap").GetString()!); int x = f.GetProperty("x").GetInt32(), y = f.GetProperty("y").GetInt32();
             string label = f.GetProperty("floor").GetInt32().ToString(CultureInfo.InvariantCulture) + "F";
             return new CampaignSilphElevatorFloor(f.GetProperty("menuIndex").GetInt32(), label, f.GetProperty("sourceFloorId").GetInt32(), map, x, y,
                 NewMaps[map].GetSourceCell(x,y)!.Elevation, f.GetProperty("destinationWarp").GetInt32());

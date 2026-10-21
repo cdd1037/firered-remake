@@ -114,25 +114,7 @@ public sealed class TrainerTowerReceiptBoundaryTests
     }
 
     [TestMethod]
-    public void EveryLegacyReceiptIsValidatedBeforeOnlyTheLastIsRetained()
-    {
-        var history = Enumerable.Range(1, 10000).Select(i => Receipt(i,
-            (TrainerTowerChallengeKind)(i % 4), floor: i % 8)).ToImmutableArray();
-        var source = basis with { TrainerTowerHistory = history };
-        var hash = CanonicalJson.Hash(source);
-        Assert.IsNull(session.ValidateLegacyTrainerTowerCheckpoint(source));
-        var converted = session.ConvertLegacyTrainerTowerCheckpoint(source);
-        Assert.IsNull(session.ValidatePlayerSave(converted));
-        Assert.AreEqual(1, converted.TrainerTowerHistory!.Value.Length);
-        Assert.AreSame(history[^1], converted.TrainerTowerHistory.Value[0]);
-        Assert.AreEqual("trainer-tower-battle:10001", Invoke("NextTrainerTowerBattleId", converted.TrainerTowerHistory));
-        Assert.AreEqual(hash, CanonicalJson.Hash(converted with { TrainerTowerHistory = history }));
-        Assert.AreEqual(hash, CanonicalJson.Hash(source));
-        Assert.AreEqual(10000, source.TrainerTowerHistory!.Value.Length);
-    }
-
-    [TestMethod]
-    public void LegacyConversionRejectsCorruptDiscardedAndRetainedReceipts()
+    public void CurrentBoundaryRejectsMalformedRetainedReceipt()
     {
         var valid = Receipt(1);
         CampaignTrainerTowerHistory[] malformed =
@@ -146,15 +128,22 @@ public sealed class TrainerTowerReceiptBoundaryTests
             valid with { OpponentsSeen = [-1] }, valid with { OpponentsSeen = [2] },
             valid with { OpponentsSeen = [0] }
         ];
-        foreach (int index in new[] { 0, 1, 2 })
         foreach (var bad in malformed)
         {
-            ImmutableArray<CampaignTrainerTowerHistory> history = [Receipt(1), Receipt(2), Receipt(3)];
-            var receipt = bad is not null && bad.Id == valid.Id ? bad with { Id = Receipt(index + 1).Id } : bad;
-            var source = basis with { TrainerTowerHistory = history.SetItem(index, receipt!) };
-            Assert.IsNotNull(session.ValidateLegacyTrainerTowerCheckpoint(source), $"Bad receipt at index {index} must not be discarded.");
-            Assert.ThrowsExactly<InvalidDataException>(() => session.ConvertLegacyTrainerTowerCheckpoint(source));
+            var state = basis with { TrainerTowerHistory = [bad] };
+            Assert.IsNotNull(session.ValidatePlayerSave(state));
+            Assert.ThrowsExactly<InvalidDataException>(() =>
+                CampaignSession.RestoreCurrent(CurrentCampaignFixture.Catalog, state, 0));
         }
+    }
+
+    [TestMethod]
+    public void CurrentBoundaryAdmitsNullOrEmptyButRejectsDefaultHistory()
+    {
+        Assert.IsNull(session.ValidatePlayerSave(basis with { TrainerTowerHistory = null }));
+        Assert.IsNull(session.ValidatePlayerSave(basis with { TrainerTowerHistory = [] }));
+        Assert.AreEqual("save_trainer_tower_history", session.ValidatePlayerSave(
+            basis with { TrainerTowerHistory = default(ImmutableArray<CampaignTrainerTowerHistory>) }));
     }
 
     [TestMethod]
@@ -165,46 +154,8 @@ public sealed class TrainerTowerReceiptBoundaryTests
         var receipt = Receipt(1, outcome: outcome) with { OpponentsSeen = [0] };
         var state = basis with { TrainerTowerHistory = [receipt] };
         Assert.IsNull(session.ValidatePlayerSave(state));
-        Assert.IsNull(session.ValidateLegacyTrainerTowerCheckpoint(state));
-        Assert.AreSame(state, session.ConvertLegacyTrainerTowerCheckpoint(state));
         Assert.AreEqual("save_trainer_tower_seen", session.ValidatePlayerSave(state with
         { TrainerTowerHistory = [receipt with { Outcome = WildBattleOutcome.Won }] }));
-    }
-
-    [TestMethod]
-    public void LegacyIdentityStillRequiresEverySequentialReceiptStartingAtOne()
-    {
-        ImmutableArray<CampaignTrainerTowerHistory>[] bad =
-        [
-            [Receipt(2)], [Receipt(1), Receipt(3)], [Receipt(1), Receipt(1)],
-            [Receipt(2), Receipt(1)], [Receipt(1), Receipt(2), Receipt(2)]
-        ];
-        foreach (var history in bad)
-            Assert.AreEqual("save_trainer_tower_history", session.ValidateLegacyTrainerTowerCheckpoint(basis with { TrainerTowerHistory = history }));
-    }
-
-    [TestMethod]
-    public void ConversionPreservesNullAndEmptyAndRejectsDefaultOrUnrelatedInvalidState()
-    {
-        var absent = basis with { TrainerTowerHistory = null };
-        var empty = basis with { TrainerTowerHistory = [] };
-        Assert.AreSame(absent, session.ConvertLegacyTrainerTowerCheckpoint(absent));
-        Assert.AreSame(empty, session.ConvertLegacyTrainerTowerCheckpoint(empty));
-        Assert.AreEqual("save_trainer_tower_history", session.ValidateLegacyTrainerTowerCheckpoint(
-            basis with { TrainerTowerHistory = default(ImmutableArray<CampaignTrainerTowerHistory>) }));
-        var source = basis with { TrainerTowerHistory = [Receipt(1), Receipt(2)] };
-        CampaignState[] bad =
-        [
-            source with { Money = -1 }, source with { TrainerTower = null },
-            source with { TrainerTower = basis.TrainerTower! with { Records = [] } },
-            source with { Script = source.Script with { Wait = new(StoryWaitKind.Battle, "active") } },
-            source with { GameStats = source.GameStats!.Remove("GAME_STAT_HATCHED_EGGS") }
-        ];
-        foreach (var state in bad)
-        {
-            Assert.IsNotNull(session.ValidateLegacyTrainerTowerCheckpoint(state));
-            Assert.ThrowsExactly<InvalidDataException>(() => session.ConvertLegacyTrainerTowerCheckpoint(state));
-        }
     }
 
     [TestMethod]

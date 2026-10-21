@@ -1,10 +1,7 @@
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
-    internal virtual int UproarRemaining(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock is { Kind: WildBattleCalledLockKind.Uproar } locked ? locked.TurnsRemaining : 0;
-    internal virtual bool UproarUnable(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock?.UnableToUseMove == true;
-    internal abstract void SetUproarRemaining(BattlerSlot actor, int remaining, string reason);
     internal void UproarResidual(BattlerSlot actor)
     {
         int remaining = UproarRemaining(actor);

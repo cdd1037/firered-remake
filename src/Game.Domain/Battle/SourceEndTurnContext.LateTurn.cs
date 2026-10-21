@@ -1,6 +1,6 @@
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
     internal bool PerishResidual(BattlerSlot slot)
     {

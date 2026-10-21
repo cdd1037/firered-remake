@@ -84,41 +84,31 @@ public static partial class CampaignStatAnimationPresentation
     public static CampaignStatAnimationDispatch? AtResult(CampaignWildBattle battle,bool sourceRules,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(!sourceRules||battle.Phase!=CampaignBattlePhase.Events)return null;
-        if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.EventIndex,2,moves,affectedBehindSubstitute) is {} charge)return charge;
+        if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.ToArray(),battle.EventIndex,2,moves,affectedBehindSubstitute) is {} charge)return charge;
         if(Grouped(battle,true,moves) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
-        return Match(battle.Id,battle.Events.Select(CampaignMoveAnimationPresentation.AnimationReceipt).ToArray(),battle.Events.Select(e=>e switch
-        {
-            WildBattleDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_DEFENSE_CURL"),
-            WildBattleMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",(int)s.Side,(int)s.Side,"pret:MOVE_MINIMIZE"),
-            WildBattleStatChangedEvent s=>new Row(s.Sequence,s.Turn,"stat",(int)s.Actor,(int)s.Target,Stat:s.Stat,Before:s.Before,After:s.After),
-            WildBattlePpCommandEvent p=>new(p.Sequence,p.Turn,"pp",(int)p.Actor,(int)p.Target,p.CurrentMove.Value,p.ChosenMove.Value,(int)p.PpOwner,Before:p.Before,After:p.After,Slot:p.PpSlot,Cost:p.CommandCost),
-            WildBattleMoveUsedEvent m=>new(m.Sequence,m.Turn,"used",(int)m.Actor,(int)m.Target,m.Move.Value,Before:m.PpBefore,After:m.PpAfter,Slot:m.Slot),
-            WildBattleAttackStringEvent a=>new(a.Sequence,a.Turn,"attack",(int)a.Actor,Move:a.CurrentMove.Value,Chosen:a.ChosenMove.Value),
-            WildBattleStatAtMinimumEvent c=>new(c.Sequence,c.Turn,"cap",(int)c.Actor,(int)c.Target),
-            WildBattleStatAtMaximumEvent c=>new(c.Sequence,c.Turn,"cap",(int)c.Actor,(int)c.Target),
-            _=>new Row(e.Sequence,e.Turn,"boundary")
-        }).ToArray(),battle.EventIndex,affectedBehindSubstitute,moves,false,i=>CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,i))??Secondary(battle,moves,affectedBehindSubstitute);
+        return Match(battle.Id,battle.Events.ToArray(),battle.Events.Select(Read).ToArray(),battle.EventIndex,affectedBehindSubstitute,moves,false,i=>CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,i))??Secondary(battle,moves,affectedBehindSubstitute);
     }
     public static CampaignStatAnimationDispatch? AtResult(CampaignDoubleBattle battle,bool affectedBehindSubstitute=false,IReadOnlyDictionary<MoveId,PokemonMoveDefinition>? moves=null)
     {
         if(battle.Stage!=CampaignDoubleBattleStage.Combat)return null;
         if(CampaignMoveAnimationPresentation.ChargeStatResult(battle.Id,battle.Events.ToArray(),battle.EventIndex,4,moves,affectedBehindSubstitute) is {} charge)return charge;
         if(Grouped(battle,moves) is {} grouped)return GroupAnimation(grouped,battle.Events[battle.EventIndex].Sequence,affectedBehindSubstitute,moves);
-        return Match(battle.Id,battle.Events.ToArray(),battle.Events.Select(e=>e switch
-        {
-            SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),
-            SourceMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_MINIMIZE"),
-            SourceStatChangedEvent s=>new Row(s.Sequence,s.Turn,"stat",s.Actor.Value,s.Target.Value,Stat:s.Stat,Before:s.Before,After:s.After),
-            SourcePpCommandEvent p=>new(p.Sequence,p.Turn,"pp",p.Actor.Value,p.Target.Value,p.CurrentMove.Value,p.ChosenMove.Value,p.PpOwner.Value,Before:p.Before,After:p.After,Slot:p.PpSlot,Cost:p.CommandCost),
-            SourceMoveUsedEvent m=>new(m.Sequence,m.Turn,"used",m.Actor.Value,m.Target.Value,m.Move.Value,Before:m.PpBefore,After:m.PpAfter,Slot:m.Slot),
-            SourceAttackStringEvent a=>new(a.Sequence,a.Turn,"attack",a.Actor.Value,Move:a.CurrentMove.Value,Chosen:a.ChosenMove.Value),
-            SourceStatAtMinimumEvent c=>new(c.Sequence,c.Turn,"cap",c.Actor.Value,c.Target.Value),
-            SourceStatAtMaximumEvent c=>new(c.Sequence,c.Turn,"cap",c.Actor.Value,c.Target.Value),
-            SourceHeldItemConsumedEvent h=>new(h.Sequence,h.Turn,"consumed",h.Side.Value,h.Side.Value),
-            SourceMoveMissedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
-            SourceMoveFailedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
-            SourceAbilityPreventedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
-            _=>new Row(e.Sequence,e.Turn,"boundary")
-        }).ToArray(),battle.EventIndex,affectedBehindSubstitute,moves,true,i=>CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,i))??Secondary(battle,moves,affectedBehindSubstitute);
+        return Match(battle.Id,battle.Events.ToArray(),battle.Events.Select(Read).ToArray(),battle.EventIndex,affectedBehindSubstitute,moves,true,i=>CampaignHeldItemAnimationPresentation.ConsumedGroupStart(battle.Events,i))??Secondary(battle,moves,affectedBehindSubstitute);
     }
+    private static Row Read(SourceBattleEvent e)=>e switch
+    {
+        SourceDefenseCurledEvent s=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_DEFENSE_CURL"),
+        SourceMtMoonVolatileEvent s when s.Volatile=="minimized"&&s.Before==0&&s.After==1&&s.Reason=="move"=>new Row(s.Sequence,s.Turn,"self-prelude",s.Side.Value,s.Side.Value,"pret:MOVE_MINIMIZE"),
+        SourceStatChangedEvent s=>new Row(s.Sequence,s.Turn,"stat",s.Actor.Value,s.Target.Value,Stat:s.Stat,Before:s.Before,After:s.After),
+        SourcePpCommandEvent p=>new(p.Sequence,p.Turn,"pp",p.Actor.Value,p.Target.Value,p.CurrentMove.Value,p.ChosenMove.Value,p.PpOwner.Value,Before:p.Before,After:p.After,Slot:p.PpSlot,Cost:p.CommandCost),
+        SourceMoveUsedEvent m=>new(m.Sequence,m.Turn,"used",m.Actor.Value,m.Target.Value,m.Move.Value,Before:m.PpBefore,After:m.PpAfter,Slot:m.Slot),
+        SourceAttackStringEvent a=>new(a.Sequence,a.Turn,"attack",a.Actor.Value,Move:a.CurrentMove.Value,Chosen:a.ChosenMove.Value),
+        SourceStatAtMinimumEvent c=>new(c.Sequence,c.Turn,"cap",c.Actor.Value,c.Target.Value),
+        SourceStatAtMaximumEvent c=>new(c.Sequence,c.Turn,"cap",c.Actor.Value,c.Target.Value),
+        SourceHeldItemConsumedEvent h=>new(h.Sequence,h.Turn,"consumed",h.Side.Value,h.Side.Value),
+        SourceMoveMissedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
+        SourceMoveFailedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
+        SourceAbilityPreventedEvent f=>new(f.Sequence,f.Turn,"failed",f.Actor.Value,f.Target.Value,f.Move.Value),
+        _=>new Row(e.Sequence,e.Turn,"boundary")
+    };
 }

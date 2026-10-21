@@ -1,10 +1,7 @@
 using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
-internal abstract partial class SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext
 {
-    internal virtual int RampageRemaining(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock is { Kind: WildBattleCalledLockKind.Rampage } locked ? locked.TurnsRemaining : 0;
-    internal virtual bool RampageUnable(BattlerSlot actor) => Get(actor).CalledTurnState?.Lock?.UnableToUseMove == true;
-    internal abstract void SetRampageRemaining(BattlerSlot actor, int remaining, string reason);
     internal void RampageResidual(BattlerSlot actor)
     {
         int remaining = RampageRemaining(actor);
