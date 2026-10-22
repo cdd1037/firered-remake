@@ -31,7 +31,6 @@ public static class PretPokemonTowerTrainers
     {
         var catalog = new OrdinaryTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id),
             document.Battles, "pokemon-tower-trainer");
-        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
 }

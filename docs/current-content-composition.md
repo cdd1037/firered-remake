@@ -27,9 +27,9 @@
 
 简体中文是目标语言，选定文本来源为 Xzonn/PretFRLG `a04f63173ca5fcf9c2db18ee223cf057c7f232c0`，选择记录位于 `scripts/recipes/config/localization-zh-Hans.source.json`。汉化文本不改变 pret 原版规则、经验分配或内容准入，也不要求用户提供中文 ROM。
 
-现有调用和布局测试覆盖 Unicode 名称、CJK 换行、Summary 固定窗口和补充字形。`dev run --language zh-Hans` 仍检查 `content/generated/localization/zh-Hans/font/cjk-font.json` 并设置 `FIRERED_TEXT_PACK`；但当前受控源码缺少调用所需的 `SourceTextPack` 和 `PresentationTextCatalog` 定义，配方中提到的部分中文转换工具也已不存在。不能仅凭旧状态字段或 CLI 参数认定语言包可构建、可加载或已完成中文覆盖。
+现有调用和布局测试覆盖 Unicode 名称、CJK 换行、Summary 固定窗口和补充字形。`SourceTextPack`、`PresentationTextCatalog` 及共享名称投影已恢复，位于 `Game.Content/Text/`，稀疏覆盖继续校验稳定 ID、参数和控制码。`dev run --language zh-Hans` 检查 `content/generated/localization/zh-Hans/font/cjk-font.json` 并设置 `FIRERED_TEXT_PACK`；配方中提到的部分中文转换工具仍未恢复，不能仅凭 CLI 参数认定完整语言包可重建或已完成中文覆盖。
 
-恢复缺失实现后，仍需分别验证文本选择、控制码、缺字、分页、命名输入和实际窗口。原版标题和图片的选择不因语言包自动替换。历史中文接入记录不作为当前运行通过的证据。
+完整语言包仍需分别验证缺字、覆盖范围和实际窗口。原版标题和图片的选择不因语言包自动替换。历史中文接入记录不作为当前运行通过的证据。
 
 ## 存档与验证
 

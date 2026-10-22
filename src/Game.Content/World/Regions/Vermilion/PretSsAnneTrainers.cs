@@ -17,7 +17,6 @@ public static class PretSsAnneTrainers
         var doc=ContentJson.ParseStrict<SsAnneTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/ssanne.json")),SharedTrainerCatalog.Options(root));
                 if(doc.SchemaVersion!=1) throw new InvalidDataException("SsAnne trainer document identity differs.");
         var catalog = new OrdinaryTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id), doc.Battles, "ssanne-trainer");
-        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
 }

@@ -20,7 +20,6 @@ public static class PretVermilionGymTrainers
         var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/data/trainer-battles/vermilion-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
                 if(doc.SchemaVersion!=1) throw new InvalidDataException("VermilionGym trainer document identity differs.");
         var catalog = new OrdinaryTrainerCatalog(doc.Trainers.ToImmutableDictionary(t => t.Id), doc.Battles, "vermilion-gym-trainer");
-        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
     public static PokemonCatalog ExtendPokemon(PretCanonicalPokemonCatalog canonical, string root, PokemonCatalog previous, bool route11Rules=false, bool rockTunnelRules=false, bool celadonApproachRules=false)

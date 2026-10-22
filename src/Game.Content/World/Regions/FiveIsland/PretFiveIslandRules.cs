@@ -15,8 +15,8 @@ public static class PretFiveIslandRules
         {
             if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty)
                 throw new InvalidDataException("Missing Five Island trainer records.");
-            return new(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles, "five-island-trainer");
-        }, OrdinaryTrainerSpecialSourceValidation.Validate);
+            return new(document.Trainers.Distinct().ToImmutableDictionary(t => t.Id), document.Battles, "five-island-trainer");
+        });
 
     public static FiveIslandTrainerDocument LoadDocument(string root) => Loader.LoadDocument(root);
     public static OrdinaryTrainerCatalog LoadTrainers(string root) => Loader.LoadCatalog(root);

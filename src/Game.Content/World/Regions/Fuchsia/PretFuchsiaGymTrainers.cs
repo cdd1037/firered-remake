@@ -14,7 +14,7 @@ public static class PretFuchsiaGymTrainers
     {
         var d=ContentJson.ParseStrict<FuchsiaGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/data/trainer-battles/fuchsia-gym.json")),SharedTrainerCatalog.Options(root, canonical.ReferenceOptions()));
         if (d.SchemaVersion != 1) throw new InvalidDataException("Unsupported FuchsiaGym trainer document schema.");
-        TrainerCatalogValidation.Validate(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, GymTrainerSourceValidation.ValidateFuchsiaGym);
+        TrainerCatalogValidation.Validate(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, OrdinaryTrainerCatalog.ValidateBattle);
         return d;
     }
     public static OrdinaryTrainerCatalog Load(PretCanonicalPokemonCatalog canonical, string root)

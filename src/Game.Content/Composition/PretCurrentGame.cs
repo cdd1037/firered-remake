@@ -80,7 +80,7 @@ public sealed partial class PretCampaignCatalog
         var schoolHouseInteriors = PretSchoolHouseInteriors.Load(world);
         var lostCave = PretLostCaveRegion.Load(world);
         var trainerFanClub = PretTrainerFanClub.Load(world);
-        var lostCaveTrainers = PretLostCaveTrainers.Load(projectRoot, vsSeekerTrainers);
+        var lostCaveTrainers = PretLostCaveTrainers.Load(projectRoot);
         var fieldFly = PretFieldFly.Load(projectRoot, shared: sharedMachines);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);

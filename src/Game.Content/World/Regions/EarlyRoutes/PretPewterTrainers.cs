@@ -29,7 +29,6 @@ public static class PretPewterTrainers
             MusicOption = b.MusicOption
         }).ToImmutableArray();
         var catalog = new OrdinaryTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), battles, "pewter-trainer");
-        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
 

@@ -106,8 +106,8 @@ public sealed class BattleTextPrinterTests
     [TestMethod]
     public void legacy_teachy_and_stats_consumers_bypass_native_printer_waits()
     {
-        string source = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignBattleDialogText.cs"));
-        string pagination = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignMessageLayoutView.cs"));
+        string source = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/Battle/Presentation/CampaignBattleDialogText.cs"));
+        string pagination = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/UI/Text/CampaignMessageLayoutView.cs"));
         string view = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/App/CampaignView.cs"));
         Assert.IsTrue(source.Contains("NativeWildMessageEnabled => TeachyBattle is null", StringComparison.Ordinal),
             "Teachy TV auto-ACK runs before ordinary battle processing and must keep its legacy event renderer.");

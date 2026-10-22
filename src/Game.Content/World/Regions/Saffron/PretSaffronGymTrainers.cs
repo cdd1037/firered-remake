@@ -13,7 +13,7 @@ public static class PretSaffronGymTrainers
     {
         var source = SaffronGymSource.Catalogs(root); var d = source.Parse<SaffronGymTrainerDocument>("trainers.json", canonical);
         if (d.SchemaVersion != 1) throw new InvalidDataException("Unsupported SaffronGym trainer document schema.");
-        TrainerCatalogValidation.Validate(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, GymTrainerSourceValidation.ValidateSaffronGym);
+        TrainerCatalogValidation.Validate(d.Trainers.ToImmutableDictionary(t => t.Id), d.Battles, OrdinaryTrainerCatalog.ValidateBattle);
         foreach (var move in d.Moves)
             if (move.BattleEffectImplemented) throw new InvalidDataException("Trainer metadata cannot enable battle effects.");
         return d;

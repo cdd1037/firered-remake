@@ -134,7 +134,7 @@ public sealed class FieldDirectionCadenceTests
         var input = new FieldDirectionCadence();
         input.SetHeld(Direction.South, true); input.SetHeld(Direction.North, true);
         Assert.AreEqual(Direction.North, input.Held); Assert.IsTrue(input.Ready);
-        var view = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/CampaignFieldDirectionView.cs"));
+        var view = File.ReadAllText(Path.Combine(TestAssets.Root, "src/Game.Godot/Input/CampaignFieldDirectionView.cs"));
         var start = view.IndexOf("private void FieldDirectionInput", StringComparison.Ordinal);
         var end = view.IndexOf("private void ProcessFieldDirection", start, StringComparison.Ordinal);
         Assert.IsFalse(view[start..end].Contains("ProcessFieldDirection();", StringComparison.Ordinal));

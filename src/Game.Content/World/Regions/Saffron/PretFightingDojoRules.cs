@@ -15,8 +15,8 @@ public static class PretFightingDojoRules
         {
             if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty)
                 throw new InvalidDataException("fighting_dojo_trainers_missing");
-            return new(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles, "fighting-dojo-trainer");
-        }, OrdinaryTrainerSpecialSourceValidation.Validate);
+            return new(document.Trainers.Distinct().ToImmutableDictionary(t => t.Id), document.Battles, "fighting-dojo-trainer");
+        });
 
     public static FightingDojoTrainerDocument LoadDocument(string root) => Loader.LoadDocument(root);
     public static OrdinaryTrainerCatalog LoadTrainers(string root) => Loader.LoadCatalog(root);

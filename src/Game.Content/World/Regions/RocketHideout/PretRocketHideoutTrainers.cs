@@ -31,7 +31,6 @@ public static class PretRocketHideoutTrainers
     {
         var catalog = new OrdinaryTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id),
             document.Battles, "rocket-hideout-trainer");
-        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
 }

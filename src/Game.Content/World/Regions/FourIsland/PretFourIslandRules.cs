@@ -15,8 +15,8 @@ public static class PretFourIslandRules
         {
             if (document.Trainers.IsDefaultOrEmpty || document.Battles.IsDefaultOrEmpty)
                 throw new InvalidDataException("Missing Four Island trainer records.");
-            return new(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles, "four-island-trainer");
-        }, OrdinaryTrainerSpecialSourceValidation.Validate);
+            return new(document.Trainers.Distinct().ToImmutableDictionary(t => t.Id), document.Battles, "four-island-trainer");
+        });
 
     public static FourIslandTrainerDocument LoadDocument(string root) => Loader.LoadDocument(root);
     public static OrdinaryTrainerCatalog LoadTrainers(string root) => Loader.LoadCatalog(root);

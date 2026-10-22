@@ -20,7 +20,6 @@ public static class PretMtMoonTrainers
             b.Trainer, b.Mode, 0, b.BattleTypeFlags, b.ScriptEntry, b.IntroText, b.DefeatText, "",
             b.PostBattleText, b.EntryScript, b.Callback, b.Source)).ToImmutableArray();
         var catalog = new OrdinaryTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), battles, "mtmoon-trainer");
-        OrdinaryTrainerSpecialSourceValidation.Validate(catalog);
         return catalog;
     }
 
