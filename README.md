@@ -2,7 +2,7 @@
 
 使用 Godot 4.7.2 .NET 和 C# 开发的 FireRed 单机重制项目。目标包括关都主线、正常单机可达的七岛、通关后玩法与支线。仓库根目录是开发入口，解决方案为 `FireRed.Current.slnx`，Godot 工程为 `src/Game.Godot/project.godot`。
 
-当前源码存在构建阻塞，最近一次检查见[验证记录](docs/validation.md#最近一次检查)。下列命令是维护入口，不表示当前版本已通过构建或全游戏验收。
+本机解决方案构建已通过；受控存档回归仍缺少独立验证的 schema 3 测试存档，检查范围见[验证记录](docs/validation.md#最近一次检查)。构建通过不代表全游戏验收完成。
 
 - [文档导航](docs/README.md)：按开发、功能、资源和验证查找说明。
 - [功能状态](docs/first-clear-remaining-scope.md)：区分已接入、未验证与明确后置的功能。
@@ -61,6 +61,9 @@ dotnet test tests/Game.Audio.Tests/Game.Audio.Tests.csproj
 - `tests/`、`docs/`：测试和维护文档。
 - `content/raw/`、`content/generated/`：本地原始输入与转换资源，不纳入 Git。
 - `checkpoints/`：本地受控测试存档和历史样本，不纳入 Git；用 `FIRERED_TEST_CHECKPOINT` 指定当前 schema 3 测试输入。
+- `reference/pokefirered/`：固定版本的上游参考子模块，供离线研究与导入使用，见[参考源说明](docs/source-baseline.md#本地参考子模块)。
+
+首次需要参考源码时，在仓库根目录执行 `git submodule update --init -- reference/pokefirered`。父仓库记录子模块地址与固定提交；开发入口可自动发现已初始化的子模块，环境变量和 `.tools/reference-root` 仍可显式覆盖。
 
 运行只读取 `content/generated` 及 Godot 自身字体/效果素材，不解析原作 C/ASM、raw、配方或 source-lock。generated 的完整冷重建尚不完整，不能当作可随时删除的缓存。保留必要私有资源，参见[运行资源边界](docs/resources/resource-layout.md)与[再生成说明](docs/resources/resource-reconstruction-guide.md)。不得用 `git add -f` 将素材、存档或生成证据塞进源码仓库，也不公开上传或分发原作素材。
 

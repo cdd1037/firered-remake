@@ -4,6 +4,84 @@
 
 ## 最近一次检查
 
+2026-10-21，在 `efadbcf1` 基线上修复不完整重构导致的缺失定义与开发入口还原错误。以下结果来自 Windows 本机，使用 .NET SDK 10.0.402、官方 Godot `4.7.2.stable.mono.official.ed1daf0bf`。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| `python dev doctor` | 通过；SDK、Godot 和本机 Godot NuGet 包目录可用 |
+| 标准解决方案串行构建 | 通过，0 警告、0 错误 |
+| `python dev build` | 还原与构建均通过，0 警告、0 错误；使用生成的 `.tools/nuget.config` 声明本机 Godot 包源和 nuget.org |
+| Domain 完整测试项目 | 377 项通过，0 失败、0 跳过 |
+| Battle 完整测试项目 | 1806 项通过，0 失败、0 跳过 |
+| Content 定向回归 | 86 项通过；覆盖普通训练家、地区加载、早期遇敌、名称和稀疏文本覆盖 |
+| Presentation 定向回归 | 93 项通过；覆盖选项、队伍动作、文字打印、输入、保存反馈、方向时序和事件 HP 投影 |
+| Process 完整测试项目 | 1 项通过；三个独立冷进程实际 CLR major 为 10，canonical hash 与存档往返一致 |
+| Application 定向回归 | 51 项中 50 项通过、1 项失败；失败项为受控存档检查，本地缺少 `checkpoints/current-schema3/controlled-checkpoint.json` |
+| Pokémon 准入导入检查 | 12 项通过；继续使用共享定义和显式 roster 引用 |
+
+未执行默认七项目的完整测试、音频测试、真实 Godot 游戏宿主 CLR、原生窗口、导出或真实声卡验收。受控存档失败保持为失败，没有生成替代档、转换旧档或推断玩家统计。交换场景图像检查按本次任务要求不重复，本轮曾尝试的相关修改已撤回。
+
+### 修复取舍
+
+- 补齐 `OrdinaryTrainerCatalog`、`RegionalTrainerDocument` 与 `RegionalTrainerLoader`：共享定义与脚本出场位置分别保存，构造时校验，普通与特殊战斗仍有明确边界。继续使用共享训练家生成器，不恢复已被替代的地区工厂。
+- 从本地 Git 历史核对并恢复仍有调用的 Unicode 名称规则、文本包、名称投影、控制码展开、菜单准入和 Godot 文本／输入适配。恢复后的演出适配使用当前 canonical `SourceTowerHpEvent`，没有恢复旧战斗 DTO 层。测试中的源码路径随目录更新。
+- 补齐当前早期遇敌和 Lost Cave 目录读取器，保留既有内容约束。Lost Cave 直接解析现有转换资源并引用共享训练家定义，不依赖再战目录重建初次对战内容。
+- 恢复仍被准入编译器调用的 `game_pokemon_admissions.py`，继续解析共享 schema 2 定义、用途引用与显式进化差异。
+
+### 执行命令
+
+```powershell
+python dev doctor
+dotnet build FireRed.Current.slnx --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
+python dev build
+dotnet test tests/Game.Domain.Tests/Game.Domain.Tests.csproj --no-build --no-restore
+dotnet test tests/Game.Battle.Tests/Game.Battle.Tests.csproj --no-build --no-restore
+dotnet test tests/Game.Process.Tests/Game.Process.Tests.csproj --no-build --no-restore
+dotnet test tests/Game.Content.Tests/Game.Content.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~OrdinaryTrainerCatalogTests|FullyQualifiedName~RegionalTrainerLoaderTests|FullyQualifiedName~SourceNameTextPackTests|FullyQualifiedName~SourceTrainerDisplayNamesTests|FullyQualifiedName~EarlyLandCompositionTests'
+dotnet test tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~OptionEditingTests|FullyQualifiedName~PartyPresentationTests|FullyQualifiedName~BattleTextPrinterTests|FullyQualifiedName~SourceTextInputTests|FullyQualifiedName~SaveFeedbackTests|FullyQualifiedName~FieldDirectionCadenceTests|FullyQualifiedName~CanonicalBattleHpPresentationTests'
+dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~CampaignCompositionTests|FullyQualifiedName~TrainerDisplayTextTests|FullyQualifiedName~CampaignFieldMenuAdmissionTests'
+python scripts/checks/test-game-pokemon.py
+```
+
+### 本地输入与失败记录
+
+本轮修复最初将参考仓库拉取到工程外的 `../pokefirered-reference`，随后按任务要求迁为 `reference/pokefirered/` 子模块，固定提交与 tree 保持不变。当前初始化方式见[参考源说明](source-baseline.md#本地参考子模块)。以下保留迁移前的拉取命令记录，远端为 `https://github.com/pret/pokefirered.git`：
+
+```powershell
+git -C ../pokefirered-reference fetch --depth=1 origin 037335f4c725d7c9aecdac87066f2002b4bd7e14
+git -C ../pokefirered-reference rev-parse FETCH_HEAD
+```
+
+只从该固定版本物化缺失输入，没有执行上游脚本或下载 ROM。补入的 `src/data/text/nature_names.h` SHA-256 为 `a8e82bf571e9eab767f7bcc654befc8fe1782c34250fe89e2542ef2894e55031`。现有导入器更新了过期的本地道具描述、训练家职业名称、Pokémon 准入、Route 1 和老人教学资源；Summary 仅更新文字和显示名称 JSON。旧物种表现与游戏厅菜单元数据通过现有 `species_art.build` 和 `import-game-corner-prizes.py` 的 `generate` 重新投影，没有修改源码读取器去接受旧字段，也没有重写 PNG。
+
+主要资源准备命令：
+
+```powershell
+python scripts/imports/items/import-item-catalog.py
+python scripts/imports/items/import-item-catalog.py --check
+python scripts/imports/trainers/import-shared-trainers.py
+python scripts/imports/pokemon/import-game-pokemon.py
+python scripts/imports/pokemon/import-route1-pokemon.py
+python scripts/imports/story/import-old-man-tutorial.py --repo ../pokefirered-reference
+```
+
+Domain 初次检查为 375 通过、2 项因参考向量缺失而失败；Battle 初次完整检查为 1786 通过、20 项因向量缺失而失败。用以下项目自有生成器补齐缺失数值向量后复测通过。生成器核验固定来源，以独立 Python 算术或 MSVC 编译的有界 C 参考程序计算，不读取 C# 测试结果，不覆盖不同的已有期望；没有执行参考仓库的构建脚本。
+
+```powershell
+python tests/Game.Domain.Tests/GrowthCapture/reference_vectors.py content/raw/pokefirered/037335f4 tests/Game.Domain.Tests/GrowthCapture/Fixtures
+python tests/Game.Battle.Tests/Turns/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Turns/Fixtures --fixtures-only
+python tests/Game.Battle.Tests/Switching/build-source-oracle.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Switching/Fixtures --fixtures-only
+python tests/Game.Battle.Tests/Residuals/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Residuals/Fixtures --fixtures-only
+python tests/Game.Battle.Tests/Moves/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Moves --fixtures-only
+python tests/Game.Battle.Tests/Items/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Items/Fixtures --fixtures-only
+python tests/Game.Battle.Tests/FieldEffects/source_probe.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/FieldEffects/Fixtures --fixtures-only
+python tests/Game.Battle.Tests/Breeding/probe_source_iv.py content/raw/pokefirered/037335f4 tests/Game.Battle.Tests/Breeding/Fixtures/iv-vectors.json
+```
+
+首次 Turns 向量生成因缺少 `include/battle_util.h` 失败，从同一固定提交补齐该头文件后生成通过。回归期间暴露的旧资源格式、缺失资源和旧测试路径失败也保留在本地日志中；一次宽范围执行在共同的内容加载错误明确后中止，不计为完整回归。本轮日志位于忽略目录 `evidence/repair-*`，raw、generated、向量与参考源码不纳入产品源码提交。
+
+## 文档整理时的基线检查（2026-10-21）
+
 2026-10-21，Windows 文档整理期间，对修改前的源码基线 `4234fdea` 执行以下检查。本次仅编辑文档，未修复下述源码或工具问题。
 
 | 命令 | 实际结果 |

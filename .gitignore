@@ -16,7 +16,8 @@ src/Game.Godot/**/*.cs.uid
 /content/generated/
 /src/Game.Godot/Assets/
 /checkpoints/
-/reference/
+/reference/*
+!/reference/pokefirered/
 /audio-reference-build/
 
 # Source-derived cue tables are runtime/import assets, not authored source.

@@ -23,6 +23,23 @@
 
 README 同时列出 LeafGreen、revision 1 和 Switch/revision 10。它们的存在不授权混用数据或修复行为。今后更换版本必须另建 source lock、列出差异、更新内容版本并重跑相关规则与场景。`master` 只可用于发现更新，不能成为构建时移动依赖。
 
+### 本地参考子模块
+
+参考源码以 Git submodule 存放于 `reference/pokefirered/`，地址为 `https://github.com/pret/pokefirered.git`。父仓库的 gitlink 固定在上述 `037335f4c725d7c9aecdac87066f2002b4bd7e14`，不跟随分支最新版本。
+
+```sh
+# 克隆父仓库后，按其记录的提交初始化参考源码。
+git submodule update --init -- reference/pokefirered
+git submodule status -- reference/pokefirered
+
+# 示例：导入器从固定提交的 Git blob 读取，仍不执行上游脚本。
+python scripts/imports/story/import-old-man-tutorial.py --repo reference/pokefirered
+```
+
+`dev` 在没有 `FIRERED_ORIGINAL_REFERENCE` 或 `.tools/reference-root` 覆盖时自动使用已初始化的子模块。直接调用导入器时按其入口传入 `--repo`、`--reference-root` 等参数；已有 raw 缓存仍可离线使用。子模块的工作区不属于产品源码目录，原始输入与转换资源继续留在忽略目录，游戏不在运行时读取参考源码。
+
+本子模块只固定参考版本。版本升级须遵守前述 source lock、内容版本和回归要求；日常初始化不使用 `git submodule update --remote`。
+
 ## 2. 初次来源核查记录
 
 - 从 GitHub 维护仓库核验 commit 及其 tree。完整 recursive tree 返回 `truncated=false`，包含 11,434 个树/文件条目；这个数量不是资源数量或游戏覆盖分母。

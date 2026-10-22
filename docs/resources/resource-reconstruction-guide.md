@@ -11,6 +11,8 @@
 - `content/raw/local/forest-trainer-art/` 的三个调色板是实际本地变体，不可替换成上游默认值。
 - 输入选择和转换配方位于 `data/`、`scripts/recipes/` 及对应导入工具。部分专用入口仍从
   固定版本 Git blob 读取，以其实际参数为准；任何入口都不得执行上游仓库脚本。
+- 固定参考仓库是 `reference/pokefirered/` 子模块；通过 `git submodule update --init -- reference/pokefirered`
+  初始化。地址、版本与开发工具发现顺序见[参考源说明](../source-baseline.md#本地参考子模块)。
 - Godot 的字体和效果素材保存在本地项目中，不随源码 Git 提交；语言包缺口与现有字形支持见[本地化状态](../current-content-composition.md#文本与本地化)。
 - 音频 cue 生成需要已有匹配的 `audio/synth/firered.pack` 与 `normal-cries.bin`。
   pack 提取需要合法已有的匹配 ROM，不下载 ROM；普通叫声目录还需对应生成后的 `.bin`

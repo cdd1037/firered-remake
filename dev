@@ -2,11 +2,15 @@
 """One reproducible entry point. Never install, relax a gate, or rewrite golden results implicitly."""
 import argparse
 import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex, tempfile, selectors, time, signal, errno
+import xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).resolve().parent
 LOCK=json.loads((ROOT/'toolchain.lock.json').read_text(encoding='utf-8'))
 for variable,filename in [('FIRERED_TOOLCHAIN_ROOT','toolchain-root'),('FIRERED_ORIGINAL_REFERENCE','reference-root')]:
  local=ROOT/'.tools'/filename
  if variable not in os.environ and local.is_file():os.environ[variable]=local.read_text(encoding='utf-8').strip()
+reference=ROOT/'reference/pokefirered'
+if 'FIRERED_ORIGINAL_REFERENCE' not in os.environ and (reference/'.git').exists():
+ os.environ['FIRERED_ORIGINAL_REFERENCE']=str(reference)
 TOOLS=pathlib.Path(os.environ.get('FIRERED_TOOLCHAIN_ROOT','/workspace/shared/firered-toolchains'))
 
 def find_tool(variable, name, candidates):
@@ -93,7 +97,12 @@ def setup():
 
 def build():
  if doctor():return 1
- run([DOTNET,'restore','FireRed.Current.slnx','--disable-parallel','--source',NUPKGS,'--source','https://api.nuget.org/v3/index.json','-p:NuGetAudit=false','-m:1','-nr:false'],'restore.log')
+ config=ET.Element('configuration');sources=ET.SubElement(config,'packageSources');ET.SubElement(sources,'clear')
+ ET.SubElement(sources,'add',key='Godot',value=str(NUPKGS))
+ ET.SubElement(sources,'add',key='nuget.org',value='https://api.nuget.org/v3/index.json')
+ config_path=ROOT/'.tools/nuget.config';config_path.parent.mkdir(exist_ok=True)
+ ET.ElementTree(config).write(config_path,encoding='utf-8',xml_declaration=True)
+ run([DOTNET,'restore','FireRed.Current.slnx','--disable-parallel','--configfile',config_path,'-p:NuGetAudit=false','-m:1','-nr:false'],'restore.log')
  run([DOTNET,'build','FireRed.Current.slnx','--no-restore','-m:1','-nr:false'],'build.log');return 0
 
 
@@ -251,6 +260,7 @@ def main():
  if args==['doctor']:return doctor()
  if args in (['env'],['env','--json']):
   exported={key:ENV[key] for key in ('FIRERED_TOOLCHAIN_ROOT','FIRERED_DOTNET','FIRERED_GODOT_NUGET_SOURCE','DOTNET_ROOT','GODOT','DOTNET_CLI_HOME','NUGET_PACKAGES','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','DOTNET_NOLOGO','DOTNET_CLI_TELEMETRY_OPTOUT','DOTNET_MULTILEVEL_LOOKUP')}
+  if ENV.get('FIRERED_ORIGINAL_REFERENCE'):exported['FIRERED_ORIGINAL_REFERENCE']=ENV['FIRERED_ORIGINAL_REFERENCE']
   if args==['env','--json']:return output(exported|{'PATH':ENV['PATH']})
   for key,value in exported.items():
    print(f'export {key}={shlex.quote(value)}')
